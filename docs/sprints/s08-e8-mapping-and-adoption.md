@@ -2,7 +2,7 @@
 
 Status: Planned
 
-**Goal:** a complete Essential Eight ML2 mapping for the reference checks, and the guides an organisation needs to adopt the kit: moving registers out of spreadsheets, running manual sources, training and governance reporting.
+**Goal:** a complete Essential Eight ML2 mapping for the reference checks, the guides an organisation needs to adopt the kit (moving registers out of spreadsheets, running manual sources, training), and two tiers of reporting: monthly operational reporting to the security committee and quarterly governance reporting to the board.
 
 ### s08-01 Essential Eight mapping file
 - [ ] Done
@@ -53,23 +53,91 @@ Status: Planned
 **Functional check**
 - Walk through the system owner guide on the local stack without help.
 
-### s08-04 Committee and board report templates
+### s08-04 Report data model and snapshots
 - [ ] Done
 
-**Story:** As an authorising official, I want monthly and quarterly report templates fed from CISO Assistant, so that reporting takes minutes, not days.
+**Story:** As the capability owner, I want each reporting period's figures captured as a snapshot, so that reports show trends and can be reproduced later.
 
 **Acceptance criteria**
-- `hound report committee --month YYYY-MM` produces Markdown: compliance status per audit and change since last month, collector health and evidence freshness, overdue applied controls, exceptions expiring, third-party reviews due.
-- `hound report board --quarter YYYY-Qn` produces a two-page summary: compliance statement placeholder, maturity per strategy with trend, top risks, supplier assurance.
-- Reports read only from the CISO Assistant API; formatting is pure functions over fetched data.
-- A guide shows how to refine the draft with Claude using CISO Assistant's MCP server.
+- `ReportingPeriod` (month or quarter) and a `PostureSnapshot` record: requirement results per audit and framework, applied control status counts, open exceptions and risk acceptances with expiry, open findings and remediation items with due dates, incidents in the period, collector run summaries, manual sources due and overdue, third-party reviews due.
+- `hound report snapshot --period YYYY-MM` reads only from the CISO Assistant API and the local run store, and writes the snapshot as JSON to the evidence store, then uploads it to CISO Assistant as evidence on a configurable "Security reporting" applied control.
+- Pure functions compute changes between two snapshots (`DiffSnapshots`), so every report is a function of snapshots, not live calls.
+
+**Tests first**
+- `SnapshotTests.Built_from_fixture_api_responses`
+- `DiffTests.Detects_requirement_result_changes_between_periods`
+- `DiffTests.Detects_new_expired_and_closed_exceptions`
+- Property: `DiffSnapshots(a, a)` is empty.
+
+**Functional check**
+- Run `hound run` twice with different recordings, take a snapshot after each, and confirm the diff lists the changed requirement.
+
+### s08-05 Monthly security committee report (operational)
+- [ ] Done
+
+**Story:** As the security committee, I want a monthly operational report, so that we can see what changed, what is failing and what is overdue, and assign actions.
+
+**Acceptance criteria**
+- `hound report committee --month YYYY-MM` produces Markdown from the month's snapshot and the previous one, with these sections in order:
+    1. Summary: three to five lines on what changed and what needs a decision.
+    2. Collector health: each collector's last run, success rate for the month, evidence freshness against its window, failures and their cause.
+    3. Control status changes: requirements and applied controls whose status changed, grouped by framework and strategy.
+    4. Exceptions and risk acceptances: new, expiring within 60 days, and expired.
+    5. Remediation (POA&M-style) progress: open items, completed this month, overdue, by owner and due date.
+    6. Incidents: incidents opened and closed in CISO Assistant this month, with status.
+    7. Manual evidence and third parties: manual uploads due or overdue; supplier reviews due.
+    8. Actions: proposed actions with owner and due date, for the committee to confirm.
+- Every figure links back to its CISO Assistant object.
+- A committee pack guide (`docs/govern/security-committee.md`): terms of reference template, agenda, attendees by role, how decisions and actions are recorded back into CISO Assistant (applied controls, exceptions, tasks).
 
 **Tests first**
 - `CommitteeReportTests.Renders_expected_markdown_from_fixture` (golden file)
-- `BoardReportTests.Trend_uses_last_four_quarters`
+- `CommitteeReportTests.Expiring_exceptions_use_60_day_window`
+- `CommitteeReportTests.Overdue_remediation_sorted_by_due_date`
+- `CommitteeReportTests.Empty_sections_say_none_rather_than_disappear`
 
 **Functional check**
-- Generate both reports from the local stack after a `hound run`.
+- Generate the report from the local stack for the current month and walk through it against the example audit.
+
+### s08-06 Quarterly board report (governance)
+- [ ] Done
+
+**Story:** As the board, I want a short quarterly governance report, so that we understand our compliance posture, its direction, the key risks and the risks management has accepted on our behalf.
+
+**Acceptance criteria**
+- `hound report board --quarter YYYY-Qn` produces a Markdown report of at most two pages plus an appendix, from the quarter-end snapshots, with these sections:
+    1. Compliance position: a one-paragraph statement for the authorising official to confirm (on track, on track with conditions, off track), with the reasons.
+    2. Maturity posture: per framework and strategy (for Essential Eight, each of the eight at ML1 and ML2), with the trend over the last four quarters.
+    3. Key risks: the top five risks against appetite, with owner, treatment and target date.
+    4. Risk-acceptance decisions: risks and exceptions accepted this quarter, who accepted them, and when they expire; anything needing board endorsement highlighted.
+    5. Assurance: collector coverage (automated versus manual share of requirements), evidence freshness, independent review status, tier 1 supplier assurance.
+    6. Decisions and asks of the board.
+- No operational detail in the body (no individual collector failures or task lists); that lives in the committee report and the appendix.
+- Trend charts rendered as simple text tables or Mermaid charts so the report stays plain Markdown.
+- A board reporting guide (`docs/govern/board-reporting.md`): risk appetite statement template, how the committee's monthly reports roll up into the quarter, and how the board's decisions are recorded in CISO Assistant.
+
+**Tests first**
+- `BoardReportTests.Trend_uses_last_four_quarters`
+- `BoardReportTests.Lists_risk_acceptances_made_in_quarter_with_expiry`
+- `BoardReportTests.Excludes_operational_detail_from_body`
+- `BoardReportTests.Renders_expected_markdown_from_fixture` (golden file)
+
+**Functional check**
+- Generate the board report from four fixture quarter snapshots and from the local stack; confirm it fits two pages when printed.
+
+### s08-07 Drafting reports with Claude
+- [ ] Done
+
+**Story:** As the authorising official, I want to refine report drafts with Claude using live CISO Assistant data, so that the narrative is accurate and fast to produce.
+
+**Acceptance criteria**
+- `docs/govern/ai-assisted-reporting.md`: connect Claude to CISO Assistant's MCP server (read-only service account), prompts for the committee summary and the board compliance position, and the rule that every figure must come from the generated report, not the model.
+
+**Tests first**
+- Docs lint and link check.
+
+**Functional check**
+- Follow the guide against the local stack and produce a committee summary from the generated report.
 
 ## Discovered work
 

@@ -18,7 +18,7 @@ A small defence-industry business has to reach and then sustain cyber compliance
 
 | Release | Contents |
 | --- | --- |
-| 1 | Core, publisher, runner, collector SDK and test kit, manual-upload collector, Microsoft 365, Sophos Central and Veeam collectors, reference Docker deployment, Essential Eight mapping, adoption guides and report templates |
+| 1 | Core, publisher, runner, collector SDK and test kit, manual-upload collector, Microsoft 365, Sophos Central and Veeam collectors, reference Docker deployment, Essential Eight mapping, adoption guides and committee (operational) and board (governance) reporting |
 | 2 | NIST SP 800-171 mapping, SSP and POA&M drafts, optional collector console |
 
 Sprints are in [`docs/sprints/`](sprints/README.md).
@@ -45,6 +45,21 @@ Sprints are in [`docs/sprints/`](sprints/README.md).
 | Independent reviewer | Periodic external assessment |
 
 Guides and training outlines for each role are delivered in sprint s08.
+
+## Reporting: operation and governance
+
+Reporting has two tiers with different audiences and questions. Both are generated from period snapshots of CISO Assistant data, so figures are reproducible and trends are reliable.
+
+| | Security committee (operation) | Board (governance) |
+| --- | --- | --- |
+| Cadence | Monthly | Quarterly |
+| Question answered | What changed, what is failing, what is overdue, who does what next? | Are we compliant and improving, what are the key risks, and what risk have we accepted? |
+| Content | Collector health and evidence freshness; control status changes; exceptions and risk acceptances (new, expiring, expired); remediation (POA&M-style) progress; incidents; manual evidence and supplier reviews due; actions | Compliance position statement; maturity posture per framework with four-quarter trend; top risks against appetite; risk-acceptance decisions and expiries; assurance coverage; decisions needed |
+| Length | As long as needed, every figure linked to CISO Assistant | Two pages plus appendix, no operational detail |
+| Owner | Capability owner prepares; committee confirms actions | Authorising official presents; board endorses risk appetite and acceptances |
+| Recorded in CISO Assistant | Actions as tasks and applied controls; exceptions | Risk-acceptance decisions; the report as evidence |
+
+The committee's monthly reports roll up into the board's quarter. Delivered in sprint s08 (tasks s08-04 to s08-07); release 2 adds NIST SP 800-171 SSP and POA&M views (s10).
 
 ## Security of the project itself
 

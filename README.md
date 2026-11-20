@@ -22,6 +22,7 @@ It is designed to be built and run by an ordinary in-house IT and software team,
 | Collector SDK | A plugin interface, template and test kit. A collector only talks to its target system. |
 | Manual-upload collector | For systems without a usable API: schedule, upload, same audit updates. |
 | Reference collectors | Microsoft 365, Sophos Central, Veeam Backup & Replication. |
+| Reporting | Monthly security committee report (operational) and quarterly board report (governance), generated from CISO Assistant data. |
 | Reference deployment | Docker Compose for CISO Assistant plus the collector runner, with backups and hardening notes. |
 
 Your organisation's configuration (system names, tenant IDs, audit IDs, mappings with real observations) never goes in this repo. Keep it in a private deployment repo.
