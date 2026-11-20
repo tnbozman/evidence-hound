@@ -48,7 +48,7 @@ jobs:
           --collect:"XPlat Code Coverage"
       - name: Upload test results
         if: ${{ always() && hashFiles('global.json') != '' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-results
           path: test-results
@@ -68,7 +68,7 @@ jobs:
         run: dotnet test -c Release --filter "Category=Functional" --logger trx --results-directory test-results
       - name: Upload functional results
         if: ${{ always() && hashFiles('global.json') != '' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: functional-results
           path: test-results
