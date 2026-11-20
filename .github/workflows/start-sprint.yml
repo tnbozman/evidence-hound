@@ -1,0 +1,44 @@
+name: Start sprint
+
+# Creates sprint/<sNN-slug> from main, marks the sprint file "In progress"
+# and opens a draft PR with the task checklist.
+# Repo setting needed: Actions > General > "Allow GitHub Actions to create and approve pull requests".
+# Note: a PR opened with GITHUB_TOKEN does not trigger CI by itself; CI runs on the first push from the dev container.
+
+on:
+  workflow_dispatch:
+    inputs:
+      sprint:
+        description: "Sprint id, for example s01"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: start-sprint
+  cancel-in-progress: false
+
+jobs:
+  start:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      # Pin actions to full commit SHAs in s00-03; Dependabot keeps them current.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Start sprint
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SPRINT: ${{ inputs.sprint }}
+        run: scripts/start-sprint.sh "$SPRINT"

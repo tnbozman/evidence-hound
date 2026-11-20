@@ -1,0 +1,37 @@
+# Build
+bin/
+obj/
+artifacts/
+TestResults/
+test-results/
+coverage*/
+*.trx
+
+# IDE
+.vs/
+*.user
+*.suo
+.idea/
+
+# Local runtime data, never commit
+.dev/
+evidence/
+manual/
+dev/ciso-assistant/db/
+*.env
+.env*
+!.env.example
+.clica.env
+.mcp.env
+
+# Organisation data formats that must not be committed by accident
+*.xlsx
+*.xls
+*.csv
+*.pdf
+!examples/**/*.xlsx
+!examples/**/*.csv
+
+# OS
+.DS_Store
+Thumbs.db

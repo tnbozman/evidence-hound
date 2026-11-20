@@ -1,0 +1,32 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug CLI (collect --dry-run, example config)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/src/EvidenceHound.Cli/bin/Debug/net10.0/hound.dll",
+      "args": ["collect", "--dry-run", "--config", "examples/example-pty-ltd.yaml"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
+      "name": "Debug CLI (run against local CISO Assistant)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/src/EvidenceHound.Cli/bin/Debug/net10.0/hound.dll",
+      "args": ["run", "--config", "examples/example-pty-ltd.yaml"],
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.dev/ca.env",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Attach to process",
+      "type": "coreclr",
+      "request": "attach"
+    }
+  ]
+}

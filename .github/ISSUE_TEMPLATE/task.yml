@@ -1,0 +1,33 @@
+name: Task
+description: A unit of work for a sprint
+labels: [task]
+body:
+  - type: markdown
+    attributes:
+      value: "Use fictional data only. Never include real organisation names, identifiers or credentials."
+  - type: input
+    id: sprint
+    attributes:
+      label: Sprint
+      placeholder: s03
+  - type: textarea
+    id: story
+    attributes:
+      label: Story
+      placeholder: As a <role>, I want <capability>, so that <outcome>.
+    validations:
+      required: true
+  - type: textarea
+    id: criteria
+    attributes:
+      label: Acceptance criteria
+    validations:
+      required: true
+  - type: textarea
+    id: tests
+    attributes:
+      label: Tests to write first
+  - type: textarea
+    id: functional
+    attributes:
+      label: Functional check

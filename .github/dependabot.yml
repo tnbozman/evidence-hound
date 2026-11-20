@@ -1,0 +1,27 @@
+version: 2
+updates:
+  - package-ecosystem: nuget
+    directory: "/"
+    schedule:
+      interval: weekly
+    groups:
+      test-tools:
+        patterns: ["xunit*", "FsCheck*", "Shouldly", "WireMock*", "Testcontainers*", "coverlet*", "Microsoft.NET.Test.Sdk"]
+      microsoft-extensions:
+        patterns: ["Microsoft.Extensions.*"]
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directories: ["/deploy/compose", "/src/EvidenceHound.Cli"]
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker-compose
+    directories: ["/deploy/compose", "/dev/ciso-assistant"]
+    schedule:
+      interval: weekly
+  - package-ecosystem: devcontainers
+    directory: "/"
+    schedule:
+      interval: weekly

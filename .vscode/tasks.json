@@ -1,0 +1,14 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    { "label": "build", "type": "shell", "command": "make build", "group": { "kind": "build", "isDefault": true }, "problemMatcher": "$msCompile" },
+    { "label": "test", "type": "shell", "command": "make test", "group": { "kind": "test", "isDefault": true }, "problemMatcher": "$msCompile" },
+    { "label": "test: functional", "type": "shell", "command": "make test-functional", "group": "test", "problemMatcher": "$msCompile" },
+    { "label": "test: scripts", "type": "shell", "command": "bats scripts/tests", "group": "test" },
+    { "label": "lint", "type": "shell", "command": "make lint", "problemMatcher": "$msCompile" },
+    { "label": "coverage", "type": "shell", "command": "make coverage" },
+    { "label": "CISO Assistant: up", "type": "shell", "command": "make ca-up" },
+    { "label": "CISO Assistant: down", "type": "shell", "command": "make ca-down" },
+    { "label": "run: dry run", "type": "shell", "command": "make run ARGS=\"collect --dry-run --config examples/example-pty-ltd.yaml\"" }
+  ]
+}
