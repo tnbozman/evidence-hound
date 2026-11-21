@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Planning;
 using EvidenceHound.Core.Publishing;
 using EvidenceHound.Core.Results;
@@ -25,12 +26,61 @@ internal sealed class InMemoryCisoAssistant : ICisoAssistantClient
 
     public Task<Result<Unit>> CheckHealthAsync(CancellationToken cancellationToken) => Done("health");
 
-    public Task<Result<string>> FindRequirementAssessmentAsync(string complianceAssessmentRefId, string requirementRefId, CancellationToken cancellationToken)
+    /// <summary>Requirement rows of every audit. A requirement with no row here has one row, <c>ra-&lt;ref or urn&gt;</c>, in every group.</summary>
+    public List<RemoteRequirementAssessment> Rows { get; } = [];
+
+    /// <summary>The selected implementation groups of every audit; empty selects all.</summary>
+    public List<string> SelectedGroups { get; } = [];
+
+    public Task<Result<IReadOnlyList<RemoteRequirementAssessment>>> FindRequirementAssessmentsAsync(
+        string complianceAssessmentRefId, RequirementKey requirement, CancellationToken cancellationToken)
     {
-        Calls.Add($"find {requirementRefId}");
-        return Task.FromResult(MissingRequirements.Contains(requirementRefId)
-            ? Result.Fail<string>(new Problem("ciso_assistant.not_found", $"No requirement assessment {requirementRefId}."))
-            : Result.Ok($"ra-{requirementRefId}"));
+        ArgumentNullException.ThrowIfNull(requirement);
+        Calls.Add($"find {requirement.Value}");
+        if (MissingRequirements.Contains(requirement.Value))
+        {
+            return Task.FromResult(Result.Fail<IReadOnlyList<RemoteRequirementAssessment>>(new Problem("ciso_assistant.not_found", $"No requirement assessment {requirement.Value}.")));
+        }
+
+        var rows = Rows.Where(r => requirement.Kind == RequirementKeyKind.Urn ? r.Urn == requirement.Value : r.RefId == requirement.Value).ToList();
+        return Task.FromResult(Result.Ok<IReadOnlyList<RemoteRequirementAssessment>>(rows.Count > 0
+            ? rows
+            : [new RemoteRequirementAssessment($"ra-{requirement.Value}", $"urn:example:req:{requirement.Value}", requirement.Value, [])]));
+    }
+
+    public HashSet<string> MissingAudits { get; } = [];
+
+    public Task<Result<RemoteAudit>> FindAuditAsync(string complianceAssessmentRefId, CancellationToken cancellationToken)
+    {
+        Calls.Add($"audit {complianceAssessmentRefId}");
+        return Task.FromResult(MissingAudits.Contains(complianceAssessmentRefId)
+            ? Result.Fail<RemoteAudit>(new Problem("ciso_assistant.not_found", $"No audit {complianceAssessmentRefId}."))
+            : Result.Ok(new RemoteAudit($"ca-{complianceAssessmentRefId}", [.. SelectedGroups])));
+    }
+
+    /// <summary>Every row in <see cref="Rows"/> with what was last written to it; unwritten rows are not assessed.</summary>
+    public Task<Result<IReadOnlyList<CurrentRow>>> ListRequirementAssessmentsAsync(string complianceAssessmentRefId, CancellationToken cancellationToken)
+    {
+        Calls.Add($"list {complianceAssessmentRefId}");
+        return Task.FromResult(MissingAudits.Contains(complianceAssessmentRefId)
+            ? Result.Fail<IReadOnlyList<CurrentRow>>(new Problem("ciso_assistant.not_found", $"No audit {complianceAssessmentRefId}."))
+            : Result.Ok<IReadOnlyList<CurrentRow>>([.. Rows.Select(r => Requirements.TryGetValue(r.Id, out var v)
+                ? new CurrentRow(r.Id, r.Urn, r.RefId, r.Groups, v.Result, v.Observation, v.EvidenceIds)
+                : new CurrentRow(r.Id, r.Urn, r.RefId, r.Groups, ComplianceResult.NotAssessed, "", []))]));
+    }
+
+    public Task<Result<IReadOnlyList<RemoteEvidence>>> FindEvidenceAsync(string refId, CancellationToken cancellationToken)
+    {
+        Calls.Add($"evidence {refId}");
+        return Task.FromResult(Result.Ok<IReadOnlyList<RemoteEvidence>>(_evidenceByRefId.TryGetValue(refId, out var found) ? [found] : []));
+    }
+
+    public Task<Result<ControlState>> FindAppliedControlStatusAsync(string refId, CancellationToken cancellationToken)
+    {
+        Calls.Add($"status {refId}");
+        return Task.FromResult(Controls.TryGetValue(refId, out var status)
+            ? Result.Ok(status)
+            : Result.Fail<ControlState>(new Problem("ciso_assistant.not_found", $"No applied control {refId}.")));
     }
 
     public Task<Result<Unit>> UpdateRequirementAssessmentAsync(string requirementAssessmentId, RequirementAssessmentValues values, CancellationToken cancellationToken)

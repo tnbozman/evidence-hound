@@ -29,6 +29,6 @@ public class HealthTests
     [Fact]
     public void Without_a_health_control_the_evidence_is_not_linked()
     {
-        Health.Plan(Record, null).Upload.AppliedControlRefIds.ShouldBeEmpty();
+        Health.Plan(Record, []).Upload.AppliedControlRefIds.ShouldBeEmpty();
     }
 }

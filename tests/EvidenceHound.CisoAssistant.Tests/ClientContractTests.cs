@@ -122,36 +122,62 @@ public sealed class ClientContractTests : IDisposable
     }
 
     [Fact]
-    public async Task Selector_builds_expected_query_string()
+    public async Task Rows_by_ref_are_found_in_the_audit_with_their_urn_and_groups()
     {
-        Respond("/api/requirement-assessments/", 200, Page(new JsonObject { ["id"] = "ra-1" }));
+        Respond("/api/requirement-assessments/", 200, Page(Row("ra-1", "bnd", "1"), Row("ra-2", "idn", "1", "2")));
 
-        var result = await _ca.Client.FindRequirementAssessmentAsync("EXAMPLE-BASELINE-2026", "EX-1.1", _ct);
+        var result = await _ca.Client.FindRequirementAssessmentsAsync("EX-ESSENTIALS", RequirementKey.Ref("ACT-01"), _ct);
 
-        result.ShouldBe(Result.Ok("ra-1"));
-        var query = OnlyRequest().RawQuery;
-        query.ShouldBe("?compliance_assessment__ref_id=EXAMPLE-BASELINE-2026&requirement__ref_id=EX-1.1");
+        result.ShouldBe(Result.Ok<IReadOnlyList<RemoteRequirementAssessment>>([
+            new("ra-1", "urn:example:req:bnd:act-01", "ACT-01", ["1"]),
+            new("ra-2", "urn:example:req:idn:act-01", "ACT-01", ["1", "2"]),
+        ]), new RowsComparer());
+        OnlyRequest().RawQuery.ShouldBe("?compliance_assessment__ref_id=EX-ESSENTIALS&requirement__ref_id=ACT-01");
     }
 
     [Fact]
-    public async Task Lookup_with_no_match_is_not_found()
+    public async Task Rows_by_urn_are_selected_by_requirement_urn()
+    {
+        Respond("/api/requirement-assessments/", 200, Page(Row("ra-2", "idn")));
+
+        var result = await _ca.Client.FindRequirementAssessmentsAsync("EX-ESSENTIALS", RequirementKey.Urn("urn:example:req:idn:act-01"), _ct);
+
+        result.Match(rows => rows.Count, _ => 0).ShouldBe(1);
+        OnlyRequest().RawQuery.ShouldBe("?compliance_assessment__ref_id=EX-ESSENTIALS&requirement__urn=urn%3Aexample%3Areq%3Aidn%3Aact-01");
+    }
+
+    [Fact]
+    public async Task Requirement_with_no_row_is_not_found()
     {
         Respond("/api/requirement-assessments/", 200, Page());
 
-        var result = await _ca.Client.FindRequirementAssessmentAsync("EXAMPLE-BASELINE-2026", "EX-9.9", _ct);
+        var result = await _ca.Client.FindRequirementAssessmentsAsync("EXAMPLE-BASELINE-2026", RequirementKey.Ref("EX-9.9"), _ct);
 
         Codes(result).ShouldBe(["ciso_assistant.not_found"]);
         Messages(result).Single().ShouldContain("requirement__ref_id=EX-9.9");
     }
 
     [Fact]
-    public async Task Lookup_with_several_matches_is_ambiguous()
+    public async Task Audit_selected_groups_are_read_from_its_write_data()
     {
-        Respond("/api/requirement-assessments/", 200, Page(new JsonObject { ["id"] = "ra-1" }, new JsonObject { ["id"] = "ra-2" }));
+        Respond("/api/compliance-assessments/", 200, Page(new JsonObject { ["id"] = "ca-1", ["selected_implementation_groups"] = new JsonArray("Maturity Level One") }));
+        Respond("/api/compliance-assessments/ca-1/object/", 200, """{"id": "ca-1", "selected_implementation_groups": ["1", "2"]}""");
 
-        var result = await _ca.Client.FindRequirementAssessmentAsync("EXAMPLE-BASELINE-2026", "EX-1.1", _ct);
+        var result = await _ca.Client.FindAuditAsync("EX-E8-2026", _ct);
 
-        Codes(result).ShouldBe(["ciso_assistant.ambiguous"]);
+        result.Match(audit => (audit.Id, string.Join(",", audit.SelectedGroups)), _ => ("", "")).ShouldBe(("ca-1", "1,2"));
+        Requests()[0].RawQuery.ShouldBe("?ref_id=EX-E8-2026");
+    }
+
+    [Fact]
+    public async Task Audit_with_no_groups_selects_all()
+    {
+        Respond("/api/compliance-assessments/", 200, Page(new JsonObject { ["id"] = "ca-1" }));
+        Respond("/api/compliance-assessments/ca-1/object/", 200, """{"id": "ca-1", "selected_implementation_groups": null}""");
+
+        var result = await _ca.Client.FindAuditAsync("EX-E8-2026", _ct);
+
+        result.Match(audit => audit.SelectedGroups.Count, _ => -1).ShouldBe(0);
     }
 
     [Fact]
@@ -234,6 +260,77 @@ public sealed class ClientContractTests : IDisposable
     }
 
     [Fact]
+    public async Task Rows_of_an_audit_are_listed_with_their_state_across_pages()
+    {
+        var first = Row("ra-1", "bnd", "1");
+        first["result"] = "compliant";
+        first["observation"] = "Rule all_pass.";
+        first["evidences"] = new JsonArray(new JsonObject { ["id"] = "ev-uuid-1", ["str"] = "mfa-admins.json" });
+        var second = Row("ra-2", "idn");
+        second["result"] = "not_assessed";
+        second["observation"] = null;
+        RespondPage("0", 2, first);
+        RespondPage("1", 2, second);
+
+        var result = await _ca.Client.ListRequirementAssessmentsAsync("EX-E8-2026", _ct);
+
+        result.Match(rows => string.Join(";", rows.Select(r => $"{r.Id}|{r.Urn}|{r.RefId}|{string.Join(",", r.Groups)}|{r.Result}|{r.Observation}|{string.Join(",", r.EvidenceIds)}")), _ => "fail")
+            .ShouldBe("ra-1|urn:example:req:bnd:act-01|ACT-01|1|Compliant|Rule all_pass.|ev-uuid-1;ra-2|urn:example:req:idn:act-01|ACT-01||NotAssessed||");
+        Requests().Select(r => r.RawQuery).ShouldBe([
+            "?compliance_assessment__ref_id=EX-E8-2026&limit=500&offset=0",
+            "?compliance_assessment__ref_id=EX-E8-2026&limit=500&offset=1",
+        ]);
+    }
+
+    [Fact]
+    public async Task Listing_rows_stops_at_an_empty_page_whatever_the_count_says()
+    {
+        RespondPage("0", 5, Row("ra-1", "bnd"));
+        RespondPage("1", 5);
+
+        var result = await _ca.Client.ListRequirementAssessmentsAsync("EX-E8-2026", _ct);
+
+        result.Match(rows => rows.Count, _ => -1).ShouldBe(1);
+        Requests().Count.ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task Find_evidence_returns_the_existing_one_with_its_latest_hash()
+    {
+        Respond("/api/evidences/", 200, Page(new JsonObject { ["id"] = "ev-uuid-1", ["ref_id"] = "ev-0001" }));
+        Respond("/api/evidence-revisions/", 200, Page(new JsonObject { ["id"] = "rev-2", ["version"] = 2, ["attachment_hash"] = new string('a', 64) }));
+
+        var result = await _ca.Client.FindEvidenceAsync("ev-0001", _ct);
+
+        result.Match(found => found.ShouldHaveSingleItem(), _ => new RemoteEvidence("", null)).ShouldBe(new RemoteEvidence("ev-uuid-1", new string('a', 64)));
+    }
+
+    [Fact]
+    public async Task Find_evidence_that_does_not_exist_creates_nothing()
+    {
+        Respond("/api/evidences/", 200, Page(new JsonObject { ["id"] = "ev-uuid-9", ["ref_id"] = "ev-00011" }));
+
+        var result = await _ca.Client.FindEvidenceAsync("ev-0001", _ct);
+
+        result.Match(found => found.Count, _ => -1).ShouldBe(0);
+        Requests().ShouldNotContain(r => r.Method == "POST");
+    }
+
+    [Theory]
+    [InlineData("active", ControlState.Active)]
+    [InlineData("in_progress", ControlState.InProgress)]
+    [InlineData("To do", ControlState.ToDo)]
+    public async Task Applied_control_status_is_read_by_ref_id(string status, ControlState expected)
+    {
+        Respond("/api/applied-controls/", 200, Page(new JsonObject { ["id"] = "ac-1", ["ref_id"] = "AC-MFA", ["status"] = status }));
+
+        var result = await _ca.Client.FindAppliedControlStatusAsync("AC-MFA", _ct);
+
+        result.ShouldBe(Result.Ok(expected));
+        OnlyRequest().RawQuery.ShouldBe("?ref_id=AC-MFA");
+    }
+
+    [Fact]
     public async Task Find_or_create_evidence_creates_a_missing_one_with_name_and_ref_id()
     {
         Respond("/api/evidences/", 200, Page());
@@ -308,6 +405,22 @@ public sealed class ClientContractTests : IDisposable
         Messages(result).Single().ShouldEndWith(new string('x', 500) + "...");
     }
 
+    private static JsonObject Row(string id, string domain, params string[] groups) => new()
+    {
+        ["id"] = id,
+        ["requirement"] = new JsonObject
+        {
+            ["id"] = $"node-{domain}",
+            ["urn"] = $"urn:example:req:{domain}:act-01",
+            ["ref_id"] = "ACT-01",
+            ["implementation_groups"] = groups.Length == 0 ? null : new JsonArray([.. groups.Select(g => JsonValue.Create(g))]),
+        },
+    };
+
+    private void RespondPage(string offset, int count, params JsonObject[] results) =>
+        _ca.Server.Given(Request.Create().WithPath("/api/requirement-assessments/").WithParam("offset", offset).UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject { ["count"] = count, ["next"] = null, ["results"] = new JsonArray(results) }.ToJsonString()));
+
     private static RequirementAssessmentValues Values() =>
         new(ComplianceResult.PartiallyCompliant, "2 of 3 checks pass.", ["ev-uuid-1", "ev-uuid-2"]);
 
@@ -319,6 +432,17 @@ public sealed class ClientContractTests : IDisposable
 
     private static List<string> Messages<T>(Result<T> result)
         where T : notnull => result.Match(_ => [], problems => problems.Select(p => p.Message).ToList());
+
+    private sealed class RowsComparer : IEqualityComparer<Result<IReadOnlyList<RemoteRequirementAssessment>>>
+    {
+        public bool Equals(Result<IReadOnlyList<RemoteRequirementAssessment>>? x, Result<IReadOnlyList<RemoteRequirementAssessment>>? y) =>
+            Flat(x) == Flat(y);
+
+        public int GetHashCode(Result<IReadOnlyList<RemoteRequirementAssessment>> obj) => Flat(obj).GetHashCode(StringComparison.Ordinal);
+
+        private static string Flat(Result<IReadOnlyList<RemoteRequirementAssessment>>? result) =>
+            result is null ? "" : result.Match(rows => string.Join(";", rows.Select(r => $"{r.Id}|{r.Urn}|{r.RefId}|{string.Join(",", r.Groups)}")), _ => "fail");
+    }
 
     private List<IRequestMessage> Requests() => [.. _ca.Server.LogEntries.Select(entry => entry.RequestMessage!)];
 

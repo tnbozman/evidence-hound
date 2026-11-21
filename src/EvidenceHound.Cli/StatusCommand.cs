@@ -12,6 +12,7 @@ namespace EvidenceHound.Cli;
 internal static class StatusCommand
 {
     private static readonly string[] Header = ["COLLECTOR", "LAST RUN (UTC)", "OUTCOME", "PASSED", "FAILED", "PUBLISHED"];
+    private static readonly string[] AuditHeader = ["AUDIT", "LAST RUN (UTC)", "RUN ID", "CHANGED", "UNCHANGED", "DRIFT"];
 
     public static Command Build(TextWriter output, ILoggerFactory loggers, CollectorRegistry registry)
     {
@@ -22,10 +23,17 @@ internal static class StatusCommand
         {
             var deployment = await ConfigCommands.LoadAsync(parseResult.GetRequiredValue(config), registry, cancellationToken);
             var latest = await deployment.BindAsync(d => new FileRunRecordStore(d.Evidence.Root).LatestAsync(cancellationToken));
-            return await deployment.Bind(d => latest.Map(records => Rows(d, records))).Match(
-                async rows =>
+            var history = await deployment.BindAsync(d => new FileRunHistory(d.Evidence.Root).LatestAsync(cancellationToken));
+            return await deployment.Bind(d => latest.Bind(records => history.Map(entries => (Collectors: Rows(d, records), Audits: AuditRows(d, entries), Any: entries.Count > 0)))).Match(
+                async tables =>
                 {
-                    await output.WriteAsync(Table([Header, .. rows]));
+                    await output.WriteAsync(Table([Header, .. tables.Collectors]));
+                    if (tables.Any)
+                    {
+                        await output.WriteLineAsync();
+                        await output.WriteAsync(Table([AuditHeader, .. tables.Audits]));
+                    }
+
                     return ExitCodes.Ok;
                 },
                 problems => Task.FromResult(Log.Problems(logger, problems)));
@@ -39,6 +47,18 @@ internal static class StatusCommand
         return [.. config.Collectors.Select(c => byName.TryGetValue(c.Name, out var r) ? Row(r) : [c.Name, "never run", "-", "-", "-", "-"])];
     }
 
+    private static IReadOnlyList<string[]> AuditRows(DeploymentConfig config, IReadOnlyList<(string Audit, HistoryEntry Entry)> entries)
+    {
+        var byAudit = entries.ToDictionary(e => e.Audit, e => e.Entry, StringComparer.Ordinal);
+        return [.. config.Targets.Select(t => t.ComplianceAssessmentRefId).Distinct(StringComparer.Ordinal).Select(audit => byAudit.TryGetValue(audit, out var e)
+            ? [audit, Time(e.Date), e.RunId, Count(e.Changed), Count(e.Unchanged), Count(e.Drift)]
+            : new[] { audit, "never run", "-", "-", "-", "-" })];
+    }
+
+    private static string Time(DateTimeOffset at) => at.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+
+    private static string Count(int value) => value.ToString(CultureInfo.InvariantCulture);
+
     private static string[] Row(RunRecord r) =>
     [
         r.Collector,
@@ -51,7 +71,7 @@ internal static class StatusCommand
 
     private static string Table(IReadOnlyList<string[]> rows)
     {
-        var widths = Enumerable.Range(0, Header.Length).Select(i => rows.Max(r => r[i].Length)).ToArray();
+        var widths = Enumerable.Range(0, rows[0].Length).Select(i => rows.Max(r => r[i].Length)).ToArray();
         return string.Concat(rows.Select(r => string.Join("  ", r.Select((cell, i) => cell.PadRight(widths[i]))).TrimEnd() + Environment.NewLine));
     }
 }

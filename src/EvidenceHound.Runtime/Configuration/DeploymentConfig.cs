@@ -2,12 +2,15 @@ using EvidenceHound.Core.Secrets;
 
 namespace EvidenceHound.Runtime.Configuration;
 
-/// <summary>One deployment's configuration, validated. Paths are absolute, resolved against the config file's folder.</summary>
+/// <summary>
+/// One deployment's configuration, validated. Paths are absolute, resolved against the config file's folder.
+/// <see cref="Targets"/> lists every audit results are published to, in config order; a single <c>target</c> is a list of one.
+/// </summary>
 public sealed record DeploymentConfig(
     CisoAssistantConfig CisoAssistant,
     EvidenceConfig Evidence,
     IReadOnlyList<CollectorInstance> Collectors,
-    TargetConfig Target);
+    IReadOnlyList<TargetConfig> Targets);
 
 /// <summary>How to reach CISO Assistant. <paramref name="Transport"/> is <c>rest</c> or <c>kafka</c>.</summary>
 public sealed record CisoAssistantConfig(Uri Url, SecretReference Token, string Transport, string? KafkaBootstrapServers);

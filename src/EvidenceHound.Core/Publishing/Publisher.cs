@@ -8,7 +8,8 @@ namespace EvidenceHound.Core.Publishing;
 /// <summary>
 /// Sends planned audit updates to CISO Assistant in plan order. Every item is attempted; a failed item is
 /// reported and the rest go on. Evidence whose latest revision already has the same SHA-256 is skipped, and
-/// requirement updates cite the CISO Assistant IDs of the evidence uploaded earlier in the plan.
+/// requirement updates cite the CISO Assistant IDs of the evidence uploaded earlier in the plan, or else the IDs the plan already knew.
+/// An update that names its rows writes those rows; one that does not is matched to the audit's rows here.
 /// </summary>
 public sealed class Publisher(ICisoAssistantClient client, IEvidenceFiles files)
 {
@@ -25,12 +26,17 @@ public sealed class Publisher(ICisoAssistantClient client, IEvidenceFiles files)
 
         var items = new List<PublishItem>(updates.Count);
         var evidenceIds = ImmutableDictionary<string, string>.Empty;
+        var audits = new Dictionary<string, Result<RemoteAudit>>(StringComparer.Ordinal);
         foreach (var update in updates)
         {
             var (outcome, resolved) = await update.Match(
-                upload => UploadAsync(upload, evidenceIds, cancellationToken),
-                requirement => WithIds(UpdateRequirementAsync(requirement, evidenceIds, cancellationToken), evidenceIds),
-                control => WithIds(UpdateControlAsync(control, cancellationToken), evidenceIds));
+                async upload =>
+                {
+                    var (uploaded, ids) = await UploadAsync(upload, evidenceIds, cancellationToken);
+                    return (uploaded.Map(o => new PublishDone(o)), ids);
+                },
+                requirement => WithIds(UpdateRequirementAsync(requirement, evidenceIds, audits, cancellationToken), evidenceIds),
+                async control => ((await UpdateControlAsync(control, cancellationToken)).Map(o => new PublishDone(o)), evidenceIds));
             evidenceIds = resolved;
             items.Add(PublishItem.For(update, outcome));
         }
@@ -76,27 +82,60 @@ public sealed class Publisher(ICisoAssistantClient client, IEvidenceFiles files)
             problems => Task.FromResult(Result.Fail<PublishOutcome>(problems)));
     }
 
-    private async Task<Result<PublishOutcome>> UpdateRequirementAsync(
-        AuditUpdate.UpdateRequirementAssessment requirement, ImmutableDictionary<string, string> evidenceIds, CancellationToken cancellationToken)
+    private async Task<Result<PublishDone>> UpdateRequirementAsync(
+        AuditUpdate.UpdateRequirementAssessment requirement,
+        ImmutableDictionary<string, string> evidenceIds,
+        Dictionary<string, Result<RemoteAudit>> audits,
+        CancellationToken cancellationToken)
     {
-        var unresolved = requirement.EvidenceRefIds.Where(refId => !evidenceIds.ContainsKey(refId)).ToList();
+        var cited = requirement.EvidenceRefIds.Select(refId => (RefId: refId, Id: evidenceIds.GetValueOrDefault(refId) ?? requirement.KnownEvidenceIds.GetValueOrDefault(refId))).ToList();
+        var unresolved = cited.Where(c => c.Id is null).Select(c => c.RefId).ToList();
         if (unresolved.Count > 0)
         {
-            return Result.Fail<PublishOutcome>(new Problem(
+            return Result.Fail<PublishDone>(new Problem(
                 "publish.evidence_unresolved",
                 $"Requirement {requirement.RequirementRefId} cites evidence {string.Join(", ", unresolved)}, which was not uploaded to CISO Assistant in this run."));
         }
 
-        var values = new RequirementAssessmentValues(requirement.Result, requirement.Observation, [.. requirement.EvidenceRefIds.Select(refId => evidenceIds[refId])]);
-        var found = await client.FindRequirementAssessmentAsync(requirement.ComplianceAssessmentRefId, requirement.RequirementRefId, cancellationToken);
-        return await found.Match(
-            async id => (await client.UpdateRequirementAssessmentAsync(id, values, cancellationToken)).Map(_ => PublishOutcome.Sent),
-            problems => Task.FromResult(Result.Fail<PublishOutcome>(problems)));
+        var values = new RequirementAssessmentValues(requirement.Result, requirement.Observation, [.. cited.Select(c => c.Id!)]);
+        if (requirement.RowIds.Count > 0)
+        {
+            return await UpdateRowsAsync(requirement.RowIds, values, cancellationToken);
+        }
+
+        var auditRefId = requirement.ComplianceAssessmentRefId;
+        if (!audits.TryGetValue(auditRefId, out var audit))
+        {
+            audit = await client.FindAuditAsync(auditRefId, cancellationToken);
+            audits[auditRefId] = audit;
+        }
+
+        var found = await client.FindRequirementAssessmentsAsync(auditRefId, requirement.Requirement, cancellationToken);
+        var rows = audit.Bind(a => found.Bind(all => RequirementRows.InScope(requirement.Requirement, all, a.SelectedGroups)));
+        return await rows.Match(
+            inScope => inScope.Count == 0
+                ? Task.FromResult(Result.Ok(new PublishDone(PublishOutcome.Skipped, RequirementRows.OutsideSelectedGroups)))
+                : UpdateRowsAsync([.. inScope.Select(row => row.Id)], values, cancellationToken),
+            problems => Task.FromResult(Result.Fail<PublishDone>(problems)));
+    }
+
+    private async Task<Result<PublishDone>> UpdateRowsAsync(IReadOnlyList<string> rowIds, RequirementAssessmentValues values, CancellationToken cancellationToken)
+    {
+        foreach (var rowId in rowIds)
+        {
+            var updated = await client.UpdateRequirementAssessmentAsync(rowId, values, cancellationToken);
+            if (updated is Result<Unit>.Fail failed)
+            {
+                return Result.Fail<PublishDone>(failed.Errors);
+            }
+        }
+
+        return Result.Ok(new PublishDone(PublishOutcome.Sent));
     }
 
     private async Task<Result<PublishOutcome>> UpdateControlAsync(AuditUpdate.UpdateAppliedControl control, CancellationToken cancellationToken) =>
         (await client.UpdateAppliedControlAsync(control.RefId, control.Status, cancellationToken)).Map(_ => PublishOutcome.Sent);
 
-    private static async Task<(Result<PublishOutcome> Outcome, ImmutableDictionary<string, string> EvidenceIds)> WithIds(
-        Task<Result<PublishOutcome>> outcome, ImmutableDictionary<string, string> evidenceIds) => (await outcome, evidenceIds);
+    private static async Task<(Result<PublishDone> Outcome, ImmutableDictionary<string, string> EvidenceIds)> WithIds(
+        Task<Result<PublishDone>> outcome, ImmutableDictionary<string, string> evidenceIds) => (await outcome, evidenceIds);
 }

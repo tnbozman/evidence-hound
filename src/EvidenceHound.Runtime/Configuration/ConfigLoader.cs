@@ -14,7 +14,7 @@ namespace EvidenceHound.Runtime.Configuration;
 /// </summary>
 public static partial class ConfigLoader
 {
-    private static readonly string[] TopKeys = ["ciso_assistant", "evidence", "collectors", "target"];
+    private static readonly string[] TopKeys = ["ciso_assistant", "evidence", "collectors", "target", "targets"];
     private static readonly string[] CisoAssistantKeys = ["url", "token", "transport", "kafka_bootstrap_servers"];
     private static readonly string[] EvidenceKeys = ["root", "retention_days"];
     private static readonly string[] CollectorKeys = ["name", "type", "schedule", "settings", "secrets"];
@@ -63,12 +63,34 @@ public static partial class ConfigLoader
         var ca = Section(root, "ciso_assistant", at).Bind(map => ParseCisoAssistant(map, at));
         var evidence = Section(root, "evidence", at).Bind(map => ParseEvidence(map, at));
         var collectors = Required(root, "collectors", at).Bind(node => ParseCollectors(node, at, knownTypes));
-        var target = Section(root, "target", at).Bind(map => ParseTarget(map, at));
+        var targets = ParseTargets(root, at);
 
-        Problem[] problems = [.. unknown, .. ProblemsOf(ca), .. ProblemsOf(evidence), .. ProblemsOf(collectors), .. ProblemsOf(target)];
+        Problem[] problems = [.. unknown, .. ProblemsOf(ca), .. ProblemsOf(evidence), .. ProblemsOf(collectors), .. ProblemsOf(targets)];
         return problems.Length > 0
             ? Result.Fail<DeploymentConfig>(problems)
-            : ca.Bind(c => evidence.Bind(e => collectors.Bind(l => target.Map(t => new DeploymentConfig(c, e, l, t)))));
+            : ca.Bind(c => evidence.Bind(e => collectors.Bind(l => targets.Map(t => new DeploymentConfig(c, e, l, t)))));
+    }
+
+    /// <summary><c>targets</c>, a list, or a single <c>target</c> read as a list of one; never both, never empty, one target per audit.</summary>
+    private static Result<IReadOnlyList<TargetConfig>> ParseTargets(YamlMappingNode root, Locator at)
+    {
+        var parsed = (Child(root, "target"), Child(root, "targets")) switch
+        {
+            (not null, { } both) => Result.Fail<IReadOnlyList<TargetConfig>>(at.Problem(both.Start, "config.targets_conflict", "use 'target' for one audit or 'targets' for several, not both.")),
+            (null, null) => Result.Fail<IReadOnlyList<TargetConfig>>(at.Problem(root.Start, "config.key_missing", "'targets' (or a single 'target') is missing.")),
+            (not null, null) => Section(root, "target", at).Bind(map => ParseTarget(map, at)).Map(t => (IReadOnlyList<TargetConfig>)[t]),
+            (null, YamlSequenceNode { Children.Count: 0 } empty) => Result.Fail<IReadOnlyList<TargetConfig>>(at.Problem(empty.Start, "config.targets_empty", "'targets' needs at least one audit.")),
+            (null, YamlSequenceNode list) => Result.Combine(list.Children.Select(item => item is YamlMappingNode map
+                ? ParseTarget(map, at)
+                : Result.Fail<TargetConfig>(at.Problem(item.Start, "config.section_not_a_map", "each target must be a map of keys.")))),
+            (null, { } other) => Result.Fail<IReadOnlyList<TargetConfig>>(at.Problem(other.Start, "config.targets_not_a_list", "'targets' must be a list.")),
+        };
+        return parsed.Bind(targets => targets.GroupBy(t => t.ComplianceAssessmentRefId, StringComparer.Ordinal).Where(g => g.Count() > 1).Select(g => g.Key).ToArray() switch
+        {
+            [] => Result.Ok(targets),
+            var duplicates => Result.Fail<IReadOnlyList<TargetConfig>>(new Problem(
+                "config.target_duplicate", $"{at.Source}: audit {string.Join(", ", duplicates)} is targeted more than once; give each audit one target.")),
+        });
     }
 
     private static Result<CisoAssistantConfig> ParseCisoAssistant(YamlMappingNode map, Locator at)

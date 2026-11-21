@@ -100,7 +100,7 @@ internal static class PublishCommand
             ? Result.Ok(new KafkaSinkOptions(servers))
             : Result.Fail<KafkaSinkOptions>(new Problem("config.kafka_servers_missing", $"Set {KafkaSetting} to the Kafka bootstrap servers the dispatcher reads, for example localhost:19092."));
 
-    private static Result<CisoAssistantOptions> Connection(IConfiguration configuration)
+    internal static Result<CisoAssistantOptions> Connection(IConfiguration configuration)
     {
         var url = configuration[UrlSetting];
         var token = configuration[TokenSetting];
@@ -110,6 +110,17 @@ internal static class PublishCommand
             new Invariant(!string.IsNullOrWhiteSpace(token), new Problem("config.ca_token_missing", $"Set {TokenSetting} to a CISO Assistant personal access token.")));
     }
 
+    /// <summary>Each audit's requirement items counted, for the publish and run reports.</summary>
+    internal static JsonArray AuditsJson(PublishReport report) =>
+        new([.. report.Audits.Select(a => new JsonObject
+        {
+            ["compliance_assessment"] = a.ComplianceAssessmentRefId,
+            ["planned"] = a.Planned,
+            ["sent"] = a.Sent,
+            ["skipped"] = a.Skipped,
+            ["failed"] = a.Failed,
+        })]);
+
     private static async Task<int> WriteAsync(PublishReport report, TextWriter output)
     {
         var json = new JsonObject
@@ -118,10 +129,12 @@ internal static class PublishCommand
             ["sent"] = report.Sent,
             ["skipped"] = report.Skipped,
             ["failed"] = report.Failed,
+            ["audits"] = AuditsJson(report),
             ["items"] = new JsonArray([.. report.Items.Select(item => new JsonObject
             {
                 ["update"] = item.Description,
                 ["outcome"] = item.Outcome.ToString().ToLowerInvariant(),
+                ["note"] = item.Note,
                 ["problems"] = new JsonArray([.. item.Problems.Select(p => new JsonObject { ["code"] = p.Code, ["message"] = p.Message })]),
             })]),
         };

@@ -2,7 +2,6 @@ using System.CommandLine;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using EvidenceHound.CisoAssistant;
-using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Planning;
 using EvidenceHound.Core.Publishing;
 using EvidenceHound.Core.Results;
@@ -58,10 +57,21 @@ internal static class RunCommand
         CancellationToken cancellationToken)
     {
         var publishing = !options.DryRun && !options.NoPublish;
-        var ready = (await MappingCommands.LoadAsync(new FileInfo(config.Target.MappingPath), cancellationToken))
-            .Bind(loaded => (publishing ? Transport(config, configuration, collectorServices.Loggers) : Result.Ok(Transports.None)).Map(t => (loaded.Mapping, Transport: t)));
+        var ready = (await PlanCommand.LoadMappingsAsync(config.Targets, cancellationToken))
+            .Bind(loaded => (publishing ? Transport(config, configuration, collectorServices.Loggers) : Result.Ok(Transports.None)).Map(t => (Targets: loaded, Transport: t)));
         return await ready.Match(
-            r => RunAsync(config, instances, options, r.Mapping, r.Transport, configuration, registry, collectorServices, output, logger, cancellationToken),
+            r => RunAsync(
+                config,
+                instances,
+                options,
+                [.. r.Targets.Select(t => new RunTarget(t.Mapping, new AuditTarget(t.Target.ComplianceAssessmentRefId, t.Target.Controls), t.Target.HealthControlRefId))],
+                r.Transport,
+                configuration,
+                registry,
+                collectorServices,
+                output,
+                logger,
+                cancellationToken),
             problems => Task.FromResult(Log.Problems(logger, problems)));
     }
 
@@ -69,7 +79,7 @@ internal static class RunCommand
         DeploymentConfig config,
         IReadOnlyList<CollectorInstance> instances,
         RunOptions options,
-        FrameworkMapping mapping,
+        IReadOnlyList<RunTarget> targets,
         Transports transport,
         IConfiguration configuration,
         CollectorRegistry registry,
@@ -83,12 +93,14 @@ internal static class RunCommand
         var runner = new Runner(
             registry.ByType,
             step,
-            mapping,
-            new AuditTarget(config.Target.ComplianceAssessmentRefId, config.Target.Controls),
+            targets,
             sinks.SinkFor,
             new SystemClock(),
-            new FileRunRecordStore(config.Evidence.Root),
-            config.Target.HealthControlRefId);
+            new FileRunRecordStore(config.Evidence.Root))
+        {
+            States = sinks.States,
+            History = new FileRunHistory(config.Evidence.Root),
+        };
 
         var summary = await runner.RunAsync(instances, options, cancellationToken);
         foreach (var collector in summary.Collectors)
@@ -117,16 +129,35 @@ internal static class RunCommand
     private static JsonObject Json(RunSummary summary) => new()
     {
         ["outcome"] = summary.Outcome.ToString().ToLowerInvariant(),
+        ["run_id"] = summary.RunId,
         ["collectors"] = new JsonArray([.. summary.Collectors.Select(c => new JsonObject
         {
             ["name"] = c.Collector,
             ["outcome"] = c.Outcome.ToString().ToLowerInvariant(),
             ["problems"] = new JsonArray([.. c.Problems.Select(p => new JsonObject { ["code"] = p.Code, ["message"] = p.Message })]),
             ["publish"] = c.Publish is { } report
-                ? new JsonObject { ["planned"] = report.Planned, ["sent"] = report.Sent, ["skipped"] = report.Skipped, ["failed"] = report.Failed }
+                ? new JsonObject
+                {
+                    ["planned"] = report.Planned,
+                    ["sent"] = report.Sent,
+                    ["skipped"] = report.Skipped,
+                    ["failed"] = report.Failed,
+                    ["audits"] = PublishCommand.AuditsJson(report),
+                }
                 : null,
+            ["changes"] = ChangesJson(c.Changes),
+            ["drift"] = new JsonArray([.. c.Drift.Select(p => new JsonObject { ["code"] = p.Code, ["message"] = p.Message })]),
         })]),
     };
+
+    internal static JsonArray ChangesJson(IReadOnlyList<AuditChanges> changes) =>
+        new([.. changes.Select(a => new JsonObject
+        {
+            ["compliance_assessment"] = a.ComplianceAssessmentRefId,
+            ["changed"] = a.Changed,
+            ["unchanged"] = a.Unchanged,
+            ["drift"] = a.Drift,
+        })]);
 
     private static int Usage(ILogger logger, IReadOnlyList<Problem> problems)
     {
@@ -139,17 +170,20 @@ internal static class RunCommand
     }
 
     /// <summary>Makes a sink per collector run over that run's files, and owns whatever the sinks share.</summary>
-    private sealed class Transports(Func<IEvidenceFiles, IAuditUpdateSink> sinkFor, IDisposable? shared) : IDisposable
+    private sealed class Transports(Func<IEvidenceFiles, IAuditUpdateSink> sinkFor, IDisposable? shared, ICurrentStateSource? states = null) : IDisposable
     {
         public static Transports None { get; } = new(_ => throw new InvalidOperationException("Publishing is off for this run."), null);
 
         public Func<IEvidenceFiles, IAuditUpdateSink> SinkFor { get; } = sinkFor;
 
+        /// <summary>CISO Assistant's current state over REST; the Kafka dispatcher cannot read, so with it everything is sent.</summary>
+        public ICurrentStateSource States { get; } = states ?? NoCurrentState.Instance;
+
         public static Transports Rest(CisoAssistantOptions options, ILoggerFactory loggers)
         {
             var services = new ServiceCollection().AddSingleton(loggers).AddCisoAssistantClient(options).BuildServiceProvider();
             var client = services.GetRequiredService<ICisoAssistantClient>();
-            return new Transports(files => new RestSink(client, files), services);
+            return new Transports(files => new RestSink(client, files), services, new ClientStateSource(client));
         }
 
         public static Transports Kafka(KafkaSinkOptions options) => new(files => new KafkaSink(options, files), null);

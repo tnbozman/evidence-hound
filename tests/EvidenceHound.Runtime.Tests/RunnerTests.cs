@@ -65,6 +65,27 @@ public sealed class RunnerTests : IDisposable
     }
 
     [Fact]
+    public async Task Owned_results_go_to_every_target_with_one_evidence_upload()
+    {
+        var second = FrameworkMapping.Create("urn:example:y", [RequirementMapping.Create("Q-MFA", [Id("identity.mfa.admins")], MappingRule.AllPass).Value()]).Value();
+        var runner = new Runner(
+            new Dictionary<string, ICollector> { ["idp"] = Reporting("identity.mfa.admins", "admins.json") },
+            new CollectStep(Secrets.From(new Dictionary<string, string>()), new FileEvidenceStore(_root), new FixedClock(Now), retentionDays: null, TestCollectorServices.None),
+            [new RunTarget(Mapping, Target, "AC-AUTO"), new RunTarget(second, new AuditTarget("EXAMPLE-2", new Dictionary<string, string>()), "AC-AUTO-2")],
+            files => _sink.With(files),
+            new FixedClock(Now),
+            new FileRunRecordStore(_root));
+
+        var summary = await runner.RunAsync([Instance("example-idp", "idp")], new RunOptions(), TestContext.Current.CancellationToken);
+
+        summary.Outcome.ShouldBe(CollectorOutcome.Succeeded);
+        var batch = _sink.Main.ShouldHaveSingleItem();
+        batch.OfType<AuditUpdate.UploadEvidence>().ShouldHaveSingleItem();
+        batch.OfType<AuditUpdate.UpdateRequirementAssessment>().Select(u => (u.ComplianceAssessmentRefId, u.RequirementRefId)).ShouldBe([("EXAMPLE-1", "R-MFA"), ("EXAMPLE-2", "Q-MFA")]);
+        _sink.HealthUploads.ShouldHaveSingleItem().AppliedControlRefIds.ShouldBe(["AC-AUTO", "AC-AUTO-2"]);
+    }
+
+    [Fact]
     public async Task Failure_in_one_collector_continues_others()
     {
         var failing = new StubCollector(_ => Result.Fail<CollectionResult>(new Problem("collector.unavailable", "the system did not answer")));

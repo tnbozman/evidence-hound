@@ -13,14 +13,18 @@ public sealed record HealthEvidence(CollectedFile File, AuditUpdate.UploadEviden
 public static class Health
 {
     /// <summary>Evidence <c>hound-health/&lt;collector&gt;</c> holding the run record as JSON, linked to <paramref name="controlRefId"/> when one is configured.</summary>
-    public static HealthEvidence Plan(RunRecord record, string? controlRefId)
+    public static HealthEvidence Plan(RunRecord record, string? controlRefId) => Plan(record, controlRefId is null ? [] : [controlRefId]);
+
+    /// <summary>The health evidence, linked to every applied control in <paramref name="controlRefIds"/>.</summary>
+    public static HealthEvidence Plan(RunRecord record, IReadOnlyList<string> controlRefIds)
     {
+        ArgumentNullException.ThrowIfNull(controlRefIds);
         ArgumentNullException.ThrowIfNull(record);
         var content = Encoding.UTF8.GetBytes(RunRecords.ToJson(record));
         var file = new CollectedFile($"collector-health-{record.Collector}.json", "application/json", content);
         var evidence = Evidence.Create(
             $"hound-health/{record.Collector}", file.FileName, file.MediaType, Convert.ToHexStringLower(SHA256.HashData(content)), content.Length, record.EndedAt)
             .Match(e => e, problems => throw new InvalidOperationException(problems[0].Message));
-        return new HealthEvidence(file, new AuditUpdate.UploadEvidence(evidence) { AppliedControlRefIds = controlRefId is null ? [] : [controlRefId] });
+        return new HealthEvidence(file, new AuditUpdate.UploadEvidence(evidence) { AppliedControlRefIds = controlRefIds });
     }
 }

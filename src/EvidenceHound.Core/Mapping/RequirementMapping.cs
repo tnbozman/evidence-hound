@@ -6,31 +6,43 @@ namespace EvidenceHound.Core.Mapping;
 /// <summary>Which checks satisfy one framework requirement, and how their outcomes combine.</summary>
 public sealed record RequirementMapping
 {
-    private RequirementMapping(string requirementRef, IReadOnlyList<CheckId> checks, MappingRule rule)
+    private RequirementMapping(RequirementKey key, IReadOnlyList<CheckId> checks, MappingRule rule)
     {
-        RequirementRef = requirementRef;
+        Key = key;
         Checks = checks;
         Rule = rule;
     }
 
-    /// <summary>The requirement's reference in the framework library, for example its ref ID or URN.</summary>
-    public string RequirementRef { get; }
+    /// <summary>The requirement's ref_id or URN, as the mapping names it.</summary>
+    public string RequirementRef => Key.Value;
+
+    /// <summary>How the requirement is named: ref or URN, and for a ref whether every matching row gets the result.</summary>
+    public RequirementKey Key { get; }
 
     public IReadOnlyList<CheckId> Checks { get; }
 
     public MappingRule Rule { get; }
 
-    public static Result<RequirementMapping> Create(string requirementRef, IEnumerable<CheckId> checks, MappingRule rule)
+    /// <summary>A requirement named by its ref_id.</summary>
+    public static Result<RequirementMapping> Create(string requirementRef, IEnumerable<CheckId> checks, MappingRule rule) =>
+        Create(RequirementKey.Ref(requirementRef), checks, rule);
+
+    public static Result<RequirementMapping> Create(RequirementKey key, IEnumerable<CheckId> checks, MappingRule rule)
     {
+        ArgumentNullException.ThrowIfNull(key);
         ArgumentNullException.ThrowIfNull(checks);
         ArgumentNullException.ThrowIfNull(rule);
 
         var checkList = checks.ToArray();
+        var requirementRef = key.Value;
         return Validation.Validate(
-            () => new RequirementMapping(requirementRef, checkList, rule),
+            () => new RequirementMapping(key, checkList, rule),
             new Invariant(
                 !string.IsNullOrWhiteSpace(requirementRef),
                 new Problem("mapping.requirement_ref_empty", "A requirement needs a ref.")),
+            new Invariant(
+                key.Kind != RequirementKeyKind.Urn || requirementRef.StartsWith("urn:", StringComparison.Ordinal),
+                new Problem("mapping.requirement_urn_invalid", $"Requirement urn '{requirementRef}' must start with 'urn:'.")),
             new Invariant(
                 checkList.Length > 0,
                 new Problem("mapping.checks_empty", $"Requirement '{requirementRef}' needs at least one check.")),

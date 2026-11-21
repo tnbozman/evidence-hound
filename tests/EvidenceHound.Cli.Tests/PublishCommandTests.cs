@@ -143,7 +143,10 @@ public sealed class PublishCommandTests : IDisposable
         _ca.Given(Request.Create().WithPath("/api/evidences/").UsingGet()).RespondWith(Json(200, """{"count": 0, "results": []}"""));
         _ca.Given(Request.Create().WithPath("/api/evidences/").UsingPost()).RespondWith(Json(201, """{"id": "ev-uuid"}"""));
         _ca.Given(Request.Create().WithPath("/api/evidence-revisions/").UsingPost()).RespondWith(Json(201, """{"id": "rev-uuid"}"""));
-        _ca.Given(Request.Create().WithPath("/api/requirement-assessments/").UsingGet()).RespondWith(Json(200, """{"count": 1, "results": [{"id": "ra-uuid"}]}"""));
+        _ca.Given(Request.Create().WithPath("/api/requirement-assessments/").UsingGet())
+            .RespondWith(Json(200, """{"count": 1, "results": [{"id": "ra-uuid", "requirement": {"urn": "urn:example:risk:req_node:example-baseline:ex-1", "ref_id": "EX-1", "implementation_groups": null}}]}"""));
+        _ca.Given(Request.Create().WithPath("/api/compliance-assessments/").UsingGet()).RespondWith(Json(200, """{"count": 1, "results": [{"id": "ca-uuid"}]}"""));
+        _ca.Given(Request.Create().WithPath("/api/compliance-assessments/ca-uuid/object/").UsingGet()).RespondWith(Json(200, """{"id": "ca-uuid", "selected_implementation_groups": []}"""));
         _ca.Given(Request.Create().WithPath("/api/requirement-assessments/ra-uuid/").UsingPatch()).RespondWith(Json(200, """{"id": "ra-uuid"}"""));
         _ca.Given(Request.Create().WithPath("/api/applied-controls/").UsingGet()).AtPriority(5).RespondWith(Json(200, """{"count": 1, "results": [{"id": "ac-uuid"}]}"""));
         _ca.Given(Request.Create().WithPath("/api/applied-controls/ac-uuid/").UsingPatch()).RespondWith(Json(200, """{"id": "ac-uuid"}"""));
