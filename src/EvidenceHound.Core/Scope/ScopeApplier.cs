@@ -21,8 +21,11 @@ public enum ApplyOutcome
 /// <summary>What happened to one change: written, failed (with the problem), or skipped because something it depends on was not written.</summary>
 public sealed record AppliedChange(ScopeChange Change, ApplyOutcome Outcome, string Detail);
 
-/// <summary>Each change the apply handled, in order, and how many changes it left for a later version (kinds it does not apply yet).</summary>
-public sealed record ScopeApplyReport(IReadOnlyList<AppliedChange> Changes, int NotApplied)
+/// <summary>
+/// Each change the apply handled, in order, how many changes it left for a later version (kinds it does not apply yet), and the plan's drift,
+/// which includes what it would not write (locked audits, outdated frameworks).
+/// </summary>
+public sealed record ScopeApplyReport(IReadOnlyList<AppliedChange> Changes, int NotApplied, IReadOnlyList<ScopeDrift> Drift)
 {
     public int Written => Changes.Count(c => c.Outcome == ApplyOutcome.Written);
 
@@ -69,7 +72,7 @@ public static class ScopeApplier
                 }));
         }
 
-        return new ScopeApplyReport(applied, plan.Changes.Count(c => !kinds.Contains(c.Kind)));
+        return new ScopeApplyReport(applied, plan.Changes.Count(c => !kinds.Contains(c.Kind)), []);
     }
 
     /// <summary>The objects a declared object refers to, by the fields that name them.</summary>

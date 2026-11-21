@@ -1,3 +1,4 @@
+using EvidenceHound.Core.Frameworks;
 using EvidenceHound.Core.Mapping;
 
 namespace EvidenceHound.Core.Scope;
@@ -13,8 +14,11 @@ namespace EvidenceHound.Core.Scope;
 /// </remarks>
 public static class ScopeDesired
 {
-    public static IReadOnlyList<ScopeObject> From(ScopeDocument scope)
+    public static IReadOnlyList<ScopeObject> From(ScopeDocument scope) => From(scope, ScopeInputs.None);
+
+    public static IReadOnlyList<ScopeObject> From(ScopeDocument scope, ScopeInputs inputs)
     {
+        ArgumentNullException.ThrowIfNull(inputs);
         ArgumentNullException.ThrowIfNull(scope);
         var setup = scope.Setup;
         return
@@ -58,4 +62,14 @@ public static class ScopeDesired
 
     private static Dictionary<string, string> Fields(params (string Name, string? Value)[] fields) =>
         fields.Where(f => !string.IsNullOrEmpty(f.Value)).ToDictionary(f => f.Name, f => f.Value!, StringComparer.Ordinal);
+}
+
+/// <summary>
+/// What the scope's objects need from outside the scope files: the framework snapshots by framework URN, the deployment's targets (null when no
+/// deployment config was given, so the rows a mapping computes are unknown and <c>unlisted</c> is not applied), and each document's files by id.
+/// </summary>
+public sealed record ScopeInputs(
+    IReadOnlyDictionary<string, FrameworkSnapshot> Snapshots, IReadOnlyList<ScopeTarget>? Targets, IReadOnlyDictionary<string, IReadOnlyList<ScopeFile>> Files)
+{
+    public static ScopeInputs None { get; } = new(new Dictionary<string, FrameworkSnapshot>(), null, new Dictionary<string, IReadOnlyList<ScopeFile>>());
 }

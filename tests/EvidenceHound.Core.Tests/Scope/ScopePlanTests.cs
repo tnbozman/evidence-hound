@@ -202,6 +202,45 @@ public class ScopePlanTests
     }
 
     /// <summary>What CISO Assistant holds once the plan is applied: created and updated objects carry their declared fields and the plan's marker.</summary>
+    [Fact]
+    public void Older_library_version_is_reported()
+    {
+        var declared = Declared(ScopeKind.Framework, "urn:intuitem:risk:framework:essential-eight-2023", ("version", "3"));
+        ActualObject older = new(Declared(ScopeKind.Framework, declared.Key, ("version", "2")), null);
+        ActualObject same = new(Declared(ScopeKind.Framework, declared.Key, ("version", "3")), null);
+
+        var plan = ScopePlanner.Plan([declared], [older], prune: false);
+
+        plan.Changes.ShouldBeEmpty();
+        var drift = plan.Drift.ShouldHaveSingleItem();
+        (drift.Kind, drift.Key, drift.Reason).ShouldBe((ScopeKind.Framework, declared.Key, DriftReason.Outdated));
+        drift.Fields.ShouldBe([new FieldChange("version", "2", "3")]);
+        ScopePlanner.Plan([declared], [same], prune: false).IsEmpty.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void Links_are_added_and_kept_unless_pruned()
+    {
+        var held = Applied(Declared(ScopeKind.Control, "AC-MFA", ("name", "MFA"), ("systems", "Example 365, Example laptops")));
+        var fewer = Declared(ScopeKind.Control, "AC-MFA", ("name", "MFA"), ("systems", "Example 365"));
+        var other = Declared(ScopeKind.Control, "AC-MFA", ("name", "MFA"), ("systems", "Example 365, Example backup service"));
+
+        ScopePlanner.Plan([fewer], [held], prune: false).IsEmpty.ShouldBeTrue();
+        ScopePlanner.Plan([other], [held], prune: false).Changes.ShouldHaveSingleItem().Fields.ShouldBe(
+            [new FieldChange("systems", "Example 365, Example laptops", "Example 365, Example backup service, Example laptops")]);
+        ScopePlanner.Plan([fewer], [held], prune: true).Changes.ShouldHaveSingleItem().Fields.ShouldBe(
+            [new FieldChange("systems", "Example 365, Example laptops", "Example 365")]);
+    }
+
+    [Fact]
+    public void Assessment_compares_only_the_fields_the_scope_declares()
+    {
+        var declared = Declared(ScopeKind.Assessment, "EX-E8-2026/ISM-1486", ("result", "not_assessed"), ("documents", "identity-policy"));
+        ActualObject row = new(Declared(ScopeKind.Assessment, declared.Key, ("status", "to_do"), ("result", "not_assessed"), ("documents", "identity-policy")), null);
+
+        ScopePlanner.Plan([declared], [row], prune: true).IsEmpty.ShouldBeTrue();
+    }
+
     private static ActualObject[] InMemoryApply(ActualObject[] actual, ScopeObject[] declared, ScopePlan plan)
     {
         var held = actual.ToDictionary(a => (a.Held.Kind, a.Held.Key));

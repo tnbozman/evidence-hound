@@ -21,7 +21,13 @@ public enum ScopeKind
 public sealed record ScopeObject(ScopeKind Kind, string Key, IReadOnlyDictionary<string, string> Fields)
 {
     public IReadOnlyDictionary<string, string> Initial { get; init; } = new Dictionary<string, string>();
+
+    /// <summary>A document's files, with their SHA-256, for the writer to upload; the plan compares their hashes (the <c>hashes</c> field).</summary>
+    public IReadOnlyList<ScopeFile> Files { get; init; } = [];
 }
+
+/// <summary>A file of a document: its path and the SHA-256 of its content, as lowercase hex.</summary>
+public sealed record ScopeFile(string Path, string Sha256);
 
 /// <summary>
 /// An object CISO Assistant holds, with the state fingerprint <c>hound</c> last wrote on it (from the marker at the end of its description),
@@ -30,6 +36,9 @@ public sealed record ScopeObject(ScopeKind Kind, string Key, IReadOnlyDictionary
 public sealed record ActualObject(ScopeObject Held, string? AppliedState)
 {
     public bool Managed => AppliedState is not null;
+
+    /// <summary>An audit locked in CISO Assistant: <c>hound</c> never changes it or its rows.</summary>
+    public bool Locked { get; init; }
 }
 
 public enum ScopeAction
@@ -55,6 +64,12 @@ public enum DriftReason
 
     /// <summary>An object in CISO Assistant that the scope does not declare.</summary>
     NotInScope,
+
+    /// <summary>A change to a locked audit, or to its rows: reported, never written.</summary>
+    Locked,
+
+    /// <summary>A framework loaded from an older library version than the scope's snapshot: reported, never upgraded silently.</summary>
+    Outdated,
 }
 
 /// <summary>An object in CISO Assistant that differs from what <c>hound</c> last wrote, or that the scope does not declare.</summary>
