@@ -1,0 +1,12 @@
+{
+  "message_type": "update_requirement_assessment",
+  "selector": {
+    "compliance_assessment__ref_id": "EXAMPLE-BASELINE-2026",
+    "requirement__ref_id": "EX-1.1"
+  },
+  "values": {
+    "result": "partially_compliant",
+    "observation": "Rule all_pass. identity.mfa.admins: pass (All 4 admins use MFA.)",
+    "evidences": ["ev-0001"]
+  }
+}

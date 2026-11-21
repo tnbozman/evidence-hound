@@ -1,0 +1,11 @@
+{
+  "message_type": "upload_attachment",
+  "selector": {
+    "name": "mfa-admins.json",
+    "ref_id": "ev-0001"
+  },
+  "values": {
+    "file_content": "ZXhhbXBsZQ==",
+    "file_name": "mfa-admins.json"
+  }
+}

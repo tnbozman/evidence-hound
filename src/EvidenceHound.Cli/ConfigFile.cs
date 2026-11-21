@@ -1,3 +1,4 @@
+using EvidenceHound.Core.Results;
 using YamlDotNet.Core;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -12,28 +13,32 @@ internal static class ConfigFile
         .IgnoreUnmatchedProperties()
         .Build();
 
-    public static async Task<ConfigLoad> LoadAsync(string path, CancellationToken cancellationToken)
+    public static async Task<Result<HoundConfig>> LoadAsync(string path, CancellationToken cancellationToken)
     {
         if (!File.Exists(path))
         {
-            return new ConfigLoad.Failed($"Config file not found: {path}");
+            return Result.Fail<HoundConfig>(new Problem("config.file_not_found", $"Config file not found: {path}"));
         }
 
         var text = await File.ReadAllTextAsync(path, cancellationToken);
         return Parse(text, path);
     }
 
-    public static ConfigLoad Parse(string yaml, string source)
+    public static Result<HoundConfig> Parse(string yaml, string source)
     {
         try
         {
             var document = Deserializer.Deserialize<ConfigDocument?>(yaml) ?? new ConfigDocument();
             var names = (document.Collectors ?? []).Select(c => c.Name ?? "").ToList();
-            return new ConfigLoad.Loaded(new HoundConfig(names));
+            var folder = Path.GetDirectoryName(Path.GetFullPath(source)) ?? ".";
+            var target = document.Target is { Mapping: { } mapping, ComplianceAssessment: { } audit } t
+                ? new TargetConfig(Path.GetFullPath(Path.Combine(folder, mapping)), audit, t.Controls ?? [])
+                : null;
+            return Result.Ok(new HoundConfig(names, target));
         }
         catch (YamlException ex)
         {
-            return new ConfigLoad.Failed($"Config file {source} is not valid YAML at line {ex.Start.Line}: {ex.Message}");
+            return Result.Fail<HoundConfig>(new Problem("config.yaml_invalid", $"Config file {source} is not valid YAML at line {ex.Start.Line}: {ex.Message}"));
         }
     }
 
@@ -41,6 +46,17 @@ internal static class ConfigFile
     private sealed class ConfigDocument
     {
         public List<CollectorDocument>? Collectors { get; set; }
+
+        public TargetDocument? Target { get; set; }
+    }
+
+    private sealed class TargetDocument
+    {
+        public string? Mapping { get; set; }
+
+        public string? ComplianceAssessment { get; set; }
+
+        public Dictionary<string, string>? Controls { get; set; }
     }
 
     private sealed class CollectorDocument

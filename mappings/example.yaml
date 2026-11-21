@@ -1,0 +1,31 @@
+# Example framework mapping. Fictional framework, made-up requirement refs.
+# Each requirement lists the framework-neutral checks that satisfy it and how their outcomes combine:
+#   all_pass   every check must pass
+#   any_pass   at least one check must pass
+#   threshold  at least `threshold` checks must pass
+# Schema: schemas/mapping.schema.json. Guide: docs/mapping-files.md
+framework_urn: urn:example:risk:library:example-baseline
+description: Example baseline used in tests and docs.
+requirements:
+  - ref: "EX-1.1"
+    rule: all_pass
+    checks:
+      - identity.mfa.admins
+      - identity.mfa.users
+  - ref: "EX-1.2"
+    rule: any_pass
+    checks:
+      - identity.mfa.phishing_resistant
+      - identity.mfa.number_matching
+  - ref: "EX-2.1"
+    rule: threshold
+    threshold: 2
+    checks:
+      - patching.os.critical_48h
+      - patching.apps.critical_48h
+      - patching.os.supported
+  - ref: "EX-3.1"
+    rule: all_pass
+    checks:
+      - backup.daily
+      - backup.restore_tested

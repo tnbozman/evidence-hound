@@ -40,10 +40,26 @@ A mapping file per framework (`mappings/<framework>.yaml`) says which checks sat
 ## Functional style
 
 - Records are immutable; "changes" return new values.
-- Expected failures (API refused, bad config, missing evidence) are returned as `Result<T, Error>` values, not thrown. Exceptions are for bugs.
+- Expected failures (API refused, bad config, missing evidence) are returned as `Result<T>` values carrying `Problem`s (code and message), not thrown. Exceptions are for bugs.
 - No shared mutable state, no static singletons, no hidden clock or randomness: pass `IClock` and IDs in.
 - Small total functions composed into pipelines. Avoid boolean flags that switch behaviour; use separate functions.
 - Validate input at the edge (config, API responses) into domain types once; trust them inside.
+
+## Errors and logging
+
+One way, in every command:
+
+| What happened | How it is handled | Exit code |
+| --- | --- | --- |
+| Expected failure (bad config, invalid mapping, missing file) | The function returns `Result.Fail` with `Problem`s. The command passes them to `Log.Problems`, which logs each at `Error` with its `Code` as structured data. | 3 |
+| Wrong arguments or unsupported mode | Logged at `Error` through `Log.Usage`. | 2 |
+| Unexpected exception (a bug) | Caught once, by the global handler in `HoundCli.RunAsync`. Logged at `Critical` with a one-line summary; the full exception is logged at `Debug`. | 1 |
+| Cancellation (Ctrl+C) | Logged at `Warning`. | 130 |
+
+- Commands never catch exceptions themselves and never write errors to the console directly; they log through an `ILogger` from the one host built per run.
+- All log output goes to stderr as `level: message` (`info`, `warn`, `error`, `crit`, ...). Stdout carries only command output, so `hound plan --dry-run > plan.json` stays valid JSON.
+- Set the level with standard .NET configuration, for example `Logging__LogLevel__Default=Debug` for stack traces or `Warning` for quiet runs.
+- Log messages live in `src/EvidenceHound.Cli/Log.cs` as `[LoggerMessage]` methods with fixed event IDs.
 
 ## Testing levels
 

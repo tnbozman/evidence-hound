@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/tnbozman/evidence-hound/schemas/mapping.schema.json",
+  "title": "Evidence Hound framework mapping",
+  "description": "Maps framework-neutral check IDs to the requirements of one framework library in CISO Assistant.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["framework_urn", "requirements"],
+  "properties": {
+    "framework_urn": {
+      "description": "URN of the framework library in CISO Assistant.",
+      "type": "string",
+      "pattern": "^urn:"
+    },
+    "description": {
+      "type": "string"
+    },
+    "requirements": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/requirement" }
+    }
+  },
+  "$defs": {
+    "checkId": {
+      "description": "Lowercase dot-separated segments, each starting with a letter.",
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$"
+    },
+    "requirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref", "rule", "checks"],
+      "properties": {
+        "ref": {
+          "description": "The requirement's reference in the framework library.",
+          "type": "string",
+          "minLength": 1
+        },
+        "rule": {
+          "enum": ["all_pass", "any_pass", "threshold"]
+        },
+        "threshold": {
+          "description": "Minimum number of passing checks; only with rule 'threshold'.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "checks": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/checkId" }
+        }
+      },
+      "if": { "properties": { "rule": { "const": "threshold" } } },
+      "then": { "required": ["threshold"] },
+      "else": { "not": { "required": ["threshold"] } }
+    }
+  }
+}

@@ -2,9 +2,11 @@
   <Folder Name="/src/">
     <Project Path="src/EvidenceHound.Cli/EvidenceHound.Cli.csproj" />
     <Project Path="src/EvidenceHound.Core/EvidenceHound.Core.csproj" />
+    <Project Path="src/EvidenceHound.Core.Yaml/EvidenceHound.Core.Yaml.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/EvidenceHound.Cli.Tests/EvidenceHound.Cli.Tests.csproj" />
     <Project Path="tests/EvidenceHound.Core.Tests/EvidenceHound.Core.Tests.csproj" />
+    <Project Path="tests/EvidenceHound.Core.Yaml.Tests/EvidenceHound.Core.Yaml.Tests.csproj" />
   </Folder>
 </Solution>

@@ -7,7 +7,7 @@ Evidence that each s00 task meets its acceptance criteria. Plan: [`docs/sprints/
 | s00-01 Solution skeleton | Done | [s00-01.md](s00-01.md) |
 | s00-02 Dev container | Done | [s00-02.md](s00-02.md) |
 | s00-03 CI pipeline | Done | [s00-03.md](s00-03.md) |
-| s00-04 Start sprint automation | Done (GitHub happy path runs when s01 starts) | [s00-04.md](s00-04.md) |
+| s00-04 Start sprint automation | Done (GitHub happy path confirmed when s01 started) | [s00-04.md](s00-04.md) |
 | s00-05 Repository security settings | Done | [s00-05.md](s00-05.md) |
 | s00-06 Walking skeleton CLI | Done | [s00-06.md](s00-06.md) |
 | s00-07 Makefile and pre-commit | Done | [s00-07.md](s00-07.md) |

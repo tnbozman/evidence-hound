@@ -1,0 +1,9 @@
+{
+  "message_type": "update_applied_control",
+  "selector": {
+    "ref_id": "AC-MFA"
+  },
+  "values": {
+    "status": "in_progress"
+  }
+}
