@@ -1,6 +1,6 @@
 # s02 CISO Assistant client and publisher
 
-Status: Planned
+Status: In progress
 
 **Goal:** send a planned list of audit updates to a real CISO Assistant instance, safely and repeatably.
 
