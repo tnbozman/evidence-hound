@@ -132,7 +132,6 @@ public sealed class ScopeClientTests : IDisposable
         const string library = "urn:example:risk:library:example-baseline";
         List("stored-libraries");
         Respond("POST", "/api/stored-libraries/upload/", 201, new JsonObject { ["urn"] = library });
-        Respond("POST", $"/api/stored-libraries/{library}/import/", 200, new JsonObject { ["status"] = "success" });
         var file = await FileAsync("example-baseline.yaml", "urn: urn:example:risk:library:example-baseline\n");
         var framework = new ScopeObject(ScopeKind.Framework, "urn:example:risk:framework:example-baseline", new Dictionary<string, string>())
         {
@@ -142,7 +141,8 @@ public sealed class ScopeClientTests : IDisposable
 
         (await Write(framework, ScopeAction.Create, null)).Value();
 
-        Sent().ShouldBe([("POST", "/api/stored-libraries/upload/"), ("POST", $"/api/stored-libraries/{library}/import/")]);
+        // CISO Assistant v4.3.4 loads an uploaded library; importing it again is rejected as "already been loaded".
+        Sent().ShouldBe([("POST", "/api/stored-libraries/upload/")]);
         var upload = Logged("POST", "/api/stored-libraries/upload/");
         upload.Body.ShouldBe("urn: urn:example:risk:library:example-baseline\n");
         upload.Headers!["Content-Disposition"].ShouldHaveSingleItem().ShouldContain("filename=example-baseline.yaml");
