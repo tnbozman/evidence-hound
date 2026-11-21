@@ -10,4 +10,4 @@ Evidence that each s01 task meets its acceptance criteria. Plan: [`docs/sprints/
 | s01-04 Mapping engine | Done | [s01-04.md](s01-04.md) |
 | s01-05 Audit update plan | Done | [s01-05.md](s01-05.md) |
 
-Fictional data only; no organisation data appears in any evidence.
+All CI checks (build-test, functional, scripts, org-data, secrets, dependency review, CodeQL) were green on PR #10 at commit [`95e86ce`](https://github.com/tnbozman/evidence-hound/commit/95e86ce) on 2026-11-21. Fictional data only; no organisation data appears in any evidence.

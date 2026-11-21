@@ -1,6 +1,6 @@
 # s01 Domain model and framework mapping
 
-Status: In progress
+Status: Done
 
 **Goal:** the pure core that turns framework-neutral check results into requirement results for any framework, with no I/O.
 
@@ -133,3 +133,14 @@ All code in this sprint lives in `src/EvidenceHound.Core` and is tested in `test
 - Coverage: the s00 code has 7 uncovered lines (`ConfigFile` YAML error branch, `HoundCli` default arm, `Program.cs`). Worth a small test in s02.
 
 ## Sprint review
+
+**2026-11-21.** All five tasks shipped, each with red, green and refactor commits and per-task evidence in `docs/evidence/s01/`. The core now has `Result<T>`, the framework-neutral check types, the framework mapping model, the mapping engine and the audit update planner, all pure and with no package references. `EvidenceHound.Core.Yaml` loads mapping files with line-numbered problems, and `schemas/mapping.schema.json` describes them. The CLI gained `mapping validate`, `mapping apply` and `plan --dry-run`. 136 tests (including two FsCheck properties), lint clean, and every new line covered. The Start sprint workflow ran its GitHub happy path for the first time and opened this PR.
+
+What slipped: nothing was dropped. Six small deviations from the plan are listed under "Discovered work" (the `Problem` name, `NotApplicable`, `PlanUpdates` returning a `Result`, evidence ref_ids in `values.evidences`, the reader for check results living in the CLI, and unknown-check warnings waiting for a check catalogue).
+
+What the feedback taught us:
+- CA1716 rejects a public type named `Error`; keep the analysers and pick another name.
+- `dotnet format` (CI lint) enforces the `_` prefix on private consts, which the build does not; use `static readonly` in tests.
+- Writing extra error paths in the green step left untested branches; coverage caught them and the refactor step added the tests. Keep green minimal.
+- The dispatcher message shapes were checked against the upstream dispatcher README and `messages.py`, so s02's publisher has a known target.
+
