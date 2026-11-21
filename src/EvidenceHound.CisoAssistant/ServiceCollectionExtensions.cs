@@ -1,7 +1,7 @@
 using System.Net.Http.Headers;
-using Microsoft.Extensions.Http.Resilience;
 using EvidenceHound.CisoAssistant;
 using EvidenceHound.Core.Publishing;
+using Microsoft.Extensions.Http.Resilience;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
