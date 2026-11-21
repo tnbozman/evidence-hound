@@ -101,7 +101,7 @@ Status: In progress
 - Attempt to push a fake token in the format of a GitHub PAT on a scratch branch: push is blocked.
 
 ### s00-06 Walking skeleton CLI
-- [ ] Done
+- [x] Done
 
 **Story:** As an operator, I want a `hound` command with `--version` and `collect --dry-run`, so that the end-to-end shape exists before any real logic.
 
@@ -118,6 +118,12 @@ Status: In progress
 
 **Functional check**
 - `make run ARGS="collect --dry-run --config examples/example-pty-ltd.yaml"` prints the expected log line.
+
+**Result (2026-11-21)**
+- `make run ARGS="collect --dry-run --config examples/example-pty-ltd.yaml"` logs `0 collectors configured`, exit 0.
+- `make run ARGS="--version"` prints `0.1.0+<commit>`.
+- `make run ARGS="collect --bogus"` prints the unknown argument, the missing `--config` and `Run 'hound --help' for usage.`, exit 2.
+- A missing config file exits 3 (configuration error), matching the exit codes planned in s03.
 
 ### s00-07 Makefile and pre-commit
 - [ ] Done
@@ -137,6 +143,7 @@ Status: In progress
 
 ## Discovered work
 
+- s03-01: replace the walking-skeleton `ConfigFile` and `HoundConfig` in `src/EvidenceHound.Cli` with the full config schema in `EvidenceHound.Runtime`, and return `Result<T>` (s01-01) instead of the local `ConfigLoad` union.
 - The `functional` CI job passes `--ignore-exit-code 8` (no tests ran) because there are no functional tests yet. Remove it when s02 adds the first functional test.
 
 ## Sprint review
