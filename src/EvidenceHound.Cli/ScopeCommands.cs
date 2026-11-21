@@ -89,7 +89,20 @@ internal static class ScopeCommands
                 problems => Task.FromResult(Log.Problems(logger, problems)));
         });
 
-        return new Command("scope", "Work with a compliance repo's scope files.") { validate, newAudit, plan, apply };
+        var outDir = new Option<DirectoryInfo>("--out") { Description = "The scope folder to write; documents go next to it, in the compliance repo.", Required = true };
+        var rootFolder = new Option<string>("--root-folder") { Description = "The folder the domains sit under (default Global).", DefaultValueFactory = _ => "Global" };
+        var withFiles = new Option<bool>("--with-files") { Description = "Also download each document's file into documents/<id>/ in the compliance repo." };
+        var export = new Command(
+            "export",
+            $"Write what CISO Assistant holds under the root folder as scope files: setup, controls, one file per audit and framework snapshots (reads it; needs {PublishCommand.UrlSetting} and {PublishCommand.TokenSetting}). Results runs compute and their evidence are left out.")
+        {
+            outDir, rootFolder, withFiles,
+        };
+        export.SetAction((parseResult, cancellationToken) => PublishCommand.Connection(configuration).Match(
+            connection => ExportAsync(parseResult.GetRequiredValue(outDir), parseResult.GetRequiredValue(rootFolder), parseResult.GetValue(withFiles), connection, loggers, output, logger, cancellationToken),
+            problems => Task.FromResult(Log.Problems(logger, problems))));
+
+        return new Command("scope", "Work with a compliance repo's scope files.") { validate, newAudit, plan, apply, export };
     }
 
     private static async Task<int> ApplyAsync(
@@ -111,6 +124,52 @@ internal static class ScopeCommands
                 var report = await ScopeApplier.ApplyAsync(plan, declared, Enum.GetValues<ScopeKind>(), checkedScope.Scope.Setup.RootFolder, services.GetRequiredService<IScopeWriter>(), cancellationToken);
                 await output.WriteAsync(ScopePlanOutput.Json(report));
                 return report.Failed > 0 ? ExitCodes.PublishFailed : ExitCodes.Ok;
+            },
+            problems => Task.FromResult(Log.Problems(logger, problems)));
+    }
+
+    private static async Task<int> ExportAsync(
+        DirectoryInfo outDir, string rootFolder, bool withFiles, CisoAssistantOptions connection, ILoggerFactory loggers, TextWriter output, ILogger logger, CancellationToken cancellationToken)
+    {
+        using var services = new ServiceCollection().AddSingleton(loggers).AddCisoAssistantClient(connection).BuildServiceProvider();
+        var source = services.GetRequiredService<IScopeExportSource>();
+        var state = await source.ReadAllAsync(rootFolder, cancellationToken);
+        return await state.Match(
+            async held =>
+            {
+                var scopeDir = Path.GetFullPath(outDir.FullName);
+                var repoDir = Path.GetDirectoryName(scopeDir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))!;
+                var documentFiles = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
+                if (withFiles)
+                {
+                    var documents = held.Objects.Where(o => o.Held.Kind == ScopeKind.Document && o.Held.Fields.ContainsKey("domain")).Select(o => o.Held.Key).Distinct(StringComparer.Ordinal);
+                    foreach (var id in documents)
+                    {
+                        var downloaded = await source.DownloadAsync(id, cancellationToken);
+                        foreach (var file in downloaded.Match(f => f, problems => { Log.Problems(logger, problems); return []; }))
+                        {
+                            var relative = $"documents/{id}/{file.FileName}";
+                            var path = Path.Combine(repoDir, "documents", id, file.FileName);
+                            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+                            await File.WriteAllBytesAsync(path, file.Content, cancellationToken);
+                            documentFiles[id] = [relative];
+                        }
+                    }
+                }
+
+                var files = ScopeExport.Write(held, documentFiles);
+                foreach (var (relative, text) in files)
+                {
+                    var path = Path.Combine(scopeDir, relative);
+                    Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+                    await File.WriteAllTextAsync(path, text, cancellationToken);
+                }
+
+                var count = (ScopeKind kind) => held.Objects.Count(o => o.Held.Kind == kind);
+                await output.WriteLineAsync(string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"exported to {scopeDir}: {count(ScopeKind.Domain)} domain(s), {count(ScopeKind.Control)} control(s), {files.Keys.Count(k => k.StartsWith("audits/", StringComparison.Ordinal))} audit(s), {documentFiles.Count} file(s)"));
+                return ExitCodes.Ok;
             },
             problems => Task.FromResult(Log.Problems(logger, problems)));
     }

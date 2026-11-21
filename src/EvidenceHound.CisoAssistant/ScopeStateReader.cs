@@ -36,6 +36,34 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
         });
     }
 
+    public async Task<Result<IReadOnlyList<ExportedFile>>> DownloadAsync(string documentId, CancellationToken cancellationToken)
+    {
+        var listed = await http.ListAllAsync("evidences/", cancellationToken);
+        return await listed.BindAsync(async evidences =>
+        {
+            if (evidences.FirstOrDefault(e => RefIdOrName(ScopeKind.Document, e) == documentId) is not { } evidence)
+            {
+                return Result.Fail<IReadOnlyList<ExportedFile>>(ApiProblems.NotFound("document", $"'{documentId}'"));
+            }
+
+            using var response = await http.GetAsync(new Uri($"evidences/{Uri.EscapeDataString(Id(evidence))}/attachment/", UriKind.Relative), cancellationToken);
+            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return Result.Ok<IReadOnlyList<ExportedFile>>([]);
+            }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return Result.Fail<IReadOnlyList<ExportedFile>>(ApiProblems.FromStatus((int)response.StatusCode, await response.Content.ReadAsStringAsync(cancellationToken), $"to download the file of document '{documentId}'"));
+            }
+
+            var disposition = response.Content.Headers.ContentDisposition;
+            var name = Path.GetFileName((disposition?.FileNameStar ?? disposition?.FileName ?? documentId).Trim('"'));
+            var content = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+            return Result.Ok<IReadOnlyList<ExportedFile>>(content.Length == 0 ? [] : [new ExportedFile(name.Length > 0 ? name : documentId, content)]);
+        });
+    }
+
     public async Task<Result<IReadOnlyList<ActualObject>>> ReadAsync(ScopeStateQuery query, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(query);

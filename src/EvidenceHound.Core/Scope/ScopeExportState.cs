@@ -13,7 +13,13 @@ public sealed record ScopeExportState(string RootFolder, IReadOnlyList<ActualObj
 public interface IScopeExportSource
 {
     Task<Result<ScopeExportState>> ReadAllAsync(string rootFolder, CancellationToken cancellationToken);
+
+    /// <summary>The latest file of the document with this id (its evidence's <c>ref_id</c>); none when it has none.</summary>
+    Task<Result<IReadOnlyList<ExportedFile>>> DownloadAsync(string documentId, CancellationToken cancellationToken);
 }
+
+/// <summary>A document's file as CISO Assistant serves it.</summary>
+public sealed record ExportedFile(string FileName, byte[] Content);
 
 /// <summary>The <c>ref_id</c> given to an audit, control or document that has none, made from its name. Pure.</summary>
 public static class ScopeRefIds

@@ -13,15 +13,20 @@ namespace EvidenceHound.Core.Yaml;
 /// <remarks>
 /// Left out, because collectors and manual sources rebuild them: rows a run computed (their observation ends with a run marker), rows still to
 /// do and not assessed, and evidence in the root folder (where runs put theirs). Documents and controls are listed in each audit whose rows
-/// link them, with those rows' requirements. A document's files are not written: CISO Assistant keeps them.
+/// link them, with those rows' requirements. A document lists the files it was given (downloaded with <c>--with-files</c>); otherwise none, and CISO
+/// Assistant keeps them.
 /// </remarks>
 public static class ScopeExport
 {
     private static readonly string Header = "# Written by hound scope export from what CISO Assistant holds. Review it, then manage CISO Assistant from these files.\n";
 
-    public static IReadOnlyDictionary<string, string> Write(ScopeExportState state)
+    public static IReadOnlyDictionary<string, string> Write(ScopeExportState state) => Write(state, new Dictionary<string, IReadOnlyList<string>>());
+
+    /// <summary>As above, listing each document's <paramref name="documentFiles"/> (by document id, relative to the compliance repo) as its files.</summary>
+    public static IReadOnlyDictionary<string, string> Write(ScopeExportState state, IReadOnlyDictionary<string, IReadOnlyList<string>> documentFiles)
     {
         ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(documentFiles);
 
         var objects = state.Objects
             .GroupBy(o => o.Held.Kind)
@@ -52,7 +57,7 @@ public static class ScopeExport
         {
             var snapshot = Field(audit, "framework") is { } urn ? snapshots.GetValueOrDefault(urn) : null;
             var inScope = InGroups(snapshot, Split(Field(audit, "groups")));
-            files[$"audits/{audit.Key.ToLowerInvariant()}.yaml"] = Audit(audit, [.. rows[audit.Key].Where(r => inScope(r.Requirement))], documents, documentIds);
+            files[$"audits/{audit.Key.ToLowerInvariant()}.yaml"] = Audit(audit, [.. rows[audit.Key].Where(r => inScope(r.Requirement))], documents, documentIds, documentFiles);
         }
 
         return files;
@@ -126,7 +131,8 @@ public static class ScopeExport
         return yaml.ToString();
     }
 
-    private static string Audit(ScopeObject audit, (string Requirement, ScopeObject Row)[] rows, ScopeObject[] documents, HashSet<string> documentIds)
+    private static string Audit(
+        ScopeObject audit, (string Requirement, ScopeObject Row)[] rows, ScopeObject[] documents, HashSet<string> documentIds, IReadOnlyDictionary<string, IReadOnlyList<string>> documentFiles)
     {
         var yaml = new StringBuilder(Header)
             .Append(CultureInfo.InvariantCulture, $"ref_id: {Scalar(audit.Key)}\n")
@@ -155,6 +161,7 @@ public static class ScopeExport
             {
                 yaml.Append(CultureInfo.InvariantCulture, $"  - id: {Scalar(id)}\n")
                     .Append(CultureInfo.InvariantCulture, $"    name: {Scalar(Field(documents.First(d => d.Key == id), "name") ?? id)}\n");
+                List(yaml, "    ", "files", [.. documentFiles.GetValueOrDefault(id) ?? []]);
                 List(yaml, "    ", "requirements", requirements);
             }
         }
