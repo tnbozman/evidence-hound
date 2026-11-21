@@ -105,6 +105,25 @@ Projects: `src/EvidenceHound.Runtime` (runner, stores, config), `src/EvidenceHou
 **Functional check**
 - After `make run ARGS="run ..."`, the example audit's control shows a fresh "collector health" evidence revision.
 
+### s03-06 Dev container with CISO Assistant on one network (added during the sprint)
+- [ ] Done
+
+**Story:** As a developer, I want the dev container and a seeded CISO Assistant on the same Docker network, so that I can develop and run `hound` against CISO Assistant without starting it by hand.
+
+**Acceptance criteria**
+- The dev container is defined by Docker Compose (`.devcontainer/compose.yml`): a `dev` service plus the CISO Assistant backend, frontend and Caddy from `dev/ciso-assistant/compose.yml`, on one network. Redpanda and the dispatcher stay behind the `kafka` profile.
+- A one-shot `ca-seed` service waits for the backend health check, seeds it and writes `HOUND_CA_URL=http://backend:8000/api/` and a local-only token to a shared volume. The token never appears in logs.
+- On start, the dev container waits (with a timeout) for that file and copies it to `.dev/ca.env`, so `hound` reaches CISO Assistant by service name.
+- The Django secret key is generated on the host before the containers start and is never committed. Docker-in-docker stays for Testcontainers.
+
+**Tests first**
+- `ca-env.bats`: writes the URL and token with mode 600 and hides the token; fails without a token.
+- `dev-ca-env.bats`: copies the shared file into `.dev/ca.env`; waits for it; times out with a message.
+- `devcontainer-compose.bats`: the compose model has the services on one network, `HOUND_CA_URL` on `dev`, and Kafka only under the profile.
+
+**Functional check**
+- Rebuild the dev container, then `set -a && . .dev/ca.env && set +a && make run ARGS="run --config examples/example-pty-ltd.yaml"` publishes to `backend:8000`. The person runs this (this cloud box cannot run the dev container).
+
 ## Discovered work
 
 - s03-01: the config keeps s01's single `target` (mapping, `compliance_assessment`, `controls`) rather than a list of targets; "control refs per check" are the existing control keys. Add a list when a deployment needs two audits.
