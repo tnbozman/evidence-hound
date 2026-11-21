@@ -184,7 +184,7 @@ The layout follows one that has already been tried against CISO Assistant: one s
 - Result (2026-11-21): `hound scope validate examples/compliance-repo/scope --config examples/example-essential-eight.yaml` printed `scope valid: 1 domain(s), 2 control(s), 1 audit(s)` and exited 0. A copy naming the undeclared system `Example tablets` in the audit exited 3 with one problem, `scope.reference_unknown` at `audits/ex-e8-2026.yaml` line 17. Evidence: [docs/evidence/s06/s06-06.md](../evidence/s06/s06-06.md).
 
 ### s06-07 Scope plan
-- [ ] Done
+- [x] Done
 
 **Story:** As a reviewer of a compliance pull request, I want to see exactly what the change will create or update in CISO Assistant, so that I can approve it with confidence.
 
@@ -203,6 +203,7 @@ The layout follows one that has already been tried against CISO Assistant: one s
 
 **Functional check**
 - Against a freshly seeded local CISO Assistant, `hound scope plan` on the example scope lists the expected creates, and the Markdown renders in a pull request comment.
+- Result (2026-11-21): in CI run [44918724134](https://github.com/tnbozman/evidence-hound/actions/runs/44918724134), `hound scope plan` on the example scope against the seeded CISO Assistant listed 6 creates (perimeter Corporate IT, three systems, two documents), 5 updates (the seeded domain, audit EX-E8-2026, AC-MFA, AC-BACKUP and the hand-written ISM-1486 row) and the seed's other audits, perimeter and control as drift, with GET requests only. The Markdown is a GitHub table, recorded in the evidence file. Evidence: [docs/evidence/s06/s06-07.md](../evidence/s06/s06-07.md).
 
 ### s06-08 Scope apply: domains, perimeters and systems
 - [ ] Done
