@@ -6,5 +6,9 @@ namespace EvidenceHound.Core.Publishing;
 public static class EvidenceNames
 {
     /// <summary>The evidence ID when it already ends with the file name, otherwise "file name (ID)". Unique because IDs are.</summary>
-    public static string For(Evidence evidence) => throw new NotImplementedException($"name for {evidence}");
+    public static string For(Evidence evidence)
+    {
+        ArgumentNullException.ThrowIfNull(evidence);
+        return evidence.Id.EndsWith(evidence.FileName, StringComparison.Ordinal) ? evidence.Id : $"{evidence.FileName} ({evidence.Id})";
+    }
 }
