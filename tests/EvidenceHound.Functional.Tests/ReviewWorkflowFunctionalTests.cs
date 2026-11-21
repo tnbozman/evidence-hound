@@ -5,7 +5,8 @@ namespace EvidenceHound.Functional.Tests;
 
 /// <summary>
 /// s06-12: docs/scope.md's review workflow, followed as written: copy the example compliance repo, change a system's owner, then validate
-/// (passes), plan (one field update) and apply (writes it). The example scope is applied again afterwards, so the shared instance is as seeded.
+/// (passes), plan (one field update) and apply (writes it). The review starts from the reviewed state: other tests in the collection publish
+/// results the example scope does not declare, so the example scope is applied first, and again afterwards, so the shared instance is as seeded.
 /// Outputs land in <c>test-results/review-workflow/</c>, which CI prints.
 /// </summary>
 [Trait("Category", "Functional")]
@@ -26,6 +27,10 @@ public sealed class ReviewWorkflowFunctionalTests(CisoAssistantFixture ciso) : I
             Directory.CreateDirectory(Path.GetDirectoryName(copy)!);
             File.Copy(file, copy);
         }
+
+        var restore = new[] { "scope", "apply", CisoAssistantFixture.ExampleScope, "--config", Path.Combine(example, "hound.yaml") };
+        var (startExit, started) = await StepAsync("0-start-from-reviewed-state", restore, ct);
+        startExit.ShouldBe(ExitCodes.Ok, started);
 
         var setup = Path.Combine(_repo, "scope", "setup.yaml");
         var text = await File.ReadAllTextAsync(setup, ct);
@@ -54,7 +59,7 @@ public sealed class ReviewWorkflowFunctionalTests(CisoAssistantFixture ciso) : I
         }
         finally
         {
-            await StepAsync("5-restore", ["scope", "apply", CisoAssistantFixture.ExampleScope, "--config", Path.Combine(example, "hound.yaml")], ct);
+            await StepAsync("5-restore", restore, ct);
         }
     }
 
