@@ -1,5 +1,4 @@
 using System.CommandLine;
-using EvidenceHound.Core.Results;
 using Microsoft.Extensions.Logging;
 
 namespace EvidenceHound.Cli;
@@ -37,12 +36,8 @@ internal static class CollectCommand
             return ExitCodes.Usage;
         }
 
-        return await ConfigFile.LoadAsync(configFile.FullName, cancellationToken) switch
-        {
-            ConfigLoad.Loaded loaded => Collectors(logger, loaded.Config),
-            ConfigLoad.Failed failed => Log.Problems(logger, [new Problem("config.invalid", failed.Reason)]),
-            var other => throw new InvalidOperationException($"Unhandled config load outcome {other.GetType().Name}."),
-        };
+        return (await ConfigFile.LoadAsync(configFile.FullName, cancellationToken))
+            .Match(config => Collectors(logger, config), problems => Log.Problems(logger, problems));
     }
 
     private static int Collectors(ILogger logger, HoundConfig config)

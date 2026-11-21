@@ -66,10 +66,7 @@ internal static class PlanCommand
         string.Create(CultureInfo.InvariantCulture, $"(dry run: base64 of {evidence.FileName}, {evidence.SizeBytes} bytes, sha256 {evidence.Sha256})");
 
     private static async Task<Result<TargetConfig>> LoadTargetAsync(FileInfo configFile, CancellationToken cancellationToken) =>
-        await ConfigFile.LoadAsync(configFile.FullName, cancellationToken) switch
-        {
-            ConfigLoad.Loaded { Config.Target: { } target } => Result.Ok(target),
-            ConfigLoad.Failed failed => Result.Fail<TargetConfig>(new Problem("config.invalid", failed.Reason)),
-            _ => Result.Fail<TargetConfig>(new Problem("config.target_missing", $"{configFile} has no 'target' with a mapping and compliance_assessment.")),
-        };
+        (await ConfigFile.LoadAsync(configFile.FullName, cancellationToken)).Bind(config => config.Target is { } target
+            ? Result.Ok(target)
+            : Result.Fail<TargetConfig>(new Problem("config.target_missing", $"{configFile} has no 'target' with a mapping and compliance_assessment.")));
 }

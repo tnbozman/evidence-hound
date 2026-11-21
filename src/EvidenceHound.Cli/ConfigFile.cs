@@ -1,3 +1,4 @@
+using EvidenceHound.Core.Results;
 using YamlDotNet.Core;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -12,18 +13,18 @@ internal static class ConfigFile
         .IgnoreUnmatchedProperties()
         .Build();
 
-    public static async Task<ConfigLoad> LoadAsync(string path, CancellationToken cancellationToken)
+    public static async Task<Result<HoundConfig>> LoadAsync(string path, CancellationToken cancellationToken)
     {
         if (!File.Exists(path))
         {
-            return new ConfigLoad.Failed($"Config file not found: {path}");
+            return Result.Fail<HoundConfig>(new Problem("config.file_not_found", $"Config file not found: {path}"));
         }
 
         var text = await File.ReadAllTextAsync(path, cancellationToken);
         return Parse(text, path);
     }
 
-    public static ConfigLoad Parse(string yaml, string source)
+    public static Result<HoundConfig> Parse(string yaml, string source)
     {
         try
         {
@@ -33,11 +34,11 @@ internal static class ConfigFile
             var target = document.Target is { Mapping: { } mapping, ComplianceAssessment: { } audit } t
                 ? new TargetConfig(Path.GetFullPath(Path.Combine(folder, mapping)), audit, t.Controls ?? [])
                 : null;
-            return new ConfigLoad.Loaded(new HoundConfig(names, target));
+            return Result.Ok(new HoundConfig(names, target));
         }
         catch (YamlException ex)
         {
-            return new ConfigLoad.Failed($"Config file {source} is not valid YAML at line {ex.Start.Line}: {ex.Message}");
+            return Result.Fail<HoundConfig>(new Problem("config.yaml_invalid", $"Config file {source} is not valid YAML at line {ex.Start.Line}: {ex.Message}"));
         }
     }
 

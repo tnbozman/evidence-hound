@@ -39,20 +39,17 @@ internal static partial class Log
     /// <summary>Structured state for a problem: <c>Code</c> and <c>Message</c>.</summary>
     private sealed class ProblemState(Problem problem) : IReadOnlyList<KeyValuePair<string, object?>>
     {
+        private readonly KeyValuePair<string, object?>[] _items =
+            [new("Code", problem.Code), new("Message", problem.Message), new("{OriginalFormat}", "{Message}")];
+
         public Problem Problem { get; } = problem;
 
-        public int Count => 3;
+        public int Count => _items.Length;
 
-        public KeyValuePair<string, object?> this[int index] => index switch
-        {
-            0 => new("Code", Problem.Code),
-            1 => new("Message", Problem.Message),
-            _ => new("{OriginalFormat}", "{Message}"),
-        };
+        public KeyValuePair<string, object?> this[int index] => _items[index];
 
-        public IEnumerator<KeyValuePair<string, object?>> GetEnumerator() =>
-            Enumerable.Range(0, Count).Select(i => this[i]).GetEnumerator();
+        public IEnumerator<KeyValuePair<string, object?>> GetEnumerator() => ((IEnumerable<KeyValuePair<string, object?>>)_items).GetEnumerator();
 
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => _items.GetEnumerator();
     }
 }

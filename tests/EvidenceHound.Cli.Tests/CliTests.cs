@@ -243,8 +243,27 @@ public sealed class CliTests : IDisposable
 
         exitCode.ShouldBe(3);
         var problem = _logs.Entries.Single(e => e.Level == LogLevel.Error);
-        problem.State.ShouldContain(kv => kv.Key == "Code" && Equals(kv.Value, "mapping.requirements_not_a_list"));
+        problem.State.Select(kv => (kv.Key, kv.Value)).ShouldBe([
+            ("Code", (object?)"mapping.requirements_not_a_list"),
+            ("Message", problem.Message),
+            ("{OriginalFormat}", "{Message}"),
+        ]);
+        problem.State[0].Key.ShouldBe("Code");
+        ((System.Collections.IEnumerable)problem.State).Cast<object>().Count().ShouldBe(3);
         _error.ToString().ShouldBe($"error: {problem.Message}{Environment.NewLine}");
+    }
+
+    [Fact]
+    public async Task Collect_with_invalid_yaml_exits_three_with_the_line()
+    {
+        var config = Path.Combine(_workDir, "broken.yaml");
+        await File.WriteAllTextAsync(config, "collectors: [\n", TestContext.Current.CancellationToken);
+
+        var exitCode = await Run("collect", "--dry-run", "--config", config);
+
+        exitCode.ShouldBe(3);
+        _error.ToString().ShouldStartWith("error: Config file ");
+        _error.ToString().ShouldContain("not valid YAML at line");
     }
 
     private static string RepoFile(string folder, string name) => Path.Combine(AppContext.BaseDirectory, "files", folder, name);
