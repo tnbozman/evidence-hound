@@ -15,8 +15,25 @@ public static partial class ScopeMarker
         return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(text)))[..16];
     }
 
-    /// <summary>The state <c>hound</c> records on an object of this kind: a fingerprint of its fields.</summary>
-    public static string State(ScopeKind kind, IReadOnlyDictionary<string, string> fields) => Fingerprint(fields);
+    /// <summary>
+    /// The state <c>hound</c> records on an object of this kind: a fingerprint of its fields except its links. Links are only ever added to,
+    /// and runs add their own (a collector's health evidence on a control), so they are compared field by field instead.
+    /// </summary>
+    public static string State(ScopeKind kind, IReadOnlyDictionary<string, string> fields)
+    {
+        ArgumentNullException.ThrowIfNull(fields);
+        var links = LinkFields(kind);
+        return Fingerprint(fields.Where(f => !links.Contains(f.Key, StringComparer.Ordinal)).ToDictionary(StringComparer.Ordinal));
+    }
+
+    /// <summary>The fields of a kind that link it to other objects.</summary>
+    public static string[] LinkFields(ScopeKind kind) => kind switch
+    {
+        ScopeKind.Control => ["systems", "documents"],
+        ScopeKind.Assessment => ["controls", "documents"],
+        ScopeKind.Document => ["hashes"],
+        _ => [],
+    };
 
     /// <summary>The description as written to CISO Assistant: the text, then the marker on its own line.</summary>
     public static string Mark(string? description, string fingerprint) =>

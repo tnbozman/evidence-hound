@@ -239,7 +239,7 @@ public class ScopePlanTests
         var declared = Declared(ScopeKind.Control, "AC-AUTO-EVIDENCE", ("name", "Automated evidence collection"), ("documents", "identity-policy"));
         var held = Applied(declared) with
         {
-            Held = Declared(ScopeKind.Control, declared.Key, ("name", "Automated evidence collection"), ("documents", "identity-policy, example-m365/health.json")),
+            Held = Declared(ScopeKind.Control, declared.Key, ("name", "Automated evidence collection"), ("documents", "example-m365/health.json, identity-policy")),
         };
 
         ScopePlanner.Plan([declared], [held], prune: false).IsEmpty.ShouldBeTrue();

@@ -52,7 +52,7 @@ public static class ScopePlanner
             var comparable = Comparable(want.Kind, have.Held.Fields, want.Fields);
             var differences = Differences(comparable, want.Fields);
             var marked = Marked(want.Kind);
-            if (marked && have.Managed && have.AppliedState != ScopeMarker.Fingerprint(comparable))
+            if (marked && have.Managed && have.AppliedState != ScopeMarker.State(want.Kind, comparable))
             {
                 drift.Add(new ScopeDrift(want.Kind, want.Key, DriftReason.Edited, Managed: true, differences));
             }
@@ -92,7 +92,7 @@ public static class ScopePlanner
     /// <summary>The declared object with the links CISO Assistant already holds added to its own.</summary>
     private static ScopeObject Linked(ScopeObject declared, IReadOnlyDictionary<string, string> held)
     {
-        var links = LinkFields(declared.Kind);
+        var links = ScopeMarker.LinkFields(declared.Kind);
         if (links.Length == 0)
         {
             return declared;
@@ -110,14 +110,6 @@ public static class ScopePlanner
 
         return declared with { Fields = fields };
     }
-
-    private static string[] LinkFields(ScopeKind kind) => kind switch
-    {
-        ScopeKind.Control => ["systems", "documents"],
-        ScopeKind.Assessment => ["controls", "documents"],
-        ScopeKind.Document => ["hashes"],
-        _ => [],
-    };
 
     private static string[] Split(string? joined) => joined is null ? [] : joined.Split(", ", StringSplitOptions.RemoveEmptyEntries);
 
@@ -151,7 +143,7 @@ public static class ScopePlanner
     private static bool Reported(ActualObject held) =>
         Marked(held.Held.Kind) && (held.Managed || held.Held.Kind != ScopeKind.Document);
 
-    private static string? StateOf(ScopeObject declared) => Marked(declared.Kind) ? ScopeMarker.Fingerprint(declared.Fields) : null;
+    private static string? StateOf(ScopeObject declared) => Marked(declared.Kind) ? ScopeMarker.State(declared.Kind, declared.Fields) : null;
 
     private static IEnumerable<FieldChange> Created(ScopeObject declared) =>
         declared.Fields.Concat(declared.Initial.Where(i => !declared.Fields.ContainsKey(i.Key))).Select(f => new FieldChange(f.Key, null, f.Value));

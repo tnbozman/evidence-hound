@@ -169,7 +169,7 @@ internal sealed partial class ScopeWriter(HttpClient http, ICisoAssistantClient 
     }
 
     private static string Described(ScopeObject declared, ScopeChange change) =>
-        ScopeMarker.Mark(Field(declared, "description"), change.State ?? ScopeMarker.Fingerprint(declared.Fields));
+        ScopeMarker.Mark(Field(declared, "description"), change.State ?? ScopeMarker.State(declared.Kind, declared.Fields));
 
     /// <summary>Leaves fields out rather than send empty ones, so CISO Assistant fills in what it fills in itself.</summary>
     private static void Drop(JsonObject body, params string[] fields)
