@@ -29,7 +29,7 @@ All code in this sprint lives in `src/EvidenceHound.Core` and is tested in `test
 **Functional check result (2026-11-21):** `make coverage` gave `total: 16, failed: 0`; Cobertura shows 100 % line and branch coverage for `Result`, `Result<T>` and `Problem`. Evidence: [`docs/evidence/s01/s01-01.md`](../evidence/s01/s01-01.md).
 
 ### s01-02 Check results and evidence
-- [ ] Done
+- [x] Done
 
 **Story:** As a collector author, I want standard types for what a collector reports, so that every collector speaks the same language.
 
@@ -48,6 +48,8 @@ All code in this sprint lives in `src/EvidenceHound.Core` and is tested in `test
 
 **Functional check**
 - `make test` green.
+
+**Functional check result (2026-11-21):** `make test` gave `total: 45, failed: 0`; lint clean. Evidence: [`docs/evidence/s01/s01-02.md`](../evidence/s01/s01-02.md).
 
 ### s01-03 Framework mapping model and loader
 - [ ] Done
