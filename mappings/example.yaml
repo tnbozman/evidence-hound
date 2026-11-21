@@ -3,7 +3,7 @@
 #   all_pass   every check must pass
 #   any_pass   at least one check must pass
 #   threshold  at least `threshold` checks must pass
-# Schema: schemas/mapping.schema.json
+# Schema: schemas/mapping.schema.json. Guide: docs/mapping-files.md
 framework_urn: urn:example:risk:library:example-baseline
 description: Example baseline used in tests and docs.
 requirements:

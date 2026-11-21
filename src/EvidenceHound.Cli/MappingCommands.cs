@@ -23,11 +23,6 @@ internal static class MappingCommands
         return await load.Match(
             async loaded =>
             {
-                foreach (var warning in loaded.Warnings)
-                {
-                    await error.WriteLineAsync($"warning: {warning}");
-                }
-
                 await output.WriteLineAsync($"valid: {loaded.Mapping.Requirements.Count} requirements");
                 return ExitCodes.Ok;
             },

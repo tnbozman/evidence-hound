@@ -18,7 +18,14 @@ public static class MappingLoader
         ArgumentNullException.ThrowIfNull(yaml);
         ArgumentNullException.ThrowIfNull(source);
 
-        var located = new Locator(source);
+        var at = new Locator(source);
+        return LoadRoot(yaml, at)
+            .Bind(root => ParseMapping(root, at))
+            .Map(parsed => new LoadedMapping(parsed.Mapping, UnknownCheckWarnings(parsed.CheckNodes, knownChecks, at)));
+    }
+
+    private static Result<YamlMappingNode> LoadRoot(string yaml, Locator at)
+    {
         var stream = new YamlStream();
         try
         {
@@ -26,199 +33,143 @@ public static class MappingLoader
         }
         catch (YamlException ex)
         {
-            return Result.Fail<LoadedMapping>(located.Problem(ex.Start, "mapping.yaml_invalid", $"not valid YAML: {ex.Message}"));
+            return Result.Fail<YamlMappingNode>(at.Problem(ex.Start, "mapping.yaml_invalid", $"not valid YAML: {ex.Message}"));
         }
 
-        if (stream.Documents.Count == 0 || stream.Documents[0].RootNode is YamlScalarNode { Value: null or "" })
+        return stream.Documents.FirstOrDefault()?.RootNode switch
         {
-            return Result.Fail<LoadedMapping>(new Problem("mapping.document_empty", $"{source}: the mapping file is empty."));
-        }
-
-        return stream.Documents[0].RootNode is YamlMappingNode root
-            ? ParseRoot(root, located, knownChecks)
-            : Result.Fail<LoadedMapping>(located.Problem(stream.Documents[0].RootNode.Start, "mapping.document_not_a_map", "the mapping file must be a map of keys."));
+            null or YamlScalarNode { Value: null or "" } => Result.Fail<YamlMappingNode>(at.FileProblem("mapping.document_empty", "the mapping file is empty.")),
+            YamlMappingNode root => Result.Ok(root),
+            var other => Result.Fail<YamlMappingNode>(at.Problem(other.Start, "mapping.document_not_a_map", "the mapping file must be a map of keys.")),
+        };
     }
 
-    private static Result<LoadedMapping> ParseRoot(YamlMappingNode root, Locator located, IReadOnlySet<CheckId>? knownChecks)
+    private static Result<ParsedMapping> ParseMapping(YamlMappingNode root, Locator at)
     {
-        var problems = new List<Problem>();
-        problems.AddRange(UnknownKeys(root, TopLevelKeys, located));
-
-        var urn = RequiredScalar(root, "framework_urn", located, problems);
-        var requirementsNode = Child(root, "requirements");
-        var requirements = new List<(RequirementMapping Mapping, YamlNode Node)>();
-        switch (requirementsNode)
+        var urn = RequiredScalar(root, "framework_urn", at);
+        var requirements = Child(root, "requirements") switch
         {
-            case null:
-                problems.Add(located.Problem(root.Start, "mapping.key_missing", "'requirements' is missing."));
-                break;
-            case YamlSequenceNode list:
-                requirements.AddRange(ParseRequirements(list, located, problems));
-                break;
-            default:
-                problems.Add(located.Problem(requirementsNode.Start, "mapping.requirements_not_a_list", "'requirements' must be a list."));
-                break;
+            null => Result.Fail<IReadOnlyList<ParsedRequirement>>(at.Problem(root.Start, "mapping.key_missing", "'requirements' is missing.")),
+            YamlSequenceNode list => ParseRequirements(list, at),
+            var other => Result.Fail<IReadOnlyList<ParsedRequirement>>(at.Problem(other.Start, "mapping.requirements_not_a_list", "'requirements' must be a list.")),
+        };
+
+        Problem[] problems = [.. UnknownKeys(root, TopLevelKeys, at), .. ProblemsOf(urn), .. ProblemsOf(requirements)];
+        return problems.Length > 0
+            ? Result.Fail<ParsedMapping>(problems)
+            : urn.Bind(urnNode => requirements.Bind(parsed =>
+                Located(FrameworkMapping.Create(urnNode.Value!, parsed.Select(r => r.Mapping)), urnNode.Start, at)
+                    .Map(mapping => new ParsedMapping(mapping, [.. parsed.SelectMany(r => r.CheckNodes)]))));
+    }
+
+    private static Result<IReadOnlyList<ParsedRequirement>> ParseRequirements(YamlSequenceNode list, Locator at)
+    {
+        var parsed = Result.Combine(list.Children.Select(item => ParseRequirement(item, at)));
+        Problem[] problems = [.. ProblemsOf(parsed), .. DuplicateRefs(list, at)];
+        return problems.Length > 0 ? Result.Fail<IReadOnlyList<ParsedRequirement>>(problems) : parsed;
+    }
+
+    private static IEnumerable<Problem> DuplicateRefs(YamlSequenceNode list, Locator at)
+    {
+        var refs = list.Children
+            .OfType<YamlMappingNode>()
+            .Select(item => Child(item, "ref"))
+            .OfType<YamlScalarNode>()
+            .Where(node => !string.IsNullOrEmpty(node.Value))
+            .ToArray();
+        return refs
+            .Select((node, index) => (Node: node, First: refs.Take(index).FirstOrDefault(earlier => earlier.Value == node.Value)))
+            .Where(pair => pair.First is not null)
+            .Select(pair => at.Problem(
+                pair.Node.Start,
+                "mapping.duplicate_requirement_ref",
+                $"requirement ref '{pair.Node.Value}' is already used at line {pair.First!.Start.Line.ToString(CultureInfo.InvariantCulture)}."));
+    }
+
+    private static Result<ParsedRequirement> ParseRequirement(YamlNode item, Locator at)
+    {
+        if (item is not YamlMappingNode map)
+        {
+            return Result.Fail<ParsedRequirement>(at.Problem(item.Start, "mapping.requirement_not_a_map", "each requirement must be a map with ref, rule and checks."));
         }
 
-        if (problems.Count > 0 || urn is null)
-        {
-            return Result.Fail<LoadedMapping>(problems);
-        }
+        var reference = RequiredScalar(map, "ref", at);
+        var rule = ParseRule(map, at);
+        var checks = ParseChecks(map, at);
+        Problem[] problems = [.. UnknownKeys(map, RequirementKeys, at), .. ProblemsOf(reference), .. ProblemsOf(rule), .. ProblemsOf(checks)];
+        return problems.Length > 0
+            ? Result.Fail<ParsedRequirement>(problems)
+            : reference.Bind(refNode => rule.Bind(parsedRule => checks.Bind(parsedChecks =>
+                Located(RequirementMapping.Create(refNode.Value!, parsedChecks.Select(c => c.Id), parsedRule), map.Start, at)
+                    .Map(mapping => new ParsedRequirement(mapping, [.. parsedChecks])))));
+    }
 
-        var warnings = knownChecks is null
+    private static Result<MappingRule> ParseRule(YamlMappingNode map, Locator at)
+    {
+        var threshold = Child(map, "threshold");
+        return RequiredScalar(map, "rule", at).Bind(rule => (rule.Value, threshold) switch
+        {
+            ("all_pass" or "any_pass", not null) =>
+                Result.Fail<MappingRule>(at.Problem(threshold.Start, "mapping.threshold_unexpected", $"'threshold' only applies to rule 'threshold', not '{rule.Value}'.")),
+            ("all_pass", _) => Result.Ok(MappingRule.AllPass),
+            ("any_pass", _) => Result.Ok(MappingRule.AnyPass),
+            ("threshold", null) =>
+                Result.Fail<MappingRule>(at.Problem(rule.Start, "mapping.threshold_missing", "rule 'threshold' needs a 'threshold' count.")),
+            ("threshold", YamlScalarNode { Value: var count }) when int.TryParse(count, NumberStyles.None, CultureInfo.InvariantCulture, out var n) =>
+                Result.Ok(MappingRule.Threshold(n)),
+            ("threshold", _) =>
+                Result.Fail<MappingRule>(at.Problem(threshold!.Start, "mapping.threshold_invalid", "'threshold' must be a whole number.")),
+            _ => Result.Fail<MappingRule>(at.Problem(rule.Start, "mapping.rule_unknown", $"unknown rule '{rule.Value}'; use all_pass, any_pass or threshold.")),
+        });
+    }
+
+    private static Result<IReadOnlyList<ParsedCheck>> ParseChecks(YamlMappingNode map, Locator at) => Child(map, "checks") switch
+    {
+        null => Result.Fail<IReadOnlyList<ParsedCheck>>(at.Problem(map.Start, "mapping.key_missing", "'checks' is missing.")),
+        YamlSequenceNode list => Result.Combine(list.Children.Select(node =>
+            Located(CheckId.Create((node as YamlScalarNode)?.Value ?? ""), node.Start, at).Map(id => new ParsedCheck(id, node)))),
+        var other => Result.Fail<IReadOnlyList<ParsedCheck>>(at.Problem(other.Start, "mapping.checks_not_a_list", "'checks' must be a list of check IDs.")),
+    };
+
+    private static Result<YamlScalarNode> RequiredScalar(YamlMappingNode map, string key, Locator at) => Child(map, key) switch
+    {
+        null => Result.Fail<YamlScalarNode>(at.Problem(map.Start, "mapping.key_missing", $"'{key}' is missing.")),
+        YamlScalarNode { Value.Length: > 0 } scalar => Result.Ok(scalar),
+        var other => Result.Fail<YamlScalarNode>(at.Problem(other.Start, "mapping.value_invalid", $"'{key}' must be a non-empty text value.")),
+    };
+
+    private static IReadOnlyList<string> UnknownCheckWarnings(IEnumerable<ParsedCheck> checks, IReadOnlySet<CheckId>? knownChecks, Locator at) =>
+        knownChecks is null
             ? []
-            : requirements
-                .SelectMany(r => ((YamlSequenceNode)((YamlMappingNode)r.Node).Children[new YamlScalarNode("checks")]).Children)
-                .Where(node => CheckId.Create(((YamlScalarNode)node).Value ?? "").Match(id => !knownChecks.Contains(id), _ => false))
-                .Select(node => located.Message(node.Start, $"check '{((YamlScalarNode)node).Value}' is not a known check."))
-                .ToArray();
+            : [.. checks.Where(check => !knownChecks.Contains(check.Id)).Select(check => at.Message(check.Node.Start, $"check '{check.Id}' is not a known check."))];
 
-        return FrameworkMapping.Create(urn.Value!, requirements.Select(r => r.Mapping))
-            .Match(
-                mapping => Result.Ok(new LoadedMapping(mapping, warnings)),
-                mappingProblems => Result.Fail<LoadedMapping>(mappingProblems.Select(p => located.Problem(urn.Start, p.Code, p.Message))));
-    }
-
-    private static List<(RequirementMapping Mapping, YamlNode Node)> ParseRequirements(YamlSequenceNode list, Locator located, List<Problem> problems)
-    {
-        var firstLineOfRef = new Dictionary<string, Mark>(StringComparer.Ordinal);
-        var parsed = new List<(RequirementMapping, YamlNode)>();
-        foreach (var item in list.Children)
-        {
-            if (item is not YamlMappingNode requirement)
-            {
-                problems.Add(located.Problem(item.Start, "mapping.requirement_not_a_map", "each requirement must be a map with ref, rule and checks."));
-                continue;
-            }
-
-            var itemProblems = new List<Problem>();
-            itemProblems.AddRange(UnknownKeys(requirement, RequirementKeys, located));
-            var reference = RequiredScalar(requirement, "ref", located, itemProblems);
-            var rule = ParseRule(requirement, located, itemProblems);
-            var checks = ParseChecks(requirement, located, itemProblems);
-
-            if (reference?.Value is { } refValue)
-            {
-                if (firstLineOfRef.TryGetValue(refValue, out var first))
-                {
-                    itemProblems.Add(located.Problem(
-                        reference.Start,
-                        "mapping.duplicate_requirement_ref",
-                        $"requirement ref '{refValue}' is already used at line {first.Line.ToString(CultureInfo.InvariantCulture)}."));
-                }
-                else
-                {
-                    firstLineOfRef[refValue] = reference.Start;
-                }
-            }
-
-            if (itemProblems.Count > 0 || reference is null || rule is null || checks is null)
-            {
-                problems.AddRange(itemProblems);
-                continue;
-            }
-
-            switch (RequirementMapping.Create(reference.Value!, checks, rule))
-            {
-                case Result<RequirementMapping>.Ok ok:
-                    parsed.Add((ok.Value, requirement));
-                    break;
-                case Result<RequirementMapping>.Fail fail:
-                    problems.AddRange(fail.Errors.Select(p => located.Problem(requirement.Start, p.Code, p.Message)));
-                    break;
-            }
-        }
-
-        return parsed;
-    }
-
-    private static MappingRule? ParseRule(YamlMappingNode requirement, Locator located, List<Problem> problems)
-    {
-        var rule = RequiredScalar(requirement, "rule", located, problems);
-        var threshold = Child(requirement, "threshold");
-        switch (rule?.Value)
-        {
-            case null:
-                return null;
-            case "all_pass" or "any_pass" when threshold is not null:
-                problems.Add(located.Problem(threshold.Start, "mapping.threshold_unexpected", $"'threshold' only applies to rule 'threshold', not '{rule.Value}'."));
-                return null;
-            case "all_pass":
-                return MappingRule.AllPass;
-            case "any_pass":
-                return MappingRule.AnyPass;
-            case "threshold" when threshold is null:
-                problems.Add(located.Problem(rule.Start, "mapping.threshold_missing", "rule 'threshold' needs a 'threshold' count."));
-                return null;
-            case "threshold" when threshold is YamlScalarNode { Value: var count } && int.TryParse(count, NumberStyles.None, CultureInfo.InvariantCulture, out var n):
-                return MappingRule.Threshold(n);
-            case "threshold":
-                problems.Add(located.Problem(threshold!.Start, "mapping.threshold_invalid", "'threshold' must be a whole number."));
-                return null;
-            default:
-                problems.Add(located.Problem(rule.Start, "mapping.rule_unknown", $"unknown rule '{rule.Value}'; use all_pass, any_pass or threshold."));
-                return null;
-        }
-    }
-
-    private static List<CheckId>? ParseChecks(YamlMappingNode requirement, Locator located, List<Problem> problems)
-    {
-        switch (Child(requirement, "checks"))
-        {
-            case null:
-                problems.Add(located.Problem(requirement.Start, "mapping.key_missing", "'checks' is missing."));
-                return null;
-            case YamlSequenceNode list:
-                var ids = new List<CheckId>();
-                var before = problems.Count;
-                foreach (var node in list.Children)
-                {
-                    var value = (node as YamlScalarNode)?.Value ?? "";
-                    switch (CheckId.Create(value))
-                    {
-                        case Result<CheckId>.Ok ok:
-                            ids.Add(ok.Value);
-                            break;
-                        case Result<CheckId>.Fail fail:
-                            problems.AddRange(fail.Errors.Select(p => located.Problem(node.Start, p.Code, p.Message)));
-                            break;
-                    }
-                }
-
-                return problems.Count == before ? ids : null;
-            case var other:
-                problems.Add(located.Problem(other.Start, "mapping.checks_not_a_list", "'checks' must be a list of check IDs."));
-                return null;
-        }
-    }
-
-    private static YamlScalarNode? RequiredScalar(YamlMappingNode map, string key, Locator located, List<Problem> problems)
-    {
-        switch (Child(map, key))
-        {
-            case null:
-                problems.Add(located.Problem(map.Start, "mapping.key_missing", $"'{key}' is missing."));
-                return null;
-            case YamlScalarNode { Value: { Length: > 0 } } scalar:
-                return scalar;
-            case var other:
-                problems.Add(located.Problem(other.Start, "mapping.value_invalid", $"'{key}' must be a non-empty text value."));
-                return null;
-        }
-    }
-
-    private static IEnumerable<Problem> UnknownKeys(YamlMappingNode map, string[] allowed, Locator located) =>
+    private static IEnumerable<Problem> UnknownKeys(YamlMappingNode map, string[] allowed, Locator at) =>
         map.Children.Keys
             .Where(key => key is not YamlScalarNode { Value: { } name } || !allowed.Contains(name, StringComparer.Ordinal))
-            .Select(key => located.Problem(key.Start, "mapping.key_unknown", $"unknown key '{key}'; expected one of {string.Join(", ", allowed)}."));
+            .Select(key => at.Problem(key.Start, "mapping.key_unknown", $"unknown key '{key}'; expected one of {string.Join(", ", allowed)}."));
 
     private static YamlNode? Child(YamlMappingNode map, string key) =>
         map.Children.TryGetValue(new YamlScalarNode(key), out var value) ? value : null;
+
+    private static IReadOnlyList<Problem> ProblemsOf<T>(Result<T> result)
+        where T : notnull => result.Match(_ => [], problems => problems);
+
+    private static Result<T> Located<T>(Result<T> result, Mark mark, Locator at)
+        where T : notnull =>
+        result.Match(Result.Ok, problems => Result.Fail<T>(problems.Select(p => at.Problem(mark, p.Code, p.Message))));
+
+    private sealed record ParsedCheck(CheckId Id, YamlNode Node);
+
+    private sealed record ParsedRequirement(RequirementMapping Mapping, IReadOnlyList<ParsedCheck> CheckNodes);
+
+    private sealed record ParsedMapping(FrameworkMapping Mapping, IReadOnlyList<ParsedCheck> CheckNodes);
 
     private sealed record Locator(string Source)
     {
         public string Message(Mark mark, string message) =>
             $"{Source} line {mark.Line.ToString(CultureInfo.InvariantCulture)}: {message}";
+
+        public Problem FileProblem(string code, string message) => new(code, $"{Source}: {message}");
 
         public Problem Problem(Mark mark, string code, string message) => new(code, Message(mark, message));
     }

@@ -115,6 +115,7 @@ public class MappingLoaderTests
     [InlineData("", "mapping.document_empty")]
     [InlineData("- a\n- b\n", "mapping.document_not_a_map")]
     [InlineData("requirements: []\n", "mapping.key_missing")]
+    [InlineData("framework_urn: urn:example:x\n", "mapping.key_missing")]
     [InlineData("framework_urn: urn:example:x\nrequirements: {}\n", "mapping.requirements_not_a_list")]
     public void Malformed_documents_fail(string yaml, string code)
     {
@@ -137,5 +138,39 @@ public class MappingLoaderTests
 
         loaded.Mapping.Requirements.Single().Checks.Count.ShouldBe(2);
         loaded.Warnings.Single().ShouldBe($"{Source} line 5: check 'identity.mfa.contractors' is not a known check.");
+    }
+
+    [Theory]
+    [InlineData("- {ref: '1', rule: all_pass, threshold: 2, checks: [a.b]}", "mapping.threshold_unexpected")]
+    [InlineData("- {ref: '1', rule: threshold, threshold: two, checks: [a.b]}", "mapping.threshold_invalid")]
+    [InlineData("- {ref: '1', rule: threshold, threshold: 3, checks: [a.b]}", "mapping.threshold_out_of_range")]
+    [InlineData("- just text", "mapping.requirement_not_a_map")]
+    [InlineData("- {ref: '1', rule: all_pass, checks: a.b}", "mapping.checks_not_a_list")]
+    [InlineData("- {ref: '1', rule: all_pass}", "mapping.key_missing")]
+    [InlineData("- {ref: [x], rule: all_pass, checks: [a.b]}", "mapping.value_invalid")]
+    [InlineData("- {ref: '1', rule: all_pass, checks: [{a: b}]}", "check_id.invalid")]
+    public void Requirement_problems_name_their_line(string requirement, string code)
+    {
+        var yaml = $"framework_urn: urn:example:x\nrequirements:\n  {requirement}\n";
+
+        var problem = MappingLoader.Parse(yaml, Source).Problems().Single();
+
+        problem.Code.ShouldBe(code);
+        problem.Message.ShouldStartWith($"{Source} line 3: ");
+    }
+
+    [Fact]
+    public void Framework_urn_that_is_not_a_urn_fails_at_its_line()
+    {
+        var problem = MappingLoader.Parse("requirements: []\nframework_urn: example\n", Source).Problems().Single();
+
+        problem.Code.ShouldBe("mapping.framework_urn_invalid");
+        problem.Message.ShouldStartWith($"{Source} line 2: ");
+    }
+
+    [Fact]
+    public void Empty_document_names_the_file_without_a_line()
+    {
+        MappingLoader.Parse("# only a comment\n", Source).Problems().Single().Message.ShouldBe($"{Source}: the mapping file is empty.");
     }
 }
