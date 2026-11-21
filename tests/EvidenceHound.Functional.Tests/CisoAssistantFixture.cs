@@ -38,7 +38,15 @@ public sealed class CisoAssistantFixture : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
-        await _backend.StartAsync();
+        try
+        {
+            await _backend.StartAsync();
+        }
+        catch (TimeoutException ex)
+        {
+            throw new InvalidOperationException($"CISO Assistant did not become healthy. Container log tail:\n{await LogTailAsync()}", ex);
+        }
+
         var seed = await _backend.ExecAsync(["bash", "/seed/seed.sh"]);
         _token = seed.Stdout.Split('\n')
             .Select(line => line.Trim())
@@ -50,4 +58,11 @@ public sealed class CisoAssistantFixture : IAsyncLifetime
     }
 
     public ValueTask DisposeAsync() => _backend.DisposeAsync();
+
+    private async Task<string> LogTailAsync()
+    {
+        var (stdout, stderr) = await _backend.GetLogsAsync();
+        var log = $"{stdout}\n{stderr}";
+        return log.Length <= 6000 ? log : log[^6000..];
+    }
 }
