@@ -246,6 +246,16 @@ public class ScopePlanTests
     }
 
     [Fact]
+    public void A_period_audit_declared_without_its_status_is_neither_drift_nor_an_update()
+    {
+        // Applied as a period of a series, in progress; exported later as a plain audit, which says nothing of its status.
+        var applied = Applied(Declared(ScopeKind.Audit, "EX-PERIOD-2026Q4", ("name", "Backups 2026Q4"), ("status", "in_progress")));
+        var declared = Declared(ScopeKind.Audit, "EX-PERIOD-2026Q4", ("name", "Backups 2026Q4"));
+
+        ScopePlanner.Plan([declared], [applied], prune: false).IsEmpty.ShouldBeTrue();
+    }
+
+    [Fact]
     public void Assessment_compares_only_the_fields_the_scope_declares()
     {
         var declared = Declared(ScopeKind.Assessment, "EX-E8-2026/ISM-1486", ("result", "not_assessed"), ("documents", "identity-policy"));
