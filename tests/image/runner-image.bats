@@ -1,6 +1,7 @@
 #!/usr/bin/env bats
 # Tests for the collector runner image (src/EvidenceHound.Cli/Dockerfile).
-# Run: make test-image (builds the image first). Needs Docker.
+# Run: make test-image (builds the image first). Needs Docker and bats 1.5 or later.
+bats_require_minimum_version 1.5.0
 
 setup() {
   IMAGE="${HOUND_IMAGE:-evidence-hound-runner:test}"
@@ -21,10 +22,8 @@ setup() {
 }
 
 @test "the final image has no shell" {
-  run docker run --rm --entrypoint /bin/sh "$IMAGE" -c true
-  [ "$status" -ne 0 ]
-  run docker run --rm --entrypoint /bin/bash "$IMAGE" -c true
-  [ "$status" -ne 0 ]
+  run -127 docker run --rm --entrypoint /bin/sh "$IMAGE" -c true
+  run -127 docker run --rm --entrypoint /bin/bash "$IMAGE" -c true
 }
 
 @test "the runner works on a read-only root filesystem" {
