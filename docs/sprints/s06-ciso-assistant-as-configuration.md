@@ -206,7 +206,7 @@ The layout follows one that has already been tried against CISO Assistant: one s
 - Result (2026-11-21): in CI run [44918724134](https://github.com/tnbozman/evidence-hound/actions/runs/44918724134), `hound scope plan` on the example scope against the seeded CISO Assistant listed 6 creates (perimeter Corporate IT, three systems, two documents), 5 updates (the seeded domain, audit EX-E8-2026, AC-MFA, AC-BACKUP and the hand-written ISM-1486 row) and the seed's other audits, perimeter and control as drift, with GET requests only. The Markdown is a GitHub table, recorded in the evidence file. Evidence: [docs/evidence/s06/s06-07.md](../evidence/s06/s06-07.md).
 
 ### s06-08 Scope apply: domains, perimeters and systems
-- [ ] Done
+- [x] Done
 
 **Story:** As a capability owner, I want `hound` to create and update the structure the scope declares, so that a new or rebuilt CISO Assistant matches the repo without any clicking.
 
@@ -222,6 +222,7 @@ The layout follows one that has already been tried against CISO Assistant: one s
 
 **Functional check**
 - Apply the example scope to an empty local CISO Assistant, apply it again and confirm the second run writes nothing.
+- Result (2026-11-21): in CI run [44923765514](https://github.com/tnbozman/evidence-hound/actions/runs/44923765514) the first apply wrote 5 changes (the domain, perimeter `Corporate IT` and three systems) with none failed, and the second apply wrote nothing. Owners are written as CISO Assistant actors. Evidence: [docs/evidence/s06/s06-08.md](../evidence/s06/s06-08.md).
 
 ### s06-09 Scope apply: frameworks, audits, documents, controls and assessments
 - [ ] Done
@@ -321,6 +322,7 @@ The layout follows one that has already been tried against CISO Assistant: one s
 - Tests that PATCH CISO Assistant must send a sized body: .NET's `PatchAsJsonAsync` streams a chunked body that reaches Django empty, so the call succeeds and changes nothing. The client already uses `StringContent`. (Found in s06-04.)
 - A deployment target's problems in `hound scope validate --config` name the config file but no line, because the config loader keeps no line numbers for targets. (Found in s06-06.)
 - The scope plan does not yet compare a system's `tags`, an audit's `field_visibility` or a document's files: tags need CISO Assistant's filtering labels, field visibility its stored shape, and files the evidence hashes (s06-09). They are not reported as changes until then. (Found in s06-07.)
+- The run publisher replaces a row's `evidences` with what its mapping computes and reports other evidence as drift, so documents the scope links to those rows (s06-09) would be undone on the next run. s06-09 must make the publisher keep scope-linked documents. (Found in s06-08.)
 - The organisation's own record (CISO Assistant's main entity, used by third-party risk features) is not managed by the scope yet; the scope uses the root folder. Add it once the REST API is confirmed to update it. (Found planning s06.)
 
 ## Sprint review
