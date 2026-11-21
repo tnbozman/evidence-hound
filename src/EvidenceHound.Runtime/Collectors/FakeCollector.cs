@@ -1,10 +1,10 @@
 using System.Text;
 using System.Text.Json.Nodes;
+using EvidenceHound.Collectors;
 using EvidenceHound.Core.Checks;
-using EvidenceHound.Core.Collecting;
-using EvidenceHound.Core.Packaging;
 using EvidenceHound.Core.Planning;
 using EvidenceHound.Core.Results;
+using EvidenceHound.Runtime.Configuration;
 
 namespace EvidenceHound.Runtime.Collectors;
 
@@ -23,19 +23,24 @@ public sealed class FakeCollector : ICollector
         ("backup.restore_tested", CheckOutcome.Pass, "A test restore completed this quarter.", "restore-test.json", new JsonObject { ["restores"] = 1, ["succeeded"] = 1 }),
     ];
 
+    public string Type => CollectorTypes.Fake;
+
     public string Version => "1.0.0";
 
-    public Task<Result<CollectorOutput>> CollectAsync(CollectorContext context, CancellationToken cancellationToken)
+    public CollectorDescription Describe() => throw new NotImplementedException();
+
+    public Task<Result<CollectionResult>> CollectAsync(CollectorContext context, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(context);
-        var tenant = context.Settings.GetValueOrDefault("tenant", "example.com");
+        var tenant = context.Settings.GetOrDefault("tenant", "example.com");
+        var now = context.Clock.UtcNow;
 
         var checks = Result.Combine(Findings.Select(f => CheckId.Create(f.CheckId)
-            .Bind(id => CheckResult.Create(id, f.Outcome, f.Observation, [f.File], context.Now, context.Name))));
-        var files = Findings.Select(f => new CollectedFile(f.File, "application/json", Encoding.UTF8.GetBytes(Content(tenant, f.CheckId, f.Detail))));
+            .Bind(id => CheckResult.Create(id, f.Outcome, f.Observation, [f.File], now, context.Name))));
+        var files = Findings.Select(f => CollectedEvidence.FromBytes(f.File, "application/json", Encoding.UTF8.GetBytes(Content(tenant, f.CheckId, f.Detail))));
         ControlStatus[] controls = [new("mfa", ControlState.InProgress), new("backups", ControlState.Active)];
 
-        return Task.FromResult(checks.Map(c => new CollectorOutput(c, [.. files], controls)));
+        return Task.FromResult(checks.Map(c => new CollectionResult(c, [.. files], controls)));
     }
 
     private static string Content(string tenant, string checkId, JsonObject detail) =>

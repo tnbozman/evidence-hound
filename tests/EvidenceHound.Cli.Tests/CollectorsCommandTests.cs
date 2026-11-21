@@ -1,0 +1,99 @@
+using EvidenceHound.Collectors;
+using EvidenceHound.Core.Results;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+namespace EvidenceHound.Cli.Tests;
+
+public sealed class CollectorsCommandTests : IDisposable
+{
+    private readonly StringWriter _output = new();
+    private readonly StringWriter _error = new();
+    private readonly RecordingLoggerProvider _logs = new();
+    private readonly string _workDir = Directory.CreateTempSubdirectory("hound-collectors-tests-").FullName;
+
+    [Fact]
+    public async Task List_shows_each_collector_with_its_check_ids_and_settings()
+    {
+        var exitCode = await Run(services => services.AddCollector<WidgetCollector>(), "collectors", "list");
+
+        exitCode.ShouldBe(ExitCodes.Ok);
+        _output.ToString().ReplaceLineEndings("\n").ShouldBe("""
+            fake 1.0.0
+              checks: backup.daily, backup.restore_tested, identity.mfa.admins, identity.mfa.users
+              settings: tenant (optional)
+              secrets: none
+            widget 0.1.0
+              checks: widget.patched
+              settings: site (required)
+              secrets: api_key (required)
+
+            """);
+    }
+
+    [Fact]
+    public async Task Duplicate_collector_types_stop_the_cli_at_startup()
+    {
+        var exitCode = await Run(services => services.AddCollector<SecondFakeCollector>(), "collectors", "list");
+
+        exitCode.ShouldBe(ExitCodes.Configuration);
+        _output.ToString().ShouldBeEmpty();
+        _logs.Entries.ShouldContain(e => e.Level == LogLevel.Error && e.Message.Contains("'fake'", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Config_validate_checks_the_settings_a_registered_collector_describes()
+    {
+        var config = Path.Combine(_workDir, "widget.yaml");
+        await File.WriteAllTextAsync(config, """
+            ciso_assistant: {url: "http://localhost:8000/api/", token: "env:HOUND_CA_TOKEN"}
+            evidence: {root: ./evidence}
+            collectors:
+              - {name: widgets, type: widget, schedule: "0 2 * * *", secrets: {api_key: "env:HOUND_WIDGET_KEY"}}
+            target: {mapping: ./mapping.yaml, compliance_assessment: EXAMPLE-1}
+            """, TestContext.Current.CancellationToken);
+
+        var exitCode = await Run(services => services.AddCollector<WidgetCollector>(), "config", "validate", config);
+
+        exitCode.ShouldBe(ExitCodes.Configuration);
+        _error.ToString().ShouldContain("needs setting 'site'");
+    }
+
+    public void Dispose()
+    {
+        _output.Dispose();
+        _error.Dispose();
+        _logs.Dispose();
+        Directory.Delete(_workDir, recursive: true);
+    }
+
+    private Task<int> Run(Action<IServiceCollection> services, params string[] args) =>
+        HoundCli.RunAsync(args, _output, _error, logging => logging.AddProvider(_logs), services, TestContext.Current.CancellationToken);
+
+    private sealed class WidgetCollector : ICollector
+    {
+        public string Type => "widget";
+
+        public string Version => "0.1.0";
+
+        public CollectorDescription Describe() => new(
+            ["widget.patched"],
+            [new("site", "The widget site to read.", Required: true)],
+            [new("api_key", "Reference to the widget API key.", Required: true)]);
+
+        public Task<Result<CollectionResult>> CollectAsync(CollectorContext context, CancellationToken cancellationToken) =>
+            Task.FromResult(Result.Ok(new CollectionResult([], [], [])));
+    }
+
+    private sealed class SecondFakeCollector : ICollector
+    {
+        public string Type => "fake";
+
+        public string Version => "0.1.0";
+
+        public CollectorDescription Describe() => new([], [], []);
+
+        public Task<Result<CollectionResult>> CollectAsync(CollectorContext context, CancellationToken cancellationToken) =>
+            Task.FromResult(Result.Ok(new CollectionResult([], [], [])));
+    }
+}

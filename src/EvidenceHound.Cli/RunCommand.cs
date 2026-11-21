@@ -23,7 +23,7 @@ internal static class RunCommand
 {
     private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
 
-    public static Command Build(TextWriter output, ILoggerFactory loggers, IConfiguration configuration)
+    public static Command Build(TextWriter output, ILoggerFactory loggers, IConfiguration configuration, CollectorServices collectorServices)
     {
         var logger = loggers.CreateLogger("hound.run");
         var config = new Option<FileInfo>("--config") { Description = "Path to the deployment config file (YAML).", Required = true };
@@ -38,7 +38,7 @@ internal static class RunCommand
             var deployment = await ConfigCommands.LoadAsync(parseResult.GetRequiredValue(config), cancellationToken);
             return await deployment.Match(
                 d => Runner.Select(d.Collectors, options.Only).Match(
-                    instances => PrepareAndRunAsync(d, instances, options, configuration, loggers, output, logger, cancellationToken),
+                    instances => PrepareAndRunAsync(d, instances, options, configuration, collectorServices, output, logger, cancellationToken),
                     problems => Task.FromResult(Usage(logger, problems))),
                 problems => Task.FromResult(Log.Problems(logger, problems)));
         });
@@ -51,16 +51,16 @@ internal static class RunCommand
         IReadOnlyList<CollectorInstance> instances,
         RunOptions options,
         IConfiguration configuration,
-        ILoggerFactory loggers,
+        CollectorServices collectorServices,
         TextWriter output,
         ILogger logger,
         CancellationToken cancellationToken)
     {
         var publishing = !options.DryRun && !options.NoPublish;
         var ready = (await MappingCommands.LoadAsync(new FileInfo(config.Target.MappingPath), cancellationToken))
-            .Bind(loaded => (publishing ? Transport(config, configuration, loggers) : Result.Ok(Transports.None)).Map(t => (loaded.Mapping, Transport: t)));
+            .Bind(loaded => (publishing ? Transport(config, configuration, collectorServices.Loggers) : Result.Ok(Transports.None)).Map(t => (loaded.Mapping, Transport: t)));
         return await ready.Match(
-            r => RunAsync(config, instances, options, r.Mapping, r.Transport, configuration, output, logger, cancellationToken),
+            r => RunAsync(config, instances, options, r.Mapping, r.Transport, configuration, collectorServices, output, logger, cancellationToken),
             problems => Task.FromResult(Log.Problems(logger, problems)));
     }
 
@@ -71,12 +71,13 @@ internal static class RunCommand
         FrameworkMapping mapping,
         Transports transport,
         IConfiguration configuration,
+        CollectorServices collectorServices,
         TextWriter output,
         ILogger logger,
         CancellationToken cancellationToken)
     {
         using var sinks = transport;
-        var step = new CollectStep(ConfigCommands.Secrets(configuration), new FileEvidenceStore(config.Evidence.Root), new SystemClock(), config.Evidence.RetentionDays);
+        var step = new CollectStep(ConfigCommands.Secrets(configuration), new FileEvidenceStore(config.Evidence.Root), new SystemClock(), config.Evidence.RetentionDays, collectorServices);
         var runner = new Runner(
             BuiltInCollectors.Create(),
             step,

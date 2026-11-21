@@ -2,6 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/EvidenceHound.CisoAssistant/EvidenceHound.CisoAssistant.csproj" />
     <Project Path="src/EvidenceHound.Cli/EvidenceHound.Cli.csproj" />
+    <Project Path="src/EvidenceHound.Collectors.Abstractions/EvidenceHound.Collectors.Abstractions.csproj" />
     <Project Path="src/EvidenceHound.Core/EvidenceHound.Core.csproj" />
     <Project Path="src/EvidenceHound.Core.Yaml/EvidenceHound.Core.Yaml.csproj" />
     <Project Path="src/EvidenceHound.Runtime/EvidenceHound.Runtime.csproj" />

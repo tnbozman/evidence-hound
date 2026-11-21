@@ -1,6 +1,8 @@
 using System.CommandLine;
+using EvidenceHound.Collectors;
 using EvidenceHound.Core.Results;
 using EvidenceHound.Core.Secrets;
+using EvidenceHound.Runtime.Collectors;
 using EvidenceHound.Runtime.Configuration;
 using EvidenceHound.Runtime.Secrets;
 using Microsoft.Extensions.Configuration;
@@ -35,7 +37,7 @@ internal static class ConfigCommands
 
     /// <summary>Loads a deployment config, knowing the collector types this build ships.</summary>
     internal static Task<Result<DeploymentConfig>> LoadAsync(FileInfo file, CancellationToken cancellationToken) =>
-        ConfigLoader.LoadAsync(file.FullName, CollectorTypes.BuiltIn, cancellationToken);
+        ConfigLoader.LoadAsync(file.FullName, BuiltInCollectors.Create().ToDictionary(p => p.Key, _ => new CollectorDescription([], [], [])), cancellationToken);
 
     /// <summary>The secret provider for this run: <c>env:</c> reads .NET configuration (environment variables and test settings).</summary>
     internal static ISecretProvider Secrets(IConfiguration configuration) => CompositeSecretProvider.Standard(name => configuration[name]);

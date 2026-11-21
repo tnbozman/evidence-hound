@@ -1,8 +1,7 @@
 using System.Text;
+using EvidenceHound.Collectors;
 using EvidenceHound.Core.Checks;
-using EvidenceHound.Core.Collecting;
 using EvidenceHound.Core.Mapping;
-using EvidenceHound.Core.Packaging;
 using EvidenceHound.Core.Planning;
 using EvidenceHound.Core.Publishing;
 using EvidenceHound.Core.Results;
@@ -32,14 +31,14 @@ public sealed class RunnerTests : IDisposable
     private static CollectorInstance Instance(string name, string type) =>
         new(name, type, "0 2 * * *", new Dictionary<string, string>(), new Dictionary<string, SecretReference>());
 
-    private static StubCollector Reporting(string checkId, string file) => new(context => Result.Ok(new CollectorOutput(
-        [CheckResult.Create(Id(checkId), CheckOutcome.Pass, "ok", [file], context.Now, context.Name).Value()],
-        [new CollectedFile(file, "application/json", Encoding.UTF8.GetBytes("{\"ok\": true}"))],
+    private static StubCollector Reporting(string checkId, string file) => new(context => Result.Ok(new CollectionResult(
+        [CheckResult.Create(Id(checkId), CheckOutcome.Pass, "ok", [file], context.Clock.UtcNow, context.Name).Value()],
+        [CollectedEvidence.FromBytes(file, "application/json", Encoding.UTF8.GetBytes("{\"ok\": true}"))],
         [])));
 
     private Runner Runner(Dictionary<string, ICollector> collectors) => new(
         collectors,
-        new CollectStep(Secrets.From(new Dictionary<string, string>()), new FileEvidenceStore(_root), new FixedClock(Now), retentionDays: null),
+        new CollectStep(Secrets.From(new Dictionary<string, string>()), new FileEvidenceStore(_root), new FixedClock(Now), retentionDays: null, TestCollectorServices.None),
         Mapping,
         Target,
         files => _sink.With(files),
@@ -68,7 +67,7 @@ public sealed class RunnerTests : IDisposable
     [Fact]
     public async Task Failure_in_one_collector_continues_others()
     {
-        var failing = new StubCollector(_ => Result.Fail<CollectorOutput>(new Problem("collector.unavailable", "the system did not answer")));
+        var failing = new StubCollector(_ => Result.Fail<CollectionResult>(new Problem("collector.unavailable", "the system did not answer")));
         var runner = Runner(new()
         {
             ["failing"] = failing,
@@ -129,8 +128,8 @@ public sealed class RunnerTests : IDisposable
     [Fact]
     public async Task A_plan_that_cannot_be_made_fails_that_collector()
     {
-        var citesNothing = new StubCollector(context => Result.Ok(new CollectorOutput(
-            [CheckResult.Create(Id("identity.mfa.admins"), CheckOutcome.Pass, "ok", ["not-collected.json"], context.Now, context.Name).Value()], [], [])));
+        var citesNothing = new StubCollector(context => Result.Ok(new CollectionResult(
+            [CheckResult.Create(Id("identity.mfa.admins"), CheckOutcome.Pass, "ok", ["not-collected.json"], context.Clock.UtcNow, context.Name).Value()], [], [])));
 
         var summary = await Runner(new() { ["idp"] = citesNothing })
             .RunAsync([Instance("one", "idp")], new RunOptions(), TestContext.Current.CancellationToken);
@@ -159,7 +158,7 @@ public sealed class RunnerTests : IDisposable
     [Fact]
     public async Task Health_evidence_planned_after_each_run()
     {
-        var failing = new StubCollector(_ => Result.Fail<CollectorOutput>(new Problem("collector.unavailable", "the system did not answer")));
+        var failing = new StubCollector(_ => Result.Fail<CollectionResult>(new Problem("collector.unavailable", "the system did not answer")));
         var runner = Runner(new() { ["failing"] = failing, ["idp"] = Reporting("identity.mfa.admins", "admins.json") });
 
         var summary = await runner.RunAsync([Instance("first", "failing"), Instance("second", "idp")], new RunOptions(), TestContext.Current.CancellationToken);
@@ -183,7 +182,7 @@ public sealed class RunnerTests : IDisposable
     [Fact]
     public async Task Each_run_saves_its_run_record()
     {
-        var failing = new StubCollector(_ => Result.Fail<CollectorOutput>(new Problem("collector.unavailable", "the system did not answer")));
+        var failing = new StubCollector(_ => Result.Fail<CollectionResult>(new Problem("collector.unavailable", "the system did not answer")));
         var runner = Runner(new() { ["failing"] = failing, ["idp"] = Reporting("identity.mfa.admins", "admins.json") });
 
         var summary = await runner.RunAsync([Instance("first", "failing"), Instance("second", "idp")], new RunOptions(NoPublish: true), TestContext.Current.CancellationToken);

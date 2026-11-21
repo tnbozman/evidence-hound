@@ -1,6 +1,7 @@
-using EvidenceHound.Core.Collecting;
+using EvidenceHound.Collectors;
 using EvidenceHound.Core.Secrets;
 using EvidenceHound.Runtime.Collectors;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace EvidenceHound.Runtime.Tests;
 
@@ -9,7 +10,12 @@ public class FakeCollectorTests
     private static readonly DateTimeOffset Now = new(2026, 6, 30, 2, 0, 0, TimeSpan.Zero);
 
     private static readonly CollectorContext Context = new(
-        "example-fake", new Dictionary<string, string> { ["tenant"] = "example.com" }, new Dictionary<string, Secret>(), Now);
+        "example-fake",
+        new CollectorSettings(new Dictionary<string, string> { ["tenant"] = "example.com" }),
+        new Dictionary<string, Secret>(),
+        new FixedClock(Now),
+        NullLogger.Instance,
+        new TestHttpClients());
 
     [Fact]
     public async Task Reports_checks_that_cite_its_own_files()
@@ -24,12 +30,24 @@ public class FakeCollectorTests
     }
 
     [Fact]
+    public async Task Describes_every_check_it_reports()
+    {
+        var output = (await new FakeCollector().CollectAsync(Context, TestContext.Current.CancellationToken)).Value();
+
+        var description = new FakeCollector().Describe();
+
+        description.Checks.ShouldBe(output.Checks.Select(c => c.CheckId.Value), ignoreOrder: true);
+        description.Settings.ShouldHaveSingleItem().ShouldBe(new SettingDescription("tenant", "Tenant domain named in the evidence. Default: example.com.", Required: false));
+        description.Secrets.ShouldBeEmpty();
+    }
+
+    [Fact]
     public async Task Same_context_gives_the_same_files()
     {
         var first = (await new FakeCollector().CollectAsync(Context, TestContext.Current.CancellationToken)).Value();
         var second = (await new FakeCollector().CollectAsync(Context, TestContext.Current.CancellationToken)).Value();
 
-        second.Files.Select(f => f.Content.ToArray()).ShouldBe(first.Files.Select(f => f.Content.ToArray()));
+        second.Files.Select(Bytes).ShouldBe(first.Files.Select(Bytes));
     }
 
     [Fact]
@@ -37,6 +55,14 @@ public class FakeCollectorTests
     {
         var output = (await new FakeCollector().CollectAsync(Context, TestContext.Current.CancellationToken)).Value();
 
-        System.Text.Encoding.UTF8.GetString(output.Files[0].Content.Span).ShouldContain("example.com");
+        System.Text.Encoding.UTF8.GetString(Bytes(output.Files[0])).ShouldContain("example.com");
+    }
+
+    private static byte[] Bytes(CollectedEvidence file)
+    {
+        using var content = file.Open();
+        using var buffer = new MemoryStream();
+        content.CopyTo(buffer);
+        return buffer.ToArray();
     }
 }

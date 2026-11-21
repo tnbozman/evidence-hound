@@ -1,4 +1,4 @@
-using EvidenceHound.Core.Collecting;
+using EvidenceHound.Collectors;
 using EvidenceHound.Runtime.Configuration;
 
 namespace EvidenceHound.Runtime.Collectors;

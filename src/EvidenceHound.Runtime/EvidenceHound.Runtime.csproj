@@ -9,6 +9,7 @@
     <InternalsVisibleTo Include="EvidenceHound.Runtime.Tests" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\EvidenceHound.Collectors.Abstractions\EvidenceHound.Collectors.Abstractions.csproj" />
     <ProjectReference Include="..\EvidenceHound.Core\EvidenceHound.Core.csproj" />
     <ProjectReference Include="..\EvidenceHound.Core.Yaml\EvidenceHound.Core.Yaml.csproj" />
   </ItemGroup>

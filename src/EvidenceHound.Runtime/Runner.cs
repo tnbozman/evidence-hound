@@ -1,5 +1,5 @@
+using EvidenceHound.Collectors;
 using EvidenceHound.Core;
-using EvidenceHound.Core.Collecting;
 using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Planning;
 using EvidenceHound.Core.Publishing;
