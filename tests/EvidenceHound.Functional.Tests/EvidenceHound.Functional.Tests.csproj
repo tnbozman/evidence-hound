@@ -3,6 +3,9 @@
     <PackageReference Include="Testcontainers" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\src\EvidenceHound.CisoAssistant\EvidenceHound.CisoAssistant.csproj" />
+  </ItemGroup>
+  <ItemGroup>
     <None Include="..\..\dev\ciso-assistant\seed\*" Link="seed\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
