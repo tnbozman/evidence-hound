@@ -1,3 +1,4 @@
+using System.CommandLine;
 using Microsoft.Extensions.Logging;
 
 namespace EvidenceHound.Cli.Tests;
@@ -11,6 +12,9 @@ public sealed class CliTests : IDisposable
 
     private Task<int> Run(params string[] args) =>
         HoundCli.RunAsync(args, _output, _error, logging => logging.AddProvider(_logs));
+
+    private Task<int> RunWith(Command extra, CancellationToken cancellationToken, params string[] args) =>
+        HoundCli.RunAsync(args, _output, _error, logging => logging.AddProvider(_logs), [extra], cancellationToken);
 
     [Fact]
     public async Task Version_prints_semantic_version()
@@ -192,6 +196,55 @@ public sealed class CliTests : IDisposable
 
         exitCode.ShouldBe(3);
         _error.ToString().ShouldContain("missing-");
+    }
+
+    [Fact]
+    public async Task Unexpected_exception_is_logged_as_critical_and_exits_one()
+    {
+        var boom = new Command("boom");
+        boom.SetAction(int (_) => throw new InvalidOperationException("kaboom"));
+
+        var exitCode = await RunWith(boom, TestContext.Current.CancellationToken, "boom");
+
+        exitCode.ShouldBe(1);
+        var critical = _logs.Entries.Single(e => e.Level == LogLevel.Critical);
+        critical.Exception.ShouldBeOfType<InvalidOperationException>();
+        critical.Message.ShouldContain("'boom'");
+        _error.ToString().ShouldContain("crit: Unexpected failure running 'boom'");
+        _error.ToString().ShouldContain("InvalidOperationException: kaboom");
+        _error.ToString().ShouldNotContain(" at ");
+    }
+
+    [Fact]
+    public async Task Cancellation_exits_130()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var wait = new Command("wait");
+        wait.SetAction(async (_, token) =>
+        {
+            await cancellation.CancelAsync();
+            await Task.Delay(Timeout.Infinite, token);
+            return 0;
+        });
+
+        var exitCode = await RunWith(wait, cancellation.Token, "wait");
+
+        exitCode.ShouldBe(130);
+        _logs.Entries.ShouldContain(e => e.Level == LogLevel.Warning && e.Message.Contains("Cancelled", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Problems_are_logged_as_errors_with_their_code()
+    {
+        var mapping = Path.Combine(_workDir, "bad.yaml");
+        await File.WriteAllTextAsync(mapping, "framework_urn: urn:example:x\nrequirements: {}\n", TestContext.Current.CancellationToken);
+
+        var exitCode = await Run("mapping", "validate", mapping);
+
+        exitCode.ShouldBe(3);
+        var problem = _logs.Entries.Single(e => e.Level == LogLevel.Error);
+        problem.State.ShouldContain(kv => kv.Key == "Code" && Equals(kv.Value, "mapping.requirements_not_a_list"));
+        _error.ToString().ShouldBe($"error: {problem.Message}{Environment.NewLine}");
     }
 
     private static string RepoFile(string folder, string name) => Path.Combine(AppContext.BaseDirectory, "files", folder, name);

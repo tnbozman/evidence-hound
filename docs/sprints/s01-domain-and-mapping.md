@@ -1,6 +1,6 @@
 # s01 Domain model and framework mapping
 
-Status: Done
+Status: In progress
 
 **Goal:** the pure core that turns framework-neutral check results into requirement results for any framework, with no I/O.
 
@@ -119,6 +119,30 @@ All code in this sprint lives in `src/EvidenceHound.Core` and is tested in `test
 - `make run ARGS="plan --dry-run --config examples/example-pty-ltd.yaml --checks tests/fixtures/checks-sample.json"` prints the planned messages as JSON.
 
 **Functional check result (2026-11-21):** `make run ARGS="plan --dry-run --config examples/example-pty-ltd.yaml --checks tests/fixtures/checks-sample.json"` printed 11 dispatcher messages: 5 `upload_attachment`, 4 `update_requirement_assessment`, 2 `update_applied_control`. `make test`: `total: 136, failed: 0`. Evidence: [`docs/evidence/s01/s01-05.md`](../evidence/s01/s01-05.md).
+
+### s01-06 Global exception handler and logger
+- [ ] Done
+
+Added 2026-11-21 at the maintainer's request.
+
+**Story:** As an operator, I want every command to report errors and log in one consistent way, so that output is predictable and an unexpected failure never ends in a raw stack trace.
+
+**Acceptance criteria**
+- One logging setup for every command: a single host, logs written to stderr (stdout stays for command output such as plan JSON) as `<level>: <message>`, minimum level from configuration (`Logging__LogLevel__Default`, default `Information`).
+- Expected failures (`Problem`s) are logged by one reporter at `Error` with their code as structured data, and the command exits 3.
+- A global handler catches any unexpected exception from a command: it logs it at `Critical` with the exception, prints a one-line summary, and exits 1. Stack traces appear only at `Debug`.
+- Cancellation (Ctrl+C) logs a warning and exits 130.
+- The core still never throws for expected failures; the handler lives only in the CLI composition root.
+
+**Tests first**
+- `StderrLoggerTests.Writes_level_and_message`
+- `StderrLoggerTests.Exception_is_summarised_on_one_line`
+- `CliTests.Unexpected_exception_is_logged_as_critical_and_exits_one`
+- `CliTests.Cancellation_exits_130`
+- `CliTests.Problems_are_logged_as_errors_with_their_code`
+
+**Functional check**
+- `make run ARGS="mapping validate <bad file>"` prints `error:` lines on stderr and exits 3; `Logging__LogLevel__Default=Warning make run ARGS="collect --dry-run --config examples/example-pty-ltd.yaml"` prints no info line.
 
 ## Discovered work
 
