@@ -46,24 +46,16 @@ public sealed record CheckResult
         ArgumentNullException.ThrowIfNull(source);
 
         var refs = evidenceRefs.ToArray();
-        var problems = new List<Problem>();
-        if (observation.Length > MaxObservationLength)
-        {
-            problems.Add(new Problem("check_result.observation_too_long", $"Observation for {checkId} is {observation.Length} characters; the limit is {MaxObservationLength}."));
-        }
-
-        if (refs.Any(string.IsNullOrWhiteSpace))
-        {
-            problems.Add(new Problem("check_result.evidence_ref_empty", $"Evidence references for {checkId} must not be empty."));
-        }
-
-        if (string.IsNullOrWhiteSpace(source))
-        {
-            problems.Add(new Problem("check_result.source_empty", $"Source for {checkId} must name the collector."));
-        }
-
-        return problems.Count == 0
-            ? Result.Ok(new CheckResult(checkId, outcome, observation, refs, collectedAt, source))
-            : Result.Fail<CheckResult>(problems);
+        return Validation.Validate(
+            () => new CheckResult(checkId, outcome, observation, refs, collectedAt, source),
+            new Invariant(
+                observation.Length <= MaxObservationLength,
+                new Problem("check_result.observation_too_long", $"Observation for {checkId} is {observation.Length} characters; the limit is {MaxObservationLength}.")),
+            new Invariant(
+                !refs.Any(string.IsNullOrWhiteSpace),
+                new Problem("check_result.evidence_ref_empty", $"Evidence references for {checkId} must not be empty.")),
+            new Invariant(
+                !string.IsNullOrWhiteSpace(source),
+                new Problem("check_result.source_empty", $"Source for {checkId} must name the collector.")));
     }
 }

@@ -33,35 +33,13 @@ public sealed partial record Evidence
     {
         ArgumentNullException.ThrowIfNull(sha256);
 
-        var problems = new List<Problem>();
-        if (string.IsNullOrWhiteSpace(id))
-        {
-            problems.Add(new Problem("evidence.id_empty", "Evidence ID must not be empty."));
-        }
-
-        if (string.IsNullOrWhiteSpace(fileName))
-        {
-            problems.Add(new Problem("evidence.file_name_empty", $"Evidence {id} needs a file name."));
-        }
-
-        if (string.IsNullOrWhiteSpace(mediaType))
-        {
-            problems.Add(new Problem("evidence.media_type_empty", $"Evidence {id} needs a media type."));
-        }
-
-        if (!Sha256Pattern().IsMatch(sha256))
-        {
-            problems.Add(new Problem("evidence.sha256_invalid", $"Evidence {id} SHA-256 must be 64 hex characters."));
-        }
-
-        if (sizeBytes < 0)
-        {
-            problems.Add(new Problem("evidence.size_negative", $"Evidence {id} size must not be negative."));
-        }
-
-        return problems.Count == 0
-            ? Result.Ok(new Evidence(id, fileName, mediaType, sha256.ToLowerInvariant(), sizeBytes, collectedAt))
-            : Result.Fail<Evidence>(problems);
+        return Validation.Validate(
+            () => new Evidence(id, fileName, mediaType, sha256.ToLowerInvariant(), sizeBytes, collectedAt),
+            new Invariant(!string.IsNullOrWhiteSpace(id), new Problem("evidence.id_empty", "Evidence ID must not be empty.")),
+            new Invariant(!string.IsNullOrWhiteSpace(fileName), new Problem("evidence.file_name_empty", $"Evidence {id} needs a file name.")),
+            new Invariant(!string.IsNullOrWhiteSpace(mediaType), new Problem("evidence.media_type_empty", $"Evidence {id} needs a media type.")),
+            new Invariant(Sha256Pattern().IsMatch(sha256), new Problem("evidence.sha256_invalid", $"Evidence {id} SHA-256 must be 64 hex characters.")),
+            new Invariant(sizeBytes >= 0, new Problem("evidence.size_negative", $"Evidence {id} size must not be negative.")));
     }
 
     [GeneratedRegex("^[0-9a-fA-F]{64}$", RegexOptions.CultureInvariant)]
