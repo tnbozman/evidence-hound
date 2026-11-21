@@ -28,8 +28,8 @@ public class WidgetCollectorContractTests : CollectorContractTests<WidgetCollect
 
 | Contract | The collector must |
 | --- | --- |
-| `DescribesAtLeastOneCheck` | List at least one check ID in `Describe()`. |
-| `EmitsOnlyDeclaredCheckIds` | Report only check IDs that `Describe()` lists. |
+| `DescribesAtLeastOneCheck` | List at least one check ID in `Describe()`, or name in `ChecksSetting` the setting that lists them per instance. |
+| `EmitsOnlyDeclaredCheckIds` | Report only check IDs that `Describe()` lists, plus those in the `Working` scenario's `ChecksSetting` setting. |
 | `EvidenceFilesCanBeHashed` | Emit evidence with plain, unique file names that reads the same each time, and cite only files it emitted. |
 | `HonoursCancellation` | Throw `OperationCanceledException` when its token is already cancelled. |
 | `ReturnsFailNotThrowsWhenCredentialsAreRefused` | Return `Result.Fail` with a problem, not throw, when the target system refuses its credentials. Collectors that declare no secrets pass this contract automatically. |

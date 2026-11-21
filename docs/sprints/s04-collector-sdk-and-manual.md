@@ -61,7 +61,7 @@ Projects: `src/EvidenceHound.Collectors.Abstractions` (published package), `src/
 - Result (2026-11-21): the template was installed and `Example.Widget` was generated in the repo root against locally packed SDK packages (`--HoundVersion 0.1.0-local.1`). Its own `dotnet test` passed 8 of 8 (six contracts and two behaviour tests). The repo's `make test` passed 362 of 362 and `make lint-dotnet` was clean with the generated folder present. `make test-template` passes. [Evidence](../evidence/s04/s04-03.md).
 
 ### s04-04 Manual-upload collector
-- [ ] Done
+- [x] Done
 
 **Story:** As a system owner of a system with no API, I want to drop an export file and have it treated like collected evidence, so that manual systems are part of continuous compliance.
 
@@ -80,6 +80,7 @@ Projects: `src/EvidenceHound.Collectors.Abstractions` (published package), `src/
 
 **Functional check**
 - Configure a manual source "Example firewall config", upload a fictional config export with attestation, run, and see evidence and result in the example audit.
+- Result (2026-11-21): the example config plus manual source `example-firewall-config` passed `hound config validate`. `hound manual upload` copied `examples/manual-exports/example-firewall-config-export.txt` and wrote its attestation; a second upload copied nothing. `hound run` against a local CISO Assistant published 8 updates for the fake and 3 for the manual source. In audit `EXAMPLE-BASELINE-2026`, the new fictional requirement EX-4.1 reads `compliant`, with the attestation in its observation, and the export and its sidecar are linked as evidence. `make test-functional` passed 7 of 7. [Evidence](../evidence/s04/s04-04.md).
 
 ## Discovered work
 
@@ -90,5 +91,9 @@ Projects: `src/EvidenceHound.Collectors.Abstractions` (published package), `src/
 - The contract kit does not yet check that check results use the context's instance name as `Source` and the context's clock for `CollectedAt`. Consider adding both contracts. (Found in s04-02.)
 - Nothing publishes the `Collectors.Abstractions` and `Collectors.Testing` packages yet; `dotnet pack` works locally. Add a pack-and-publish job before the template (s04-03) refers to them by package. (Found in s04-02.) Update from s04-03: `EvidenceHound.Core` must be published too, because the Abstractions package depends on it. Until all three are on a feed, a collector generated with the default `--HoundVersion 0.1.0` cannot restore outside `make test-template`.
 - The runner registers only built-in collectors (`AddBuiltInCollectors`). There is no way yet to load a collector built from the template into `hound` without editing the CLI. Decide how plugins are loaded: a package reference in a custom host, or assembly loading from config. (Found in s04-03.)
+- `make ca-up` fails at the seed step: the Makefile passes `HOUND_CA_SECRET_KEY` to `docker compose up` but not to `scripts/ca-seed.sh`, whose `docker compose exec` needs it to read the compose file. Workaround: `HOUND_CA_SECRET_KEY="$(scripts/ca-secret-key.sh)" scripts/ca-seed.sh`. (Found in s04-04.)
+- A manual source whose drop folder does not exist yet fails its run (`manual.drop_folder_missing`) until the first upload creates it. Consider reporting `error: no evidence uploaded yet` instead, so a new source shows as overdue rather than failing. (Found in s04-04.)
+- Config validation does not check the check IDs in a `ChecksSetting` setting, such as the manual collector's `checks`. A bad ID is reported only when the collector runs. (Found in s04-04.)
+- Attestations are not checked against the source's `owner`: anyone can be named in `who`. Decide whether only the owner may attest. (Found in s04-04.)
 
 ## Sprint review

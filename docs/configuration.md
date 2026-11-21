@@ -45,7 +45,69 @@ A value that looks like a secret fails validation: `ciso_assistant.token` or a `
 | Type | What it does |
 | --- | --- |
 | `fake` | Fixed, fictional results for tests, demos and dry runs. Optional setting `tenant`. |
+| `manual` | Export files that an owner drops in a folder, for systems without an API. See [Manual sources](#manual-sources). |
 
-`hound collectors list` prints every registered type with the check IDs it reports and the settings and secrets it reads. A collector with a required setting or secret missing fails validation with `config.setting_missing` or `config.secret_missing`.
+`hound collectors list` prints every registered type with the check IDs it reports and the settings and secrets it reads. A collector with a required setting or secret missing fails validation with `config.setting_missing` or `config.secret_missing`. Settings a collector describes as paths, such as `drop_folder`, are resolved against the config file's folder like every other path.
+
+## Manual sources
+
+A `manual` collector instance is one manual source. Its settings:
+
+| Setting | Required | Meaning |
+| --- | --- | --- |
+| `drop_folder` | yes | Folder the owner drops export files in. |
+| `patterns` | no | Comma-separated file patterns to accept, such as `*.txt,*.cfg`. Default: every file. |
+| `checks` | yes | Comma-separated check IDs this source supports. |
+| `due_days` | yes | Days after which fresh evidence is due, such as `30`. |
+| `owner` | yes | Who owns the evidence and attests it. |
+
+```yaml
+collectors:
+  - name: example-firewall-config
+    type: manual
+    schedule: "0 6 * * *"
+    settings:
+      drop_folder: ../.dev/manual/example-firewall-config
+      patterns: "*.txt,*.cfg"
+      checks: network.firewall.rules_reviewed, network.firewall.config_exported
+      due_days: 30
+      owner: Alex Example
+```
+
+Each run reads the drop folder and emits every accepted file dated within the last `due_days` as evidence, with SHA-256 hashes like any other evidence. The same content dropped twice is emitted once, under its newest name. The newest file decides each configured check:
+
+| Newest file within the interval | Check result |
+| --- | --- |
+| Has an attestation with an outcome for the check | That outcome (`pass`, `fail`, `partial` or `not_applicable`), naming who attested, when, and the note |
+| Has an attestation without an outcome for the check | `partial`: "evidence present, not attested for this check" |
+| Has no attestation | `partial`: "evidence present, not attested" |
+| None, but an older file exists | `error`: "evidence overdue since <date>" |
+| None ever | `error`: "no evidence uploaded yet" |
+
+A file is dated by its attestation's `date`, or by when it was written if nobody attested it. A missing drop folder or an invalid attestation fails the collector's run with `manual.drop_folder_missing` or `manual.attestation_invalid`.
+
+An attestation is a sidecar next to the file, named `<file>.attest.yaml`:
+
+```yaml
+who: Alex Example
+date: 2026-11-20            # or 2026-11-20T09:30:00Z
+note: Rules reviewed with the network team.
+outcomes:
+  network.firewall.rules_reviewed: pass
+  network.firewall.config_exported: pass
+```
+
+`hound manual upload` copies a file into a source's drop folder and asks whether to attest it. Prompts go to stderr; the copied file's path goes to stdout.
+
+```
+$ hound manual upload --config hound.yaml --source example-firewall-config firewall-export.txt
+Attest this file now? [y/N]: y
+Attested by [Alex Example]:
+Outcome for network.firewall.rules_reviewed (pass, fail, partial, not_applicable) [pass]:
+Outcome for network.firewall.config_exported (pass, fail, partial, not_applicable) [pass]:
+Note (optional): Rules reviewed with the network team.
+```
+
+The command refuses a file that does not match the source's patterns, or whose name is already taken by different content (exit 3), and a non-attestable outcome answer (exit 2). A file whose content is already in the drop folder is not copied again.
 
 A collector is a class implementing `ICollector` from `EvidenceHound.Collectors.Abstractions`, registered with `services.AddCollector<T>()`. Two collectors with the same type stop the CLI at startup (`collector.type_duplicate`, exit 3).
