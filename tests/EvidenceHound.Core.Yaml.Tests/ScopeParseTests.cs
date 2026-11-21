@@ -90,4 +90,14 @@ public class ScopeParseTests
 
         problems.Select(p => (p.Code, p.At.File)).ShouldBe([("scope.value_invalid", "scope/setup.yaml"), ("scope.value_invalid", ScopeFixture.AuditPath)], ignoreOrder: true);
     }
+
+    [Fact]
+    public void Control_status_must_be_an_applied_control_status()
+    {
+        var controls = ScopeFixture.Controls.Replace("    status: active\n    priority", "    status: live\n    priority", StringComparison.Ordinal);
+
+        var problem = ScopeFixture.Parse(controls: controls).Problems.ShouldHaveSingleItem();
+
+        (problem.Code, problem.At).ShouldBe(("scope.value_invalid", new SourceLine("scope/controls.yaml", 6)));
+    }
 }

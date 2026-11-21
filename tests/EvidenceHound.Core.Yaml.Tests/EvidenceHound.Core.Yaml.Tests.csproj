@@ -10,5 +10,7 @@
     <None Include="..\..\mappings\*.yaml" Link="files\mappings\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\fixtures\frameworks\example-repeated-library.yaml" Link="files\frameworks\example-repeated-library.yaml" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\schemas\mapping.schema.json" Link="files\schemas\mapping.schema.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\schemas\scope.schema.json" Link="files\schemas\scope.schema.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\examples\compliance-repo\scope\**\*.yaml" Link="files\compliance-repo\scope\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=../../../schemas/scope.schema.json
+# Applied controls, declared once and used by any number of audits. Everything here is made up.
+controls:
+  - ref_id: AC-MFA
+    name: Multi-factor authentication
+    description: Every user signs in to Example 365 with MFA; administrators with phishing-resistant MFA.
+    domain: Example Pty Ltd
+    owner: it@example.com
+    status: active
+    priority: "1"
+    category: technical
+    systems: [Example 365]
+    documents: [identity-policy]
+  - ref_id: AC-BACKUP
+    name: Daily backups with quarterly restore tests
+    domain: Example Pty Ltd
+    owner: it@example.com
+    status: active
+    priority: "1"
+    category: technical
+    eta: "2026-12-31"
+    systems: [Example backup service, Example 365, Example laptops]
+    documents: [backup-procedure]

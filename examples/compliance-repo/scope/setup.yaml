@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=../../../schemas/scope.schema.json
+# The fictional Example Pty Ltd's structure in CISO Assistant. Everything here is made up.
+# Guide: docs/scope.md. Check it with: hound scope validate examples/compliance-repo/scope
+organisation:
+  root_folder: Global
+frameworks:
+  - urn: urn:intuitem:risk:framework:essential-eight-2023
+    library: urn:intuitem:risk:library:essential-eight-2023
+    snapshot: ../../../frameworks/essential-eight-2023.json
+domains:
+  - name: Example Pty Ltd
+    description: The whole company, one office and its cloud services.
+    perimeter:
+      name: Corporate IT
+      ref_id: PER-CORP
+      description: Everything staff use to do their work.
+    systems:
+      - name: Example 365
+        ref_id: SYS-365
+        type: primary
+        description: Mail, files, identity and device management.
+        owner: it@example.com
+        tags:
+          essentials_domain: identity
+      - name: Example laptops
+        ref_id: SYS-LAPTOPS
+        type: supporting
+        description: Staff Windows laptops, managed by Intune.
+        owner: it@example.com
+        parents: [Example 365]
+      - name: Example backup service
+        ref_id: SYS-BACKUP
+        type: supporting
+        description: Daily backups of Example 365 and the laptops.
+        owner: it@example.com
