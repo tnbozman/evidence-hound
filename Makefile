@@ -15,4 +15,4 @@ build: restore ## Build the solution
 	dotnet build --no-restore -c $(CONFIGURATION)
 
 test: build ## Unit and contract tests
-	dotnet test --no-build -c $(CONFIGURATION) --filter "Category!=Functional"
+	dotnet test --no-build -c $(CONFIGURATION) -- --filter-not-trait "Category=Functional"
