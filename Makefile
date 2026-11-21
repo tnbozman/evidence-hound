@@ -8,7 +8,7 @@ ARGS ?=
 CA_COMPOSE := dev/ciso-assistant/compose.yml
 SHELL_SCRIPTS := $(wildcard scripts/*.sh scripts/lib/*.sh .devcontainer/*.sh dev/ciso-assistant/seed/*.sh) .githooks/pre-commit
 
-.PHONY: help restore build test test-functional test-scripts coverage lint lint-dotnet lint-shell format run hooks ca-up ca-down
+.PHONY: help restore build test test-functional test-scripts coverage lint lint-dotnet lint-shell format run hooks ca-up ca-up-kafka ca-down
 
 help: ## List targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-16s %s\n", $$1, $$2}'
@@ -55,5 +55,8 @@ ca-up: ## Start and seed a local CISO Assistant (token in .dev/ca.env)
 	docker compose -f $(CA_COMPOSE) up -d --wait
 	scripts/ca-seed.sh
 
+ca-up-kafka: ca-up ## Also start Redpanda and the CISO Assistant dispatcher (compose profile kafka)
+	set -a && . ./.dev/ca.env && set +a && docker compose -f $(CA_COMPOSE) --profile kafka up -d --build
+
 ca-down: ## Stop the local CISO Assistant (add ARGS=-v to delete its data)
-	docker compose -f $(CA_COMPOSE) down $(ARGS)
+	docker compose -f $(CA_COMPOSE) --profile kafka down $(ARGS)

@@ -16,7 +16,18 @@ public enum PublishOutcome
 }
 
 /// <summary>One update's outcome, a description for people, and the problems if it failed.</summary>
-public sealed record PublishItem(AuditUpdate Update, string Description, PublishOutcome Outcome, IReadOnlyList<Problem> Problems);
+public sealed record PublishItem(AuditUpdate Update, string Description, PublishOutcome Outcome, IReadOnlyList<Problem> Problems)
+{
+    /// <summary>The item for an update whose sending ended in <paramref name="outcome"/>: its outcome, or Failed with the problems.</summary>
+    public static PublishItem For(AuditUpdate update, Result<PublishOutcome> outcome)
+    {
+        ArgumentNullException.ThrowIfNull(outcome);
+        var description = UpdateDescriptions.Describe(update);
+        return outcome.Match(
+            done => new PublishItem(update, description, done, []),
+            problems => new PublishItem(update, description, PublishOutcome.Failed, problems));
+    }
+}
 
 /// <summary>The outcome of publishing a plan, item by item in plan order.</summary>
 public sealed record PublishReport(IReadOnlyList<PublishItem> Items)

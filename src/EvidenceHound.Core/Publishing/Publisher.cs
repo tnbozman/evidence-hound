@@ -16,7 +16,7 @@ public sealed class Publisher(ICisoAssistantClient client, IEvidenceFiles files)
     public static PublishReport DryRun(IReadOnlyList<AuditUpdate> updates)
     {
         ArgumentNullException.ThrowIfNull(updates);
-        return new([.. updates.Select(update => new PublishItem(update, Describe(update), PublishOutcome.Planned, []))]);
+        return new([.. updates.Select(update => PublishItem.For(update, Result.Ok(PublishOutcome.Planned)))]);
     }
 
     public async Task<PublishReport> PublishAsync(IReadOnlyList<AuditUpdate> updates, CancellationToken cancellationToken)
@@ -32,9 +32,7 @@ public sealed class Publisher(ICisoAssistantClient client, IEvidenceFiles files)
                 requirement => WithIds(UpdateRequirementAsync(requirement, evidenceIds, cancellationToken), evidenceIds),
                 control => WithIds(UpdateControlAsync(control, cancellationToken), evidenceIds));
             evidenceIds = resolved;
-            items.Add(outcome.Match(
-                sentOrSkipped => new PublishItem(update, Describe(update), sentOrSkipped, []),
-                problems => new PublishItem(update, Describe(update), PublishOutcome.Failed, problems)));
+            items.Add(PublishItem.For(update, outcome));
         }
 
         return new PublishReport(items);
@@ -84,6 +82,4 @@ public sealed class Publisher(ICisoAssistantClient client, IEvidenceFiles files)
 
     private static async Task<(Result<PublishOutcome> Outcome, ImmutableDictionary<string, string> EvidenceIds)> WithIds(
         Task<Result<PublishOutcome>> outcome, ImmutableDictionary<string, string> evidenceIds) => (await outcome, evidenceIds);
-
-    private static string Describe(AuditUpdate update) => UpdateDescriptions.Describe(update);
 }

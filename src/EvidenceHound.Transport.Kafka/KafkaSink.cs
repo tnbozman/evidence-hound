@@ -24,10 +24,8 @@ public sealed class KafkaSink(KafkaSinkOptions options, IEvidenceFiles files) : 
         foreach (var update in updates)
         {
             var message = await MessageAsync(update, cancellationToken);
-            var outcome = await message.Match(json => ProduceAsync(json, cancellationToken), problems => Task.FromResult(Result.Fail<Unit>(problems)));
-            items.Add(outcome.Match(
-                _ => new PublishItem(update, UpdateDescriptions.Describe(update), PublishOutcome.Sent, []),
-                problems => new PublishItem(update, UpdateDescriptions.Describe(update), PublishOutcome.Failed, problems)));
+            var outcome = await message.Match(json => ProduceAsync(json, cancellationToken), problems => Task.FromResult(Result.Fail<PublishOutcome>(problems)));
+            items.Add(PublishItem.For(update, outcome));
         }
 
         _producer.Flush(cancellationToken);
@@ -43,16 +41,16 @@ public sealed class KafkaSink(KafkaSinkOptions options, IEvidenceFiles files) : 
             requirement => Task.FromResult(Result.Ok(WithoutEvidenceRefs(DispatcherMessages.ToJson(update, NoFile)))),
             control => Task.FromResult(Result.Ok(DispatcherMessages.ToJson(update, NoFile))));
 
-    private async Task<Result<Unit>> ProduceAsync(JsonObject message, CancellationToken cancellationToken)
+    private async Task<Result<PublishOutcome>> ProduceAsync(JsonObject message, CancellationToken cancellationToken)
     {
         try
         {
             await _producer.ProduceAsync(options.Topic, new Message<Null, string> { Value = message.ToJsonString() }, cancellationToken);
-            return Result.Ok(Unit.Value);
+            return Result.Ok(PublishOutcome.Sent);
         }
         catch (ProduceException<Null, string> ex)
         {
-            return Result.Fail<Unit>(new Problem("kafka.produce_failed", $"Kafka refused the message for topic {options.Topic}: {ex.Error.Reason}"));
+            return Result.Fail<PublishOutcome>(new Problem("kafka.produce_failed", $"Kafka refused the message for topic {options.Topic}: {ex.Error.Reason}"));
         }
     }
 
