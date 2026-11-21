@@ -47,7 +47,7 @@ public sealed class ClientStateSource(ICisoAssistantClient client) : ICurrentSta
         {
             var audit = await client.FindAuditAsync(refId, cancellationToken);
             var rows = await audit.BindAsync(_ => client.ListRequirementAssessmentsAsync(refId, cancellationToken));
-            audits.AddRange(audit.Bind(a => rows.Map(all => new CurrentAudit(refId, a.SelectedGroups, all))).Match<CurrentAudit[]>(a => [a], _ => []));
+            audits.AddRange(audit.Bind(a => rows.Map(all => new CurrentAudit(refId, a.SelectedGroups, all) { Closed = a.Closed })).Match<CurrentAudit[]>(a => [a], _ => []));
         }
 
         var evidence = new List<CurrentEvidence>();

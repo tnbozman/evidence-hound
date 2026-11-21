@@ -133,6 +133,14 @@ public static class AuditPlanner
         var fingerprint = RowState.Fingerprint(result.Result, result.CheckOutcomes, result.EvidenceRefs.Select(id => $"{id}={hashes[id]}"));
         var knownIds = result.EvidenceRefs.Where(known.ContainsKey).Distinct().ToDictionary(id => id, id => known[id], StringComparer.Ordinal);
         var update = Update(target, result, RowState.Mark(result.Observation, runId, fingerprint), knownIds);
+        if (audit is { Closed: true })
+        {
+            return new RowsPlan(target.ComplianceAssessmentRefId, null, Changed: 0, Unchanged: 0, Drift:
+            [
+                new Problem("plan.audit_closed", $"Audit {audit.RefId} is in review, done or locked, so requirement {result.RequirementRef} was not written to it."),
+            ]);
+        }
+
         var inScope = audit is null ? null : RowsInScope(audit, result.Key);
         if (inScope is null)
         {

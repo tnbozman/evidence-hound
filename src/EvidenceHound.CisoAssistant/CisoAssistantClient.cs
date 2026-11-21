@@ -41,7 +41,10 @@ internal sealed class CisoAssistantClient(HttpClient http) : ICisoAssistantClien
         var found = await FindOneAsync("compliance-assessments/", "audit", Selector.ByRefId(complianceAssessmentRefId), cancellationToken);
         return await found.BindAsync(async id =>
             (await SendAsync(new HttpRequestMessage(HttpMethod.Get, $"compliance-assessments/{Uri.EscapeDataString(id)}/object/"), $"to read audit {complianceAssessmentRefId}", cancellationToken))
-                .Map(audit => new RemoteAudit(id, Strings(audit["selected_implementation_groups"]))));
+                .Map(audit => new RemoteAudit(id, Strings(audit["selected_implementation_groups"]))
+                {
+                    Closed = (string?)audit["status"] is "in_review" or "done" || audit["is_locked"] is JsonValue locked && locked.TryGetValue<bool>(out var isLocked) && isLocked,
+                }));
     }
 
     // Pages by limit and offset rather than following "next", whose host is whatever the server believes it is.
