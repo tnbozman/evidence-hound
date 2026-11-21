@@ -1,6 +1,6 @@
 # s06 CISO Assistant as configuration, and multi-framework foundations
 
-Status: Planned
+Status: In progress
 
 **Goal:** an organisation's assurance structure in CISO Assistant is declared in version-controlled YAML, then validated, previewed and applied by `hound` instead of by clicking. One collection run feeds several framework audits, CISO Assistant changes only when a check's state changes, and audits run in periods that close with a sign-off. The errors, schemas and plans are precise enough for a person or an AI assistant to get the configuration right through ordinary pull requests.
 
