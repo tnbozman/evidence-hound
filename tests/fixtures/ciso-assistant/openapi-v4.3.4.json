@@ -16,6 +16,26 @@
         "operationId": "actors_retrieve"
       }
     },
+    "/api/actors/{id}/cascade-info/": {
+      "get": {
+        "operationId": "actors_cascade_info_retrieve"
+      }
+    },
+    "/api/actors/{id}/neighborhood/": {
+      "get": {
+        "operationId": "actors_neighborhood_retrieve"
+      }
+    },
+    "/api/actors/{id}/object/": {
+      "get": {
+        "operationId": "actors_object_retrieve"
+      }
+    },
+    "/api/actors/autocomplete/": {
+      "get": {
+        "operationId": "actors_autocomplete_retrieve"
+      }
+    },
     "/api/applied-controls/": {
       "get": {
         "operationId": "applied_controls_list"
