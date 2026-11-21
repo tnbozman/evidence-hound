@@ -9,15 +9,6 @@ root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 compose=(docker compose -f "$root/dev/ciso-assistant/compose.yml")
 env_file="$root/.dev/ca.env"
 
-output="$("${compose[@]}" exec -T backend bash /seed/seed.sh)"
-grep -v '^HOUND_CA_TOKEN=' <<<"$output" || true
-token_line="$(grep '^HOUND_CA_TOKEN=' <<<"$output" | tail -n 1)"
-[[ -n "$token_line" ]] || { echo "ca-seed: the seed script printed no token" >&2; exit 1; }
-
-mkdir -p "$(dirname "$env_file")"
-umask 077
-{
-  echo "HOUND_CA_URL=http://localhost:8000/api/"
-  echo "$token_line"
-} >"$env_file"
+"${compose[@]}" exec -T backend bash /seed/seed.sh \
+  | bash "$root/dev/ciso-assistant/seed/write-env.sh" "http://localhost:8000/api/" "$env_file"
 echo "ca-seed: wrote $env_file. Open https://localhost:8443 and sign in as admin@example.com."
