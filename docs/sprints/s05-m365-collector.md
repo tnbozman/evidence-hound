@@ -9,7 +9,7 @@ Project: `src/Collectors/EvidenceHound.Collectors.M365`. Uses `Azure.Identity` (
 Required Entra app permissions (application, admin consent, all read-only): `Policy.Read.All`, `Reports.Read.All`, `RoleManagement.Read.Directory`, `DeviceManagementConfiguration.Read.All`, `DeviceManagementManagedDevices.Read.All`, `User.Read.All`.
 
 ### s05-01 Graph access and paging
-- [ ] Done
+- [x] Done
 
 **Story:** As the collector, I want authenticated, paged, throttling-aware Graph calls, so that large tenants are collected reliably.
 
@@ -25,6 +25,7 @@ Required Entra app permissions (application, admin consent, all read-only): `Pol
 
 **Functional check**
 - Run against the WireMock recording: three pages read, one evidence file written.
+- Result (2026-11-21): against WireMock, `GraphPagingTests.Follows_next_link_until_exhausted` read three pages (three requests, five users in order) and `GraphEvidenceTests.One_file_holds_every_page_minimised` wrote one `users.json` recording `pages: 3` with every UPN hashed; 25 of 25 tests pass. [Evidence](../evidence/s05/s05-01.md).
 
 ### s05-02 Multi-factor authentication checks
 - [ ] Done
