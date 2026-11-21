@@ -267,7 +267,7 @@ public class ConfigTests
     [Fact]
     public void Scope_and_period_retention_are_read()
     {
-        var yaml = Valid.Replace("retention_days: 30", "retention_days: 30\n  period_retention_years: 10", StringComparison.Ordinal) + "scope: ../compliance-repo/scope\n";
+        var yaml = "scope: ../compliance-repo/scope\n" + Valid.Replace("retention_days: 30", "retention_days: 30\n  period_retention_years: 10", StringComparison.Ordinal);
 
         var config = ConfigLoader.Parse(yaml, Source, Known).Value();
 

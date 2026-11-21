@@ -71,6 +71,11 @@
           "description": "Delete runs older than this; the latest successful run is always kept.",
           "type": "integer",
           "minimum": 1
+        },
+        "period_retention_years": {
+          "description": "Years each closed audit period's final run is kept, however old. Default 7.",
+          "type": "integer",
+          "minimum": 1
         }
       }
     },
@@ -91,6 +96,11 @@
       "items": {
         "$ref": "#/$defs/target"
       }
+    },
+    "scope": {
+      "description": "The compliance repo's scope folder (relative to this file). With it, a target that names an audit with a cycle publishes to the period open on the run's date, and each closed period's final run is kept.",
+      "type": "string",
+      "minLength": 1
     }
   },
   "$defs": {
