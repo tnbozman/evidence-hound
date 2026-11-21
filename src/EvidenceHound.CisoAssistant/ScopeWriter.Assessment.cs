@@ -87,7 +87,20 @@ internal sealed partial class ScopeWriter
                     ["authors"] = resolved[3].DeepClone(),
                     ["reviewers"] = resolved[4].DeepClone(),
                 };
-                Drop(body, "eta", "due_date");
+                // A period audit: its status and lock go in the same write, because a locked audit refuses any later one.
+                body["status"] = Field(declared, "status");
+                if (Field(declared, "locked") == "true")
+                {
+                    body["is_locked"] = true;
+                }
+
+                // A new period opens from the previous one, so its results and evidence links carry over.
+                if (write.Change.Action == ScopeAction.Create && declared.Initial.GetValueOrDefault("baseline") is { } baseline)
+                {
+                    body["baseline"] = IdByField(audits, "ref_id").GetValueOrDefault(baseline);
+                }
+
+                Drop(body, "eta", "due_date", "status", "baseline");
                 return write.Change.Action == ScopeAction.Create
                     ? await SendAsync(HttpMethod.Post, "compliance-assessments/", body, $"to create audit {declared.Key}", cancellationToken)
                     : await UpdateAsync("compliance-assessments", existing, body, write, cancellationToken);

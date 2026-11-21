@@ -68,7 +68,8 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource
             .. audits.Select(a => Marked(ScopeKind.Audit, Text(a["ref_id"]), a,
                 ("name", Text(a["name"])), ("framework", Lookup(a["framework"], frameworks)), ("groups", ScopeDesired.Joined(Strings(a["selected_implementation_groups"]))),
                 ("domain", names.Domain(a)), ("perimeter", Lookup(a["perimeter"], names.Perimeters)), ("eta", Text(a["eta"])), ("due_date", Text(a["due_date"])),
-                ("authors", Joined(a["authors"], names.Users)), ("reviewers", Joined(a["reviewers"], names.Users))) with { Locked = a["is_locked"] is JsonValue locked && locked.TryGetValue<bool>(out var isLocked) && isLocked }),
+                ("authors", Joined(a["authors"], names.Users)), ("reviewers", Joined(a["reviewers"], names.Users)), ("status", Text(a["status"])),
+                ("locked", IsLocked(a) ? "true" : null)) with { Locked = IsLocked(a) }),
             .. evidences.Select(e => Marked(ScopeKind.Document, Text(e["ref_id"]), e, ("name", Text(e["name"])), ("domain", names.Domain(e)), ("hashes", hashes.GetValueOrDefault(Id(e))))),
             .. controls.Select(c => Marked(ScopeKind.Control, Text(c["ref_id"]), c,
                 ("name", Text(c["name"])), ("domain", names.Domain(c)), ("owner", Joined(c["owner"], names.Users)), ("priority", Text(c["priority"])),
@@ -153,6 +154,8 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource
 
     /// <summary>A related object's ID: a plain ID, or the <c>{"id", "str"}</c> object the read serializers give.</summary>
     private static string? RelationId(JsonNode? relation) => relation is JsonObject o ? Text(o["id"]) : Text(relation);
+
+    private static bool IsLocked(JsonNode audit) => audit["is_locked"] is JsonValue locked && locked.TryGetValue<bool>(out var isLocked) && isLocked;
 
     private static string? Text(JsonNode? node) => node switch
     {
