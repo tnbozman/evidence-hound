@@ -44,6 +44,7 @@ public static class ScopeLoader
     private static readonly string[] SignOffKeys = ["role", "name"];
     private static readonly string[] UnlistedKeys = ["result", "reason"];
     private static readonly string[] SystemTypes = ["primary", "supporting"];
+    private static readonly string[] ControlStatuses = ["to_do", "in_progress", "on_hold", "active", "degraded", "deprecated", "--"];
 
     public static ScopeParse Parse(ScopeSource setup, ScopeSource? controls, IReadOnlyList<ScopeSource> audits)
     {
@@ -146,7 +147,7 @@ public static class ScopeLoader
                 file.Text(item, "description"),
                 file.Ref(item, "domain"),
                 file.Text(item, "owner"),
-                file.Text(item, "status"),
+                file.OneOf(item, "status", ControlStatuses, required: false),
                 file.Text(item, "priority"),
                 file.Text(item, "category"),
                 file.Text(item, "eta"),
