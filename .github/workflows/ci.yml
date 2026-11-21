@@ -11,74 +11,79 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 env:
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
+  CONFIGURATION: Release
 
+# Every action is pinned to a full commit SHA (comment shows the tag). Dependabot keeps them current.
 jobs:
-  # Pin every action to a full commit SHA in s00-03; Dependabot keeps them current.
-
   build-test:
-    # Steps are skipped until s00-01 adds global.json and the solution.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
-        if: ${{ hashFiles('global.json') != '' }}
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
           global-json-file: global.json
       - name: Restore
-        if: ${{ hashFiles('global.json') != '' }}
         run: dotnet restore --locked-mode
       - name: Format check
-        if: ${{ hashFiles('global.json') != '' }}
         run: dotnet format --verify-no-changes --no-restore
       - name: Build
-        if: ${{ hashFiles('global.json') != '' }}
-        run: dotnet build --no-restore -c Release -p:ContinuousIntegrationBuild=true
+        run: dotnet build --no-restore -c "$CONFIGURATION" -p:ContinuousIntegrationBuild=true
       - name: Unit and contract tests
-        if: ${{ hashFiles('global.json') != '' }}
         run: >
-          dotnet test --no-build -c Release
+          dotnet test --no-build -c "$CONFIGURATION"
           --results-directory test-results
           --filter-not-trait "Category=Functional"
           --report-trx --coverage --coverage-output-format cobertura
       - name: Upload test results
-        if: ${{ always() && hashFiles('global.json') != '' }}
-        uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: test-results
           path: test-results
+          if-no-files-found: ignore
 
   functional:
     if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     needs: build-test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
-        if: ${{ hashFiles('global.json') != '' }}
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
           global-json-file: global.json
       - name: Functional tests (Testcontainers starts CISO Assistant)
-        if: ${{ hashFiles('global.json') != '' }}
-        run: dotnet test -c Release --results-directory test-results --filter-trait "Category=Functional" --report-trx --ignore-exit-code 8
+        # Exit code 8 means "no tests ran"; allowed until the first functional test lands (see s00 Discovered work).
+        run: >
+          dotnet test -c "$CONFIGURATION"
+          --results-directory test-results
+          --filter-trait "Category=Functional"
+          --report-trx --ignore-exit-code 8
       - name: Upload functional results
-        if: ${{ always() && hashFiles('global.json') != '' }}
-        uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: functional-results
           path: test-results
+          if-no-files-found: ignore
 
   scripts:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: ShellCheck
-        run: shellcheck -x scripts/*.sh scripts/lib/*.sh
+        run: shellcheck -x scripts/*.sh scripts/lib/*.sh .devcontainer/*.sh
       - name: Script tests
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq bats
@@ -87,9 +92,10 @@ jobs:
   org-data:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Check for organisation-specific terms
         # Secrets are not available to PRs from forks; those are checked again on merge to main.
         if: github.event.pull_request.head.repo.fork != true
@@ -101,10 +107,11 @@ jobs:
   secrets:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
+          persist-credentials: false
+      - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
@@ -115,8 +122,10 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/dependency-review-action@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/dependency-review-action@bbc44d14a204704ccc493733616cd1e93a0321ec # v5.0.1
         with:
           fail-on-severity: high
           comment-summary-in-pr: on-failure
