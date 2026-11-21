@@ -12,7 +12,7 @@ public sealed record LoadedMapping(FrameworkMapping Mapping, IReadOnlyList<strin
     public IReadOnlyList<int> Lines { get; init; } = [];
 
     /// <summary>Requirements no check covers yet, each with a suggested manual source.</summary>
-    public IReadOnlyList<ManualOnlyRequirement> ManualOnly => throw new NotImplementedException();
+    public IReadOnlyList<ManualOnlyRequirement> ManualOnly { get; init; } = [];
 }
 
 /// <summary>A requirement no check covers yet, and the manual source suggested for it (<c>manual_only</c> in a mapping file).</summary>

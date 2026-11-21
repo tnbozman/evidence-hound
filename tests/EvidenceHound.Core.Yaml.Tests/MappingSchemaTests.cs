@@ -19,6 +19,24 @@ public class MappingSchemaTests
         result.IsValid.ShouldBeTrue(string.Join("; ", (result.Details ?? []).Where(d => d.Errors is not null).SelectMany(d => d.Errors!.Values)));
     }
 
+    [Fact]
+    public void Essential_eight_mapping_validates_against_schema()
+    {
+        var yaml = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "files", "mappings", "essential-eight-2023.yaml"));
+
+        var result = Schema.Evaluate(ToJson(yaml), new EvaluationOptions { OutputFormat = OutputFormat.List });
+
+        result.IsValid.ShouldBeTrue(string.Join("; ", (result.Details ?? []).Where(d => d.Errors is not null).SelectMany(d => d.Errors!.Values)));
+    }
+
+    [Theory]
+    [InlineData("framework_urn: urn:example:x\nrequirements: []\nmanual_only:\n  - {ref: '1'}\n")]
+    [InlineData("framework_urn: urn:example:x\nrequirements: []\nmanual_only:\n  - {ref: '1', source: Record, owner: Alex}\n")]
+    public void Invalid_manual_only_entries_fail_the_schema(string yaml)
+    {
+        Schema.Evaluate(ToJson(yaml)).IsValid.ShouldBeFalse();
+    }
+
     [Theory]
     [InlineData("framework_urn: urn:example:x\nrequirements:\n  - {urn: 'urn:example:x:1', rule: all_pass, checks: [a.b]}\n")]
     [InlineData("framework_urn: urn:example:x\nrequirements:\n  - {ref: '1', rows: all, rule: all_pass, checks: [a.b]}\n")]

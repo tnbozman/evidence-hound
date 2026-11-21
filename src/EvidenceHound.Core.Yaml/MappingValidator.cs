@@ -21,10 +21,13 @@ public static class MappingValidator
                 $"{loaded.Source}: the mapping is for {mapping.FrameworkUrn} but the snapshot is of {snapshot.FrameworkUrn}.")];
         }
 
-        return [.. mapping.Requirements
-            .Select((requirement, index) => Check(requirement.Key, snapshot))
-            .Select((problem, index) => problem is null ? null : At(loaded, index, problem))
-            .OfType<Problem>()];
+        var lines = loaded.Lines.Count == mapping.Requirements.Count ? loaded.Lines : [.. mapping.Requirements.Select(_ => 0)];
+        var named = mapping.Requirements.Select((requirement, index) => (requirement.Key, Line: lines[index]))
+            .Concat(loaded.ManualOnly.Select(manual => (manual.Key, manual.Line)));
+        return [.. named
+            .Select(entry => (entry.Line, Problem: Check(entry.Key, snapshot)))
+            .Where(entry => entry.Problem is not null)
+            .Select(entry => At(loaded.Source, entry.Line, entry.Problem!))];
     }
 
     private static Problem? Check(RequirementKey key, FrameworkSnapshot snapshot)
@@ -42,8 +45,8 @@ public static class MappingValidator
         };
     }
 
-    private static Problem At(LoadedMapping loaded, int index, Problem problem) =>
-        new(problem.Code, index < loaded.Lines.Count
-            ? $"{loaded.Source} line {loaded.Lines[index].ToString(CultureInfo.InvariantCulture)}: {problem.Message}"
-            : $"{loaded.Source}: {problem.Message}");
+    private static Problem At(string source, int line, Problem problem) =>
+        new(problem.Code, line > 0
+            ? $"{source} line {line.ToString(CultureInfo.InvariantCulture)}: {problem.Message}"
+            : $"{source}: {problem.Message}");
 }

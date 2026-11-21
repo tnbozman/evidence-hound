@@ -23,6 +23,13 @@
       "items": {
         "$ref": "#/$defs/requirement"
       }
+    },
+    "manual_only": {
+      "description": "Requirements no check covers yet, each with a suggested manual source. Not published; a coverage record.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/manualOnly"
+      }
     }
   },
   "$defs": {
@@ -97,6 +104,69 @@
             }
           }
         },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "ref"
+              ],
+              "not": {
+                "required": [
+                  "urn"
+                ]
+              }
+            },
+            {
+              "required": [
+                "urn"
+              ],
+              "not": {
+                "anyOf": [
+                  {
+                    "required": [
+                      "ref"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "rows"
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "manualOnly": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source"
+      ],
+      "properties": {
+        "ref": {
+          "description": "The requirement's ref_id in the framework library. A ref the framework repeats needs 'rows: all', or name the row by 'urn'.",
+          "type": "string",
+          "minLength": 1
+        },
+        "urn": {
+          "description": "The URN of one requirement node, which names exactly one row.",
+          "type": "string",
+          "pattern": "^urn:"
+        },
+        "rows": {
+          "description": "With 'ref' only: 'all' writes the same result to every row that has the ref.",
+          "const": "all"
+        },
+        "source": {
+          "description": "The manual source suggested for this requirement, such as an export and who attests it.",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "allOf": [
         {
           "oneOf": [
             {

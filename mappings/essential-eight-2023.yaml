@@ -1,2 +1,248 @@
+# yaml-language-server: $schema=../schemas/mapping.schema.json
+# Essential Eight Maturity Model (November 2023), maturity levels 1 and 2, for the checks Evidence Hound has today.
+# The audit selects implementation groups 1 and 2; ML3-only rows are skipped when publishing, not reported as errors.
+#
+# - ISM controls the framework lists under several mitigation strategies use `rows: all`: the control has the same text
+#   under each strategy, so one result is written to every strategy's row.
+# - Results from collector checks are only as wide as what the collector sees: the Microsoft 365 checks cover Microsoft 365
+#   and Intune-managed Windows devices, not other systems in scope. Each requirement's comment says what stands behind it.
+# - `manual_only` lists every other ML1 and ML2 requirement with a suggested manual source. It shrinks as collectors land
+#   (s07) and is completed in s11. See docs/mapping-files.md.
 framework_urn: urn:intuitem:risk:framework:essential-eight-2023
-requirements: []
+description: Essential Eight (November 2023) ML1 and ML2, from the Microsoft 365 collector and manual sources.
+requirements:
+  # Multi-factor authentication. MFA required for every user of Microsoft 365, every member registered for MFA, and legacy authentication (which bypasses MFA) blocked.
+  - ref: ISM-1504
+    rule: all_pass
+    checks:
+      - identity.mfa.enforced_conditional_access
+      - identity.mfa.registered_all_users
+      - identity.legacy_auth_blocked
+  # Multi-factor authentication. Privileged users of Microsoft 365 must use MFA; the admin check also requires phishing-resistant MFA for every privileged role.
+  - ref: ISM-1173
+    rule: all_pass
+    checks:
+      - identity.mfa.enforced_conditional_access
+      - identity.mfa.phishing_resistant_admins
+  # Restrict administrative privileges. Cloud-only privileged accounts are separate from users' synchronised everyday accounts. Covers Microsoft 365 roles only.
+  - ref: ISM-0445
+    rule: all_pass
+    checks:
+      - identity.privileged.admins_cloud_only
+  # Restrict administrative privileges. Privileged roles in Microsoft 365 held by few accounts, and only activated when needed.
+  - ref: ISM-1883
+    rule: all_pass
+    checks:
+      - identity.privileged.global_admin_count
+      - identity.privileged.pim_eligible_not_permanent
+  # Patch operating systems. Every Intune-managed Windows device runs a supported build. Devices outside Intune are not seen.
+  - ref: ISM-1501
+    rule: all_pass
+    checks:
+      - endpoint.os.supported_versions
+  # Patch operating systems. Stands for ISM-1695 only if the Intune compliance policy requires a minimum OS version that tracks monthly updates.
+  - ref: ISM-1695
+    rule: all_pass
+    checks:
+      - endpoint.managed.compliant_ratio
+  # Restrict Microsoft Office macros.
+  - ref: ISM-1488
+    rule: all_pass
+    checks:
+      - apps.office.macros_blocked_from_internet
+  # Restrict Microsoft Office macros. The ASR rule blocking Win32 API calls from Office macros.
+  - ref: ISM-1673
+    rule: all_pass
+    checks:
+      - endpoint.asr.office_rules_enabled
+  # User application hardening. The ASR rule blocking Office from creating child processes.
+  - ref: ISM-1667
+    rule: all_pass
+    checks:
+      - endpoint.asr.office_rules_enabled
+  # User application hardening. The ASR rule blocking Office from creating executable content.
+  - ref: ISM-1668
+    rule: all_pass
+    checks:
+      - endpoint.asr.office_rules_enabled
+  # User application hardening. The ASR rule blocking Office from injecting code into other processes.
+  - ref: ISM-1669
+    rule: all_pass
+    checks:
+      - endpoint.asr.office_rules_enabled
+  # Multi-factor authentication, Restrict administrative privileges, Application control, User application hardening. Manual source: the incident register.
+  - ref: ISM-0123
+    rows: all
+    rule: all_pass
+    checks:
+      - incident.reported_to_ciso
+  # Multi-factor authentication, Restrict administrative privileges, Application control, User application hardening. Manual source: the incident register.
+  - ref: ISM-0140
+    rows: all
+    rule: all_pass
+    checks:
+      - incident.reported_to_asd
+  # Multi-factor authentication, Restrict administrative privileges, Application control, User application hardening. Manual source: the incident register.
+  - ref: ISM-1819
+    rows: all
+    rule: all_pass
+    checks:
+      - incident.response_plan_followed
+  # Regular backups. Manual source: the restore test record.
+  - ref: ISM-1515
+    rule: all_pass
+    checks:
+      - backup.restore_tested
+  # Application control. Manual source: the application control ruleset review.
+  - ref: ISM-1582
+    rule: all_pass
+    checks:
+      - appcontrol.rulesets_validated
+manual_only:
+  - ref: ISM-1807  # Patch applications, Patch operating systems
+    rows: all
+    source: Asset discovery tool configuration and run history.
+  - ref: ISM-1808  # Patch applications, Patch operating systems
+    rows: all
+    source: Vulnerability scanner configuration showing database update frequency.
+  - ref: ISM-1698  # Patch applications
+    source: Vulnerability scanner reports and application patch records, exported monthly and attested by the application owner.
+  - ref: ISM-1699  # Patch applications
+    source: Vulnerability scanner reports and application patch records, exported monthly and attested by the application owner.
+  - ref: ISM-1700  # Patch applications
+    source: Vulnerability scanner reports and application patch records, exported monthly and attested by the application owner.
+  - ref: ISM-1876  # Patch applications
+    source: Vulnerability scanner reports and application patch records, exported monthly and attested by the application owner.
+  - ref: ISM-1690  # Patch applications
+    source: Vulnerability scanner reports and application patch records, exported monthly and attested by the application owner.
+  - ref: ISM-1691  # Patch applications
+    source: Vulnerability scanner reports and application patch records, exported monthly and attested by the application owner.
+  - ref: ISM-1693  # Patch applications
+    source: Vulnerability scanner reports and application patch records, exported monthly and attested by the application owner.
+  - ref: ISM-1905  # Patch applications
+    source: Vulnerability scanner reports and application patch records, exported monthly and attested by the application owner.
+  - ref: ISM-1704  # Patch applications
+    source: Vulnerability scanner reports and application patch records, exported monthly and attested by the application owner.
+  - ref: ISM-1701  # Patch operating systems
+    source: Vulnerability scanner reports and operating system patch records, exported monthly and attested by the infrastructure owner.
+  - ref: ISM-1702  # Patch operating systems
+    source: Vulnerability scanner reports and operating system patch records, exported monthly and attested by the infrastructure owner.
+  - ref: ISM-1877  # Patch operating systems
+    source: Vulnerability scanner reports and operating system patch records, exported monthly and attested by the infrastructure owner.
+  - ref: ISM-1694  # Patch operating systems
+    source: Vulnerability scanner reports and operating system patch records, exported monthly and attested by the infrastructure owner.
+  - ref: ISM-1679  # Multi-factor authentication
+    source: Identity provider MFA configuration export and policy review, attested by the identity owner.
+  - ref: ISM-1680  # Multi-factor authentication
+    source: Identity provider MFA configuration export and policy review, attested by the identity owner.
+  - ref: ISM-1892  # Multi-factor authentication
+    source: Identity provider MFA configuration export and policy review, attested by the identity owner.
+  - ref: ISM-1893  # Multi-factor authentication
+    source: Identity provider MFA configuration export and policy review, attested by the identity owner.
+  - ref: ISM-1681  # Multi-factor authentication
+    source: Identity provider MFA configuration export and policy review, attested by the identity owner.
+  - ref: ISM-0974  # Multi-factor authentication
+    source: Identity provider MFA configuration export and policy review, attested by the identity owner.
+  - ref: ISM-1401  # Multi-factor authentication
+    source: Identity provider MFA configuration export and policy review, attested by the identity owner.
+  - ref: ISM-1872  # Multi-factor authentication
+    source: Identity provider MFA configuration export and policy review, attested by the identity owner.
+  - ref: ISM-1873  # Multi-factor authentication
+    source: Identity provider MFA configuration export and policy review, attested by the identity owner.
+  - ref: ISM-1682  # Multi-factor authentication
+    source: Identity provider MFA configuration export and policy review, attested by the identity owner.
+  - ref: ISM-1683  # Multi-factor authentication
+    source: Identity provider MFA configuration export and policy review, attested by the identity owner.
+  - ref: ISM-1815  # Multi-factor authentication, Restrict administrative privileges, Application control, User application hardening
+    rows: all
+    source: Central logging (SIEM) configuration showing log protection, attested by the security owner.
+  - ref: ISM-1906  # Multi-factor authentication, Restrict administrative privileges, Application control, User application hardening
+    rows: all
+    source: Event log review records for internet-facing servers.
+  - ref: ISM-1228  # Multi-factor authentication, Restrict administrative privileges, Application control, User application hardening
+    rows: all
+    source: Security event triage records from the central logging service.
+  - ref: ISM-1507  # Restrict administrative privileges
+    source: Privileged access register, access request approvals and review records, attested by the system owner.
+  - ref: ISM-1647  # Restrict administrative privileges
+    source: Privileged access register, access request approvals and review records, attested by the system owner.
+  - ref: ISM-1648  # Restrict administrative privileges
+    source: Privileged access register, access request approvals and review records, attested by the system owner.
+  - ref: ISM-1175  # Restrict administrative privileges
+    source: Privileged access register, access request approvals and review records, attested by the system owner.
+  - ref: ISM-1380  # Restrict administrative privileges
+    source: Privileged access register, access request approvals and review records, attested by the system owner.
+  - ref: ISM-1687  # Restrict administrative privileges
+    source: Privileged access register, access request approvals and review records, attested by the system owner.
+  - ref: ISM-1688  # Restrict administrative privileges
+    source: Privileged access register, access request approvals and review records, attested by the system owner.
+  - ref: ISM-1689  # Restrict administrative privileges
+    source: Privileged access register, access request approvals and review records, attested by the system owner.
+  - ref: ISM-1387  # Restrict administrative privileges
+    source: Privileged access register, access request approvals and review records, attested by the system owner.
+  - ref: ISM-1685  # Restrict administrative privileges
+    source: Privileged access register, access request approvals and review records, attested by the system owner.
+  - ref: ISM-1509  # Restrict administrative privileges
+    source: Privileged access register, access request approvals and review records, attested by the system owner.
+  - ref: ISM-1650  # Restrict administrative privileges
+    source: Privileged access register, access request approvals and review records, attested by the system owner.
+  - ref: ISM-0843  # Application control
+    source: Application control policy export and ruleset review record, attested by the endpoint owner.
+  - ref: ISM-1490  # Application control
+    source: Application control policy export and ruleset review record, attested by the endpoint owner.
+  - ref: ISM-1870  # Application control
+    source: Application control policy export and ruleset review record, attested by the endpoint owner.
+  - ref: ISM-1871  # Application control
+    source: Application control policy export and ruleset review record, attested by the endpoint owner.
+  - ref: ISM-1657  # Application control
+    source: Application control policy export and ruleset review record, attested by the endpoint owner.
+  - ref: ISM-1544  # Application control
+    source: Application control policy export and ruleset review record, attested by the endpoint owner.
+  - ref: ISM-1660  # Application control
+    source: Application control policy export and ruleset review record, attested by the endpoint owner.
+  - ref: ISM-1671  # Restrict Microsoft Office macros
+    source: Microsoft Office macro settings export (Group Policy or Intune), attested by the endpoint owner.
+  - ref: ISM-1672  # Restrict Microsoft Office macros
+    source: Microsoft Office macro settings export (Group Policy or Intune), attested by the endpoint owner.
+  - ref: ISM-1489  # Restrict Microsoft Office macros
+    source: Microsoft Office macro settings export (Group Policy or Intune), attested by the endpoint owner.
+  - ref: ISM-1654  # User application hardening
+    source: Browser, Office and PDF reader hardening settings export, attested by the endpoint owner.
+  - ref: ISM-1486  # User application hardening
+    source: Browser, Office and PDF reader hardening settings export, attested by the endpoint owner.
+  - ref: ISM-1485  # User application hardening
+    source: Browser, Office and PDF reader hardening settings export, attested by the endpoint owner.
+  - ref: ISM-1412  # User application hardening
+    source: Browser, Office and PDF reader hardening settings export, attested by the endpoint owner.
+  - ref: ISM-1585  # User application hardening
+    source: Browser, Office and PDF reader hardening settings export, attested by the endpoint owner.
+  - ref: ISM-1542  # User application hardening
+    source: Browser, Office and PDF reader hardening settings export, attested by the endpoint owner.
+  - ref: ISM-1859  # User application hardening
+    source: Browser, Office and PDF reader hardening settings export, attested by the endpoint owner.
+  - ref: ISM-1823  # User application hardening
+    source: Browser, Office and PDF reader hardening settings export, attested by the endpoint owner.
+  - ref: ISM-1670  # User application hardening
+    source: Browser, Office and PDF reader hardening settings export, attested by the endpoint owner.
+  - ref: ISM-1860  # User application hardening
+    source: Browser, Office and PDF reader hardening settings export, attested by the endpoint owner.
+  - ref: ISM-1824  # User application hardening
+    source: Browser, Office and PDF reader hardening settings export, attested by the endpoint owner.
+  - ref: ISM-1623  # User application hardening
+    source: Browser, Office and PDF reader hardening settings export, attested by the endpoint owner.
+  - ref: ISM-1889  # User application hardening
+    source: Browser, Office and PDF reader hardening settings export, attested by the endpoint owner.
+  - ref: ISM-1511  # Regular backups
+    source: Backup job reports, retention and immutability settings, and backup access review, attested by the backup owner.
+  - ref: ISM-1810  # Regular backups
+    source: Backup job reports, retention and immutability settings, and backup access review, attested by the backup owner.
+  - ref: ISM-1811  # Regular backups
+    source: Backup job reports, retention and immutability settings, and backup access review, attested by the backup owner.
+  - ref: ISM-1812  # Regular backups
+    source: Backup job reports, retention and immutability settings, and backup access review, attested by the backup owner.
+  - ref: ISM-1705  # Regular backups
+    source: Backup job reports, retention and immutability settings, and backup access review, attested by the backup owner.
+  - ref: ISM-1814  # Regular backups
+    source: Backup job reports, retention and immutability settings, and backup access review, attested by the backup owner.
+  - ref: ISM-1707  # Regular backups
+    source: Backup job reports, retention and immutability settings, and backup access review, attested by the backup owner.

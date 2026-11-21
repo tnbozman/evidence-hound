@@ -1,9 +1,54 @@
+# Example deployment config for the fictional Example Pty Ltd's Essential Eight (November 2023) ML2 audit.
+# Everything here is made up. Keep your organisation's real config in a private repo.
+# Schema: schemas/config.schema.json. Guides: docs/configuration.md, docs/collectors/m365.md
+# The audit EX-E8-2026 selects maturity levels 1 and 2 in CISO Assistant; ML3-only rows are skipped when publishing.
+
 ciso_assistant:
-  url: http://localhost:8000/api/
+  url: http://localhost:8000/api/        # HOUND_CA_URL overrides this
   token: env:HOUND_CA_TOKEN
+
 evidence:
   root: ../.dev/evidence
-collectors: []
+  retention_days: 90
+
+collectors:
+  - name: example-m365
+    type: m365
+    schedule: "0 3 * * *"
+    settings:
+      tenant_id: 00000000-0000-4000-8000-000000000001     # fictional
+      client_id: 00000000-0000-4000-8000-000000000002     # fictional
+      supported_windows_builds: "10.0.22631, 10.0.26100"
+    secrets:
+      client_certificate: file:/run/secrets/m365_client_certificate
+
+  - name: example-incident-register
+    type: manual
+    schedule: "0 6 * * *"
+    settings:
+      drop_folder: ../.dev/manual/example-incident-register
+      checks: incident.reported_to_ciso, incident.reported_to_asd, incident.response_plan_followed
+      due_days: 31
+      owner: Alex Example
+
+  - name: example-backup-restore-test
+    type: manual
+    schedule: "0 6 * * *"
+    settings:
+      drop_folder: ../.dev/manual/example-backup-restore-test
+      checks: backup.restore_tested
+      due_days: 92
+      owner: Sam Example
+
+  - name: example-application-control-review
+    type: manual
+    schedule: "0 6 * * *"
+    settings:
+      drop_folder: ../.dev/manual/example-application-control-review
+      checks: appcontrol.rulesets_validated
+      due_days: 366
+      owner: Sam Example
+
 target:
   mapping: ../mappings/essential-eight-2023.yaml
   compliance_assessment: EX-E8-2026

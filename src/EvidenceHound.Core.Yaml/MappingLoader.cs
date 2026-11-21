@@ -10,7 +10,8 @@ namespace EvidenceHound.Core.Yaml;
 /// <summary>Parses a framework mapping file (see <c>schemas/mapping.schema.json</c>). Every problem names the file and line.</summary>
 public static class MappingLoader
 {
-    private static readonly string[] TopLevelKeys = ["framework_urn", "description", "requirements"];
+    private static readonly string[] TopLevelKeys = ["framework_urn", "description", "requirements", "manual_only"];
+    private static readonly string[] ManualOnlyKeys = ["ref", "urn", "rows", "source"];
     private static readonly string[] RequirementKeys = ["ref", "urn", "rows", "rule", "threshold", "checks"];
 
     public static Result<LoadedMapping> Parse(string yaml, string source, IReadOnlySet<CheckId>? knownChecks = null)
@@ -25,6 +26,7 @@ public static class MappingLoader
             {
                 Source = source,
                 Lines = parsed.Lines,
+                ManualOnly = parsed.ManualOnly,
             });
     }
 
@@ -58,12 +60,35 @@ public static class MappingLoader
             var other => Result.Fail<IReadOnlyList<ParsedRequirement>>(at.Problem(other.Start, "mapping.requirements_not_a_list", "'requirements' must be a list.")),
         };
 
-        Problem[] problems = [.. UnknownKeys(root, TopLevelKeys, at), .. ProblemsOf(urn), .. ProblemsOf(requirements)];
+        var manualOnly = Child(root, "manual_only") switch
+        {
+            null => Result.Ok<IReadOnlyList<ManualOnlyRequirement>>([]),
+            YamlSequenceNode list => Result.Combine(list.Children.Select(item => ParseManualOnly(item, at))),
+            var other => Result.Fail<IReadOnlyList<ManualOnlyRequirement>>(at.Problem(other.Start, "mapping.manual_only_not_a_list", "'manual_only' must be a list.")),
+        };
+
+        Problem[] problems = [.. UnknownKeys(root, TopLevelKeys, at), .. ProblemsOf(urn), .. ProblemsOf(requirements), .. ProblemsOf(manualOnly)];
         return problems.Length > 0
             ? Result.Fail<ParsedMapping>(problems)
-            : urn.Bind(urnNode => requirements.Bind(parsed =>
+            : urn.Bind(urnNode => requirements.Bind(parsed => manualOnly.Bind(manual =>
                 Located(FrameworkMapping.Create(urnNode.Value!, parsed.Select(r => r.Mapping)), urnNode.Start, at)
-                    .Map(mapping => new ParsedMapping(mapping, [.. parsed.SelectMany(r => r.CheckNodes)], [.. parsed.Select(r => r.Line)]))));
+                    .Map(mapping => new ParsedMapping(mapping, [.. parsed.SelectMany(r => r.CheckNodes)], [.. parsed.Select(r => r.Line)], manual)))));
+    }
+
+    /// <summary>A <c>manual_only</c> entry: a requirement named as in <c>requirements</c>, and the manual source suggested for it.</summary>
+    private static Result<ManualOnlyRequirement> ParseManualOnly(YamlNode item, Locator at)
+    {
+        if (item is not YamlMappingNode map)
+        {
+            return Result.Fail<ManualOnlyRequirement>(at.Problem(item.Start, "mapping.manual_only_not_a_map", "each manual_only entry must be a map with ref or urn, and source."));
+        }
+
+        var key = ParseKey(map, at);
+        var source = RequiredScalar(map, "source", at);
+        Problem[] problems = [.. ProblemsOf(key), .. ProblemsOf(source), .. UnknownKeys(map, ManualOnlyKeys, at)];
+        return problems.Length > 0
+            ? Result.Fail<ManualOnlyRequirement>(problems)
+            : key.Bind(k => source.Map(s => new ManualOnlyRequirement(k, s.Value!, (int)map.Start.Line)));
     }
 
     private static Result<IReadOnlyList<ParsedRequirement>> ParseRequirements(YamlSequenceNode list, Locator at)
@@ -187,7 +212,7 @@ public static class MappingLoader
 
     private sealed record ParsedRequirement(RequirementMapping Mapping, IReadOnlyList<ParsedCheck> CheckNodes, int Line);
 
-    private sealed record ParsedMapping(FrameworkMapping Mapping, IReadOnlyList<ParsedCheck> CheckNodes, IReadOnlyList<int> Lines);
+    private sealed record ParsedMapping(FrameworkMapping Mapping, IReadOnlyList<ParsedCheck> CheckNodes, IReadOnlyList<int> Lines, IReadOnlyList<ManualOnlyRequirement> ManualOnly);
 
     private sealed record Locator(string Source)
     {
