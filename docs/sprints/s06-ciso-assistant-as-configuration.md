@@ -335,6 +335,8 @@ The layout follows one that has already been tried against CISO Assistant: one s
 - CISO Assistant v4.3.4 audits have no start or end dates, so a period's dates show only in its `ref_id`, name and ETA (the period's last day). (Found in s06-10.)
 - Only the change-only REST run checks that a target audit is closed (`plan.audit_closed`). `hound publish` and runs over Kafka send to whatever the target names; with a series target that is always the open period, but an explicit period `ref_id` of a closed period would be refused only by CISO Assistant's lock, and an in-review one would be written. (Found in s06-10.)
 - The scope plan labels an audit "awaiting sign-off" for every ended period still in review, however old; it does not yet warn when a sign-off is overdue. (Found in s06-10.)
+- `hound publish` writes results without the run marker that `hound run` adds (s06-04), so `scope export` cannot tell rows it wrote from hand-written ones and exports them as `assessments`. Give `publish` the marker too. (Found in s06-11.)
+- `scope export` does not export a control's status or reference control, a system's tags, an audit's field visibility or cycle, or libraries no audit uses; an exported period audit is a plain audit. (Found in s06-11.)
 - The organisation's own record (CISO Assistant's main entity, used by third-party risk features) is not managed by the scope yet; the scope uses the root folder. Add it once the REST API is confirmed to update it. (Found planning s06.)
 
 ## Sprint review
