@@ -5,6 +5,7 @@ using EvidenceHound.CisoAssistant;
 using EvidenceHound.Core.Planning;
 using EvidenceHound.Core.Publishing;
 using EvidenceHound.Core.Results;
+using EvidenceHound.Transport.Kafka;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -16,6 +17,8 @@ internal static class PublishCommand
 {
     public const string UrlSetting = "HOUND_CA_URL";
     public const string TokenSetting = "HOUND_CA_TOKEN";
+    public const string TransportSetting = "HOUND_TRANSPORT";
+    public const string KafkaSetting = "HOUND_KAFKA_BOOTSTRAP_SERVERS";
 
     private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
 
@@ -47,27 +50,41 @@ internal static class PublishCommand
         ILoggerFactory loggers,
         TextWriter output,
         ILogger logger,
-        CancellationToken cancellationToken) =>
-        Connection(configuration).Match(
-            options => SendAsync(updates, evidenceDir, options, loggers, output, logger, cancellationToken),
-            problems => Task.FromResult(Log.Problems(logger, problems)));
-
-    private static async Task<int> SendAsync(
-        IReadOnlyList<AuditUpdate> updates,
-        DirectoryInfo evidenceDir,
-        CisoAssistantOptions options,
-        ILoggerFactory loggers,
-        TextWriter output,
-        ILogger logger,
         CancellationToken cancellationToken)
+    {
+        var files = new EvidenceDirectory(evidenceDir);
+        return (configuration[TransportSetting] ?? "rest") switch
+        {
+            "rest" => Connection(configuration).Match(
+                options => SendRestAsync(options, files, updates, loggers, output, logger, cancellationToken),
+                problems => Task.FromResult(Log.Problems(logger, problems))),
+            "kafka" => KafkaConnection(configuration).Match(
+                options => SendKafkaAsync(options, files, updates, output, logger, cancellationToken),
+                problems => Task.FromResult(Log.Problems(logger, problems))),
+            var other => Task.FromResult(Log.Problems(logger, [new Problem("config.transport_unknown", $"Unknown {TransportSetting} '{other}'; use rest (the default) or kafka.")])),
+        };
+    }
+
+    private static async Task<int> SendRestAsync(
+        CisoAssistantOptions options, IEvidenceFiles files, IReadOnlyList<AuditUpdate> updates, ILoggerFactory loggers, TextWriter output, ILogger logger, CancellationToken cancellationToken)
     {
         using var services = new ServiceCollection()
             .AddSingleton(loggers)
             .AddCisoAssistantClient(options)
             .BuildServiceProvider();
-        var publisher = new Publisher(services.GetRequiredService<ICisoAssistantClient>(), new EvidenceDirectory(evidenceDir));
+        return await SendAsync(new RestSink(services.GetRequiredService<ICisoAssistantClient>(), files), updates, output, logger, cancellationToken);
+    }
 
-        var report = await publisher.PublishAsync(updates, cancellationToken);
+    private static async Task<int> SendKafkaAsync(
+        KafkaSinkOptions options, IEvidenceFiles files, IReadOnlyList<AuditUpdate> updates, TextWriter output, ILogger logger, CancellationToken cancellationToken)
+    {
+        using var sink = new KafkaSink(options, files);
+        return await SendAsync(sink, updates, output, logger, cancellationToken);
+    }
+
+    private static async Task<int> SendAsync(IAuditUpdateSink sink, IReadOnlyList<AuditUpdate> updates, TextWriter output, ILogger logger, CancellationToken cancellationToken)
+    {
+        var report = await sink.SendAsync(updates, cancellationToken);
         await WriteAsync(report, output);
         Log.Published(logger, report.Sent, report.Skipped, report.Failed);
         Log.Problems(logger, report.Items
@@ -76,6 +93,11 @@ internal static class PublishCommand
 
         return report.HasFailures ? ExitCodes.PublishFailed : ExitCodes.Ok;
     }
+
+    private static Result<KafkaSinkOptions> KafkaConnection(IConfiguration configuration) =>
+        configuration[KafkaSetting] is { Length: > 0 } servers
+            ? Result.Ok(new KafkaSinkOptions(servers))
+            : Result.Fail<KafkaSinkOptions>(new Problem("config.kafka_servers_missing", $"Set {KafkaSetting} to the Kafka bootstrap servers the dispatcher reads, for example localhost:19092."));
 
     private static Result<CisoAssistantOptions> Connection(IConfiguration configuration)
     {

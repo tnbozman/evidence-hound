@@ -1,7 +1,5 @@
 using System.Collections.Immutable;
-using System.Security.Cryptography;
 using EvidenceHound.Core.Checks;
-using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Planning;
 using EvidenceHound.Core.Results;
 
@@ -57,7 +55,7 @@ public sealed class Publisher(ICisoAssistantClient client, IEvidenceFiles files)
 
     private async Task<Result<PublishOutcome>> SendRevisionAsync(string evidenceId, Evidence evidence, CancellationToken cancellationToken)
     {
-        var content = (await files.ReadAsync(evidence, cancellationToken)).Bind(bytes => Verified(evidence, bytes));
+        var content = await EvidenceContent.ReadVerifiedAsync(files, evidence, cancellationToken);
         return await content.Match(
             async bytes => (await client.UploadEvidenceRevisionAsync(evidenceId, new EvidenceFile(evidence.FileName, bytes), cancellationToken)).Map(_ => PublishOutcome.Sent),
             problems => Task.FromResult(Result.Fail<PublishOutcome>(problems)));
@@ -87,13 +85,5 @@ public sealed class Publisher(ICisoAssistantClient client, IEvidenceFiles files)
     private static async Task<(Result<PublishOutcome> Outcome, ImmutableDictionary<string, string> EvidenceIds)> WithIds(
         Task<Result<PublishOutcome>> outcome, ImmutableDictionary<string, string> evidenceIds) => (await outcome, evidenceIds);
 
-    private static Result<ReadOnlyMemory<byte>> Verified(Evidence evidence, ReadOnlyMemory<byte> content) =>
-        Convert.ToHexStringLower(SHA256.HashData(content.Span)) == evidence.Sha256
-            ? Result.Ok(content)
-            : Result.Fail<ReadOnlyMemory<byte>>(new Problem("evidence.hash_mismatch", $"Evidence {evidence.Id} ({evidence.FileName}) does not match its recorded SHA-256; it was changed after collection."));
-
-    private static string Describe(AuditUpdate update) => update.Match(
-        upload => $"upload evidence {upload.Evidence.Id} ({upload.Evidence.FileName})",
-        requirement => $"set requirement {requirement.RequirementRefId} in {requirement.ComplianceAssessmentRefId} to {Names.Of(requirement.Result)}",
-        control => $"set applied control {control.RefId} to {Names.Of(control.Status)}");
+    private static string Describe(AuditUpdate update) => UpdateDescriptions.Describe(update);
 }
