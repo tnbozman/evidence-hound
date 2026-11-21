@@ -14,6 +14,15 @@ public sealed record DeploymentConfig(
 {
     /// <summary>The compliance repo's scope folder, when the deployment's audits are managed as scope files; null otherwise.</summary>
     public string? Scope { get; init; }
+
+    /// <summary>The time zone collector schedules are read in, and the most each instance's runs are delayed by.</summary>
+    public SchedulerConfig Scheduler { get; init; } = SchedulerConfig.Default;
+}
+
+/// <summary>The time zone schedules are read in, and the most each instance's runs are delayed by (its jitter).</summary>
+public sealed record SchedulerConfig(TimeZoneInfo TimeZone, TimeSpan MaxJitter)
+{
+    public static SchedulerConfig Default { get; } = new(TimeZoneInfo.Utc, TimeSpan.FromMinutes(5));
 }
 
 /// <summary>How to reach CISO Assistant. <paramref name="Transport"/> is <c>rest</c> or <c>kafka</c>.</summary>

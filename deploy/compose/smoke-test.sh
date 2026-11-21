@@ -79,6 +79,16 @@ compose run --rm --no-deps runner run --config /config-smoke/hound.yaml
 compose run --rm --no-deps runner status --config /config-smoke/hound.yaml | tee "$work/status.txt"
 grep -q 'smoke-fake' "$work/status.txt"
 
+echo "smoke: serving the fake collector every minute for about three minutes"
+HOUND_CONFIG_FILE=../config-smoke/hound-serve.yaml compose up -d --no-deps runner
+sleep 170
+compose logs --no-color runner | tail -n 20
+compose cp runner:/var/lib/evidence-hound/evidence/_history/EXAMPLE-BASELINE-2026.jsonl "$work/history.jsonl"
+runs="$(wc -l <"$work/history.jsonl")"
+echo "smoke: $runs published runs recorded for EXAMPLE-BASELINE-2026"
+[[ "$runs" -ge 3 ]] || { echo "smoke: expected the one-off run and at least two scheduled runs" >&2; exit 1; }
+compose stop runner
+
 echo "smoke: checking HTTPS through Caddy"
 curl -fsS --cacert <(compose exec -T caddy cat /data/caddy/pki/authorities/local/root.crt) \
   --resolve "localhost:18443:127.0.0.1" -o /dev/null "https://localhost:18443/api/health/"

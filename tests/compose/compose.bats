@@ -81,3 +81,9 @@ setup() {
   services="$(config --profile kafka | jq -r '.services | keys | sort | join(" ")')"
   [ "$services" = "backend caddy dispatcher frontend postgres redpanda runner worker" ]
 }
+
+@test "the runner serves the collectors on their schedules and restarts unless stopped" {
+  json="$(config)"
+  [ "$(jq -r '.services.runner.command[0]' <<<"$json")" = "serve" ]
+  [ "$(jq -r '.services.runner.restart' <<<"$json")" = "unless-stopped" ]
+}
