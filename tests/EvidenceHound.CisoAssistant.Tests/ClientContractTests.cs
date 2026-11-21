@@ -181,6 +181,21 @@ public sealed class ClientContractTests : IDisposable
         Requests()[0].RawQuery.ShouldBe("?ref_id=EX-E8-2026");
     }
 
+    [Theory]
+    [InlineData("in_progress", false, false)]
+    [InlineData("in_review", false, true)]
+    [InlineData("done", false, true)]
+    [InlineData("in_progress", true, true)]
+    public async Task Audit_in_review_done_or_locked_is_closed(string status, bool locked, bool closed)
+    {
+        Respond("/api/compliance-assessments/", 200, Page(new JsonObject { ["id"] = "ca-1" }));
+        Respond("/api/compliance-assessments/ca-1/object/", 200, new JsonObject { ["id"] = "ca-1", ["status"] = status, ["is_locked"] = locked }.ToJsonString());
+
+        var result = await _ca.Client.FindAuditAsync("EX-E8-BACKUP-2026Q3", _ct);
+
+        result.Match(audit => audit.Closed, _ => !closed).ShouldBe(closed);
+    }
+
     [Fact]
     public async Task Audit_with_no_groups_selects_all()
     {

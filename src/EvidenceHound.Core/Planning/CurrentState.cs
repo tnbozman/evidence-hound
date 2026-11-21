@@ -16,7 +16,11 @@ public sealed record CurrentState(IReadOnlyList<CurrentAudit> Audits, IReadOnlyL
 }
 
 /// <summary>An audit, the implementation groups it selects (none selects all) and every one of its rows.</summary>
-public sealed record CurrentAudit(string RefId, IReadOnlyList<string> SelectedGroups, IReadOnlyList<CurrentRow> Rows);
+public sealed record CurrentAudit(string RefId, IReadOnlyList<string> SelectedGroups, IReadOnlyList<CurrentRow> Rows)
+{
+    /// <summary>In review, done or locked: a closed period that <c>hound</c> never writes to again.</summary>
+    public bool Closed { get; init; }
+}
 
 /// <summary>One requirement assessment as CISO Assistant holds it. <paramref name="EvidenceIds"/> are CISO Assistant IDs.</summary>
 public sealed record CurrentRow(

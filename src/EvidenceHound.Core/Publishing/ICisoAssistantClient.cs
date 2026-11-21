@@ -59,4 +59,8 @@ public sealed record EvidenceFile(string FileName, ReadOnlyMemory<byte> Content)
 public sealed record RemoteRequirementAssessment(string Id, string Urn, string? RefId, IReadOnlyList<string> Groups);
 
 /// <summary>An audit and the ref_ids of the implementation groups it selects; none selects all.</summary>
-public sealed record RemoteAudit(string Id, IReadOnlyList<string> SelectedGroups);
+public sealed record RemoteAudit(string Id, IReadOnlyList<string> SelectedGroups)
+{
+    /// <summary>In review, done or locked: <c>hound</c> never writes to it.</summary>
+    public bool Closed { get; init; }
+}

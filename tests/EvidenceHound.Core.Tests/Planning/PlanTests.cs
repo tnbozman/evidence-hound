@@ -314,6 +314,17 @@ public class PlanTests
         kept["ra-EX-1.1"].ShouldBe(["uuid-policy"]);
     }
 
+    [Fact]
+    public void Audit_in_review_or_locked_is_never_written()
+    {
+        var closed = Fresh("EX-1.1") with { Audits = [Fresh("EX-1.1").Audits[0] with { Closed = true }] };
+
+        var plan = Changes([Requirement("EX-1.1", ComplianceResult.Compliant)], [], [], closed, Run1);
+
+        plan.Updates.OfType<AuditUpdate.UpdateRequirementAssessment>().ShouldBeEmpty();
+        plan.Drift.ShouldHaveSingleItem().Code.ShouldBe("plan.audit_closed");
+    }
+
     private static readonly string Run1 = "20261120T020000Z";
     private static readonly string Run2 = "20261121T020000Z";
 
