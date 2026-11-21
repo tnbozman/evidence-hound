@@ -1,6 +1,6 @@
 # s01 Domain model and framework mapping
 
-Status: In progress
+Status: Done
 
 **Goal:** the pure core that turns framework-neutral check results into requirement results for any framework, with no I/O.
 
@@ -121,7 +121,7 @@ All code in this sprint lives in `src/EvidenceHound.Core` and is tested in `test
 **Functional check result (2026-11-21):** `make run ARGS="plan --dry-run --config examples/example-pty-ltd.yaml --checks tests/fixtures/checks-sample.json"` printed 11 dispatcher messages: 5 `upload_attachment`, 4 `update_requirement_assessment`, 2 `update_applied_control`. `make test`: `total: 136, failed: 0`. Evidence: [`docs/evidence/s01/s01-05.md`](../evidence/s01/s01-05.md).
 
 ### s01-06 Global exception handler and logger
-- [ ] Done
+- [x] Done
 
 Added 2026-11-21 at the maintainer's request.
 
@@ -144,6 +144,8 @@ Added 2026-11-21 at the maintainer's request.
 **Functional check**
 - `make run ARGS="mapping validate <bad file>"` prints `error:` lines on stderr and exits 3; `Logging__LogLevel__Default=Warning make run ARGS="collect --dry-run --config examples/example-pty-ltd.yaml"` prints no info line.
 
+**Functional check result (2026-11-21):** `mapping validate` on a broken file printed `error: <file> line 4: unknown rule 'most_pass'...` on stderr with nothing on stdout, exit 3. With `Logging__LogLevel__Default=Warning`, `collect --dry-run` printed nothing. `plan --dry-run` stdout parsed as JSON (11 messages). `make test`: `total: 149, failed: 0`. Evidence: [`docs/evidence/s01/s01-06.md`](../evidence/s01/s01-06.md).
+
 ## Discovered work
 
 - s01-01: the error record is `Problem`, not `Error`, because CA1716 rejects `Error` (a Visual Basic keyword). Later sprint files that say `Error` mean `Problem`.
@@ -154,11 +156,11 @@ Added 2026-11-21 at the maintainer's request.
 - s01-05: `update_requirement_assessment` values carry `evidences` as evidence `ref_id`s. CISO Assistant's API wants evidence IDs, so the s02 REST publisher must look them up, and the Kafka sink must do the same or drop the field (the dispatcher passes values straight to PATCH).
 - s01-05: the check results file now also carries `evidence` and `control_statuses`, and the config has a single `target` (mapping, `compliance_assessment`, `controls`). s03's full config schema should keep these names or migrate them.
 - s01-05: a dry-run plan describes evidence files in `file_content` instead of reading them; the s02 publisher supplies the real base64 content.
-- Coverage: the s00 code has 7 uncovered lines (`ConfigFile` YAML error branch, `HoundCli` default arm, `Program.cs`). Worth a small test in s02.
+- Coverage: s01-06 covered the s00 `ConfigFile` YAML error branch and removed the `HoundCli` default arm; only `Program.cs` is untested.
 
 ## Sprint review
 
-**2026-11-21.** All five tasks shipped, each with red, green and refactor commits and per-task evidence in `docs/evidence/s01/`. The core now has `Result<T>`, the framework-neutral check types, the framework mapping model, the mapping engine and the audit update planner, all pure and with no package references. `EvidenceHound.Core.Yaml` loads mapping files with line-numbered problems, and `schemas/mapping.schema.json` describes them. The CLI gained `mapping validate`, `mapping apply` and `plan --dry-run`. 136 tests (including two FsCheck properties), lint clean, and every new line covered. The Start sprint workflow ran its GitHub happy path for the first time and opened this PR.
+**2026-11-21.** All five planned tasks shipped, plus s01-06 (global exception handler and logger), which the maintainer added mid-sprint, each with red, green and refactor commits and per-task evidence in `docs/evidence/s01/`. The core now has `Result<T>`, the framework-neutral check types, the framework mapping model, the mapping engine and the audit update planner, all pure and with no package references. `EvidenceHound.Core.Yaml` loads mapping files with line-numbered problems, and `schemas/mapping.schema.json` describes them. The CLI gained `mapping validate`, `mapping apply` and `plan --dry-run`, and every command now logs through one stderr logger with a global handler for unexpected errors. 149 tests (including two FsCheck properties), lint clean, and every new line covered. The Start sprint workflow ran its GitHub happy path for the first time and opened this PR.
 
 What slipped: nothing was dropped. Six small deviations from the plan are listed under "Discovered work" (the `Problem` name, `NotApplicable`, `PlanUpdates` returning a `Result`, evidence ref_ids in `values.evidences`, the reader for check results living in the CLI, and unknown-check warnings waiting for a check catalogue).
 
