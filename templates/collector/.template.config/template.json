@@ -50,6 +50,11 @@
   },
   "sources": [
     {
+      "rename": {
+        "Hound.Template.Collector.slnx.in": "Hound.Template.Collector.slnx",
+        "src/Hound.Template.Collector/Hound.Template.Collector.csproj.in": "src/Hound.Template.Collector/Hound.Template.Collector.csproj",
+        "tests/Hound.Template.Collector.Tests/Hound.Template.Collector.Tests.csproj.in": "tests/Hound.Template.Collector.Tests/Hound.Template.Collector.Tests.csproj"
+      },
       "modifiers": [
         {
           "exclude": ["**/bin/**", "**/obj/**"]
