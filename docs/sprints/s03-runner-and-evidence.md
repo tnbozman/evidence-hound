@@ -1,6 +1,6 @@
 # s03 Runner, configuration, evidence packaging and run status
 
-Status: Planned
+Status: In progress
 
 **Goal:** one command runs every configured collector, packages its evidence, maps and publishes results, and reports its own health into CISO Assistant.
 
