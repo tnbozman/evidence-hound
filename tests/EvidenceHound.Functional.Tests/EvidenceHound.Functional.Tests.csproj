@@ -1,4 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- Unit runs filter out Category=Functional, which leaves this project with zero tests (exit code 8).
+         Only this project may run zero tests; every unit project still fails if none run. -->
+    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --ignore-exit-code 8</TestingPlatformCommandLineArguments>
+  </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Testcontainers" />
   </ItemGroup>

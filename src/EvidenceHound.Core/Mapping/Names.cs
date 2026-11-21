@@ -1,4 +1,5 @@
 using EvidenceHound.Core.Checks;
+using EvidenceHound.Core.Planning;
 
 namespace EvidenceHound.Core.Mapping;
 
@@ -23,5 +24,15 @@ public static class Names
         ComplianceResult.NotAssessed => "not_assessed",
         ComplianceResult.NotApplicable => "not_applicable",
         _ => throw new ArgumentOutOfRangeException(nameof(result), result, null),
+    };
+
+    public static string Of(ControlState state) => state switch
+    {
+        ControlState.ToDo => "to_do",
+        ControlState.InProgress => "in_progress",
+        ControlState.OnHold => "on_hold",
+        ControlState.Active => "active",
+        ControlState.Deprecated => "deprecated",
+        _ => throw new ArgumentOutOfRangeException(nameof(state), state, null),
     };
 }

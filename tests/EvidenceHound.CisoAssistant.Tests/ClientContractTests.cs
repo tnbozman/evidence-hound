@@ -130,7 +130,7 @@ public sealed class ClientContractTests : IDisposable
 
         result.ShouldBe(Result.Ok("ra-1"));
         var query = OnlyRequest().RawQuery;
-        query.ShouldBe("compliance_assessment__ref_id=EXAMPLE-BASELINE-2026&requirement__ref_id=EX-1.1");
+        query.ShouldBe("?compliance_assessment__ref_id=EXAMPLE-BASELINE-2026&requirement__ref_id=EX-1.1");
     }
 
     [Fact]
@@ -177,7 +177,7 @@ public sealed class ClientContractTests : IDisposable
         var result = await _ca.Client.UpdateAppliedControlAsync("AC-MFA", ControlState.InProgress, _ct);
 
         result.ShouldBe(Result.Ok(Unit.Value));
-        Requests()[0].RawQuery.ShouldBe("ref_id=AC-MFA");
+        Requests()[0].RawQuery.ShouldBe("?ref_id=AC-MFA");
         JsonNode.Parse(Requests()[^1].Body!)!["status"]!.GetValue<string>().ShouldBe("in_progress");
     }
 
@@ -192,8 +192,8 @@ public sealed class ClientContractTests : IDisposable
         var result = await _ca.Client.FindOrCreateEvidenceAsync("ev-0001", "mfa-admins.json", _ct);
 
         result.ShouldBe(Result.Ok(new RemoteEvidence("ev-uuid-1", new string('a', 64))));
-        Requests()[0].RawQuery.ShouldBe("search=ev-0001");
-        Requests()[^1].RawQuery.ShouldBe("evidence=ev-uuid-1&ordering=-version&limit=1");
+        Requests()[0].RawQuery.ShouldBe("?search=ev-0001");
+        Requests()[^1].RawQuery.ShouldBe("?evidence=ev-uuid-1&ordering=-version&limit=1");
     }
 
     [Fact]

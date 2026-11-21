@@ -36,19 +36,9 @@ public static class DispatcherMessages
             control => Message(
                 "update_applied_control",
                 new JsonObject { ["ref_id"] = control.RefId },
-                new JsonObject { ["status"] = StateName(control.Status) }));
+                new JsonObject { ["status"] = Names.Of(control.Status) }));
     }
 
     private static JsonObject Message(string type, JsonObject selector, JsonObject values) =>
         new() { ["message_type"] = type, ["selector"] = selector, ["values"] = values };
-
-    private static string StateName(ControlState state) => state switch
-    {
-        ControlState.ToDo => "to_do",
-        ControlState.InProgress => "in_progress",
-        ControlState.OnHold => "on_hold",
-        ControlState.Active => "active",
-        ControlState.Deprecated => "deprecated",
-        _ => throw new ArgumentOutOfRangeException(nameof(state), state, null),
-    };
 }
