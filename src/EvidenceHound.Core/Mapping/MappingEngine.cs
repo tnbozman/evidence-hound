@@ -36,11 +36,15 @@ public static class MappingEngine
         var contributing = requirement.Checks.Select(id => (Id: id, Result: latest.GetValueOrDefault(id))).ToArray();
         var found = contributing.Where(c => c.Result is not null).Select(c => c.Result!).ToArray();
 
-        var result = found.Length < contributing.Length || found.Any(r => r.Outcome == CheckOutcome.Error)
-            ? ComplianceResult.NotAssessed
-            : Roll(requirement.Rule, [.. found.Select(r => r.Outcome).Where(o => o != CheckOutcome.NotApplicable)]);
+        var applicable = found.Select(r => r.Outcome).Where(o => o != CheckOutcome.NotApplicable).ToArray();
+        var result = found.Length < contributing.Length || applicable.Contains(CheckOutcome.Error) ? ComplianceResult.NotAssessed
+            : applicable.Length == 0 ? ComplianceResult.NotApplicable
+            : requirement.Rule.Assess(new OutcomeTally(
+                applicable.Count(o => o == CheckOutcome.Pass),
+                applicable.Count(o => o == CheckOutcome.Partial),
+                applicable.Count(o => o == CheckOutcome.Fail)));
 
-        var observation = $"Rule {Names.Of(requirement.Rule)}. " + string.Join(
+        var observation = $"Rule {requirement.Rule.Name}. " + string.Join(
             "; ",
             contributing.Select(c => c.Result is null
                 ? $"{c.Id}: missing"
@@ -48,30 +52,5 @@ public static class MappingEngine
         var evidence = found.SelectMany(r => r.EvidenceRefs).Distinct().Order(StringComparer.Ordinal).ToArray();
 
         return new RequirementResult(requirement.RequirementRef, result, observation, evidence);
-    }
-
-    private static ComplianceResult Roll(MappingRule rule, CheckOutcome[] applicable)
-    {
-        if (applicable.Length == 0)
-        {
-            return ComplianceResult.NotApplicable;
-        }
-
-        var passes = applicable.Count(o => o == CheckOutcome.Pass);
-        var anyProgress = passes > 0 || applicable.Contains(CheckOutcome.Partial);
-        var needed = rule switch
-        {
-            MappingRule.ThresholdRule threshold => Math.Min(threshold.Count, applicable.Length),
-            MappingRule.AnyPassRule or MappingRule.AllPassRule => applicable.Length,
-            _ => throw new ArgumentOutOfRangeException(nameof(rule), rule, "Unknown mapping rule."),
-        };
-
-        return (passes >= needed, rule, anyProgress, applicable.Contains(CheckOutcome.Fail)) switch
-        {
-            (true, _, _, _) => ComplianceResult.Compliant,
-            (false, MappingRule.AllPassRule, _, true) => ComplianceResult.NonCompliant,
-            (false, _, true, _) => ComplianceResult.PartiallyCompliant,
-            _ => ComplianceResult.NonCompliant,
-        };
     }
 }

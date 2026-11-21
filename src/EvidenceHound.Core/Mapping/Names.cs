@@ -24,12 +24,4 @@ public static class Names
         ComplianceResult.NotApplicable => "not_applicable",
         _ => throw new ArgumentOutOfRangeException(nameof(result), result, null),
     };
-
-    public static string Of(MappingRule rule) => rule switch
-    {
-        MappingRule.AllPassRule => "all_pass",
-        MappingRule.AnyPassRule => "any_pass",
-        MappingRule.ThresholdRule threshold => $"threshold({threshold.Count})",
-        _ => throw new ArgumentOutOfRangeException(nameof(rule), rule, null),
-    };
 }
