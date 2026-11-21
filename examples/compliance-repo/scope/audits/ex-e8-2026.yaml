@@ -31,11 +31,7 @@ controls:
     requirements: [ISM-1504, ISM-1173]
   - ref_id: AC-BACKUP
     requirements: [ISM-1511, ISM-1515]
-assessments:
-  # Web browsers do not process Java from the internet. No collector covers this yet.
-  - ref: ISM-1486
-    status: done
-    result: compliant
-    observation: Java is not installed on any laptop, and the browser policy blocks it. Checked at the March review.
+# No hand-written assessments: the Essential Eight mapping computes every ML1 and ML2 row.
+# The Essentials audit shows one (ex-essentials-2026.yaml).
 unlisted:
   result: not_assessed

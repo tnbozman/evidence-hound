@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../../../schemas/scope.schema.json
+# The audit of the fictional Example baseline (../../frameworks/example-baseline.yaml), which examples/example-pty-ltd.yaml publishes to.
+ref_id: EXAMPLE-BASELINE-2026
+name: Example baseline 2026
+framework: urn:example:risk:framework:example-baseline
+domain: Example Pty Ltd
+perimeter: Corporate IT
+systems: [Example 365, Example laptops]
+unlisted:
+  result: not_assessed

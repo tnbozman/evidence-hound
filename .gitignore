@@ -31,6 +31,7 @@ dev/ciso-assistant/db/
 *.pdf
 !examples/**/*.xlsx
 !examples/**/*.csv
+!examples/**/*.pdf
 
 # Claude Code: personal settings stay on each developer's machine
 .claude/settings.local.json
