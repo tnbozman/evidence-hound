@@ -61,6 +61,17 @@ public static class HoundCli
         CancellationToken cancellationToken) =>
         RunAsync(args, TextReader.Null, output, error, configureLogging, [], new Dictionary<string, string?>(), configureServices, cancellationToken);
 
+    /// <summary>Runs with extra configuration settings and extra service registrations, for example a collector's test doubles.</summary>
+    internal static Task<int> RunAsync(
+        string[] args,
+        TextWriter output,
+        TextWriter error,
+        Action<ILoggingBuilder>? configureLogging,
+        IReadOnlyDictionary<string, string?> settings,
+        Action<IServiceCollection> configureServices,
+        CancellationToken cancellationToken) =>
+        RunAsync(args, TextReader.Null, output, error, configureLogging, [], settings, configureServices, cancellationToken);
+
     internal static Task<int> RunAsync(
         string[] args,
         TextWriter output,
