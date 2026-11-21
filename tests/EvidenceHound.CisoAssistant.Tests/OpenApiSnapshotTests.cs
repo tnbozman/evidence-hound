@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Planning;
 using EvidenceHound.Core.Publishing;
+using EvidenceHound.Core.Scope;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 
@@ -52,6 +53,7 @@ public sealed class OpenApiSnapshotTests : IDisposable
         await client.UploadEvidenceRevisionAsync("x-1", new EvidenceFile("file.json", "{}"u8.ToArray()), _ct);
         await client.LinkEvidenceToAppliedControlAsync("R", "x-9", _ct);
         await client.UpdateAppliedControlAsync("R", ControlState.Active, _ct);
+        await _ca.Scope.ReadAsync(new ScopeStateQuery("Global", [], new Dictionary<string, IReadOnlyList<RequirementKey>> { ["R"] = [RequirementKey.Ref("R")] }), _ct);
 
         var templates = ApiEndpoints.Used.Select(e => (e.Method, Pattern: new Regex("^" + Regex.Replace(Regex.Escape(e.Path), @"\\\{[a-z_]+}", "[^/]+") + "$"))).ToArray();
         var unlisted = _ca.Server.LogEntries
@@ -74,6 +76,8 @@ public sealed class OpenApiSnapshotTests : IDisposable
         {
             ["id"] = "x-1",
             ["ref_id"] = "R",
+            ["name"] = "Global",
+            ["folder"] = "x-1",
             ["status"] = "active",
             ["result"] = "compliant",
             ["attachment_hash"] = new string('a', 64),

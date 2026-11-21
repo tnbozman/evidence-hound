@@ -5,8 +5,6 @@ using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Planning;
 using EvidenceHound.Core.Publishing;
 using EvidenceHound.Core.Results;
-using Polly.CircuitBreaker;
-using Polly.Timeout;
 
 namespace EvidenceHound.CisoAssistant;
 
@@ -187,31 +185,13 @@ internal sealed class CisoAssistantClient(HttpClient http) : ICisoAssistantClien
     private Task<Result<JsonNode>> PatchAsync(string path, JsonObject body, string action, CancellationToken cancellationToken) =>
         SendAsync(new HttpRequestMessage(HttpMethod.Patch, path) { Content = Json(body) }, action, cancellationToken);
 
-    private async Task<Result<JsonNode>> SendAsync(HttpRequestMessage request, string action, CancellationToken cancellationToken)
-    {
-        using (request)
-        {
-            try
-            {
-                using var response = await http.SendAsync(request, cancellationToken);
-                var body = await response.Content.ReadAsStringAsync(cancellationToken);
-                return response.IsSuccessStatusCode
-                    ? Result.Ok(string.IsNullOrWhiteSpace(body) ? new JsonObject() : JsonNode.Parse(body) ?? new JsonObject())
-                    : Result.Fail<JsonNode>(ApiProblems.FromStatus((int)response.StatusCode, body, action));
-            }
-            catch (Exception ex) when (ex is HttpRequestException or TimeoutRejectedException or BrokenCircuitException)
-            {
-                return Result.Fail<JsonNode>(ApiProblems.Unavailable($"CISO Assistant could not be reached {action}: {ex.Message}"));
-            }
-        }
-    }
+    private Task<Result<JsonNode>> SendAsync(HttpRequestMessage request, string action, CancellationToken cancellationToken) =>
+        http.SendForJsonAsync(request, action, cancellationToken);
 
     /// <summary>A JSON body with a known length: CISO Assistant's server reads no chunked request body.</summary>
     private static StringContent Json(JsonNode body) => new(body.ToJsonString(), Encoding.UTF8, "application/json");
 
-    /// <summary>The objects in a list response: a paginated <c>{"results": [...]}</c> or a bare array.</summary>
-    private static List<JsonNode> Results(JsonNode page) =>
-        [.. (page as JsonArray ?? page["results"] as JsonArray ?? []).OfType<JsonNode>()];
+    private static List<JsonNode> Results(JsonNode page) => ApiRequests.Results(page);
 
     /// <summary>A requirement assessment from the list endpoint, which nests its requirement node.</summary>
     private static RemoteRequirementAssessment Row(JsonNode row)

@@ -20,5 +20,15 @@ public static class ApiEndpoints
         new("GET", "/api/applied-controls/"),
         new("GET", "/api/applied-controls/{id}/"),
         new("PATCH", "/api/applied-controls/{id}/"),
+        new("GET", "/api/applied-controls/{id}/object/"),
+        new("GET", "/api/folders/"),
+        new("GET", "/api/folders/{id}/object/"),
+        new("GET", "/api/users/"),
+        new("GET", "/api/frameworks/"),
+        new("GET", "/api/perimeters/"),
+        new("GET", "/api/perimeters/{id}/object/"),
+        new("GET", "/api/assets/"),
+        new("GET", "/api/assets/{id}/object/"),
+        new("GET", "/api/evidences/{id}/object/"),
     ];
 }

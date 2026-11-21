@@ -2,21 +2,24 @@ using System.CommandLine;
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using EvidenceHound.CisoAssistant;
 using EvidenceHound.Core.Frameworks;
 using EvidenceHound.Core.Results;
 using EvidenceHound.Core.Scope;
 using EvidenceHound.Core.Yaml;
 using EvidenceHound.Runtime.Collectors;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace EvidenceHound.Cli;
 
-/// <summary>The <c>hound scope</c> commands: check a compliance repo's scope files, and start a new audit file.</summary>
+/// <summary>The <c>hound scope</c> commands: check a compliance repo's scope files, start a new audit file, and plan the scope against CISO Assistant.</summary>
 internal static class ScopeCommands
 {
     private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
 
-    public static Command Build(TextWriter output, ILoggerFactory loggers, CollectorRegistry registry)
+    public static Command Build(TextWriter output, ILoggerFactory loggers, IConfiguration configuration, CollectorRegistry registry)
     {
         var logger = loggers.CreateLogger("hound.scope");
         var dir = new Argument<DirectoryInfo>("scope") { Description = "The scope folder: setup.yaml, controls.yaml and audits/*.yaml." };
@@ -26,8 +29,8 @@ internal static class ScopeCommands
         var validate = new Command("validate", "Check the scope files offline and report every problem with its file, line and code.") { dir, config, format };
         validate.SetAction(async (parseResult, cancellationToken) =>
         {
-            var problems = await ValidateAsync(parseResult.GetRequiredValue(dir), parseResult.GetValue(config), registry, cancellationToken);
-            return await ReportAsync(problems.Problems, problems.Summary, parseResult.GetRequiredValue(format), output, logger);
+            var checkedScope = await ValidateAsync(parseResult.GetRequiredValue(dir), parseResult.GetValue(config), registry, cancellationToken);
+            return await ReportAsync(checkedScope.Problems, checkedScope.Summary, parseResult.GetRequiredValue(format), output, logger);
         });
 
         var framework = new Option<FileInfo>("--framework") { Description = "The framework snapshot (from hound framework snapshot).", Required = true };
@@ -43,7 +46,44 @@ internal static class ScopeCommands
                 problems => Task.FromResult(Log.Problems(logger, problems)));
         });
 
-        return new Command("scope", "Work with a compliance repo's scope files.") { validate, newAudit };
+        var planFormat = new Option<string>("--format") { Description = "markdown (the default, for a pull request comment) or json.", DefaultValueFactory = _ => "markdown" };
+        planFormat.AcceptOnlyFromAmong("markdown", "json");
+        var prune = new Option<bool>("--prune") { Description = "Also plan deleting the objects hound manages that the scope no longer declares." };
+        var plan = new Command(
+            "plan",
+            $"Show what applying the scope would create, update or delete in CISO Assistant, and what drifted (reads it; needs {PublishCommand.UrlSetting} and {PublishCommand.TokenSetting}). Sends nothing.")
+        {
+            dir, config, planFormat, prune,
+        };
+        plan.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var checkedScope = await ValidateAsync(parseResult.GetRequiredValue(dir), parseResult.GetValue(config), registry, cancellationToken);
+            if (checkedScope.Problems.Count > 0)
+            {
+                return await ReportAsync(checkedScope.Problems, checkedScope.Summary, "text", output, logger);
+            }
+
+            return await PublishCommand.Connection(configuration).Match(
+                connection => PlanAsync(checkedScope.Scope, connection, parseResult.GetValue(prune), parseResult.GetRequiredValue(planFormat), loggers, output, logger, cancellationToken),
+                problems => Task.FromResult(Log.Problems(logger, problems)));
+        });
+
+        return new Command("scope", "Work with a compliance repo's scope files.") { validate, newAudit, plan };
+    }
+
+    private static async Task<int> PlanAsync(
+        ScopeDocument scope, CisoAssistantOptions connection, bool prune, string format, ILoggerFactory loggers, TextWriter output, ILogger logger, CancellationToken cancellationToken)
+    {
+        using var services = new ServiceCollection().AddSingleton(loggers).AddCisoAssistantClient(connection).BuildServiceProvider();
+        var actual = await services.GetRequiredService<IScopeStateSource>().ReadAsync(ScopeStateQuery.For(scope), cancellationToken);
+        return await actual.Match(
+            async held =>
+            {
+                var plan = ScopePlanner.Plan(ScopeDesired.From(scope), held, prune);
+                await output.WriteAsync(format == "json" ? ScopePlanOutput.Json(plan) : ScopePlanOutput.Markdown(plan));
+                return ExitCodes.Ok;
+            },
+            problems => Task.FromResult(Log.Problems(logger, problems)));
     }
 
     private static string[] Groups(string? groups) =>
@@ -64,13 +104,13 @@ internal static class ScopeCommands
         return ExitCodes.Ok;
     }
 
-    private static async Task<(IReadOnlyList<ScopeProblem> Problems, string Summary)> ValidateAsync(
+    private static async Task<(IReadOnlyList<ScopeProblem> Problems, string Summary, ScopeDocument Scope)> ValidateAsync(
         DirectoryInfo dir, FileInfo? configFile, CollectorRegistry registry, CancellationToken cancellationToken)
     {
         var setupPath = Path.Combine(dir.ToString(), "setup.yaml");
         if (!File.Exists(setupPath))
         {
-            return ([new ScopeProblem("scope.file_missing", new SourceLine(setupPath, 0), "the scope has no setup.yaml.", "Create setup.yaml with the organisation, frameworks and domains.")], "");
+            return ([new ScopeProblem("scope.file_missing", new SourceLine(setupPath, 0), "the scope has no setup.yaml.", "Create setup.yaml with the organisation, frameworks and domains.")], "", new ScopeDocument(new ScopeSetup("Global", [], []), [], []));
         }
 
         var controlsPath = Path.Combine(dir.ToString(), "controls.yaml");
@@ -93,7 +133,7 @@ internal static class ScopeCommands
         ];
         return (problems, string.Create(
             CultureInfo.InvariantCulture,
-            $"scope valid: {scope.Setup.Domains.Count} domain(s), {scope.Controls.Count} control(s), {scope.Audits.Count} audit(s)"));
+            $"scope valid: {scope.Setup.Domains.Count} domain(s), {scope.Controls.Count} control(s), {scope.Audits.Count} audit(s)"), scope);
     }
 
     private static async Task<ScopeSource> ReadAsync(string path, CancellationToken cancellationToken) =>

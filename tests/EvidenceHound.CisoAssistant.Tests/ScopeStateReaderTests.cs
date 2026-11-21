@@ -47,7 +47,7 @@ public sealed class ScopeStateReaderTests : IDisposable
             ["name"] = "Corporate IT",
             ["ref_id"] = "PER-CORP",
             ["domain"] = "Example Pty Ltd",
-        });
+        }, ignoreOrder: true);
         held[(ScopeKind.System, "Example laptops")].ShouldSatisfyAllConditions(
             s => s.Held.Fields.ShouldBe(new Dictionary<string, string>
             {
@@ -57,7 +57,7 @@ public sealed class ScopeStateReaderTests : IDisposable
                 ["owner"] = "it@example.com",
                 ["domain"] = "Example Pty Ltd",
                 ["parents"] = "Example 365",
-            }),
+            }, ignoreOrder: true),
             s => s.AppliedState.ShouldBeNull());
         held[(ScopeKind.Audit, "EX-E8-2026")].Held.Fields.ShouldBe(new Dictionary<string, string>
         {
@@ -68,8 +68,8 @@ public sealed class ScopeStateReaderTests : IDisposable
             ["perimeter"] = "Corporate IT",
             ["eta"] = "2026-06-30",
             ["authors"] = "it@example.com",
-        });
-        held[(ScopeKind.Document, "identity-policy")].Held.Fields.ShouldBe(new Dictionary<string, string> { ["name"] = "Identity policy", ["domain"] = "Example Pty Ltd" });
+        }, ignoreOrder: true);
+        held[(ScopeKind.Document, "identity-policy")].Held.Fields.ShouldBe(new Dictionary<string, string> { ["name"] = "Identity policy", ["domain"] = "Example Pty Ltd" }, ignoreOrder: true);
         held[(ScopeKind.Control, "AC-MFA")].Held.Fields.ShouldBe(new Dictionary<string, string>
         {
             ["name"] = "Multi-factor authentication",
@@ -79,13 +79,13 @@ public sealed class ScopeStateReaderTests : IDisposable
             ["category"] = "technical",
             ["systems"] = "Example 365",
             ["documents"] = "identity-policy",
-        });
+        }, ignoreOrder: true);
         held[(ScopeKind.Assessment, "EX-E8-2026/ISM-1486")].Held.Fields.ShouldBe(new Dictionary<string, string>
         {
             ["status"] = "done",
             ["result"] = "compliant",
             ["observation"] = "Reviewed by hand.",
-        });
+        }, ignoreOrder: true);
     }
 
     [Fact]
