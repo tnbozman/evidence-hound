@@ -40,17 +40,7 @@ internal static class PlanCommand
             return ExitCodes.Usage;
         }
 
-        var target = await LoadTargetAsync(configFile, cancellationToken);
-        var mapping = await target.Map(t => new FileInfo(t.MappingPath)).Match(
-            file => MappingCommands.LoadAsync(file, cancellationToken),
-            problems => Task.FromResult(Result.Fail<Core.Yaml.LoadedMapping>(problems)));
-        var run = await CheckResultsJson.LoadRunAsync(checksFile, cancellationToken);
-
-        var plan = target.Bind(t => mapping.Bind(m => run.Bind(r => AuditPlanner.PlanUpdates(
-            new AuditTarget(t.ComplianceAssessmentRefId, t.Controls),
-            MappingEngine.ApplyMapping(m.Mapping, r.Checks),
-            r.Evidence,
-            r.ControlStatuses))));
+        var plan = await PlanAsync(configFile, checksFile, cancellationToken);
 
         return await plan.Match(
             async updates =>
@@ -60,6 +50,22 @@ internal static class PlanCommand
                 return ExitCodes.Ok;
             },
             problems => Task.FromResult(Log.Problems(logger, problems)));
+    }
+
+    /// <summary>Loads the config, its mapping and the check results, and plans the audit updates.</summary>
+    internal static async Task<Result<IReadOnlyList<AuditUpdate>>> PlanAsync(FileInfo configFile, FileInfo checksFile, CancellationToken cancellationToken)
+    {
+        var target = await LoadTargetAsync(configFile, cancellationToken);
+        var mapping = await target.Map(t => new FileInfo(t.MappingPath)).Match(
+            file => MappingCommands.LoadAsync(file, cancellationToken),
+            problems => Task.FromResult(Result.Fail<Core.Yaml.LoadedMapping>(problems)));
+        var run = await CheckResultsJson.LoadRunAsync(checksFile, cancellationToken);
+
+        return target.Bind(t => mapping.Bind(m => run.Bind(r => AuditPlanner.PlanUpdates(
+            new AuditTarget(t.ComplianceAssessmentRefId, t.Controls),
+            MappingEngine.ApplyMapping(m.Mapping, r.Checks),
+            r.Evidence,
+            r.ControlStatuses))));
     }
 
     private static string DescribeFile(Core.Checks.Evidence evidence) =>

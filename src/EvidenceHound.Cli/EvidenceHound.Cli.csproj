@@ -14,6 +14,7 @@
     <InternalsVisibleTo Include="EvidenceHound.Functional.Tests" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\EvidenceHound.CisoAssistant\EvidenceHound.CisoAssistant.csproj" />
     <ProjectReference Include="..\EvidenceHound.Core\EvidenceHound.Core.csproj" />
     <ProjectReference Include="..\EvidenceHound.Core.Yaml\EvidenceHound.Core.Yaml.csproj" />
   </ItemGroup>

@@ -692,6 +692,7 @@
       "hound": {
         "type": "Project",
         "dependencies": {
+          "EvidenceHound.CisoAssistant": "[0.1.0, )",
           "EvidenceHound.Core": "[0.1.0, )",
           "EvidenceHound.Core.Yaml": "[0.1.0, )",
           "Microsoft.Extensions.Hosting": "[10.0.14, )",
