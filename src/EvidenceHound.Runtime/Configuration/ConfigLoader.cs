@@ -142,14 +142,31 @@ public static partial class ConfigLoader
         var schedule = Scalar(map, "schedule", at).Bind(node => IsCron(node.Value!)
             ? Result.Ok(node.Value!)
             : Result.Fail<string>(at.Problem(node.Start, "config.schedule_invalid", "'schedule' must be a five-field cron expression, for example \"0 2 * * *\".")));
-        var settings = OptionalMap(map, "settings", at).Bind(m => Settings(m, at));
-        var secrets = OptionalMap(map, "secrets", at).Bind(m => Secrets(m, at));
+        var settingsMap = OptionalMap(map, "settings", at);
+        var secretsMap = OptionalMap(map, "secrets", at);
+        var settings = settingsMap.Bind(m => Settings(m, at));
+        var secrets = secretsMap.Bind(m => Secrets(m, at));
+        var missing = type.Match(
+            t => [.. Missing("setting", t, knownTypes[t].Settings, settingsMap, map, at), .. Missing("secret", t, knownTypes[t].Secrets, secretsMap, map, at)],
+            _ => Array.Empty<Problem>());
 
-        Problem[] problems = [.. UnknownKeys(map, CollectorKeys, at), .. ProblemsOf(name), .. ProblemsOf(type), .. ProblemsOf(schedule), .. ProblemsOf(settings), .. ProblemsOf(secrets)];
+        Problem[] problems =
+        [
+            .. UnknownKeys(map, CollectorKeys, at), .. ProblemsOf(name), .. ProblemsOf(type), .. ProblemsOf(schedule), .. ProblemsOf(settings), .. ProblemsOf(secrets), .. missing,
+        ];
         return problems.Length > 0
             ? Result.Fail<CollectorInstance>(problems)
             : name.Bind(n => type.Bind(t => schedule.Bind(s => settings.Bind(v => secrets.Map(r => new CollectorInstance(n, t, s, v, r))))));
     }
+
+    /// <summary>A problem for each required setting or secret that the collector's section does not give.</summary>
+    private static IEnumerable<Problem> Missing(
+        string kind, string type, IReadOnlyList<SettingDescription> described, Result<YamlMappingNode> section, YamlMappingNode collector, Locator at) =>
+        section.Match(
+            given => described
+                .Where(d => d.Required && Child(given, d.Name) is null)
+                .Select(d => at.Problem(collector.Start, $"config.{kind}_missing", $"collector type '{type}' needs {kind} '{d.Name}'.")),
+            _ => []);
 
     private static Result<TargetConfig> ParseTarget(YamlMappingNode map, Locator at)
     {

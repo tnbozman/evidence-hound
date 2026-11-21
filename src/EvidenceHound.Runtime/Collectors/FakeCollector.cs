@@ -27,7 +27,10 @@ public sealed class FakeCollector : ICollector
 
     public string Version => "1.0.0";
 
-    public CollectorDescription Describe() => throw new NotImplementedException();
+    public CollectorDescription Describe() => new(
+        [.. Findings.Select(f => f.CheckId)],
+        [new("tenant", "Tenant domain named in the evidence. Default: example.com.", Required: false)],
+        []);
 
     public Task<Result<CollectionResult>> CollectAsync(CollectorContext context, CancellationToken cancellationToken)
     {

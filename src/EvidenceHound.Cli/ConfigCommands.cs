@@ -1,5 +1,4 @@
 using System.CommandLine;
-using EvidenceHound.Collectors;
 using EvidenceHound.Core.Results;
 using EvidenceHound.Core.Secrets;
 using EvidenceHound.Runtime.Collectors;
@@ -13,7 +12,7 @@ namespace EvidenceHound.Cli;
 /// <summary><c>hound config validate</c>: check a deployment config file and report every problem at once.</summary>
 internal static class ConfigCommands
 {
-    public static Command Build(TextWriter output, ILoggerFactory loggers, IConfiguration configuration)
+    public static Command Build(TextWriter output, ILoggerFactory loggers, IConfiguration configuration, CollectorRegistry registry)
     {
         var logger = loggers.CreateLogger("hound.config");
         var file = new Argument<FileInfo>("file") { Description = "Path to the deployment config file (YAML)." };
@@ -21,7 +20,7 @@ internal static class ConfigCommands
         var validate = new Command("validate", "Check a deployment config file and report every problem.") { file, checkSecrets };
         validate.SetAction(async (parseResult, cancellationToken) =>
         {
-            var config = await LoadAsync(parseResult.GetRequiredValue(file), cancellationToken);
+            var config = await LoadAsync(parseResult.GetRequiredValue(file), registry, cancellationToken);
             var checkedConfig = parseResult.GetValue(checkSecrets) ? config.Bind(c => WithSecrets(c, configuration)) : config;
             return await checkedConfig.Match(
                 async _ =>
@@ -35,9 +34,9 @@ internal static class ConfigCommands
         return new Command("config", "Work with deployment config files.") { validate };
     }
 
-    /// <summary>Loads a deployment config, knowing the collector types this build ships.</summary>
-    internal static Task<Result<DeploymentConfig>> LoadAsync(FileInfo file, CancellationToken cancellationToken) =>
-        ConfigLoader.LoadAsync(file.FullName, BuiltInCollectors.Create().ToDictionary(p => p.Key, _ => new CollectorDescription([], [], [])), cancellationToken);
+    /// <summary>Loads a deployment config, checking each collector against what its registered type describes.</summary>
+    internal static Task<Result<DeploymentConfig>> LoadAsync(FileInfo file, CollectorRegistry registry, CancellationToken cancellationToken) =>
+        ConfigLoader.LoadAsync(file.FullName, registry.Descriptions, cancellationToken);
 
     /// <summary>The secret provider for this run: <c>env:</c> reads .NET configuration (environment variables and test settings).</summary>
     internal static ISecretProvider Secrets(IConfiguration configuration) => CompositeSecretProvider.Standard(name => configuration[name]);

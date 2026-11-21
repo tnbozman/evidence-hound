@@ -1,5 +1,6 @@
 using System.CommandLine;
 using EvidenceHound.Runtime;
+using EvidenceHound.Runtime.Collectors;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -75,9 +76,25 @@ public static class HoundCli
         using var host = BuildHost(error, configureLogging, settings, configureServices);
         var loggers = host.Services.GetRequiredService<ILoggerFactory>();
         var logger = loggers.CreateLogger("hound");
-        var collectorServices = new CollectorServices(loggers, host.Services.GetRequiredService<IHttpClientFactory>());
 
-        var root = BuildRootCommand(output, loggers, host.Services.GetRequiredService<IConfiguration>(), collectorServices);
+        return await CollectorRegistry.FromServices(host.Services).Match(
+            registry => InvokeAsync(args, output, error, extraCommands, host.Services, registry, logger, cancellationToken),
+            problems => Task.FromResult(Log.Problems(logger, problems)));
+    }
+
+    private static async Task<int> InvokeAsync(
+        string[] args,
+        TextWriter output,
+        TextWriter error,
+        IReadOnlyList<Command> extraCommands,
+        IServiceProvider services,
+        CollectorRegistry registry,
+        ILogger logger,
+        CancellationToken cancellationToken)
+    {
+        var loggers = services.GetRequiredService<ILoggerFactory>();
+        var collectorServices = new CollectorServices(loggers, services.GetRequiredService<IHttpClientFactory>());
+        var root = BuildRootCommand(output, loggers, services.GetRequiredService<IConfiguration>(), registry, collectorServices);
         foreach (var command in extraCommands)
         {
             root.Subcommands.Add(command);
@@ -114,16 +131,18 @@ public static class HoundCli
         }
     }
 
-    private static RootCommand BuildRootCommand(TextWriter output, ILoggerFactory loggers, IConfiguration configuration, CollectorServices collectorServices) =>
+    private static RootCommand BuildRootCommand(
+        TextWriter output, ILoggerFactory loggers, IConfiguration configuration, CollectorRegistry registry, CollectorServices collectorServices) =>
         new("Evidence Hound: collects compliance evidence and publishes it to CISO Assistant.")
         {
-            CollectCommand.Build(loggers, configuration, collectorServices),
-            ConfigCommands.Build(output, loggers, configuration),
+            CollectCommand.Build(loggers, configuration, registry, collectorServices),
+            CollectorsCommand.Build(output, registry),
+            ConfigCommands.Build(output, loggers, configuration, registry),
             MappingCommands.Build(output, loggers),
-            PlanCommand.Build(output, loggers),
-            PublishCommand.Build(output, loggers, configuration),
-            RunCommand.Build(output, loggers, configuration, collectorServices),
-            StatusCommand.Build(output, loggers),
+            PlanCommand.Build(output, loggers, registry),
+            PublishCommand.Build(output, loggers, configuration, registry),
+            RunCommand.Build(output, loggers, configuration, registry, collectorServices),
+            StatusCommand.Build(output, loggers, registry),
         };
 
     /// <summary>One host per run. Logs go to <paramref name="error"/>; the level comes from configuration (for example <c>Logging__LogLevel__Default</c>).</summary>
@@ -140,6 +159,7 @@ public static class HoundCli
         builder.Logging.AddProvider(new StderrLoggerProvider(error));
         configureLogging?.Invoke(builder.Logging);
         builder.Services.AddHttpClient();
+        builder.Services.AddBuiltInCollectors();
         configureServices?.Invoke(builder.Services);
         return builder.Build();
     }

@@ -12,7 +12,7 @@ namespace EvidenceHound.Cli;
 /// <summary><c>hound collect</c>: collect evidence from every configured collector and store it with a manifest.</summary>
 internal static class CollectCommand
 {
-    public static Command Build(ILoggerFactory loggers, IConfiguration configuration, CollectorServices collectorServices)
+    public static Command Build(ILoggerFactory loggers, IConfiguration configuration, CollectorRegistry registry, CollectorServices collectorServices)
     {
         var logger = loggers.CreateLogger("hound.collect");
         var dryRun = new Option<bool>("--dry-run")
@@ -27,10 +27,10 @@ internal static class CollectCommand
 
         var collect = new Command("collect", "Collect evidence from every configured collector into the evidence store.") { dryRun, config };
         collect.SetAction(async (parseResult, cancellationToken) =>
-            await (await ConfigCommands.LoadAsync(parseResult.GetRequiredValue(config), cancellationToken)).Match(
+            await (await ConfigCommands.LoadAsync(parseResult.GetRequiredValue(config), registry, cancellationToken)).Match(
                 deployment => parseResult.GetValue(dryRun)
                     ? Task.FromResult(Collectors(logger, deployment))
-                    : CollectAsync(deployment, configuration, collectorServices, logger, cancellationToken),
+                    : CollectAsync(deployment, configuration, registry, collectorServices, logger, cancellationToken),
                 problems => Task.FromResult(Log.Problems(logger, problems))));
         return collect;
     }
@@ -41,14 +41,14 @@ internal static class CollectCommand
         return ExitCodes.Ok;
     }
 
-    private static async Task<int> CollectAsync(DeploymentConfig config, IConfiguration configuration, CollectorServices collectorServices, ILogger logger, CancellationToken cancellationToken)
+    private static async Task<int> CollectAsync(
+        DeploymentConfig config, IConfiguration configuration, CollectorRegistry registry, CollectorServices collectorServices, ILogger logger, CancellationToken cancellationToken)
     {
-        var collectors = BuiltInCollectors.Create();
         var step = new CollectStep(ConfigCommands.Secrets(configuration), new FileEvidenceStore(config.Evidence.Root), new SystemClock(), config.Evidence.RetentionDays, collectorServices);
         var failed = 0;
         foreach (var instance in config.Collectors)
         {
-            var run = await step.RunAsync(instance, collectors[instance.Type], cancellationToken);
+            var run = await step.RunAsync(instance, registry.ByType[instance.Type], cancellationToken);
             failed += run.Match(
                 stored =>
                 {

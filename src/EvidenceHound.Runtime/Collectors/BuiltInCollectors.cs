@@ -1,11 +1,9 @@
-using EvidenceHound.Collectors;
-using EvidenceHound.Runtime.Configuration;
+using EvidenceHound.Runtime.Collectors;
 
-namespace EvidenceHound.Runtime.Collectors;
+namespace Microsoft.Extensions.DependencyInjection;
 
-/// <summary>The collectors this build ships, by type name.</summary>
-public static class BuiltInCollectors
+public static class BuiltInCollectorServiceCollectionExtensions
 {
-    public static IReadOnlyDictionary<string, ICollector> Create() =>
-        new Dictionary<string, ICollector>(StringComparer.Ordinal) { [CollectorTypes.Fake] = new FakeCollector() };
+    /// <summary>Registers the collectors this build ships.</summary>
+    public static IServiceCollection AddBuiltInCollectors(this IServiceCollection services) => services.AddCollector<FakeCollector>();
 }

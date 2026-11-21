@@ -1,6 +1,7 @@
 using System.CommandLine;
 using System.Globalization;
 using EvidenceHound.Core.Results;
+using EvidenceHound.Runtime.Collectors;
 using EvidenceHound.Runtime.Configuration;
 using EvidenceHound.Runtime.Status;
 using Microsoft.Extensions.Logging;
@@ -12,14 +13,14 @@ internal static class StatusCommand
 {
     private static readonly string[] Header = ["COLLECTOR", "LAST RUN (UTC)", "OUTCOME", "PASSED", "FAILED", "PUBLISHED"];
 
-    public static Command Build(TextWriter output, ILoggerFactory loggers)
+    public static Command Build(TextWriter output, ILoggerFactory loggers, CollectorRegistry registry)
     {
         var logger = loggers.CreateLogger("hound.status");
         var config = new Option<FileInfo>("--config") { Description = "Path to the deployment config file (YAML).", Required = true };
         var status = new Command("status", "Show the latest run of each configured collector.") { config };
         status.SetAction(async (parseResult, cancellationToken) =>
         {
-            var deployment = await ConfigCommands.LoadAsync(parseResult.GetRequiredValue(config), cancellationToken);
+            var deployment = await ConfigCommands.LoadAsync(parseResult.GetRequiredValue(config), registry, cancellationToken);
             var latest = await deployment.BindAsync(d => new FileRunRecordStore(d.Evidence.Root).LatestAsync(cancellationToken));
             return await deployment.Bind(d => latest.Map(records => Rows(d, records))).Match(
                 async rows =>
