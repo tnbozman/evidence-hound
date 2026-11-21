@@ -107,7 +107,7 @@ Moved from s13-02, because the Essentials parallel run needs it before 800-171 d
 - Result (2026-11-21): `ChangeOnlyFunctionalTests` in CI run [44905017778](https://github.com/tnbozman/evidence-hound/actions/runs/44905017778) passed; the second run sends nothing and its history line counts every row unchanged, and after an edit of EX-1.1 through the API the third run writes that row only, reports `publish.drift_corrected` and records drift 1. Evidence: [docs/evidence/s06/s06-04.md](../evidence/s06/s06-04.md).
 
 ### s06-05 CISO Assistant configuration inventory
-- [ ] Done
+- [x] Done
 
 **Story:** As the capability owner, I want a verified list of what in CISO Assistant is configuration and how each piece can be set through the API, so that the scope format covers what matters and never promises what the API cannot do.
 
@@ -132,6 +132,7 @@ Moved from s13-02, because the Essentials parallel run needs it before 800-171 d
 
 **Functional check**
 - Each answer above reproduced against the local CISO Assistant with a short script under `scripts/`, its output recorded under this task.
+- Result (2026-11-21): `scripts/ca-inventory.sh` ran against v4.3.4 in the functional CI job (runs [44906131552](https://github.com/tnbozman/evidence-hound/actions/runs/44906131552) and [44907514706](https://github.com/tnbozman/evidence-hound/actions/runs/44907514706)). Locking an audit does not freeze its controls; evidence revisions carry the file's SHA-256; audits have `status`, `eta` and `due_date` and can be created from a baseline; read-only field writes are dropped silently; a custom library uploads as a raw file body (201), and the main entity and feature flags can be PATCHed; BIAs, entity assessments and metric instances have `ref_id`, and entity assessments have no revisions. Evidence: [docs/evidence/s06/s06-05.md](../evidence/s06/s06-05.md).
 
 ### s06-06 Scope file and offline validation
 - [x] Done
