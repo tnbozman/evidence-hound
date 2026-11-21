@@ -87,6 +87,7 @@ public class ResultTests
         Result.Fail<int>([NotFound, Refused]).ShouldBe(Result.Fail<int>([NotFound, Refused]));
         Result.Fail<int>([NotFound, Refused]).GetHashCode().ShouldBe(Result.Fail<int>([NotFound, Refused]).GetHashCode());
         Result.Fail<int>([NotFound, Refused]).ShouldNotBe(Result.Fail<int>([Refused, NotFound]));
+        Result.Fail<int>(NotFound).Equals(null).ShouldBeFalse();
     }
 
     [Fact]

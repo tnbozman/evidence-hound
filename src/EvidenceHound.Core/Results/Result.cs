@@ -20,24 +20,12 @@ public static class Result
     {
         ArgumentNullException.ThrowIfNull(results);
 
-        var values = ImmutableArray.CreateBuilder<T>();
-        var errors = ImmutableArray.CreateBuilder<Problem>();
-        foreach (var result in results)
-        {
-            switch (result)
-            {
-                case Result<T>.Ok ok:
-                    values.Add(ok.Value);
-                    break;
-                case Result<T>.Fail fail:
-                    errors.AddRange(fail.Errors);
-                    break;
-            }
-        }
-
-        return errors.Count == 0
-            ? Ok<IReadOnlyList<T>>(values.ToImmutable())
-            : Fail<IReadOnlyList<T>>(errors.ToImmutable());
+        return results.Aggregate(
+            Ok(ImmutableList<T>.Empty),
+            (combined, next) => combined.Match(
+                values => next.Match(value => Ok(values.Add(value)), Fail<ImmutableList<T>>),
+                problems => next.Match(_ => Fail<ImmutableList<T>>(problems), more => Fail<ImmutableList<T>>(problems.Concat(more)))))
+            .Map(values => (IReadOnlyList<T>)values);
     }
 }
 
@@ -49,18 +37,7 @@ public abstract record Result<T>
     {
     }
 
-    public TOut Match<TOut>(Func<T, TOut> ok, Func<IReadOnlyList<Problem>, TOut> fail)
-    {
-        ArgumentNullException.ThrowIfNull(ok);
-        ArgumentNullException.ThrowIfNull(fail);
-
-        return this switch
-        {
-            Ok success => ok(success.Value),
-            Fail failure => fail(failure.Errors),
-            _ => throw new InvalidOperationException("Result is either Ok or Fail."),
-        };
-    }
+    public abstract TOut Match<TOut>(Func<T, TOut> ok, Func<IReadOnlyList<Problem>, TOut> fail);
 
     public Result<TOut> Map<TOut>(Func<T, TOut> map)
         where TOut : notnull
@@ -85,6 +62,12 @@ public abstract record Result<T>
         }
 
         public T Value { get; }
+
+        public override TOut Match<TOut>(Func<T, TOut> ok, Func<IReadOnlyList<Problem>, TOut> fail)
+        {
+            ArgumentNullException.ThrowIfNull(ok);
+            return ok(Value);
+        }
     }
 
     public sealed record Fail : Result<T>
@@ -100,6 +83,12 @@ public abstract record Result<T>
         }
 
         public IReadOnlyList<Problem> Errors { get; }
+
+        public override TOut Match<TOut>(Func<T, TOut> ok, Func<IReadOnlyList<Problem>, TOut> fail)
+        {
+            ArgumentNullException.ThrowIfNull(fail);
+            return fail(Errors);
+        }
 
         public bool Equals(Fail? other) =>
             other is not null && Errors.SequenceEqual(other.Errors);
