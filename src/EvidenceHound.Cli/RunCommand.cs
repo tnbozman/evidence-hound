@@ -96,7 +96,11 @@ internal static class RunCommand
             targets,
             sinks.SinkFor,
             new SystemClock(),
-            new FileRunRecordStore(config.Evidence.Root));
+            new FileRunRecordStore(config.Evidence.Root))
+        {
+            States = sinks.States,
+            History = new FileRunHistory(config.Evidence.Root),
+        };
 
         var summary = await runner.RunAsync(instances, options, cancellationToken);
         foreach (var collector in summary.Collectors)
@@ -125,6 +129,7 @@ internal static class RunCommand
     private static JsonObject Json(RunSummary summary) => new()
     {
         ["outcome"] = summary.Outcome.ToString().ToLowerInvariant(),
+        ["run_id"] = summary.RunId,
         ["collectors"] = new JsonArray([.. summary.Collectors.Select(c => new JsonObject
         {
             ["name"] = c.Collector,
@@ -140,8 +145,18 @@ internal static class RunCommand
                     ["audits"] = PublishCommand.AuditsJson(report),
                 }
                 : null,
+            ["changes"] = ChangesJson(c.Changes),
         })]),
     };
+
+    internal static JsonArray ChangesJson(IReadOnlyList<AuditChanges> changes) =>
+        new([.. changes.Select(a => new JsonObject
+        {
+            ["compliance_assessment"] = a.ComplianceAssessmentRefId,
+            ["changed"] = a.Changed,
+            ["unchanged"] = a.Unchanged,
+            ["drift"] = a.Drift,
+        })]);
 
     private static int Usage(ILogger logger, IReadOnlyList<Problem> problems)
     {
@@ -154,17 +169,20 @@ internal static class RunCommand
     }
 
     /// <summary>Makes a sink per collector run over that run's files, and owns whatever the sinks share.</summary>
-    private sealed class Transports(Func<IEvidenceFiles, IAuditUpdateSink> sinkFor, IDisposable? shared) : IDisposable
+    private sealed class Transports(Func<IEvidenceFiles, IAuditUpdateSink> sinkFor, IDisposable? shared, ICurrentStateSource? states = null) : IDisposable
     {
         public static Transports None { get; } = new(_ => throw new InvalidOperationException("Publishing is off for this run."), null);
 
         public Func<IEvidenceFiles, IAuditUpdateSink> SinkFor { get; } = sinkFor;
 
+        /// <summary>CISO Assistant's current state over REST; the Kafka dispatcher cannot read, so with it everything is sent.</summary>
+        public ICurrentStateSource States { get; } = states ?? NoCurrentState.Instance;
+
         public static Transports Rest(CisoAssistantOptions options, ILoggerFactory loggers)
         {
             var services = new ServiceCollection().AddSingleton(loggers).AddCisoAssistantClient(options).BuildServiceProvider();
             var client = services.GetRequiredService<ICisoAssistantClient>();
-            return new Transports(files => new RestSink(client, files), services);
+            return new Transports(files => new RestSink(client, files), services, new ClientStateSource(client));
         }
 
         public static Transports Kafka(KafkaSinkOptions options) => new(files => new KafkaSink(options, files), null);

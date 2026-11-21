@@ -82,7 +82,7 @@ public sealed class PlanCommandTests : IDisposable
         _ca.Given(Request.Create().WithPath("/api/compliance-assessments/ca-uuid/object/").UsingGet()).RespondWith(Json(200, """{"id": "ca-uuid", "selected_implementation_groups": []}"""));
         _ca.Given(Request.Create().WithPath("/api/requirement-assessments/").UsingGet())
             .RespondWith(Json(200, new JsonObject { ["count"] = 5, ["results"] = rows }.ToJsonString()));
-        _ca.Given(Request.Create().WithPath("/api/evidences/").UsingGet()).RespondWith(Json(200, """{"count": 0, "results": []}"""));
+        _ca.Given(Request.Create().WithPath("/api/evidences/").UsingGet()).AtPriority(10).RespondWith(Json(200, """{"count": 0, "results": []}"""));
         _ca.Given(Request.Create().WithPath("/api/evidences/").UsingGet().WithParam("search", "ev-0001")).AtPriority(1)
             .RespondWith(Json(200, """{"count": 1, "results": [{"id": "ev-uuid-1", "ref_id": "ev-0001"}]}"""));
         _ca.Given(Request.Create().WithPath("/api/evidence-revisions/").UsingGet())

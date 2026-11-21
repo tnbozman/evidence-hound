@@ -18,6 +18,7 @@ public sealed class HistoryTests : IDisposable
     private static readonly DateTimeOffset Now = new(2026, 6, 30, 2, 0, 0, TimeSpan.Zero);
     private readonly string _root = Directory.CreateTempSubdirectory("hound-history-").FullName;
     private readonly CancellationToken _ct = TestContext.Current.CancellationToken;
+    private readonly FixedClock _clock = new(Now);
 
     private static CheckId Id(string id) => CheckId.Create(id).Value();
 
@@ -45,6 +46,7 @@ public sealed class HistoryTests : IDisposable
         (first["changed"]!.GetValue<int>(), first["unchanged"]!.GetValue<int>(), first["drift"]!.GetValue<int>()).ShouldBe((2, 0, 0));
         Lines("EXAMPLE-2").ShouldHaveSingleItem()["changed"]!.GetValue<int>().ShouldBe(1);
 
+        _clock.UtcNow = Now.AddDays(1);
         await runner.RunAsync([Instance("example-idp", "idp"), Instance("example-backup", "backup")], new RunOptions(), _ct);
 
         Lines("EXAMPLE-1").Count.ShouldBe(2);
@@ -102,13 +104,13 @@ public sealed class HistoryTests : IDisposable
         var accepting = sink ?? new AcceptingSink();
         return new Runner(
             new Dictionary<string, ICollector> { ["idp"] = Reporting("identity.mfa.admins", "admins.json"), ["backup"] = Reporting("backup.daily", "jobs.json") },
-            new CollectStep(Secrets.From(new Dictionary<string, string>()), new FileEvidenceStore(_root), new FixedClock(Now), retentionDays: null, TestCollectorServices.None),
+            new CollectStep(Secrets.From(new Dictionary<string, string>()), new FileEvidenceStore(_root), _clock, retentionDays: null, TestCollectorServices.None),
             [
                 new RunTarget(First, new AuditTarget("EXAMPLE-1", new Dictionary<string, string>())),
                 new RunTarget(Second, new AuditTarget("EXAMPLE-2", new Dictionary<string, string>())),
             ],
             _ => accepting,
-            new FixedClock(Now),
+            _clock,
             new FileRunRecordStore(_root))
         {
             States = states ?? NoCurrentState.Instance,

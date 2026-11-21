@@ -100,7 +100,7 @@ internal static class PublishCommand
             ? Result.Ok(new KafkaSinkOptions(servers))
             : Result.Fail<KafkaSinkOptions>(new Problem("config.kafka_servers_missing", $"Set {KafkaSetting} to the Kafka bootstrap servers the dispatcher reads, for example localhost:19092."));
 
-    private static Result<CisoAssistantOptions> Connection(IConfiguration configuration)
+    internal static Result<CisoAssistantOptions> Connection(IConfiguration configuration)
     {
         var url = configuration[UrlSetting];
         var token = configuration[TokenSetting];
