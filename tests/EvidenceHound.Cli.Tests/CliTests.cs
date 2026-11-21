@@ -113,6 +113,36 @@ public sealed class CliTests : IDisposable
         _error.ToString().ShouldContain("missing.yaml");
     }
 
+    [Fact]
+    public async Task Mapping_apply_prints_a_row_per_requirement()
+    {
+        var exitCode = await Run("mapping", "apply", RepoFile("mappings", "example.yaml"), RepoFile("fixtures", "checks-sample.json"));
+
+        exitCode.ShouldBe(0);
+        var lines = _output.ToString().Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        lines[0].ShouldStartWith("REQUIREMENT");
+        lines.Skip(1).Select(l => string.Join(' ', l.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2))).ShouldBe([
+            "EX-1.1 non_compliant",
+            "EX-1.2 partially_compliant",
+            "EX-2.1 compliant",
+            "EX-3.1 not_assessed",
+        ]);
+    }
+
+    [Fact]
+    public async Task Mapping_apply_with_bad_checks_file_exits_three()
+    {
+        var checks = Path.Combine(_workDir, "checks.json");
+        await File.WriteAllTextAsync(checks, "{", TestContext.Current.CancellationToken);
+
+        var exitCode = await Run("mapping", "apply", RepoFile("mappings", "example.yaml"), checks);
+
+        exitCode.ShouldBe(3);
+        _error.ToString().ShouldContain("checks.json");
+    }
+
+    private static string RepoFile(string folder, string name) => Path.Combine(AppContext.BaseDirectory, "files", folder, name);
+
     public void Dispose()
     {
         _output.Dispose();

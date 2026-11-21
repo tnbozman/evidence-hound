@@ -1,0 +1,76 @@
+{
+  "checks": [
+    {
+      "check_id": "identity.mfa.admins",
+      "outcome": "pass",
+      "observation": "All 4 admin accounts at example.com use MFA.",
+      "evidence_refs": ["ev-0001"],
+      "collected_at": "2026-01-15T09:30:00Z",
+      "source": "example-idp"
+    },
+    {
+      "check_id": "identity.mfa.users",
+      "outcome": "fail",
+      "observation": "3 of 40 user accounts have no MFA method.",
+      "evidence_refs": ["ev-0002"],
+      "collected_at": "2026-01-15T09:30:00Z",
+      "source": "example-idp"
+    },
+    {
+      "check_id": "identity.mfa.phishing_resistant",
+      "outcome": "partial",
+      "observation": "Phishing-resistant MFA is enforced for admins only.",
+      "evidence_refs": ["ev-0003"],
+      "collected_at": "2026-01-15T09:30:00Z",
+      "source": "example-idp"
+    },
+    {
+      "check_id": "identity.mfa.number_matching",
+      "outcome": "pass",
+      "observation": "Number matching is on for every user.",
+      "evidence_refs": ["ev-0003"],
+      "collected_at": "2026-01-15T09:30:00Z",
+      "source": "example-idp"
+    },
+    {
+      "check_id": "patching.os.critical_48h",
+      "outcome": "pass",
+      "observation": "Every endpoint has critical OS patches within 48 hours.",
+      "evidence_refs": ["ev-0004"],
+      "collected_at": "2026-01-15T10:00:00Z",
+      "source": "example-endpoint"
+    },
+    {
+      "check_id": "patching.apps.critical_48h",
+      "outcome": "fail",
+      "observation": "2 endpoints have an unpatched critical browser update.",
+      "evidence_refs": ["ev-0004"],
+      "collected_at": "2026-01-15T10:00:00Z",
+      "source": "example-endpoint"
+    },
+    {
+      "check_id": "patching.os.supported",
+      "outcome": "pass",
+      "observation": "Every endpoint runs a supported OS version.",
+      "evidence_refs": ["ev-0004"],
+      "collected_at": "2026-01-15T10:00:00Z",
+      "source": "example-endpoint"
+    },
+    {
+      "check_id": "backup.daily",
+      "outcome": "error",
+      "observation": "The backup API returned HTTP 503.",
+      "evidence_refs": [],
+      "collected_at": "2026-01-15T11:00:00Z",
+      "source": "example-backup"
+    },
+    {
+      "check_id": "backup.daily",
+      "outcome": "pass",
+      "observation": "Last night's backup job completed for all 12 servers.",
+      "evidence_refs": ["ev-0005"],
+      "collected_at": "2026-01-15T11:15:00Z",
+      "source": "example-backup"
+    }
+  ]
+}

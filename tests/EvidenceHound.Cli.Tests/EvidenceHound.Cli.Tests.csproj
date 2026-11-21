@@ -2,4 +2,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\EvidenceHound.Cli\EvidenceHound.Cli.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\mappings\example.yaml" Link="files\mappings\example.yaml" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\fixtures\*.json" Link="files\fixtures\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>
