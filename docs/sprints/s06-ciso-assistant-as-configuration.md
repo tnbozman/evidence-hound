@@ -1,6 +1,6 @@
 # s06 CISO Assistant as configuration, and multi-framework foundations
 
-Status: In progress
+Status: Done
 
 **Goal:** an organisation's assurance structure in CISO Assistant is declared in version-controlled YAML, then validated, previewed and applied by `hound` instead of by clicking. One collection run feeds several framework audits, CISO Assistant changes only when a check's state changes, and audits run in periods that close with a sign-off. The errors, schemas and plans are precise enough for a person or an AI assistant to get the configuration right through ordinary pull requests.
 
@@ -303,7 +303,7 @@ The layout follows one that has already been tried against CISO Assistant: one s
 - Result (2026-11-21): `ScopeExportFunctionalTests` exported the seeded v4.3.4 instance with `--with-files` in the functional CI job (run [44953205117](https://github.com/tnbozman/evidence-hound/actions/runs/44953205117)): five audits, the controls and documents with their files, and the hand-written results. `scope validate` passed, `scope plan` on the export listed no changes, and a second export was identical. The first run found one period audit planned as "mark as managed", fixed by leaving an audit's status and lock out of its recorded state. Evidence: [docs/evidence/s06/s06-11.md](../evidence/s06/s06-11.md).
 
 ### s06-12 Compliance repo template and guide
-- [ ] Done
+- [x] Done
 
 **Story:** As a capability owner working with an AI assistant, I want a ready-made private compliance repo layout, with instructions for the assistant, so that the assistant proposes valid changes and I review them as pull requests.
 
@@ -321,6 +321,7 @@ The layout follows one that has already been tried against CISO Assistant: one s
 
 **Functional check**
 - Following `docs/scope.md` verbatim: copy the example repo, change a system's owner, and confirm that validate passes, plan shows one field update, and apply makes it.
+- Result (2026-11-21): `ReviewWorkflowFunctionalTests` in the functional CI job (run [44956715748](https://github.com/tnbozman/evidence-hound/actions/runs/44956715748)): validate passed, plan showed `0 to create, 1 to update, 0 to delete.` with the owner change on "Example laptops", apply wrote 1, and a second plan showed no changes. The first run planned 5 updates because other tests had published results the example scope does not declare; the check now starts from the applied example scope. Evidence: [docs/evidence/s06/s06-12.md](../evidence/s06/s06-12.md).
 
 ## Discovered work
 
@@ -338,6 +339,23 @@ The layout follows one that has already been tried against CISO Assistant: one s
 - The scope plan labels an audit "awaiting sign-off" for every ended period still in review, however old; it does not yet warn when a sign-off is overdue. (Found in s06-10.)
 - `hound publish` writes results without the run marker that `hound run` adds (s06-04), so `scope export` cannot tell rows it wrote from hand-written ones and exports them as `assessments`. Give `publish` the marker too. (Found in s06-11.)
 - `scope export` does not export a control's status or reference control, a system's tags, an audit's field visibility or cycle, or libraries no audit uses; an exported period audit is a plain audit. (Found in s06-11.)
+- `scope apply` resets results that `hound publish` wrote to rows the scope leaves `unlisted: not_assessed`, because those rows carry no run marker (see the s06-11 note). Rows written by `hound run` are kept. Giving `publish` the marker fixes both. (Found in s06-12.)
 - The organisation's own record (CISO Assistant's main entity, used by third-party risk features) is not managed by the scope yet; the scope uses the root folder. Add it once the REST API is confirmed to update it. (Found planning s06.)
 
 ## Sprint review
+
+**2026-11-21.** All twelve tasks shipped with red and green commits and per-task evidence in `docs/evidence/s06/`. Each functional check ran against CISO Assistant v4.3.4 in CI.
+
+- **Publishing by URN to several audits.** Requirement rows are addressed by URN and scoped to an audit's groups. One run feeds several audits (the Essential Eight and the ASD Essentials). Only rows whose state changed are written, each traced to its run by a marker.
+- **CISO Assistant as configuration.** `hound scope validate`, `plan`, `apply` and `export` manage domains, perimeters, systems, frameworks and libraries, audits, documents with files, applied controls and hand-written assessments from YAML. Validation is offline against committed framework snapshots. Plans show drift from UI changes and never delete without `--prune`. An export of an instance plans back to no changes.
+- **Audit periods.** A `cycle` turns an audit file into a series of periods. Each opens from the previous one as baseline, moves to review when it ends and is locked on sign-off. Runs publish to the open period and never write a closed one. Each closed period's final run is kept for seven years.
+- **A compliance repo template** with an assistant guide and a pull request workflow (validate, plan as a comment, apply behind a protected environment).
+
+754 unit and contract tests, the script tests, 17 functional tests (CI) and lint pass.
+
+What slipped: nothing in scope. Follow-ups are under Discovered work, notably the run marker for `hound publish`, a system's tags and an audit's field visibility in plans, and overdue sign-off warnings.
+
+What the feedback taught us:
+- Read the API before writing tests. The s06-05 inventory, run in CI against the real container, found that owners are actor IDs, that chunked bodies reach Django empty, that uploading a library also loads it, and that audits have no dates. Each would otherwise have been a wrong test.
+- State that only some objects declare (links, an audit's status and lock) must stay out of the recorded marker state, or every object that does not declare it plans as an update. The functional checks found both cases. The unit tests had not.
+- Functional tests share one instance, so each check must start from a state it sets itself rather than from what earlier tests left behind.
