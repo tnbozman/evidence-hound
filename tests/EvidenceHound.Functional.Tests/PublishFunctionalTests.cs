@@ -17,9 +17,9 @@ public sealed class PublishFunctionalTests(CisoAssistantFixture ciso)
         var (secondExit, second) = await PublishAsync(ct);
 
         firstExit.ShouldBe(ExitCodes.Ok, first.ToJsonString());
-        (first["sent"]!.GetValue<int>(), first["failed"]!.GetValue<int>()).ShouldBe((9, 0));
+        (first["sent"]!.GetValue<int>(), first["failed"]!.GetValue<int>()).ShouldBe((10, 0));
         secondExit.ShouldBe(ExitCodes.Ok, second.ToJsonString());
-        (second["skipped"]!.GetValue<int>(), second["sent"]!.GetValue<int>(), second["failed"]!.GetValue<int>()).ShouldBe((3, 6, 0));
+        (second["skipped"]!.GetValue<int>(), second["sent"]!.GetValue<int>(), second["failed"]!.GetValue<int>()).ShouldBe((3, 7, 0));
 
         var evidence = (await Get("evidences/?search=ev-0001", ct))["results"]!.AsArray()
             .Where(e => e!["ref_id"]!.GetValue<string>() == "ev-0001").ToList();

@@ -1,9 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <PackageReference Include="JsonSchema.Net" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="YamlDotNet" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\src\EvidenceHound.Collectors.Testing\EvidenceHound.Collectors.Testing.csproj" />
     <ProjectReference Include="..\..\src\EvidenceHound.Runtime\EvidenceHound.Runtime.csproj" />
   </ItemGroup>
   <ItemGroup>

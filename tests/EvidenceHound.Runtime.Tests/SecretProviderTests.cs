@@ -73,7 +73,7 @@ public sealed class SecretProviderTests : IDisposable
               - {name: two, type: fake, schedule: "0 2 * * *", secrets: {key: "env:HOUND_NOT_SET", other: "file:/run/secrets/hound-not-there"}}
             target: {mapping: ./mapping.yaml, compliance_assessment: EXAMPLE-1}
             """;
-        var config = Configuration.ConfigLoader.Parse(yaml, "hound.yaml", new HashSet<string>(StringComparer.Ordinal) { "fake" }).Value();
+        var config = Configuration.ConfigLoader.Parse(yaml, "hound.yaml", new Dictionary<string, EvidenceHound.Collectors.CollectorDescription>(StringComparer.Ordinal) { ["fake"] = new([], [], []) }).Value();
 
         var missing = SecretCheck.Missing(config, CompositeSecretProvider.Standard(name => Environment.GetValueOrDefault(name)));
 

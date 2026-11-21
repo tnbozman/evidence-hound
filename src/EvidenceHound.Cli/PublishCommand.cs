@@ -5,6 +5,7 @@ using EvidenceHound.CisoAssistant;
 using EvidenceHound.Core.Planning;
 using EvidenceHound.Core.Publishing;
 using EvidenceHound.Core.Results;
+using EvidenceHound.Runtime.Collectors;
 using EvidenceHound.Transport.Kafka;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,7 +23,7 @@ internal static class PublishCommand
 
     private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
 
-    public static Command Build(TextWriter output, ILoggerFactory loggers, IConfiguration configuration)
+    public static Command Build(TextWriter output, ILoggerFactory loggers, IConfiguration configuration, CollectorRegistry registry)
     {
         var logger = loggers.CreateLogger("hound.publish");
         var dryRun = new Option<bool>("--dry-run") { Description = "Print the report of what would be sent, without calling CISO Assistant." };
@@ -33,7 +34,7 @@ internal static class PublishCommand
         var publish = new Command("publish", $"Publish a run's check results to CISO Assistant (needs {UrlSetting} and {TokenSetting}).") { dryRun, config, checks, evidenceDir };
         publish.SetAction(async (parseResult, cancellationToken) =>
         {
-            var plan = await PlanCommand.PlanAsync(parseResult.GetRequiredValue(config), parseResult.GetRequiredValue(checks), cancellationToken);
+            var plan = await PlanCommand.PlanAsync(parseResult.GetRequiredValue(config), parseResult.GetRequiredValue(checks), registry, cancellationToken);
             return await plan.Match(
                 updates => parseResult.GetValue(dryRun)
                     ? WriteAsync(Publisher.DryRun(updates), output)

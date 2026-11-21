@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "Evidence Hound contributors",
+  "classifications": ["Evidence Hound", "Collector"],
+  "identity": "EvidenceHound.Templates.Collector",
+  "name": "Evidence Hound collector",
+  "shortName": "hound-collector",
+  "description": "An Evidence Hound collector project, a test project that applies the collector contract kit to it, a README with setup steps and a sample recorded response.",
+  "sourceName": "Hound.Template.Collector",
+  "preferNameDirectory": true,
+  "tags": {
+    "language": "C#",
+    "type": "solution"
+  },
+  "symbols": {
+    "HoundVersion": {
+      "type": "parameter",
+      "datatype": "text",
+      "defaultValue": "0.1.0",
+      "replaces": "0.0.0-hound",
+      "description": "Version of the EvidenceHound.Collectors.Abstractions and EvidenceHound.Collectors.Testing packages to reference."
+    },
+    "stem": {
+      "type": "derived",
+      "valueSource": "name",
+      "valueTransform": "lastSegment",
+      "replaces": "TemplateStem",
+      "fileRename": "TemplateStem"
+    },
+    "collectorType": {
+      "type": "derived",
+      "valueSource": "name",
+      "valueTransform": "typeName",
+      "replaces": "template_type"
+    }
+  },
+  "forms": {
+    "lastSegment": {
+      "identifier": "replace",
+      "pattern": "^.*\\.",
+      "replacement": ""
+    },
+    "lower": {
+      "identifier": "lowerCase"
+    },
+    "typeName": {
+      "identifier": "chain",
+      "steps": ["lastSegment", "lower"]
+    }
+  },
+  "sources": [
+    {
+      "rename": {
+        "Hound.Template.Collector.slnx.in": "Hound.Template.Collector.slnx",
+        "src/Hound.Template.Collector/Hound.Template.Collector.csproj.in": "src/Hound.Template.Collector/Hound.Template.Collector.csproj",
+        "tests/Hound.Template.Collector.Tests/Hound.Template.Collector.Tests.csproj.in": "tests/Hound.Template.Collector.Tests/Hound.Template.Collector.Tests.csproj"
+      },
+      "modifiers": [
+        {
+          "exclude": ["**/bin/**", "**/obj/**"]
+        }
+      ]
+    }
+  ]
+}

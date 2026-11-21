@@ -1,6 +1,6 @@
 using System.Text;
+using EvidenceHound.Collectors;
 using EvidenceHound.Core.Checks;
-using EvidenceHound.Core.Collecting;
 using EvidenceHound.Core.Packaging;
 using EvidenceHound.Core.Results;
 using EvidenceHound.Core.Secrets;
@@ -22,13 +22,13 @@ public sealed class CollectStepTests : IDisposable
         new Dictionary<string, string> { ["tenant"] = "example.com" },
         secrets.ToDictionary(s => s.Key, s => SecretReference.Parse(s.Reference).Value()));
 
-    private static Result<CollectorOutput> Output(CollectorContext context) => Result.Ok(new CollectorOutput(
-        [CheckResult.Create(CheckId.Create("identity.mfa.admins").Value(), CheckOutcome.Pass, "ok", ["admins.json"], context.Now, context.Name).Value()],
-        [new CollectedFile("admins.json", "application/json", Encoding.UTF8.GetBytes("{}"))],
+    private static Result<CollectionResult> Output(CollectorContext context) => Result.Ok(new CollectionResult(
+        [CheckResult.Create(CheckId.Create("identity.mfa.admins").Value(), CheckOutcome.Pass, "ok", ["admins.json"], context.Clock.UtcNow, context.Name).Value()],
+        [CollectedEvidence.FromBytes("admins.json", "application/json", Encoding.UTF8.GetBytes("{}"))],
         []));
 
     private CollectStep Step(int? retentionDays = null, Dictionary<string, string>? environment = null) =>
-        new(Secrets.From(environment ?? []), new FileEvidenceStore(_root), _clock, retentionDays);
+        new(Secrets.From(environment ?? []), new FileEvidenceStore(_root), _clock, retentionDays, TestCollectorServices.None);
 
     [Fact]
     public async Task Stores_the_collector_output_with_a_manifest()
@@ -45,8 +45,8 @@ public sealed class CollectStepTests : IDisposable
         File.Exists(Path.Combine(run.Stored.Location, Manifests.FileName)).ShouldBeTrue();
         var context = collector.Calls.ShouldHaveSingleItem();
         context.Name.ShouldBe("idp");
-        context.Settings["tenant"].ShouldBe("example.com");
-        context.Now.ShouldBe(Now);
+        context.Settings.Find("tenant").ShouldBe("example.com");
+        context.Clock.UtcNow.ShouldBe(Now);
     }
 
     [Fact]
@@ -74,7 +74,7 @@ public sealed class CollectStepTests : IDisposable
     [Fact]
     public async Task A_failed_collection_stores_nothing()
     {
-        var collector = new StubCollector(_ => Result.Fail<CollectorOutput>(new Problem("collector.unavailable", "the system did not answer")));
+        var collector = new StubCollector(_ => Result.Fail<CollectionResult>(new Problem("collector.unavailable", "the system did not answer")));
 
         var result = await Step().RunAsync(Instance(), collector, TestContext.Current.CancellationToken);
 

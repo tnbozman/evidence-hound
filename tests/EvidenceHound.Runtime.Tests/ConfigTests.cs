@@ -1,3 +1,4 @@
+using EvidenceHound.Collectors;
 using EvidenceHound.Core.Secrets;
 using EvidenceHound.Runtime.Configuration;
 
@@ -5,7 +6,11 @@ namespace EvidenceHound.Runtime.Tests;
 
 public class ConfigTests
 {
-    private static readonly HashSet<string> Known = new(StringComparer.Ordinal) { "fake", "manual" };
+    private static readonly Dictionary<string, CollectorDescription> Known = new(StringComparer.Ordinal)
+    {
+        ["fake"] = new([], [], []),
+        ["manual"] = new([], [], []),
+    };
 
     private static readonly string Source = Path.Combine(Path.GetTempPath(), "deploy", "hound.yaml");
 

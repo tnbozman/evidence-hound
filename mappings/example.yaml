@@ -29,3 +29,8 @@ requirements:
     checks:
       - backup.daily
       - backup.restore_tested
+  - ref: "EX-4.1"
+    rule: all_pass
+    checks:
+      - network.firewall.rules_reviewed
+      - network.firewall.config_exported

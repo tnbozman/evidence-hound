@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Hound.Template.Collector/Hound.Template.Collector.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Hound.Template.Collector.Tests/Hound.Template.Collector.Tests.csproj" />
+  </Folder>
+</Solution>

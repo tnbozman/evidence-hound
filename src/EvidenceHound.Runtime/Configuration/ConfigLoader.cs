@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
+using EvidenceHound.Collectors;
 using EvidenceHound.Core.Results;
 using EvidenceHound.Core.Secrets;
 using YamlDotNet.Core;
@@ -21,12 +22,12 @@ public static partial class ConfigLoader
     private static readonly string[] Transports = ["rest", "kafka"];
     private static readonly int NoRetention = -1;
 
-    public static async Task<Result<DeploymentConfig>> LoadAsync(string path, IReadOnlySet<string> knownCollectorTypes, CancellationToken cancellationToken) =>
+    public static async Task<Result<DeploymentConfig>> LoadAsync(string path, IReadOnlyDictionary<string, CollectorDescription> knownCollectorTypes, CancellationToken cancellationToken) =>
         File.Exists(path)
             ? Parse(await File.ReadAllTextAsync(path, cancellationToken), path, knownCollectorTypes)
             : Result.Fail<DeploymentConfig>(new Problem("config.file_not_found", $"Config file not found: {path}"));
 
-    public static Result<DeploymentConfig> Parse(string yaml, string source, IReadOnlySet<string> knownCollectorTypes)
+    public static Result<DeploymentConfig> Parse(string yaml, string source, IReadOnlyDictionary<string, CollectorDescription> knownCollectorTypes)
     {
         ArgumentNullException.ThrowIfNull(yaml);
         ArgumentNullException.ThrowIfNull(source);
@@ -56,7 +57,7 @@ public static partial class ConfigLoader
         };
     }
 
-    private static Result<DeploymentConfig> ParseRoot(YamlMappingNode root, Locator at, IReadOnlySet<string> knownTypes)
+    private static Result<DeploymentConfig> ParseRoot(YamlMappingNode root, Locator at, IReadOnlyDictionary<string, CollectorDescription> knownTypes)
     {
         var unknown = UnknownKeys(root, TopKeys, at);
         var ca = Section(root, "ciso_assistant", at).Bind(map => ParseCisoAssistant(map, at));
@@ -108,7 +109,7 @@ public static partial class ConfigLoader
             : root.Bind(r => retention.Map(days => new EvidenceConfig(r, days == NoRetention ? null : days)));
     }
 
-    private static Result<IReadOnlyList<CollectorInstance>> ParseCollectors(YamlNode node, Locator at, IReadOnlySet<string> knownTypes)
+    private static Result<IReadOnlyList<CollectorInstance>> ParseCollectors(YamlNode node, Locator at, IReadOnlyDictionary<string, CollectorDescription> knownTypes)
     {
         if (node is not YamlSequenceNode list)
         {
@@ -125,7 +126,7 @@ public static partial class ConfigLoader
         return problems.Length > 0 ? Result.Fail<IReadOnlyList<CollectorInstance>>(problems) : parsed;
     }
 
-    private static Result<CollectorInstance> ParseCollector(YamlNode item, Locator at, IReadOnlySet<string> knownTypes)
+    private static Result<CollectorInstance> ParseCollector(YamlNode item, Locator at, IReadOnlyDictionary<string, CollectorDescription> knownTypes)
     {
         if (item is not YamlMappingNode map)
         {
@@ -135,20 +136,44 @@ public static partial class ConfigLoader
         var name = Scalar(map, "name", at).Bind(node => CollectorName().IsMatch(node.Value!)
             ? Result.Ok(node.Value!)
             : Result.Fail<string>(at.Problem(node.Start, "config.collector_name_invalid", "'name' must be lowercase letters, digits and hyphens, starting with a letter or digit.")));
-        var type = Scalar(map, "type", at).Bind(node => knownTypes.Contains(node.Value!)
+        var type = Scalar(map, "type", at).Bind(node => knownTypes.ContainsKey(node.Value!)
             ? Result.Ok(node.Value!)
-            : Result.Fail<string>(at.Problem(node.Start, "config.collector_type_unknown", $"unknown collector type '{node.Value}'; known types: {string.Join(", ", knownTypes.Order(StringComparer.Ordinal))}.")));
+            : Result.Fail<string>(at.Problem(node.Start, "config.collector_type_unknown", $"unknown collector type '{node.Value}'; known types: {string.Join(", ", knownTypes.Keys.Order(StringComparer.Ordinal))}.")));
         var schedule = Scalar(map, "schedule", at).Bind(node => IsCron(node.Value!)
             ? Result.Ok(node.Value!)
             : Result.Fail<string>(at.Problem(node.Start, "config.schedule_invalid", "'schedule' must be a five-field cron expression, for example \"0 2 * * *\".")));
-        var settings = OptionalMap(map, "settings", at).Bind(m => Settings(m, at));
-        var secrets = OptionalMap(map, "secrets", at).Bind(m => Secrets(m, at));
+        var settingsMap = OptionalMap(map, "settings", at);
+        var secretsMap = OptionalMap(map, "secrets", at);
+        var settings = settingsMap.Bind(m => Settings(m, at));
+        var secrets = secretsMap.Bind(m => Secrets(m, at));
+        var missing = type.Match(
+            t => [.. Missing("setting", t, knownTypes[t].Settings, settingsMap, map, at), .. Missing("secret", t, knownTypes[t].Secrets, secretsMap, map, at)],
+            _ => Array.Empty<Problem>());
 
-        Problem[] problems = [.. UnknownKeys(map, CollectorKeys, at), .. ProblemsOf(name), .. ProblemsOf(type), .. ProblemsOf(schedule), .. ProblemsOf(settings), .. ProblemsOf(secrets)];
+        Problem[] problems =
+        [
+            .. UnknownKeys(map, CollectorKeys, at), .. ProblemsOf(name), .. ProblemsOf(type), .. ProblemsOf(schedule), .. ProblemsOf(settings), .. ProblemsOf(secrets), .. missing,
+        ];
         return problems.Length > 0
             ? Result.Fail<CollectorInstance>(problems)
-            : name.Bind(n => type.Bind(t => schedule.Bind(s => settings.Bind(v => secrets.Map(r => new CollectorInstance(n, t, s, v, r))))));
+            : name.Bind(n => type.Bind(t => schedule.Bind(s => settings.Bind(v => secrets.Map(r => new CollectorInstance(n, t, s, ResolvePaths(v, knownTypes[t].Settings, at), r))))));
     }
+
+    /// <summary>Settings the collector describes as paths, resolved against the config file's folder like every other path in the config.</summary>
+    private static Dictionary<string, string> ResolvePaths(IReadOnlyDictionary<string, string> values, IReadOnlyList<SettingDescription> described, Locator at)
+    {
+        var paths = described.Where(d => d.IsPath).Select(d => d.Name).ToHashSet(StringComparer.Ordinal);
+        return values.ToDictionary(pair => pair.Key, pair => paths.Contains(pair.Key) ? at.FullPath(pair.Value) : pair.Value, StringComparer.Ordinal);
+    }
+
+    /// <summary>A problem for each required setting or secret that the collector's section does not give.</summary>
+    private static IEnumerable<Problem> Missing(
+        string kind, string type, IReadOnlyList<SettingDescription> described, Result<YamlMappingNode> section, YamlMappingNode collector, Locator at) =>
+        section.Match(
+            given => described
+                .Where(d => d.Required && Child(given, d.Name) is null)
+                .Select(d => at.Problem(collector.Start, $"config.{kind}_missing", $"collector type '{type}' needs {kind} '{d.Name}'.")),
+            _ => []);
 
     private static Result<TargetConfig> ParseTarget(YamlMappingNode map, Locator at)
     {

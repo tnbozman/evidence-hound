@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>EvidenceHound.Collectors.Manual</RootNamespace>
+    <IsPackable>true</IsPackable>
+    <PackageId>EvidenceHound.Collectors.Manual</PackageId>
+    <Description>The Evidence Hound manual-upload collector: export files dropped in a folder, optionally attested by their owner, become evidence and check results.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="YamlDotNet" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\EvidenceHound.Collectors.Abstractions\EvidenceHound.Collectors.Abstractions.csproj" />
+  </ItemGroup>
+</Project>

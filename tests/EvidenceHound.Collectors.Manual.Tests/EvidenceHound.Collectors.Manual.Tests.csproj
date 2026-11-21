@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Collectors\EvidenceHound.Collectors.Manual\EvidenceHound.Collectors.Manual.csproj" />
+  </ItemGroup>
+</Project>

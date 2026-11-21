@@ -32,6 +32,9 @@ dev/ciso-assistant/db/
 !examples/**/*.xlsx
 !examples/**/*.csv
 
+# Claude Code: personal settings stay on each developer's machine
+.claude/settings.local.json
+
 # OS
 .DS_Store
 Thumbs.db

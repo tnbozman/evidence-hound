@@ -15,7 +15,7 @@
 | --- | --- | --- |
 | Domain (core) | `Evidence`, `CheckResult`, `CheckId`, `RequirementResult`, `ControlStatus`, `AuditUpdate`, `RunRecord`, `FrameworkMapping` | Immutable records. No I/O. No framework or vendor names. |
 | Logic (core) | `evaluate`, `applyMapping`, `planUpdates`, `buildManifest`, `summariseRun` | Pure functions. Same input, same output. Property tests where useful. |
-| Ports (core) | `ICisoAssistantClient`, `IEvidenceStore`, `ISecretProvider`, `IClock`, `ICollector` | Small interfaces, one purpose each. |
+| Ports (core) | `ICisoAssistantClient`, `IEvidenceStore`, `ISecretProvider`, `IClock`; `ICollector` in `EvidenceHound.Collectors.Abstractions`, which references only the core | Small interfaces, one purpose each. |
 | Adapters | REST client, filesystem store, environment secrets, system clock, vendor collectors | All side effects live here. Thin; tested with contract tests against fakes and recorded responses. |
 | Composition root | CLI and scheduled runner | Wires adapters to ports from configuration. The only place that knows concrete types. |
 
@@ -33,7 +33,7 @@ A mapping file per framework (`mappings/<framework>.yaml`) says which checks sat
 | --- | --- |
 | Single responsibility | A collector collects. Evaluation, mapping, planning and publishing are separate functions. |
 | Open/closed | New systems are new collector packages registered as plugins; new frameworks are new mapping files. The core does not change. |
-| Liskov | Every `ICollector` passes the shared collector contract test suite. |
+| Liskov | Every `ICollector` passes the shared collector contract test suite, [`CollectorContractTests<T>`](../src/EvidenceHound.Collectors.Testing/README.md). `ContractCoverageTests` fails if a built-in collector has no contract test class. |
 | Interface segregation | Ports are small: a collector never sees the CISO Assistant client; the publisher never sees vendor APIs. |
 | Dependency inversion | Core defines ports; adapters implement them; the composition root wires them. |
 

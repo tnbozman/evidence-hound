@@ -23,7 +23,7 @@ internal static class RunCommand
 {
     private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
 
-    public static Command Build(TextWriter output, ILoggerFactory loggers, IConfiguration configuration)
+    public static Command Build(TextWriter output, ILoggerFactory loggers, IConfiguration configuration, CollectorRegistry registry, CollectorServices collectorServices)
     {
         var logger = loggers.CreateLogger("hound.run");
         var config = new Option<FileInfo>("--config") { Description = "Path to the deployment config file (YAML).", Required = true };
@@ -35,10 +35,10 @@ internal static class RunCommand
         run.SetAction(async (parseResult, cancellationToken) =>
         {
             var options = new RunOptions(parseResult.GetValue(only), parseResult.GetValue(dryRun), parseResult.GetValue(noPublish));
-            var deployment = await ConfigCommands.LoadAsync(parseResult.GetRequiredValue(config), cancellationToken);
+            var deployment = await ConfigCommands.LoadAsync(parseResult.GetRequiredValue(config), registry, cancellationToken);
             return await deployment.Match(
                 d => Runner.Select(d.Collectors, options.Only).Match(
-                    instances => PrepareAndRunAsync(d, instances, options, configuration, loggers, output, logger, cancellationToken),
+                    instances => PrepareAndRunAsync(d, instances, options, configuration, registry, collectorServices, output, logger, cancellationToken),
                     problems => Task.FromResult(Usage(logger, problems))),
                 problems => Task.FromResult(Log.Problems(logger, problems)));
         });
@@ -51,16 +51,17 @@ internal static class RunCommand
         IReadOnlyList<CollectorInstance> instances,
         RunOptions options,
         IConfiguration configuration,
-        ILoggerFactory loggers,
+        CollectorRegistry registry,
+        CollectorServices collectorServices,
         TextWriter output,
         ILogger logger,
         CancellationToken cancellationToken)
     {
         var publishing = !options.DryRun && !options.NoPublish;
         var ready = (await MappingCommands.LoadAsync(new FileInfo(config.Target.MappingPath), cancellationToken))
-            .Bind(loaded => (publishing ? Transport(config, configuration, loggers) : Result.Ok(Transports.None)).Map(t => (loaded.Mapping, Transport: t)));
+            .Bind(loaded => (publishing ? Transport(config, configuration, collectorServices.Loggers) : Result.Ok(Transports.None)).Map(t => (loaded.Mapping, Transport: t)));
         return await ready.Match(
-            r => RunAsync(config, instances, options, r.Mapping, r.Transport, configuration, output, logger, cancellationToken),
+            r => RunAsync(config, instances, options, r.Mapping, r.Transport, configuration, registry, collectorServices, output, logger, cancellationToken),
             problems => Task.FromResult(Log.Problems(logger, problems)));
     }
 
@@ -71,14 +72,16 @@ internal static class RunCommand
         FrameworkMapping mapping,
         Transports transport,
         IConfiguration configuration,
+        CollectorRegistry registry,
+        CollectorServices collectorServices,
         TextWriter output,
         ILogger logger,
         CancellationToken cancellationToken)
     {
         using var sinks = transport;
-        var step = new CollectStep(ConfigCommands.Secrets(configuration), new FileEvidenceStore(config.Evidence.Root), new SystemClock(), config.Evidence.RetentionDays);
+        var step = new CollectStep(ConfigCommands.Secrets(configuration), new FileEvidenceStore(config.Evidence.Root), new SystemClock(), config.Evidence.RetentionDays, collectorServices);
         var runner = new Runner(
-            BuiltInCollectors.Create(),
+            registry.ByType,
             step,
             mapping,
             new AuditTarget(config.Target.ComplianceAssessmentRefId, config.Target.Controls),
