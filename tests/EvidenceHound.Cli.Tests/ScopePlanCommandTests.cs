@@ -151,6 +151,47 @@ public sealed class ScopePlanCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Export_writes_scope_files_that_validate_and_plan_to_no_changes()
+    {
+        HeldStructure();
+        var exported = Path.Combine(_workDir, "exported", "scope");
+
+        var exitCode = await Export("--out", exported);
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        _output.ToString().ShouldContain("1 domain(s), 0 control(s), 0 audit(s)");
+        var setup = await File.ReadAllTextAsync(Path.Combine(exported, "setup.yaml"), _ct);
+        setup.ShouldContain("  - name: Example Pty Ltd\n");
+        setup.ShouldContain("      - name: Example baseline\n");
+        setup.ShouldContain("      - name: Example 365\n");
+        _output.GetStringBuilder().Clear();
+
+        (await HoundCli.RunAsync(["scope", "validate", exported], _output, _error, logging => logging.AddProvider(_logs), new Dictionary<string, string?>(), _ct)).ShouldBe(ExitCodes.Ok, _error.ToString());
+        _output.GetStringBuilder().Clear();
+        (await HoundCli.RunAsync(
+            ["scope", "plan", exported, "--format", "json"], _output, _error, logging => logging.AddProvider(_logs),
+            new Dictionary<string, string?> { ["HOUND_CA_URL"] = $"{_ca.Url}/api/", ["HOUND_CA_TOKEN"] = Token }, _ct)).ShouldBe(ExitCodes.Ok, _error.ToString());
+        JsonNode.Parse(_output.ToString())!["changes"]!.AsArray().ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task Export_with_files_downloads_each_document_into_the_compliance_repo()
+    {
+        HeldStructure();
+        HeldAuditWithDocument();
+        var exported = Path.Combine(_workDir, "exported", "scope");
+
+        var exitCode = await Export("--out", exported, "--with-files");
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var downloaded = Path.Combine(_workDir, "exported", "documents", "identity-policy", "identity-policy.pdf");
+        (await File.ReadAllTextAsync(downloaded, _ct)).ShouldBe("example policy");
+        var audit = await File.ReadAllTextAsync(Path.Combine(exported, "audits", "ex-audit.yaml"), _ct);
+        audit.ShouldContain("    files: [documents/identity-policy/identity-policy.pdf]\n");
+        File.Exists(Path.Combine(exported, "frameworks", "example-baseline.json")).ShouldBeTrue();
+    }
+
+    [Fact]
     public async Task Apply_with_a_failed_write_reports_it_and_exits_with_publish_failed()
     {
         await WriteScopeAsync();
@@ -186,6 +227,69 @@ public sealed class ScopePlanCommandTests : IDisposable
     }
 
     private Task<int> Plan(params string[] args) => Plan(null, args);
+
+    private Task<int> Export(params string[] args) =>
+        HoundCli.RunAsync(
+            ["scope", "export", .. args],
+            _output,
+            _error,
+            logging => logging.AddProvider(_logs),
+            new Dictionary<string, string?> { ["HOUND_CA_URL"] = $"{_ca.Url}/api/", ["HOUND_CA_TOKEN"] = Token },
+            _ct);
+
+    /// <summary>An audit in the example domain whose row links a document with one file, and the audit's framework with its one node.</summary>
+    private void HeldAuditWithDocument()
+    {
+        static JsonObject In(string id, string folder, string? refId = null) =>
+            new() { ["id"] = id, ["ref_id"] = refId, ["folder"] = new JsonObject { ["id"] = folder, ["str"] = folder } };
+
+        _ca.Given(Request.Create().WithPath("/api/compliance-assessments/").UsingGet()).AtPriority(0)
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject { ["count"] = 1, ["results"] = new JsonArray(In("ca-ex", "f-ex", "EX-AUDIT")) }.ToJsonString()));
+        Object("compliance-assessments", "ca-ex", new JsonObject
+        {
+            ["id"] = "ca-ex",
+            ["ref_id"] = "EX-AUDIT",
+            ["name"] = "Example audit",
+            ["framework"] = "fw-1",
+            ["perimeter"] = "p-1",
+            ["folder"] = "f-ex",
+            ["selected_implementation_groups"] = new JsonArray("1"),
+        });
+        _ca.Given(Request.Create().WithPath("/api/evidences/").UsingGet()).AtPriority(0)
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject { ["count"] = 1, ["results"] = new JsonArray(In("ev-1", "f-ex", "identity-policy")) }.ToJsonString()));
+        Object("evidences", "ev-1", new JsonObject { ["id"] = "ev-1", ["ref_id"] = "identity-policy", ["name"] = "Identity policy", ["folder"] = "f-ex" });
+        List("evidence-revisions", new JsonObject { ["id"] = "rev-1", ["attachment_hash"] = new string('a', 64) });
+        _ca.Given(Request.Create().WithPath("/api/evidences/ev-1/attachment/").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithHeader("Content-Disposition", "attachment; filename=\"identity-policy.pdf\"").WithBody("example policy"));
+        _ca.Given(Request.Create().WithPath("/api/requirement-assessments/").UsingGet()).AtPriority(0)
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject
+            {
+                ["count"] = 1,
+                ["results"] = new JsonArray(new JsonObject
+                {
+                    ["id"] = "ra-1",
+                    ["status"] = "to_do",
+                    ["result"] = "not_assessed",
+                    ["evidences"] = new JsonArray("ev-1"),
+                    ["requirement"] = new JsonObject { ["urn"] = Snapshot.Nodes[0].Urn, ["ref_id"] = "EX-1.1" },
+                }),
+            }.ToJsonString()));
+        Object("frameworks", "fw-1", new JsonObject
+        {
+            ["id"] = "fw-1",
+            ["urn"] = Snapshot.FrameworkUrn,
+            ["library"] = "lib-1",
+            ["implementation_groups_definition"] = new JsonArray(new JsonObject { ["ref_id"] = "1", ["name"] = "Level one" }),
+        });
+        List("requirement-nodes", new JsonObject
+        {
+            ["urn"] = Snapshot.Nodes[0].Urn,
+            ["ref_id"] = "EX-1.1",
+            ["name"] = "Every account uses multi-factor authentication",
+            ["assessable"] = true,
+            ["implementation_groups"] = new JsonArray("1"),
+        });
+    }
 
     private Task<int> Run(string command, params string[] args) =>
         HoundCli.RunAsync(
