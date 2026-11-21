@@ -92,6 +92,12 @@ jobs:
           for file in test-results/scope-export/*; do
             if [ -f "$file" ]; then echo "== $file"; head -c 8000 "$file"; echo; fi
           done
+      - name: Show the review workflow, followed as the scope guide describes it
+        if: ${{ always() }}
+        run: |
+          for file in test-results/review-workflow/*.txt; do
+            if [ -f "$file" ]; then echo "== $file"; head -c 6000 "$file"; echo; fi
+          done
       - name: Upload functional results
         if: ${{ always() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
