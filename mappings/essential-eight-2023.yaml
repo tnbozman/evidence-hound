@@ -7,7 +7,7 @@
 # - Results from collector checks are only as wide as what the collector sees: the Microsoft 365 checks cover Microsoft 365
 #   and Intune-managed Windows devices, not other systems in scope. Each requirement's comment says what stands behind it.
 # - `manual_only` lists every other ML1 and ML2 requirement with a suggested manual source. It shrinks as collectors land
-#   (s07) and is completed in s11. See docs/mapping-files.md.
+#   (s08, s09) and is completed in s11. See docs/mapping-files.md.
 framework_urn: urn:intuitem:risk:framework:essential-eight-2023
 description: Essential Eight (November 2023) ML1 and ML2, from the Microsoft 365 collector and manual sources.
 requirements:
