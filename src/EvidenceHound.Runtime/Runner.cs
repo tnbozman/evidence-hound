@@ -179,7 +179,7 @@ public sealed class Runner(
             {
                 var report = options.DryRun ? Publisher.DryRun(p.Plan.Updates) : await SendAsync(RunEvidence.Files(p.Run), p.Plan.Updates, cancellationToken);
                 var problems = FailedItems(report);
-                return (problems.Count > 0 ? Failed(instance, problems, report) : Succeeded(instance, report)) with { Changes = p.Plan.Audits };
+                return (problems.Count > 0 ? Failed(instance, problems, report) : Succeeded(instance, report)) with { Changes = p.Plan.Audits, Drift = p.Plan.Drift };
             },
             problems => Task.FromResult(Failed(instance, problems, null)));
     }

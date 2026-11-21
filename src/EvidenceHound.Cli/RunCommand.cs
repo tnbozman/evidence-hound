@@ -146,6 +146,7 @@ internal static class RunCommand
                 }
                 : null,
             ["changes"] = ChangesJson(c.Changes),
+            ["drift"] = new JsonArray([.. c.Drift.Select(p => new JsonObject { ["code"] = p.Code, ["message"] = p.Message })]),
         })]),
     };
 
