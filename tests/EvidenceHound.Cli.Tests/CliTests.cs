@@ -57,15 +57,34 @@ public sealed class CliTests : IDisposable
     }
 
     [Fact]
-    public async Task Collect_without_dry_run_exits_two_until_collectors_exist()
+    public async Task Collect_stores_each_collectors_evidence_with_a_manifest()
     {
-        var config = Path.Combine(_workDir, "empty.yaml");
-        await File.WriteAllTextAsync(config, ConfigWithoutCollectors, TestContext.Current.CancellationToken);
+        var config = Path.Combine(_workDir, "fake.yaml");
+        await File.WriteAllTextAsync(config, ConfigWithoutCollectors.Replace(
+            "collectors: []", "collectors:\n  - {name: example-fake, type: fake, schedule: \"0 2 * * *\", settings: {tenant: example.com}}", StringComparison.Ordinal),
+            TestContext.Current.CancellationToken);
 
         var exitCode = await Run("collect", "--config", config);
 
-        exitCode.ShouldBe(2);
-        _error.ToString().ShouldContain("--dry-run");
+        exitCode.ShouldBe(0);
+        var run = Directory.GetDirectories(Path.Combine(_workDir, "evidence", "example-fake")).ShouldHaveSingleItem();
+        File.Exists(Path.Combine(run, "_manifest.json")).ShouldBeTrue();
+        Directory.GetFiles(run).Length.ShouldBe(5);
+        _logs.Messages.ShouldContain(m => m.Contains("example-fake", StringComparison.Ordinal) && m.Contains("4 files", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Collect_with_a_missing_secret_exits_one_and_names_the_reference()
+    {
+        var config = Path.Combine(_workDir, "fake.yaml");
+        await File.WriteAllTextAsync(config, ConfigWithoutCollectors.Replace(
+            "collectors: []", "collectors:\n  - {name: example-fake, type: fake, schedule: \"0 2 * * *\", secrets: {api_token: \"env:HOUND_TEST_NOT_SET\"}}", StringComparison.Ordinal),
+            TestContext.Current.CancellationToken);
+
+        var exitCode = await Run("collect", "--config", config);
+
+        exitCode.ShouldBe(1);
+        _error.ToString().ShouldContain("env:HOUND_TEST_NOT_SET");
     }
 
     [Fact]
