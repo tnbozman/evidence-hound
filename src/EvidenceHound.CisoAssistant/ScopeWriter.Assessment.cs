@@ -27,18 +27,22 @@ internal sealed partial class ScopeWriter
             return Result.Fail<Unit>(new Problem("scope.library_missing", $"Framework {declared.Key} names no library to load."));
         }
 
-        var stored = declared.Files is [var file, ..] ? await UploadLibraryAsync(library, file, cancellationToken) : Result.Ok(Unit.Value);
-        return await stored.BindAsync(_ => SendAsync(HttpMethod.Post, $"stored-libraries/{library}/import/", null, $"to load library {library}", cancellationToken));
+        // CISO Assistant loads a library when it is uploaded, so only a library that was already stored is imported.
+        var uploaded = declared.Files is [var file, ..] ? await UploadLibraryAsync(library, file, cancellationToken) : Result.Ok(false);
+        return await uploaded.BindAsync(done => done
+            ? Task.FromResult(Result.Ok(Unit.Value))
+            : SendAsync(HttpMethod.Post, $"stored-libraries/{library}/import/", null, $"to load library {library}", cancellationToken));
     }
 
-    private async Task<Result<Unit>> UploadLibraryAsync(string library, ScopeFile file, CancellationToken cancellationToken)
+    /// <summary>Uploads a custom library file unless CISO Assistant already stores the library; true when it was uploaded.</summary>
+    private async Task<Result<bool>> UploadLibraryAsync(string library, ScopeFile file, CancellationToken cancellationToken)
     {
         var stored = await http.ListAllAsync($"stored-libraries/?urn={Uri.EscapeDataString(library)}", cancellationToken);
         return await stored.BindAsync(async found =>
         {
             if (found.Any(l => Text(l["urn"]) == library))
             {
-                return Result.Ok(Unit.Value);
+                return Result.Ok(false);
             }
 
             // CISO Assistant reads the upload with a file upload parser: the raw file as the body, named by Content-Disposition.
@@ -46,7 +50,7 @@ internal sealed partial class ScopeWriter
             content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
             content.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment") { FileName = Path.GetFileName(file.Path) };
             var request = new HttpRequestMessage(HttpMethod.Post, "stored-libraries/upload/") { Content = content };
-            return (await http.SendForJsonAsync(request, $"to upload library {Path.GetFileName(file.Path)}", cancellationToken)).Map(_ => Unit.Value);
+            return (await http.SendForJsonAsync(request, $"to upload library {Path.GetFileName(file.Path)}", cancellationToken)).Map(_ => true);
         });
     }
 
