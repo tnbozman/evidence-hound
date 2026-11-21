@@ -94,10 +94,13 @@ public static class HoundCli
     private static RootCommand BuildRootCommand(TextWriter output, ILoggerFactory loggers, IConfiguration configuration) =>
         new("Evidence Hound: collects compliance evidence and publishes it to CISO Assistant.")
         {
-            CollectCommand.Build(loggers),
+            CollectCommand.Build(loggers, configuration),
+            ConfigCommands.Build(output, loggers, configuration),
             MappingCommands.Build(output, loggers),
             PlanCommand.Build(output, loggers),
             PublishCommand.Build(output, loggers, configuration),
+            RunCommand.Build(output, loggers, configuration),
+            StatusCommand.Build(output, loggers),
         };
 
     /// <summary>One host per run. Logs go to <paramref name="error"/>; the level comes from configuration (for example <c>Logging__LogLevel__Default</c>).</summary>

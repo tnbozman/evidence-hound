@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="JsonSchema.Net" />
+    <PackageReference Include="YamlDotNet" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\EvidenceHound.Runtime\EvidenceHound.Runtime.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\mappings\example.yaml" Link="files\mappings\example.yaml" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\examples\*.yaml" Link="files\examples\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\schemas\config.schema.json" Link="files\schemas\config.schema.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

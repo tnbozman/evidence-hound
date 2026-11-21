@@ -19,6 +19,9 @@ public abstract record AuditUpdate
     /// <summary><c>upload_attachment</c>: create or update the evidence with ref_id <c>Evidence.Id</c> and attach the file.</summary>
     public sealed record UploadEvidence(Evidence Evidence) : AuditUpdate
     {
+        /// <summary>ref_ids of applied controls the evidence is linked to after upload. The dispatcher cannot link, so only the REST transport does.</summary>
+        public IReadOnlyList<string> AppliedControlRefIds { get; init; } = [];
+
         public override T Match<T>(Func<UploadEvidence, T> upload, Func<UpdateRequirementAssessment, T> requirement, Func<UpdateAppliedControl, T> control)
         {
             ArgumentNullException.ThrowIfNull(upload);

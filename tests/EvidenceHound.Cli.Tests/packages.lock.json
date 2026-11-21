@@ -1592,6 +1592,14 @@
           "YamlDotNet": "[18.1.0, )"
         }
       },
+      "evidencehound.runtime": {
+        "type": "Project",
+        "dependencies": {
+          "EvidenceHound.Core": "[0.1.0, )",
+          "EvidenceHound.Core.Yaml": "[0.1.0, )",
+          "YamlDotNet": "[18.1.0, )"
+        }
+      },
       "evidencehound.transport.kafka": {
         "type": "Project",
         "dependencies": {
@@ -1605,6 +1613,7 @@
           "EvidenceHound.CisoAssistant": "[0.1.0, )",
           "EvidenceHound.Core": "[0.1.0, )",
           "EvidenceHound.Core.Yaml": "[0.1.0, )",
+          "EvidenceHound.Runtime": "[0.1.0, )",
           "EvidenceHound.Transport.Kafka": "[0.1.0, )",
           "Microsoft.Extensions.Hosting": "[10.0.14, )",
           "System.CommandLine": "[2.0.14, )",

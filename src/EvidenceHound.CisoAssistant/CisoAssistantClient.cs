@@ -57,6 +57,10 @@ internal sealed class CisoAssistantClient(HttpClient http) : ICisoAssistantClien
         return (await SendAsync(request, $"to upload {file.FileName}", cancellationToken)).Map(_ => Unit.Value);
     }
 
+    public Task<Result<Unit>> LinkEvidenceToAppliedControlAsync(string controlRefId, string evidenceId, CancellationToken cancellationToken) =>
+        FindOneAsync("applied-controls/", "applied control", Selector.ByRefId(controlRefId), cancellationToken)
+            .BindAsync(id => LinkAsync(id, controlRefId, evidenceId, cancellationToken));
+
     public async Task<Result<Unit>> UpdateAppliedControlAsync(string refId, ControlState status, CancellationToken cancellationToken)
     {
         var found = await FindOneAsync("applied-controls/", "applied control", Selector.ByRefId(refId), cancellationToken);
@@ -64,6 +68,24 @@ internal sealed class CisoAssistantClient(HttpClient http) : ICisoAssistantClien
             async id => (await PatchAsync($"applied-controls/{Uri.EscapeDataString(id)}/", new JsonObject { ["status"] = Names.Of(status) }, $"to update applied control {refId}", cancellationToken))
                 .Map(_ => Unit.Value),
             problems => Task.FromResult(Result.Fail<Unit>(problems)));
+    }
+
+    private async Task<Result<Unit>> LinkAsync(string controlId, string controlRefId, string evidenceId, CancellationToken cancellationToken)
+    {
+        var path = $"applied-controls/{Uri.EscapeDataString(controlId)}/";
+        var control = await SendAsync(new HttpRequestMessage(HttpMethod.Get, path), $"to read applied control {controlRefId}", cancellationToken);
+        return await control.BindAsync(async found =>
+        {
+            // The read serializer lists evidences as {"id", "str"} objects; plain IDs are accepted too.
+            List<string> linked = [.. (found["evidences"] as JsonArray ?? []).Select(e => e is JsonObject o ? (string?)o["id"] : (string?)e).OfType<string>()];
+            if (linked.Contains(evidenceId))
+            {
+                return Result.Ok(Unit.Value);
+            }
+
+            var body = new JsonObject { ["evidences"] = new JsonArray([.. linked.Append(evidenceId).Select(e => JsonValue.Create(e))]) };
+            return (await PatchAsync(path, body, $"to link evidence to applied control {controlRefId}", cancellationToken)).Map(_ => Unit.Value);
+        });
     }
 
     private async Task<Result<RemoteEvidence>> CreateEvidenceAsync(string refId, string name, CancellationToken cancellationToken)

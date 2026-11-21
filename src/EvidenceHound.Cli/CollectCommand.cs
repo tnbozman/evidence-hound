@@ -1,12 +1,18 @@
 using System.CommandLine;
+using EvidenceHound.Core.Results;
+using EvidenceHound.Runtime;
+using EvidenceHound.Runtime.Collectors;
+using EvidenceHound.Runtime.Configuration;
+using EvidenceHound.Runtime.Storage;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace EvidenceHound.Cli;
 
-/// <summary><c>hound collect</c>: collect evidence from every configured collector.</summary>
+/// <summary><c>hound collect</c>: collect evidence from every configured collector and store it with a manifest.</summary>
 internal static class CollectCommand
 {
-    public static Command Build(ILoggerFactory loggers)
+    public static Command Build(ILoggerFactory loggers, IConfiguration configuration)
     {
         var logger = loggers.CreateLogger("hound.collect");
         var dryRun = new Option<bool>("--dry-run")
@@ -19,30 +25,43 @@ internal static class CollectCommand
             Required = true,
         };
 
-        var collect = new Command("collect", "Collect evidence from every configured collector.") { dryRun, config };
-        collect.SetAction((parseResult, cancellationToken) => RunAsync(
-            parseResult.GetValue(dryRun),
-            parseResult.GetRequiredValue(config),
-            logger,
-            cancellationToken));
+        var collect = new Command("collect", "Collect evidence from every configured collector into the evidence store.") { dryRun, config };
+        collect.SetAction(async (parseResult, cancellationToken) =>
+            await (await ConfigCommands.LoadAsync(parseResult.GetRequiredValue(config), cancellationToken)).Match(
+                deployment => parseResult.GetValue(dryRun)
+                    ? Task.FromResult(Collectors(logger, deployment))
+                    : CollectAsync(deployment, configuration, logger, cancellationToken),
+                problems => Task.FromResult(Log.Problems(logger, problems))));
         return collect;
     }
 
-    private static async Task<int> RunAsync(bool dryRun, FileInfo configFile, ILogger logger, CancellationToken cancellationToken)
+    private static int Collectors(ILogger logger, DeploymentConfig config)
     {
-        if (!dryRun)
-        {
-            Log.Usage(logger, "collect currently supports only --dry-run; real collection arrives with the runner.");
-            return ExitCodes.Usage;
-        }
-
-        return (await ConfigFile.LoadAsync(configFile.FullName, cancellationToken))
-            .Match(config => Collectors(logger, config), problems => Log.Problems(logger, problems));
+        Log.CollectorsConfigured(logger, config.Collectors.Count);
+        return ExitCodes.Ok;
     }
 
-    private static int Collectors(ILogger logger, HoundConfig config)
+    private static async Task<int> CollectAsync(DeploymentConfig config, IConfiguration configuration, ILogger logger, CancellationToken cancellationToken)
     {
-        Log.CollectorsConfigured(logger, config.CollectorNames.Count);
-        return ExitCodes.Ok;
+        var collectors = BuiltInCollectors.Create();
+        var step = new CollectStep(ConfigCommands.Secrets(configuration), new FileEvidenceStore(config.Evidence.Root), new SystemClock(), config.Evidence.RetentionDays);
+        var failed = 0;
+        foreach (var instance in config.Collectors)
+        {
+            var run = await step.RunAsync(instance, collectors[instance.Type], cancellationToken);
+            failed += run.Match(
+                stored =>
+                {
+                    Log.Collected(logger, instance.Name, stored.Manifest.Files.Count, stored.Stored.Location);
+                    return 0;
+                },
+                problems =>
+                {
+                    Log.Problems(logger, problems.Select(p => new Problem(p.Code, $"{instance.Name}: {p.Message}")));
+                    return 1;
+                });
+        }
+
+        return failed > 0 ? ExitCodes.CollectorFailed : ExitCodes.Ok;
     }
 }

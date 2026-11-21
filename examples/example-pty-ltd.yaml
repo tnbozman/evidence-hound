@@ -1,13 +1,35 @@
 # Example deployment config for the fictional Example Pty Ltd.
 # Everything here is made up. Keep your organisation's real config in a private repo.
-# The full schema (CISO Assistant connection, evidence root, schedules) arrives in s03.
+# Schema: schemas/config.schema.json. Guide: docs/configuration.md
+# Relative paths are relative to this file. Secrets are references only:
+#   env:NAME               an environment variable
+#   file:/run/secrets/x    a file, for example a Docker secret (one trailing newline is trimmed)
 
-collectors: []
+ciso_assistant:
+  url: http://localhost:8000/api/        # HOUND_CA_URL overrides this, for example in tests
+  token: env:HOUND_CA_TOKEN              # a personal access token for a service account
+  transport: rest                        # rest (default) or kafka, through CISO Assistant's dispatcher
+  # kafka_bootstrap_servers: localhost:19092
 
-# The CISO Assistant audit that results are published to. Paths are relative to this file.
+evidence:
+  root: ../.dev/evidence                 # one folder per collector, one sub-folder per run
+  retention_days: 90                     # older runs are deleted; the latest successful run is always kept
+
+collectors:
+  - name: example-fake                   # unique; names the evidence folder and the health evidence
+    type: fake                           # built-in collector with fixed, fictional results
+    schedule: "0 2 * * *"                # cron, five fields, UTC
+    settings:
+      tenant: example.com
+    secrets: {}
+    # secrets:
+    #   api_token: file:/run/secrets/example_fake_token
+
+# The CISO Assistant audit that results are published to.
 target:
   mapping: ../mappings/example.yaml
   compliance_assessment: EXAMPLE-BASELINE-2026   # the audit's ref_id in CISO Assistant
   controls:                                      # config key -> applied control ref_id in CISO Assistant
     mfa: AC-MFA
     backups: AC-BACKUP
+  health_control: AC-AUTO-EVIDENCE               # each collector's health evidence is linked to this applied control

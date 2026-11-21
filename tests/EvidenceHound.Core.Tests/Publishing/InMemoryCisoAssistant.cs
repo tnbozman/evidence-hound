@@ -20,6 +20,9 @@ internal sealed class InMemoryCisoAssistant : ICisoAssistantClient
 
     public HashSet<string> UnreachableEvidence { get; } = [];
 
+    /// <summary>The name each evidence was created with, by ref_id.</summary>
+    public Dictionary<string, string> EvidenceNames { get; } = [];
+
     public Task<Result<Unit>> CheckHealthAsync(CancellationToken cancellationToken) => Done("health");
 
     public Task<Result<string>> FindRequirementAssessmentAsync(string complianceAssessmentRefId, string requirementRefId, CancellationToken cancellationToken)
@@ -39,6 +42,7 @@ internal sealed class InMemoryCisoAssistant : ICisoAssistantClient
     public Task<Result<RemoteEvidence>> FindOrCreateEvidenceAsync(string refId, string name, CancellationToken cancellationToken)
     {
         Calls.Add($"find-or-create {refId}");
+        EvidenceNames.TryAdd(refId, name);
         return Task.FromResult(UnreachableEvidence.Contains(refId)
             ? Result.Fail<RemoteEvidence>(new Problem("ciso_assistant.unavailable", "CISO Assistant could not be reached."))
             : Result.Ok(_evidenceByRefId.GetOrAdd(refId, id => new RemoteEvidence($"uuid-{id}", null))));
@@ -49,6 +53,22 @@ internal sealed class InMemoryCisoAssistant : ICisoAssistantClient
         var refId = _evidenceByRefId.Single(e => e.Value.Id == evidenceId).Key;
         _evidenceByRefId[refId] = new RemoteEvidence(evidenceId, Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(file.Content.Span)));
         return Done($"upload {evidenceId} {file.FileName}");
+    }
+
+    public Dictionary<string, List<string>> ControlEvidence { get; } = [];
+
+    public HashSet<string> MissingControls { get; } = [];
+
+    public Task<Result<Unit>> LinkEvidenceToAppliedControlAsync(string controlRefId, string evidenceId, CancellationToken cancellationToken)
+    {
+        if (MissingControls.Contains(controlRefId))
+        {
+            return Task.FromResult(Result.Fail<Unit>(new Problem("ciso_assistant.not_found", $"No applied control {controlRefId}.")));
+        }
+
+        var linked = ControlEvidence.TryGetValue(controlRefId, out var list) ? list : ControlEvidence[controlRefId] = [];
+        linked.Add(evidenceId);
+        return Done($"link {evidenceId} to {controlRefId}");
     }
 
     public Task<Result<Unit>> UpdateAppliedControlAsync(string refId, ControlState status, CancellationToken cancellationToken)

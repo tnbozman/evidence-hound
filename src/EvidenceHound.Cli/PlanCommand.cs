@@ -5,6 +5,7 @@ using System.Text.Json.Nodes;
 using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Planning;
 using EvidenceHound.Core.Results;
+using EvidenceHound.Runtime.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace EvidenceHound.Cli;
@@ -72,7 +73,5 @@ internal static class PlanCommand
         string.Create(CultureInfo.InvariantCulture, $"(dry run: base64 of {evidence.FileName}, {evidence.SizeBytes} bytes, sha256 {evidence.Sha256})");
 
     private static async Task<Result<TargetConfig>> LoadTargetAsync(FileInfo configFile, CancellationToken cancellationToken) =>
-        (await ConfigFile.LoadAsync(configFile.FullName, cancellationToken)).Bind(config => config.Target is { } target
-            ? Result.Ok(target)
-            : Result.Fail<TargetConfig>(new Problem("config.target_missing", $"{configFile} has no 'target' with a mapping and compliance_assessment.")));
+        (await ConfigCommands.LoadAsync(configFile, cancellationToken)).Map(config => config.Target);
 }

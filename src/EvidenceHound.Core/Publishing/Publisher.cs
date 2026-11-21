@@ -28,7 +28,7 @@ public sealed class Publisher(ICisoAssistantClient client, IEvidenceFiles files)
         foreach (var update in updates)
         {
             var (outcome, resolved) = await update.Match(
-                upload => UploadAsync(upload.Evidence, evidenceIds, cancellationToken),
+                upload => UploadAsync(upload, evidenceIds, cancellationToken),
                 requirement => WithIds(UpdateRequirementAsync(requirement, evidenceIds, cancellationToken), evidenceIds),
                 control => WithIds(UpdateControlAsync(control, cancellationToken), evidenceIds));
             evidenceIds = resolved;
@@ -39,16 +39,33 @@ public sealed class Publisher(ICisoAssistantClient client, IEvidenceFiles files)
     }
 
     private async Task<(Result<PublishOutcome> Outcome, ImmutableDictionary<string, string> EvidenceIds)> UploadAsync(
-        Evidence evidence, ImmutableDictionary<string, string> evidenceIds, CancellationToken cancellationToken)
+        AuditUpdate.UploadEvidence upload, ImmutableDictionary<string, string> evidenceIds, CancellationToken cancellationToken)
     {
-        var remote = await client.FindOrCreateEvidenceAsync(evidence.Id, evidence.FileName, cancellationToken);
+        var evidence = upload.Evidence;
+        var remote = await client.FindOrCreateEvidenceAsync(evidence.Id, EvidenceNames.For(evidence), cancellationToken);
         var outcome = await remote.Match(
             found => found.LatestSha256 == evidence.Sha256
                 ? Task.FromResult(Result.Ok(PublishOutcome.Skipped))
                 : SendRevisionAsync(found.Id, evidence, cancellationToken),
             problems => Task.FromResult(Result.Fail<PublishOutcome>(problems)));
-        var ids = outcome.Bind(_ => remote).Match(found => evidenceIds.SetItem(evidence.Id, found.Id), _ => evidenceIds);
-        return (outcome, ids);
+        var linked = await outcome.Bind(_ => remote).BindAsync(found => LinkAsync(found.Id, upload.AppliedControlRefIds, cancellationToken));
+        var final = linked.Bind(_ => outcome);
+        var ids = final.Bind(_ => remote).Match(found => evidenceIds.SetItem(evidence.Id, found.Id), _ => evidenceIds);
+        return (final, ids);
+    }
+
+    private async Task<Result<Unit>> LinkAsync(string evidenceId, IReadOnlyList<string> controlRefIds, CancellationToken cancellationToken)
+    {
+        foreach (var controlRefId in controlRefIds)
+        {
+            var linked = await client.LinkEvidenceToAppliedControlAsync(controlRefId, evidenceId, cancellationToken);
+            if (linked is Result<Unit>.Fail)
+            {
+                return linked;
+            }
+        }
+
+        return Result.Ok(Unit.Value);
     }
 
     private async Task<Result<PublishOutcome>> SendRevisionAsync(string evidenceId, Evidence evidence, CancellationToken cancellationToken)
