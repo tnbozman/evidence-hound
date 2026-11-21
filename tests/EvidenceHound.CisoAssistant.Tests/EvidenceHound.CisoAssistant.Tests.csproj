@@ -3,6 +3,9 @@
     <PackageReference Include="WireMock.Net" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\fixtures\ciso-assistant\*.json" Link="ciso-assistant\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\..\src\EvidenceHound.CisoAssistant\EvidenceHound.CisoAssistant.csproj" />
   </ItemGroup>
 </Project>
