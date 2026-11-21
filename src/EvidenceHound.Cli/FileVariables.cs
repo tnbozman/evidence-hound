@@ -1,3 +1,4 @@
+using EvidenceHound.Runtime.Secrets;
 using Microsoft.Extensions.Configuration;
 
 namespace EvidenceHound.Cli;
@@ -16,7 +17,7 @@ internal static class FileVariables
             .Where(pair => pair.Key.Length > Suffix.Length && pair.Key.EndsWith(Suffix, StringComparison.Ordinal))
             .Select(pair => (Name: pair.Key[..^Suffix.Length], Path: pair.Value))
             .Where(file => !variables.ContainsKey(file.Name) && File.Exists(file.Path))
-            .ToDictionary(file => file.Name, file => (string?)TrimOneNewline(File.ReadAllText(file.Path!)));
+            .ToDictionary(file => file.Name, file => (string?)FileSecretProvider.ReadSecretFile(file.Path!));
 
     /// <summary>Adds the variables the configuration's <c>_FILE</c> entries point at.</summary>
     public static IConfigurationBuilder AddFileVariables(this IConfigurationBuilder builder)
@@ -24,9 +25,4 @@ internal static class FileVariables
         var current = builder.Build().AsEnumerable().ToDictionary(pair => pair.Key, pair => pair.Value);
         return builder.AddInMemoryCollection(Resolve(current));
     }
-
-    private static string TrimOneNewline(string text) =>
-        text.EndsWith("\r\n", StringComparison.Ordinal) ? text[..^2]
-        : text.EndsWith('\n') ? text[..^1]
-        : text;
 }
