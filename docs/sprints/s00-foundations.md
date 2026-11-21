@@ -176,6 +176,7 @@ Status: In progress
 
 ## Discovered work
 
+- Dependabot PRs #1 to #8 folded into this sprint (2026-11-21): checkout v7.0.1, setup-dotnet v6.1.0, upload-artifact v7.0.2, dependency-review-action v5.0.1, gitleaks-action v3.0.0 (Node 24 runtime only, no input changes; v2 targets Node 20, which GitHub-hosted runners no longer support), dev container features docker-in-docker 4 and node 2 (options used here unchanged). The feature bumps are verified at the s00-02 container rebuild.
 - s03-01: replace the walking-skeleton `ConfigFile` and `HoundConfig` in `src/EvidenceHound.Cli` with the full config schema in `EvidenceHound.Runtime`, and return `Result<T>` (s01-01) instead of the local `ConfigLoad` union.
 - The `functional` CI job passes `--ignore-exit-code 8` (no tests ran) because there are no functional tests yet. Remove it when s02 adds the first functional test.
 
