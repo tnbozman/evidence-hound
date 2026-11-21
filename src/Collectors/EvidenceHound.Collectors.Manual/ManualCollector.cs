@@ -1,3 +1,4 @@
+using System.Text;
 using EvidenceHound.Core.Results;
 
 namespace EvidenceHound.Collectors.Manual;
@@ -67,7 +68,7 @@ public sealed class ManualCollector : ICollector
 
         var attestationContent = await File.ReadAllBytesAsync(sidecar, cancellationToken);
         // Editors such as Notepad start UTF-8 files with a byte-order mark; it is not part of the first key.
-        var yaml = System.Text.Encoding.UTF8.GetString(attestationContent).TrimStart('﻿');
+        var yaml = Encoding.UTF8.GetString(attestationContent).TrimStart('﻿');
         return Attestation.Parse(yaml, Attestation.SidecarFor(name))
             .Map(attestation => new DroppedFile(name, content, modified, attestation, attestationContent));
     }

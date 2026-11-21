@@ -2,6 +2,7 @@ using System.Globalization;
 using System.IO.Enumeration;
 using EvidenceHound.Core.Checks;
 using EvidenceHound.Core.Results;
+using static EvidenceHound.Collectors.Manual.ResultProblems;
 
 namespace EvidenceHound.Collectors.Manual;
 
@@ -66,7 +67,4 @@ public sealed record ManualSource(string DropFolder, IReadOnlyList<string> Patte
             : Result.Fail<int>(new Problem(Invalid, $"Setting '{ManualSettings.DueDays}' must be a whole number of days greater than zero, not '{text}'."));
 
     private static string[] List(string text) => text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-    private static IReadOnlyList<Problem> ProblemsOf<T>(Result<T> result)
-        where T : notnull => result.Match(_ => [], problems => problems);
 }

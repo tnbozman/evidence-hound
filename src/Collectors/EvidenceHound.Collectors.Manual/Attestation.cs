@@ -4,6 +4,7 @@ using EvidenceHound.Core.Results;
 using YamlDotNet.Core;
 using YamlDotNet.RepresentationModel;
 using YamlDotNet.Serialization;
+using static EvidenceHound.Collectors.Manual.ResultProblems;
 
 namespace EvidenceHound.Collectors.Manual;
 
@@ -106,7 +107,4 @@ public sealed record Attestation(string Who, DateTimeOffset Date, IReadOnlyDicti
         root.Children.TryGetValue(new YamlScalarNode(key), out var node) && node is YamlScalarNode { Value: { } value } ? value.Trim() : null;
 
     private static Problem Problem(string source, string message) => new(Invalid, $"{source}: {message}");
-
-    private static IReadOnlyList<Problem> ProblemsOf<T>(Result<T> result)
-        where T : notnull => result.Match(_ => [], problems => problems);
 }
