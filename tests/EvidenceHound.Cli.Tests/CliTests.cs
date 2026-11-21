@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+
 namespace EvidenceHound.Cli.Tests;
 
 public sealed class CliTests : IDisposable
