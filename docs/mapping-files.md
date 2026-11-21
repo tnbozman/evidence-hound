@@ -22,10 +22,50 @@ requirements:
 
 Rules:
 
-- `framework_urn` starts with `urn:`. Requirement refs are unique within a file.
+- `framework_urn` starts with `urn:`. Each requirement is named once in a file.
+- Name each requirement with exactly one of `ref` (its `ref_id`) or `urn` (the URN of its requirement node).
 - Check IDs are lowercase dot-separated segments that start with a letter (`identity.mfa.admins`, `backup.restore_tested`), at most 128 characters, and are listed once per requirement.
 - `threshold` is required with `rule: threshold`, is between 1 and the number of checks, and is not allowed with the other rules.
 - Unknown keys are errors.
+
+## Requirements a framework repeats
+
+Some frameworks use the same `ref_id` in more than one place. The Essential Eight (November 2023) lists an ISM control under every mitigation strategy it applies to, and the ASD Essentials rates each action in every domain it applies to. Each place is its own row in a CISO Assistant audit.
+
+- `urn:` names exactly one row. Use it when each row needs its own result, as in the Essentials, where each domain is rated separately.
+- `ref:` with `rows: all` writes the same result to every row that has the ref. Use it when the rows really are the same requirement, as with an ISM control repeated across Essential Eight strategies.
+- `ref:` on its own must match one row. A ref that matches several is an error (`mapping.ref_ambiguous`) that lists the matching URNs.
+
+```yaml
+framework_urn: urn:intuitem:risk:framework:asd-essentials-enterprise-it
+requirements:
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-01:it.pro-01.1
+    rule: all_pass
+    checks: [network.boundary.secure_design]
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-01:it.pro-01.1
+    rule: all_pass
+    checks: [identity.secure_design]
+---
+framework_urn: urn:intuitem:risk:framework:essential-eight-2023
+requirements:
+  - ref: ISM-0123          # listed under four strategies, same text in each
+    rows: all
+    rule: all_pass
+    checks: [incident.reporting_to_ciso]
+```
+
+When publishing, rows outside the audit's selected implementation groups (such as ML3 rows in an ML2 audit) are left alone and reported as `skipped` with the note `outside selected groups`, not as errors.
+
+## Framework snapshots
+
+A framework snapshot lets you check a mapping without CISO Assistant. It lists the framework's URN, version and implementation groups, and each assessable requirement's URN, `ref_id`, parent, groups and a short title. Make one from a CISO Assistant library file and commit it under `frameworks/`:
+
+```console
+$ hound framework snapshot essential-eight-2023.yaml --out frameworks/essential-eight-2023.json
+wrote frameworks/essential-eight-2023.json: urn:intuitem:risk:framework:essential-eight-2023 version 3, 152 assessable requirements
+```
+
+Library files ship with CISO Assistant under `backend/library/libraries/` in its source repository. Snapshots of the Essential Eight (November 2023) and the ASD Essentials for enterprise IT, from CISO Assistant v4.3.4, are in [`frameworks/`](../frameworks/). Make a new snapshot when you upgrade CISO Assistant and the library version changes.
 
 ## How results are worked out
 
@@ -55,5 +95,12 @@ Problems are printed with the file and line, and the command exits with code 3:
 
 ```console
 error: mappings/bad.yaml line 7: unknown rule 'most_pass'; use all_pass, any_pass or threshold.
-error: mappings/bad.yaml line 6: requirement ref 'EX-1.1' is already used at line 3.
+error: mappings/bad.yaml line 6: requirement 'EX-1.1' is already used at line 3.
+```
+
+With `--framework <snapshot>`, it also checks every requirement against the framework: unknown URNs and refs, refs that match several rows without `rows: all`, and a mapping for a different framework.
+
+```console
+$ hound mapping validate mappings/essential-eight-2023.yaml --framework frameworks/essential-eight-2023.json
+error: mappings/essential-eight-2023.yaml line 12: ref 'ISM-0123' matches 4 rows: urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-0123, ... Name one row by 'urn', or add 'rows: all' to write the same result to every row.
 ```

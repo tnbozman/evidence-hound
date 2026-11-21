@@ -1,7 +1,8 @@
 # Seeds a disposable CISO Assistant through `python manage.py shell` (see seed.sh).
-# Creates a service-account user with a personal access token, loads the Essential Eight and
-# the fictional Example baseline libraries, and creates the Example Pty Ltd folder, perimeter,
-# audit and applied controls through the REST API. Everything here is fictional.
+# Creates a service-account user with a personal access token, loads the Essential Eight (November 2023),
+# the ASD Essentials for enterprise IT, the transition mapping between them and the fictional Example
+# baseline libraries, and creates the Example Pty Ltd folder, perimeter, audits and applied controls
+# through the REST API. Everything here is fictional.
 import json
 import os
 import urllib.error
@@ -14,11 +15,21 @@ from knox.auth import get_token_model, knox_settings
 API = os.environ.get("SEED_API_URL", "http://localhost:8000/api")
 SERVICE_EMAIL = "hound-service@example.com"
 TOKEN_NAME = "evidence-hound"
-LIBRARIES = ["urn:intuitem:risk:library:essential-eight", "urn:example:risk:library:example-baseline"]
-FRAMEWORK_URN = "urn:example:risk:framework:example-baseline"
+LIBRARIES = [
+    "urn:intuitem:risk:library:essential-eight-2023",
+    "urn:intuitem:risk:library:asd-essentials-enterprise-it",
+    "urn:intuitem:risk:library:mapping-essential-eight-2023-and-asd-essentials-enterprise-it",
+    "urn:example:risk:library:example-baseline",
+]
 FOLDER = "Example Pty Ltd"
 PERIMETER = "Example baseline"
 AUDIT_REF_ID = "EXAMPLE-BASELINE-2026"
+# ref_id: (name, framework URN, selected implementation groups)
+AUDITS = {
+    AUDIT_REF_ID: ("Example baseline 2026", "urn:example:risk:framework:example-baseline", []),
+    "EX-E8-2026": ("Example Essential Eight ML2 2026", "urn:intuitem:risk:framework:essential-eight-2023", ["1", "2"]),
+    "EX-ESSENTIALS-2026": ("Example Essentials phase 1 2026", "urn:intuitem:risk:framework:asd-essentials-enterprise-it", ["1"]),
+}
 CONTROLS = {
     "AC-MFA": "Multi-factor authentication",
     "AC-BACKUP": "Daily backups",
@@ -78,20 +89,18 @@ for urn in LIBRARIES:
     if status != 200:
         print(f"seed: library {urn} not imported ({status}: {body}); it may already be loaded")
 
-framework = find(token, "/frameworks/", urn=FRAMEWORK_URN)
-if framework is None:
-    raise SystemExit(f"seed: framework {FRAMEWORK_URN} is not loaded")
-
 folder = ensure(token, "/folders/", {"name": FOLDER}, {"name": FOLDER})
 perimeter = ensure(token, "/perimeters/", {"name": PERIMETER}, {"name": PERIMETER, "folder": folder})
-ensure(
-    token,
-    "/compliance-assessments/",
-    {"ref_id": AUDIT_REF_ID},
-    {"name": "Example baseline 2026", "ref_id": AUDIT_REF_ID, "perimeter": perimeter, "framework": framework["id"], "folder": folder},
-)
+for ref_id, (name, framework_urn, groups) in AUDITS.items():
+    framework = find(token, "/frameworks/", urn=framework_urn)
+    if framework is None:
+        raise SystemExit(f"seed: framework {framework_urn} is not loaded")
+    audit = {"name": name, "ref_id": ref_id, "perimeter": perimeter, "framework": framework["id"], "folder": folder}
+    if groups:
+        audit["selected_implementation_groups"] = groups
+    ensure(token, "/compliance-assessments/", {"ref_id": ref_id}, audit)
 for ref_id, name in CONTROLS.items():
     ensure(token, "/applied-controls/", {"ref_id": ref_id}, {"name": name, "ref_id": ref_id, "folder": folder, "status": "to_do"})
 
-print(f"seed: {FOLDER}, audit {AUDIT_REF_ID} and controls {', '.join(CONTROLS)} are ready")
+print(f"seed: {FOLDER}, audits {', '.join(AUDITS)} and controls {', '.join(CONTROLS)} are ready")
 print(f"HOUND_CA_TOKEN={token}")
