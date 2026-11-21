@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -19,21 +20,41 @@ public static class HoundCli
         CancellationToken cancellationToken = default) =>
         RunAsync(args, output, error, configureLogging, [], cancellationToken);
 
+    /// <summary>Runs with extra configuration settings (for example <c>HOUND_CA_TOKEN</c>) on top of the environment.</summary>
+    internal static Task<int> RunAsync(
+        string[] args,
+        TextWriter output,
+        TextWriter error,
+        Action<ILoggingBuilder>? configureLogging,
+        IReadOnlyDictionary<string, string?> settings,
+        CancellationToken cancellationToken) =>
+        RunAsync(args, output, error, configureLogging, [], settings, cancellationToken);
+
+    internal static Task<int> RunAsync(
+        string[] args,
+        TextWriter output,
+        TextWriter error,
+        Action<ILoggingBuilder>? configureLogging,
+        IReadOnlyList<Command> extraCommands,
+        CancellationToken cancellationToken) =>
+        RunAsync(args, output, error, configureLogging, extraCommands, new Dictionary<string, string?>(), cancellationToken);
+
     internal static async Task<int> RunAsync(
         string[] args,
         TextWriter output,
         TextWriter error,
         Action<ILoggingBuilder>? configureLogging,
         IReadOnlyList<Command> extraCommands,
+        IReadOnlyDictionary<string, string?> settings,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(error);
 
-        using var host = BuildHost(error, configureLogging);
+        using var host = BuildHost(error, configureLogging, settings);
         var loggers = host.Services.GetRequiredService<ILoggerFactory>();
         var logger = loggers.CreateLogger("hound");
 
-        var root = BuildRootCommand(output, loggers);
+        var root = BuildRootCommand(output, loggers, host.Services.GetRequiredService<IConfiguration>());
         foreach (var command in extraCommands)
         {
             root.Subcommands.Add(command);
@@ -70,19 +91,22 @@ public static class HoundCli
         }
     }
 
-    private static RootCommand BuildRootCommand(TextWriter output, ILoggerFactory loggers) =>
+    private static RootCommand BuildRootCommand(TextWriter output, ILoggerFactory loggers, IConfiguration configuration) =>
         new("Evidence Hound: collects compliance evidence and publishes it to CISO Assistant.")
         {
             CollectCommand.Build(loggers),
             MappingCommands.Build(output, loggers),
             PlanCommand.Build(output, loggers),
+            PublishCommand.Build(output, loggers, configuration),
         };
 
     /// <summary>One host per run. Logs go to <paramref name="error"/>; the level comes from configuration (for example <c>Logging__LogLevel__Default</c>).</summary>
-    private static IHost BuildHost(TextWriter error, Action<ILoggingBuilder>? configureLogging)
+    private static IHost BuildHost(TextWriter error, Action<ILoggingBuilder>? configureLogging, IReadOnlyDictionary<string, string?> settings)
     {
         var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { EnvironmentName = "Production" });
+        builder.Configuration.AddInMemoryCollection(settings);
         builder.Logging.ClearProviders();
+        builder.Logging.AddFilter("System.Net.Http.HttpClient", LogLevel.Warning);
         builder.Logging.AddProvider(new StderrLoggerProvider(error));
         configureLogging?.Invoke(builder.Logging);
         return builder.Build();

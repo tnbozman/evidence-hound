@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup Condition="'$(UnitTestRun)' == 'true'">
+    <!-- Unit runs (make test, make coverage) filter out Category=Functional, which leaves this project with
+         zero tests (exit code 8). Only this project, and only in unit runs, may run zero tests. -->
+    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --ignore-exit-code 8</TestingPlatformCommandLineArguments>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Testcontainers" />
+    <PackageReference Include="Testcontainers.Redpanda" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\EvidenceHound.CisoAssistant\EvidenceHound.CisoAssistant.csproj" />
+    <ProjectReference Include="..\..\src\EvidenceHound.Cli\EvidenceHound.Cli.csproj" />
+    <ProjectReference Include="..\..\src\EvidenceHound.Transport.Kafka\EvidenceHound.Transport.Kafka.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\dev\ciso-assistant\seed\*" Link="seed\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\mappings\example.yaml" Link="files\mappings\example.yaml" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\examples\*.yaml" Link="files\examples\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\fixtures\publish\**\*" Link="files\fixtures\publish\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

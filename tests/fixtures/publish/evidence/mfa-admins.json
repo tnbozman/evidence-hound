@@ -1,0 +1,5 @@
+{
+  "source": "example-idp",
+  "admins": 4,
+  "admins_with_mfa": 4
+}

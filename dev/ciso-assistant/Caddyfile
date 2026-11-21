@@ -1,0 +1,6 @@
+# Local TLS front door for the disposable CISO Assistant (self-signed, Caddy's internal CA).
+https://localhost:8443 {
+	reverse_proxy /api/* backend:8000
+	reverse_proxy /* frontend:3000
+	tls internal
+}

@@ -27,6 +27,9 @@ internal static partial class Log
     [LoggerMessage(EventId = 1000, Level = LogLevel.Information, Message = "{Count} collectors configured")]
     public static partial void CollectorsConfigured(ILogger logger, int count);
 
+    [LoggerMessage(EventId = 1100, Level = LogLevel.Information, Message = "Published to CISO Assistant: {Sent} sent, {Skipped} skipped, {Failed} failed")]
+    public static partial void Published(ILogger logger, int sent, int skipped, int failed);
+
     [LoggerMessage(EventId = 9000, Level = LogLevel.Critical, Message = "Unexpected failure running '{Command}'. Rerun with Logging__LogLevel__Default=Debug for the stack trace.")]
     public static partial void Unexpected(ILogger logger, Exception exception, string command);
 

@@ -1,0 +1,5 @@
+{
+  "source": "example-backup",
+  "servers": 12,
+  "jobs_ok": 12
+}

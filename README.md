@@ -39,6 +39,10 @@ Your organisation's configuration (system names, tenant IDs, audit IDs, mappings
 
 You only need Docker and VS Code (or GitHub Codespaces). Open the repo and choose **Reopen in Container**. The dev container has the SDK, test tools, debugger, GitHub CLI, Claude Code and Docker for running a local CISO Assistant.
 
+## Try it with a local CISO Assistant
+
+`make ca-up` starts a disposable CISO Assistant (pinned release, SQLite) and seeds it with a service-account token and the fictional Example Pty Ltd audit. Open <https://localhost:8443> and sign in as `admin@example.com` (password `HOUND_CA_ADMIN_PASSWORD`, default `change-me-local-only`). Then follow [`docs/publishing.md`](docs/publishing.md) to publish the example run. `make ca-down ARGS=-v` removes it.
+
 ## Licence
 
 Apache-2.0. CISO Assistant itself is AGPL-3.0 and is used over its API only.
