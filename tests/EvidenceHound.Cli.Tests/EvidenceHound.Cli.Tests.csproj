@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\EvidenceHound.Cli\EvidenceHound.Cli.csproj" />
+  </ItemGroup>
+</Project>
