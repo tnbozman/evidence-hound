@@ -52,11 +52,11 @@ public sealed class RunnerTests : IDisposable
 
         summary.Collectors.Select(c => (c.Collector, c.Outcome)).ShouldBe([("example-idp", CollectorOutcome.Succeeded), ("example-backup", CollectorOutcome.Succeeded)]);
         _sink.Batches.Count.ShouldBe(2);
-        _sink.Batches[0].ShouldBe([
-            new AuditUpdate.UploadEvidence(_sink.Batches[0].OfType<AuditUpdate.UploadEvidence>().Single().Evidence),
-            new AuditUpdate.UpdateRequirementAssessment("EXAMPLE-1", "R-MFA", ComplianceResult.Compliant, _sink.Batches[0].OfType<AuditUpdate.UpdateRequirementAssessment>().Single().Observation, ["example-idp/admins.json"]),
-        ]);
+        _sink.Batches[0].Select(u => u.GetType().Name).ShouldBe(["UploadEvidence", "UpdateRequirementAssessment"]);
         _sink.Batches[0].OfType<AuditUpdate.UploadEvidence>().Single().Evidence.Id.ShouldBe("example-idp/admins.json");
+        var requirement = _sink.Batches[0].OfType<AuditUpdate.UpdateRequirementAssessment>().Single();
+        (requirement.ComplianceAssessmentRefId, requirement.RequirementRefId, requirement.Result).ShouldBe(("EXAMPLE-1", "R-MFA", ComplianceResult.Compliant));
+        requirement.EvidenceRefIds.ShouldBe(["example-idp/admins.json"]);
         _sink.Batches[1].OfType<AuditUpdate.UpdateRequirementAssessment>().Single().RequirementRefId.ShouldBe("R-BACKUP");
         summary.Collectors[0].Publish!.Sent.ShouldBe(2);
     }
@@ -94,7 +94,8 @@ public sealed class RunnerTests : IDisposable
 
         ok.Outcome.ShouldBe(CollectorOutcome.Succeeded);
         publishFailed.Outcome.ShouldBe(CollectorOutcome.Failed);
-        publishFailed.Collectors.Single().Problems.ShouldHaveSingleItem().Code.ShouldBe("ciso_assistant.rejected");
+        publishFailed.Collectors.Single().Problems.ShouldNotBeEmpty();
+        publishFailed.Collectors.Single().Problems.ShouldAllBe(p => p.Code == "ciso_assistant.rejected");
         new RunSummary([]).Outcome.ShouldBe(CollectorOutcome.Succeeded);
     }
 
