@@ -100,7 +100,7 @@ public sealed class Publisher(ICisoAssistantClient client, IEvidenceFiles files)
         var values = new RequirementAssessmentValues(requirement.Result, requirement.Observation, [.. cited.Select(c => c.Id!)]);
         if (requirement.RowIds.Count > 0)
         {
-            return await UpdateRowsAsync(requirement.RowIds, values, cancellationToken);
+            return await UpdateRowsAsync(requirement.RowIds, values, requirement.KeptEvidenceIds, cancellationToken);
         }
 
         var auditRefId = requirement.ComplianceAssessmentRefId;
@@ -115,15 +115,18 @@ public sealed class Publisher(ICisoAssistantClient client, IEvidenceFiles files)
         return await rows.Match(
             inScope => inScope.Count == 0
                 ? Task.FromResult(Result.Ok(new PublishDone(PublishOutcome.Skipped, RequirementRows.OutsideSelectedGroups)))
-                : UpdateRowsAsync([.. inScope.Select(row => row.Id)], values, cancellationToken),
+                : UpdateRowsAsync([.. inScope.Select(row => row.Id)], values, requirement.KeptEvidenceIds, cancellationToken),
             problems => Task.FromResult(Result.Fail<PublishDone>(problems)));
     }
 
-    private async Task<Result<PublishDone>> UpdateRowsAsync(IReadOnlyList<string> rowIds, RequirementAssessmentValues values, CancellationToken cancellationToken)
+    /// <summary>Writes each row, keeping the scope's documents the row links alongside the cited evidence.</summary>
+    private async Task<Result<PublishDone>> UpdateRowsAsync(
+        IReadOnlyList<string> rowIds, RequirementAssessmentValues values, IReadOnlyDictionary<string, IReadOnlyList<string>> kept, CancellationToken cancellationToken)
     {
         foreach (var rowId in rowIds)
         {
-            var updated = await client.UpdateRequirementAssessmentAsync(rowId, values, cancellationToken);
+            var rowValues = kept.TryGetValue(rowId, out var documents) ? values with { EvidenceIds = [.. values.EvidenceIds.Union(documents, StringComparer.Ordinal)] } : values;
+            var updated = await client.UpdateRequirementAssessmentAsync(rowId, rowValues, cancellationToken);
             if (updated is Result<Unit>.Fail failed)
             {
                 return Result.Fail<PublishDone>(failed.Errors);

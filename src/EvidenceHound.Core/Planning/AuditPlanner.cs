@@ -58,8 +58,9 @@ public static class AuditPlanner
                 .DistinctBy(e => e.RefId)
                 .ToDictionary(e => e.RefId, e => e.Id, StringComparer.Ordinal);
             var audits = current.Audits.DistinctBy(a => a.RefId).ToDictionary(a => a.RefId, StringComparer.Ordinal);
+            var documents = current.ScopeDocumentIds.ToHashSet(StringComparer.Ordinal);
             var rows = targets
-                .SelectMany(t => t.Results.Select(r => PlanRows(t.Target, audits.GetValueOrDefault(t.Target.ComplianceAssessmentRefId), r, hashes, known, runId)))
+                .SelectMany(t => t.Results.Select(r => PlanRows(t.Target, audits.GetValueOrDefault(t.Target.ComplianceAssessmentRefId), r, hashes, known, documents, runId)))
                 .ToArray();
             var statuses = current.Controls.DistinctBy(c => c.RefId).ToDictionary(c => c.RefId, c => c.Status, StringComparer.Ordinal);
 
@@ -126,6 +127,7 @@ public static class AuditPlanner
         RequirementResult result,
         Dictionary<string, string> hashes,
         Dictionary<string, string> known,
+        HashSet<string> documents,
         string runId)
     {
         var fingerprint = RowState.Fingerprint(result.Result, result.CheckOutcomes, result.EvidenceRefs.Select(id => $"{id}={hashes[id]}"));
@@ -138,7 +140,10 @@ public static class AuditPlanner
         }
 
         var desiredIds = result.EvidenceRefs.Select(id => known.GetValueOrDefault(id)).ToArray();
-        var compared = inScope.Select(row => (Row: row, Change: Compare(row, result.Result, desiredIds, fingerprint))).ToArray();
+        var compared = inScope
+            .Select(row => (Row: row, Kept: row.EvidenceIds.Where(documents.Contains).ToArray()))
+            .Select(r => (r.Row, r.Kept, Change: Compare(r.Row, result.Result, [.. desiredIds, .. r.Kept], fingerprint)))
+            .ToArray();
         var written = compared.Where(c => c.Change != RowChange.None).ToArray();
         var drift = written
             .Where(c => c.Change == RowChange.Drift)
@@ -149,7 +154,11 @@ public static class AuditPlanner
             .ToArray();
         return new RowsPlan(
             target.ComplianceAssessmentRefId,
-            written.Length == 0 ? null : update with { RowIds = [.. written.Select(c => c.Row.Id)] },
+            written.Length == 0 ? null : update with
+            {
+                RowIds = [.. written.Select(c => c.Row.Id)],
+                KeptEvidenceIds = written.Where(c => c.Kept.Length > 0).ToDictionary(c => c.Row.Id, c => (IReadOnlyList<string>)c.Kept, StringComparer.Ordinal),
+            },
             written.Length,
             compared.Length - written.Length,
             drift);

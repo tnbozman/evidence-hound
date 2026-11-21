@@ -64,6 +64,7 @@ public sealed class ClientStateSource(ICisoAssistantClient client) : ICurrentSta
             controls.AddRange(status.Match<CurrentControl[]>(s => [new CurrentControl(refId, s)], _ => []));
         }
 
-        return new CurrentState(audits, evidence, controls);
+        var documents = await client.ListScopeDocumentIdsAsync(cancellationToken);
+        return new CurrentState(audits, evidence, controls) { ScopeDocumentIds = documents.Match(ids => ids, _ => []) };
     }
 }

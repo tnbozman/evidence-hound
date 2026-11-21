@@ -309,8 +309,9 @@ public class PlanTests
         var changed = Changes([Requirement("EX-1.1", ComplianceResult.NonCompliant)], [], [], linked, Run2);
 
         (unchanged.Updates.Count, unchanged.Drift.Count).ShouldBe((0, 0));
-        changed.Updates.OfType<AuditUpdate.UpdateRequirementAssessment>().ShouldHaveSingleItem().KeptEvidenceIds.ShouldBe(
-            new Dictionary<string, IReadOnlyList<string>> { ["ra-EX-1.1"] = ["uuid-policy"] });
+        var kept = changed.Updates.OfType<AuditUpdate.UpdateRequirementAssessment>().ShouldHaveSingleItem().KeptEvidenceIds;
+        kept.Keys.ShouldBe(["ra-EX-1.1"]);
+        kept["ra-EX-1.1"].ShouldBe(["uuid-policy"]);
     }
 
     private static readonly string Run1 = "20261120T020000Z";
