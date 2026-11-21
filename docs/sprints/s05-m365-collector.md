@@ -28,7 +28,7 @@ Required Entra app permissions (application, admin consent, all read-only): `Pol
 - Result (2026-11-21): against WireMock, `GraphPagingTests.Follows_next_link_until_exhausted` read three pages (three requests, five users in order) and `GraphEvidenceTests.One_file_holds_every_page_minimised` wrote one `users.json` recording `pages: 3` with every UPN hashed; 25 of 25 tests pass. [Evidence](../evidence/s05/s05-01.md).
 
 ### s05-02 Multi-factor authentication checks
-- [ ] Done
+- [x] Done
 
 **Story:** As a compliance owner, I want MFA coverage measured, so that the MFA requirements are assessed from live data.
 
@@ -43,6 +43,7 @@ Required Entra app permissions (application, admin consent, all read-only): `Pol
 
 **Functional check**
 - Collector run against recordings produces four check results with readable observations.
+- Result (2026-11-21): the `m365` collector run against the recorded `example.com` tenant (five Graph requests, three of them user pages) reported the four checks, all `pass`, with observations such as "All 7 enabled member accounts are MFA-capable.", and wrote `users.json`, `mfa-registration.json` and `conditional-access-policies.json`. `hound collectors list` shows `m365`. [Evidence](../evidence/s05/s05-02.md).
 
 ### s05-03 Privileged access checks
 - [ ] Done
@@ -92,5 +93,8 @@ Required Entra app permissions (application, admin consent, all read-only): `Pol
 - A reviewer follows the doc on a test tenant and gets a successful dry run (record date, no tenant details).
 
 ## Discovered work
+
+- The registration report (`reports/authenticationMethods/userRegistrationDetails`) needs `AuditLog.Read.All`, not `Reports.Read.All` as the permission list above says. The collector asks for `AuditLog.Read.All`; `docs/collectors/m365.md` (s05-05) lists the permissions the collector actually uses. (Found in s05-02.)
+- Conditional Access exclusions of guests or external users (`excludeGuestsOrExternalUsers`) are not read yet, so a policy that excludes them still counts as covering all users. (Found in s05-02.)
 
 ## Sprint review
