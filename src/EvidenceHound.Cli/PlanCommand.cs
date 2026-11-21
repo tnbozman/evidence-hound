@@ -75,8 +75,7 @@ internal static class PlanCommand
         await ConfigFile.LoadAsync(configFile.FullName, cancellationToken) switch
         {
             ConfigLoad.Loaded { Config.Target: { } target } => Result.Ok(target),
-            ConfigLoad.Loaded => Result.Fail<TargetConfig>(new Problem("config.target_missing", $"{configFile} has no 'target' with a mapping and compliance_assessment.")),
             ConfigLoad.Failed failed => Result.Fail<TargetConfig>(new Problem("config.invalid", failed.Reason)),
-            var other => throw new InvalidOperationException($"Unhandled config load outcome {other.GetType().Name}."),
+            _ => Result.Fail<TargetConfig>(new Problem("config.target_missing", $"{configFile} has no 'target' with a mapping and compliance_assessment.")),
         };
 }

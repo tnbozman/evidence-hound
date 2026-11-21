@@ -180,6 +180,20 @@ public sealed class CliTests : IDisposable
         _error.ToString().ShouldContain("target");
     }
 
+    [Theory]
+    [InlineData("missing-config.yaml", "checks-sample.json")]
+    [InlineData("example-pty-ltd.yaml", "missing-checks.json")]
+    public async Task Plan_with_a_missing_file_exits_three(string config, string checks)
+    {
+        var configPath = config.StartsWith("missing", StringComparison.Ordinal) ? Path.Combine(_workDir, config) : RepoFile("examples", config);
+        var checksPath = checks.StartsWith("missing", StringComparison.Ordinal) ? Path.Combine(_workDir, checks) : RepoFile("fixtures", checks);
+
+        var exitCode = await Run("plan", "--dry-run", "--config", configPath, "--checks", checksPath);
+
+        exitCode.ShouldBe(3);
+        _error.ToString().ShouldContain("missing-");
+    }
+
     private static string RepoFile(string folder, string name) => Path.Combine(AppContext.BaseDirectory, "files", folder, name);
 
     public void Dispose()

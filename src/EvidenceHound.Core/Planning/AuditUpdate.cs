@@ -10,8 +10,21 @@ public abstract record AuditUpdate
     {
     }
 
+    /// <summary>Calls the function for the case this update is.</summary>
+    public abstract T Match<T>(
+        Func<UploadEvidence, T> upload,
+        Func<UpdateRequirementAssessment, T> requirement,
+        Func<UpdateAppliedControl, T> control);
+
     /// <summary><c>upload_attachment</c>: create or update the evidence with ref_id <c>Evidence.Id</c> and attach the file.</summary>
-    public sealed record UploadEvidence(Evidence Evidence) : AuditUpdate;
+    public sealed record UploadEvidence(Evidence Evidence) : AuditUpdate
+    {
+        public override T Match<T>(Func<UploadEvidence, T> upload, Func<UpdateRequirementAssessment, T> requirement, Func<UpdateAppliedControl, T> control)
+        {
+            ArgumentNullException.ThrowIfNull(upload);
+            return upload(this);
+        }
+    }
 
     /// <summary><c>update_requirement_assessment</c>: set the result and observation of one requirement in one audit.</summary>
     /// <param name="ComplianceAssessmentRefId">The audit's ref_id.</param>
@@ -24,8 +37,22 @@ public abstract record AuditUpdate
         string RequirementRefId,
         ComplianceResult Result,
         string Observation,
-        IReadOnlyList<string> EvidenceRefIds) : AuditUpdate;
+        IReadOnlyList<string> EvidenceRefIds) : AuditUpdate
+    {
+        public override T Match<T>(Func<UploadEvidence, T> upload, Func<UpdateRequirementAssessment, T> requirement, Func<UpdateAppliedControl, T> control)
+        {
+            ArgumentNullException.ThrowIfNull(requirement);
+            return requirement(this);
+        }
+    }
 
     /// <summary><c>update_applied_control</c>: set an applied control's status.</summary>
-    public sealed record UpdateAppliedControl(string RefId, ControlState Status) : AuditUpdate;
+    public sealed record UpdateAppliedControl(string RefId, ControlState Status) : AuditUpdate
+    {
+        public override T Match<T>(Func<UploadEvidence, T> upload, Func<UpdateRequirementAssessment, T> requirement, Func<UpdateAppliedControl, T> control)
+        {
+            ArgumentNullException.ThrowIfNull(control);
+            return control(this);
+        }
+    }
 }

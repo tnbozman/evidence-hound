@@ -30,6 +30,7 @@ public class CheckResultsJsonTests
     [InlineData("""{"checks": [{"check_id": "a.b", "outcome": "pass", "observation": "", "evidence_refs": [], "collected_at": "2026-01-15T09:30:00Z", "source": ""}]}""", "check_result.source_empty")]
     [InlineData("""{"checks": [{"check_id": "a.b", "outcome": "pass"}]}""", "checks.json_invalid")]
     [InlineData("""{}""", "checks.json_invalid")]
+    [InlineData("null", "checks.json_invalid")]
     public void Problems_name_the_file_and_entry(string json, string code)
     {
         var problem = CheckResultsJson.Parse(json, "checks.json").Match(_ => throw new InvalidOperationException("parsed"), p => p[0]);

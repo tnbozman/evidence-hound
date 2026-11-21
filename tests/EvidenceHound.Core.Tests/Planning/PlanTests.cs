@@ -103,6 +103,12 @@ public class PlanTests
             .ShouldBe(["to_do", "in_progress", "on_hold", "active", "deprecated"]);
     }
 
+    [Fact]
+    public void Undefined_control_state_is_a_bug()
+    {
+        Should.Throw<ArgumentOutOfRangeException>(() => DispatcherMessages.ToJson(new AuditUpdate.UpdateAppliedControl("AC-1", (ControlState)99), _ => ""));
+    }
+
     private static IReadOnlyList<AuditUpdate> Plan(RequirementResult[] results, Evidence[] evidence, ControlStatus[] controls) =>
         PlanUpdates(results, evidence, controls).Value();
 

@@ -13,13 +13,14 @@ public static class DispatcherMessages
     {
         ArgumentNullException.ThrowIfNull(fileContent);
 
-        return update switch
-        {
-            AuditUpdate.UploadEvidence upload => Message(
+        ArgumentNullException.ThrowIfNull(update);
+
+        return update.Match(
+            upload => Message(
                 "upload_attachment",
                 new JsonObject { ["name"] = upload.Evidence.FileName, ["ref_id"] = upload.Evidence.Id },
                 new JsonObject { ["file_content"] = fileContent(upload.Evidence), ["file_name"] = upload.Evidence.FileName }),
-            AuditUpdate.UpdateRequirementAssessment requirement => Message(
+            requirement => Message(
                 "update_requirement_assessment",
                 new JsonObject
                 {
@@ -32,12 +33,10 @@ public static class DispatcherMessages
                     ["observation"] = requirement.Observation,
                     ["evidences"] = new JsonArray([.. requirement.EvidenceRefIds.Select(id => JsonValue.Create(id))]),
                 }),
-            AuditUpdate.UpdateAppliedControl control => Message(
+            control => Message(
                 "update_applied_control",
                 new JsonObject { ["ref_id"] = control.RefId },
-                new JsonObject { ["status"] = StateName(control.Status) }),
-            _ => throw new ArgumentOutOfRangeException(nameof(update), update, "Unknown audit update."),
-        };
+                new JsonObject { ["status"] = StateName(control.Status) }));
     }
 
     private static JsonObject Message(string type, JsonObject selector, JsonObject values) =>
