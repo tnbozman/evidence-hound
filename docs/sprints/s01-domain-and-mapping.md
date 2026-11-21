@@ -1,6 +1,6 @@
 # s01 Domain model and framework mapping
 
-Status: Planned
+Status: In progress
 
 **Goal:** the pure core that turns framework-neutral check results into requirement results for any framework, with no I/O.
 
