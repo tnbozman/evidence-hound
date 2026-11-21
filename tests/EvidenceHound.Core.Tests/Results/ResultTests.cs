@@ -12,6 +12,39 @@ public class ResultTests
     private static readonly Problem Refused = new("refused", "The API refused the request.");
 
     [Fact]
+    public async Task BindAsync_on_ok_awaits_the_next_step()
+    {
+        var result = await Result.Ok(20).BindAsync(n => Task.FromResult(Result.Ok(n + 1)));
+
+        result.ShouldBe(Result.Ok(21));
+    }
+
+    [Fact]
+    public async Task BindAsync_on_fail_skips_the_next_step()
+    {
+        var called = false;
+
+        var result = await Result.Fail<int>(NotFound).BindAsync(n =>
+        {
+            called = true;
+            return Task.FromResult(Result.Ok(n + 1));
+        });
+
+        result.ShouldBe(Result.Fail<int>(NotFound));
+        called.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task BindAsync_chains_on_a_pending_result()
+    {
+        var result = await Task.FromResult(Result.Ok(1))
+            .BindAsync(n => Task.FromResult(Result.Ok(n + 1)))
+            .BindAsync(n => Task.FromResult(Result.Fail<int>(Refused)));
+
+        result.ShouldBe(Result.Fail<int>(Refused));
+    }
+
+    [Fact]
     public void Map_on_ok_applies_function()
     {
         var result = Result.Ok(20).Map(n => n + 1);
