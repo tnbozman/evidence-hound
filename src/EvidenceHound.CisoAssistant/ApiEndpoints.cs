@@ -24,6 +24,7 @@ public static class ApiEndpoints
         new("GET", "/api/folders/"),
         new("GET", "/api/folders/{id}/object/"),
         new("GET", "/api/users/"),
+        new("GET", "/api/actors/"),
         new("GET", "/api/frameworks/"),
         new("GET", "/api/perimeters/"),
         new("GET", "/api/perimeters/{id}/object/"),

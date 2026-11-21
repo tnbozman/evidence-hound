@@ -7,7 +7,7 @@ namespace EvidenceHound.CisoAssistant;
 
 /// <summary>
 /// Writes scope changes to CISO Assistant: domains as folders under the root folder, perimeters, and systems as assets. Each write finds the
-/// IDs it needs by name first (folders, assets, users), so nothing is sent when a name cannot be resolved. Creates and updates send every
+/// IDs it needs by name first (folders, assets, users' actors), so nothing is sent when a name cannot be resolved. Creates and updates send every
 /// field the scope manages, with the <c>[hound scope &lt;state&gt;]</c> marker at the end of the description.
 /// </summary>
 internal sealed class ScopeWriter(HttpClient http) : IScopeWriter
@@ -107,7 +107,7 @@ internal sealed class ScopeWriter(HttpClient http) : IScopeWriter
         });
     }
 
-    /// <summary>The users named by email, as IDs.</summary>
+    /// <summary>The users named by email, as the IDs of their actors: owners, authors and reviewers are actors in CISO Assistant.</summary>
     private async Task<Result<JsonArray>> OwnersAsync(string[] emails, CancellationToken cancellationToken)
     {
         if (emails.Length == 0)
@@ -116,7 +116,17 @@ internal sealed class ScopeWriter(HttpClient http) : IScopeWriter
         }
 
         var users = await http.ListAllAsync("users/", cancellationToken);
-        return users.Bind(all => Resolve(emails, all.GroupBy(u => Text(u["email"]) ?? "").ToDictionary(g => g.Key, g => Id(g.First()), StringComparer.Ordinal), "user"));
+        return await users.BindAsync(async all =>
+            (await http.ListAllAsync("actors/", cancellationToken)).Bind(actors => Resolve(emails, ActorIds(all, actors), "user")));
+    }
+
+    /// <summary>Each user's actor ID by the user's email.</summary>
+    private static Dictionary<string, string> ActorIds(List<JsonNode> users, List<JsonNode> actors)
+    {
+        var actorOf = actors.Where(a => Text(a["type"]) == "user" && RelationId(a["specific"]) is not null)
+            .GroupBy(a => RelationId(a["specific"])!).ToDictionary(g => g.Key, g => Id(g.First()), StringComparer.Ordinal);
+        return users.Where(u => Text(u["email"]) is not null && actorOf.ContainsKey(Id(u)))
+            .GroupBy(u => Text(u["email"])!).ToDictionary(g => g.Key, g => actorOf[Id(g.First())], StringComparer.Ordinal);
     }
 
     private static Result<JsonArray> Resolve(string[] names, Dictionary<string, string> ids, string what) =>

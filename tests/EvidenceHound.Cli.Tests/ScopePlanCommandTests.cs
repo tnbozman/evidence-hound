@@ -190,7 +190,7 @@ public sealed class ScopePlanCommandTests : IDisposable
     private void EmptyInstance(JsonObject[]? perimeters = null, JsonObject[]? folders = null)
     {
         List("folders", [new JsonObject { ["id"] = "f-global", ["name"] = "Global", ["parent_folder"] = null }, .. folders ?? []]);
-        foreach (var resource in new[] { "users", "frameworks", "assets", "compliance-assessments", "evidences", "applied-controls", "requirement-assessments" })
+        foreach (var resource in new[] { "users", "actors", "frameworks", "assets", "compliance-assessments", "evidences", "applied-controls", "requirement-assessments" })
         {
             List(resource);
         }

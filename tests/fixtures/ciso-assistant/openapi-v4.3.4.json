@@ -6,6 +6,16 @@
   },
   "all_paths": 1805,
   "paths": {
+    "/api/actors/": {
+      "get": {
+        "operationId": "actors_list"
+      }
+    },
+    "/api/actors/{id}/": {
+      "get": {
+        "operationId": "actors_retrieve"
+      }
+    },
     "/api/applied-controls/": {
       "get": {
         "operationId": "applied_controls_list"

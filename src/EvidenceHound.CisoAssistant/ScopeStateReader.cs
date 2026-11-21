@@ -31,7 +31,7 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource
         var rootId = Id(root);
         var domainIds = folders.Where(f => RelationId(f["parent_folder"]) == rootId).Select(Id).ToArray();
         var domainObjects = await reading.ObjectsAsync("folders", domainIds);
-        var users = (await reading.ListAsync("users/")).ToDictionary(Id, u => Text(u["email"]) ?? Id(u), StringComparer.Ordinal);
+        var users = Actors(await reading.ListAsync("users/"), await reading.ListAsync("actors/"));
         var frameworks = (await reading.ListAsync("frameworks/")).ToDictionary(Id, f => Text(f["urn"]) ?? Id(f), StringComparer.Ordinal);
         HashSet<string> inScope = [rootId, .. domainIds];
         var perimeters = await reading.ObjectsInAsync("perimeters", inScope);
@@ -93,6 +93,15 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource
         }
 
         return found;
+    }
+
+    /// <summary>
+    /// Names for actor IDs, which owners, authors and reviewers hold: a user's actor by the user's email, a team's or entity's by its name.
+    /// </summary>
+    private static Dictionary<string, string> Actors(List<JsonNode> users, List<JsonNode> actors)
+    {
+        var emails = users.ToDictionary(Id, u => Text(u["email"]) ?? Id(u), StringComparer.Ordinal);
+        return actors.ToDictionary(Id, a => RelationId(a["specific"]) is { } id && emails.TryGetValue(id, out var email) ? email : Text(a["str"]) ?? Id(a), StringComparer.Ordinal);
     }
 
     private static bool Matches(JsonNode? requirement, RequirementKey key) =>
