@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>EvidenceHound.Collectors.Testing</RootNamespace>
+    <IsPackable>true</IsPackable>
+    <PackageId>EvidenceHound.Collectors.Testing</PackageId>
+    <Description>The contract tests every Evidence Hound collector must pass, and recorded-response helpers for collector tests.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="WireMock.Net" />
+    <PackageReference Include="xunit.v3.assert" />
+    <PackageReference Include="xunit.v3.extensibility.core" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\EvidenceHound.Collectors.Abstractions\EvidenceHound.Collectors.Abstractions.csproj" />
+  </ItemGroup>
+</Project>

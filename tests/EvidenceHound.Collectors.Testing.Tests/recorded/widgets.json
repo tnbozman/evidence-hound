@@ -1,0 +1,6 @@
+{
+  "widgets": [
+    { "name": "example-widget-01", "patched": true },
+    { "name": "example-widget-02", "patched": true }
+  ]
+}
