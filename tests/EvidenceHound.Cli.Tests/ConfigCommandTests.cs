@@ -39,8 +39,34 @@ public sealed class ConfigCommandTests : IDisposable
         _error.ToString().ShouldNotContain("hunter2");
     }
 
+    [Fact]
+    public async Task Check_secrets_reports_a_missing_secret_without_its_value_and_exits_three()
+    {
+        var exitCode = await RunWith(new Dictionary<string, string?>(), "config", "validate", "--check-secrets", ExampleConfig);
+
+        exitCode.ShouldBe(ExitCodes.Configuration);
+        var problem = _logs.Entries.ShouldHaveSingleItem();
+        problem.Message.ShouldContain("env:HOUND_CA_TOKEN");
+        problem.State[0].Value.ShouldBe("secret.missing");
+    }
+
+    [Fact]
+    public async Task Check_secrets_prints_valid_when_every_secret_resolves()
+    {
+        var exitCode = await RunWith(new Dictionary<string, string?> { ["HOUND_CA_TOKEN"] = "hunter2" }, "config", "validate", "--check-secrets", ExampleConfig);
+
+        exitCode.ShouldBe(ExitCodes.Ok);
+        _output.ToString().Trim().ShouldBe("valid");
+        _error.ToString().ShouldNotContain("hunter2");
+    }
+
+    private static string ExampleConfig => Path.Combine(AppContext.BaseDirectory, "files", "examples", "example-pty-ltd.yaml");
+
     private Task<int> Run(params string[] args) =>
         HoundCli.RunAsync(args, _output, _error, logging => logging.AddProvider(_logs));
+
+    private Task<int> RunWith(IReadOnlyDictionary<string, string?> settings, params string[] args) =>
+        HoundCli.RunAsync(args, _output, _error, logging => logging.AddProvider(_logs), settings, TestContext.Current.CancellationToken);
 
     public void Dispose()
     {
