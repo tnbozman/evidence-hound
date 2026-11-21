@@ -7,7 +7,7 @@ Status: In progress
 Projects: `src/EvidenceHound.Collectors.Abstractions` (published package), `src/EvidenceHound.Collectors.Testing` (published test kit), `src/Collectors/EvidenceHound.Collectors.Manual`, `templates/collector`.
 
 ### s04-01 Collector interface
-- [ ] Done
+- [x] Done
 
 **Story:** As a collector author, I want a small, stable interface, so that I only write code that talks to my target system.
 
@@ -24,6 +24,7 @@ Projects: `src/EvidenceHound.Collectors.Abstractions` (published package), `src/
 
 **Functional check**
 - `make run ARGS="collectors list"` shows the fake and manual collectors with their check IDs.
+- Result (2026-11-21): lists `fake 1.0.0` with its four check IDs, setting `tenant (optional)` and no secrets, exit 0. `manual` appears once s04-04 adds it. [Evidence](../evidence/s04/s04-01.md).
 
 ### s04-02 Contract test kit
 - [ ] Done
@@ -79,5 +80,10 @@ Projects: `src/EvidenceHound.Collectors.Abstractions` (published package), `src/
 - Configure a manual source "Example firewall config", upload a fictional config export with attestation, run, and see evidence and result in the example audit.
 
 ## Discovered work
+
+- `scripts/start-sprint.sh`: the open-sprint check (`gh pr list ... || true`) passes silently when `gh` is not logged in, so the script pushes the branch and fails only at `gh pr create`. Check `gh auth status` first. (Found starting s04.)
+- `PublishCommandTests.Without_a_url_exits_three` fails when `HOUND_CA_URL` is set in the environment, as it is in the dev container. The CLI tests should not read the developer's environment. (Found in s04-01.)
+- Config validation reports missing required settings but not unknown ones; a typo in an optional setting name goes unnoticed. Consider `config.setting_unknown` once every collector describes its settings. (Found in s04-01.)
+- `CollectStep` reads each evidence stream into memory before hashing and storing it. Stream to the store for large exports (manual collector, s04-04). (Found in s04-01.)
 
 ## Sprint review

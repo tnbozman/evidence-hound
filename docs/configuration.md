@@ -44,6 +44,8 @@ A value that looks like a secret fails validation: `ciso_assistant.token` or a `
 
 | Type | What it does |
 | --- | --- |
-| `fake` | Fixed, fictional results for tests, demos and dry runs. |
+| `fake` | Fixed, fictional results for tests, demos and dry runs. Optional setting `tenant`. |
 
-The collector SDK (s04) adds the manual upload collector and the way to register more.
+`hound collectors list` prints every registered type with the check IDs it reports and the settings and secrets it reads. A collector with a required setting or secret missing fails validation with `config.setting_missing` or `config.secret_missing`.
+
+A collector is a class implementing `ICollector` from `EvidenceHound.Collectors.Abstractions`, registered with `services.AddCollector<T>()`. Two collectors with the same type stop the CLI at startup (`collector.type_duplicate`, exit 3).
