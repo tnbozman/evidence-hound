@@ -79,6 +79,26 @@
         }
       }
     },
+    "scheduler": {
+      "description": "How `hound serve` reads collector schedules.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "time_zone": {
+          "description": "IANA time zone the cron schedules are read in, for example Australia/Sydney. Default UTC.",
+          "type": "string",
+          "minLength": 1,
+          "default": "UTC"
+        },
+        "jitter_seconds": {
+          "description": "Most seconds each collector's runs are delayed by, a stable amount per collector, so collectors sharing a schedule do not start together. 0 turns it off.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3600,
+          "default": 300
+        }
+      }
+    },
     "collectors": {
       "type": "array",
       "items": {
@@ -129,7 +149,7 @@
           "minLength": 1
         },
         "schedule": {
-          "description": "Five-field cron expression, UTC.",
+          "description": "Five-field cron expression, read in scheduler.time_zone (UTC unless set).",
           "type": "string",
           "pattern": "^\\s*[0-9A-Za-z*/,-]+(\\s+[0-9A-Za-z*/,-]+){4}\\s*$"
         },

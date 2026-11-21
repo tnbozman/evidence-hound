@@ -30,17 +30,35 @@ internal static class RunCommand
         var noPublish = new Option<bool>("--no-publish") { Description = "Collect and store evidence only; do not plan or publish." };
 
         var run = new Command("run", "Run every configured collector: collect, store evidence, map, plan and publish.") { config, only, dryRun, noPublish };
-        run.SetAction(async (parseResult, cancellationToken) =>
-        {
-            var options = new RunOptions(parseResult.GetValue(only), parseResult.GetValue(dryRun), parseResult.GetValue(noPublish));
-            var deployment = await ConfigCommands.LoadAsync(parseResult.GetRequiredValue(config), registry, cancellationToken);
-            return await deployment.Match(
-                d => Runner.Select(d.Collectors, options.Only).Match(
-                    instances => PrepareAndRunAsync(d, instances, options, configuration, registry, collectorServices, output, logger, cancellationToken),
-                    problems => Task.FromResult(Usage(logger, problems))),
-                problems => Task.FromResult(Log.Problems(logger, problems)));
-        });
+        run.SetAction((parseResult, cancellationToken) => RunConfigAsync(
+            parseResult.GetRequiredValue(config),
+            new RunOptions(parseResult.GetValue(only), parseResult.GetValue(dryRun), parseResult.GetValue(noPublish)),
+            configuration,
+            registry,
+            collectorServices,
+            output,
+            logger,
+            cancellationToken));
         return run;
+    }
+
+    /// <summary>Loads the config (again, so a changed compliance repo is picked up) and runs the selected collectors; returns the exit code.</summary>
+    internal static async Task<int> RunConfigAsync(
+        FileInfo config,
+        RunOptions options,
+        IConfiguration configuration,
+        CollectorRegistry registry,
+        CollectorServices collectorServices,
+        TextWriter output,
+        ILogger logger,
+        CancellationToken cancellationToken)
+    {
+        var deployment = await ConfigCommands.LoadAsync(config, registry, cancellationToken);
+        return await deployment.Match(
+            d => Runner.Select(d.Collectors, options.Only).Match(
+                instances => PrepareAndRunAsync(d, instances, options, configuration, registry, collectorServices, output, logger, cancellationToken),
+                problems => Task.FromResult(Usage(logger, problems))),
+            problems => Task.FromResult(Log.Problems(logger, problems)));
     }
 
     /// <summary>Loads the mapping and, when publishing, the transport (resolving the token); then runs.</summary>

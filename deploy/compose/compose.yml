@@ -120,14 +120,15 @@ services:
     networks: [web]
     security_opt: ["no-new-privileges:true"]
 
-  # The collector runner. No published ports; it reaches only the CISO Assistant API and the internet.
+  # The collector runner: `hound serve` runs each collector on its schedule (hound.yaml). No published ports; it
+  # reaches only the CISO Assistant API and the internet. One-off commands: docker compose run --rm runner <command>.
   runner:
     image: ${HOUND_RUNNER_IMAGE:?set HOUND_RUNNER_IMAGE in .env}
-    restart: "no"
+    restart: unless-stopped
     depends_on:
       backend:
         condition: service_healthy
-    command: ["run", "--config", "/config/${HOUND_CONFIG_FILE:-hound.yaml}"]
+    command: ["serve", "--config", "/config/${HOUND_CONFIG_FILE:-hound.yaml}"]
     environment:
       HOUND_CA_URL: http://backend:8000/api/
       HOUND_CA_TOKEN_FILE: /run/secrets/hound_ca_token

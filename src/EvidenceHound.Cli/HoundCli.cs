@@ -170,6 +170,7 @@ public static class HoundCli
             PlanCommand.Build(output, loggers, configuration, registry),
             PublishCommand.Build(output, loggers, configuration, registry),
             RunCommand.Build(output, loggers, configuration, registry, collectorServices),
+            ServeCommand.Build(output, loggers, configuration, registry, collectorServices),
             StatusCommand.Build(output, loggers, registry),
         };
     }

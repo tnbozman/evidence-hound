@@ -22,8 +22,10 @@ valid
 | `evidence.root` | yes | Evidence folder, relative to the config file. |
 | `evidence.retention_days` | no | Runs older than this many days are deleted; the latest successful run of each collector is always kept. |
 | `evidence.period_retention_years` | no | How many years the final run of each ended audit period is kept, however old (default 7). It is the evidence behind a closed record. |
+| `scheduler.time_zone` | no | IANA time zone the collectors' cron schedules are read in, for example `Australia/Sydney` (default `UTC`). `"0 3 * * *"` then means 03:00 there, across daylight saving changes. |
+| `scheduler.jitter_seconds` | no | The most each collector's scheduled runs are delayed by (default 300, at most 3600, 0 for none). Each collector gets its own stable delay, so collectors sharing a schedule do not call their APIs at the same moment. |
 | `scope` | no | The compliance repo's scope folder, relative to the config file. A target that names an audit with a `cycle` there publishes to the period open on the run's date (see [scope.md](scope.md#audit-periods)), and those periods' final runs are kept as above. |
-| `collectors[]` | yes (may be empty) | `name` (unique, lowercase letters, digits and hyphens), `type` (a known collector type), `schedule` (five-field cron, UTC), `settings` (plain values) and `secrets` (references). |
+| `collectors[]` | yes (may be empty) | `name` (unique, lowercase letters, digits and hyphens), `type` (a known collector type), `schedule` (five-field cron, read in `scheduler.time_zone`), `settings` (plain values) and `secrets` (references). |
 | `targets[]` | yes, or `target` | The audits results are published to. Each has the keys below. |
 | `targets[].mapping` | yes | Framework mapping file, relative to the config file. |
 | `targets[].compliance_assessment` | yes | The audit's `ref_id` in CISO Assistant, or the series `ref_id` of an audit with a `cycle` in `scope`. Each audit is targeted once. |

@@ -44,6 +44,47 @@ Before planning, `hound run` reads each target audit's rows, the evidence it cit
 
 Exit codes: 0 every collector succeeded, 1 any collector failed, 2 usage, 3 configuration or secrets.
 
+## On a schedule
+
+`hound serve --config <file>` runs each collector on its `schedule` until stopped; it is the runner container's default command in the [reference deployment](../deploy/compose/README.md). Schedules are read in `scheduler.time_zone` and each collector's runs are delayed by its own jitter (see [configuration](configuration.md)). At start it logs each collector's next run:
+
+```
+info: example-m365: next run 2026-11-22 03:02:41 Australia/Sydney (2026-11-21 16:02:41 UTC)
+```
+
+- Each scheduled run is `hound run --only <name>`: it reads the config file again, so a pull of the compliance repo applies to the next run. A changed schedule needs a restart of `hound serve`.
+- One collector never has two runs at once. An occurrence that falls due while its previous run is still going is skipped with a warning, not queued. Occurrences missed while the host was down run once, late, when it is back.
+- Runs happen one at a time, in name order when several fall due together. A run that fails is logged and the schedule carries on; `hound status` and the collector health evidence show it.
+- Stopping the container (SIGTERM) cancels the current run and exits 0.
+
+**Without `hound serve`.** A host scheduler can call one-off runs instead. Set the runner's command to something harmless or remove the service's `restart`, then, for example with cron:
+
+```
+# /etc/cron.d/evidence-hound: every collector nightly at 03:00 host time
+0 3 * * * root cd /opt/evidence-hound/deploy/compose && docker compose run --rm runner run --config /config/hound.yaml >>/var/log/evidence-hound.log 2>&1
+```
+
+or a systemd timer:
+
+```ini
+# /etc/systemd/system/evidence-hound.service
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/evidence-hound/deploy/compose
+ExecStart=/usr/bin/docker compose run --rm runner run --config /config/hound.yaml
+
+# /etc/systemd/system/evidence-hound.timer
+[Timer]
+OnCalendar=*-*-* 03:00:00
+RandomizedDelaySec=300
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+```
+
+`systemctl enable --now evidence-hound.timer`. Use `--only <name>` and one timer per collector for different schedules. The host scheduler does not stop overlapping runs, so give each run time to finish before the next.
+
 ## One collector never stops another
 
 Each collector runs on its own. If it crashes, cannot find a secret or CISO Assistant rejects one of its updates, that collector is reported as failed with its problems and the others carry on.

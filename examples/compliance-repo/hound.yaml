@@ -12,13 +12,19 @@ evidence:
   retention_days: 90
   period_retention_years: 7
 
+# `hound serve` (the runner container) reads every schedule below in this time zone, and delays each collector's
+# runs by up to jitter_seconds (a stable amount per collector).
+scheduler:
+  time_zone: Australia/Sydney
+  jitter_seconds: 300
+
 # The scope folder: lets a target name an audit series that runs in periods (see docs/scope.md).
 scope: scope
 
 collectors:
   - name: example-m365
     type: m365
-    schedule: "0 3 * * *"
+    schedule: "0 3 * * *"                # nightly at 03:00 Sydney time, publishing to EX-E8-2026
     settings:
       tenant_id: 00000000-0000-4000-8000-000000000001     # fictional
       client_id: 00000000-0000-4000-8000-000000000002     # fictional

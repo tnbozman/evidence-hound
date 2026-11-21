@@ -18,7 +18,7 @@ evidence:
 collectors:
   - name: example-fake                   # unique; names the evidence folder and the health evidence
     type: fake                           # built-in collector with fixed, fictional results
-    schedule: "0 2 * * *"                # cron, five fields, UTC
+    schedule: "0 2 * * *"                # cron, five fields, in scheduler.time_zone (UTC by default)
     settings:
       tenant: example.com
     secrets: {}
