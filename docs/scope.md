@@ -1,6 +1,6 @@
 # Scope files
 
-A compliance repo declares the organisation's structure in CISO Assistant as files, so it changes through reviewed pull requests rather than clicks. `hound scope validate` checks the files offline; later commands plan and apply them (s06-07 to s06-09).
+A compliance repo declares the organisation's structure in CISO Assistant as files, so it changes through reviewed pull requests rather than clicks. `hound scope validate` checks the files offline, `hound scope plan` shows what they would change in CISO Assistant, and later commands apply them (s06-08 and s06-09).
 
 A complete fictional example is in [`examples/compliance-repo/scope/`](../examples/compliance-repo/scope/). The schema is [`schemas/scope.schema.json`](../schemas/scope.schema.json); add `# yaml-language-server: $schema=…` to the top of each file for editor help.
 
@@ -73,3 +73,24 @@ Every problem is reported at once with its file, line, code and a hint, and the 
 | `scope.field_not_writable` | `field_visibility` leaves `result`, `observation` or `evidences` below `edit` for the auditor. |
 | `scope.unlisted_missing`, `scope.unlisted_reason_missing` | `unlisted` is missing, or marks requirements not applicable without a reason. |
 | `config.target_not_in_scope` | A deployment target names an audit or control the scope does not declare. |
+
+## Plan
+
+```sh
+HOUND_CA_URL=http://localhost:8000/api/ HOUND_CA_TOKEN=… hound scope plan scope/ [--config hound.yaml] [--format markdown|json] [--prune]
+```
+
+The plan validates the scope first and stops, reading nothing, when there are problems. Otherwise it reads CISO Assistant (GET requests only) and prints what applying the scope would do, as Markdown for a pull request comment or as JSON for tools. It writes nothing.
+
+- **Create**: objects the scope declares that CISO Assistant does not hold, with their fields.
+- **Update**: objects whose fields differ, field by field (old → new). An object that exists but was not made by `hound` is taken over: "mark as managed".
+- **Delete**, only with `--prune`: objects `hound` manages that the scope no longer declares. Objects made by hand are never deleted.
+- **Drift**: objects changed in CISO Assistant since `hound` last wrote them (they are written back), and objects under the root folder that the scope does not declare.
+
+Changes come in dependency order: frameworks, domains, perimeters, systems, audits, documents, controls, then assessments. Deletes come last, in reverse.
+
+How objects are matched: a framework by URN, a domain and a system by name, a perimeter by domain and name, an audit and a control by `ref_id`, a document by its id (the evidence's `ref_id`), and a hand-written assessment by audit and requirement. Only objects in the root folder and the domains directly under it are read.
+
+`hound` marks the objects it manages by ending their description with `[hound scope <state>]`, a fingerprint of the fields it wrote. That is how the plan tells an object edited in CISO Assistant (drift) from one the scope changed (an update). Frameworks and assessments carry no marker.
+
+What the plan compares: a domain's description; a perimeter's name, `ref_id`, description and domain; a system's `ref_id`, type, description, owner, domain and parents; an audit's name, framework, groups, domain, perimeter, ETA, due date, authors and reviewers; a document's name and domain; a control's name, description, domain, owner, priority, category, ETA, systems and documents; an assessment's status, result and observation. A control's `status` and `reference_control` and a framework's library are written only when the object is created, because collectors and CISO Assistant own them afterwards.

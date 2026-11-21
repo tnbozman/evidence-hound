@@ -319,6 +319,7 @@ The layout follows one that has already been tried against CISO Assistant: one s
 - Over Kafka, `hound run` has no current state to compare with, so it sends every row (as before s06-04) and reports no drift. A requirement mapped with `rows: all` is not supported over Kafka either, because the dispatcher addresses one row. (Found in s06-04.)
 - Tests that PATCH CISO Assistant must send a sized body: .NET's `PatchAsJsonAsync` streams a chunked body that reaches Django empty, so the call succeeds and changes nothing. The client already uses `StringContent`. (Found in s06-04.)
 - A deployment target's problems in `hound scope validate --config` name the config file but no line, because the config loader keeps no line numbers for targets. (Found in s06-06.)
+- The scope plan does not yet compare a system's `tags`, an audit's `field_visibility` or a document's files: tags need CISO Assistant's filtering labels, field visibility its stored shape, and files the evidence hashes (s06-09). They are not reported as changes until then. (Found in s06-07.)
 - The organisation's own record (CISO Assistant's main entity, used by third-party risk features) is not managed by the scope yet; the scope uses the root folder. Add it once the REST API is confirmed to update it. (Found planning s06.)
 
 ## Sprint review
