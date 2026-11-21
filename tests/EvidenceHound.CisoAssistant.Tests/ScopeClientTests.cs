@@ -18,6 +18,8 @@ public sealed class ScopeClientTests : IDisposable
         List("assets", new JsonObject { ["id"] = "a-365", ["name"] = "Example 365", ["folder"] = new JsonObject { ["id"] = "f-ex", ["str"] = "Example Pty Ltd" } });
         List("perimeters", new JsonObject { ["id"] = "p-corp", ["name"] = "Corporate IT", ["folder"] = new JsonObject { ["id"] = "f-ex", ["str"] = "Example Pty Ltd" } });
         List("users", new JsonObject { ["id"] = "u-it", ["email"] = "it@example.com" });
+        // Owners, authors and reviewers are actors: each user, team or entity has one, and a user's actor names the user as "specific".
+        List("actors", new JsonObject { ["id"] = "act-it", ["str"] = "it@example.com", ["type"] = "user", ["specific"] = new JsonObject { ["id"] = "u-it", ["str"] = "it@example.com" } });
         foreach (var resource in new[] { "folders", "perimeters", "assets" })
         {
             _ca.Server.Given(Request.Create().WithPath($"/api/{resource}/").UsingPost())
@@ -63,7 +65,7 @@ public sealed class ScopeClientTests : IDisposable
             ["description"] = $"Staff laptops.\n[hound scope {State}]",
             ["folder"] = "f-ex",
             ["parent_assets"] = new JsonArray("a-365"),
-            ["owner"] = new JsonArray("u-it"),
+            ["owner"] = new JsonArray("act-it"),
         }));
     }
 

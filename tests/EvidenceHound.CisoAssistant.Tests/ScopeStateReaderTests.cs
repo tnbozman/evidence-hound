@@ -118,6 +118,8 @@ public sealed class ScopeStateReaderTests : IDisposable
         List("folders", Folder("f-global", "Global", null), Folder("f-ex", "Example Pty Ltd", "f-global"), Folder("f-other", "Other Pty Ltd", "f-other-parent"));
         Object("folders", "f-ex", new JsonObject { ["id"] = "f-ex", ["name"] = "Example Pty Ltd", ["description"] = $"The whole company.\n[hound scope {Fingerprint}]", ["parent_folder"] = "f-global" });
         List("users", new JsonObject { ["id"] = "u-it", ["email"] = "it@example.com" });
+        // Owners, authors and reviewers are actors: each user, team or entity has one, and a user's actor names the user as "specific".
+        List("actors", new JsonObject { ["id"] = "act-it", ["str"] = "it@example.com", ["type"] = "user", ["specific"] = new JsonObject { ["id"] = "u-it", ["str"] = "it@example.com" } });
         List("frameworks", new JsonObject { ["id"] = "fw-e8", ["urn"] = "urn:intuitem:risk:framework:essential-eight-2023" }, new JsonObject { ["id"] = "fw-x", ["urn"] = "urn:example:risk:framework:not-in-scope" });
         List("perimeters", Listed("p-corp", "f-ex"), Listed("p-other", "f-other"));
         Object("perimeters", "p-corp", new JsonObject { ["id"] = "p-corp", ["name"] = "Corporate IT", ["ref_id"] = "PER-CORP", ["description"] = "", ["folder"] = "f-ex" });
@@ -132,7 +134,7 @@ public sealed class ScopeStateReaderTests : IDisposable
             ["description"] = "Staff laptops.",
             ["folder"] = "f-ex",
             ["parent_assets"] = new JsonArray("a-365"),
-            ["owner"] = new JsonArray("u-it"),
+            ["owner"] = new JsonArray("act-it"),
         });
         List("compliance-assessments", Listed("ca-e8", "f-ex"));
         Object("compliance-assessments", "ca-e8", new JsonObject
@@ -146,7 +148,7 @@ public sealed class ScopeStateReaderTests : IDisposable
             ["selected_implementation_groups"] = new JsonArray("2", "1"),
             ["eta"] = "2026-06-30",
             ["due_date"] = null,
-            ["authors"] = new JsonArray("u-it"),
+            ["authors"] = new JsonArray("act-it"),
             ["reviewers"] = new JsonArray(),
         });
         List("evidences", Listed("ev-policy", "f-ex"));
@@ -158,7 +160,7 @@ public sealed class ScopeStateReaderTests : IDisposable
             ["name"] = "Multi-factor authentication",
             ["ref_id"] = "AC-MFA",
             ["folder"] = "f-ex",
-            ["owner"] = new JsonArray("u-it"),
+            ["owner"] = new JsonArray("act-it"),
             ["status"] = "active",
             ["priority"] = 1,
             ["category"] = "technical",

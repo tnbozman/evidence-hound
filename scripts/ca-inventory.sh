@@ -38,7 +38,7 @@ curl -s -H "Authorization: Token $HOUND_CA_TOKEN" "${api}schema/?format=json" > 
 schema="$out/openapi.json"
 # The snapshot hound's endpoints are checked against: the operations on the resources hound uses or s06 configures,
 # small enough to commit. The full schema stays in openapi.json.
-snapshot_resources='^/api/(health|schema|requirement-assessments|compliance-assessments|evidences|evidence-revisions|applied-controls|folders|perimeters|assets|stored-libraries|loaded-libraries|frameworks|requirement-nodes|reference-controls|risk-matrices|entities|settings|users|user-groups|role-assignments)/'
+snapshot_resources='^/api/(health|schema|requirement-assessments|compliance-assessments|evidences|evidence-revisions|applied-controls|folders|perimeters|assets|stored-libraries|loaded-libraries|frameworks|requirement-nodes|reference-controls|risk-matrices|entities|settings|users|actors|user-groups|role-assignments)/'
 jq --arg re "$snapshot_resources" '{openapi, info: {title: .info.title, version: .info.version}, all_paths: (.paths | length),
   paths: (.paths | with_entries(select(.key | test($re))) | map_values(with_entries(select(.key | test("^(get|post|put|patch|delete)$")) | .value = {operationId: .value.operationId})))}' \
   "$schema" > "$out/openapi-paths.json"
