@@ -455,10 +455,18 @@
       "evidencehound.core": {
         "type": "Project"
       },
+      "evidencehound.core.yaml": {
+        "type": "Project",
+        "dependencies": {
+          "EvidenceHound.Core": "[0.1.0, )",
+          "YamlDotNet": "[18.1.0, )"
+        }
+      },
       "hound": {
         "type": "Project",
         "dependencies": {
           "EvidenceHound.Core": "[0.1.0, )",
+          "EvidenceHound.Core.Yaml": "[0.1.0, )",
           "Microsoft.Extensions.Hosting": "[10.0.14, )",
           "System.CommandLine": "[2.0.14, )",
           "YamlDotNet": "[18.1.0, )"

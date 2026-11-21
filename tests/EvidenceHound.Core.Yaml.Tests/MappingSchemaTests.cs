@@ -16,7 +16,7 @@ public class MappingSchemaTests
     {
         var result = Schema.Evaluate(ToJson(RepoFiles.ExampleMapping), new EvaluationOptions { OutputFormat = OutputFormat.List });
 
-        result.IsValid.ShouldBeTrue(string.Join("; ", result.Details.Where(d => d.Errors is not null).SelectMany(d => d.Errors!.Values)));
+        result.IsValid.ShouldBeTrue(string.Join("; ", (result.Details ?? []).Where(d => d.Errors is not null).SelectMany(d => d.Errors!.Values)));
     }
 
     [Theory]

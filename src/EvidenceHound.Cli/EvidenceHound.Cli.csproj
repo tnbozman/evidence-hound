@@ -14,5 +14,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\EvidenceHound.Core\EvidenceHound.Core.csproj" />
+    <ProjectReference Include="..\EvidenceHound.Core.Yaml\EvidenceHound.Core.Yaml.csproj" />
   </ItemGroup>
 </Project>

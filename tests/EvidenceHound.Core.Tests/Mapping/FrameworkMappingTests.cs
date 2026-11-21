@@ -6,7 +6,7 @@ namespace EvidenceHound.Core.Tests.Mapping;
 
 public class FrameworkMappingTests
 {
-    private const string Urn = "urn:example:risk:library:example-baseline";
+    private static readonly string Urn = "urn:example:risk:library:example-baseline";
 
     private static readonly CheckId MfaAdmins = CheckTestData.Id("identity.mfa.admins");
     private static readonly CheckId MfaUsers = CheckTestData.Id("identity.mfa.users");

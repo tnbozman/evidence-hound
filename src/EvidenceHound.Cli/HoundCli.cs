@@ -17,7 +17,7 @@ public static partial class HoundCli
     {
         ArgumentNullException.ThrowIfNull(error);
 
-        var parseResult = BuildRootCommand(error, configureLogging).Parse(args);
+        var parseResult = BuildRootCommand(output, error, configureLogging).Parse(args);
         if (parseResult.Errors.Count > 0)
         {
             foreach (var parseError in parseResult.Errors)
@@ -33,7 +33,7 @@ public static partial class HoundCli
         return await parseResult.InvokeAsync(invocation, cancellationToken);
     }
 
-    private static RootCommand BuildRootCommand(TextWriter error, Action<ILoggingBuilder>? configureLogging)
+    private static RootCommand BuildRootCommand(TextWriter output, TextWriter error, Action<ILoggingBuilder>? configureLogging)
     {
         var dryRun = new Option<bool>("--dry-run")
         {
@@ -53,7 +53,11 @@ public static partial class HoundCli
             configureLogging,
             cancellationToken));
 
-        return new RootCommand("Evidence Hound: collects compliance evidence and publishes it to CISO Assistant.") { collect };
+        return new RootCommand("Evidence Hound: collects compliance evidence and publishes it to CISO Assistant.")
+        {
+            collect,
+            MappingCommands.Build(output, error),
+        };
     }
 
     private static async Task<int> CollectAsync(

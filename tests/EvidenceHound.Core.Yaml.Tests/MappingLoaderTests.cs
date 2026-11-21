@@ -5,7 +5,7 @@ namespace EvidenceHound.Core.Yaml.Tests;
 
 public class MappingLoaderTests
 {
-    private const string Source = "mappings/test.yaml";
+    private static readonly string Source = "mappings/test.yaml";
 
     [Fact]
     public void Loads_valid_example_mapping()
@@ -118,7 +118,7 @@ public class MappingLoaderTests
     [InlineData("framework_urn: urn:example:x\nrequirements: {}\n", "mapping.requirements_not_a_list")]
     public void Malformed_documents_fail(string yaml, string code)
     {
-        MappingLoader.Parse(yaml, Source).Problems().First().Code.ShouldBe(code);
+        MappingLoader.Parse(yaml, Source).Problems()[0].Code.ShouldBe(code);
     }
 
     [Fact]
