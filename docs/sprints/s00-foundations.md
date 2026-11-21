@@ -68,6 +68,12 @@ Status: In progress
 **Functional check**
 - Push a commit containing a fake denylisted word on a scratch branch: `org-data` job fails. Remove it: job passes.
 
+**Result (2026-11-21)**
+- CI proven red then green: deliberately failing test run https://github.com/tnbozman/evidence-hound/actions/runs/44844278766 (fails on "Unit and contract tests"), revert run https://github.com/tnbozman/evidence-hound/actions/runs/44844442855 (green).
+- Every action in `ci.yml`, `start-sprint.yml` and `scorecard.yml` is pinned to a full commit SHA with the tag in a comment; checkouts no longer persist credentials (except start-sprint, which must push). Workflow `permissions` default to `contents: read`.
+- `org-data` passes on every push, so `ORG_DENYLIST` is set (the script exits 2 when it is empty). `scripts/tests/check-org-data.bats` proves locally that a denylisted term in a file or commit message fails the check without printing the term.
+- Maintainer to do for the live check: add a harmless canary term (for example `houndcanary`) to `ORG_DENYLIST`, then push a commit containing it to a scratch branch and confirm `org-data` fails; delete the branch. Claude cannot see the deny-list, by design.
+
 ### s00-04 Start sprint automation
 - [x] Done
 
@@ -107,6 +113,19 @@ Status: In progress
 
 **Functional check**
 - Attempt to push a fake token in the format of a GitHub PAT on a scratch branch: push is blocked.
+
+**Status (2026-11-21)**
+- Repo files: `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md` (added) present; `LICENSE` is Apache-2.0; `.github/dependabot.yml` covers NuGet, GitHub Actions, Docker, Docker Compose and dev containers weekly.
+- Seen working from the PR: CodeQL default setup runs on PR #9; automatic dependency submission (NuGet) runs; `ORG_DENYLIST` is set.
+- Maintainer to confirm in Settings (Claude has no settings access), with the date:
+  - [ ] Secret scanning and push protection on
+  - [ ] Private vulnerability reporting on
+  - [ ] Dependabot alerts and security updates on
+  - [ ] CodeQL default setup includes C# and GitHub Actions
+  - [ ] Ruleset on `main`: PR required, 1 approval, required checks `build-test`, `org-data`, `secrets`, `scripts`, CodeQL; no force push; no deletion
+  - [ ] Actions: "Allow GitHub Actions to create and approve pull requests" on
+  - [ ] Functional check: push a fake GitHub PAT to a scratch branch and see the push blocked
+- Note: as the only maintainer you cannot approve your own PR; either add a second reviewer or allow bypass for the repository admin on the ruleset.
 
 ### s00-06 Walking skeleton CLI
 - [x] Done
