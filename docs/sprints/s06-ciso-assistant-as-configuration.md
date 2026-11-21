@@ -15,7 +15,7 @@ Principles for every task:
 All examples use the fictional Example Pty Ltd and `example.com`.
 
 ### s06-01 Requirement rows by URN, scoped to the audit's groups
-- [ ] Done
+- [x] Done
 
 **Story:** As a compliance owner, I want a mapping to name each requirement exactly, so that frameworks that repeat a `ref_id` across domains or strategies publish to the right row.
 
@@ -37,6 +37,7 @@ All examples use the fictional Example Pty Ltd and `example.com`.
 
 **Functional check**
 - Against the local CISO Assistant: publish a fictional mapping that names an Essentials action in two domains by URN, and confirm each domain's row gets its own result.
+- Result (2026-11-21): `RequirementRowsFunctionalTests` in CI run [44898045325](https://github.com/tnbozman/evidence-hound/actions/runs/44898045325) passed; the Boundary services row of `IT.PRO-01.1` is `compliant`, the Identity services row `non_compliant`. Offline: `hound mapping validate mappings/essential-eight-2023.yaml --framework frameworks/essential-eight-2023.json` prints `valid: 16 requirements`. Evidence: [docs/evidence/s06/s06-01.md](../evidence/s06/s06-01.md).
 
 ### s06-02 Essential Eight 2023 ML2 mapping for the checks we have
 - [ ] Done
