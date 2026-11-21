@@ -19,8 +19,8 @@ Always refer to libraries and frameworks by URN. The `/stored-libraries/<uuid>` 
 | When | Frameworks in use | Evidence Hound needs |
 | --- | --- | --- |
 | Now | Essential Eight 2023 at ML2 is the audit of record | Requirement rows by URN and the ML2 mapping (s06) |
-| In a few months | Essential Eight and the Essentials in parallel, then the Essentials alone | Several audits per run (s06) and the Essentials mapping (s11) |
-| A few months later | The Essentials and NIST SP 800-171 in parallel | The 800-171 mapping, SSP and POA&M (s13) |
+| In a few months | Essential Eight and the Essentials in parallel, then the Essentials alone | Several audits per run (s06) and the Essentials mapping (s13, release 2) |
+| A few months later | The Essentials and NIST SP 800-171 in parallel | The 800-171 mapping, SSP and POA&M (s16, release 2) |
 
 The parallel run in stage 1 below uses the same mechanism as running the Essentials and 800-171 together later: one collection run, one evidence upload, several audits.
 
@@ -152,7 +152,7 @@ These are new work. Most are processes rather than technical settings, so a manu
 
 ## Changes to Evidence Hound
 
-These are the changes Evidence Hound needs before it can publish to the Essentials. Changes 1, 2, 3, 5 and 6 are planned in [s06](../sprints/s06-ciso-assistant-as-configuration.md), and change 4 in [s11](../sprints/s11-essentials-mapping-and-adoption.md).
+These are the changes Evidence Hound needs before it can publish to the Essentials. Changes 1, 2, 3, 5 and 6 are planned in [s06](../sprints/s06-ciso-assistant-as-configuration.md), and change 4 in [s13](../sprints/s13-essentials-mapping.md).
 
 1. **Address requirement rows by URN.** Today `hound publish` selects a requirement assessment by audit `ref_id` and requirement `ref_id` (`Selector.RequirementInAudit`). In the Essentials, 37 of 58 action `ref_id`s appear in more than one domain. In the Essential Eight, 10 ISM `ref_id`s appear under more than one strategy, ISM-0123 under four. A mapping file must be able to name a requirement by its URN, such as `urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-13:it.pro-13.4`. For readability it could also use a domain-qualified form, such as `identity-services/IT.PRO-13.4`. This also blocks the Essential Eight 2023 mapping kept for the transition.
 2. **Scope the mapping to the audit's groups.** A mapping file covers the whole framework. The publisher should skip requirements outside the audit's selected implementation groups (maturity levels or phases), rather than writing results CISO Assistant hides.
@@ -182,7 +182,7 @@ These are the changes Evidence Hound needs before it can publish to the Essentia
 
 ### Stage 2: close the gaps
 
-- For each action with no Essential Eight source, either add a manual source with an owner and due interval, or plan a collector. Supplier assurance (GOV-11), supply chain security (PRO-16) and risk management (GOV-03) can be evidenced from CISO Assistant's own records by the governance collector ([s10-03](../sprints/s10-third-parties-and-metrics.md)), once suppliers and risk studies are managed as configuration.
+- For each action with no Essential Eight source, either add a manual source with an owner and due interval, or plan a collector. Supplier assurance (GOV-11), supply chain security (PRO-16) and risk management (GOV-03) can be evidenced from CISO Assistant's own records by the governance collector ([s15-01](../sprints/s15-governance-and-metrics.md)), once suppliers and risk studies are managed as configuration.
 - Place the six unmapped ISM controls under their Essentials actions, and record the decision in the mapping file's comments.
 - Tag each system with its Essentials domain (change 6), and check the per-domain roll-up matches what an assessor would conclude.
 
