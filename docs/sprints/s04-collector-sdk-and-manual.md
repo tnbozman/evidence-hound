@@ -1,6 +1,6 @@
 # s04 Collector SDK, contract test kit and manual-upload collector
 
-Status: In progress
+Status: Done
 
 **Goal:** anyone can write a collector for their system in about a day, and systems without APIs are covered from day one.
 
@@ -97,3 +97,21 @@ Projects: `src/EvidenceHound.Collectors.Abstractions` (published package), `src/
 - Attestations are not checked against the source's `owner`: anyone can be named in `who`. Decide whether only the owner may attest. (Found in s04-04.)
 
 ## Sprint review
+
+**2026-11-21.** All four tasks shipped with red, green and refactor commits and per-task evidence in `docs/evidence/s04/`.
+
+- **Collector SDK.** A collector implements a small `ICollector`, registers with `services.AddCollector<T>()`, and describes its checks, settings and secrets; config is validated against that description.
+- **Contract kit and template.** `EvidenceHound.Collectors.Testing` gives every collector the same six contracts and WireMock-based recorded responses. `dotnet new hound-collector` produces a collector, its contract-tested test project, a README and a sample response, and CI builds and tests a generated one.
+- **Manual-upload collector.** Systems without an API are covered: a dropped, optionally attested export becomes evidence and a pass, partial or overdue result in CISO Assistant, and `hound manual upload` adds files with an attestation prompt.
+
+397 unit and contract tests, 38 script tests, 7 functional tests, the template job and lint all pass locally.
+
+What slipped: nothing was dropped. Two items are needed before outside collectors are practical: publishing the SDK packages, and loading collectors that are not built in. Both are under "Discovered work".
+
+What the feedback taught us:
+- The template job found that the Abstractions package depends on an unpacked `EvidenceHound.Core`. Generating and building a consumer project catches packaging gaps that in-repo project references hide.
+- WireMock.Net brings Humanizer 2.x, which clashes with JsonSchema.Net's Humanizer.Core 3.x. Humanizer is pinned centrally to 3.0.10, within WireMock's allowed range.
+- A test-kit contract that skips cannot itself be tested and shows up as a skip in `make test`. Contracts that do not apply pass instead, and say so in the kit's README.
+- Real files carry quirks that synthetic ones miss: a UTF-8 byte-order mark broke attestation parsing until a test wrote its sidecar the way Notepad does.
+- Example data feeds count assertions in CLI and functional tests. A new example requirement moves those counts, and the functional suite against a real CISO Assistant confirms the seed library and the mapping agree.
+- CI and code-scanning results were not readable from the cloud session that ran this sprint. Check the PR's checks before merging.

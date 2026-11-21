@@ -5,5 +5,8 @@ Evidence that each s04 task meets its acceptance criteria. Plan: [`docs/sprints/
 | Task | Status | Evidence |
 | --- | --- | --- |
 | s04-01 Collector interface | Done | [s04-01.md](s04-01.md) |
+| s04-02 Contract test kit | Done | [s04-02.md](s04-02.md) |
+| s04-03 Collector template | Done | [s04-03.md](s04-03.md) |
+| s04-04 Manual-upload collector | Done | [s04-04.md](s04-04.md) |
 
 Fictional data only; no organisation data appears in any evidence.
