@@ -15,7 +15,7 @@ feed="$work/feed"
 hive="$work/hive"
 
 echo "test-template: packing the collector SDK $version"
-for project in EvidenceHound.Collectors.Abstractions EvidenceHound.Collectors.Testing; do
+for project in EvidenceHound.Core EvidenceHound.Collectors.Abstractions EvidenceHound.Collectors.Testing; do
   dotnet pack "$root/src/$project" -c Release -o "$feed" -p:Version="$version" --nologo -v quiet
 done
 

@@ -1,5 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <RootNamespace>EvidenceHound.Core</RootNamespace>
+    <IsPackable>true</IsPackable>
+    <PackageId>EvidenceHound.Core</PackageId>
+    <Description>Evidence Hound's domain types and pure logic: check results, evidence, results and problems. A dependency of EvidenceHound.Collectors.Abstractions.</Description>
   </PropertyGroup>
 </Project>
