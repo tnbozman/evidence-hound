@@ -9,7 +9,7 @@ This is the first half of the old s08 reference deployment, moved forward. Backu
 Folder: `deploy/compose/`. Fictional names only.
 
 ### s07-01 Collector runner image
-- [ ] Done
+- [x] Done
 
 **Story:** As an operator, I want a minimal, signed container image for the runner, so that it is easy and safe to deploy.
 
@@ -23,6 +23,7 @@ Folder: `deploy/compose/`. Fictional names only.
 
 **Functional check**
 - `docker run --rm ghcr.io/<owner>/<repo>:dev --version`.
+- Result (2026-11-21): the same Dockerfile built locally passed `make test-image` (starts, `--version` prints `0.1.0`, user `app`, no shell, read-only root); amd64 and arm64 both build; CI job `image` passed with no high or critical Grype finding. The `dev` tag is published from main after merge. Evidence: [`docs/evidence/s07/s07-01.md`](../evidence/s07/s07-01.md).
 
 ### s07-02 Compose stack
 - [ ] Done
