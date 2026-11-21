@@ -184,4 +184,27 @@ public class ScopeValidationTests
 
         (problem.Code, problem.At).ShouldBe(("scope.framework_snapshot_missing", new SourceLine("scope/setup.yaml", 4)));
     }
+
+    [Theory]
+    [InlineData("cycle: {period: quarter, starts: \"2026-01-15\"}", "scope.cycle_start_invalid")]
+    [InlineData("cycle: {period: quarter, starts: \"2026-01-01\"}\nsign_offs:\n  - {period: 2026Q3, by: ceo@example.com, date: \"2026-09-30\"}", "scope.sign_off_early")]
+    [InlineData("cycle: {period: quarter, starts: \"2026-01-01\"}\nsign_offs:\n  - {period: 2026M02, by: ceo@example.com, date: \"2026-10-02\"}", "scope.sign_off_unknown_period")]
+    [InlineData("sign_offs:\n  - {period: 2026Q3, by: ceo@example.com, date: \"2026-10-02\"}", "scope.sign_off_without_cycle")]
+    public void Cycle_and_sign_off_problems_are_reported(string lines, string code)
+    {
+        var audit = ScopeFixture.Audit.Replace("unlisted:", lines + "\nunlisted:", StringComparison.Ordinal);
+
+        ScopeFixture.Problems(audit: audit).ShouldHaveSingleItem().Code.ShouldBe(code);
+    }
+
+    [Fact]
+    public void Sign_off_of_an_ended_period_is_valid()
+    {
+        var audit = ScopeFixture.Audit.Replace(
+            "unlisted:",
+            "cycle: {period: quarter, starts: \"2026-01-01\"}\nsign_offs:\n  - {period: 2026Q3, by: ceo@example.com, date: \"2026-10-02\"}\nunlisted:",
+            StringComparison.Ordinal);
+
+        ScopeFixture.Problems(audit: audit).ShouldBeEmpty();
+    }
 }

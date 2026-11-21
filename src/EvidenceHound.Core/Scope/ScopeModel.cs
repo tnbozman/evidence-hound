@@ -77,10 +77,20 @@ public sealed record AuditControl(ScopeRef Control, IReadOnlyList<RequirementRef
 /// <summary>A hand-written result for a requirement no check covers.</summary>
 public sealed record HandAssessment(RequirementRef Requirement, string Status, ComplianceResult Result, string Observation);
 
-/// <summary>An audit that runs in periods: how long each period is and when the first starts.</summary>
-public sealed record AuditCycle(string Period, string Starts, SourceLine At);
+/// <summary>
+/// An audit that runs in periods: how long each period is, when the first starts, and how an ended period closes: <c>sign_off</c> (locked once
+/// the file records its sign-off) or <c>auto</c> (locked when it ends).
+/// </summary>
+public sealed record AuditCycle(string Period, string Starts, SourceLine At)
+{
+    public string Close { get; init; } = "sign_off";
+}
 
-public sealed record SignOff(string Role, string Name);
+/// <summary>A period's sign-off, recorded in the audit file so the approval is itself a reviewed commit: the period's label, who signed and when.</summary>
+public sealed record SignOff(string Period, string By, string Date)
+{
+    public SourceLine? At { get; init; }
+}
 
 /// <summary>What happens to in-group requirements the audit file does not list: not assessed, or not applicable with a reason.</summary>
 public sealed record UnlistedRule(ComplianceResult Result, string? Reason, SourceLine At);

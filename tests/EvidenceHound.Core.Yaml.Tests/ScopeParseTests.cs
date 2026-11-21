@@ -39,6 +39,32 @@ public class ScopeParseTests
     }
 
     [Fact]
+    public void Cycle_and_sign_offs_are_read()
+    {
+        var audit = ScopeFixture.Audit.Replace("unlisted:", """
+            cycle: {period: quarter, starts: "2026-01-01", close: auto}
+            sign_offs:
+              - {period: 2026Q1, by: ceo@example.com, date: "2026-04-14"}
+            unlisted:
+            """, StringComparison.Ordinal);
+
+        var parsed = ScopeFixture.Parse(audit: audit);
+
+        parsed.Problems.ShouldBeEmpty();
+        var read = parsed.Scope.Audits.ShouldHaveSingleItem();
+        (read.Cycle!.Period, read.Cycle.Starts, read.Cycle.Close).ShouldBe(("quarter", "2026-01-01", "auto"));
+        read.SignOffs.ShouldHaveSingleItem().ShouldBe(new SignOff("2026Q1", "ceo@example.com", "2026-04-14") { At = read.SignOffs[0].At });
+    }
+
+    [Fact]
+    public void Cycle_closes_on_sign_off_unless_it_says_auto()
+    {
+        var audit = ScopeFixture.Audit.Replace("unlisted:", "cycle: {period: month, starts: \"2026-01-01\"}\nunlisted:", StringComparison.Ordinal);
+
+        ScopeFixture.Parse(audit: audit).Scope.Audits[0].Cycle!.Close.ShouldBe("sign_off");
+    }
+
+    [Fact]
     public void Other_libraries_are_read_by_urn()
     {
         var setup = ScopeFixture.Setup.Replace("domains:", "libraries:\n  - urn:example:risk:library:mapping-example\ndomains:", StringComparison.Ordinal);

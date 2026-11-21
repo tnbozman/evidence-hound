@@ -41,7 +41,7 @@ public static class ScopeLoader
     private static readonly string[] Statuses = ["to_do", "in_progress", "in_review", "done"];
     private static readonly string[] CycleKeys = ["period", "starts"];
     private static readonly string[] Periods = ["month", "quarter", "half_year", "year"];
-    private static readonly string[] SignOffKeys = ["role", "name"];
+    private static readonly string[] SignOffKeys = ["period", "by", "date"];
     private static readonly string[] UnlistedKeys = ["result", "reason"];
     private static readonly string[] SystemTypes = ["primary", "supporting"];
     private static readonly string[] ControlStatuses = ["to_do", "in_progress", "on_hold", "active", "degraded", "deprecated", "--"];
@@ -263,9 +263,10 @@ public static class ScopeLoader
     private static SignOff? ReadSignOff(YamlMappingNode item, FileReader file)
     {
         file.Keys(item, SignOffKeys);
-        var role = file.Required(item, "role");
-        var name = file.Required(item, "name");
-        return role is null || name is null ? null : new SignOff(role, name);
+        var period = file.Required(item, "period");
+        var by = file.Required(item, "by");
+        var date = file.Required(item, "date");
+        return period is null || by is null || date is null ? null : new SignOff(period, by, date);
     }
 
     private static UnlistedRule? ReadUnlisted(YamlMappingNode map, FileReader file)
