@@ -35,11 +35,16 @@ public sealed class ChangeOnlyFunctionalTests(CisoAssistantFixture ciso) : IDisp
         var computed = row["result"]!.GetValue<string>();
         var edited = computed == "compliant" ? "non_compliant" : "compliant";
         await PatchAsync($"requirement-assessments/{row["id"]!.GetValue<string>()}/", new JsonObject { ["result"] = edited }, ct);
+        var afterEdit = await RequirementAsync("EX-1.1", ct);
+        afterEdit["result"]!.GetValue<string>().ShouldBe(edited, afterEdit.ToJsonString());
+        var listed = await GetAsync("requirement-assessments/?compliance_assessment__ref_id=EXAMPLE-BASELINE-2026&limit=500&offset=0", ct);
+        var listedRow = listed["results"]!.AsArray().Single(r => r!["id"]!.GetValue<string>() == row["id"]!.GetValue<string>())!;
+        listedRow["result"]!.GetValue<string>().ShouldBe(edited, listedRow.ToJsonString());
 
         var (thirdExit, third) = await RunAsync(ct);
 
         thirdExit.ShouldBe(ExitCodes.Ok, third.ToJsonString());
-        Changes(third).ShouldBe((1, rows - 1, 1));
+        Changes(third).ShouldBe((1, rows - 1, 1), $"before: {row.ToJsonString()}\nlisted: {listedRow.ToJsonString()}\nrun: {third.ToJsonString()}");
         var drift = third["collectors"]![0]!["drift"]!.AsArray().ShouldHaveSingleItem()!;
         drift["code"]!.GetValue<string>().ShouldBe("publish.drift_corrected");
         drift["message"]!.GetValue<string>().ShouldContain($"was {edited}, now {computed}");
