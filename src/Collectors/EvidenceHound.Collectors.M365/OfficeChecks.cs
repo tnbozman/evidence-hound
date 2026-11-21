@@ -45,9 +45,8 @@ internal static class OfficeChecks
 
         if (forAllUsers.Length == apps.Length)
         {
-            var names = string.Join(", ", forAllUsers.SelectMany(a => a.Policies.Where(p => p.AllUsers)).Select(p => $"'{p.Name}'").Distinct(StringComparer.Ordinal));
-            var policy = names.Contains(',', StringComparison.Ordinal) ? "policies" : "policy";
-            return new(id, CheckOutcome.Pass, $"Macros from the internet are blocked for all users in {And(apps.Select(a => a.Name))} ({policy} {names}).", sources);
+            var policies = Policies(forAllUsers.SelectMany(a => a.Policies.Where(p => p.AllUsers)).Select(p => p.Name));
+            return new(id, CheckOutcome.Pass, $"Macros from the internet are blocked for all users in {And(apps.Select(a => a.Name))} ({policies}).", sources);
         }
 
         if (forAllUsers.Length > 0)
@@ -80,9 +79,7 @@ internal static class OfficeChecks
         var blocking = rules.Where(r => r.Mode == Mode.Block).ToArray();
         if (blocking.Length == rules.Length)
         {
-            var names = string.Join(", ", blocking.SelectMany(r => r.Policies).Distinct(StringComparer.Ordinal).Select(n => $"'{n}'"));
-            var policy = names.Contains(',', StringComparison.Ordinal) ? "policies" : "policy";
-            return new(id, CheckOutcome.Pass, $"All {rules.Length} Office attack surface reduction rules are in block mode ({policy} {names}).", sources);
+            return new(id, CheckOutcome.Pass, $"All {rules.Length} Office attack surface reduction rules are in block mode ({Policies(blocking.SelectMany(r => r.Policies))}).", sources);
         }
 
         if (rules.All(r => r.Mode == Mode.NotConfigured))
@@ -125,6 +122,13 @@ internal static class OfficeChecks
         Mode.Warn => "warn",
         _ => "not configured",
     };
+
+    /// <summary>"policy 'A'" or "policies 'A', 'B'", each policy named once.</summary>
+    private static string Policies(IEnumerable<string> names)
+    {
+        var distinct = names.Distinct(StringComparer.Ordinal).Select(n => $"'{n}'").ToArray();
+        return $"{(distinct.Length == 1 ? "policy" : "policies")} {string.Join(", ", distinct)}";
+    }
 
     /// <summary>"A", "A and B", "A, B and C".</summary>
     private static string And(IEnumerable<string> items)
