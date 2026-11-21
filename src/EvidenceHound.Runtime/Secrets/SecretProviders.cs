@@ -35,6 +35,14 @@ public sealed class FileSecretProvider : ISecretProvider
 /// <summary>Resolves each reference with the provider for its scheme.</summary>
 public sealed class CompositeSecretProvider(IReadOnlyDictionary<SecretScheme, ISecretProvider> providers) : ISecretProvider
 {
+    /// <summary>The standard provider: <c>env:</c> through a name lookup and <c>file:</c> from disk.</summary>
+    public static CompositeSecretProvider Standard(Func<string, string?> lookup) =>
+        new(new Dictionary<SecretScheme, ISecretProvider>
+        {
+            [SecretScheme.Env] = new EnvironmentSecretProvider(lookup),
+            [SecretScheme.File] = new FileSecretProvider(),
+        });
+
     public Result<Secret> Resolve(SecretReference reference)
     {
         ArgumentNullException.ThrowIfNull(reference);

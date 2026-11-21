@@ -1,5 +1,6 @@
 using System.CommandLine;
 using EvidenceHound.Core.Results;
+using EvidenceHound.Core.Secrets;
 using EvidenceHound.Runtime.Configuration;
 using EvidenceHound.Runtime.Secrets;
 using Microsoft.Extensions.Configuration;
@@ -37,7 +38,7 @@ internal static class ConfigCommands
         ConfigLoader.LoadAsync(file.FullName, CollectorTypes.BuiltIn, cancellationToken);
 
     /// <summary>The secret provider for this run: <c>env:</c> reads .NET configuration (environment variables and test settings).</summary>
-    internal static Core.Secrets.ISecretProvider Secrets(IConfiguration configuration) => SecretProvider.Standard(name => configuration[name]);
+    internal static ISecretProvider Secrets(IConfiguration configuration) => CompositeSecretProvider.Standard(name => configuration[name]);
 
     private static Result<DeploymentConfig> WithSecrets(DeploymentConfig config, IConfiguration configuration) =>
         SecretCheck.Missing(config, Secrets(configuration)) is { Count: > 0 } missing ? Result.Fail<DeploymentConfig>(missing) : Result.Ok(config);

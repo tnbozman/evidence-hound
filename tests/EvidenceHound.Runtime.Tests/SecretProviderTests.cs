@@ -13,11 +13,7 @@ public sealed class SecretProviderTests : IDisposable
         ["HOUND_EMPTY"] = "",
     };
 
-    private static CompositeSecretProvider Composite() => new(new Dictionary<SecretScheme, ISecretProvider>
-    {
-        [SecretScheme.Env] = new EnvironmentSecretProvider(name => Environment.GetValueOrDefault(name)),
-        [SecretScheme.File] = new FileSecretProvider(),
-    });
+    private static CompositeSecretProvider Composite() => CompositeSecretProvider.Standard(name => Environment.GetValueOrDefault(name));
 
     private static SecretReference Ref(string text) => SecretReference.Parse(text).Value();
 
@@ -79,7 +75,7 @@ public sealed class SecretProviderTests : IDisposable
             """;
         var config = Configuration.ConfigLoader.Parse(yaml, "hound.yaml", new HashSet<string>(StringComparer.Ordinal) { "fake" }).Value();
 
-        var missing = SecretCheck.Missing(config, SecretProvider.Standard(name => Environment.GetValueOrDefault(name)));
+        var missing = SecretCheck.Missing(config, CompositeSecretProvider.Standard(name => Environment.GetValueOrDefault(name)));
 
         missing.Select(p => p.Message).ShouldBe([
             "Secret env:HOUND_NOT_SET could not be resolved: the environment variable is not set.",
