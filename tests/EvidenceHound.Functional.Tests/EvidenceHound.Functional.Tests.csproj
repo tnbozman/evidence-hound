@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <!-- Unit runs filter out Category=Functional, which leaves this project with zero tests (exit code 8).
-         Only this project may run zero tests; every unit project still fails if none run. -->
+  <PropertyGroup Condition="'$(UnitTestRun)' == 'true'">
+    <!-- Unit runs (make test, make coverage) filter out Category=Functional, which leaves this project with
+         zero tests (exit code 8). Only this project, and only in unit runs, may run zero tests. -->
     <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --ignore-exit-code 8</TestingPlatformCommandLineArguments>
   </PropertyGroup>
   <ItemGroup>

@@ -20,17 +20,16 @@ build: restore ## Build the solution
 	dotnet build --no-restore -c $(CONFIGURATION)
 
 test: build ## Unit and contract tests
-	dotnet test --no-build -c $(CONFIGURATION) --filter-not-trait "Category=Functional"
+	dotnet test --no-build -c $(CONFIGURATION) -p:UnitTestRun=true --filter-not-trait "Category=Functional"
 
 coverage: build ## Unit and contract tests with TRX and Cobertura coverage in $(RESULTS_DIR)
-	dotnet test --no-build -c $(CONFIGURATION) --results-directory $(RESULTS_DIR) \
+	dotnet test --no-build -c $(CONFIGURATION) -p:UnitTestRun=true --results-directory $(RESULTS_DIR) \
 	  --filter-not-trait "Category=Functional" \
 	  --report-trx --coverage --coverage-output-format cobertura
 
-# Exit code 8 means "no tests ran"; allowed until the first functional test lands (see s00 Discovered work).
 test-functional: build ## Functional tests (Testcontainers starts CISO Assistant)
-	dotnet test --no-build -c $(CONFIGURATION) --results-directory $(RESULTS_DIR) \
-	  --filter-trait "Category=Functional" --report-trx --ignore-exit-code 8
+	dotnet test --no-build -c $(CONFIGURATION) --project tests/EvidenceHound.Functional.Tests \
+	  --results-directory $(RESULTS_DIR) --filter-trait "Category=Functional" --report-trx
 
 test-scripts: ## Shell script tests (bats)
 	bats scripts/tests
