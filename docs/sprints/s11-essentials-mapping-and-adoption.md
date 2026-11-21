@@ -1,28 +1,34 @@
-# s08 Essential Eight mapping and adoption guides
+# s11 ASD Essentials mapping and adoption guides
 
 Status: Planned
 
-**Goal:** a complete Essential Eight ML2 mapping for the reference checks, the guides an organisation needs to adopt the kit (moving registers out of spreadsheets, running manual sources, training), and two tiers of reporting: monthly operational reporting to the security committee and quarterly governance reporting to the board.
+**Goal:** the Essential Eight ML2 mapping completed, an ASD Essentials for enterprise IT mapping ready for the migration (priority phase 1 first), the guides an organisation needs to adopt the kit (moving registers out of spreadsheets, running manual sources, training), and two tiers of reporting: monthly operational reporting to the security committee and quarterly governance reporting to the board.
 
-### s08-01 Essential Eight mapping file
+### s11-01 ASD Essentials mapping file
 - [ ] Done
 
-**Story:** As a compliance owner, I want the reference checks mapped to Essential Eight ML2 requirements, so that a new deployment produces E8 results on its first run.
+**Story:** As a compliance owner, I want the reference checks mapped to the ASD Essentials for enterprise IT, so that a new deployment produces Essentials results on its first run, and an organisation still on the Essential Eight can run both during its transition.
+
+See [the migration plan](../migrations/essential-eight-to-asd-essentials.md).
 
 **Acceptance criteria**
-- `mappings/essential-eight-2023.yaml` targets CISO Assistant's built-in Essential Eight (Nov 2023) framework URN.
-- Every check ID from the reference and manual collectors maps to at least one ML1 or ML2 requirement; every ML2 requirement either has checks or is listed under `manual_only` with a suggested manual source.
-- A coverage report (`hound mapping coverage`) prints automated, manual-only and uncovered counts per mitigation strategy.
+- `mappings/asd-essentials-enterprise-it.yaml` targets `urn:intuitem:risk:framework:asd-essentials-enterprise-it` and names requirements by URN (s06-01), so each action is mapped per domain.
+- `mappings/essential-eight-2023.yaml` (started in s06-02, extended in s07) covers every ML1 and ML2 requirement with checks or a `manual_only` entry. It stays the audit of record until the migration's cut-over.
+- `hound mapping derive` writes a draft Essentials mapping from the Essential Eight mapping and CISO Assistant's transition mapping. Each action row gets the union of its source controls' checks and is marked `draft: true`; publishing refuses draft rows until a person removes the mark.
+- Every check ID from the reference and manual collectors maps to at least one priority phase 1 action; every phase 1 action either has checks or is listed under `manual_only` with a suggested manual source.
+- A coverage report (`hound mapping coverage`) prints automated, manual-only and uncovered counts per Essentials domain and phase, and per Essential Eight strategy for the transition mapping.
 
 **Tests first**
-- `E8MappingTests.All_requirement_refs_exist_in_library_snapshot` (snapshot of the framework's requirement refs committed under `tests/fixtures`)
-- `E8MappingTests.Every_reference_check_is_mapped`
-- `CoverageTests.Counts_per_strategy`
+- `EssentialsMappingTests.All_requirement_urns_exist_in_framework_snapshot`
+- `EssentialsMappingTests.Every_reference_check_is_mapped`
+- `DeriveTests.Action_gets_union_of_source_checks_marked_draft`
+- `PublishTests.Draft_rows_are_not_published`
+- `CoverageTests.Counts_per_domain_and_phase`
 
 **Functional check**
-- Against the local CISO Assistant with the E8 library loaded: `hound run` with recordings fills the example audit; coverage report matches the audit.
+- Against the local CISO Assistant with both libraries loaded: `hound run` with recordings fills the example Essentials and Essential Eight 2023 audits; the coverage report matches the audits.
 
-### s08-02 Spreadsheet migration guide (no code)
+### s11-02 Spreadsheet migration guide (no code)
 - [ ] Done
 
 **Story:** As an organisation moving from spreadsheets, I want a step-by-step guide using CISO Assistant's own import templates, so that I can migrate without custom code.
@@ -37,7 +43,7 @@ Status: Planned
 **Functional check**
 - Import the sample workbooks into the local CISO Assistant with `clica` following the guide verbatim.
 
-### s08-03 Operating guides and training
+### s11-03 Operating guides and training
 - [ ] Done
 
 **Story:** As a small team without a CISO, I want role-based guides and short training, so that system owners and the committee can run the process.
@@ -53,7 +59,7 @@ Status: Planned
 **Functional check**
 - Walk through the system owner guide on the local stack without help.
 
-### s08-04 Report data model and snapshots
+### s11-04 Report data model and snapshots
 - [ ] Done
 
 **Story:** As the capability owner, I want each reporting period's figures captured as a snapshot, so that reports show trends and can be reproduced later.
@@ -62,6 +68,7 @@ Status: Planned
 - `ReportingPeriod` (month or quarter) and a `PostureSnapshot` record: requirement results per audit and framework, applied control status counts, open exceptions and risk acceptances with expiry, open findings and remediation items with due dates, incidents in the period, collector run summaries, manual sources due and overdue, third-party reviews due.
 - `hound report snapshot --period YYYY-MM` reads only from the CISO Assistant API and the local run store, and writes the snapshot as JSON to the evidence store, then uploads it to CISO Assistant as evidence on a configurable "Security reporting" applied control.
 - Pure functions compute changes between two snapshots (`DiffSnapshots`), so every report is a function of snapshots, not live calls.
+- When audits run in periods (s06-10), a period's snapshot is taken from its closed audit and the audit history files (s06-04), so a signed-off period's figures never change.
 
 **Tests first**
 - `SnapshotTests.Built_from_fixture_api_responses`
@@ -72,7 +79,7 @@ Status: Planned
 **Functional check**
 - Run `hound run` twice with different recordings, take a snapshot after each, and confirm the diff lists the changed requirement.
 
-### s08-05 Monthly security committee report (operational)
+### s11-05 Monthly security committee report (operational)
 - [ ] Done
 
 **Story:** As the security committee, I want a monthly operational report, so that we can see what changed, what is failing and what is overdue, and assign actions.
@@ -99,7 +106,7 @@ Status: Planned
 **Functional check**
 - Generate the report from the local stack for the current month and walk through it against the example audit.
 
-### s08-06 Quarterly board report (governance)
+### s11-06 Quarterly board report (governance)
 - [ ] Done
 
 **Story:** As the board, I want a short quarterly governance report, so that we understand our compliance posture, its direction, the key risks and the risks management has accepted on our behalf.
@@ -107,7 +114,7 @@ Status: Planned
 **Acceptance criteria**
 - `hound report board --quarter YYYY-Qn` produces a Markdown report of at most two pages plus an appendix, from the quarter-end snapshots, with these sections:
     1. Compliance position: a one-paragraph statement for the authorising official to confirm (on track, on track with conditions, off track), with the reasons.
-    2. Maturity posture: per framework and strategy (for Essential Eight, each of the eight at ML1 and ML2), with the trend over the last four quarters.
+    2. Maturity posture: per framework and strategy (for the Essentials, each domain by priority phase; for the Essential Eight during transition, each of the eight at ML1 and ML2), with the trend over the last four quarters.
     3. Key risks: the top five risks against appetite, with owner, treatment and target date.
     4. Risk-acceptance decisions: risks and exceptions accepted this quarter, who accepted them, and when they expire; anything needing board endorsement highlighted.
     5. Assurance: collector coverage (automated versus manual share of requirements), evidence freshness, independent review status, tier 1 supplier assurance.
@@ -125,7 +132,7 @@ Status: Planned
 **Functional check**
 - Generate the board report from four fixture quarter snapshots and from the local stack; confirm it fits two pages when printed.
 
-### s08-07 Drafting reports with Claude
+### s11-07 Drafting reports with Claude
 - [ ] Done
 
 **Story:** As the authorising official, I want to refine report drafts with Claude using live CISO Assistant data, so that the narrative is accurate and fast to produce.

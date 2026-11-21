@@ -1,4 +1,4 @@
-# s07 Reference Docker deployment
+# s08 Reference Docker deployment
 
 Status: Planned
 
@@ -6,7 +6,7 @@ Status: Planned
 
 Folder: `deploy/compose/`. Fictional names only.
 
-### s07-01 Collector runner image
+### s08-01 Collector runner image
 - [ ] Done
 
 **Story:** As an operator, I want a minimal, signed container image for the runner, so that it is easy and safe to deploy.
@@ -22,7 +22,7 @@ Folder: `deploy/compose/`. Fictional names only.
 **Functional check**
 - `docker run --rm ghcr.io/<owner>/<repo>:dev --version`.
 
-### s07-02 Compose stack
+### s08-02 Compose stack
 - [ ] Done
 
 **Story:** As an operator, I want one Compose project for the whole stack, so that install and upgrade are repeatable.
@@ -40,7 +40,7 @@ Folder: `deploy/compose/`. Fictional names only.
 **Functional check**
 - On a fresh VM: follow `deploy/compose/README.md` and reach the CISO Assistant login over HTTPS within 30 minutes.
 
-### s07-03 Scheduling
+### s08-03 Scheduling
 - [ ] Done
 
 **Story:** As an operator, I want collectors to run on their schedules without a human, so that evidence stays fresh.
@@ -56,7 +56,7 @@ Folder: `deploy/compose/`. Fictional names only.
 **Functional check**
 - Stack runs overnight with a 15-minute test schedule; status shows each run.
 
-### s07-04 Backup and restore
+### s08-04 Backup and restore
 - [ ] Done
 
 **Story:** As an operator, I want automated backups and a tested restore, so that the system of record survives failure and the restore test becomes evidence.
@@ -71,7 +71,7 @@ Folder: `deploy/compose/`. Fictional names only.
 **Functional check**
 - Run both scripts on the VM; the restore test appears as evidence in CISO Assistant.
 
-### s07-05 Hardening and update guide
+### s08-05 Hardening and update guide
 - [ ] Done
 
 **Acceptance criteria**
