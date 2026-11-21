@@ -118,6 +118,24 @@ jobs:
       - name: Generate a collector from the template, build and test it
         run: make test-template
 
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install bats
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq bats
+      - name: Build the runner image and test it (starts, non-root, no shell, read-only)
+        run: make test-image HOUND_IMAGE=evidence-hound-runner:ci
+      - name: Scan the runner image (high and critical findings fail the build)
+        uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
+        with:
+          image: evidence-hound-runner:ci
+          severity-cutoff: high
+          only-fixed: false
+          output-format: table
+
   scripts:
     runs-on: ubuntu-latest
     steps:
