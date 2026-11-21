@@ -39,7 +39,8 @@ public sealed class RunFunctionalTests(CisoAssistantFixture ciso) : IDisposable
         var (secondExit, second) = await RunAsync(ct);
 
         secondExit.ShouldBe(ExitCodes.Ok, second.ToJsonString());
-        second["collectors"]![0]!["publish"]!["skipped"]!.GetValue<int>().ShouldBe(4);
+        // s06-04: nothing changed, so nothing is planned: evidence with a known hash is not even looked up again.
+        (second["collectors"]![0]!["publish"]!["sent"]!.GetValue<int>(), second["collectors"]![0]!["publish"]!["skipped"]!.GetValue<int>()).ShouldBe((0, 0));
         (await RevisionCountAsync(health, ct)).ShouldBe(revisionsAfterFirst + 1);
     }
 
