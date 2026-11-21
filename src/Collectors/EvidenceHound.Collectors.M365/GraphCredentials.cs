@@ -43,13 +43,9 @@ public sealed class AzureIdentityCredentials : IGraphCredentialFactory
             var text = pem.Reveal();
             return Result.Ok(X509Certificate2.CreateFromPem(text, text));
         }
-        catch (CryptographicException)
+        catch (Exception exception) when (exception is CryptographicException or ArgumentException)
         {
-            return Result.Fail<X509Certificate2>(new Problem(
-                "m365.certificate_invalid", "The client_certificate secret must hold a PEM certificate and its private key (BEGIN CERTIFICATE and BEGIN PRIVATE KEY)."));
-        }
-        catch (ArgumentException)
-        {
+            // The exception may quote the value, so only a fixed message is returned.
             return Result.Fail<X509Certificate2>(new Problem(
                 "m365.certificate_invalid", "The client_certificate secret must hold a PEM certificate and its private key (BEGIN CERTIFICATE and BEGIN PRIVATE KEY)."));
         }
