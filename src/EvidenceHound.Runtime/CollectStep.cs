@@ -63,10 +63,7 @@ public sealed class CollectStep(ISecretProvider secrets, IEvidenceStore store, I
         var files = new List<CollectedFile>(result.Files.Count);
         foreach (var file in result.Files)
         {
-            await using var content = file.Open();
-            using var buffer = new MemoryStream();
-            await content.CopyToAsync(buffer, cancellationToken);
-            files.Add(new CollectedFile(file.FileName, file.MediaType, buffer.ToArray()));
+            files.Add(await file.ReadAsync(cancellationToken));
         }
 
         return new CollectorOutput(result.Checks, files, result.ControlStatuses);

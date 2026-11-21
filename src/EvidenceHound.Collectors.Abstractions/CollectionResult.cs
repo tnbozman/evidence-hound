@@ -1,4 +1,5 @@
 using EvidenceHound.Core.Checks;
+using EvidenceHound.Core.Packaging;
 using EvidenceHound.Core.Planning;
 
 namespace EvidenceHound.Collectors;
@@ -15,4 +16,13 @@ public sealed record CollectedEvidence(string FileName, string MediaType, Func<S
     /// <summary>A file whose content is already in memory.</summary>
     public static CollectedEvidence FromBytes(string fileName, string mediaType, ReadOnlyMemory<byte> content) =>
         new(fileName, mediaType, () => new MemoryStream(content.ToArray(), writable: false));
+
+    /// <summary>Opens the file once and reads all of it into memory.</summary>
+    public async Task<CollectedFile> ReadAsync(CancellationToken cancellationToken)
+    {
+        await using var content = Open();
+        using var buffer = new MemoryStream();
+        await content.CopyToAsync(buffer, cancellationToken);
+        return new CollectedFile(FileName, MediaType, buffer.ToArray());
+    }
 }

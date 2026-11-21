@@ -112,7 +112,7 @@ public abstract class CollectorContractTests<TCollector>
         {
             var logs = new CapturingLogger();
             var thrown = await Record.ExceptionAsync(() => collector.CollectAsync(Context(scenario, collector, logs), Token));
-            string[] written = [.. logs.Entries, .. thrown is null ? [] : new[] { thrown.ToString() }];
+            var written = logs.Entries.Append(thrown?.ToString() ?? string.Empty).ToArray();
 
             var leaked = SecretValues(scenario, collector.Describe())
                 .Where(secret => secret.Value.Length > 0 && written.Any(text => text.Contains(secret.Value, StringComparison.Ordinal)))
@@ -147,10 +147,7 @@ public abstract class CollectorContractTests<TCollector>
         var read = new List<CollectedFile>(files.Count);
         foreach (var file in files)
         {
-            await using var content = file.Open();
-            using var buffer = new MemoryStream();
-            await content.CopyToAsync(buffer, Token);
-            read.Add(new CollectedFile(file.FileName, file.MediaType, buffer.ToArray()));
+            read.Add(await file.ReadAsync(Token));
         }
 
         return read;
