@@ -15,6 +15,14 @@ public static class AuditPlanner
         IReadOnlyList<ControlStatus> controlStatuses) =>
         PlanUpdates([new TargetResults(target, requirementResults)], evidence, controlStatuses);
 
+    /// <summary>The updates that change what <paramref name="current"/> holds, with each written row's observation naming <paramref name="runId"/>.</summary>
+    public static Result<ChangePlan> PlanChanges(
+        IReadOnlyList<TargetResults> targets,
+        IReadOnlyList<Evidence> evidence,
+        IReadOnlyList<ControlStatus> controlStatuses,
+        CurrentState current,
+        string runId) => throw new NotImplementedException();
+
     /// <summary>
     /// Evidence uploads (by ID) first, each once however many audits cite it; then one requirement update per result, audit by audit in
     /// target order; then one update per applied control (by key), however many targets configure it.

@@ -97,6 +97,36 @@ public class PublisherTests
     }
 
     [Fact]
+    public async Task Update_with_row_ids_writes_those_rows_without_looking_them_up()
+    {
+        var update = new AuditUpdate.UpdateRequirementAssessment("EXAMPLE-BASELINE-2026", "EX-1.1", ComplianceResult.Compliant, "All admins use MFA.", ["ev-0001"])
+        {
+            RowIds = ["ra-a", "ra-b"],
+            KnownEvidenceIds = new Dictionary<string, string> { ["ev-0001"] = "uuid-known" },
+        };
+
+        var report = await Publisher().PublishAsync([update], _ct);
+
+        report.Sent.ShouldBe(1);
+        _ca.Calls.ShouldBe(["update ra-a", "update ra-b"]);
+        _ca.Requirements["ra-b"].EvidenceIds.ShouldBe(["uuid-known"]);
+    }
+
+    [Fact]
+    public async Task Evidence_uploaded_in_the_plan_wins_over_a_known_id()
+    {
+        var update = new AuditUpdate.UpdateRequirementAssessment("EXAMPLE-BASELINE-2026", "EX-1.1", ComplianceResult.Compliant, "All admins use MFA.", ["ev-0001"])
+        {
+            RowIds = ["ra-a"],
+            KnownEvidenceIds = new Dictionary<string, string> { ["ev-0001"] = "uuid-stale" },
+        };
+
+        await Publisher().PublishAsync([new AuditUpdate.UploadEvidence(Mfa), update], _ct);
+
+        _ca.Requirements["ra-a"].EvidenceIds.ShouldBe(["uuid-ev-0001"]);
+    }
+
+    [Fact]
     public async Task Requirement_updates_cite_ciso_assistant_evidence_ids_not_ref_ids()
     {
         await Publisher().PublishAsync(Plan(), _ct);

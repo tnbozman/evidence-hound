@@ -9,4 +9,7 @@ public sealed record RequirementResult(string RequirementRef, ComplianceResult R
 {
     /// <summary>How the mapping names the requirement. Defaults to <see cref="RequirementRef"/> as a ref.</summary>
     public RequirementKey Key { get; init; } = RequirementKey.Ref(RequirementRef);
+
+    /// <summary>Each contributing check as <c>check.id:outcome</c> (<c>missing</c> when it has no result), in mapping order.</summary>
+    public IReadOnlyList<string> CheckOutcomes { get; init; } = [];
 }

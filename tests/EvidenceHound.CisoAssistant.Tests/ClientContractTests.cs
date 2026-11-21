@@ -260,6 +260,85 @@ public sealed class ClientContractTests : IDisposable
     }
 
     [Fact]
+    public async Task Rows_of_an_audit_are_listed_with_their_state_across_pages()
+    {
+        var first = Row("ra-1", "bnd", "1");
+        first["result"] = "compliant";
+        first["observation"] = "Rule all_pass.";
+        first["evidences"] = new JsonArray(new JsonObject { ["id"] = "ev-uuid-1", ["str"] = "mfa-admins.json" });
+        var second = Row("ra-2", "idn");
+        second["result"] = "not_assessed";
+        second["observation"] = null;
+        _ca.Server.Given(Request.Create().WithPath("/api/requirement-assessments/").WithParam("offset", "1").UsingGet()).AtPriority(1)
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject { ["count"] = 2, ["next"] = null, ["results"] = new JsonArray(second) }.ToJsonString()));
+        _ca.Server.Given(Request.Create().WithPath("/api/requirement-assessments/").WithParam("compliance_assessment__ref_id", "EX-E8-2026").UsingGet()).AtPriority(10)
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject
+            {
+                ["count"] = 2,
+                ["next"] = $"{_ca.Server.Url}/api/requirement-assessments/?compliance_assessment__ref_id=EX-E8-2026&limit=1&offset=1",
+                ["results"] = new JsonArray(first),
+            }.ToJsonString()));
+
+        var result = await _ca.Client.ListRequirementAssessmentsAsync("EX-E8-2026", _ct);
+
+        result.Match(rows => string.Join(";", rows.Select(r => $"{r.Id}|{r.Urn}|{r.RefId}|{string.Join(",", r.Groups)}|{r.Result}|{r.Observation}|{string.Join(",", r.EvidenceIds)}")), _ => "fail")
+            .ShouldBe("ra-1|urn:example:req:bnd:act-01|ACT-01|1|Compliant|Rule all_pass.|ev-uuid-1;ra-2|urn:example:req:idn:act-01|ACT-01||NotAssessed||");
+        Requests()[0].RawQuery.ShouldBe("?compliance_assessment__ref_id=EX-E8-2026");
+    }
+
+    [Fact]
+    public async Task Listing_rows_never_follows_a_next_link_to_another_host()
+    {
+        Respond("/api/requirement-assessments/", 200, new JsonObject
+        {
+            ["count"] = 2,
+            ["next"] = "https://elsewhere.example.com/api/requirement-assessments/?offset=1",
+            ["results"] = new JsonArray(Row("ra-1", "bnd")),
+        }.ToJsonString());
+
+        var result = await _ca.Client.ListRequirementAssessmentsAsync("EX-E8-2026", _ct);
+
+        Codes(result).ShouldBe(["ciso_assistant.rejected"]);
+        Requests().Count.ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task Find_evidence_returns_the_existing_one_with_its_latest_hash()
+    {
+        Respond("/api/evidences/", 200, Page(new JsonObject { ["id"] = "ev-uuid-1", ["ref_id"] = "ev-0001" }));
+        Respond("/api/evidence-revisions/", 200, Page(new JsonObject { ["id"] = "rev-2", ["version"] = 2, ["attachment_hash"] = new string('a', 64) }));
+
+        var result = await _ca.Client.FindEvidenceAsync("ev-0001", _ct);
+
+        result.Match(found => found.ShouldHaveSingleItem(), _ => new RemoteEvidence("", null)).ShouldBe(new RemoteEvidence("ev-uuid-1", new string('a', 64)));
+    }
+
+    [Fact]
+    public async Task Find_evidence_that_does_not_exist_creates_nothing()
+    {
+        Respond("/api/evidences/", 200, Page(new JsonObject { ["id"] = "ev-uuid-9", ["ref_id"] = "ev-00011" }));
+
+        var result = await _ca.Client.FindEvidenceAsync("ev-0001", _ct);
+
+        result.Match(found => found.Count, _ => -1).ShouldBe(0);
+        Requests().ShouldNotContain(r => r.Method == "POST");
+    }
+
+    [Theory]
+    [InlineData("active", ControlState.Active)]
+    [InlineData("in_progress", ControlState.InProgress)]
+    [InlineData("To do", ControlState.ToDo)]
+    public async Task Applied_control_status_is_read_by_ref_id(string status, ControlState expected)
+    {
+        Respond("/api/applied-controls/", 200, Page(new JsonObject { ["id"] = "ac-1", ["ref_id"] = "AC-MFA", ["status"] = status }));
+
+        var result = await _ca.Client.FindAppliedControlStatusAsync("AC-MFA", _ct);
+
+        result.ShouldBe(Result.Ok(expected));
+        OnlyRequest().RawQuery.ShouldBe("?ref_id=AC-MFA");
+    }
+
+    [Fact]
     public async Task Find_or_create_evidence_creates_a_missing_one_with_name_and_ref_id()
     {
         Respond("/api/evidences/", 200, Page());

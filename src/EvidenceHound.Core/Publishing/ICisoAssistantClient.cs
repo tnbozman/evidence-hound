@@ -19,6 +19,15 @@ public interface ICisoAssistantClient
     /// <summary>The one audit with this ref_id and the implementation groups it selects.</summary>
     Task<Result<RemoteAudit>> FindAuditAsync(string complianceAssessmentRefId, CancellationToken cancellationToken);
 
+    /// <summary>Every row of the audit with its current result, observation and evidence IDs.</summary>
+    Task<Result<IReadOnlyList<CurrentRow>>> ListRequirementAssessmentsAsync(string complianceAssessmentRefId, CancellationToken cancellationToken);
+
+    /// <summary>The evidence with this ref_id and its latest hash; empty when there is none. Creates nothing.</summary>
+    Task<Result<IReadOnlyList<RemoteEvidence>>> FindEvidenceAsync(string refId, CancellationToken cancellationToken);
+
+    /// <summary>The status of the one applied control with this ref_id.</summary>
+    Task<Result<ControlState>> FindAppliedControlStatusAsync(string refId, CancellationToken cancellationToken);
+
     Task<Result<Unit>> UpdateRequirementAssessmentAsync(string requirementAssessmentId, RequirementAssessmentValues values, CancellationToken cancellationToken);
 
     /// <summary>The evidence with this ref_id, created with <paramref name="name"/> when there is none.</summary>

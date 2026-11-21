@@ -58,6 +58,31 @@ internal sealed class InMemoryCisoAssistant : ICisoAssistantClient
             : Result.Ok(new RemoteAudit($"ca-{complianceAssessmentRefId}", [.. SelectedGroups])));
     }
 
+    /// <summary>Every row in <see cref="Rows"/> with what was last written to it; unwritten rows are not assessed.</summary>
+    public Task<Result<IReadOnlyList<CurrentRow>>> ListRequirementAssessmentsAsync(string complianceAssessmentRefId, CancellationToken cancellationToken)
+    {
+        Calls.Add($"list {complianceAssessmentRefId}");
+        return Task.FromResult(MissingAudits.Contains(complianceAssessmentRefId)
+            ? Result.Fail<IReadOnlyList<CurrentRow>>(new Problem("ciso_assistant.not_found", $"No audit {complianceAssessmentRefId}."))
+            : Result.Ok<IReadOnlyList<CurrentRow>>([.. Rows.Select(r => Requirements.TryGetValue(r.Id, out var v)
+                ? new CurrentRow(r.Id, r.Urn, r.RefId, r.Groups, v.Result, v.Observation, v.EvidenceIds)
+                : new CurrentRow(r.Id, r.Urn, r.RefId, r.Groups, ComplianceResult.NotAssessed, "", []))]));
+    }
+
+    public Task<Result<IReadOnlyList<RemoteEvidence>>> FindEvidenceAsync(string refId, CancellationToken cancellationToken)
+    {
+        Calls.Add($"evidence {refId}");
+        return Task.FromResult(Result.Ok<IReadOnlyList<RemoteEvidence>>(_evidenceByRefId.TryGetValue(refId, out var found) ? [found] : []));
+    }
+
+    public Task<Result<ControlState>> FindAppliedControlStatusAsync(string refId, CancellationToken cancellationToken)
+    {
+        Calls.Add($"status {refId}");
+        return Task.FromResult(Controls.TryGetValue(refId, out var status)
+            ? Result.Ok(status)
+            : Result.Fail<ControlState>(new Problem("ciso_assistant.not_found", $"No applied control {refId}.")));
+    }
+
     public Task<Result<Unit>> UpdateRequirementAssessmentAsync(string requirementAssessmentId, RequirementAssessmentValues values, CancellationToken cancellationToken)
     {
         Requirements[requirementAssessmentId] = values;

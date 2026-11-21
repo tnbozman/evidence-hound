@@ -39,6 +39,13 @@ internal sealed class CisoAssistantClient(HttpClient http) : ICisoAssistantClien
                 .Map(audit => new RemoteAudit(id, Strings(audit["selected_implementation_groups"]))));
     }
 
+    public Task<Result<IReadOnlyList<CurrentRow>>> ListRequirementAssessmentsAsync(string complianceAssessmentRefId, CancellationToken cancellationToken) =>
+        throw new NotImplementedException();
+
+    public Task<Result<IReadOnlyList<RemoteEvidence>>> FindEvidenceAsync(string refId, CancellationToken cancellationToken) => throw new NotImplementedException();
+
+    public Task<Result<ControlState>> FindAppliedControlStatusAsync(string refId, CancellationToken cancellationToken) => throw new NotImplementedException();
+
     public async Task<Result<Unit>> UpdateRequirementAssessmentAsync(string requirementAssessmentId, RequirementAssessmentValues values, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(values);
