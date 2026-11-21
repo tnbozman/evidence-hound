@@ -36,6 +36,12 @@ internal static partial class Log
     [LoggerMessage(EventId = 1100, Level = LogLevel.Information, Message = "Published to CISO Assistant: {Sent} sent, {Skipped} skipped, {Failed} failed")]
     public static partial void Published(ILogger logger, int sent, int skipped, int failed);
 
+    [LoggerMessage(EventId = 1200, Level = LogLevel.Information, Message = "Uploaded {File} to {Folder} (attested: {Attested})")]
+    public static partial void Uploaded(ILogger logger, string file, string folder, bool attested);
+
+    [LoggerMessage(EventId = 1201, Level = LogLevel.Information, Message = "{File} is already uploaded as {Existing}; nothing copied")]
+    public static partial void AlreadyUploaded(ILogger logger, string file, string existing);
+
     [LoggerMessage(EventId = 9000, Level = LogLevel.Critical, Message = "Unexpected failure running '{Command}'. Rerun with Logging__LogLevel__Default=Debug for the stack trace.")]
     public static partial void Unexpected(ILogger logger, Exception exception, string command);
 

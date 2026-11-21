@@ -25,11 +25,18 @@ internal static class CollectorsCommand
 
     private static string Describe(ICollector collector, CollectorDescription description) => $"""
         {collector.Type} {collector.Version}
-          checks: {Names(description.Checks.Order(StringComparer.Ordinal))}
+          checks: {Checks(description)}
           settings: {Settings(description.Settings)}
           secrets: {Settings(description.Secrets)}
 
         """;
+
+    private static string Checks(CollectorDescription description) => (description.Checks.Count, description.ChecksSetting) switch
+    {
+        (0, { } setting) => $"set per instance by setting '{setting}'",
+        (_, { } setting) => $"{Names(description.Checks.Order(StringComparer.Ordinal))}, plus those in setting '{setting}'",
+        _ => Names(description.Checks.Order(StringComparer.Ordinal)),
+    };
 
     private static string Settings(IEnumerable<SettingDescription> settings) =>
         Names(settings.Select(s => $"{s.Name} ({(s.Required ? "required" : "optional")})"));

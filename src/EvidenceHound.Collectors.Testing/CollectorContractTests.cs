@@ -35,14 +35,18 @@ public abstract class CollectorContractTests<TCollector>
     public void DescribesAtLeastOneCheck()
     {
         var collector = CreateCollector();
-        Assert.True(collector.Describe().Checks.Count > 0, $"Collector '{collector.Type}' describes no checks. Describe() must list every check ID it can emit.");
+        var description = collector.Describe();
+        Assert.True(
+            description.Checks.Count > 0 || description.ChecksSetting is not null,
+            $"Collector '{collector.Type}' describes no checks. Describe() must list every check ID it can emit, or name the setting that lists them in ChecksSetting.");
     }
 
     [Fact]
     public async Task EmitsOnlyDeclaredCheckIds()
     {
         var collector = CreateCollector();
-        var declared = collector.Describe().Checks.ToHashSet(StringComparer.Ordinal);
+        var description = collector.Describe();
+        var declared = description.Checks.Concat(Configured(description, Working)).ToHashSet(StringComparer.Ordinal);
 
         var result = await CollectWorkingAsync(collector);
 
@@ -125,6 +129,12 @@ public abstract class CollectorContractTests<TCollector>
     private async Task<CollectionResult> CollectWorkingAsync(TCollector collector) =>
         (await collector.CollectAsync(Context(Working, collector, NullLogger.Instance), Token))
             .Match(result => result, problems => throw FailException.ForFailure($"Collector '{collector.Type}' failed its Working scenario: {Describe(problems)}"));
+
+    /// <summary>The check IDs a scenario's config allows, when the collector names a setting that lists them.</summary>
+    private static string[] Configured(CollectorDescription description, CollectorScenario scenario) =>
+        description.ChecksSetting is { } setting && scenario.Settings.TryGetValue(setting, out var list)
+            ? list.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            : [];
 
     private static CollectorContext Context(CollectorScenario scenario, ICollector collector, ILogger logger) => new(
         InstanceName,

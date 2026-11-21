@@ -156,7 +156,14 @@ public static partial class ConfigLoader
         ];
         return problems.Length > 0
             ? Result.Fail<CollectorInstance>(problems)
-            : name.Bind(n => type.Bind(t => schedule.Bind(s => settings.Bind(v => secrets.Map(r => new CollectorInstance(n, t, s, v, r))))));
+            : name.Bind(n => type.Bind(t => schedule.Bind(s => settings.Bind(v => secrets.Map(r => new CollectorInstance(n, t, s, ResolvePaths(v, knownTypes[t].Settings, at), r))))));
+    }
+
+    /// <summary>Settings the collector describes as paths, resolved against the config file's folder like every other path in the config.</summary>
+    private static Dictionary<string, string> ResolvePaths(IReadOnlyDictionary<string, string> values, IReadOnlyList<SettingDescription> described, Locator at)
+    {
+        var paths = described.Where(d => d.IsPath).Select(d => d.Name).ToHashSet(StringComparer.Ordinal);
+        return values.ToDictionary(pair => pair.Key, pair => paths.Contains(pair.Key) ? at.FullPath(pair.Value) : pair.Value, StringComparer.Ordinal);
     }
 
     /// <summary>A problem for each required setting or secret that the collector's section does not give.</summary>
