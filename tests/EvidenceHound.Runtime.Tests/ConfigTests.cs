@@ -142,6 +142,44 @@ public class ConfigTests
         ConfigLoader.Parse(yaml, Source, Known).Problems().ShouldHaveSingleItem().Code.ShouldBe(code);
     }
 
+    [Theory]
+    [InlineData("collectors:\n  - name: idp", "collectors: idp\nunused:\n  - name: idp", "config.collectors_not_a_list")]
+    [InlineData("  - name: idp\n    type: fake", "  - just-a-name\n  - name: idp\n    type: fake", "config.collector_not_a_map")]
+    [InlineData("    settings:\n      tenant: example.com", "    settings: [example.com]", "config.section_not_a_map")]
+    [InlineData("    settings:\n      tenant: example.com", "    settings:\n      tenant: [a, b]", "config.value_invalid")]
+    [InlineData("    secrets:\n      api_token: file:/run/secrets/idp_token", "    secrets:\n      api_token: [a]", "config.value_invalid")]
+    [InlineData("    settings:\n      tenant: example.com", "    settings:\n      cert: '-----BEGIN PRIVATE KEY-----'", "config.secret_inline")]
+    [InlineData("- name: idp", "- name: Idp_1", "config.collector_name_invalid")]
+    [InlineData("url: http://localhost:8000/api/", "url: ftp://localhost/api/", "config.url_invalid")]
+    [InlineData("url: http://localhost:8000/api/", "url: ''", "config.value_invalid")]
+    [InlineData("evidence:\n  root: ./evidence", "evidence: ./evidence\nstore:\n  root: ./evidence", "config.section_not_a_map")]
+    public void Badly_shaped_values_are_rejected(string valid, string invalid, string code)
+    {
+        var yaml = Valid.Replace(valid, invalid, StringComparison.Ordinal);
+        yaml.ShouldNotBe(Valid);
+
+        ConfigLoader.Parse(yaml, Source, Known).Problems().Select(p => p.Code).ShouldContain(code);
+    }
+
+    [Fact]
+    public void Retention_is_optional()
+    {
+        var yaml = Valid.Replace("  retention_days: 30\n", "", StringComparison.Ordinal);
+
+        ConfigLoader.Parse(yaml, Source, Known).Value().Evidence.RetentionDays.ShouldBeNull();
+    }
+
+    [Fact]
+    public void Collector_settings_and_secrets_are_optional()
+    {
+        var yaml = Valid.Replace("collectors:\n", "collectors:\n  - {name: second, type: fake, schedule: \"0 3 * * *\"}\n", StringComparison.Ordinal);
+
+        var second = ConfigLoader.Parse(yaml, Source, Known).Value().Collectors[0];
+
+        second.Settings.ShouldBeEmpty();
+        second.Secrets.ShouldBeEmpty();
+    }
+
     [Fact]
     public void Retention_must_be_a_positive_whole_number()
     {

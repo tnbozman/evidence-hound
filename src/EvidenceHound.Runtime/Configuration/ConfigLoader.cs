@@ -19,7 +19,7 @@ public static partial class ConfigLoader
     private static readonly string[] CollectorKeys = ["name", "type", "schedule", "settings", "secrets"];
     private static readonly string[] TargetKeys = ["mapping", "compliance_assessment", "controls"];
     private static readonly string[] Transports = ["rest", "kafka"];
-    private static readonly int NoRetention = 0;
+    private static readonly int NoRetention = -1;
 
     public static async Task<Result<DeploymentConfig>> LoadAsync(string path, IReadOnlySet<string> knownCollectorTypes, CancellationToken cancellationToken) =>
         File.Exists(path)
@@ -81,7 +81,8 @@ public static partial class ConfigLoader
             ? Result.Ok(node.Value is "" ? "rest" : node.Value!)
             : Result.Fail<string>(at.Problem(node.Start, "config.transport_unknown", $"unknown transport '{node.Value}'; use {string.Join(" or ", Transports)}.")));
         var servers = OptionalScalar(map, "kafka_bootstrap_servers", at).Map(node => node.Value!);
-        var kafkaReady = transport.Match(t => servers.Match(s => t == "kafka" && s.Length == 0, _ => false), _ => false)
+        var kafkaWithoutServers = transport.Match(t => t == "kafka", _ => false) && servers.Match(s => s.Length == 0, _ => false);
+        var kafkaReady = kafkaWithoutServers
             ? Result.Fail<Unit>(at.Problem(map.Start, "config.kafka_servers_missing", "transport 'kafka' needs 'kafka_bootstrap_servers'."))
             : Result.Ok(Unit.Value);
 
