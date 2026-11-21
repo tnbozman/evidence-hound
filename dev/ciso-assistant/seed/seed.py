@@ -19,7 +19,11 @@ FRAMEWORK_URN = "urn:example:risk:framework:example-baseline"
 FOLDER = "Example Pty Ltd"
 PERIMETER = "Example baseline"
 AUDIT_REF_ID = "EXAMPLE-BASELINE-2026"
-CONTROLS = {"AC-MFA": "Multi-factor authentication", "AC-BACKUP": "Daily backups"}
+CONTROLS = {
+    "AC-MFA": "Multi-factor authentication",
+    "AC-BACKUP": "Daily backups",
+    "AC-AUTO-EVIDENCE": "Automated evidence collection",
+}
 
 
 def service_token():

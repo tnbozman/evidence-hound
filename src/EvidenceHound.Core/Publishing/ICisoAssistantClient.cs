@@ -24,6 +24,9 @@ public interface ICisoAssistantClient
     /// <summary>Adds a new revision holding <paramref name="file"/> to the evidence.</summary>
     Task<Result<Unit>> UploadEvidenceRevisionAsync(string evidenceId, EvidenceFile file, CancellationToken cancellationToken);
 
+    /// <summary>Adds the evidence to the evidences of the one applied control with this ref_id, if it is not there already.</summary>
+    Task<Result<Unit>> LinkEvidenceToAppliedControlAsync(string controlRefId, string evidenceId, CancellationToken cancellationToken);
+
     /// <summary>Sets the status of the one applied control with this ref_id.</summary>
     Task<Result<Unit>> UpdateAppliedControlAsync(string refId, ControlState status, CancellationToken cancellationToken);
 }

@@ -23,5 +23,8 @@ public sealed record CollectorInstance(
     IReadOnlyDictionary<string, string> Settings,
     IReadOnlyDictionary<string, SecretReference> Secrets);
 
-/// <summary>The audit that results are published to: the mapping file, the audit's ref_id and control key to applied control ref_id.</summary>
-public sealed record TargetConfig(string MappingPath, string ComplianceAssessmentRefId, IReadOnlyDictionary<string, string> Controls);
+/// <summary>
+/// The audit that results are published to: the mapping file, the audit's ref_id, control key to applied control ref_id, and the
+/// applied control that each collector's health evidence is linked to.
+/// </summary>
+public sealed record TargetConfig(string MappingPath, string ComplianceAssessmentRefId, IReadOnlyDictionary<string, string> Controls, string? HealthControlRefId = null);

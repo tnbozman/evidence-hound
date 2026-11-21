@@ -9,6 +9,7 @@ using EvidenceHound.Core.Results;
 using EvidenceHound.Runtime;
 using EvidenceHound.Runtime.Collectors;
 using EvidenceHound.Runtime.Configuration;
+using EvidenceHound.Runtime.Status;
 using EvidenceHound.Runtime.Storage;
 using EvidenceHound.Transport.Kafka;
 using Microsoft.Extensions.Configuration;
@@ -77,7 +78,14 @@ internal static class RunCommand
         using var sinks = transport;
         var step = new CollectStep(ConfigCommands.Secrets(configuration), new FileEvidenceStore(config.Evidence.Root), new SystemClock(), config.Evidence.RetentionDays);
         var runner = new Runner(
-            BuiltInCollectors.Create(), step, mapping, new AuditTarget(config.Target.ComplianceAssessmentRefId, config.Target.Controls), sinks.SinkFor);
+            BuiltInCollectors.Create(),
+            step,
+            mapping,
+            new AuditTarget(config.Target.ComplianceAssessmentRefId, config.Target.Controls),
+            sinks.SinkFor,
+            new SystemClock(),
+            new FileRunRecordStore(config.Evidence.Root),
+            config.Target.HealthControlRefId);
 
         var summary = await runner.RunAsync(instances, options, cancellationToken);
         foreach (var collector in summary.Collectors)

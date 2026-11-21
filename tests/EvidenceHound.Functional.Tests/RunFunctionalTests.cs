@@ -29,11 +29,26 @@ public sealed class RunFunctionalTests(CisoAssistantFixture ciso) : IDisposable
             .Where(e => e!["ref_id"]!.GetValue<string>() == "example-fake/mfa-users.json").ToList();
         evidence.ShouldHaveSingleItem();
 
+        var health = await HealthEvidenceAsync(ct);
+        var control = (await GetAsync("applied-controls/?ref_id=AC-AUTO-EVIDENCE", ct))["results"]![0]!;
+        var linked = (await GetAsync($"applied-controls/{control["id"]!.GetValue<string>()}/", ct))["evidences"]!.AsArray()
+            .Select(e => e is JsonObject o ? o["id"]!.GetValue<string>() : e!.GetValue<string>());
+        linked.ShouldContain(health["id"]!.GetValue<string>());
+        var revisionsAfterFirst = await RevisionCountAsync(health, ct);
+
         var (secondExit, second) = await RunAsync(ct);
 
         secondExit.ShouldBe(ExitCodes.Ok, second.ToJsonString());
         second["collectors"]![0]!["publish"]!["skipped"]!.GetValue<int>().ShouldBe(4);
+        (await RevisionCountAsync(health, ct)).ShouldBe(revisionsAfterFirst + 1);
     }
+
+    private async Task<JsonNode> HealthEvidenceAsync(CancellationToken ct) =>
+        (await GetAsync("evidences/?search=hound-health", ct))["results"]!.AsArray()
+            .Single(e => e!["ref_id"]!.GetValue<string>() == "hound-health/example-fake")!;
+
+    private async Task<int> RevisionCountAsync(JsonNode evidence, CancellationToken ct) =>
+        (await GetAsync($"evidence-revisions/?evidence={evidence["id"]!.GetValue<string>()}", ct))["results"]!.AsArray().Count;
 
     private async Task<(int ExitCode, JsonNode Summary)> RunAsync(CancellationToken ct)
     {

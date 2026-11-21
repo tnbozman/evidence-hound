@@ -1,3 +1,4 @@
+using EvidenceHound.Core;
 using EvidenceHound.Core.Collecting;
 using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Planning;
@@ -5,6 +6,7 @@ using EvidenceHound.Core.Publishing;
 using EvidenceHound.Core.Results;
 using EvidenceHound.Runtime.Configuration;
 using EvidenceHound.Runtime.Pipeline;
+using EvidenceHound.Runtime.Status;
 
 namespace EvidenceHound.Runtime;
 
@@ -20,6 +22,12 @@ public enum CollectorOutcome
 /// <summary>One collector instance's result: its outcome, the problems behind a failure, and the publish report if it got that far.</summary>
 public sealed record CollectorRunResult(string Collector, CollectorOutcome Outcome, IReadOnlyList<Problem> Problems, PublishReport? Publish)
 {
+    /// <summary>The run record saved for this run.</summary>
+    public RunRecord? Record { get; init; }
+
+    /// <summary>The report of publishing the health evidence, when the run published.</summary>
+    public PublishReport? Health { get; init; }
+
     public bool Equals(CollectorRunResult? other) =>
         other is not null && Collector == other.Collector && Outcome == other.Outcome && Problems.SequenceEqual(other.Problems) && Equals(Publish, other.Publish);
 
@@ -42,7 +50,10 @@ public sealed class Runner(
     CollectStep collect,
     FrameworkMapping mapping,
     AuditTarget target,
-    Func<IEvidenceFiles, IAuditUpdateSink> sinkFor)
+    Func<IEvidenceFiles, IAuditUpdateSink> sinkFor,
+    IClock clock,
+    IRunRecordStore records,
+    string? healthControlRefId = null)
 {
     /// <summary>The instances to run: all of them, or the one named by <paramref name="only"/> (<c>run.collector_unknown</c> if none has that name).</summary>
     public static Result<IReadOnlyList<CollectorInstance>> Select(IReadOnlyList<CollectorInstance> instances, string? only)
@@ -68,8 +79,11 @@ public sealed class Runner(
         return new RunSummary(results);
     }
 
+    private static string Unused(IClock clock, IRunRecordStore records, string? health) => string.Join(", ", clock, records, health);
+
     private async Task<CollectorRunResult> RunOneAsync(CollectorInstance instance, RunOptions options, CancellationToken cancellationToken)
     {
+        _ = Unused(clock, records, healthControlRefId);
         Result<CollectedRun> collected;
         try
         {

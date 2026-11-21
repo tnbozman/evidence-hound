@@ -51,6 +51,15 @@ internal sealed class InMemoryCisoAssistant : ICisoAssistantClient
         return Done($"upload {evidenceId} {file.FileName}");
     }
 
+    public Dictionary<string, List<string>> ControlEvidence { get; } = [];
+
+    public Task<Result<Unit>> LinkEvidenceToAppliedControlAsync(string controlRefId, string evidenceId, CancellationToken cancellationToken)
+    {
+        var linked = ControlEvidence.TryGetValue(controlRefId, out var list) ? list : ControlEvidence[controlRefId] = [];
+        linked.Add(evidenceId);
+        return Done($"link {evidenceId} to {controlRefId}");
+    }
+
     public Task<Result<Unit>> UpdateAppliedControlAsync(string refId, ControlState status, CancellationToken cancellationToken)
     {
         Controls[refId] = status;

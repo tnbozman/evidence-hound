@@ -9,6 +9,7 @@ using EvidenceHound.Core.Results;
 using EvidenceHound.Core.Secrets;
 using EvidenceHound.Runtime.Configuration;
 using EvidenceHound.Runtime.Pipeline;
+using EvidenceHound.Runtime.Status;
 using EvidenceHound.Runtime.Storage;
 
 namespace EvidenceHound.Runtime.Tests;
@@ -41,7 +42,10 @@ public sealed class RunnerTests : IDisposable
         new CollectStep(Secrets.From(new Dictionary<string, string>()), new FileEvidenceStore(_root), new FixedClock(Now), retentionDays: null),
         Mapping,
         Target,
-        files => _sink.With(files));
+        files => _sink.With(files),
+        new FixedClock(Now),
+        new FileRunRecordStore(_root),
+        "AC-AUTO");
 
     [Fact]
     public async Task Runs_each_configured_collector()
@@ -51,13 +55,13 @@ public sealed class RunnerTests : IDisposable
         var summary = await runner.RunAsync([Instance("example-idp", "idp"), Instance("example-backup", "backup")], new RunOptions(), TestContext.Current.CancellationToken);
 
         summary.Collectors.Select(c => (c.Collector, c.Outcome)).ShouldBe([("example-idp", CollectorOutcome.Succeeded), ("example-backup", CollectorOutcome.Succeeded)]);
-        _sink.Batches.Count.ShouldBe(2);
-        _sink.Batches[0].Select(u => u.GetType().Name).ShouldBe(["UploadEvidence", "UpdateRequirementAssessment"]);
-        _sink.Batches[0].OfType<AuditUpdate.UploadEvidence>().Single().Evidence.Id.ShouldBe("example-idp/admins.json");
-        var requirement = _sink.Batches[0].OfType<AuditUpdate.UpdateRequirementAssessment>().Single();
+        _sink.Main.Count.ShouldBe(2);
+        _sink.Main[0].Select(u => u.GetType().Name).ShouldBe(["UploadEvidence", "UpdateRequirementAssessment"]);
+        _sink.Main[0].OfType<AuditUpdate.UploadEvidence>().Single().Evidence.Id.ShouldBe("example-idp/admins.json");
+        var requirement = _sink.Main[0].OfType<AuditUpdate.UpdateRequirementAssessment>().Single();
         (requirement.ComplianceAssessmentRefId, requirement.RequirementRefId, requirement.Result).ShouldBe(("EXAMPLE-1", "R-MFA", ComplianceResult.Compliant));
         requirement.EvidenceRefIds.ShouldBe(["example-idp/admins.json"]);
-        _sink.Batches[1].OfType<AuditUpdate.UpdateRequirementAssessment>().Single().RequirementRefId.ShouldBe("R-BACKUP");
+        _sink.Main[1].OfType<AuditUpdate.UpdateRequirementAssessment>().Single().RequirementRefId.ShouldBe("R-BACKUP");
         summary.Collectors[0].Publish!.Sent.ShouldBe(2);
     }
 
@@ -80,7 +84,7 @@ public sealed class RunnerTests : IDisposable
         var crash = summary.Collectors[1].Problems.ShouldHaveSingleItem();
         crash.Code.ShouldBe("collector.crashed");
         crash.Message.ShouldContain("collector bug");
-        _sink.Batches.ShouldHaveSingleItem();
+        _sink.Main.ShouldHaveSingleItem();
     }
 
     [Fact]
@@ -105,7 +109,7 @@ public sealed class RunnerTests : IDisposable
         var summary = await Runner(new() { ["idp"] = Reporting("identity.mfa.admins", "admins.json") })
             .RunAsync([Instance("one", "idp")], new RunOptions(DryRun: true), TestContext.Current.CancellationToken);
 
-        _sink.Batches.ShouldBeEmpty();
+        _sink.Main.ShouldBeEmpty();
         summary.Collectors.Single().Publish!.Planned.ShouldBe(2);
         Directory.Exists(Path.Combine(_root, "one")).ShouldBeTrue();
     }
@@ -116,8 +120,9 @@ public sealed class RunnerTests : IDisposable
         var summary = await Runner(new() { ["idp"] = Reporting("identity.mfa.admins", "admins.json") })
             .RunAsync([Instance("one", "idp")], new RunOptions(NoPublish: true), TestContext.Current.CancellationToken);
 
-        _sink.Batches.ShouldBeEmpty();
+        _sink.Main.ShouldBeEmpty();
         summary.Collectors.Single().ShouldBe(new CollectorRunResult("one", CollectorOutcome.Succeeded, [], null));
+        _sink.Batches.ShouldBeEmpty();
         Directory.Exists(Path.Combine(_root, "one")).ShouldBeTrue();
     }
 
@@ -151,12 +156,57 @@ public sealed class RunnerTests : IDisposable
         RunEvidence.IdFor("example-idp", "admins.json").ShouldBe("example-idp/admins.json");
     }
 
+    [Fact]
+    public async Task Health_evidence_planned_after_each_run()
+    {
+        var failing = new StubCollector(_ => Result.Fail<CollectorOutput>(new Problem("collector.unavailable", "the system did not answer")));
+        var runner = Runner(new() { ["failing"] = failing, ["idp"] = Reporting("identity.mfa.admins", "admins.json") });
+
+        var summary = await runner.RunAsync([Instance("first", "failing"), Instance("second", "idp")], new RunOptions(), TestContext.Current.CancellationToken);
+
+        _sink.HealthUploads.Select(u => u.Evidence.Id).ShouldBe(["hound-health/first", "hound-health/second"]);
+        _sink.HealthUploads.ShouldAllBe(u => u.AppliedControlRefIds.Count == 1 && u.AppliedControlRefIds[0] == "AC-AUTO");
+        summary.Collectors.Select(c => c.Health!.Sent).ShouldBe([1, 1]);
+        _sink.Batches.Select(b => b[0] is AuditUpdate.UploadEvidence u ? u.Evidence.Id : "main").ShouldBe(["hound-health/first", "main", "hound-health/second"]);
+    }
+
+    [Fact]
+    public async Task Dry_run_plans_the_health_evidence_without_sending_it()
+    {
+        var summary = await Runner(new() { ["idp"] = Reporting("identity.mfa.admins", "admins.json") })
+            .RunAsync([Instance("one", "idp")], new RunOptions(DryRun: true), TestContext.Current.CancellationToken);
+
+        _sink.Batches.ShouldBeEmpty();
+        summary.Collectors.Single().Health!.Planned.ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task Each_run_saves_its_run_record()
+    {
+        var failing = new StubCollector(_ => Result.Fail<CollectorOutput>(new Problem("collector.unavailable", "the system did not answer")));
+        var runner = Runner(new() { ["failing"] = failing, ["idp"] = Reporting("identity.mfa.admins", "admins.json") });
+
+        var summary = await runner.RunAsync([Instance("first", "failing"), Instance("second", "idp")], new RunOptions(NoPublish: true), TestContext.Current.CancellationToken);
+
+        var saved = (await new FileRunRecordStore(_root).LatestAsync(TestContext.Current.CancellationToken)).Value();
+        saved.Select(r => (r.Collector, r.Outcome, r.ChecksPassed)).ShouldBe([("first", CollectorOutcome.Failed, 0), ("second", CollectorOutcome.Succeeded, 1)]);
+        saved[0].Problems.ShouldHaveSingleItem().Code.ShouldBe("collector.unavailable");
+        summary.Collectors.Select(c => c.Record).ShouldBe(saved);
+    }
+
     public void Dispose() => Directory.Delete(_root, recursive: true);
 
     /// <summary>Records each batch of updates and reads every evidence file through the files it was given.</summary>
     private sealed class RecordingSink
     {
         public List<IReadOnlyList<AuditUpdate>> Batches { get; } = [];
+
+        /// <summary>Batches other than health evidence uploads.</summary>
+        public List<IReadOnlyList<AuditUpdate>> Main =>
+            [.. Batches.Where(b => !b.All(u => u is AuditUpdate.UploadEvidence upload && upload.Evidence.Id.StartsWith("hound-health/", StringComparison.Ordinal)))];
+
+        public List<AuditUpdate.UploadEvidence> HealthUploads =>
+            [.. Batches.SelectMany(b => b).OfType<AuditUpdate.UploadEvidence>().Where(u => u.Evidence.Id.StartsWith("hound-health/", StringComparison.Ordinal))];
 
         public bool FailEverything { get; set; }
 

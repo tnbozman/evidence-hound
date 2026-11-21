@@ -57,6 +57,9 @@ internal sealed class CisoAssistantClient(HttpClient http) : ICisoAssistantClien
         return (await SendAsync(request, $"to upload {file.FileName}", cancellationToken)).Map(_ => Unit.Value);
     }
 
+    public Task<Result<Unit>> LinkEvidenceToAppliedControlAsync(string controlRefId, string evidenceId, CancellationToken cancellationToken) =>
+        throw new NotImplementedException();
+
     public async Task<Result<Unit>> UpdateAppliedControlAsync(string refId, ControlState status, CancellationToken cancellationToken)
     {
         var found = await FindOneAsync("applied-controls/", "applied control", Selector.ByRefId(refId), cancellationToken);

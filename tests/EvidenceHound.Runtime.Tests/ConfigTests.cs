@@ -40,6 +40,7 @@ public class ConfigTests
         config.CisoAssistant.Transport.ShouldBe("rest");
         config.Collectors.ShouldHaveSingleItem().Type.ShouldBe("fake");
         config.Target.ComplianceAssessmentRefId.ShouldBe("EXAMPLE-BASELINE-2026");
+        config.Target.HealthControlRefId.ShouldBe("AC-AUTO-EVIDENCE");
         File.Exists(config.Target.MappingPath).ShouldBeTrue();
     }
 
@@ -159,6 +160,15 @@ public class ConfigTests
         yaml.ShouldNotBe(Valid);
 
         ConfigLoader.Parse(yaml, Source, Known).Problems().Select(p => p.Code).ShouldContain(code);
+    }
+
+    [Fact]
+    public void Health_control_is_optional()
+    {
+        ConfigLoader.Parse(Valid, Source, Known).Value().Target.HealthControlRefId.ShouldBeNull();
+        var yaml = Valid.Replace("  compliance_assessment: EXAMPLE-1", "  compliance_assessment: EXAMPLE-1\n  health_control: AC-AUTO", StringComparison.Ordinal);
+
+        ConfigLoader.Parse(yaml, Source, Known).Value().Target.HealthControlRefId.ShouldBe("AC-AUTO");
     }
 
     [Fact]

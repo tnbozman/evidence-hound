@@ -32,3 +32,4 @@ target:
   controls:                                      # config key -> applied control ref_id in CISO Assistant
     mfa: AC-MFA
     backups: AC-BACKUP
+  health_control: AC-AUTO-EVIDENCE               # each collector's health evidence is linked to this applied control

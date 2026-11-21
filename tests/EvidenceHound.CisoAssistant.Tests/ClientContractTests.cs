@@ -182,6 +182,43 @@ public sealed class ClientContractTests : IDisposable
     }
 
     [Fact]
+    public async Task Link_evidence_adds_it_to_the_applied_controls_evidences()
+    {
+        Respond("/api/applied-controls/", 200, Page(new JsonObject { ["id"] = "ac-1", ["ref_id"] = "AC-AUTO" }));
+        Respond("/api/applied-controls/ac-1/", 200, """{"id": "ac-1", "evidences": [{"id": "ev-old", "str": "older evidence"}]}""");
+        Respond("/api/applied-controls/ac-1/", 200, """{"id": "ac-1"}""", "PATCH");
+
+        var result = await _ca.Client.LinkEvidenceToAppliedControlAsync("AC-AUTO", "ev-new", _ct);
+
+        result.ShouldBe(Result.Ok(Unit.Value));
+        Requests()[0].RawQuery.ShouldBe("?ref_id=AC-AUTO");
+        var patch = Requests().Single(r => r.Method == "PATCH");
+        JsonNode.Parse(patch.Body!)!["evidences"]!.AsArray().Select(e => e!.GetValue<string>()).ShouldBe(["ev-old", "ev-new"]);
+    }
+
+    [Fact]
+    public async Task Link_evidence_already_linked_sends_no_patch()
+    {
+        Respond("/api/applied-controls/", 200, Page(new JsonObject { ["id"] = "ac-1", ["ref_id"] = "AC-AUTO" }));
+        Respond("/api/applied-controls/ac-1/", 200, """{"id": "ac-1", "evidences": ["ev-new"]}""");
+
+        var result = await _ca.Client.LinkEvidenceToAppliedControlAsync("AC-AUTO", "ev-new", _ct);
+
+        result.ShouldBe(Result.Ok(Unit.Value));
+        Requests().ShouldNotContain(r => r.Method == "PATCH");
+    }
+
+    [Fact]
+    public async Task Link_evidence_to_a_missing_control_is_not_found()
+    {
+        Respond("/api/applied-controls/", 200, Page());
+
+        var result = await _ca.Client.LinkEvidenceToAppliedControlAsync("AC-NONE", "ev-new", _ct);
+
+        Codes(result).ShouldBe(["ciso_assistant.not_found"]);
+    }
+
+    [Fact]
     public async Task Find_or_create_evidence_returns_the_existing_one_with_its_latest_hash()
     {
         Respond("/api/evidences/", 200, Page(

@@ -31,6 +31,26 @@ public class PublisherTests
         new(_ca, new InMemoryEvidenceFiles(files ?? new() { ["ev-0001"] = MfaFile, ["ev-0002"] = BackupFile }));
 
     [Fact]
+    public async Task Upload_links_the_evidence_to_its_applied_controls_whether_sent_or_skipped()
+    {
+        var linked = new AuditUpdate.UploadEvidence(Mfa) { AppliedControlRefIds = ["AC-AUTO"] };
+
+        var first = await Publisher().PublishAsync([linked], _ct);
+        var second = await Publisher().PublishAsync([linked], _ct);
+
+        (first.Sent, second.Skipped).ShouldBe((1, 1));
+        _ca.Calls.Where(c => c.StartsWith("link", StringComparison.Ordinal)).ShouldBe(["link uuid-ev-0001 to AC-AUTO", "link uuid-ev-0001 to AC-AUTO"]);
+    }
+
+    [Fact]
+    public async Task Upload_without_controls_links_nothing()
+    {
+        await Publisher().PublishAsync([new AuditUpdate.UploadEvidence(Mfa)], _ct);
+
+        _ca.Calls.ShouldNotContain(c => c.StartsWith("link", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void Dry_run_calls_nothing()
     {
         var report = Core.Publishing.Publisher.DryRun(Plan());
