@@ -68,10 +68,16 @@ jobs:
             jq -c '{openapi, info, all_paths}' "$dir/openapi-paths.json"
             jq -c '.paths | to_entries[] | {(.key): .value}' "$dir/openapi-paths.json"
           fi
-      - name: Show the scope plan and apply
+      - name: Show the seed's scope apply, then the plan and apply after it
         if: ${{ always() }}
         run: |
-          for file in test-results/scope-plan/scope-plan.md test-results/scope-plan/scope-plan.json test-results/scope-plan/first-apply.json test-results/scope-plan/second-apply.json; do
+          seed=test-results/scope-plan/seed-apply.json
+          if [ -f "$seed" ]; then
+            jq -c '{written, failed, skipped, not_applied}' "$seed"
+            jq -r '.changes | group_by(.kind, .action, .outcome)[] | "\(.[0].kind) \(.[0].action) \(.[0].outcome): \(length)"' "$seed"
+            jq -c '.changes[] | select(.outcome != "written")' "$seed"
+          fi
+          for file in test-results/scope-plan/scope-plan.md test-results/scope-plan/scope-plan.json test-results/scope-plan/second-apply.json; do
             if [ -f "$file" ]; then cat "$file"; fi
           done
       - name: Upload functional results
