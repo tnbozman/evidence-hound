@@ -11,7 +11,7 @@ Releases are delivered in one-week sprints. Each sprint has its own file, `sNN-<
 | [s04](s04-collector-sdk-and-manual.md) | Collector SDK, contract test kit, manual-upload collector | 1 |
 | [s05](s05-m365-collector.md) | Microsoft 365 reference collector | 1 |
 | [s06](s06-ciso-assistant-as-configuration.md) | Requirement URNs and the Essential Eight 2023 ML2 mapping; several audits per run; change-only publishing; CISO Assistant as configuration (scope files, plan and apply); audit periods with sign-off | 1 |
-| [s07](s07-thin-deployment.md) | Runner image, Compose stack and scheduling, so Microsoft 365 evidence runs nightly | 1 |
+| [s07](s07-thin-deployment.md) | Runner image, Compose stack and scheduling, so Microsoft 365 evidence runs nightly; users and settings as configuration; tutorial for the private compliance repo and first deployment | 1 |
 | [s08](s08-sophos-veeam-collectors.md) | Sophos Central and Veeam reference collectors | 1 |
 | [s09](s09-e8-gap-collectors.md) | Essential Eight gap collectors: application control from Intune and Defender, vulnerability scan import, manual-upload templates | 1 |
 | [s10](s10-third-parties.md) | Suppliers, contracts and supplier assessments as configuration | 1 |
