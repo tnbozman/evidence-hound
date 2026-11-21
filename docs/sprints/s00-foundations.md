@@ -47,6 +47,10 @@ Status: In progress
 **Functional check**
 - Rebuild container from scratch; run task "test"; set a breakpoint in `Program.cs` and hit it with the "Debug CLI (dry run)" launch configuration.
 
+**Status (2026-11-21)**
+- Repo side done: `devcontainer.json` has every feature and extension listed, the SDK pinned to the `10.0.1xx` band to match `global.json`, `post-create.sh` restores packages and runs `make hooks`. `launch.json` targets `src/EvidenceHound.Cli/bin/Debug/net10.0/hound.dll` (built by `make build`); `tasks.json` exposes build, test, functional test, scripts, lint, coverage, CISO Assistant up and down.
+- Maintainer to do: rebuild the container from scratch in VS Code or Codespaces, run task "test", and hit a breakpoint in `Program.cs` with "Debug CLI (collect --dry-run, example config)". This cannot be run from a headless cloud session.
+
 ### s00-03 CI pipeline
 - [ ] Done
 
@@ -65,7 +69,7 @@ Status: In progress
 - Push a commit containing a fake denylisted word on a scratch branch: `org-data` job fails. Remove it: job passes.
 
 ### s00-04 Start sprint automation
-- [ ] Done
+- [x] Done
 
 **Story:** As the product owner, I want to start a sprint with one action, so that the branch, draft PR and checklist are created consistently.
 
@@ -80,6 +84,10 @@ Status: In progress
 
 **Functional check**
 - Run the workflow for `s01`; branch and draft PR exist; PR body lists all s01 tasks. Close the PR and delete the branch afterwards if s01 is not starting yet.
+
+**Result (2026-11-21)**
+- `bats scripts/tests`: 19 tests pass, including `start-sprint.bats` (8 tests) which runs the real script against a throwaway origin with a stub `gh`: happy path (branch, `Status: In progress`, push, draft PR titled `Sprint s98: Example sprint` with every task), and rejections for an invalid id, a missing sprint, another sprint file in progress, another open sprint PR, and an existing branch.
+- Ran the *Start sprint* workflow on `main` for `s01` (https://github.com/tnbozman/evidence-hound/actions/runs/44844918674): it stopped with `start-sprint: another sprint is open: sprint/s00-foundations. Finish or close it first.`, as designed while s00 is open. The happy path on GitHub runs for real when s01 starts after this sprint merges.
 
 ### s00-05 Repository security settings
 - [ ] Done
