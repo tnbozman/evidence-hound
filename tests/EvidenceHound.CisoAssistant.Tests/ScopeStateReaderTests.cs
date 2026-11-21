@@ -12,7 +12,7 @@ public sealed class ScopeStateReaderTests : IDisposable
     private static readonly string Fingerprint = "0123456789abcdef";
     private static readonly ScopeStateQuery Query = new(
         "Global",
-        ["urn:intuitem:risk:framework:essential-eight-2023"],
+        ["urn:intuitem:risk:framework:essential-eight-2023", "urn:example:risk:library:mapping-example"],
         new Dictionary<string, IReadOnlyList<RequirementKey>> { ["EX-E8-2026"] = [RequirementKey.Ref("ISM-1486")] });
 
     private readonly FakeCisoAssistant _ca = new();
@@ -30,6 +30,7 @@ public sealed class ScopeStateReaderTests : IDisposable
         held.Keys.ShouldBe(
         [
             (ScopeKind.Framework, "urn:intuitem:risk:framework:essential-eight-2023"),
+            (ScopeKind.Framework, "urn:example:risk:library:mapping-example"),
             (ScopeKind.Domain, "Example Pty Ltd"),
             (ScopeKind.Perimeter, "Example Pty Ltd/Corporate IT"),
             (ScopeKind.System, "Example 365"),
@@ -40,6 +41,10 @@ public sealed class ScopeStateReaderTests : IDisposable
             (ScopeKind.Assessment, "EX-E8-2026/ISM-1486"),
         ],
         ignoreOrder: true);
+        held[(ScopeKind.Framework, "urn:intuitem:risk:framework:essential-eight-2023")].Held.Fields.ShouldBe(new Dictionary<string, string> { ["version"] = "2" });
+        held[(ScopeKind.Framework, "urn:example:risk:library:mapping-example")].Held.Fields.ShouldBe(new Dictionary<string, string> { ["version"] = "1" });
+        held[(ScopeKind.Audit, "EX-E8-2026")].Locked.ShouldBeTrue();
+        held[(ScopeKind.System, "Example laptops")].Locked.ShouldBeFalse();
         var domain = held[(ScopeKind.Domain, "Example Pty Ltd")];
         (domain.Held.Fields.ShouldHaveSingleItem(), domain.AppliedState).ShouldBe((new KeyValuePair<string, string>("description", "The whole company."), Fingerprint));
         held[(ScopeKind.Perimeter, "Example Pty Ltd/Corporate IT")].Held.Fields.ShouldBe(new Dictionary<string, string>
@@ -69,7 +74,8 @@ public sealed class ScopeStateReaderTests : IDisposable
             ["eta"] = "2026-06-30",
             ["authors"] = "it@example.com",
         }, ignoreOrder: true);
-        held[(ScopeKind.Document, "identity-policy")].Held.Fields.ShouldBe(new Dictionary<string, string> { ["name"] = "Identity policy", ["domain"] = "Example Pty Ltd" }, ignoreOrder: true);
+        held[(ScopeKind.Document, "identity-policy")].Held.Fields.ShouldBe(
+            new Dictionary<string, string> { ["name"] = "Identity policy", ["domain"] = "Example Pty Ltd", ["hashes"] = "aaaa, bbbb" }, ignoreOrder: true);
         held[(ScopeKind.Control, "AC-MFA")].Held.Fields.ShouldBe(new Dictionary<string, string>
         {
             ["name"] = "Multi-factor authentication",
@@ -85,6 +91,8 @@ public sealed class ScopeStateReaderTests : IDisposable
             ["status"] = "done",
             ["result"] = "compliant",
             ["observation"] = "Reviewed by hand.",
+            ["controls"] = "AC-MFA",
+            ["documents"] = "identity-policy",
         }, ignoreOrder: true);
     }
 
@@ -120,7 +128,14 @@ public sealed class ScopeStateReaderTests : IDisposable
         List("users", new JsonObject { ["id"] = "u-it", ["email"] = "it@example.com" });
         // Owners, authors and reviewers are actors: each user, team or entity has one, and a user's actor names the user as "specific".
         List("actors", new JsonObject { ["id"] = "act-it", ["str"] = "it@example.com", ["type"] = "user", ["specific"] = new JsonObject { ["id"] = "u-it", ["str"] = "it@example.com" } });
-        List("frameworks", new JsonObject { ["id"] = "fw-e8", ["urn"] = "urn:intuitem:risk:framework:essential-eight-2023" }, new JsonObject { ["id"] = "fw-x", ["urn"] = "urn:example:risk:framework:not-in-scope" });
+        List("frameworks",
+            new JsonObject { ["id"] = "fw-e8", ["urn"] = "urn:intuitem:risk:framework:essential-eight-2023", ["library"] = new JsonObject { ["id"] = "lib-e8", ["urn"] = "urn:intuitem:risk:library:essential-eight-2023" } },
+            new JsonObject { ["id"] = "fw-x", ["urn"] = "urn:example:risk:framework:not-in-scope", ["library"] = new JsonObject { ["id"] = "lib-x", ["urn"] = "urn:example:risk:library:not-in-scope" } });
+        List("loaded-libraries",
+            new JsonObject { ["id"] = "lib-e8", ["urn"] = "urn:intuitem:risk:library:essential-eight-2023", ["version"] = 2 },
+            new JsonObject { ["id"] = "lib-map", ["urn"] = "urn:example:risk:library:mapping-example", ["version"] = 1 },
+            new JsonObject { ["id"] = "lib-x", ["urn"] = "urn:example:risk:library:not-in-scope", ["version"] = 1 });
+        List("evidence-revisions", new JsonObject { ["id"] = "rev-2", ["attachment_hash"] = "bbbb" }, new JsonObject { ["id"] = "rev-1", ["attachment_hash"] = "aaaa" });
         List("perimeters", Listed("p-corp", "f-ex"), Listed("p-other", "f-other"));
         Object("perimeters", "p-corp", new JsonObject { ["id"] = "p-corp", ["name"] = "Corporate IT", ["ref_id"] = "PER-CORP", ["description"] = "", ["folder"] = "f-ex" });
         List("assets", Listed("a-365", "f-ex"), Listed("a-laptops", "f-ex"), Listed("a-other", "f-other"));
@@ -148,6 +163,7 @@ public sealed class ScopeStateReaderTests : IDisposable
             ["selected_implementation_groups"] = new JsonArray("2", "1"),
             ["eta"] = "2026-06-30",
             ["due_date"] = null,
+            ["is_locked"] = true,
             ["authors"] = new JsonArray("act-it"),
             ["reviewers"] = new JsonArray(),
         });
@@ -175,6 +191,8 @@ public sealed class ScopeStateReaderTests : IDisposable
                 ["status"] = "done",
                 ["result"] = "compliant",
                 ["observation"] = "Reviewed by hand.",
+                ["applied_controls"] = new JsonArray("ac-mfa"),
+                ["evidences"] = new JsonArray(new JsonObject { ["id"] = "ev-policy", ["str"] = "Identity policy" }),
                 ["requirement"] = new JsonObject { ["urn"] = "urn:intuitem:risk:req_node:essential-eight-2023:ism-1486", ["ref_id"] = "ISM-1486", ["implementation_groups"] = new JsonArray("1") },
             },
             new JsonObject
