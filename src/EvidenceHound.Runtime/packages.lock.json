@@ -98,6 +98,13 @@
           "Microsoft.Extensions.Logging.Abstractions": "[10.0.14, )"
         }
       },
+      "evidencehound.collectors.manual": {
+        "type": "Project",
+        "dependencies": {
+          "EvidenceHound.Collectors.Abstractions": "[0.1.0, )",
+          "YamlDotNet": "[18.1.0, )"
+        }
+      },
       "evidencehound.core": {
         "type": "Project"
       },

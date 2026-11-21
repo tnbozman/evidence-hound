@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/Collectors/EvidenceHound.Collectors.Manual/EvidenceHound.Collectors.Manual.csproj" />
     <Project Path="src/EvidenceHound.CisoAssistant/EvidenceHound.CisoAssistant.csproj" />
     <Project Path="src/EvidenceHound.Cli/EvidenceHound.Cli.csproj" />
     <Project Path="src/EvidenceHound.Collectors.Abstractions/EvidenceHound.Collectors.Abstractions.csproj" />
@@ -12,6 +13,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/EvidenceHound.CisoAssistant.Tests/EvidenceHound.CisoAssistant.Tests.csproj" />
     <Project Path="tests/EvidenceHound.Cli.Tests/EvidenceHound.Cli.Tests.csproj" />
+    <Project Path="tests/EvidenceHound.Collectors.Manual.Tests/EvidenceHound.Collectors.Manual.Tests.csproj" />
     <Project Path="tests/EvidenceHound.Collectors.Testing.Tests/EvidenceHound.Collectors.Testing.Tests.csproj" />
     <Project Path="tests/EvidenceHound.Core.Tests/EvidenceHound.Core.Tests.csproj" />
     <Project Path="tests/EvidenceHound.Core.Yaml.Tests/EvidenceHound.Core.Yaml.Tests.csproj" />

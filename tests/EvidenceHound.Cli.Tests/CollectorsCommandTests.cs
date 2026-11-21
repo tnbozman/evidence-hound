@@ -23,6 +23,10 @@ public sealed class CollectorsCommandTests : IDisposable
               checks: backup.daily, backup.restore_tested, identity.mfa.admins, identity.mfa.users
               settings: tenant (optional)
               secrets: none
+            manual 1.0.0
+              checks: set per instance by setting 'checks'
+              settings: drop_folder (required), patterns (optional), checks (required), due_days (required), owner (required)
+              secrets: none
             widget 0.1.0
               checks: widget.patched
               settings: site (required)

@@ -80,6 +80,14 @@ internal static class TestCollectors
         return Task.FromResult(Collected(context, [Check, "widget.unlisted"], [File], Evidence(File, "{}")));
     });
 
+    /// <summary>Emits the check IDs listed in its <c>checks</c> setting, plus any <paramref name="extra"/> ones.</summary>
+    public static ScriptedCollector ChecksFromSetting(params string[] extra) => new(new([], [], [], ChecksSetting: "checks"), (context, cancellationToken) =>
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        string[] configured = [.. context.Settings.GetOrDefault("checks", "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries), .. extra];
+        return Task.FromResult(Collected(context, configured, [File], Evidence(File, "{}")));
+    });
+
     public static ScriptedCollector DescribesNoChecks() => new(new([], [], []), (context, _) => Task.FromResult(Collected(context, [], [], [])));
 
     public static ScriptedCollector CitesMissingFile() => new(Description, (context, cancellationToken) =>

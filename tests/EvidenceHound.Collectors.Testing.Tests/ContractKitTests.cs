@@ -10,6 +10,8 @@ public sealed class ContractKitTests : IDisposable
 
     private readonly RecordedApi _refusing = RecordedApi.Start().Respond("GET", "/api/widgets", 401, "{\"detail\":\"Invalid token.\"}");
 
+    private static CollectorScenario ConfiguredChecks => new() { Settings = new Dictionary<string, string> { ["checks"] = "widget.patched, widget.backed_up" } };
+
     private CollectorScenario WorkingApi => new() { HttpClients = _working.HttpClients, Secrets = new Dictionary<string, string> { [TestCollectors.TokenKey] = TestCollectors.Token } };
 
     private CollectorScenario RefusingApi => new() { HttpClients = _refusing.HttpClients, Secrets = new Dictionary<string, string> { [TestCollectors.TokenKey] = TestCollectors.Token } };
@@ -49,6 +51,20 @@ public sealed class ContractKitTests : IDisposable
         contract.DescribesAtLeastOneCheck();
         await contract.EvidenceFilesCanBeHashed();
     }
+
+    [Fact]
+    public async Task Checks_named_by_a_setting_count_as_declared()
+    {
+        var contract = new Contract(TestCollectors.ChecksFromSetting(), ConfiguredChecks);
+
+        contract.DescribesAtLeastOneCheck();
+        await contract.EmitsOnlyDeclaredCheckIds();
+    }
+
+    [Fact]
+    public async Task Check_outside_the_named_setting_fails_the_declared_check_ids_contract() =>
+        (await FailsAsync(new Contract(TestCollectors.ChecksFromSetting("widget.unlisted"), ConfiguredChecks).EmitsOnlyDeclaredCheckIds))
+            .Message.ShouldContain("widget.unlisted");
 
     [Fact]
     public void Collector_describing_no_checks_fails_the_describes_contract()

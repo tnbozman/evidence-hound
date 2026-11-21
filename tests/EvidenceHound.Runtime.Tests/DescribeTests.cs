@@ -35,6 +35,21 @@ public class DescribeTests
     }
 
     [Fact]
+    public void Path_settings_are_resolved_against_the_config_files_folder()
+    {
+        var described = new Dictionary<string, CollectorDescription>(StringComparer.Ordinal)
+        {
+            ["widget"] = new(["widget.patched"], [new("drop", "A folder.", Required: true, IsPath: true), new("site", "Not a path.", Required: false)], []),
+        };
+        var source = Path.Combine(Path.GetTempPath(), "hound-example", "hound.yaml");
+
+        var collector = ConfigLoader.Parse(Config("    settings: {drop: ./manual/firewall, site: ./not-a-path}"), source, described).Value().Collectors.ShouldHaveSingleItem();
+
+        collector.Settings["drop"].ShouldBe(Path.Combine(Path.GetTempPath(), "hound-example", "manual", "firewall"));
+        collector.Settings["site"].ShouldBe("./not-a-path");
+    }
+
+    [Fact]
     public void Config_with_every_required_setting_and_secret_is_valid()
     {
         var yaml = Config("""

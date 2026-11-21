@@ -22,6 +22,16 @@ public static class HoundCli
         CancellationToken cancellationToken = default) =>
         RunAsync(args, output, error, configureLogging, [], cancellationToken);
 
+    /// <summary>Runs with <paramref name="input"/> for prompts, such as the attestation questions of <c>hound manual upload</c>.</summary>
+    public static Task<int> RunAsync(
+        string[] args,
+        TextReader input,
+        TextWriter output,
+        TextWriter error,
+        Action<ILoggingBuilder>? configureLogging = null,
+        CancellationToken cancellationToken = default) =>
+        throw new NotImplementedException();
+
     /// <summary>Runs with extra configuration settings (for example <c>HOUND_CA_TOKEN</c>) on top of the environment.</summary>
     internal static Task<int> RunAsync(
         string[] args,
