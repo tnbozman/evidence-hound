@@ -141,6 +141,45 @@ public sealed class CliTests : IDisposable
         _error.ToString().ShouldContain("checks.json");
     }
 
+    [Fact]
+    public async Task Plan_dry_run_prints_dispatcher_messages()
+    {
+        var exitCode = await Run("plan", "--dry-run", "--config", RepoFile("examples", "example-pty-ltd.yaml"), "--checks", RepoFile("fixtures", "checks-sample.json"));
+
+        exitCode.ShouldBe(0);
+        var messages = System.Text.Json.Nodes.JsonNode.Parse(_output.ToString())!.AsArray();
+        messages.Select(m => m!["message_type"]!.GetValue<string>()).ShouldBe([
+            .. Enumerable.Repeat("upload_attachment", 5),
+            .. Enumerable.Repeat("update_requirement_assessment", 4),
+            .. Enumerable.Repeat("update_applied_control", 2),
+        ]);
+        messages[5]!["selector"]!["compliance_assessment__ref_id"]!.GetValue<string>().ShouldBe("EXAMPLE-BASELINE-2026");
+        messages[5]!["values"]!["result"]!.GetValue<string>().ShouldBe("non_compliant");
+        messages[9]!["selector"]!["ref_id"]!.GetValue<string>().ShouldBe("AC-BACKUP");
+        messages[0]!["values"]!["file_content"]!.GetValue<string>().ShouldContain("dry run");
+    }
+
+    [Fact]
+    public async Task Plan_without_dry_run_exits_two()
+    {
+        var exitCode = await Run("plan", "--config", RepoFile("examples", "example-pty-ltd.yaml"), "--checks", RepoFile("fixtures", "checks-sample.json"));
+
+        exitCode.ShouldBe(2);
+        _error.ToString().ShouldContain("--dry-run");
+    }
+
+    [Fact]
+    public async Task Plan_with_config_without_target_exits_three()
+    {
+        var config = Path.Combine(_workDir, "no-target.yaml");
+        await File.WriteAllTextAsync(config, "collectors: []\n", TestContext.Current.CancellationToken);
+
+        var exitCode = await Run("plan", "--dry-run", "--config", config, "--checks", RepoFile("fixtures", "checks-sample.json"));
+
+        exitCode.ShouldBe(3);
+        _error.ToString().ShouldContain("target");
+    }
+
     private static string RepoFile(string folder, string name) => Path.Combine(AppContext.BaseDirectory, "files", folder, name);
 
     public void Dispose()

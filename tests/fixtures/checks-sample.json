@@ -4,7 +4,9 @@
       "check_id": "identity.mfa.admins",
       "outcome": "pass",
       "observation": "All 4 admin accounts at example.com use MFA.",
-      "evidence_refs": ["ev-0001"],
+      "evidence_refs": [
+        "ev-0001"
+      ],
       "collected_at": "2026-01-15T09:30:00Z",
       "source": "example-idp"
     },
@@ -12,7 +14,9 @@
       "check_id": "identity.mfa.users",
       "outcome": "fail",
       "observation": "3 of 40 user accounts have no MFA method.",
-      "evidence_refs": ["ev-0002"],
+      "evidence_refs": [
+        "ev-0002"
+      ],
       "collected_at": "2026-01-15T09:30:00Z",
       "source": "example-idp"
     },
@@ -20,7 +24,9 @@
       "check_id": "identity.mfa.phishing_resistant",
       "outcome": "partial",
       "observation": "Phishing-resistant MFA is enforced for admins only.",
-      "evidence_refs": ["ev-0003"],
+      "evidence_refs": [
+        "ev-0003"
+      ],
       "collected_at": "2026-01-15T09:30:00Z",
       "source": "example-idp"
     },
@@ -28,7 +34,9 @@
       "check_id": "identity.mfa.number_matching",
       "outcome": "pass",
       "observation": "Number matching is on for every user.",
-      "evidence_refs": ["ev-0003"],
+      "evidence_refs": [
+        "ev-0003"
+      ],
       "collected_at": "2026-01-15T09:30:00Z",
       "source": "example-idp"
     },
@@ -36,7 +44,9 @@
       "check_id": "patching.os.critical_48h",
       "outcome": "pass",
       "observation": "Every endpoint has critical OS patches within 48 hours.",
-      "evidence_refs": ["ev-0004"],
+      "evidence_refs": [
+        "ev-0004"
+      ],
       "collected_at": "2026-01-15T10:00:00Z",
       "source": "example-endpoint"
     },
@@ -44,7 +54,9 @@
       "check_id": "patching.apps.critical_48h",
       "outcome": "fail",
       "observation": "2 endpoints have an unpatched critical browser update.",
-      "evidence_refs": ["ev-0004"],
+      "evidence_refs": [
+        "ev-0004"
+      ],
       "collected_at": "2026-01-15T10:00:00Z",
       "source": "example-endpoint"
     },
@@ -52,7 +64,9 @@
       "check_id": "patching.os.supported",
       "outcome": "pass",
       "observation": "Every endpoint runs a supported OS version.",
-      "evidence_refs": ["ev-0004"],
+      "evidence_refs": [
+        "ev-0004"
+      ],
       "collected_at": "2026-01-15T10:00:00Z",
       "source": "example-endpoint"
     },
@@ -68,9 +82,63 @@
       "check_id": "backup.daily",
       "outcome": "pass",
       "observation": "Last night's backup job completed for all 12 servers.",
-      "evidence_refs": ["ev-0005"],
+      "evidence_refs": [
+        "ev-0005"
+      ],
       "collected_at": "2026-01-15T11:15:00Z",
       "source": "example-backup"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ev-0001",
+      "file_name": "mfa-admins.json",
+      "media_type": "application/json",
+      "sha256": "4f2a1c0b7e9d3a5f6c8b0e2d4a6f8c1e3b5d7f9a0c2e4b6d8f1a3c5e7b9d0f2a",
+      "size_bytes": 2048,
+      "collected_at": "2026-01-15T09:30:00Z"
+    },
+    {
+      "id": "ev-0002",
+      "file_name": "mfa-users.json",
+      "media_type": "application/json",
+      "sha256": "8b3d5f7a9c1e2d4f6a8c0e1b3d5f7a9c2e4b6d8f0a1c3e5b7d9f2a4c6e8b0d1f",
+      "size_bytes": 8192,
+      "collected_at": "2026-01-15T09:30:00Z"
+    },
+    {
+      "id": "ev-0003",
+      "file_name": "mfa-methods.json",
+      "media_type": "application/json",
+      "sha256": "1c3e5a7b9d0f2a4c6e8b1d3f5a7c9e0b2d4f6a8c1e3b5d7f9a0c2e4b6d8f1a3c",
+      "size_bytes": 4096,
+      "collected_at": "2026-01-15T09:30:00Z"
+    },
+    {
+      "id": "ev-0004",
+      "file_name": "patch-status.csv",
+      "media_type": "text/csv",
+      "sha256": "9e0b2d4f6a8c1e3b5d7f9a0c2e4b6d8f1a3c5e7b9d0f2a4c6e8b1d3f5a7c9e0b",
+      "size_bytes": 16384,
+      "collected_at": "2026-01-15T09:30:00Z"
+    },
+    {
+      "id": "ev-0005",
+      "file_name": "backup-jobs.csv",
+      "media_type": "text/csv",
+      "sha256": "5d7f9a0c2e4b6d8f1a3c5e7b9d0f2a4c6e8b1d3f5a7c9e0b2d4f6a8c1e3b5d7f",
+      "size_bytes": 1024,
+      "collected_at": "2026-01-15T09:30:00Z"
+    }
+  ],
+  "control_statuses": [
+    {
+      "control": "mfa",
+      "status": "in_progress"
+    },
+    {
+      "control": "backups",
+      "status": "active"
     }
   ]
 }

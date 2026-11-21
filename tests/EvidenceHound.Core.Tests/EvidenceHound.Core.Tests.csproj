@@ -5,4 +5,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\EvidenceHound.Core\EvidenceHound.Core.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Planning\golden\*.json" Link="golden\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

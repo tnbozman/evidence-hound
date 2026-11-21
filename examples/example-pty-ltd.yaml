@@ -1,5 +1,13 @@
 # Example deployment config for the fictional Example Pty Ltd.
 # Everything here is made up. Keep your organisation's real config in a private repo.
-# The full schema (CISO Assistant connection, evidence root, targets) arrives in s03.
+# The full schema (CISO Assistant connection, evidence root, schedules) arrives in s03.
 
 collectors: []
+
+# The CISO Assistant audit that results are published to. Paths are relative to this file.
+target:
+  mapping: ../mappings/example.yaml
+  compliance_assessment: EXAMPLE-BASELINE-2026   # the audit's ref_id in CISO Assistant
+  controls:                                      # config key -> applied control ref_id in CISO Assistant
+    mfa: AC-MFA
+    backups: AC-BACKUP

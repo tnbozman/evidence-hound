@@ -1,4 +1,5 @@
 using EvidenceHound.Core.Checks;
+using EvidenceHound.Core.Planning;
 
 namespace EvidenceHound.Cli.Tests;
 
@@ -43,5 +44,29 @@ public class CheckResultsJsonTests
         var json = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "files", "fixtures", "checks-sample.json"));
 
         CheckResultsJson.Parse(json, "checks-sample.json").Match(list => list.Count, _ => -1).ShouldBe(9);
+    }
+
+    [Fact]
+    public void Parses_evidence_and_control_statuses()
+    {
+        var json = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "files", "fixtures", "checks-sample.json"));
+
+        var run = CheckResultsJson.ParseRun(json, "checks-sample.json").Match(r => r, p => throw new InvalidOperationException(p[0].Message));
+
+        run.Checks.Count.ShouldBe(9);
+        run.Evidence.Select(e => e.Id).ShouldBe(["ev-0001", "ev-0002", "ev-0003", "ev-0004", "ev-0005"]);
+        run.Evidence[0].FileName.ShouldBe("mfa-admins.json");
+        run.ControlStatuses.Select(c => (c.ControlKey, c.State)).ShouldBe([("mfa", ControlState.InProgress), ("backups", ControlState.Active)]);
+    }
+
+    [Theory]
+    [InlineData("""{"checks": [], "evidence": [{"id": "ev-1", "file_name": "a", "media_type": "text/plain", "sha256": "abc", "size_bytes": 1, "collected_at": "2026-01-15T09:30:00Z"}]}""", "evidence.sha256_invalid")]
+    [InlineData("""{"checks": [], "control_statuses": [{"control": "mfa", "status": "done"}]}""", "checks.control_status_unknown")]
+    public void Evidence_and_control_status_problems_name_the_file(string json, string code)
+    {
+        var problem = CheckResultsJson.ParseRun(json, "checks.json").Match(_ => throw new InvalidOperationException("parsed"), p => p[0]);
+
+        problem.Code.ShouldBe(code);
+        problem.Message.ShouldStartWith("checks.json");
     }
 }
