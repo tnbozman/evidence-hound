@@ -39,7 +39,8 @@ public static class ScopeLoader
     private static readonly string[] AuditControlKeys = ["ref_id", "requirements"];
     private static readonly string[] AssessmentKeys = ["ref", "urn", "status", "result", "observation"];
     private static readonly string[] Statuses = ["to_do", "in_progress", "in_review", "done"];
-    private static readonly string[] CycleKeys = ["period", "starts"];
+    private static readonly string[] CycleKeys = ["period", "starts", "close"];
+    private static readonly string[] Closes = ["sign_off", "auto"];
     private static readonly string[] Periods = ["month", "quarter", "half_year", "year"];
     private static readonly string[] SignOffKeys = ["period", "by", "date"];
     private static readonly string[] UnlistedKeys = ["result", "reason"];
@@ -257,7 +258,8 @@ public static class ScopeLoader
         file.Keys(map, CycleKeys);
         var period = file.OneOf(map, "period", Periods, required: true);
         var starts = file.Required(map, "starts");
-        return period is null || starts is null ? null : new AuditCycle(period, starts, file.At(map));
+        var close = file.OneOf(map, "close", Closes, required: false) ?? "sign_off";
+        return period is null || starts is null ? null : new AuditCycle(period, starts, file.At(map)) { Close = close };
     }
 
     private static SignOff? ReadSignOff(YamlMappingNode item, FileReader file)
@@ -266,7 +268,7 @@ public static class ScopeLoader
         var period = file.Required(item, "period");
         var by = file.Required(item, "by");
         var date = file.Required(item, "date");
-        return period is null || by is null || date is null ? null : new SignOff(period, by, date);
+        return period is null || by is null || date is null ? null : new SignOff(period, by, date) { At = file.At(item) };
     }
 
     private static UnlistedRule? ReadUnlisted(YamlMappingNode map, FileReader file)

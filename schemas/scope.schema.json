@@ -351,6 +351,7 @@
           }
         },
         "cycle": {
+          "description": "Run the audit in periods: each period is its own audit, <ref_id>-<label> such as EX-E8-BACKUP-2026Q4.",
           "type": "object",
           "additionalProperties": false,
           "required": [
@@ -367,25 +368,39 @@
               ]
             },
             "starts": {
+              "description": "The first period's first day: the first of a month.",
               "$ref": "#/$defs/date"
+            },
+            "close": {
+              "description": "How an ended period closes: sign_off (the default) locks it once sign_offs records it; auto locks it when it ends.",
+              "enum": [
+                "sign_off",
+                "auto"
+              ]
             }
           }
         },
         "sign_offs": {
+          "description": "Each ended period's sign-off, so the approval is a reviewed commit.",
           "type": "array",
           "items": {
             "type": "object",
             "additionalProperties": false,
             "required": [
-              "role",
-              "name"
+              "period",
+              "by",
+              "date"
             ],
             "properties": {
-              "role": {
+              "period": {
+                "description": "The period's label, such as 2026Q4.",
                 "$ref": "#/$defs/text"
               },
-              "name": {
+              "by": {
                 "$ref": "#/$defs/text"
+              },
+              "date": {
+                "$ref": "#/$defs/date"
               }
             }
           }

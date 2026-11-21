@@ -1,3 +1,4 @@
+using System.Globalization;
 using EvidenceHound.Core.Frameworks;
 using EvidenceHound.Core.Mapping;
 
@@ -93,7 +94,63 @@ public static class ScopeValidator
             .. ResultConflicts(audit, snapshot, targets),
             .. FieldVisibilityProblems(audit),
             .. UnlistedProblems(audit),
+            .. CycleProblems(audit),
         ];
+    }
+
+    /// <summary>A cycle starts on the first of a month; each sign-off names one of its periods, and is dated after that period ended.</summary>
+    private static IEnumerable<ScopeProblem> CycleProblems(ScopeAudit audit)
+    {
+        if (audit.Cycle is not { } cycle)
+        {
+            return audit.SignOffs.Take(1).Select(s => new ScopeProblem(
+                "scope.sign_off_without_cycle",
+                s.At ?? audit.At,
+                $"audit '{audit.RefId}' records sign-offs but has no 'cycle'.",
+                "Add a 'cycle', or remove the sign-offs."));
+        }
+
+        if (!DateOnly.TryParseExact(cycle.Starts, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var first) || first.Day != 1)
+        {
+            return
+            [
+                new ScopeProblem(
+                    "scope.cycle_start_invalid",
+                    cycle.At,
+                    $"the cycle of audit '{audit.RefId}' starts on '{cycle.Starts}', which is not the first day of a month.",
+                    "Start the cycle on the first of a month, such as \"2026-07-01\"."),
+            ];
+        }
+
+        return audit.SignOffs.SelectMany(s => SignOffProblems(audit, cycle, s));
+    }
+
+    private static IEnumerable<ScopeProblem> SignOffProblems(ScopeAudit audit, AuditCycle cycle, SignOff signOff)
+    {
+        var at = signOff.At ?? audit.At;
+        if (!DateOnly.TryParseExact(signOff.Date, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+        {
+            yield return new ScopeProblem("scope.sign_off_date_invalid", at, $"sign-off date '{signOff.Date}' is not a date.", "Write it as YYYY-MM-DD.");
+            yield break;
+        }
+
+        var periods = AuditPeriods.Until(audit.RefId, cycle, date.AddYears(1));
+        if (periods.FirstOrDefault(p => p.Label == signOff.Period) is not { } period)
+        {
+            yield return new ScopeProblem(
+                "scope.sign_off_unknown_period",
+                at,
+                $"sign-off period '{signOff.Period}' is not a period of audit '{audit.RefId}'.",
+                periods.Count > 0 ? $"Name a period such as '{periods[^1].Label}'." : "Name a period that starts on or after the cycle's start.");
+        }
+        else if (date <= period.End)
+        {
+            yield return new ScopeProblem(
+                "scope.sign_off_early",
+                at,
+                $"period '{signOff.Period}' is signed off on {signOff.Date}, before it ends on {period.End:yyyy-MM-dd}.",
+                "Sign a period off after it has ended.");
+        }
     }
 
     private static IEnumerable<ScopeProblem> FrameworkProblems(ScopeAudit audit, FrameworkSnapshot snapshot)
