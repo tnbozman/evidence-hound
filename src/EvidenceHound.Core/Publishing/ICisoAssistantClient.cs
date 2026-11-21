@@ -13,9 +13,6 @@ public interface ICisoAssistantClient
 {
     Task<Result<Unit>> CheckHealthAsync(CancellationToken cancellationToken);
 
-    /// <summary>The ID of the one requirement assessment for this requirement in this audit.</summary>
-    Task<Result<string>> FindRequirementAssessmentAsync(string complianceAssessmentRefId, string requirementRefId, CancellationToken cancellationToken);
-
     /// <summary>Every requirement assessment in this audit for the requirement: one for a URN, one or more for a repeated ref.</summary>
     Task<Result<IReadOnlyList<RemoteRequirementAssessment>>> FindRequirementAssessmentsAsync(string complianceAssessmentRefId, RequirementKey requirement, CancellationToken cancellationToken);
 

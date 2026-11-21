@@ -24,7 +24,10 @@ public sealed class ClientFunctionalTests(CisoAssistantFixture ciso) : IDisposab
         var ct = TestContext.Current.CancellationToken;
         var client = _services.GetRequiredService<ICisoAssistantClient>();
 
-        var id = Value(await client.FindRequirementAssessmentAsync("EXAMPLE-BASELINE-2026", "EX-1.2", ct));
+        var row = Value(await client.FindRequirementAssessmentsAsync("EXAMPLE-BASELINE-2026", RequirementKey.Ref("EX-1.2"), ct)).ShouldHaveSingleItem();
+        row.RefId.ShouldBe("EX-1.2");
+        row.Urn.ShouldStartWith("urn:example:risk:req_node:example-baseline");
+        var id = row.Id;
         Value(await client.UpdateRequirementAssessmentAsync(
             id, new RequirementAssessmentValues(ComplianceResult.PartiallyCompliant, "Set by a functional test.", []), ct));
 

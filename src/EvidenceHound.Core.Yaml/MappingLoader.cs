@@ -11,7 +11,7 @@ namespace EvidenceHound.Core.Yaml;
 public static class MappingLoader
 {
     private static readonly string[] TopLevelKeys = ["framework_urn", "description", "requirements"];
-    private static readonly string[] RequirementKeys = ["ref", "rule", "threshold", "checks"];
+    private static readonly string[] RequirementKeys = ["ref", "urn", "rows", "rule", "threshold", "checks"];
 
     public static Result<LoadedMapping> Parse(string yaml, string source, IReadOnlySet<CheckId>? knownChecks = null)
     {
@@ -21,7 +21,11 @@ public static class MappingLoader
         var at = new Locator(source);
         return LoadRoot(yaml, at)
             .Bind(root => ParseMapping(root, at))
-            .Map(parsed => new LoadedMapping(parsed.Mapping, UnknownCheckWarnings(parsed.CheckNodes, knownChecks, at)));
+            .Map(parsed => new LoadedMapping(parsed.Mapping, UnknownCheckWarnings(parsed.CheckNodes, knownChecks, at))
+            {
+                Source = source,
+                Lines = parsed.Lines,
+            });
     }
 
     private static Result<YamlMappingNode> LoadRoot(string yaml, Locator at)
@@ -59,7 +63,7 @@ public static class MappingLoader
             ? Result.Fail<ParsedMapping>(problems)
             : urn.Bind(urnNode => requirements.Bind(parsed =>
                 Located(FrameworkMapping.Create(urnNode.Value!, parsed.Select(r => r.Mapping)), urnNode.Start, at)
-                    .Map(mapping => new ParsedMapping(mapping, [.. parsed.SelectMany(r => r.CheckNodes)]))));
+                    .Map(mapping => new ParsedMapping(mapping, [.. parsed.SelectMany(r => r.CheckNodes)], [.. parsed.Select(r => r.Line)]))));
     }
 
     private static Result<IReadOnlyList<ParsedRequirement>> ParseRequirements(YamlSequenceNode list, Locator at)
@@ -73,7 +77,7 @@ public static class MappingLoader
     {
         var refs = list.Children
             .OfType<YamlMappingNode>()
-            .Select(item => Child(item, "ref"))
+            .Select(item => Child(item, "ref") ?? Child(item, "urn"))
             .OfType<YamlScalarNode>()
             .Where(node => !string.IsNullOrEmpty(node.Value))
             .ToArray();
@@ -83,7 +87,7 @@ public static class MappingLoader
             .Select(pair => at.Problem(
                 pair.Node.Start,
                 "mapping.duplicate_requirement_ref",
-                $"requirement ref '{pair.Node.Value}' is already used at line {pair.First!.Start.Line.ToString(CultureInfo.InvariantCulture)}."));
+                $"requirement '{pair.Node.Value}' is already used at line {pair.First!.Start.Line.ToString(CultureInfo.InvariantCulture)}."));
     }
 
     private static Result<ParsedRequirement> ParseRequirement(YamlNode item, Locator at)
@@ -93,15 +97,36 @@ public static class MappingLoader
             return Result.Fail<ParsedRequirement>(at.Problem(item.Start, "mapping.requirement_not_a_map", "each requirement must be a map with ref, rule and checks."));
         }
 
-        var reference = RequiredScalar(map, "ref", at);
+        var key = ParseKey(map, at);
         var rule = ParseRule(map, at);
         var checks = ParseChecks(map, at);
-        Problem[] problems = [.. UnknownKeys(map, RequirementKeys, at), .. ProblemsOf(reference), .. ProblemsOf(rule), .. ProblemsOf(checks)];
+        Problem[] problems = [.. UnknownKeys(map, RequirementKeys, at), .. ProblemsOf(key), .. ProblemsOf(rule), .. ProblemsOf(checks)];
         return problems.Length > 0
             ? Result.Fail<ParsedRequirement>(problems)
-            : reference.Bind(refNode => rule.Bind(parsedRule => checks.Bind(parsedChecks =>
-                Located(RequirementMapping.Create(refNode.Value!, parsedChecks.Select(c => c.Id), parsedRule), map.Start, at)
-                    .Map(mapping => new ParsedRequirement(mapping, [.. parsedChecks])))));
+            : key.Bind(parsedKey => rule.Bind(parsedRule => checks.Bind(parsedChecks =>
+                Located(RequirementMapping.Create(parsedKey, parsedChecks.Select(c => c.Id), parsedRule), map.Start, at)
+                    .Map(mapping => new ParsedRequirement(mapping, [.. parsedChecks], (int)map.Start.Line)))));
+    }
+
+    /// <summary>Exactly one of <c>ref</c> and <c>urn</c>; <c>rows: all</c> only with a ref.</summary>
+    private static Result<RequirementKey> ParseKey(YamlMappingNode map, Locator at)
+    {
+        var rows = Child(map, "rows");
+        var hasRef = Child(map, "ref") is not null;
+        var hasUrn = Child(map, "urn") is not null;
+        if (hasRef == hasUrn)
+        {
+            return Result.Fail<RequirementKey>(at.Problem(map.Start, "mapping.requirement_name_invalid", "each requirement needs exactly one of 'ref' and 'urn'."));
+        }
+
+        if (rows is not null && (hasUrn || rows is not YamlScalarNode { Value: "all" }))
+        {
+            return Result.Fail<RequirementKey>(at.Problem(rows.Start, "mapping.rows_invalid", "'rows' can only be 'all', and only with 'ref': a urn names one row."));
+        }
+
+        return hasUrn
+            ? RequiredScalar(map, "urn", at).Map(node => RequirementKey.Urn(node.Value!))
+            : RequiredScalar(map, "ref", at).Map(node => RequirementKey.Ref(node.Value!, allRows: rows is not null));
     }
 
     private static Result<MappingRule> ParseRule(YamlMappingNode map, Locator at)
@@ -160,9 +185,9 @@ public static class MappingLoader
 
     private sealed record ParsedCheck(CheckId Id, YamlNode Node);
 
-    private sealed record ParsedRequirement(RequirementMapping Mapping, IReadOnlyList<ParsedCheck> CheckNodes);
+    private sealed record ParsedRequirement(RequirementMapping Mapping, IReadOnlyList<ParsedCheck> CheckNodes, int Line);
 
-    private sealed record ParsedMapping(FrameworkMapping Mapping, IReadOnlyList<ParsedCheck> CheckNodes);
+    private sealed record ParsedMapping(FrameworkMapping Mapping, IReadOnlyList<ParsedCheck> CheckNodes, IReadOnlyList<int> Lines);
 
     private sealed record Locator(string Source)
     {

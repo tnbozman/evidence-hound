@@ -122,6 +122,7 @@ internal static class PublishCommand
             {
                 ["update"] = item.Description,
                 ["outcome"] = item.Outcome.ToString().ToLowerInvariant(),
+                ["note"] = item.Note,
                 ["problems"] = new JsonArray([.. item.Problems.Select(p => new JsonObject { ["code"] = p.Code, ["message"] = p.Message })]),
             })]),
         };

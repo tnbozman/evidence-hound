@@ -15,14 +15,29 @@ internal sealed class CisoAssistantClient(HttpClient http) : ICisoAssistantClien
     public async Task<Result<Unit>> CheckHealthAsync(CancellationToken cancellationToken) =>
         (await SendAsync(new HttpRequestMessage(HttpMethod.Get, "health/"), "for the health check", cancellationToken)).Map(_ => Unit.Value);
 
-    public Task<Result<string>> FindRequirementAssessmentAsync(string complianceAssessmentRefId, string requirementRefId, CancellationToken cancellationToken) =>
-        FindOneAsync("requirement-assessments/", "requirement assessment", Selector.RequirementInAudit(complianceAssessmentRefId, requirementRefId), cancellationToken);
+    public async Task<Result<IReadOnlyList<RemoteRequirementAssessment>>> FindRequirementAssessmentsAsync(
+        string complianceAssessmentRefId, RequirementKey requirement, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(requirement);
+        var selector = requirement.Kind == RequirementKeyKind.Urn
+            ? Selector.RequirementUrnInAudit(complianceAssessmentRefId, requirement.Value)
+            : Selector.RequirementInAudit(complianceAssessmentRefId, requirement.Value);
+        var page = await SendAsync(new HttpRequestMessage(HttpMethod.Get, $"requirement-assessments/?{selector.ToQueryString()}"), $"to find the requirement assessments for {selector}", cancellationToken);
+        return page.Bind(p => Results(p) switch
+        {
+            [] => Result.Fail<IReadOnlyList<RemoteRequirementAssessment>>(ApiProblems.NotFound("requirement assessment", selector)),
+            var rows => Result.Ok<IReadOnlyList<RemoteRequirementAssessment>>([.. rows.Select(Row)]),
+        });
+    }
 
-    public Task<Result<IReadOnlyList<RemoteRequirementAssessment>>> FindRequirementAssessmentsAsync(string complianceAssessmentRefId, RequirementKey requirement, CancellationToken cancellationToken) =>
-        throw new NotImplementedException();
-
-    public Task<Result<RemoteAudit>> FindAuditAsync(string complianceAssessmentRefId, CancellationToken cancellationToken) =>
-        throw new NotImplementedException();
+    public async Task<Result<RemoteAudit>> FindAuditAsync(string complianceAssessmentRefId, CancellationToken cancellationToken)
+    {
+        // The read serializer lists the selected groups by name; the write data has their ref_ids.
+        var found = await FindOneAsync("compliance-assessments/", "audit", Selector.ByRefId(complianceAssessmentRefId), cancellationToken);
+        return await found.BindAsync(async id =>
+            (await SendAsync(new HttpRequestMessage(HttpMethod.Get, $"compliance-assessments/{Uri.EscapeDataString(id)}/object/"), $"to read audit {complianceAssessmentRefId}", cancellationToken))
+                .Map(audit => new RemoteAudit(id, Strings(audit["selected_implementation_groups"]))));
+    }
 
     public async Task<Result<Unit>> UpdateRequirementAssessmentAsync(string requirementAssessmentId, RequirementAssessmentValues values, CancellationToken cancellationToken)
     {
@@ -146,6 +161,15 @@ internal sealed class CisoAssistantClient(HttpClient http) : ICisoAssistantClien
     /// <summary>The objects in a list response: a paginated <c>{"results": [...]}</c> or a bare array.</summary>
     private static List<JsonNode> Results(JsonNode page) =>
         [.. (page as JsonArray ?? page["results"] as JsonArray ?? []).OfType<JsonNode>()];
+
+    /// <summary>A requirement assessment from the list endpoint, which nests its requirement node.</summary>
+    private static RemoteRequirementAssessment Row(JsonNode row)
+    {
+        var requirement = row["requirement"] as JsonObject ?? throw new InvalidOperationException("CISO Assistant returned a requirement assessment without its requirement.");
+        return new RemoteRequirementAssessment(Id(row), (string?)requirement["urn"] ?? "", (string?)requirement["ref_id"], Strings(requirement["implementation_groups"]));
+    }
+
+    private static List<string> Strings(JsonNode? node) => [.. (node as JsonArray ?? []).Select(n => (string?)n).OfType<string>()];
 
     private static string Id(JsonNode node) => (string?)node["id"] ?? throw new InvalidOperationException("CISO Assistant returned an object without an id.");
 }

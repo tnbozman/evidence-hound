@@ -40,7 +40,8 @@ public class FrameworkSnapshotTests
         read.FrameworkUrn.ShouldBe(snapshot.FrameworkUrn);
         read.Groups.ShouldBe(snapshot.Groups);
         read.Nodes.Count.ShouldBe(snapshot.Nodes.Count);
-        read.Nodes[2].ShouldBeEquivalentTo(snapshot.Nodes[2]);
+        read.Nodes.Select(n => (n.Urn, n.RefId, n.ParentUrn, string.Join(",", n.Groups), n.Title))
+            .ShouldBe(snapshot.Nodes.Select(n => (n.Urn, n.RefId, n.ParentUrn, string.Join(",", n.Groups), n.Title)));
         FrameworkSnapshotJson.Write(read).ShouldBe(json);
     }
 

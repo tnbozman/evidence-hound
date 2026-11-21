@@ -5,4 +5,8 @@ namespace EvidenceHound.Core.Mapping;
 /// <param name="Result">The assessed state.</param>
 /// <param name="Observation">Generated text listing the rule and each contributing check with its outcome.</param>
 /// <param name="EvidenceRefs">Sorted, distinct evidence IDs from the contributing checks.</param>
-public sealed record RequirementResult(string RequirementRef, ComplianceResult Result, string Observation, IReadOnlyList<string> EvidenceRefs);
+public sealed record RequirementResult(string RequirementRef, ComplianceResult Result, string Observation, IReadOnlyList<string> EvidenceRefs)
+{
+    /// <summary>How the mapping names the requirement. Defaults to <see cref="RequirementRef"/> as a ref.</summary>
+    public RequirementKey Key { get; init; } = RequirementKey.Ref(RequirementRef);
+}

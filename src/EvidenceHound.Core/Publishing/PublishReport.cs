@@ -15,6 +15,9 @@ public enum PublishOutcome
     Failed,
 }
 
+/// <summary>How an update that did not fail ended, and why when the outcome alone does not say.</summary>
+public sealed record PublishDone(PublishOutcome Outcome, string? Note = null);
+
 /// <summary>One update's outcome, a description for people, and the problems if it failed.</summary>
 public sealed record PublishItem(AuditUpdate Update, string Description, PublishOutcome Outcome, IReadOnlyList<Problem> Problems)
 {
@@ -25,9 +28,16 @@ public sealed record PublishItem(AuditUpdate Update, string Description, Publish
     public static PublishItem For(AuditUpdate update, Result<PublishOutcome> outcome)
     {
         ArgumentNullException.ThrowIfNull(outcome);
+        return For(update, outcome.Map(done => new PublishDone(done)));
+    }
+
+    /// <summary>The item for an update whose sending ended in <paramref name="done"/>, with its note.</summary>
+    public static PublishItem For(AuditUpdate update, Result<PublishDone> done)
+    {
+        ArgumentNullException.ThrowIfNull(done);
         var description = UpdateDescriptions.Describe(update);
-        return outcome.Match(
-            done => new PublishItem(update, description, done, []),
+        return done.Match(
+            ok => new PublishItem(update, description, ok.Outcome, []) { Note = ok.Note },
             problems => new PublishItem(update, description, PublishOutcome.Failed, problems));
     }
 }

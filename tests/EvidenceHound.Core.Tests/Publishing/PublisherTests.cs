@@ -89,7 +89,7 @@ public class PublisherTests
         _ca.Calls.ShouldBe([
             "find-or-create ev-0001", "upload uuid-ev-0001 mfa-admins.json",
             "find-or-create ev-0002", "upload uuid-ev-0002 backup-jobs.json",
-            "find EX-1.1", "update ra-EX-1.1",
+            "audit EXAMPLE-BASELINE-2026", "find EX-1.1", "update ra-EX-1.1",
             "find EX-3.1", "update ra-EX-3.1",
             "control AC-MFA",
         ]);

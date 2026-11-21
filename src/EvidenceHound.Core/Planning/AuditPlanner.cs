@@ -40,7 +40,10 @@ public static class AuditPlanner
             .OrderBy(e => e.Id, StringComparer.Ordinal)
             .Select(e => new AuditUpdate.UploadEvidence(e));
         IEnumerable<AuditUpdate> requirements = requirementResults
-            .Select(r => new AuditUpdate.UpdateRequirementAssessment(target.ComplianceAssessmentRefId, r.RequirementRef, r.Result, r.Observation, r.EvidenceRefs));
+            .Select(r => new AuditUpdate.UpdateRequirementAssessment(target.ComplianceAssessmentRefId, r.RequirementRef, r.Result, r.Observation, r.EvidenceRefs)
+            {
+                Requirement = r.Key,
+            });
         IEnumerable<AuditUpdate> controls = controlStatuses
             .OrderBy(c => c.ControlKey, StringComparer.Ordinal)
             .Select(c => new AuditUpdate.UpdateAppliedControl(target.AppliedControlRefIds[c.ControlKey], c.State));

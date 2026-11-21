@@ -17,7 +17,11 @@ public sealed record FrameworkSnapshot(
     public const int TitleLength = 80;
 
     /// <summary>The nodes a requirement key names: every node with the ref, or the one node with the URN. Empty when none.</summary>
-    public IReadOnlyList<SnapshotNode> Resolve(RequirementKey key) => throw new NotImplementedException();
+    public IReadOnlyList<SnapshotNode> Resolve(RequirementKey key)
+    {
+        ArgumentNullException.ThrowIfNull(key);
+        return [.. Nodes.Where(node => (key.Kind == RequirementKeyKind.Urn ? node.Urn : node.RefId) == key.Value)];
+    }
 }
 
 /// <summary>One implementation group, such as a maturity level or a priority phase.</summary>
