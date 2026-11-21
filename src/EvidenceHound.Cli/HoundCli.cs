@@ -19,6 +19,16 @@ public static class HoundCli
         CancellationToken cancellationToken = default) =>
         RunAsync(args, output, error, configureLogging, [], cancellationToken);
 
+    /// <summary>Runs with extra configuration settings (for example <c>HOUND_CA_TOKEN</c>) on top of the environment. Not built yet.</summary>
+    internal static Task<int> RunAsync(
+        string[] args,
+        TextWriter output,
+        TextWriter error,
+        Action<ILoggingBuilder>? configureLogging,
+        IReadOnlyDictionary<string, string?> settings,
+        CancellationToken cancellationToken) =>
+        throw new NotImplementedException($"{args}{output}{error}{configureLogging}{settings}{cancellationToken}");
+
     internal static async Task<int> RunAsync(
         string[] args,
         TextWriter output,

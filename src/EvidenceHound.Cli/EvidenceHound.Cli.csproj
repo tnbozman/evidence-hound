@@ -11,6 +11,7 @@
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="EvidenceHound.Cli.Tests" />
+    <InternalsVisibleTo Include="EvidenceHound.Functional.Tests" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\EvidenceHound.Core\EvidenceHound.Core.csproj" />

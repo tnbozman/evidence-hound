@@ -1,0 +1,70 @@
+{
+  "checks": [
+    {
+      "check_id": "identity.mfa.admins",
+      "outcome": "pass",
+      "observation": "All 4 admin accounts at example.com use MFA.",
+      "evidence_refs": [
+        "ev-0001"
+      ],
+      "collected_at": "2026-01-15T09:30:00Z",
+      "source": "example-idp"
+    },
+    {
+      "check_id": "identity.mfa.users",
+      "outcome": "fail",
+      "observation": "3 of 40 user accounts have no MFA method.",
+      "evidence_refs": [
+        "ev-0002"
+      ],
+      "collected_at": "2026-01-15T09:30:00Z",
+      "source": "example-idp"
+    },
+    {
+      "check_id": "backup.daily",
+      "outcome": "pass",
+      "observation": "Last night's backup job completed for all 12 servers.",
+      "evidence_refs": [
+        "ev-0003"
+      ],
+      "collected_at": "2026-01-15T09:30:00Z",
+      "source": "example-backup"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ev-0001",
+      "file_name": "mfa-admins.json",
+      "media_type": "application/json",
+      "sha256": "84bed19d3d29b3d3ed117642456e1040e95f94f2b66a078fc6aff7379fbd867f",
+      "size_bytes": 69,
+      "collected_at": "2026-01-15T09:30:00Z"
+    },
+    {
+      "id": "ev-0002",
+      "file_name": "mfa-users.json",
+      "media_type": "application/json",
+      "sha256": "409e298dc6792ecd5278bd42a794f1d47344f24be452cec03b0038f20e9d237f",
+      "size_bytes": 71,
+      "collected_at": "2026-01-15T09:30:00Z"
+    },
+    {
+      "id": "ev-0003",
+      "file_name": "backup-jobs.json",
+      "media_type": "application/json",
+      "sha256": "300db6f7d602ca9181a4a6e11583ce3d7cc9e4f81032a7642f4734cf8b761525",
+      "size_bytes": 67,
+      "collected_at": "2026-01-15T09:30:00Z"
+    }
+  ],
+  "control_statuses": [
+    {
+      "control": "mfa",
+      "status": "in_progress"
+    },
+    {
+      "control": "backups",
+      "status": "active"
+    }
+  ]
+}
