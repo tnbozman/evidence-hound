@@ -30,7 +30,7 @@ public sealed class PublishCommandTests : IDisposable
         exitCode.ShouldBe(ExitCodes.Ok);
         _ca.LogEntries.ShouldBeEmpty();
         var report = Report();
-        report["planned"]!.GetValue<int>().ShouldBe(9);
+        report["planned"]!.GetValue<int>().ShouldBe(10);
         report["sent"]!.GetValue<int>().ShouldBe(0);
         report["items"]![0]!["update"]!.GetValue<string>().ShouldBe("upload evidence ev-0001 (mfa-admins.json)");
         report["items"]![0]!["outcome"]!.GetValue<string>().ShouldBe("planned");
@@ -79,9 +79,9 @@ public sealed class PublishCommandTests : IDisposable
 
         exitCode.ShouldBe(ExitCodes.Ok);
         var report = Report();
-        (report["sent"]!.GetValue<int>(), report["failed"]!.GetValue<int>()).ShouldBe((9, 0));
+        (report["sent"]!.GetValue<int>(), report["failed"]!.GetValue<int>()).ShouldBe((10, 0));
         _ca.LogEntries.ShouldAllBe(e => e.RequestMessage!.Headers!["Authorization"][0] == $"Token {Token}");
-        _logs.Messages.ShouldContain("Published to CISO Assistant: 9 sent, 0 skipped, 0 failed");
+        _logs.Messages.ShouldContain("Published to CISO Assistant: 10 sent, 0 skipped, 0 failed");
     }
 
     [Fact]

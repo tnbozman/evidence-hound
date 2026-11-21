@@ -149,6 +149,7 @@ public sealed class CliTests : IDisposable
             "EX-1.2 partially_compliant",
             "EX-2.1 compliant",
             "EX-3.1 not_assessed",
+            "EX-4.1 not_assessed",
         ]);
     }
 
@@ -173,12 +174,12 @@ public sealed class CliTests : IDisposable
         var messages = System.Text.Json.Nodes.JsonNode.Parse(_output.ToString())!.AsArray();
         messages.Select(m => m!["message_type"]!.GetValue<string>()).ShouldBe([
             .. Enumerable.Repeat("upload_attachment", 5),
-            .. Enumerable.Repeat("update_requirement_assessment", 4),
+            .. Enumerable.Repeat("update_requirement_assessment", 5),
             .. Enumerable.Repeat("update_applied_control", 2),
         ]);
         messages[5]!["selector"]!["compliance_assessment__ref_id"]!.GetValue<string>().ShouldBe("EXAMPLE-BASELINE-2026");
         messages[5]!["values"]!["result"]!.GetValue<string>().ShouldBe("non_compliant");
-        messages[9]!["selector"]!["ref_id"]!.GetValue<string>().ShouldBe("AC-BACKUP");
+        messages[10]!["selector"]!["ref_id"]!.GetValue<string>().ShouldBe("AC-BACKUP");
         messages[0]!["values"]!["file_content"]!.GetValue<string>().ShouldContain("dry run");
     }
 
