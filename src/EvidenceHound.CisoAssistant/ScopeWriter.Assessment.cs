@@ -60,7 +60,7 @@ internal sealed partial class ScopeWriter
         var listed = await http.ListAllAsync("compliance-assessments/", cancellationToken);
         return await listed.BindAsync(async audits =>
         {
-            var existing = IdByField(audits, "ref_id").GetValueOrDefault(write.Change.Key);
+            var existing = IdByRefId(audits, ScopeKind.Audit).GetValueOrDefault(write.Change.Key);
             if (write.Change.Action == ScopeAction.Delete || write.Declared is not { } declared)
             {
                 return await DeleteAsync("compliance-assessments", existing, write, cancellationToken);
@@ -114,7 +114,7 @@ internal sealed partial class ScopeWriter
         var listed = await http.ListAllAsync("evidences/", cancellationToken);
         return await listed.BindAsync(async evidences =>
         {
-            var existing = IdByField(evidences, "ref_id").GetValueOrDefault(write.Change.Key);
+            var existing = IdByRefId(evidences, ScopeKind.Document).GetValueOrDefault(write.Change.Key);
             if (write.Change.Action == ScopeAction.Delete || write.Declared is not { } declared)
             {
                 return await DeleteAsync("evidences", existing, write, cancellationToken);
@@ -164,7 +164,7 @@ internal sealed partial class ScopeWriter
         var listed = await http.ListAllAsync("applied-controls/", cancellationToken);
         return await listed.BindAsync(async controls =>
         {
-            var existing = IdByField(controls, "ref_id").GetValueOrDefault(write.Change.Key);
+            var existing = IdByRefId(controls, ScopeKind.Control).GetValueOrDefault(write.Change.Key);
             if (write.Change.Action == ScopeAction.Delete || write.Declared is not { } declared)
             {
                 return await DeleteAsync("applied-controls", existing, write, cancellationToken);
@@ -278,6 +278,14 @@ internal sealed partial class ScopeWriter
 
         return (await http.ListAllAsync(path, cancellationToken)).Bind(all => Resolve(names, IdByField(all, field), what));
     }
+
+    /// <summary>Each object's ID by its <c>ref_id</c>, or, when it has none, by the one an export made from its name; the write then sets it.</summary>
+    private static Dictionary<string, string> IdByRefId(List<JsonNode> objects, ScopeKind kind) =>
+        objects
+            .Select(o => (Key: Text(o["ref_id"]) ?? (Text(o["name"]) is { } name ? ScopeRefIds.For(kind, name) : null), Id: Id(o)))
+            .Where(o => o.Key is not null)
+            .GroupBy(o => o.Key!, StringComparer.Ordinal)
+            .ToDictionary(g => g.Key, g => g.First().Id, StringComparer.Ordinal);
 
     private static Dictionary<string, string> IdByField(List<JsonNode> objects, string field) =>
         objects.Where(o => Text(o[field]) is not null).GroupBy(o => Text(o[field])!).ToDictionary(g => g.Key, g => Id(g.First()), StringComparer.Ordinal);
