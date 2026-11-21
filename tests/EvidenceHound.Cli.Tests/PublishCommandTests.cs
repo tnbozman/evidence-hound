@@ -99,6 +99,24 @@ public sealed class PublishCommandTests : IDisposable
         _logs.Entries.ShouldContain(e => e.Level == LogLevel.Error && e.Message.Contains("AC-MFA", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public async Task Kafka_transport_without_bootstrap_servers_exits_three()
+    {
+        var exitCode = await Publish(new Dictionary<string, string?> { ["HOUND_TRANSPORT"] = "kafka" });
+
+        exitCode.ShouldBe(ExitCodes.Configuration);
+        _logs.Messages.ShouldContain(m => m.Contains("HOUND_KAFKA_BOOTSTRAP_SERVERS", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Unknown_transport_exits_three()
+    {
+        var exitCode = await Publish(new Dictionary<string, string?> { ["HOUND_TRANSPORT"] = "carrier-pigeon" });
+
+        exitCode.ShouldBe(ExitCodes.Configuration);
+        _logs.Messages.ShouldContain(m => m.Contains("carrier-pigeon", StringComparison.Ordinal));
+    }
+
     private string ApiUrl => $"{_ca.Url}/api/";
 
     private Dictionary<string, string?> Settings() => new() { ["HOUND_CA_URL"] = ApiUrl, ["HOUND_CA_TOKEN"] = Token };

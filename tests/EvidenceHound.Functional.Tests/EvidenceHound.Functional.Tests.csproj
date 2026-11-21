@@ -6,10 +6,12 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Testcontainers" />
+    <PackageReference Include="Testcontainers.Redpanda" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\EvidenceHound.CisoAssistant\EvidenceHound.CisoAssistant.csproj" />
     <ProjectReference Include="..\..\src\EvidenceHound.Cli\EvidenceHound.Cli.csproj" />
+    <ProjectReference Include="..\..\src\EvidenceHound.Transport.Kafka\EvidenceHound.Transport.Kafka.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\dev\ciso-assistant\seed\*" Link="seed\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
