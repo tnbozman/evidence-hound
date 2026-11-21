@@ -140,7 +140,8 @@ objects:
         name: Probe requirement
 YAML
 library_upload="$(curl -s -o "$work/upload" -w '%{http_code}' -H "Authorization: Token $HOUND_CA_TOKEN" \
-  -F "file=@$work/hound-probe-library.yaml;type=application/yaml;filename=hound-probe-library.yaml" "${api}stored-libraries/upload/")"
+  -H 'Content-Disposition: attachment; filename=hound-probe-library.yaml' -H 'Content-Type: application/octet-stream' \
+  --data-binary "@$work/hound-probe-library.yaml" "${api}stored-libraries/upload/")"
 main="$(call GET 'entities/?builtin=true')"
 main_id="$(first_id "$main")"
 main_description="$(body_of "$(call GET "entities/$main_id/")" | jq -r '.description // ""')"
