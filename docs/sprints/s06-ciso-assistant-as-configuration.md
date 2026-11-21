@@ -330,6 +330,10 @@ The layout follows one that has already been tried against CISO Assistant: one s
 - `hound scope apply` does not clear a field the scope removes (such as a control's ETA): it sends only the fields that have values. (Found in s06-09.)
 - The first apply of an audit writes each row it touches with its own PATCH (about 200 for the example scope). Fine for now; a batch endpoint would make it faster. (Found in s06-09.)
 - The scope plan still does not compare a system's `tags` or an audit's `field_visibility` (see s06-07); document files are now compared by hash. (Found in s06-09.)
+- Cycle periods are named `month`, `quarter`, `half_year` and `year`, not `monthly` and so on as the s06-10 story says, to match the period labels. (Found in s06-10.)
+- CISO Assistant v4.3.4 audits have no start or end dates, so a period's dates show only in its `ref_id`, name and ETA (the period's last day). (Found in s06-10.)
+- Only the change-only REST run checks that a target audit is closed (`plan.audit_closed`). `hound publish` and runs over Kafka send to whatever the target names; with a series target that is always the open period, but an explicit period `ref_id` of a closed period would be refused only by CISO Assistant's lock, and an in-review one would be written. (Found in s06-10.)
+- The scope plan labels an audit "awaiting sign-off" for every ended period still in review, however old; it does not yet warn when a sign-off is overdue. (Found in s06-10.)
 - The organisation's own record (CISO Assistant's main entity, used by third-party risk features) is not managed by the scope yet; the scope uses the root folder. Add it once the REST API is confirmed to update it. (Found planning s06.)
 
 ## Sprint review

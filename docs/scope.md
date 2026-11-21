@@ -45,7 +45,7 @@ The local CISO Assistant (`make ca-up`, the dev container and the functional tes
 | `documents` | Static evidence such as policies and reports: `id`, `name`, `files` (paths or globs, relative to the compliance repo, the scope folder's parent), `systems` and `requirements` it supports. A document is linked to the rows it cites in its own audit, and in every other audit of the same framework that shares one of its systems. |
 | `controls` | The applied controls this audit relies on, by `ref_id`, each with the `requirements` it supports in this framework. |
 | `assessments` | Hand-written results for requirements no check covers: `ref` (or `urn`), `status` (`to_do`, `in_progress`, `in_review`, `done`), `result` and `observation`. |
-| `cycle`, `sign_offs` | Optional, for an audit that runs in periods (s06-10): `cycle: {period: month|quarter|half_year|year, starts: YYYY-MM-DD}`, and `sign_offs: [{role, name}]`. |
+| `cycle`, `sign_offs` | Optional, for an audit that runs in periods: `cycle: {period: month|quarter|half_year|year, starts: YYYY-MM-DD, close: sign_off|auto}` and `sign_offs: [{period, by, date}]`. See [Audit periods](#audit-periods). |
 | `unlisted` | Required. What happens to in-group requirements the file does not list: `{result: not_assessed}`, or `{result: not_applicable, reason: …}` for an audit scoped to one system. Nothing is marked not applicable silently. It is applied only with `--config`, because the deployment's mappings say which rows a run computes, and those are left alone. |
 
 A requirement is named by its ref_id, or by its URN when the value starts with `urn:` (needed when a framework repeats a ref).
@@ -55,6 +55,38 @@ Start an audit file with every in-group requirement listed, titled in a comment,
 ```sh
 hound scope new-audit --framework frameworks/essential-eight-2023.json --groups 1,2 --ref-id EX-E8-2026 --out scope/audits/ex-e8-2026.yaml
 ```
+
+## Audit periods
+
+An audit file with a `cycle` describes a series rather than one audit. Each period is its own audit, with `ref_id` `<series>-<label>`:
+
+```yaml
+ref_id: EX-E8-BACKUP
+name: Backups
+cycle: {period: quarter, starts: "2026-07-01"}   # close: sign_off (the default) or auto
+sign_offs:
+  - {period: 2026Q3, by: ceo@example.com, date: "2026-10-14"}
+```
+
+| `period` | Labels | Example `ref_id` |
+| --- | --- | --- |
+| `month` | year and month | `EX-E8-BACKUP-2026M02` |
+| `quarter` | year and calendar quarter | `EX-E8-BACKUP-2026Q4` |
+| `half_year` | year and calendar half | `EX-E8-BACKUP-2027H1` |
+| `year` | year, or `FY` and the year it starts when `starts` is not 1 January | `EX-E8-BACKUP-2026`, `EX-E8-BACKUP-FY2026` |
+
+`starts` must be the first day of a month. Periods follow on from it, each labelled by the month, quarter, half or year it starts in. `hound` works out the periods from the date it runs on (UTC), and each `scope plan` and `scope apply` brings CISO Assistant up to that date:
+
+- The **open** period (the one holding today) is in progress. It is created from the previous period's audit as its baseline, so CISO Assistant copies its results, evidence links and hand-written assessments over, and its ETA is the period's last day. Its documents, controls, hand-written assessments and `unlisted` rule are written to it only.
+- An **ended** period moves to in review and is never written again, by `scope apply` or by runs.
+- With `close: sign_off`, an ended period stays in review until the file records its sign-off in `sign_offs`; the next `scope apply` sets it to done and locks it, so the approval is itself a reviewed commit. With `close: auto` it is done and locked as soon as it ends.
+- A missed boundary is caught up once: an apply after several periods have ended creates or closes each of them in turn.
+
+A deployment target may name the series (`compliance_assessment: EX-E8-BACKUP`): with the config's `scope:` key pointing at this folder, each run publishes to the period open on the run's date. A run never writes to an audit that is in review, done or locked; it reports `plan.audit_closed` instead. Set `HOUND_TODAY=YYYY-MM-DD` to run any command as of another date, for example to check a boundary.
+
+The plan lists what happens to each period under **Audit periods**: opens (with its baseline), closes (in review, awaiting sign-off), awaiting sign-off (still in review from an earlier period), or signed off (done and locked). In JSON these are `periods[]`, each `{audit, event, baseline}`.
+
+CISO Assistant v4.3.4 audits have no start or end dates, so the period shows in the `ref_id`, the name (`Backups 2026Q4`) and the ETA. Locking an audit does not freeze the applied controls it links to, so a locked period never blocks the open one.
 
 ## Validate
 
@@ -78,6 +110,8 @@ Every problem is reported at once with its file, line, code and a hint, and the 
 | `scope.result_conflict` | A hand-written result for a requirement a target's mapping also computes, so a person and a collector would write the same row. |
 | `scope.field_not_writable` | `field_visibility` leaves `result`, `observation` or `evidences` below `edit` for the auditor. |
 | `scope.unlisted_missing`, `scope.unlisted_reason_missing` | `unlisted` is missing, or marks requirements not applicable without a reason. |
+| `scope.cycle_start_invalid` | A cycle's `starts` is not the first day of a month. |
+| `scope.sign_off_without_cycle`, `scope.sign_off_date_invalid`, `scope.sign_off_unknown_period`, `scope.sign_off_early` | A sign-off in an audit without a cycle, with a date that is not `YYYY-MM-DD`, for a period the cycle does not have, or dated before its period ends. |
 | `config.target_not_in_scope` | A deployment target names an audit or control the scope does not declare. |
 
 ## Plan
