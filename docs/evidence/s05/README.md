@@ -6,8 +6,8 @@ Evidence that each s05 task meets its acceptance criteria. Plan: [`docs/sprints/
 | --- | --- | --- |
 | s05-01 Graph access and paging | Done | [s05-01.md](s05-01.md) |
 | s05-02 Multi-factor authentication checks | Done | [s05-02.md](s05-02.md) |
-| s05-03 Privileged access checks | Planned | |
-| s05-04 Device and Office hardening checks | Planned | |
-| s05-05 Documentation | Planned | |
+| s05-03 Privileged access checks | Done | [s05-03.md](s05-03.md) |
+| s05-04 Device and Office hardening checks | Done | [s05-04.md](s05-04.md) |
+| s05-05 Documentation | Done (reviewer dry run owed) | [s05-05.md](s05-05.md) |
 
 Fictional data only: every recorded Graph response is for `example.com`, and no organisation data appears in any evidence.
