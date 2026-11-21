@@ -18,6 +18,9 @@ RUN rid="linux-$([ "$TARGETARCH" = arm64 ] && echo arm64 || echo x64)" \
  && dotnet publish src/EvidenceHound.Cli/EvidenceHound.Cli.csproj --no-restore -c Release -o /app \
       -r "$rid" --self-contained false \
       -p:ContinuousIntegrationBuild=true -p:DebugType=none -p:GenerateDocumentationFile=false
+# The runner's data folder (evidence, run records, manual drop folders), owned by the non-root `app` user (1654)
+# so a named volume mounted there starts writable.
+RUN mkdir -p /data/var/lib/evidence-hound
 
 FROM mcr.microsoft.com/dotnet/runtime:10.0-noble-chiseled@sha256:1b234cef150624fe8cc7d027e8d742c0f03a16aef2484dc469eb8c872167255e
 LABEL org.opencontainers.image.title="Evidence Hound runner" \
@@ -31,5 +34,6 @@ WORKDIR /app
 COPY --from=build /app ./
 COPY frameworks/ /app/frameworks/
 COPY mappings/ /app/mappings/
+COPY --from=build --chown=1654:1654 /data/var/lib/evidence-hound /var/lib/evidence-hound
 USER app
 ENTRYPOINT ["/app/hound"]

@@ -1,0 +1,10 @@
+# Reverse proxy for CISO Assistant: HTTPS on CA_HOSTNAME with Caddy's internal certificate authority.
+# Browsers warn until you trust Caddy's root certificate (deploy/compose/README.md shows how), or replace
+# `tls internal` with your own certificate (`tls /path/cert.pem /path/key.pem`) or remove it for a public
+# Let's Encrypt certificate when the host is reachable from the internet.
+{$CA_HOSTNAME}:{$CA_HTTPS_PORT} {
+	tls internal
+	encode zstd gzip
+	reverse_proxy /api/* backend:8000
+	reverse_proxy /* frontend:3000
+}

@@ -183,6 +183,7 @@ public static class HoundCli
     {
         var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { EnvironmentName = "Production" });
         builder.Configuration.AddInMemoryCollection(settings);
+        builder.Configuration.AddFileVariables();
         builder.Logging.ClearProviders();
         builder.Logging.AddFilter("System.Net.Http.HttpClient", LogLevel.Warning);
         builder.Logging.AddProvider(new StderrLoggerProvider(error));

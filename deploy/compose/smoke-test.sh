@@ -11,9 +11,12 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 dir="$root/deploy/compose"
 work="$(mktemp -d)"
-project="hound-smoke-$$"
 
-compose() { docker compose --project-name "$project" --project-directory "$dir" -f "$dir/compose.yml" -f "$work/smoke.override.yml" --env-file "$work/.env" "$@"; }
+# docker compose's own variables, so runner-token.sh (which runs plain `docker compose`) uses this stack too.
+export COMPOSE_PROJECT_NAME="hound-smoke-$$"
+export COMPOSE_FILE="$dir/compose.yml:$work/smoke.override.yml"
+export COMPOSE_ENV_FILES="$work/.env"
+compose() { docker compose "$@"; }
 
 cleanup() {
   status=$?
@@ -36,6 +39,7 @@ fi
 # Settings: the documented example, with a port that is free on CI runners and the runner image under test.
 sed -e "s|^HOUND_RUNNER_IMAGE=.*|HOUND_RUNNER_IMAGE=$image|" \
     -e "s|^CA_HTTPS_PORT=.*|CA_HTTPS_PORT=18443|" \
+    -e "s|^CA_HOSTNAME=.*|CA_HOSTNAME=localhost|" \
     -e "s|^HOUND_SECRETS_DIR=.*|HOUND_SECRETS_DIR=$work/secrets|" \
     -e "s|^HOUND_CONFIG_DIR=.*|HOUND_CONFIG_DIR=$root/examples/compliance-repo|" \
     "$dir/.env.example" >"$work/.env"
@@ -59,13 +63,16 @@ YAML
 echo "smoke: starting the stack"
 compose up -d --wait --wait-timeout 600 postgres backend worker frontend caddy
 
-echo "smoke: seeding a service account, its token and the example staff users"
-token="$(compose exec -T backend python manage.py shell <"$root/dev/ciso-assistant/seed/seed.py" | grep '^HOUND_CA_TOKEN=' | tail -n 1 | cut -d= -f2-)"
-[[ -n "$token" ]] || { echo "smoke: the seed printed no token" >&2; exit 1; }
-printf '%s\n' "$token" >"$work/secrets/hound_ca_token"
+echo "smoke: issuing the runner's token"
+"$dir/runner-token.sh" hound-runner@example.com "$work/secrets" 1
+[[ -s "$work/secrets/hound_ca_token" ]]
+
+echo "smoke: creating the example staff users the example scope names (the dev seed; its own token is discarded)"
+compose exec -T backend python manage.py shell <"$root/dev/ciso-assistant/seed/seed.py" | grep -v '^HOUND_CA_TOKEN='
 
 echo "smoke: applying the example scope through the runner image"
-compose run --rm --no-deps runner scope apply /config/scope --config /config/hound.yaml >"$work/scope-apply.json"
+compose run --rm --no-deps runner scope apply /config/scope --config /config/hound.yaml >"$work/scope-apply.json" \
+  || { cat "$work/scope-apply.json"; exit 1; }
 
 echo "smoke: running the runner once with the fake collector"
 compose run --rm --no-deps runner run --config /config-smoke/hound.yaml

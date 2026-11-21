@@ -1,0 +1,206 @@
+# Reference deployment: CISO Assistant (backend, worker, frontend), PostgreSQL, Caddy with internal TLS and the
+# Evidence Hound collector runner, on one host. Guide: deploy/compose/README.md; tutorial: docs/tutorials/first-deployment.md.
+# Settings: .env (from .env.example). Secrets: Docker secrets files in HOUND_SECRETS_DIR, never variables.
+#
+# Networks:
+#   web      Caddy, frontend and backend. Caddy is the only service with a published port.
+#   data     internal: PostgreSQL with the backend and worker only.
+#   collect  the runner and the CISO Assistant API (backend) only, plus outbound internet for the collectors.
+name: evidence-hound
+
+x-ca-env: &ca-env
+  ALLOWED_HOSTS: backend,localhost,${CA_HOSTNAME:?set CA_HOSTNAME in .env}
+  CISO_ASSISTANT_URL: https://${CA_HOSTNAME}:${CA_HTTPS_PORT:-443}
+  DJANGO_DEBUG: "False"
+  POSTGRES_NAME: ${POSTGRES_DB:-ciso_assistant}
+  POSTGRES_USER: ${POSTGRES_USER:-ciso_assistant}
+  DB_HOST: postgres
+  HOME: /tmp
+  TZ: ${TZ:-UTC}
+
+services:
+  postgres:
+    image: postgres:16.11
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ciso_assistant}
+      POSTGRES_USER: ${POSTGRES_USER:-ciso_assistant}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+      TZ: ${TZ:-UTC}
+    secrets: [postgres_password]
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks: [data]
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 60s
+
+  backend:
+    image: ghcr.io/intuitem/ciso-assistant-community/backend:${CA_VERSION:?set CA_VERSION in .env}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment: *ca-env
+    # CISO Assistant reads its database password and Django secret key from variables, so they are read from
+    # the secrets files at start and exported only inside the container.
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        export POSTGRES_PASSWORD="$$(cat /run/secrets/postgres_password)"
+        DJANGO_SECRET_KEY="$$(cat /run/secrets/django_secret_key)"
+        && exec uv run bash startup.sh
+    secrets: [postgres_password, django_secret_key]
+    volumes:
+      - ca-data:/code/db
+    networks: [web, data, collect]
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health/', timeout=5)"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 300s
+
+  worker:
+    image: ghcr.io/intuitem/ciso-assistant-community/backend:${CA_VERSION}
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment: *ca-env
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        export POSTGRES_PASSWORD="$$(cat /run/secrets/postgres_password)"
+        DJANGO_SECRET_KEY="$$(cat /run/secrets/django_secret_key)"
+        && exec uv run python manage.py run_huey -w 2 --scheduler-interval 60
+    secrets: [postgres_password, django_secret_key]
+    volumes:
+      - ca-data:/code/db
+    networks: [web, data]
+    security_opt: ["no-new-privileges:true"]
+
+  frontend:
+    image: ghcr.io/intuitem/ciso-assistant-community/frontend:${CA_VERSION}
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      PUBLIC_BACKEND_API_URL: http://backend:8000/api
+      PUBLIC_BACKEND_API_EXPOSED_URL: https://${CA_HOSTNAME}:${CA_HTTPS_PORT:-443}/api
+      PROTOCOL_HEADER: x-forwarded-proto
+      HOST_HEADER: x-forwarded-host
+      ADDRESS_HEADER: x-forwarded-for
+      XFF_DEPTH: "1"
+      TZ: ${TZ:-UTC}
+    networks: [web]
+    security_opt: ["no-new-privileges:true"]
+
+  caddy:
+    image: caddy:2.11.4
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      CA_HOSTNAME: ${CA_HOSTNAME}
+      CA_HTTPS_PORT: ${CA_HTTPS_PORT:-443}
+    ports:
+      - ${CA_HTTPS_PORT:-443}:${CA_HTTPS_PORT:-443}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks: [web]
+    security_opt: ["no-new-privileges:true"]
+
+  # The collector runner. No published ports; it reaches only the CISO Assistant API and the internet.
+  runner:
+    image: ${HOUND_RUNNER_IMAGE:?set HOUND_RUNNER_IMAGE in .env}
+    restart: "no"
+    depends_on:
+      backend:
+        condition: service_healthy
+    command: ["run", "--config", "/config/${HOUND_CONFIG_FILE:-hound.yaml}"]
+    environment:
+      HOUND_CA_URL: http://backend:8000/api/
+      HOUND_CA_TOKEN_FILE: /run/secrets/hound_ca_token
+      TZ: ${TZ:-UTC}
+    secrets: [hound_ca_token, m365_client_certificate]
+    volumes:
+      - ${HOUND_CONFIG_DIR:?set HOUND_CONFIG_DIR in .env}:/config:ro
+      - runner-data:/var/lib/evidence-hound
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=64m
+    networks: [collect]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+
+  # Optional: docker compose --profile kafka up -d. Results then go through CISO Assistant's dispatcher
+  # (set HOUND_TRANSPORT=kafka for the runner in an override; see docs/publishing.md).
+  redpanda:
+    image: redpandadata/redpanda:${REDPANDA_VERSION:-v24.3.1}
+    profiles: [kafka]
+    restart: unless-stopped
+    command:
+      - redpanda start --mode dev-container --smp 1
+      - --kafka-addr internal://0.0.0.0:9092
+      - --advertise-kafka-addr internal://redpanda:9092
+    volumes:
+      - redpanda-data:/var/lib/redpanda/data
+    networks: [collect]
+    security_opt: ["no-new-privileges:true"]
+
+  dispatcher:
+    # Upstream publishes no dispatcher image, so it is built from the same CISO Assistant release.
+    build: https://github.com/intuitem/ciso-assistant-community.git#${CA_VERSION}:dispatcher
+    profiles: [kafka]
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+      redpanda:
+        condition: service_started
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        export USER_TOKEN="$$(cat /run/secrets/hound_ca_token)"
+        && exec uv run bash entrypoint.sh
+    environment:
+      API_URL: http://backend:8000/api
+      BOOTSTRAP_SERVERS: redpanda:9092
+      ERRORS_TOPIC: errors
+    secrets: [hound_ca_token]
+    networks: [collect]
+    security_opt: ["no-new-privileges:true"]
+
+secrets:
+  postgres_password:
+    file: ${HOUND_SECRETS_DIR:?set HOUND_SECRETS_DIR in .env}/postgres_password
+  django_secret_key:
+    file: ${HOUND_SECRETS_DIR}/django_secret_key
+  hound_ca_token:
+    file: ${HOUND_SECRETS_DIR}/hound_ca_token
+  m365_client_certificate:
+    file: ${HOUND_SECRETS_DIR}/m365_client_certificate
+
+networks:
+  web: {}
+  data:
+    internal: true
+  collect: {}
+
+volumes:
+  postgres-data:
+  ca-data:
+  caddy-data:
+  caddy-config:
+  runner-data:
+  redpanda-data:

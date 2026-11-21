@@ -35,7 +35,7 @@ setup() {
 @test "the runner is only on its own network, which it shares only with the CISO Assistant API" {
   runner_networks="$(config | jq -r '.services.runner.networks | keys | join(" ")')"
   [ "$runner_networks" = "collect" ]
-  sharing="$(config | jq -r '[.services | to_entries[] | select(.value.networks.collect != null) | .key] | sort | join(" ")')"
+  sharing="$(config | jq -r '[.services | to_entries[] | select(.value.networks // {} | has("collect")) | .key] | sort | join(" ")')"
   [ "$sharing" = "backend runner" ]
   internal="$(config | jq -r '.networks.collect.internal // false')"
   [ "$internal" = "false" ]
