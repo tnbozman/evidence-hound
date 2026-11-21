@@ -211,6 +211,21 @@ public sealed class ClientContractTests : IDisposable
     }
 
     [Fact]
+    public async Task Json_bodies_have_a_content_length_because_the_api_ignores_chunked_bodies()
+    {
+        Respond("/api/evidences/", 200, Page());
+        Respond("/api/evidences/", 201, """{"id": "ev-uuid-1"}""", "POST");
+        Respond("/api/requirement-assessments/ra-1/", 200, """{"id": "ra-1"}""", "PATCH");
+
+        await _ca.Client.FindOrCreateEvidenceAsync("ev-0001", "mfa-admins.json", _ct);
+        await _ca.Client.UpdateRequirementAssessmentAsync("ra-1", Values(), _ct);
+
+        var withBodies = Requests().Where(r => r.Method != "GET").ToList();
+        withBodies.Count.ShouldBe(2);
+        withBodies.ShouldAllBe(r => r.Headers!.ContainsKey("Content-Length") && !r.Headers.ContainsKey("Transfer-Encoding"));
+    }
+
+    [Fact]
     public async Task Upload_evidence_revision_posts_the_file_as_multipart()
     {
         Respond("/api/evidence-revisions/", 201, """{"id": "rev-3"}""", "POST");
