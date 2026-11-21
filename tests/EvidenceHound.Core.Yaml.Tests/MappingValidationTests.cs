@@ -78,6 +78,21 @@ public class MappingValidationTests
     }
 
     [Fact]
+    public void Manual_only_entries_are_checked_too()
+    {
+        var problems = Validate("""
+            framework_urn: urn:example:risk:framework:example-repeated
+            requirements: []
+            manual_only:
+              - ref: ACT-01
+                source: MFA design review record.
+            """);
+
+        problems.ShouldHaveSingleItem().Code.ShouldBe("mapping.ref_ambiguous");
+        problems[0].Message.ShouldContain("line 4");
+    }
+
+    [Fact]
     public void Mapping_for_another_framework_is_reported()
     {
         var problems = Validate("""

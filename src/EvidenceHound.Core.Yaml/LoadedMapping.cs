@@ -10,4 +10,10 @@ public sealed record LoadedMapping(FrameworkMapping Mapping, IReadOnlyList<strin
 
     /// <summary>The line of each requirement, in requirement order.</summary>
     public IReadOnlyList<int> Lines { get; init; } = [];
+
+    /// <summary>Requirements no check covers yet, each with a suggested manual source.</summary>
+    public IReadOnlyList<ManualOnlyRequirement> ManualOnly => throw new NotImplementedException();
 }
+
+/// <summary>A requirement no check covers yet, and the manual source suggested for it (<c>manual_only</c> in a mapping file).</summary>
+public sealed record ManualOnlyRequirement(Mapping.RequirementKey Key, string Source, int Line);

@@ -106,4 +106,46 @@ public class MappingTests
         loaded.Source.ShouldBe(Source);
         loaded.Lines.ShouldBe([3, 6]);
     }
+
+    [Fact]
+    public void Manual_only_lists_requirements_with_their_suggested_source()
+    {
+        const string yaml = """
+            framework_urn: urn:example:risk:framework:example-repeated
+            requirements:
+              - ref: ACT-02
+                rule: all_pass
+                checks: [backup.restore_tested]
+            manual_only:
+              - ref: ACT-01
+                rows: all
+                source: MFA design review record, attested by the identity owner.
+              - urn: urn:example:risk:req_node:example-repeated:idn:act-03
+                source: Quarterly account review.
+            """;
+
+        var loaded = MappingLoader.Parse(yaml, Source).Value();
+
+        loaded.ManualOnly.ShouldBe([
+            new ManualOnlyRequirement(RequirementKey.Ref("ACT-01", allRows: true), "MFA design review record, attested by the identity owner.", 7),
+            new ManualOnlyRequirement(RequirementKey.Urn("urn:example:risk:req_node:example-repeated:idn:act-03"), "Quarterly account review.", 10),
+        ]);
+    }
+
+    [Fact]
+    public void Manual_only_entry_needs_a_source_and_known_keys()
+    {
+        const string yaml = """
+            framework_urn: urn:example:risk:framework:example-repeated
+            requirements: []
+            manual_only:
+              - ref: ACT-01
+                rows: all
+              - ref: ACT-02
+                source: Restore test record.
+                owner: Alex Example
+            """;
+
+        MappingLoader.Parse(yaml, Source).Problems().Select(p => p.Code).ShouldBe(["mapping.key_missing", "mapping.key_unknown"]);
+    }
 }

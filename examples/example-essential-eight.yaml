@@ -1,0 +1,9 @@
+ciso_assistant:
+  url: http://localhost:8000/api/
+  token: env:HOUND_CA_TOKEN
+evidence:
+  root: ../.dev/evidence
+collectors: []
+target:
+  mapping: ../mappings/essential-eight-2023.yaml
+  compliance_assessment: EX-E8-2026

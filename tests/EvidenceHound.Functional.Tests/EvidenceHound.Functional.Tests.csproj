@@ -23,7 +23,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\dev\ciso-assistant\seed\*" Link="seed\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\..\mappings\example.yaml" Link="files\mappings\example.yaml" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\mappings\*.yaml" Link="files\mappings\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\examples\*.yaml" Link="files\examples\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\fixtures\publish\**\*" Link="files\fixtures\publish\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
