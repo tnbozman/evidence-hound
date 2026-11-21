@@ -9,7 +9,7 @@ CA_COMPOSE := dev/ciso-assistant/compose.yml
 CA_ENV := HOUND_CA_SECRET_KEY="$$(scripts/ca-secret-key.sh)"
 SHELL_SCRIPTS := $(wildcard scripts/*.sh scripts/lib/*.sh .devcontainer/*.sh dev/ciso-assistant/seed/*.sh) .githooks/pre-commit
 
-.PHONY: help restore build test test-functional test-scripts coverage lint lint-dotnet lint-shell format run hooks ca-up ca-up-kafka ca-down
+.PHONY: help restore build test test-functional test-template test-scriptscoverage lint lint-dotnet lint-shell format run hooks ca-up ca-up-kafka ca-down
 
 help: ## List targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-16s %s\n", $$1, $$2}'
@@ -31,6 +31,9 @@ coverage: build ## Unit and contract tests with TRX and Cobertura coverage in $(
 test-functional: build ## Functional tests (Testcontainers starts CISO Assistant)
 	dotnet test --no-build -c $(CONFIGURATION) --project tests/EvidenceHound.Functional.Tests \
 	  --results-directory $(RESULTS_DIR) --filter-trait "Category=Functional" --report-trx
+
+test-template: ## Generate a collector from templates/collector, then build and test it
+	scripts/test-template.sh
 
 test-scripts: ## Shell script tests (bats)
 	bats scripts/tests
