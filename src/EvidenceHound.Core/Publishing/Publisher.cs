@@ -8,7 +8,8 @@ namespace EvidenceHound.Core.Publishing;
 /// <summary>
 /// Sends planned audit updates to CISO Assistant in plan order. Every item is attempted; a failed item is
 /// reported and the rest go on. Evidence whose latest revision already has the same SHA-256 is skipped, and
-/// requirement updates cite the CISO Assistant IDs of the evidence uploaded earlier in the plan.
+/// requirement updates cite the CISO Assistant IDs of the evidence uploaded earlier in the plan, or else the IDs the plan already knew.
+/// An update that names its rows writes those rows; one that does not is matched to the audit's rows here.
 /// </summary>
 public sealed class Publisher(ICisoAssistantClient client, IEvidenceFiles files)
 {
@@ -87,12 +88,19 @@ public sealed class Publisher(ICisoAssistantClient client, IEvidenceFiles files)
         Dictionary<string, Result<RemoteAudit>> audits,
         CancellationToken cancellationToken)
     {
-        var unresolved = requirement.EvidenceRefIds.Where(refId => !evidenceIds.ContainsKey(refId)).ToList();
+        var cited = requirement.EvidenceRefIds.Select(refId => (RefId: refId, Id: evidenceIds.GetValueOrDefault(refId) ?? requirement.KnownEvidenceIds.GetValueOrDefault(refId))).ToList();
+        var unresolved = cited.Where(c => c.Id is null).Select(c => c.RefId).ToList();
         if (unresolved.Count > 0)
         {
             return Result.Fail<PublishDone>(new Problem(
                 "publish.evidence_unresolved",
                 $"Requirement {requirement.RequirementRefId} cites evidence {string.Join(", ", unresolved)}, which was not uploaded to CISO Assistant in this run."));
+        }
+
+        var values = new RequirementAssessmentValues(requirement.Result, requirement.Observation, [.. cited.Select(c => c.Id!)]);
+        if (requirement.RowIds.Count > 0)
+        {
+            return await UpdateRowsAsync(requirement.RowIds, values, cancellationToken);
         }
 
         var auditRefId = requirement.ComplianceAssessmentRefId;
@@ -104,19 +112,18 @@ public sealed class Publisher(ICisoAssistantClient client, IEvidenceFiles files)
 
         var found = await client.FindRequirementAssessmentsAsync(auditRefId, requirement.Requirement, cancellationToken);
         var rows = audit.Bind(a => found.Bind(all => RequirementRows.InScope(requirement.Requirement, all, a.SelectedGroups)));
-        var values = new RequirementAssessmentValues(requirement.Result, requirement.Observation, [.. requirement.EvidenceRefIds.Select(refId => evidenceIds[refId])]);
         return await rows.Match(
             inScope => inScope.Count == 0
                 ? Task.FromResult(Result.Ok(new PublishDone(PublishOutcome.Skipped, RequirementRows.OutsideSelectedGroups)))
-                : UpdateRowsAsync(inScope, values, cancellationToken),
+                : UpdateRowsAsync([.. inScope.Select(row => row.Id)], values, cancellationToken),
             problems => Task.FromResult(Result.Fail<PublishDone>(problems)));
     }
 
-    private async Task<Result<PublishDone>> UpdateRowsAsync(IReadOnlyList<RemoteRequirementAssessment> rows, RequirementAssessmentValues values, CancellationToken cancellationToken)
+    private async Task<Result<PublishDone>> UpdateRowsAsync(IReadOnlyList<string> rowIds, RequirementAssessmentValues values, CancellationToken cancellationToken)
     {
-        foreach (var row in rows)
+        foreach (var rowId in rowIds)
         {
-            var updated = await client.UpdateRequirementAssessmentAsync(row.Id, values, cancellationToken);
+            var updated = await client.UpdateRequirementAssessmentAsync(rowId, values, cancellationToken);
             if (updated is Result<Unit>.Fail failed)
             {
                 return Result.Fail<PublishDone>(failed.Errors);

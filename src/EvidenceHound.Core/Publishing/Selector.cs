@@ -14,6 +14,9 @@ public sealed class Selector
     public static Selector RequirementInAudit(string complianceAssessmentRefId, string requirementRefId) =>
         new(KeyValuePair.Create("compliance_assessment__ref_id", complianceAssessmentRefId), KeyValuePair.Create("requirement__ref_id", requirementRefId));
 
+    public static Selector RowsOfAudit(string complianceAssessmentRefId) =>
+        new(KeyValuePair.Create("compliance_assessment__ref_id", complianceAssessmentRefId));
+
     public static Selector RequirementUrnInAudit(string complianceAssessmentRefId, string requirementUrn) =>
         new(KeyValuePair.Create("compliance_assessment__ref_id", complianceAssessmentRefId), KeyValuePair.Create("requirement__urn", requirementUrn));
 

@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Text;
 using System.Text.Json.Nodes;
 using EvidenceHound.Core.Mapping;
@@ -12,6 +13,8 @@ namespace EvidenceHound.CisoAssistant;
 /// <summary>REST adapter for <see cref="ICisoAssistantClient"/>. Paths are relative to the <c>/api/</c> base address.</summary>
 internal sealed class CisoAssistantClient(HttpClient http) : ICisoAssistantClient
 {
+    private static readonly int PageSize = 500;
+
     public async Task<Result<Unit>> CheckHealthAsync(CancellationToken cancellationToken) =>
         (await SendAsync(new HttpRequestMessage(HttpMethod.Get, "health/"), "for the health check", cancellationToken)).Map(_ => Unit.Value);
 
@@ -39,12 +42,34 @@ internal sealed class CisoAssistantClient(HttpClient http) : ICisoAssistantClien
                 .Map(audit => new RemoteAudit(id, Strings(audit["selected_implementation_groups"]))));
     }
 
+    // Pages by limit and offset rather than following "next", whose host is whatever the server believes it is.
     public Task<Result<IReadOnlyList<CurrentRow>>> ListRequirementAssessmentsAsync(string complianceAssessmentRefId, CancellationToken cancellationToken) =>
-        throw new NotImplementedException();
+        ListRowsAsync(complianceAssessmentRefId, ImmutableList<CurrentRow>.Empty, cancellationToken);
 
-    public Task<Result<IReadOnlyList<RemoteEvidence>>> FindEvidenceAsync(string refId, CancellationToken cancellationToken) => throw new NotImplementedException();
+    public async Task<Result<IReadOnlyList<RemoteEvidence>>> FindEvidenceAsync(string refId, CancellationToken cancellationToken)
+    {
+        var matches = await SearchEvidenceAsync(refId, cancellationToken);
+        return await matches.Match(
+            found => found.Count switch
+            {
+                0 => Task.FromResult(Result.Ok<IReadOnlyList<RemoteEvidence>>([])),
+                1 => AsList(LatestHashAsync(Id(found[0]), cancellationToken)),
+                _ => Task.FromResult(Result.Fail<IReadOnlyList<RemoteEvidence>>(ApiProblems.Ambiguous("evidence", Selector.ByRefId(refId), found.Count))),
+            },
+            problems => Task.FromResult(Result.Fail<IReadOnlyList<RemoteEvidence>>(problems)));
+    }
 
-    public Task<Result<ControlState>> FindAppliedControlStatusAsync(string refId, CancellationToken cancellationToken) => throw new NotImplementedException();
+    public async Task<Result<ControlState>> FindAppliedControlStatusAsync(string refId, CancellationToken cancellationToken)
+    {
+        var selector = Selector.ByRefId(refId);
+        var page = await SendAsync(new HttpRequestMessage(HttpMethod.Get, $"applied-controls/?{selector.ToQueryString()}"), $"to find the applied control for {selector}", cancellationToken);
+        return page.Bind(p => Results(p) switch
+        {
+            [] => Result.Fail<ControlState>(ApiProblems.NotFound("applied control", selector)),
+            [var only] => ControlStateOf((string?)only["status"], refId),
+            var many => Result.Fail<ControlState>(ApiProblems.Ambiguous("applied control", selector, many.Count)),
+        });
+    }
 
     public async Task<Result<Unit>> UpdateRequirementAssessmentAsync(string requirementAssessmentId, RequirementAssessmentValues values, CancellationToken cancellationToken)
     {
@@ -61,8 +86,7 @@ internal sealed class CisoAssistantClient(HttpClient http) : ICisoAssistantClien
 
     public async Task<Result<RemoteEvidence>> FindOrCreateEvidenceAsync(string refId, string name, CancellationToken cancellationToken)
     {
-        var search = await SendAsync(new HttpRequestMessage(HttpMethod.Get, $"evidences/?search={Uri.EscapeDataString(refId)}"), $"to find evidence {refId}", cancellationToken);
-        var matches = search.Map(page => Results(page).Where(o => (string?)o["ref_id"] == refId).ToList());
+        var matches = await SearchEvidenceAsync(refId, cancellationToken);
         return await matches.Match(
             found => found.Count switch
             {
@@ -114,6 +138,26 @@ internal sealed class CisoAssistantClient(HttpClient http) : ICisoAssistantClien
             var body = new JsonObject { ["evidences"] = new JsonArray([.. linked.Append(evidenceId).Select(e => JsonValue.Create(e))]) };
             return (await PatchAsync(path, body, $"to link evidence to applied control {controlRefId}", cancellationToken)).Map(_ => Unit.Value);
         });
+    }
+
+    private async Task<Result<IReadOnlyList<CurrentRow>>> ListRowsAsync(string auditRefId, ImmutableList<CurrentRow> listed, CancellationToken cancellationToken)
+    {
+        var path = $"requirement-assessments/?{Selector.RowsOfAudit(auditRefId).ToQueryString()}&limit={PageSize}&offset={listed.Count}";
+        var page = await SendAsync(new HttpRequestMessage(HttpMethod.Get, path), $"to list the rows of audit {auditRefId}", cancellationToken);
+        return await page
+            .Bind(p => Result.Combine(Results(p).Select(StateRow)).Map(found => (Rows: listed.AddRange(found), More: found.Count > 0 && listed.Count + found.Count < ((int?)p["count"] ?? 0))))
+            .Match(
+                next => next.More ? ListRowsAsync(auditRefId, next.Rows, cancellationToken) : Task.FromResult(Result.Ok<IReadOnlyList<CurrentRow>>(next.Rows)),
+                problems => Task.FromResult(Result.Fail<IReadOnlyList<CurrentRow>>(problems)));
+    }
+
+    private static async Task<Result<IReadOnlyList<RemoteEvidence>>> AsList(Task<Result<RemoteEvidence>> found) =>
+        (await found).Map(e => (IReadOnlyList<RemoteEvidence>)[e]);
+
+    private async Task<Result<List<JsonNode>>> SearchEvidenceAsync(string refId, CancellationToken cancellationToken)
+    {
+        var search = await SendAsync(new HttpRequestMessage(HttpMethod.Get, $"evidences/?search={Uri.EscapeDataString(refId)}"), $"to find evidence {refId}", cancellationToken);
+        return search.Map(page => Results(page).Where(o => (string?)o["ref_id"] == refId).ToList());
     }
 
     private async Task<Result<RemoteEvidence>> CreateEvidenceAsync(string refId, string name, CancellationToken cancellationToken)
@@ -175,6 +219,28 @@ internal sealed class CisoAssistantClient(HttpClient http) : ICisoAssistantClien
         var requirement = row["requirement"] as JsonObject ?? throw new InvalidOperationException("CISO Assistant returned a requirement assessment without its requirement.");
         return new RemoteRequirementAssessment(Id(row), (string?)requirement["urn"] ?? "", (string?)requirement["ref_id"], Strings(requirement["implementation_groups"]));
     }
+
+    /// <summary>A requirement assessment with its state: result, observation and evidence IDs (the read serializer nests each as {"id", "str"}).</summary>
+    private static Result<CurrentRow> StateRow(JsonNode row)
+    {
+        var at = Row(row);
+        var result = (string?)row["result"] ?? "not_assessed";
+        return Enum.GetValues<ComplianceResult>().Where(r => Names.Of(r) == Normalised(result)).ToArray() is [var known]
+            ? Result.Ok(new CurrentRow(
+                at.Id, at.Urn, at.RefId, at.Groups, known, (string?)row["observation"] ?? "",
+                [.. (row["evidences"] as JsonArray ?? []).Select(e => e is JsonObject o ? (string?)o["id"] : (string?)e).OfType<string>()]))
+            : Result.Fail<CurrentRow>(Unexpected($"requirement assessment {at.Id} has result '{result}'"));
+    }
+
+    private static Result<ControlState> ControlStateOf(string? status, string refId) =>
+        Enum.GetValues<ControlState>().Where(s => Names.Of(s) == Normalised(status ?? "")).ToArray() is [var known]
+            ? Result.Ok(known)
+            : Result.Fail<ControlState>(Unexpected($"applied control {refId} has status '{status}'"));
+
+    /// <summary>A choice's value from its value or its display name: "To do" is "to_do".</summary>
+    private static string Normalised(string value) => value.Trim().ToLowerInvariant().Replace(' ', '_');
+
+    private static Problem Unexpected(string what) => new("ciso_assistant.rejected", $"CISO Assistant returned something this version does not know: {what}.");
 
     private static List<string> Strings(JsonNode? node) => [.. (node as JsonArray ?? []).Select(n => (string?)n).OfType<string>()];
 

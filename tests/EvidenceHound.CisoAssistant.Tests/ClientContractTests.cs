@@ -269,37 +269,29 @@ public sealed class ClientContractTests : IDisposable
         var second = Row("ra-2", "idn");
         second["result"] = "not_assessed";
         second["observation"] = null;
-        _ca.Server.Given(Request.Create().WithPath("/api/requirement-assessments/").WithParam("offset", "1").UsingGet()).AtPriority(1)
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject { ["count"] = 2, ["next"] = null, ["results"] = new JsonArray(second) }.ToJsonString()));
-        _ca.Server.Given(Request.Create().WithPath("/api/requirement-assessments/").WithParam("compliance_assessment__ref_id", "EX-E8-2026").UsingGet()).AtPriority(10)
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject
-            {
-                ["count"] = 2,
-                ["next"] = $"{_ca.Server.Url}/api/requirement-assessments/?compliance_assessment__ref_id=EX-E8-2026&limit=1&offset=1",
-                ["results"] = new JsonArray(first),
-            }.ToJsonString()));
+        RespondPage("0", 2, first);
+        RespondPage("1", 2, second);
 
         var result = await _ca.Client.ListRequirementAssessmentsAsync("EX-E8-2026", _ct);
 
         result.Match(rows => string.Join(";", rows.Select(r => $"{r.Id}|{r.Urn}|{r.RefId}|{string.Join(",", r.Groups)}|{r.Result}|{r.Observation}|{string.Join(",", r.EvidenceIds)}")), _ => "fail")
             .ShouldBe("ra-1|urn:example:req:bnd:act-01|ACT-01|1|Compliant|Rule all_pass.|ev-uuid-1;ra-2|urn:example:req:idn:act-01|ACT-01||NotAssessed||");
-        Requests()[0].RawQuery.ShouldBe("?compliance_assessment__ref_id=EX-E8-2026");
+        Requests().Select(r => r.RawQuery).ShouldBe([
+            "?compliance_assessment__ref_id=EX-E8-2026&limit=500&offset=0",
+            "?compliance_assessment__ref_id=EX-E8-2026&limit=500&offset=1",
+        ]);
     }
 
     [Fact]
-    public async Task Listing_rows_never_follows_a_next_link_to_another_host()
+    public async Task Listing_rows_stops_at_an_empty_page_whatever_the_count_says()
     {
-        Respond("/api/requirement-assessments/", 200, new JsonObject
-        {
-            ["count"] = 2,
-            ["next"] = "https://elsewhere.example.com/api/requirement-assessments/?offset=1",
-            ["results"] = new JsonArray(Row("ra-1", "bnd")),
-        }.ToJsonString());
+        RespondPage("0", 5, Row("ra-1", "bnd"));
+        RespondPage("1", 5);
 
         var result = await _ca.Client.ListRequirementAssessmentsAsync("EX-E8-2026", _ct);
 
-        Codes(result).ShouldBe(["ciso_assistant.rejected"]);
-        Requests().Count.ShouldBe(1);
+        result.Match(rows => rows.Count, _ => -1).ShouldBe(1);
+        Requests().Count.ShouldBe(2);
     }
 
     [Fact]
@@ -424,6 +416,10 @@ public sealed class ClientContractTests : IDisposable
             ["implementation_groups"] = groups.Length == 0 ? null : new JsonArray([.. groups.Select(g => JsonValue.Create(g))]),
         },
     };
+
+    private void RespondPage(string offset, int count, params JsonObject[] results) =>
+        _ca.Server.Given(Request.Create().WithPath("/api/requirement-assessments/").WithParam("offset", offset).UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject { ["count"] = count, ["next"] = null, ["results"] = new JsonArray(results) }.ToJsonString()));
 
     private static RequirementAssessmentValues Values() =>
         new(ComplianceResult.PartiallyCompliant, "2 of 3 checks pass.", ["ev-uuid-1", "ev-uuid-2"]);
