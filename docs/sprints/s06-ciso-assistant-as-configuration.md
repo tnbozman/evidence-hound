@@ -40,7 +40,7 @@ All examples use the fictional Example Pty Ltd and `example.com`.
 - Result (2026-11-21): `RequirementRowsFunctionalTests` in CI run [44898045325](https://github.com/tnbozman/evidence-hound/actions/runs/44898045325) passed; the Boundary services row of `IT.PRO-01.1` is `compliant`, the Identity services row `non_compliant`. Offline: `hound mapping validate mappings/essential-eight-2023.yaml --framework frameworks/essential-eight-2023.json` prints `valid: 16 requirements`. Evidence: [docs/evidence/s06/s06-01.md](../evidence/s06/s06-01.md).
 
 ### s06-02 Essential Eight 2023 ML2 mapping for the checks we have
-- [ ] Done
+- [x] Done
 
 **Story:** As a compliance owner whose audit of record is Essential Eight ML2, I want the checks that exist today mapped to the Essential Eight (November 2023) framework, so that collection runs update my real audit now rather than after s11.
 
@@ -57,9 +57,10 @@ All examples use the fictional Example Pty Ltd and `example.com`.
 
 **Functional check**
 - Against the local CISO Assistant with `essential-eight-2023` loaded: `hound run` with the M365 recordings fills the example ML2 audit, and a control repeated across strategies, such as ISM-0123, gets its result in every strategy's row.
+- Result (2026-11-21): `E8RunFunctionalTests` in CI run [44899216065](https://github.com/tnbozman/evidence-hound/actions/runs/44899216065) passed; all 4 rows of ISM-0123 are `compliant` and ISM-1504 is assessed. Evidence: [docs/evidence/s06/s06-02.md](../evidence/s06/s06-02.md).
 
 ### s06-03 Several audits from one run
-- [ ] Done
+- [x] Done
 
 Moved from s13-02, because the Essentials parallel run needs it before 800-171 does.
 
@@ -77,6 +78,7 @@ Moved from s13-02, because the Essentials parallel run needs it before 800-171 d
 
 **Functional check**
 - `hound run` against the local CISO Assistant updates the example Essential Eight 2023 and Essentials audits. The evidence appears once and is linked from both.
+- Result (2026-11-21): `TwoAuditsFunctionalTests` in CI run [44899216065](https://github.com/tnbozman/evidence-hound/actions/runs/44899216065) passed; both audits are updated with no failures, and the conditional access evidence exists once and is linked from both. Evidence: [docs/evidence/s06/s06-03.md](../evidence/s06/s06-03.md).
 
 ### s06-04 Change-only publishing, traced to the run
 - [ ] Done
