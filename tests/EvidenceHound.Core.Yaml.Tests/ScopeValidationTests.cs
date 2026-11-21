@@ -126,7 +126,7 @@ public class ScopeValidationTests
     [Fact]
     public void Unlisted_is_required()
     {
-        var audit = ScopeFixture.Audit.Replace("unlisted:\n  result: not_assessed\n", "", StringComparison.Ordinal);
+        var audit = ScopeFixture.Audit.Replace("unlisted:\n  result: not_assessed", "", StringComparison.Ordinal);
 
         var problem = ScopeFixture.Problems(audit: audit).ShouldHaveSingleItem();
 
@@ -137,7 +137,7 @@ public class ScopeValidationTests
     [Fact]
     public void Not_applicable_unlisted_needs_a_reason()
     {
-        var audit = ScopeFixture.Audit.Replace("  result: not_assessed\n", "  result: not_applicable\n", StringComparison.Ordinal);
+        var audit = ScopeFixture.Audit.Replace("  result: not_assessed", "  result: not_applicable", StringComparison.Ordinal);
 
         ScopeFixture.Problems(audit: audit).ShouldHaveSingleItem().Code.ShouldBe("scope.unlisted_reason_missing");
     }
