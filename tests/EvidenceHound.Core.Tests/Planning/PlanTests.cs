@@ -286,6 +286,33 @@ public class PlanTests
         replan.Audits.ShouldBe([new AuditChanges("EXAMPLE-BASELINE-2026", Changed: 0, Unchanged: results.Length, Drift: 0)]);
     }
 
+    [Fact]
+    public async Task State_source_reads_the_scope_documents()
+    {
+        var ca = new InMemoryCisoAssistant();
+        ca.ScopeDocumentIds.Add("uuid-policy");
+
+        var state = await new ClientStateSource(ca).ReadAsync(new StateQuery([], [], []), TestContext.Current.CancellationToken);
+
+        state.ScopeDocumentIds.ShouldBe(["uuid-policy"]);
+    }
+
+    [Fact]
+    public void Scope_documents_on_a_row_are_kept_and_are_not_drift()
+    {
+        RequirementResult[] results = [Requirement("EX-1.1", ComplianceResult.Compliant)];
+        var state = Published(Fresh("EX-1.1"), Changes(results, [], [], Fresh("EX-1.1"), Run1));
+        var audit = state.Audits[0];
+        var linked = state with { Audits = [audit with { Rows = [audit.Rows[0] with { EvidenceIds = ["uuid-policy"] }] }], ScopeDocumentIds = ["uuid-policy"] };
+
+        var unchanged = Changes(results, [], [], linked, Run2);
+        var changed = Changes([Requirement("EX-1.1", ComplianceResult.NonCompliant)], [], [], linked, Run2);
+
+        (unchanged.Updates.Count, unchanged.Drift.Count).ShouldBe((0, 0));
+        changed.Updates.OfType<AuditUpdate.UpdateRequirementAssessment>().ShouldHaveSingleItem().KeptEvidenceIds.ShouldBe(
+            new Dictionary<string, IReadOnlyList<string>> { ["ra-EX-1.1"] = ["uuid-policy"] });
+    }
+
     private static readonly string Run1 = "20261120T020000Z";
     private static readonly string Run2 = "20261121T020000Z";
 

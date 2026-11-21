@@ -7,6 +7,12 @@ public sealed record CurrentState(IReadOnlyList<CurrentAudit> Audits, IReadOnlyL
 {
     /// <summary>Nothing known: every update is planned, as before change-only publishing.</summary>
     public static CurrentState Empty { get; } = new([], [], []);
+
+    /// <summary>
+    /// CISO Assistant IDs of the documents <c>hound scope apply</c> manages. A row keeps those it links, so publishing a mapping's result does not
+    /// undo a document the scope links to the same row.
+    /// </summary>
+    public IReadOnlyList<string> ScopeDocumentIds { get; init; } = [];
 }
 
 /// <summary>An audit, the implementation groups it selects (none selects all) and every one of its rows.</summary>

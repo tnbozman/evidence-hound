@@ -11,6 +11,9 @@ namespace EvidenceHound.Core.Publishing;
 /// </summary>
 public interface ICisoAssistantClient
 {
+    /// <summary>The IDs of the evidence items <c>hound scope apply</c> manages (their description ends with the scope marker).</summary>
+    Task<Result<IReadOnlyList<string>>> ListScopeDocumentIdsAsync(CancellationToken cancellationToken);
+
     Task<Result<Unit>> CheckHealthAsync(CancellationToken cancellationToken);
 
     /// <summary>Every requirement assessment in this audit for the requirement: one for a URN, one or more for a repeated ref.</summary>

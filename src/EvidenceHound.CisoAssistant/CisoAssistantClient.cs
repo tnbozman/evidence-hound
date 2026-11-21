@@ -13,6 +13,9 @@ internal sealed class CisoAssistantClient(HttpClient http) : ICisoAssistantClien
 {
     private static readonly int PageSize = 500;
 
+    public Task<Result<IReadOnlyList<string>>> ListScopeDocumentIdsAsync(CancellationToken cancellationToken) =>
+        Task.FromResult(Result.Ok<IReadOnlyList<string>>([]));
+
     public async Task<Result<Unit>> CheckHealthAsync(CancellationToken cancellationToken) =>
         (await SendAsync(new HttpRequestMessage(HttpMethod.Get, "health/"), "for the health check", cancellationToken)).Map(_ => Unit.Value);
 

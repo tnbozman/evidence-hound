@@ -113,6 +113,22 @@ public class PublisherTests
     }
 
     [Fact]
+    public async Task Row_update_keeps_the_scope_documents_on_each_row()
+    {
+        var update = new AuditUpdate.UpdateRequirementAssessment("EXAMPLE-BASELINE-2026", "EX-1.1", ComplianceResult.Compliant, "All admins use MFA.", ["ev-0001"])
+        {
+            RowIds = ["ra-a", "ra-b"],
+            KnownEvidenceIds = new Dictionary<string, string> { ["ev-0001"] = "uuid-known" },
+            KeptEvidenceIds = new Dictionary<string, IReadOnlyList<string>> { ["ra-b"] = ["uuid-policy"] },
+        };
+
+        await Publisher().PublishAsync([update], _ct);
+
+        _ca.Requirements["ra-a"].EvidenceIds.ShouldBe(["uuid-known"]);
+        _ca.Requirements["ra-b"].EvidenceIds.ShouldBe(["uuid-known", "uuid-policy"]);
+    }
+
+    [Fact]
     public async Task Evidence_uploaded_in_the_plan_wins_over_a_known_id()
     {
         var update = new AuditUpdate.UpdateRequirementAssessment("EXAMPLE-BASELINE-2026", "EX-1.1", ComplianceResult.Compliant, "All admins use MFA.", ["ev-0001"])

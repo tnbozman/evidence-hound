@@ -26,6 +26,12 @@ internal sealed class InMemoryCisoAssistant : ICisoAssistantClient
 
     public Task<Result<Unit>> CheckHealthAsync(CancellationToken cancellationToken) => Done("health");
 
+    /// <summary>The evidence IDs <c>hound scope apply</c> manages.</summary>
+    public List<string> ScopeDocumentIds { get; } = [];
+
+    public Task<Result<IReadOnlyList<string>>> ListScopeDocumentIdsAsync(CancellationToken cancellationToken) =>
+        Task.FromResult(Result.Ok<IReadOnlyList<string>>([.. ScopeDocumentIds]));
+
     /// <summary>Requirement rows of every audit. A requirement with no row here has one row, <c>ra-&lt;ref or urn&gt;</c>, in every group.</summary>
     public List<RemoteRequirementAssessment> Rows { get; } = [];
 

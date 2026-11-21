@@ -30,6 +30,18 @@ public sealed class ClientContractTests : IDisposable
     }
 
     [Fact]
+    public async Task Scope_documents_are_the_evidence_marked_by_the_scope()
+    {
+        Respond("/api/evidences/", 200, Page(
+            new JsonObject { ["id"] = "ev-policy", ["ref_id"] = "identity-policy", ["description"] = "Signed policy.\n[hound scope 0123456789abcdef]" },
+            new JsonObject { ["id"] = "ev-0001", ["ref_id"] = "ev-0001", ["description"] = "Collected by example-fake." }));
+
+        var ids = (await _ca.Client.ListScopeDocumentIdsAsync(_ct)).Value();
+
+        ids.ShouldBe(["ev-policy"]);
+    }
+
+    [Fact]
     public async Task Retries_on_503_then_succeeds()
     {
         _ca.Server.Given(Request.Create().WithPath("/api/health/").UsingGet())
