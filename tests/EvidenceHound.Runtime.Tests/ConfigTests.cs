@@ -265,6 +265,25 @@ public class ConfigTests
     }
 
     [Fact]
+    public void Scope_and_period_retention_are_read()
+    {
+        var yaml = Valid.Replace("retention_days: 30", "retention_days: 30\n  period_retention_years: 10", StringComparison.Ordinal) + "scope: ../compliance-repo/scope\n";
+
+        var config = ConfigLoader.Parse(yaml, Source, Known).Value();
+
+        config.Scope.ShouldBe(Path.GetFullPath(Path.Combine(Path.GetTempPath(), "compliance-repo", "scope")));
+        config.Evidence.PeriodRetentionYears.ShouldBe(10);
+    }
+
+    [Fact]
+    public void Scope_is_optional_and_period_retention_defaults_to_seven_years()
+    {
+        var config = ConfigLoader.Parse(Valid, Source, Known).Value();
+
+        (config.Scope, config.Evidence.PeriodRetentionYears).ShouldBe((null, 7));
+    }
+
+    [Fact]
     public void Retention_must_be_a_positive_whole_number()
     {
         var yaml = Valid.Replace("retention_days: 30", "retention_days: -1", StringComparison.Ordinal);
