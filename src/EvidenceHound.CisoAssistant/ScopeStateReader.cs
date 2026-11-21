@@ -24,7 +24,7 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
             var snapshots = new List<FrameworkSnapshot>();
             foreach (var urn in h.AuditedFrameworks)
             {
-                if (h.Frameworks.FirstOrDefault(f => Text(f["urn"]) == urn) is { } framework && await SnapshotAsync(reading, framework, h.LibraryVersions) is { } snapshot)
+                if (h.Frameworks.FirstOrDefault(f => Text(f["urn"]) == urn) is { } framework && await SnapshotAsync(reading, framework, h.Libraries) is { } snapshot)
                 {
                     snapshots.Add(snapshot);
                 }
@@ -147,11 +147,11 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
                     ("controls", Joined(r.Row["applied_controls"], names.Controls)), ("documents", Joined(r.Row["evidences"], names.Evidence)))),
                 null)),
         ];
-        return Result.Ok(new HeldState(objects, frameworkList, libraries.ToDictionary(Id, l => Text(l["version"]), StringComparer.Ordinal), auditedFrameworks));
+        return Result.Ok(new HeldState(objects, frameworkList, libraries.ToDictionary(Id, l => (Text(l["urn"]), Text(l["version"])), StringComparer.Ordinal), auditedFrameworks));
     }
 
-    /// <summary>What a read found, with what an export also needs: every framework, each loaded library's version, and the audits' frameworks.</summary>
-    private sealed record HeldState(IReadOnlyList<ActualObject> Objects, List<JsonNode> Frameworks, Dictionary<string, string?> LibraryVersions, string[] AuditedFrameworks);
+    /// <summary>What a read found, with what an export also needs: every framework, each loaded library's URN and version, and the audits' frameworks.</summary>
+    private sealed record HeldState(IReadOnlyList<ActualObject> Objects, List<JsonNode> Frameworks, Dictionary<string, (string? Urn, string? Version)> Libraries, string[] AuditedFrameworks);
 
     /// <summary>An object's <c>ref_id</c>, or one made from its name when it has none, so the scope files can name it.</summary>
     private static string RefIdOrName(ScopeKind kind, JsonNode held) =>
@@ -160,7 +160,7 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
     private static string AuditKey(JsonNode audit) => RefIdOrName(ScopeKind.Audit, audit);
 
     /// <summary>A framework's snapshot from its own record and its assessable requirement nodes; null when either cannot be read.</summary>
-    private static async Task<FrameworkSnapshot?> SnapshotAsync(Reading reading, JsonNode framework, Dictionary<string, string?> versions)
+    private static async Task<FrameworkSnapshot?> SnapshotAsync(Reading reading, JsonNode framework, Dictionary<string, (string? Urn, string? Version)> libraries)
     {
         var id = Id(framework);
         var held = (await reading.ObjectsAsync("frameworks", [id])).FirstOrDefault();
@@ -171,21 +171,25 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
         }
 
         var libraryId = RelationId(held["library"]) ?? RelationId(framework["library"]);
-        var libraryUrn = framework["library"] is JsonObject library ? Text(library["urn"]) : null;
-        var version = libraryId is not null && int.TryParse(versions.GetValueOrDefault(libraryId), NumberStyles.Integer, CultureInfo.InvariantCulture, out var v) ? v : 1;
+        (string? Urn, string? Version)? library = libraryId is not null && libraries.TryGetValue(libraryId, out var found) ? found : null;
+        var version = int.TryParse(library?.Version, NumberStyles.Integer, CultureInfo.InvariantCulture, out var v) ? v : 1;
+        SnapshotNode[] assessable =
+        [
+            .. nodes.Where(n => n["assessable"] is JsonValue a && a.TryGetValue<bool>(out var isAssessable) && isAssessable).Select(n => new SnapshotNode(
+                Text(n["urn"]) ?? Id(n),
+                Text(n["ref_id"]),
+                Text(n["parent_urn"]),
+                Strings(n["implementation_groups"]),
+                Text(n["name"]) ?? Text(n["description"]) ?? Text(n["ref_id"]) ?? Text(n["urn"]) ?? "")),
+        ];
+        ImplementationGroup[] defined =
+            [.. (held["implementation_groups_definition"] as JsonArray ?? []).OfType<JsonObject>().Select(g => new ImplementationGroup(Text(g["ref_id"]) ?? "", Text(g["name"]) ?? Text(g["ref_id"]) ?? ""))];
         return new FrameworkSnapshot(
-            libraryUrn ?? Text(held["library_urn"]) ?? "",
+            library?.Urn ?? (framework["library"] is JsonObject listed ? Text(listed["urn"]) : null) ?? "",
             Text(held["urn"]) ?? Text(framework["urn"]) ?? id,
             version,
-            [.. (held["implementation_groups_definition"] as JsonArray ?? []).OfType<JsonObject>().Select(g => new ImplementationGroup(Text(g["ref_id"]) ?? "", Text(g["name"]) ?? Text(g["ref_id"]) ?? ""))],
-            [
-                .. nodes.Where(n => n["assessable"] is JsonValue a && a.TryGetValue<bool>(out var assessable) && assessable).Select(n => new SnapshotNode(
-                    Text(n["urn"]) ?? Id(n),
-                    Text(n["ref_id"]),
-                    Text(n["parent_urn"]),
-                    Strings(n["implementation_groups"]),
-                    Text(n["name"]) ?? Text(n["description"]) ?? Text(n["ref_id"]) ?? Text(n["urn"]) ?? "")),
-            ]);
+            defined.Length > 0 ? defined : [.. assessable.SelectMany(n => n.Groups).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).Select(g => new ImplementationGroup(g, g))],
+            assessable);
     }
 
     /// <summary>
