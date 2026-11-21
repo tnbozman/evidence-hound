@@ -27,9 +27,23 @@ public sealed class StderrLoggerTests : IDisposable
     {
         using var provider = new StderrLoggerProvider(_error);
 
-        provider.CreateLogger("hound.test").LogCritical(new InvalidOperationException("kaboom"), "Unexpected failure.");
+        var exception = new InvalidOperationException("kaboom");
+
+        provider.CreateLogger("hound.test").LogCritical(exception, "Unexpected failure.");
 
         _error.ToString().ShouldBe($"crit: Unexpected failure. (InvalidOperationException: kaboom){Environment.NewLine}");
+    }
+
+    [Fact]
+    public void Debug_entries_include_the_full_exception()
+    {
+        using var provider = new StderrLoggerProvider(_error);
+
+        var exception = new InvalidOperationException("kaboom");
+
+        provider.CreateLogger("hound.test").LogDebug(exception, "Details:");
+
+        _error.ToString().ShouldStartWith($"debug: Details:{Environment.NewLine}System.InvalidOperationException: kaboom");
     }
 
     [Fact]

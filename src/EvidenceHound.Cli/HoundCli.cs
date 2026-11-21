@@ -5,102 +5,86 @@ using Microsoft.Extensions.Logging;
 
 namespace EvidenceHound.Cli;
 
-/// <summary>Composition root for the <c>hound</c> command line.</summary>
-public static partial class HoundCli
+/// <summary>
+/// Composition root for the <c>hound</c> command line. It owns the one logging setup and the global handler:
+/// expected failures come back from commands as problems, anything else is caught here, logged and turned into an exit code.
+/// </summary>
+public static class HoundCli
 {
-    public static async Task<int> RunAsync(
+    public static Task<int> RunAsync(
         string[] args,
         TextWriter output,
         TextWriter error,
         Action<ILoggingBuilder>? configureLogging = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        RunAsync(args, output, error, configureLogging, [], cancellationToken);
+
+    internal static async Task<int> RunAsync(
+        string[] args,
+        TextWriter output,
+        TextWriter error,
+        Action<ILoggingBuilder>? configureLogging,
+        IReadOnlyList<Command> extraCommands,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(error);
 
-        var parseResult = BuildRootCommand(output, error, configureLogging).Parse(args);
+        using var host = BuildHost(error, configureLogging);
+        var loggers = host.Services.GetRequiredService<ILoggerFactory>();
+        var logger = loggers.CreateLogger("hound");
+
+        var root = BuildRootCommand(output, loggers);
+        foreach (var command in extraCommands)
+        {
+            root.Subcommands.Add(command);
+        }
+
+        var parseResult = root.Parse(args);
         if (parseResult.Errors.Count > 0)
         {
             foreach (var parseError in parseResult.Errors)
             {
-                await error.WriteLineAsync(parseError.Message);
+                Log.Usage(logger, parseError.Message);
             }
 
-            await error.WriteLineAsync("Run 'hound --help' for usage.");
+            Log.Usage(logger, "Run 'hound --help' for usage.");
             return ExitCodes.Usage;
         }
 
-        var invocation = new InvocationConfiguration { Output = output, Error = error };
-        return await parseResult.InvokeAsync(invocation, cancellationToken);
-    }
-
-    private static RootCommand BuildRootCommand(TextWriter output, TextWriter error, Action<ILoggingBuilder>? configureLogging)
-    {
-        var dryRun = new Option<bool>("--dry-run")
+        var invocation = new InvocationConfiguration { Output = output, Error = error, EnableDefaultExceptionHandler = false };
+        try
         {
-            Description = "Load the config and report what would run, without contacting any system.",
-        };
-        var config = new Option<FileInfo>("--config")
-        {
-            Description = "Path to the deployment config file (YAML).",
-            Required = true,
-        };
-
-        var collect = new Command("collect", "Collect evidence from every configured collector.") { dryRun, config };
-        collect.SetAction((parseResult, cancellationToken) => CollectAsync(
-            parseResult.GetValue(dryRun),
-            parseResult.GetRequiredValue(config),
-            error,
-            configureLogging,
-            cancellationToken));
-
-        return new RootCommand("Evidence Hound: collects compliance evidence and publishes it to CISO Assistant.")
-        {
-            collect,
-            MappingCommands.Build(output, error),
-            PlanCommand.Build(output, error),
-        };
-    }
-
-    private static async Task<int> CollectAsync(
-        bool dryRun,
-        FileInfo configFile,
-        TextWriter error,
-        Action<ILoggingBuilder>? configureLogging,
-        CancellationToken cancellationToken)
-    {
-        if (!dryRun)
-        {
-            await error.WriteLineAsync("collect currently supports only --dry-run; real collection arrives with the runner.");
-            return ExitCodes.Usage;
+            return await parseResult.InvokeAsync(invocation, cancellationToken);
         }
-
-        using var host = BuildHost(configureLogging);
-        var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("hound.collect");
-
-        var load = await ConfigFile.LoadAsync(configFile.FullName, cancellationToken);
-        switch (load)
+        catch (OperationCanceledException)
         {
-            case ConfigLoad.Loaded loaded:
-                LogCollectorsConfigured(logger, loaded.Config.CollectorNames.Count);
-                return ExitCodes.Ok;
-            case ConfigLoad.Failed failed:
-                LogConfigFailed(logger, failed.Reason);
-                return ExitCodes.Configuration;
-            default:
-                throw new InvalidOperationException($"Unhandled config load outcome {load.GetType().Name}.");
+            Log.Cancelled(logger);
+            return ExitCodes.Cancelled;
+        }
+        catch (Exception exception)
+        {
+            Log.Unexpected(logger, exception, parseResult.CommandResult.Command.Name);
+            Log.Details(logger, exception);
+
+            return ExitCodes.Unexpected;
         }
     }
 
-    private static IHost BuildHost(Action<ILoggingBuilder>? configureLogging)
+    private static RootCommand BuildRootCommand(TextWriter output, ILoggerFactory loggers) =>
+        new("Evidence Hound: collects compliance evidence and publishes it to CISO Assistant.")
+        {
+            CollectCommand.Build(loggers),
+            MappingCommands.Build(output, loggers),
+            PlanCommand.Build(output, loggers),
+        };
+
+    /// <summary>One host per run. Logs go to <paramref name="error"/>; the level comes from configuration (for example <c>Logging__LogLevel__Default</c>).</summary>
+    private static IHost BuildHost(TextWriter error, Action<ILoggingBuilder>? configureLogging)
     {
         var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { EnvironmentName = "Production" });
+        builder.Logging.ClearProviders();
+        builder.Logging.AddProvider(new StderrLoggerProvider(error));
         configureLogging?.Invoke(builder.Logging);
         return builder.Build();
     }
-
-    [LoggerMessage(Level = LogLevel.Information, Message = "{Count} collectors configured")]
-    private static partial void LogCollectorsConfigured(ILogger logger, int count);
-
-    [LoggerMessage(Level = LogLevel.Error, Message = "{Reason}")]
-    private static partial void LogConfigFailed(ILogger logger, string reason);
 }

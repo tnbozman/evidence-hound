@@ -5,6 +5,7 @@ using System.Text.Json.Nodes;
 using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Planning;
 using EvidenceHound.Core.Results;
+using Microsoft.Extensions.Logging;
 
 namespace EvidenceHound.Cli;
 
@@ -13,8 +14,9 @@ internal static class PlanCommand
 {
     private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
 
-    public static Command Build(TextWriter output, TextWriter error)
+    public static Command Build(TextWriter output, ILoggerFactory loggers)
     {
+        var logger = loggers.CreateLogger("hound.plan");
         var dryRun = new Option<bool>("--dry-run") { Description = "Print the planned dispatcher messages as JSON instead of sending them." };
         var config = new Option<FileInfo>("--config") { Description = "Path to the deployment config file (YAML).", Required = true };
         var checks = new Option<FileInfo>("--checks") { Description = "Path to a check results file (JSON).", Required = true };
@@ -25,16 +27,16 @@ internal static class PlanCommand
             parseResult.GetRequiredValue(config),
             parseResult.GetRequiredValue(checks),
             output,
-            error,
+            logger,
             cancellationToken));
         return plan;
     }
 
-    private static async Task<int> RunAsync(bool dryRun, FileInfo configFile, FileInfo checksFile, TextWriter output, TextWriter error, CancellationToken cancellationToken)
+    private static async Task<int> RunAsync(bool dryRun, FileInfo configFile, FileInfo checksFile, TextWriter output, ILogger logger, CancellationToken cancellationToken)
     {
         if (!dryRun)
         {
-            await error.WriteLineAsync("plan currently supports only --dry-run; publishing arrives with the publisher (s02).");
+            Log.Usage(logger, "plan currently supports only --dry-run; publishing arrives with the publisher (s02).");
             return ExitCodes.Usage;
         }
 
@@ -57,15 +59,7 @@ internal static class PlanCommand
                 await output.WriteLineAsync(messages.ToJsonString(Indented));
                 return ExitCodes.Ok;
             },
-            async problems =>
-            {
-                foreach (var problem in problems)
-                {
-                    await error.WriteLineAsync($"error: {problem.Message}");
-                }
-
-                return ExitCodes.Configuration;
-            });
+            problems => Task.FromResult(Log.Problems(logger, problems)));
     }
 
     private static string DescribeFile(Core.Checks.Evidence evidence) =>
