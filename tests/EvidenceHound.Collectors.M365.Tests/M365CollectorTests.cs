@@ -15,13 +15,18 @@ public sealed class M365CollectorTests : IDisposable
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
+    private static readonly string[] CheckIds =
+    [
+        "identity.mfa.registered_all_users", "identity.mfa.enforced_conditional_access", "identity.legacy_auth_blocked", "identity.mfa.phishing_resistant_admins",
+        "identity.privileged.global_admin_count", "identity.privileged.admins_cloud_only", "identity.privileged.pim_eligible_not_permanent",
+    ];
+
     [Fact]
-    public async Task Reports_the_mfa_checks_from_the_recorded_tenant()
+    public async Task Reports_every_check_from_the_recorded_tenant()
     {
         var result = (await CollectAsync(_tenant)).Value();
 
-        result.Checks.Select(c => c.CheckId.Value).ShouldBe(
-            ["identity.mfa.registered_all_users", "identity.mfa.enforced_conditional_access", "identity.legacy_auth_blocked", "identity.mfa.phishing_resistant_admins"]);
+        result.Checks.Select(c => c.CheckId.Value).ShouldBe(CheckIds);
         result.Checks.ShouldAllBe(c => c.Outcome == CheckOutcome.Pass && c.Source == "example-m365" && c.CollectedAt == Now);
         result.Checks[0].EvidenceRefs.ShouldBe(["users.json", "mfa-registration.json"]);
         result.ControlStatuses.ShouldBeEmpty();
@@ -45,7 +50,30 @@ public sealed class M365CollectorTests : IDisposable
     {
         var result = (await CollectAsync(_tenant)).Value();
 
-        result.Files.Select(f => f.FileName).ShouldBe(["users.json", "mfa-registration.json", "conditional-access-policies.json"]);
+        result.Files.Select(f => f.FileName).ShouldBe(
+            ["users.json", "mfa-registration.json", "conditional-access-policies.json", "role-assignments.json", "role-eligibility-schedules.json", "role-assignment-schedule-instances.json"]);
+    }
+
+    [Fact]
+    public async Task Without_pim_the_pim_check_is_not_applicable_and_the_run_succeeds()
+    {
+        _tenant.WithoutPim();
+
+        var result = (await CollectAsync(_tenant)).Value();
+
+        var pim = result.Checks.Single(c => c.CheckId.Value == "identity.privileged.pim_eligible_not_permanent");
+        pim.Outcome.ShouldBe(CheckOutcome.NotApplicable);
+        pim.EvidenceRefs.ShouldBe(["role-assignments.json"]);
+        result.Files.Select(f => f.FileName).ShouldNotContain("role-eligibility-schedules.json");
+        result.Files.Select(f => f.FileName).ShouldNotContain("role-assignment-schedule-instances.json");
+    }
+
+    [Fact]
+    public async Task A_missing_licence_for_a_required_collection_still_fails_the_run()
+    {
+        _tenant.Fail("users", 400, "AadPremiumLicenseRequired", "A license is required.");
+
+        (await CollectAsync(_tenant)).Problems().ShouldHaveSingleItem().Code.ShouldBe(GraphClient.NotLicensed);
     }
 
     [Fact]
@@ -100,9 +128,7 @@ public sealed class M365CollectorTests : IDisposable
     {
         var description = new M365Collector(new CapturingFactory(), new RecordingWait()).Describe();
 
-        description.Checks.ShouldBe(
-            ["identity.mfa.registered_all_users", "identity.mfa.enforced_conditional_access", "identity.legacy_auth_blocked", "identity.mfa.phishing_resistant_admins"],
-            ignoreOrder: true);
+        description.Checks.ShouldBe(CheckIds, ignoreOrder: true);
         description.Settings.Where(s => s.Required).Select(s => s.Name).ShouldBe(["tenant_id", "client_id"], ignoreOrder: true);
         description.Secrets.Select(s => s.Name).ShouldBe(["client_certificate", "client_secret"]);
         description.Secrets.ShouldAllBe(s => !s.Required);

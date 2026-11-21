@@ -24,8 +24,8 @@ public sealed class CollectorsCommandTests : IDisposable
               settings: tenant (optional)
               secrets: none
             m365 1.0.0
-              checks: identity.legacy_auth_blocked, identity.mfa.enforced_conditional_access, identity.mfa.phishing_resistant_admins, identity.mfa.registered_all_users
-              settings: tenant_id (required), client_id (required), graph_url (optional), include_identities (optional), break_glass_accounts (optional), mfa_partial_percent (optional), privileged_roles (optional)
+              checks: identity.legacy_auth_blocked, identity.mfa.enforced_conditional_access, identity.mfa.phishing_resistant_admins, identity.mfa.registered_all_users, identity.privileged.admins_cloud_only, identity.privileged.global_admin_count, identity.privileged.pim_eligible_not_permanent
+              settings: tenant_id (required), client_id (required), graph_url (optional), include_identities (optional), break_glass_accounts (optional), mfa_partial_percent (optional), privileged_roles (optional), global_admin_min (optional), global_admin_max (optional)
               secrets: client_certificate (optional), client_secret (optional)
             manual 1.0.0
               checks: set per instance by setting 'checks'

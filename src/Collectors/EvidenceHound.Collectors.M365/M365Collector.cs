@@ -26,6 +26,8 @@ public sealed class M365Collector(IGraphCredentialFactory credentials, IGraphWai
             new(M365Settings.BreakGlassAccounts, "Comma-separated object IDs of break-glass accounts that Conditional Access policies may exclude.", Required: false),
             new(M365Settings.MfaPartialPercent, "Percentage of MFA-capable members at or above which MFA registration is partial rather than failed. Default: 90.", Required: false),
             new(M365Settings.PrivilegedRoles, "Comma-separated role template IDs treated as privileged. Default: 14 built-in administrator roles.", Required: false),
+            new(M365Settings.GlobalAdminMin, "Fewest Global Administrators expected, break-glass accounts included. Default: 2.", Required: false),
+            new(M365Settings.GlobalAdminMax, "Most Global Administrators expected, break-glass accounts included. Default: 4.", Required: false),
         ],
         [
             new(M365Settings.ClientCertificate, "PEM certificate and private key of the app registration (preferred).", Required: false),
@@ -53,21 +55,30 @@ public sealed class M365Collector(IGraphCredentialFactory credentials, IGraphWai
         secrets.GetValueOrDefault(M365Settings.ClientCertificate),
         secrets.GetValueOrDefault(M365Settings.ClientSecret));
 
-    private static async Task<Result<IReadOnlyList<(GraphSource Source, GraphCollection Collection)>>> ReadAsync(GraphClient client, CancellationToken cancellationToken)
+    /// <summary>Reads every collection. One the tenant is not licensed for is left out when the source allows it, so its checks can say so.</summary>
+    private static async Task<Result<IReadOnlyList<(GraphSource Source, GraphCollection? Collection)>>> ReadAsync(GraphClient client, CancellationToken cancellationToken)
     {
-        var read = new List<Result<(GraphSource, GraphCollection)>>();
+        var read = new List<Result<(GraphSource, GraphCollection?)>>();
         foreach (var source in GraphSources.All)
         {
-            read.Add((await client.GetAllAsync(source.Request, cancellationToken)).Map(collection => (source, collection)));
+            var collection = await client.GetAllAsync(source.Request, cancellationToken);
+            read.Add(collection.Match(
+                found => Result.Ok<(GraphSource, GraphCollection?)>((source, found)),
+                problems => source.NeedsLicence && problems.All(p => p.Code == GraphClient.NotLicensed)
+                    ? Result.Ok<(GraphSource, GraphCollection?)>((source, null))
+                    : Result.Fail<(GraphSource, GraphCollection?)>(problems)));
         }
 
         return Result.Combine(read);
     }
 
-    private static Result<CollectionResult> Evaluate(IReadOnlyList<(GraphSource Source, GraphCollection Collection)> collections, M365Options options, CollectorContext context)
+    private static Result<CollectionResult> Evaluate(IReadOnlyList<(GraphSource Source, GraphCollection? Collection)> collections, M365Options options, CollectorContext context)
     {
-        var tenant = TenantData.Parse(collections.ToDictionary(c => c.Source.Name, c => (System.Text.Json.Nodes.JsonArray?)c.Collection.Items, StringComparer.Ordinal));
-        var files = collections.Select(c => GraphEvidence.File(c.Source.EvidenceFile, c.Collection, options.IncludeIdentities)).ToArray();
+        var tenant = TenantData.Parse(collections.ToDictionary(c => c.Source.Name, c => c.Collection?.Items, StringComparer.Ordinal));
+        var files = collections
+            .Where(c => c.Collection is not null)
+            .Select(c => GraphEvidence.File(c.Source.EvidenceFile, c.Collection!, options.IncludeIdentities))
+            .ToArray();
         var now = context.Clock.UtcNow;
         var checks = M365Checks.All
             .Select(check => check.Evaluate(tenant, options))

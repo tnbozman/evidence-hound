@@ -12,6 +12,8 @@ public static class M365Settings
     public const string BreakGlassAccounts = "break_glass_accounts";
     public const string MfaPartialPercent = "mfa_partial_percent";
     public const string PrivilegedRoles = "privileged_roles";
+    public const string GlobalAdminMin = "global_admin_min";
+    public const string GlobalAdminMax = "global_admin_max";
     public const string ClientCertificate = "client_certificate";
     public const string ClientSecret = "client_secret";
 }
@@ -24,7 +26,9 @@ internal sealed record M365Options(
     bool IncludeIdentities,
     IReadOnlySet<string> BreakGlass,
     double MfaPartialPercent,
-    IReadOnlyList<string> PrivilegedRoles)
+    IReadOnlyList<string> PrivilegedRoles,
+    int GlobalAdminMin,
+    int GlobalAdminMax)
 {
     public static readonly Uri DefaultGraphUrl = new("https://graph.microsoft.com/");
 
@@ -32,6 +36,8 @@ internal sealed record M365Options(
     {
         ArgumentNullException.ThrowIfNull(settings);
         var read = new SettingsReader(settings);
+        var adminMin = read.Count(M365Settings.GlobalAdminMin, 2);
+        var adminMax = read.Count(M365Settings.GlobalAdminMax, 4);
         return read.Finish(new M365Options(
             read.Required(M365Settings.TenantId),
             read.Required(M365Settings.ClientId),
@@ -39,6 +45,8 @@ internal sealed record M365Options(
             read.Flag(M365Settings.IncludeIdentities),
             read.List(M365Settings.BreakGlassAccounts).ToHashSet(StringComparer.OrdinalIgnoreCase),
             read.Percent(M365Settings.MfaPartialPercent, 90),
-            read.List(M365Settings.PrivilegedRoles) is { Length: > 0 } roles ? roles : M365.PrivilegedRoles.Default));
+            read.List(M365Settings.PrivilegedRoles) is { Length: > 0 } roles ? roles : M365.PrivilegedRoles.Default,
+            adminMin,
+            adminMax));
     }
 }

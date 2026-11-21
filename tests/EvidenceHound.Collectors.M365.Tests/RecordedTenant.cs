@@ -24,6 +24,9 @@ internal sealed class RecordedTenant : IDisposable
         ["users"] = "/v1.0/users",
         ["mfa-registration"] = "/v1.0/reports/authenticationMethods/userRegistrationDetails",
         ["conditional-access-policies"] = "/v1.0/identity/conditionalAccess/policies",
+        ["role-assignments"] = "/v1.0/roleManagement/directory/roleAssignments",
+        ["role-eligibility-schedules"] = "/v1.0/roleManagement/directory/roleEligibilitySchedules",
+        ["role-assignment-schedule-instances"] = "/v1.0/roleManagement/directory/roleAssignmentScheduleInstances",
     };
 
     private readonly RecordedApi _api = RecordedApi.Start();
@@ -79,6 +82,13 @@ internal sealed class RecordedTenant : IDisposable
             .RespondWith(Response.Create().WithStatusCode(status).WithHeader("Content-Type", "application/json")
                 .WithBody(new JsonObject { ["error"] = new JsonObject { ["code"] = code, ["message"] = message } }.ToJsonString()));
         return this;
+    }
+
+    /// <summary>Answers the Privileged Identity Management paths as Graph does for a tenant without the licence for it.</summary>
+    public RecordedTenant WithoutPim()
+    {
+        Fail("role-eligibility-schedules", 400, "AadPremiumLicenseRequired", "The tenant needs to have Microsoft Entra ID P2 or Microsoft Entra ID Governance license.");
+        return Fail("role-assignment-schedule-instances", 400, "AadPremiumLicenseRequired", "The tenant needs to have Microsoft Entra ID P2 or Microsoft Entra ID Governance license.");
     }
 
     /// <summary>Answers every path with 401, as Graph does for a token it does not accept.</summary>

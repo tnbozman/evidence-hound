@@ -60,6 +60,15 @@ internal sealed class SettingsReader(CollectorSettings settings)
         var text => Invalid(name, $"'{text}' is not an http or https address", fallback),
     };
 
+    /// <summary>Records <paramref name="why"/> against <paramref name="name"/> unless <paramref name="valid"/>.</summary>
+    public void Require(bool valid, string name, string why)
+    {
+        if (!valid)
+        {
+            Invalid(name, why, 0);
+        }
+    }
+
     private T Invalid<T>(string name, string why, T fallback)
     {
         _problems.Add(new Problem("m365.setting_invalid", $"Setting '{name}': {why}."));

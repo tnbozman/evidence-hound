@@ -1,0 +1,9 @@
+{
+  "@odata.context": "{{graph}}v1.0/$metadata#roleManagement/directory/roleEligibilitySchedules",
+  "value": [
+    { "id": "es-0001", "principalId": "00000000-0000-4000-8000-0000000000a1", "roleDefinitionId": "62e90394-69f5-4237-9190-012177145e10", "directoryScopeId": "/", "memberType": "Direct", "status": "Provisioned", "scheduleInfo": { "startDateTime": "2026-07-01T00:00:00Z", "expiration": { "type": "afterDateTime", "endDateTime": "2027-07-01T00:00:00Z" } } },
+    { "id": "es-0002", "principalId": "00000000-0000-4000-8000-0000000000a2", "roleDefinitionId": "62e90394-69f5-4237-9190-012177145e10", "directoryScopeId": "/", "memberType": "Direct", "status": "Provisioned", "scheduleInfo": { "startDateTime": "2026-07-01T00:00:00Z", "expiration": { "type": "afterDateTime", "endDateTime": "2027-07-01T00:00:00Z" } } },
+    { "id": "es-0003", "principalId": "00000000-0000-4000-8000-0000000000a1", "roleDefinitionId": "29232cdf-9323-42fd-ade2-1d097af3e4de", "directoryScopeId": "/", "memberType": "Direct", "status": "Provisioned", "scheduleInfo": { "startDateTime": "2026-07-01T00:00:00Z", "expiration": { "type": "noExpiration" } } },
+    { "id": "es-0004", "principalId": "00000000-0000-4000-8000-0000000000a2", "roleDefinitionId": "194ae4cb-b126-40b2-bd5b-6091b380977d", "directoryScopeId": "/", "memberType": "Direct", "status": "Provisioned", "scheduleInfo": { "startDateTime": "2026-07-01T00:00:00Z", "expiration": { "type": "noExpiration" } } }
+  ]
+}

@@ -12,5 +12,8 @@ internal static class M365Checks
         new("identity.mfa.enforced_conditional_access", MfaChecks.EnforcedByConditionalAccess),
         new("identity.legacy_auth_blocked", MfaChecks.LegacyAuthBlocked),
         new("identity.mfa.phishing_resistant_admins", MfaChecks.PhishingResistantAdmins),
+        new("identity.privileged.global_admin_count", PrivilegedChecks.GlobalAdminCount),
+        new("identity.privileged.admins_cloud_only", PrivilegedChecks.AdminsCloudOnly),
+        new("identity.privileged.pim_eligible_not_permanent", PrivilegedChecks.PimEligibleNotPermanent),
     ];
 }

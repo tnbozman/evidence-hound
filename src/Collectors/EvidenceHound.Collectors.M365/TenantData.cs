@@ -6,19 +6,31 @@ namespace EvidenceHound.Collectors.M365;
 internal sealed record TenantData(
     IReadOnlyList<DirectoryUser> Users,
     IReadOnlyList<MfaRegistration> Registrations,
-    IReadOnlyList<CaPolicy> Policies)
+    IReadOnlyList<CaPolicy> Policies,
+    IReadOnlyList<RoleGrant> Assignments,
+    IReadOnlyList<RoleGrant>? Eligibilities,
+    IReadOnlyList<RoleGrant>? Instances)
 {
+    /// <summary>Whether the tenant has Privileged Identity Management, that is whether its eligibility and schedule collections could be read.</summary>
+    public bool HasPim => Eligibilities is not null && Instances is not null;
+
     public static TenantData Parse(IReadOnlyDictionary<string, JsonArray?> collections)
     {
         ArgumentNullException.ThrowIfNull(collections);
         return new(
             Items(collections, GraphSources.Users).Select(DirectoryUser.From).ToArray(),
             Items(collections, GraphSources.MfaRegistration).Select(MfaRegistration.From).ToArray(),
-            Items(collections, GraphSources.ConditionalAccess).Select(CaPolicy.From).ToArray());
+            Items(collections, GraphSources.ConditionalAccess).Select(CaPolicy.From).ToArray(),
+            Items(collections, GraphSources.RoleAssignments).Select(RoleGrant.From).ToArray(),
+            Optional(collections, GraphSources.RoleEligibility)?.Select(RoleGrant.From).ToArray(),
+            Optional(collections, GraphSources.RoleInstances)?.Select(RoleGrant.From).ToArray());
     }
 
     internal static IEnumerable<JsonObject> Items(IReadOnlyDictionary<string, JsonArray?> collections, string name) =>
         collections.GetValueOrDefault(name)?.OfType<JsonObject>() ?? [];
+
+    private static IEnumerable<JsonObject>? Optional(IReadOnlyDictionary<string, JsonArray?> collections, string name) =>
+        collections.GetValueOrDefault(name)?.OfType<JsonObject>();
 }
 
 internal sealed record DirectoryUser(string Id, bool Enabled, bool IsMember, bool Synced)
@@ -33,6 +45,18 @@ internal sealed record DirectoryUser(string Id, bool Enabled, bool IsMember, boo
 internal sealed record MfaRegistration(string Id, bool IsMfaCapable)
 {
     public static MfaRegistration From(JsonObject item) => new(Json.Text(item, "id"), Json.Flag(item, "isMfaCapable"));
+}
+
+/// <summary>
+/// A directory role held by a principal: an active assignment, an eligibility, or an assignment schedule instance. Only instances
+/// have an assignment type (<c>Assigned</c> or <c>Activated</c>); an empty <paramref name="End"/> means it never expires.
+/// </summary>
+internal sealed record RoleGrant(string PrincipalId, string RoleId, string AssignmentType, string End)
+{
+    public bool IsPermanentAssignment => AssignmentType == "Assigned" && End.Length == 0;
+
+    public static RoleGrant From(JsonObject item) =>
+        new(Json.Text(item, "principalId"), Json.Text(item, "roleDefinitionId"), Json.Text(item, "assignmentType"), Json.Text(item, "endDateTime"));
 }
 
 /// <summary>A Conditional Access policy: who and what it applies to, and what it grants.</summary>
