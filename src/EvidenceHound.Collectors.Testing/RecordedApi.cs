@@ -1,3 +1,5 @@
+using WireMock.RequestBuilders;
+using WireMock.ResponseBuilders;
 using WireMock.Server;
 
 namespace EvidenceHound.Collectors.Testing;
@@ -9,25 +11,39 @@ namespace EvidenceHound.Collectors.Testing;
 /// </summary>
 public sealed class RecordedApi : IDisposable
 {
-    private RecordedApi(WireMockServer server) => Server = server;
+    private RecordedApi(WireMockServer server)
+    {
+        Server = server;
+        Url = new Uri(server.Url ?? throw new InvalidOperationException("WireMock started without a URL."));
+        HttpClients = new BaseAddressClients(Url);
+    }
 
     public WireMockServer Server { get; }
 
     /// <summary>The server's base address.</summary>
-    public Uri Url => throw new NotImplementedException();
+    public Uri Url { get; }
 
     /// <summary>HTTP clients whose base address is <see cref="Url"/>, so collectors can use relative paths.</summary>
-    public IHttpClientFactory HttpClients => throw new NotImplementedException();
+    public IHttpClientFactory HttpClients { get; }
 
-    public static RecordedApi Start() => throw new NotImplementedException();
+    public static RecordedApi Start() => new(WireMockServer.Start());
 
     /// <summary>Answers <paramref name="method"/> <paramref name="path"/> with <paramref name="status"/> and <paramref name="body"/>.</summary>
-    public RecordedApi Respond(string method, string path, int status, string body, string mediaType = "application/json") =>
-        throw new NotImplementedException();
+    public RecordedApi Respond(string method, string path, int status, string body, string mediaType = "application/json")
+    {
+        Server.Given(Request.Create().WithPath(path).UsingMethod(method))
+            .RespondWith(Response.Create().WithStatusCode(status).WithHeader("Content-Type", mediaType).WithBody(body));
+        return this;
+    }
 
     /// <summary>Answers <paramref name="method"/> <paramref name="path"/> with the content of a recorded response file.</summary>
     public RecordedApi RespondWithFile(string method, string path, string responseFile, int status = 200, string mediaType = "application/json") =>
-        throw new NotImplementedException();
+        Respond(method, path, status, File.ReadAllText(responseFile), mediaType);
 
     public void Dispose() => Server.Dispose();
+
+    private sealed class BaseAddressClients(Uri baseAddress) : IHttpClientFactory
+    {
+        public HttpClient CreateClient(string name) => new() { BaseAddress = baseAddress };
+    }
 }

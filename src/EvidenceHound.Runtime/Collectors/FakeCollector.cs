@@ -35,6 +35,7 @@ public sealed class FakeCollector : ICollector
     public Task<Result<CollectionResult>> CollectAsync(CollectorContext context, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(context);
+        cancellationToken.ThrowIfCancellationRequested();
         var tenant = context.Settings.GetOrDefault("tenant", "example.com");
         var now = context.Clock.UtcNow;
 

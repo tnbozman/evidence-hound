@@ -23,16 +23,8 @@ public sealed class ContractKitTests : IDisposable
         await contract.EmitsOnlyDeclaredCheckIds();
         await contract.EvidenceFilesCanBeHashed();
         await contract.HonoursCancellation();
+        await contract.ReturnsFailNotThrowsWhenCredentialsAreRefused();
         await contract.NeverLogsSecrets();
-    }
-
-    [Fact]
-    public async Task Credentials_contract_is_skipped_for_a_collector_without_secrets()
-    {
-        var skipped = await Record.ExceptionAsync(new Contract(TestCollectors.WellBehaved()).ReturnsFailNotThrowsWhenCredentialsAreRefused);
-
-        skipped.ShouldNotBeNull().Message.ShouldContain("declares no secrets");
-        skipped.ShouldNotBeAssignableTo<IAssertionException>();
     }
 
     [Fact]
