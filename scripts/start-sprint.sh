@@ -26,6 +26,9 @@ branch="sprint/$slug"
 [[ "$(sprint_status "$file")" == "Planned" ]] \
   || die "$file is not 'Status: Planned' (it is '$(sprint_status "$file")')"
 
+in_progress="$(sprint_others_in_progress "$id")"
+[[ -z "$in_progress" ]] || die "another sprint is already in progress on main: $in_progress"
+
 open_sprints="$(gh pr list --state open --json headRefName --jq '.[].headRefName' | grep '^sprint/' || true)"
 [[ -z "$open_sprints" ]] || die "another sprint is open: $open_sprints. Finish or close it first."
 
