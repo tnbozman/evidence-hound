@@ -48,7 +48,7 @@ Projects: `src/EvidenceHound.Runtime` (runner, stores, config), `src/EvidenceHou
 - Result (2026-11-21): `hound config validate --check-secrets examples/example-pty-ltd.yaml` without `HOUND_CA_TOKEN` logs `Secret env:HOUND_CA_TOKEN could not be resolved` and exits 3; with it set prints `valid`. [Evidence](../evidence/s03/s03-02.md).
 
 ### s03-03 Evidence store and manifest
-- [ ] Done
+- [x] Done
 
 **Story:** As an auditor, I want every run's evidence stored with a hash manifest, so that I can prove what was collected and when.
 
@@ -65,6 +65,7 @@ Projects: `src/EvidenceHound.Runtime` (runner, stores, config), `src/EvidenceHou
 
 **Functional check**
 - Dry run with the fake collector writes a folder and a manifest you can verify with `sha256sum`.
+- Result (2026-11-21): `make run ARGS="collect --config examples/example-pty-ltd.yaml"` wrote `.dev/evidence/example-fake/<timestamp>/` with four files and `_manifest.json`; `sha256sum -c` on the manifest's hashes printed `OK` for all four. [Evidence](../evidence/s03/s03-03.md).
 
 ### s03-04 Runner pipeline
 - [ ] Done
@@ -108,6 +109,7 @@ Projects: `src/EvidenceHound.Runtime` (runner, stores, config), `src/EvidenceHou
 
 - s03-01: the config keeps s01's single `target` (mapping, `compliance_assessment`, `controls`) rather than a list of targets; "control refs per check" are the existing control keys. Add a list when a deployment needs two audits.
 - s03-02: the problem code is `secret.missing`, dotted like the other codes. `hound config validate --check-secrets` resolves every reference before a run.
+- s03-03: `ICollector` (with `Version`) and `CollectorOutput` are minimal: check results cite evidence by file name. s04's SDK and shared collector contract tests build on them. `hound collect` now stores evidence; `--dry-run` still contacts nothing.
 - s03-01: the only collector type is `fake`; s04's SDK should replace `CollectorTypes.BuiltIn` with a registry the CLI builds.
 
 ## Sprint review
