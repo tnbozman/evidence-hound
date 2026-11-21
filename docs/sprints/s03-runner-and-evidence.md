@@ -28,7 +28,7 @@ Projects: `src/EvidenceHound.Runtime` (runner, stores, config), `src/EvidenceHou
 - Result (2026-11-21): prints `valid`, exit 0; a broken config lists all four problems with lines and exits 3 without printing the inline token. [Evidence](../evidence/s03/s03-01.md).
 
 ### s03-02 Secret provider
-- [ ] Done
+- [x] Done
 
 **Story:** As an operator, I want secrets resolved at run time from the environment or Docker secrets, so that they are never stored by the tool.
 
@@ -45,6 +45,7 @@ Projects: `src/EvidenceHound.Runtime` (runner, stores, config), `src/EvidenceHou
 
 **Functional check**
 - Run the CLI with a missing env var: clear error, exit code 3, no value printed.
+- Result (2026-11-21): `hound config validate --check-secrets examples/example-pty-ltd.yaml` without `HOUND_CA_TOKEN` logs `Secret env:HOUND_CA_TOKEN could not be resolved` and exits 3; with it set prints `valid`. [Evidence](../evidence/s03/s03-02.md).
 
 ### s03-03 Evidence store and manifest
 - [ ] Done
@@ -106,6 +107,7 @@ Projects: `src/EvidenceHound.Runtime` (runner, stores, config), `src/EvidenceHou
 ## Discovered work
 
 - s03-01: the config keeps s01's single `target` (mapping, `compliance_assessment`, `controls`) rather than a list of targets; "control refs per check" are the existing control keys. Add a list when a deployment needs two audits.
+- s03-02: the problem code is `secret.missing`, dotted like the other codes. `hound config validate --check-secrets` resolves every reference before a run.
 - s03-01: the only collector type is `fake`; s04's SDK should replace `CollectorTypes.BuiltIn` with a registry the CLI builds.
 
 ## Sprint review
