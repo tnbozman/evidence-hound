@@ -45,7 +45,7 @@ Projects: `src/EvidenceHound.Collectors.Abstractions` (published package), `src/
 - Result (2026-11-21): `make test` passes 362 of 362 (0 skipped), including the six `FakeCollectorContractTests` contracts and `ContractCoverageTests.Every_built_in_collector_has_contract_tests`; making the fake's contract class non-public fails the coverage test, naming `FakeCollector`. [Evidence](../evidence/s04/s04-02.md).
 
 ### s04-03 Collector template
-- [ ] Done
+- [x] Done
 
 **Story:** As a contributor, I want `dotnet new hound-collector`, so that a new collector starts with structure, tests and docs.
 
@@ -58,6 +58,7 @@ Projects: `src/EvidenceHound.Collectors.Abstractions` (published package), `src/
 
 **Functional check**
 - `dotnet new hound-collector -n Example.Widget` then `make test` passes.
+- Result (2026-11-21): the template was installed and `Example.Widget` was generated in the repo root against locally packed SDK packages (`--HoundVersion 0.1.0-local.1`). Its own `dotnet test` passed 8 of 8 (six contracts and two behaviour tests). The repo's `make test` passed 362 of 362 and `make lint-dotnet` was clean with the generated folder present. `make test-template` passes. [Evidence](../evidence/s04/s04-03.md).
 
 ### s04-04 Manual-upload collector
 - [ ] Done
@@ -87,6 +88,7 @@ Projects: `src/EvidenceHound.Collectors.Abstractions` (published package), `src/
 - Config validation reports missing required settings but not unknown ones; a typo in an optional setting name goes unnoticed. Consider `config.setting_unknown` once every collector describes its settings. (Found in s04-01.)
 - `CollectStep` reads each evidence stream into memory before hashing and storing it. Stream to the store for large exports (manual collector, s04-04). (Found in s04-01.)
 - The contract kit does not yet check that check results use the context's instance name as `Source` and the context's clock for `CollectedAt`. Consider adding both contracts. (Found in s04-02.)
-- Nothing publishes the `Collectors.Abstractions` and `Collectors.Testing` packages yet; `dotnet pack` works locally. Add a pack-and-publish job before the template (s04-03) refers to them by package. (Found in s04-02.)
+- Nothing publishes the `Collectors.Abstractions` and `Collectors.Testing` packages yet; `dotnet pack` works locally. Add a pack-and-publish job before the template (s04-03) refers to them by package. (Found in s04-02.) Update from s04-03: `EvidenceHound.Core` must be published too, because the Abstractions package depends on it. Until all three are on a feed, a collector generated with the default `--HoundVersion 0.1.0` cannot restore outside `make test-template`.
+- The runner registers only built-in collectors (`AddBuiltInCollectors`). There is no way yet to load a collector built from the template into `hound` without editing the CLI. Decide how plugins are loaded: a package reference in a custom host, or assembly loading from config. (Found in s04-03.)
 
 ## Sprint review
