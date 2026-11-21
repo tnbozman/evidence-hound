@@ -1,32 +1,29 @@
-# s11 ASD Essentials mapping and adoption guides
+# s11 Essential Eight mapping and adoption guides
 
 Status: Planned
 
-**Goal:** the Essential Eight ML2 mapping completed, an ASD Essentials for enterprise IT mapping ready for the migration (priority phase 1 first), the guides an organisation needs to adopt the kit (moving registers out of spreadsheets, running manual sources, training), and two tiers of reporting: monthly operational reporting to the security committee and quarterly governance reporting to the board.
+**Goal:** the Essential Eight ML2 mapping completed, the guides an organisation needs to adopt the kit (moving registers out of spreadsheets, running manual sources, training), and two tiers of reporting: monthly operational reporting to the security committee and quarterly governance reporting to the board.
 
-### s11-01 ASD Essentials mapping file
+Risks, exceptions and risk acceptances in the reports are read from CISO Assistant, whether entered there by hand or, from release 2 (s14), applied from configuration. The ASD Essentials mapping, planned here before the release 1 reorder, is now [s13](s13-essentials-mapping.md).
+
+### s11-01 Essential Eight mapping completed
 - [ ] Done
 
-**Story:** As a compliance owner, I want the reference checks mapped to the ASD Essentials for enterprise IT, so that a new deployment produces Essentials results on its first run, and an organisation still on the Essential Eight can run both during its transition.
-
-See [the migration plan](../migrations/essential-eight-to-asd-essentials.md).
+**Story:** As a compliance owner whose audit of record is Essential Eight ML2, I want every ML1 and ML2 requirement either evidenced by a check or assigned to a named manual source, so that the audit has no row that nobody owns.
 
 **Acceptance criteria**
-- `mappings/asd-essentials-enterprise-it.yaml` targets `urn:intuitem:risk:framework:asd-essentials-enterprise-it` and names requirements by URN (s06-01), so each action is mapped per domain.
-- `mappings/essential-eight-2023.yaml` (started in s06-02, extended in s07) covers every ML1 and ML2 requirement with checks or a `manual_only` entry. It stays the audit of record until the migration's cut-over.
-- `hound mapping derive` writes a draft Essentials mapping from the Essential Eight mapping and CISO Assistant's transition mapping. Each action row gets the union of its source controls' checks and is marked `draft: true`; publishing refuses draft rows until a person removes the mark.
-- Every check ID from the reference and manual collectors maps to at least one priority phase 1 action; every phase 1 action either has checks or is listed under `manual_only` with a suggested manual source.
-- A coverage report (`hound mapping coverage`) prints automated, manual-only and uncovered counts per Essentials domain and phase, and per Essential Eight strategy for the transition mapping.
+- `mappings/essential-eight-2023.yaml` (started in s06-02, extended in s08 and s09) covers every ML1 and ML2 requirement with checks or a `manual_only` entry, and every `manual_only` entry names a manual source from the example config (s09-05).
+- Every check ID from the reference and manual collectors maps to at least one Essential Eight requirement.
+- `hound mapping coverage` prints automated, manual-only and uncovered counts per Essential Eight strategy and maturity level, for an audit's selected maturity levels.
 
 **Tests first**
-- `EssentialsMappingTests.All_requirement_urns_exist_in_framework_snapshot`
-- `EssentialsMappingTests.Every_reference_check_is_mapped`
-- `DeriveTests.Action_gets_union_of_source_checks_marked_draft`
-- `PublishTests.Draft_rows_are_not_published`
-- `CoverageTests.Counts_per_domain_and_phase`
+- `E8MappingTests.All_requirement_urns_exist_in_framework_snapshot`
+- `E8MappingTests.Every_reference_check_is_mapped`
+- `E8MappingTests.Every_ml1_and_ml2_requirement_is_covered_or_manual`
+- `CoverageTests.Counts_per_strategy_and_maturity_level`
 
 **Functional check**
-- Against the local CISO Assistant with both libraries loaded: `hound run` with recordings fills the example Essentials and Essential Eight 2023 audits; the coverage report matches the audits.
+- Against the local CISO Assistant with `essential-eight-2023` loaded: `hound run` with recordings fills the example ML2 audit; the coverage report matches the audit, with no `not_assessed` row that lacks a manual source.
 
 ### s11-02 Spreadsheet migration guide (no code)
 - [ ] Done
@@ -114,7 +111,7 @@ See [the migration plan](../migrations/essential-eight-to-asd-essentials.md).
 **Acceptance criteria**
 - `hound report board --quarter YYYY-Qn` produces a Markdown report of at most two pages plus an appendix, from the quarter-end snapshots, with these sections:
     1. Compliance position: a one-paragraph statement for the authorising official to confirm (on track, on track with conditions, off track), with the reasons.
-    2. Maturity posture: per framework and strategy (for the Essentials, each domain by priority phase; for the Essential Eight during transition, each of the eight at ML1 and ML2), with the trend over the last four quarters.
+    2. Maturity posture: per framework and strategy (for the Essential Eight, each of the eight at ML1 and ML2; once the Essentials audit exists (s13), each domain by priority phase), with the trend over the last four quarters.
     3. Key risks: the top five risks against appetite, with owner, treatment and target date.
     4. Risk-acceptance decisions: risks and exceptions accepted this quarter, who accepted them, and when they expire; anything needing board endorsement highlighted.
     5. Assurance: collector coverage (automated versus manual share of requirements), evidence freshness, independent review status, tier 1 supplier assurance.
