@@ -30,6 +30,7 @@ public sealed class RunCommandTests : IDisposable
         changes["compliance_assessment"]!.GetValue<string>().ShouldBe("EXAMPLE-BASELINE-2026");
         changes["changed"]!.GetValue<int>().ShouldBeGreaterThan(0);
         (changes["unchanged"]!.GetValue<int>(), changes["drift"]!.GetValue<int>()).ShouldBe((0, 0));
+        collector["drift"]!.AsArray().ShouldBeEmpty();
         Directory.GetDirectories(Path.Combine(_workDir, "evidence", "example-fake")).ShouldHaveSingleItem();
     }
 

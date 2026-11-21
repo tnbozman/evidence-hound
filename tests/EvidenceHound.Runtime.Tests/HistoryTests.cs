@@ -96,6 +96,36 @@ public sealed class HistoryTests : IDisposable
         summary.Audits.ShouldBe([new AuditChanges("EXAMPLE-1", 1, 0, 0), new AuditChanges("EXAMPLE-2", 1, 0, 0)]);
     }
 
+    [Fact]
+    public async Task A_row_edited_in_ciso_assistant_is_restored_and_reported_as_drift()
+    {
+        var states = new RecordingStates();
+        var sink = new AcceptingSink();
+        var runner = Runner(sink, states);
+        states.Next = new CurrentState([new CurrentAudit("EXAMPLE-1", [], [Row("R-MFA", ComplianceResult.NotAssessed, "", [])])], [], []);
+        await runner.RunAsync([Instance("example-idp", "idp")], new RunOptions(), _ct);
+        var written = sink.Updates.OfType<AuditUpdate.UpdateRequirementAssessment>().Single(u => u.RequirementRefId == "R-MFA");
+        var uploaded = sink.Updates.OfType<AuditUpdate.UploadEvidence>().Single(u => u.Evidence.Id == "example-idp/admins.json").Evidence;
+        states.Next = new CurrentState(
+            [new CurrentAudit("EXAMPLE-1", [], [Row("R-MFA", ComplianceResult.NonCompliant, written.Observation, ["uuid-admins"])])],
+            [new CurrentEvidence(uploaded.Id, "uuid-admins", uploaded.Sha256)],
+            []);
+        sink.Updates.Clear();
+        _clock.UtcNow = Now.AddDays(1);
+
+        var summary = await runner.RunAsync([Instance("example-idp", "idp")], new RunOptions(), _ct);
+
+        var drift = summary.Collectors[0].Drift.ShouldHaveSingleItem();
+        drift.Code.ShouldBe("publish.drift_corrected");
+        drift.Message.ShouldContain("urn:example:req:r-mfa");
+        summary.Audits[0].ShouldBe(new AuditChanges("EXAMPLE-1", Changed: 1, Unchanged: 0, Drift: 1));
+        sink.Updates.OfType<AuditUpdate.UploadEvidence>().Where(u => !u.Evidence.Id.StartsWith("hound-health/", StringComparison.Ordinal)).ShouldBeEmpty();
+        sink.Updates.OfType<AuditUpdate.UpdateRequirementAssessment>().Single(u => u.RequirementRefId == "R-MFA").Result.ShouldBe(ComplianceResult.Compliant);
+    }
+
+    private static CurrentRow Row(string reference, ComplianceResult result, string observation, string[] evidenceIds) =>
+        new($"ra-{reference}", $"urn:example:req:{reference.ToLowerInvariant()}", reference, [], result, observation, evidenceIds);
+
     private List<JsonNode> Lines(string audit) =>
         [.. File.ReadAllLines(Path.Combine(_root, "_history", $"{audit}.jsonl")).Select(line => JsonNode.Parse(line)!)];
 
@@ -130,10 +160,12 @@ public sealed class HistoryTests : IDisposable
     {
         public List<StateQuery> Queries { get; } = [];
 
+        public CurrentState Next { get; set; } = CurrentState.Empty;
+
         public Task<CurrentState> ReadAsync(StateQuery query, CancellationToken cancellationToken)
         {
             Queries.Add(query);
-            return Task.FromResult(CurrentState.Empty);
+            return Task.FromResult(Next);
         }
     }
 

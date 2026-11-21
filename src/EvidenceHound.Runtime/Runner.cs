@@ -31,6 +31,9 @@ public sealed record CollectorRunResult(string Collector, CollectorOutcome Outco
     /// <summary>Rows changed, verified unchanged and restored from drift, per target audit, when the run planned.</summary>
     public IReadOnlyList<AuditChanges> Changes { get; init; } = [];
 
+    /// <summary>A <c>publish.drift_corrected</c> notice for each computed row someone edited in CISO Assistant, which this run restores.</summary>
+    public IReadOnlyList<Problem> Drift { get; init; } = [];
+
     public bool Equals(CollectorRunResult? other) =>
         other is not null && Collector == other.Collector && Outcome == other.Outcome && Problems.SequenceEqual(other.Problems) && Equals(Publish, other.Publish);
 
