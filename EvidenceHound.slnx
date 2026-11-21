@@ -10,9 +10,13 @@
     <Project Path="src/EvidenceHound.Runtime/EvidenceHound.Runtime.csproj" />
     <Project Path="src/EvidenceHound.Transport.Kafka/EvidenceHound.Transport.Kafka.csproj" />
   </Folder>
+  <Folder Name="/src/Collectors/">
+    <Project Path="src/Collectors/EvidenceHound.Collectors.M365/EvidenceHound.Collectors.M365.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/EvidenceHound.CisoAssistant.Tests/EvidenceHound.CisoAssistant.Tests.csproj" />
     <Project Path="tests/EvidenceHound.Cli.Tests/EvidenceHound.Cli.Tests.csproj" />
+    <Project Path="tests/EvidenceHound.Collectors.M365.Tests/EvidenceHound.Collectors.M365.Tests.csproj" />
     <Project Path="tests/EvidenceHound.Collectors.Manual.Tests/EvidenceHound.Collectors.Manual.Tests.csproj" />
     <Project Path="tests/EvidenceHound.Collectors.Testing.Tests/EvidenceHound.Collectors.Testing.Tests.csproj" />
     <Project Path="tests/EvidenceHound.Core.Tests/EvidenceHound.Core.Tests.csproj" />

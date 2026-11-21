@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Collectors\EvidenceHound.Collectors.M365\EvidenceHound.Collectors.M365.csproj" />
+    <ProjectReference Include="..\..\src\EvidenceHound.Collectors.Testing\EvidenceHound.Collectors.Testing.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="recorded\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
