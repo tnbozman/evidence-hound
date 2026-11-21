@@ -78,7 +78,7 @@ public static class HoundCli
         var logger = loggers.CreateLogger("hound");
 
         return await CollectorRegistry.FromServices(host.Services).Match(
-            registry => InvokeAsync(args, output, error, extraCommands, host.Services, registry, logger, cancellationToken),
+            registry => InvokeAsync(args, output, error, extraCommands, host.Services, registry, loggers, cancellationToken),
             problems => Task.FromResult(Log.Problems(logger, problems)));
     }
 
@@ -89,10 +89,10 @@ public static class HoundCli
         IReadOnlyList<Command> extraCommands,
         IServiceProvider services,
         CollectorRegistry registry,
-        ILogger logger,
+        ILoggerFactory loggers,
         CancellationToken cancellationToken)
     {
-        var loggers = services.GetRequiredService<ILoggerFactory>();
+        var logger = loggers.CreateLogger("hound");
         var collectorServices = new CollectorServices(loggers, services.GetRequiredService<IHttpClientFactory>());
         var root = BuildRootCommand(output, loggers, services.GetRequiredService<IConfiguration>(), registry, collectorServices);
         foreach (var command in extraCommands)
