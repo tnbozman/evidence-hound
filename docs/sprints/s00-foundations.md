@@ -1,6 +1,6 @@
 # s00 Foundations
 
-Status: Planned
+Status: In progress
 
 **Goal:** a public repo where a contributor opens the dev container, runs one command and sees a green build, with CI, security scanning and the sprint workflow working end to end.
 
