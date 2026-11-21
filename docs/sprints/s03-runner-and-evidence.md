@@ -7,7 +7,7 @@ Status: In progress
 Projects: `src/EvidenceHound.Runtime` (runner, stores, config), `src/EvidenceHound.Cli`.
 
 ### s03-01 Deployment configuration
-- [ ] Done
+- [x] Done
 
 **Story:** As an operator, I want one config file per deployment, so that nothing organisation-specific lives in code.
 
@@ -25,6 +25,7 @@ Projects: `src/EvidenceHound.Runtime` (runner, stores, config), `src/EvidenceHou
 
 **Functional check**
 - `make run ARGS="config validate examples/example-pty-ltd.yaml"` prints `valid`.
+- Result (2026-11-21): prints `valid`, exit 0; a broken config lists all four problems with lines and exits 3 without printing the inline token. [Evidence](../evidence/s03/s03-01.md).
 
 ### s03-02 Secret provider
 - [ ] Done
@@ -103,5 +104,8 @@ Projects: `src/EvidenceHound.Runtime` (runner, stores, config), `src/EvidenceHou
 - After `make run ARGS="run ..."`, the example audit's control shows a fresh "collector health" evidence revision.
 
 ## Discovered work
+
+- s03-01: the config keeps s01's single `target` (mapping, `compliance_assessment`, `controls`) rather than a list of targets; "control refs per check" are the existing control keys. Add a list when a deployment needs two audits.
+- s03-01: the only collector type is `fake`; s04's SDK should replace `CollectorTypes.BuiltIn` with a registry the CLI builds.
 
 ## Sprint review
