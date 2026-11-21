@@ -134,7 +134,7 @@ Moved from s13-02, because the Essentials parallel run needs it before 800-171 d
 - Each answer above reproduced against the local CISO Assistant with a short script under `scripts/`, its output recorded under this task.
 
 ### s06-06 Scope file and offline validation
-- [ ] Done
+- [x] Done
 
 **Story:** As a capability owner, I want the organisation's structure declared in files with a schema, so that I can change it through reviewed pull requests, with an assistant's help, instead of clicking in CISO Assistant.
 
@@ -180,6 +180,7 @@ The layout follows one that has already been tried against CISO Assistant: one s
 
 **Functional check**
 - `hound scope validate examples/compliance-repo/scope/` passes, and a copy with one broken reference fails with exactly that problem.
+- Result (2026-11-21): `hound scope validate examples/compliance-repo/scope --config examples/example-essential-eight.yaml` printed `scope valid: 1 domain(s), 2 control(s), 1 audit(s)` and exited 0. A copy naming the undeclared system `Example tablets` in the audit exited 3 with one problem, `scope.reference_unknown` at `audits/ex-e8-2026.yaml` line 17. Evidence: [docs/evidence/s06/s06-06.md](../evidence/s06/s06-06.md).
 
 ### s06-07 Scope plan
 - [ ] Done
@@ -316,6 +317,7 @@ The layout follows one that has already been tried against CISO Assistant: one s
 
 - Over Kafka, `hound run` has no current state to compare with, so it sends every row (as before s06-04) and reports no drift. A requirement mapped with `rows: all` is not supported over Kafka either, because the dispatcher addresses one row. (Found in s06-04.)
 - Tests that PATCH CISO Assistant must send a sized body: .NET's `PatchAsJsonAsync` streams a chunked body that reaches Django empty, so the call succeeds and changes nothing. The client already uses `StringContent`. (Found in s06-04.)
+- A deployment target's problems in `hound scope validate --config` name the config file but no line, because the config loader keeps no line numbers for targets. (Found in s06-06.)
 - The organisation's own record (CISO Assistant's main entity, used by third-party risk features) is not managed by the scope yet; the scope uses the root folder. Add it once the REST API is confirmed to update it. (Found planning s06.)
 
 ## Sprint review
