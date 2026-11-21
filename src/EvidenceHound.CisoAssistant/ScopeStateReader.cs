@@ -32,14 +32,17 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource
         var domainIds = folders.Where(f => RelationId(f["parent_folder"]) == rootId).Select(Id).ToArray();
         var domainObjects = await reading.ObjectsAsync("folders", domainIds);
         var users = Actors(await reading.ListAsync("users/"), await reading.ListAsync("actors/"));
-        var frameworks = (await reading.ListAsync("frameworks/")).ToDictionary(Id, f => Text(f["urn"]) ?? Id(f), StringComparer.Ordinal);
+        var frameworkList = await reading.ListAsync("frameworks/");
+        var frameworks = frameworkList.ToDictionary(Id, f => Text(f["urn"]) ?? Id(f), StringComparer.Ordinal);
+        var libraries = await reading.ListAsync("loaded-libraries/");
         HashSet<string> inScope = [rootId, .. domainIds];
         var perimeters = await reading.ObjectsInAsync("perimeters", inScope);
         var assets = await reading.ObjectsInAsync("assets", inScope);
         var audits = await reading.ObjectsInAsync("compliance-assessments", inScope);
         var evidences = await reading.ObjectsInAsync("evidences", inScope);
         var controls = await reading.ObjectsInAsync("applied-controls", inScope);
-        var rows = await RowsAsync(reading, query, audits.Select(a => Text(a["ref_id"])).OfType<string>().ToHashSet(StringComparer.Ordinal));
+        var hashes = await HashesAsync(reading, evidences);
+        var rows = await reading.RowsAsync(query, audits.Select(a => Text(a["ref_id"])).OfType<string>().ToHashSet(StringComparer.Ordinal));
         if (reading.Problems.Count > 0)
         {
             return Result.Fail<IReadOnlyList<ActualObject>>(reading.Problems);
@@ -51,10 +54,11 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource
             users,
             assets.ToDictionary(Id, a => Text(a["name"]) ?? Id(a), StringComparer.Ordinal),
             perimeters.ToDictionary(Id, p => Text(p["name"]) ?? Id(p), StringComparer.Ordinal),
-            evidences.ToDictionary(Id, e => Text(e["ref_id"]) ?? Id(e), StringComparer.Ordinal));
+            evidences.ToDictionary(Id, e => Text(e["ref_id"]) ?? Id(e), StringComparer.Ordinal),
+            controls.ToDictionary(Id, c => Text(c["ref_id"]) ?? Id(c), StringComparer.Ordinal));
         return Result.Ok<IReadOnlyList<ActualObject>>(
         [
-            .. frameworks.Values.Where(query.FrameworkUrns.Contains).Select(urn => new ActualObject(new ScopeObject(ScopeKind.Framework, urn, Fields()), null)),
+            .. Frameworks(query, frameworkList, libraries),
             .. domainObjects.Select(d => Marked(ScopeKind.Domain, Text(d["name"]), d)),
             .. perimeters.Select(p => Marked(ScopeKind.Perimeter, ScopeDesired.PerimeterKey(names.Domain(p) ?? names.Root, Text(p["name"]) ?? Id(p)), p,
                 ("name", Text(p["name"])), ("ref_id", Text(p["ref_id"])), ("domain", names.Domain(p)))),
@@ -64,35 +68,49 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource
             .. audits.Select(a => Marked(ScopeKind.Audit, Text(a["ref_id"]), a,
                 ("name", Text(a["name"])), ("framework", Lookup(a["framework"], frameworks)), ("groups", ScopeDesired.Joined(Strings(a["selected_implementation_groups"]))),
                 ("domain", names.Domain(a)), ("perimeter", Lookup(a["perimeter"], names.Perimeters)), ("eta", Text(a["eta"])), ("due_date", Text(a["due_date"])),
-                ("authors", Joined(a["authors"], names.Users)), ("reviewers", Joined(a["reviewers"], names.Users)))),
-            .. evidences.Select(e => Marked(ScopeKind.Document, Text(e["ref_id"]), e, ("name", Text(e["name"])), ("domain", names.Domain(e)))),
+                ("authors", Joined(a["authors"], names.Users)), ("reviewers", Joined(a["reviewers"], names.Users))) with { Locked = a["is_locked"] is JsonValue locked && locked.TryGetValue<bool>(out var isLocked) && isLocked }),
+            .. evidences.Select(e => Marked(ScopeKind.Document, Text(e["ref_id"]), e, ("name", Text(e["name"])), ("domain", names.Domain(e)), ("hashes", hashes.GetValueOrDefault(Id(e))))),
             .. controls.Select(c => Marked(ScopeKind.Control, Text(c["ref_id"]), c,
                 ("name", Text(c["name"])), ("domain", names.Domain(c)), ("owner", Joined(c["owner"], names.Users)), ("priority", Text(c["priority"])),
                 ("category", Text(c["category"])), ("eta", Text(c["eta"])), ("systems", Joined(c["assets"], names.Assets)), ("documents", Joined(c["evidences"], names.Evidence)))),
-            .. rows,
+            .. rows.Select(r => new ActualObject(
+                new ScopeObject(ScopeKind.Assessment, r.Key, Fields(
+                    ("status", Choice(Text(r.Row["status"]))), ("result", Choice(Text(r.Row["result"]))), ("observation", Text(r.Row["observation"])),
+                    ("controls", Joined(r.Row["applied_controls"], names.Controls)), ("documents", Joined(r.Row["evidences"], names.Evidence)))),
+                null)),
         ]);
     }
 
-    /// <summary>The rows with hand-written results, from each audit CISO Assistant already holds, matched by requirement ref_id or URN.</summary>
-    private static async Task<List<ActualObject>> RowsAsync(Reading reading, ScopeStateQuery query, HashSet<string> heldAudits)
+    /// <summary>
+    /// The frameworks and other libraries the scope loads that CISO Assistant holds, each with its loaded library's version: a framework by its
+    /// URN, another library (such as a mapping set) by its own URN.
+    /// </summary>
+    private static IEnumerable<ActualObject> Frameworks(ScopeStateQuery query, List<JsonNode> frameworks, List<JsonNode> libraries)
     {
-        var found = new List<ActualObject>();
-        foreach (var (audit, requirements) in query.Rows.Where(r => heldAudits.Contains(r.Key)))
+        var versions = libraries.ToDictionary(Id, l => Text(l["version"]), StringComparer.Ordinal);
+        foreach (var urn in query.FrameworkUrns.Distinct(StringComparer.Ordinal))
         {
-            var rows = await reading.ListAsync($"requirement-assessments/?{Selector.RowsOfAudit(audit).ToQueryString()}");
-            foreach (var requirement in requirements)
+            (bool Found, string? Version) version = frameworks.FirstOrDefault(f => Text(f["urn"]) == urn) is { } framework
+                ? (true, RelationId(framework["library"]) is { } library ? versions.GetValueOrDefault(library) : null)
+                : libraries.FirstOrDefault(l => Text(l["urn"]) == urn) is { } loaded ? (true, Text(loaded["version"])) : (false, null);
+            if (version.Found)
             {
-                if (rows.FirstOrDefault(r => Matches(r["requirement"], requirement)) is { } row)
-                {
-                    found.Add(new ActualObject(
-                        new ScopeObject(ScopeKind.Assessment, ScopeDesired.AssessmentKey(audit, requirement), Fields(
-                            ("status", Choice(Text(row["status"]))), ("result", Choice(Text(row["result"]))), ("observation", Text(row["observation"])))),
-                        null));
-                }
+                yield return new ActualObject(new ScopeObject(ScopeKind.Framework, urn, Fields(("version", version.Version))), null);
             }
         }
+    }
 
-        return found;
+    /// <summary>Each evidence item's file hashes, from its revisions.</summary>
+    private static async Task<Dictionary<string, string?>> HashesAsync(Reading reading, List<JsonNode> evidences)
+    {
+        var hashes = new Dictionary<string, string?>(StringComparer.Ordinal);
+        foreach (var id in evidences.Select(Id))
+        {
+            var revisions = await reading.ListAsync($"evidence-revisions/?evidence={Uri.EscapeDataString(id)}");
+            hashes[id] = ScopeDesired.Joined(revisions.Select(r => Text(r["attachment_hash"])).OfType<string>().Distinct(StringComparer.Ordinal));
+        }
+
+        return hashes;
     }
 
     /// <summary>
@@ -154,7 +172,8 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource
         Dictionary<string, string> Users,
         Dictionary<string, string> Assets,
         Dictionary<string, string> Perimeters,
-        Dictionary<string, string> Evidence)
+        Dictionary<string, string> Evidence,
+        Dictionary<string, string> Controls)
     {
         public string? Domain(JsonNode held) => RelationId(held["folder"]) is { } id ? Domains.GetValueOrDefault(id) : null;
     }
@@ -171,6 +190,22 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource
         /// <summary>The <c>/object/</c> view of each listed object whose folder is one of <paramref name="folders"/>.</summary>
         public async Task<List<JsonNode>> ObjectsInAsync(string resource, HashSet<string> folders) =>
             await ObjectsAsync(resource, [.. (await ListAsync($"{resource}/")).Where(o => RelationId(o["folder"]) is { } f && folders.Contains(f)).Select(Id)]);
+
+        /// <summary>The row of each requirement the scope writes, from each audit CISO Assistant already holds, matched by requirement ref_id or URN.</summary>
+        public async Task<List<(string Key, JsonNode Row)>> RowsAsync(ScopeStateQuery query, HashSet<string> heldAudits)
+        {
+            var found = new List<(string Key, JsonNode Row)>();
+            foreach (var (audit, requirements) in query.Rows.Where(r => heldAudits.Contains(r.Key)))
+            {
+                var rows = await ListAsync($"requirement-assessments/?{Selector.RowsOfAudit(audit).ToQueryString()}");
+                found.AddRange(requirements
+                    .Select(requirement => (Key: ScopeDesired.AssessmentKey(audit, requirement), Row: rows.FirstOrDefault(r => Matches(r["requirement"], requirement))))
+                    .Where(r => r.Row is not null)
+                    .Select(r => (r.Key, r.Row!)));
+            }
+
+            return found;
+        }
 
         public async Task<List<JsonNode>> ObjectsAsync(string resource, string[] ids)
         {

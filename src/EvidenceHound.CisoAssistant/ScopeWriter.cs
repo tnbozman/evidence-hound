@@ -1,16 +1,18 @@
 using System.Text;
 using System.Text.Json.Nodes;
+using EvidenceHound.Core.Publishing;
 using EvidenceHound.Core.Results;
 using EvidenceHound.Core.Scope;
 
 namespace EvidenceHound.CisoAssistant;
 
 /// <summary>
-/// Writes scope changes to CISO Assistant: domains as folders under the root folder, perimeters, and systems as assets. Each write finds the
-/// IDs it needs by name first (folders, assets, users' actors), so nothing is sent when a name cannot be resolved. Creates and updates send every
-/// field the scope manages, with the <c>[hound scope &lt;state&gt;]</c> marker at the end of the description.
+/// Writes scope changes to CISO Assistant: frameworks as loaded libraries, domains as folders under the root folder, perimeters, systems as
+/// assets, audits as compliance assessments, documents as evidence with their files, applied controls, and rows. Each write finds the IDs it
+/// needs by name first (folders, assets, users' actors, frameworks, evidence, controls), so nothing is sent when a name cannot be resolved.
+/// Creates and updates send every field the scope manages, with the <c>[hound scope &lt;state&gt;]</c> marker at the end of the description.
 /// </summary>
-internal sealed class ScopeWriter(HttpClient http) : IScopeWriter
+internal sealed partial class ScopeWriter(HttpClient http, ICisoAssistantClient client) : IScopeWriter
 {
     public async Task<Result<Unit>> WriteAsync(ScopeWrite write, CancellationToken cancellationToken)
     {
@@ -27,6 +29,11 @@ internal sealed class ScopeWriter(HttpClient http) : IScopeWriter
         ScopeKind.Domain => DomainAsync(write, folders, cancellationToken),
         ScopeKind.Perimeter => PerimeterAsync(write, folders, cancellationToken),
         ScopeKind.System => SystemAsync(write, folders, cancellationToken),
+        ScopeKind.Framework => FrameworkAsync(write, cancellationToken),
+        ScopeKind.Audit => AuditAsync(write, folders, cancellationToken),
+        ScopeKind.Document => DocumentAsync(write, folders, cancellationToken),
+        ScopeKind.Control => ControlAsync(write, folders, cancellationToken),
+        ScopeKind.Assessment => RowAsync(write, cancellationToken),
         var kind => Task.FromResult(Result.Fail<Unit>(new Problem("scope.kind_not_applied", $"This version of hound does not write {kind.ToString().ToLowerInvariant()}s yet."))),
     };
 
@@ -85,7 +92,7 @@ internal sealed class ScopeWriter(HttpClient http) : IScopeWriter
             }
 
             var parents = Resolve(Split(Field(declared, "parents")), byName, "parent system");
-            var owners = await OwnersAsync(Split(Field(declared, "owner")), cancellationToken);
+            var owners = await ActorsAsync(Split(Field(declared, "owner")), cancellationToken);
             var folder = folders.FolderOf(declared);
             return await Result.Combine([folder.Map(f => (JsonNode)f), parents.Map(p => (JsonNode)p), owners.Map(o => (JsonNode)o)]).BindAsync(async resolved =>
             {
@@ -108,7 +115,7 @@ internal sealed class ScopeWriter(HttpClient http) : IScopeWriter
     }
 
     /// <summary>The users named by email, as the IDs of their actors: owners, authors and reviewers are actors in CISO Assistant.</summary>
-    private async Task<Result<JsonArray>> OwnersAsync(string[] emails, CancellationToken cancellationToken)
+    private async Task<Result<JsonArray>> ActorsAsync(string[] emails, CancellationToken cancellationToken)
     {
         if (emails.Length == 0)
         {
@@ -146,6 +153,11 @@ internal sealed class ScopeWriter(HttpClient http) : IScopeWriter
 
     private async Task<Result<Unit>> SendAsync(HttpMethod method, string path, JsonObject? body, string action, CancellationToken cancellationToken)
     {
+        return (await SendForJsonAsync(method, path, body, action, cancellationToken)).Map(_ => Unit.Value);
+    }
+
+    private Task<Result<JsonNode>> SendForJsonAsync(HttpMethod method, string path, JsonObject? body, string action, CancellationToken cancellationToken)
+    {
         var request = new HttpRequestMessage(method, path);
         if (body is not null)
         {
@@ -153,16 +165,16 @@ internal sealed class ScopeWriter(HttpClient http) : IScopeWriter
             request.Content = new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json");
         }
 
-        return (await http.SendForJsonAsync(request, action, cancellationToken)).Map(_ => Unit.Value);
+        return http.SendForJsonAsync(request, action, cancellationToken);
     }
 
     private static string Described(ScopeObject declared, ScopeChange change) =>
         ScopeMarker.Mark(Field(declared, "description"), change.State ?? ScopeMarker.Fingerprint(declared.Fields));
 
-    /// <summary>Leaves a field out rather than send an empty one, so CISO Assistant fills in what it fills in itself.</summary>
-    private static void Drop(JsonObject body, string field)
+    /// <summary>Leaves fields out rather than send empty ones, so CISO Assistant fills in what it fills in itself.</summary>
+    private static void Drop(JsonObject body, params string[] fields)
     {
-        if (body[field] is null)
+        foreach (var field in fields.Where(f => body[f] is null))
         {
             body.Remove(field);
         }

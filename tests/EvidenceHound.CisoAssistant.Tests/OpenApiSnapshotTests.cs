@@ -54,14 +54,22 @@ public sealed class OpenApiSnapshotTests : IDisposable
         await client.LinkEvidenceToAppliedControlAsync("R", "x-9", _ct);
         await client.UpdateAppliedControlAsync("R", ControlState.Active, _ct);
         await _ca.Scope.ReadAsync(new ScopeStateQuery("Global", [], new Dictionary<string, IReadOnlyList<RequirementKey>> { ["R"] = [RequirementKey.Ref("R")] }), _ct);
-        foreach (var kind in new[] { ScopeKind.Domain, ScopeKind.Perimeter, ScopeKind.System })
+        var file = Path.Combine(Path.GetTempPath(), $"hound-snapshot-{Guid.NewGuid():N}.yaml");
+        await File.WriteAllTextAsync(file, "urn: urn:example:other", _ct);
+        try
         {
-            var declared = new ScopeObject(kind, kind == ScopeKind.Perimeter ? "Global/Global" : "Global", new Dictionary<string, string> { ["name"] = "Global" });
-            foreach (var action in Enum.GetValues<ScopeAction>())
+            foreach (var declared in Declared(new ScopeFile(file, new string('b', 64))))
             {
-                var change = new ScopeChange(kind, declared.Key, action, [], "0123456789abcdef");
-                await _ca.Writer.WriteAsync(new ScopeWrite(change, action == ScopeAction.Delete ? null : declared, "Global"), _ct);
+                foreach (var action in Enum.GetValues<ScopeAction>())
+                {
+                    var change = new ScopeChange(declared.Kind, declared.Key, action, [], "0123456789abcdef");
+                    await _ca.Writer.WriteAsync(new ScopeWrite(change, action == ScopeAction.Delete ? null : declared, "Global"), _ct);
+                }
             }
+        }
+        finally
+        {
+            File.Delete(file);
         }
 
         var templates = ApiEndpoints.Used.Select(e => (e.Method, Pattern: new Regex("^" + Regex.Replace(Regex.Escape(e.Path), @"\\\{[a-z_]+}", "[^/]+") + "$"))).ToArray();
@@ -72,6 +80,20 @@ public sealed class OpenApiSnapshotTests : IDisposable
             .Select(request => $"{request.Method} {request.Path}");
 
         unlisted.ShouldBeEmpty();
+    }
+
+    /// <summary>One object of each kind the scope writes, named so that every lookup finds <see cref="AnyObject"/>.</summary>
+    private static IEnumerable<ScopeObject> Declared(ScopeFile file)
+    {
+        static Dictionary<string, string> Fields(params (string Name, string Value)[] fields) => fields.ToDictionary(f => f.Name, f => f.Value, StringComparer.Ordinal);
+        yield return new ScopeObject(ScopeKind.Framework, "urn:example:r", Fields()) { Initial = Fields(("library", "urn:example:other")), Files = [file] };
+        yield return new ScopeObject(ScopeKind.Domain, "Global", Fields(("name", "Global")));
+        yield return new ScopeObject(ScopeKind.Perimeter, "Global/Global", Fields(("name", "Global")));
+        yield return new ScopeObject(ScopeKind.System, "Global", Fields(("name", "Global")));
+        yield return new ScopeObject(ScopeKind.Audit, "R", Fields(("name", "Global"), ("framework", "urn:example:r"), ("perimeter", "Global"), ("groups", "1")));
+        yield return new ScopeObject(ScopeKind.Document, "R", Fields(("name", "Global"))) { Files = [file] };
+        yield return new ScopeObject(ScopeKind.Control, "R", Fields(("name", "Global"), ("systems", "Global"), ("documents", "R"))) { Initial = Fields(("reference_control", "urn:example:r")) };
+        yield return new ScopeObject(ScopeKind.Assessment, "R/R", Fields(("result", "compliant"), ("controls", "R"), ("documents", "R")));
     }
 
     /// <summary>One body that lets every client call go on to its next request.</summary>
@@ -86,6 +108,7 @@ public sealed class OpenApiSnapshotTests : IDisposable
             ["id"] = "x-1",
             ["ref_id"] = "R",
             ["name"] = "Global",
+            ["urn"] = "urn:example:r",
             ["folder"] = "x-1",
             ["status"] = "active",
             ["result"] = "compliant",

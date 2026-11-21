@@ -40,5 +40,17 @@ public static class ApiEndpoints
         new("POST", "/api/assets/"),
         new("PATCH", "/api/assets/{id}/"),
         new("DELETE", "/api/assets/{id}/"),
+        new("GET", "/api/loaded-libraries/"),
+        new("GET", "/api/stored-libraries/"),
+        new("POST", "/api/stored-libraries/upload/"),
+        new("POST", "/api/stored-libraries/{id}/import/"),
+        new("POST", "/api/compliance-assessments/"),
+        new("PATCH", "/api/compliance-assessments/{id}/"),
+        new("DELETE", "/api/compliance-assessments/{id}/"),
+        new("PATCH", "/api/evidences/{id}/"),
+        new("DELETE", "/api/evidences/{id}/"),
+        new("GET", "/api/reference-controls/"),
+        new("POST", "/api/applied-controls/"),
+        new("DELETE", "/api/applied-controls/{id}/"),
     ];
 }
