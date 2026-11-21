@@ -14,6 +14,9 @@ public static class M365Settings
     public const string PrivilegedRoles = "privileged_roles";
     public const string GlobalAdminMin = "global_admin_min";
     public const string GlobalAdminMax = "global_admin_max";
+    public const string CompliantPassPercent = "compliant_pass_percent";
+    public const string CompliantPartialPercent = "compliant_partial_percent";
+    public const string SupportedWindowsBuilds = "supported_windows_builds";
     public const string ClientCertificate = "client_certificate";
     public const string ClientSecret = "client_secret";
 }
@@ -28,7 +31,10 @@ internal sealed record M365Options(
     double MfaPartialPercent,
     IReadOnlyList<string> PrivilegedRoles,
     int GlobalAdminMin,
-    int GlobalAdminMax)
+    int GlobalAdminMax,
+    double CompliantPassPercent,
+    double CompliantPartialPercent,
+    IReadOnlyList<string> SupportedWindowsBuilds)
 {
     public static readonly Uri DefaultGraphUrl = new("https://graph.microsoft.com/");
 
@@ -39,6 +45,9 @@ internal sealed record M365Options(
         var adminMin = read.Count(M365Settings.GlobalAdminMin, 2);
         var adminMax = read.Count(M365Settings.GlobalAdminMax, 4);
         read.Require(adminMin <= adminMax, M365Settings.GlobalAdminMin, $"{adminMin} is more than {M365Settings.GlobalAdminMax} ({adminMax})");
+        var compliantPass = read.Percent(M365Settings.CompliantPassPercent, 95);
+        var compliantPartial = read.Percent(M365Settings.CompliantPartialPercent, 80);
+        var builds = read.List(M365Settings.SupportedWindowsBuilds);
         return read.Finish(new M365Options(
             read.Required(M365Settings.TenantId),
             read.Required(M365Settings.ClientId),
@@ -48,6 +57,10 @@ internal sealed record M365Options(
             read.Percent(M365Settings.MfaPartialPercent, 90),
             read.List(M365Settings.PrivilegedRoles) is { Length: > 0 } roles ? roles : M365.PrivilegedRoles.Default,
             adminMin,
-            adminMax));
+            adminMax,
+            compliantPass,
+            compliantPartial,
+            [.. builds.Select(b => string.Join('.', b.Split('.').Take(3)))]));
     }
+
 }

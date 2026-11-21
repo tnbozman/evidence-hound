@@ -28,6 +28,9 @@ public sealed class M365Collector(IGraphCredentialFactory credentials, IGraphWai
             new(M365Settings.PrivilegedRoles, "Comma-separated role template IDs treated as privileged. Default: 14 built-in administrator roles.", Required: false),
             new(M365Settings.GlobalAdminMin, "Fewest Global Administrators expected, break-glass accounts included. Default: 2.", Required: false),
             new(M365Settings.GlobalAdminMax, "Most Global Administrators expected, break-glass accounts included. Default: 4.", Required: false),
+            new(M365Settings.CompliantPassPercent, "Percentage of compliant Intune-managed Windows devices needed to pass. Default: 95.", Required: false),
+            new(M365Settings.CompliantPartialPercent, "Percentage of compliant Intune-managed Windows devices needed for partial. Default: 80.", Required: false),
+            new(M365Settings.SupportedWindowsBuilds, "Comma-separated Windows builds still in support, for example 10.0.22631, 10.0.26100.", Required: true),
         ],
         [
             new(M365Settings.ClientCertificate, "PEM certificate and private key of the app registration (preferred).", Required: false),

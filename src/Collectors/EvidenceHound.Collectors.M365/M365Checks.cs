@@ -15,5 +15,9 @@ internal static class M365Checks
         new("identity.privileged.global_admin_count", PrivilegedChecks.GlobalAdminCount),
         new("identity.privileged.admins_cloud_only", PrivilegedChecks.AdminsCloudOnly),
         new("identity.privileged.pim_eligible_not_permanent", PrivilegedChecks.PimEligibleNotPermanent),
+        new("endpoint.managed.compliant_ratio", DeviceChecks.CompliantRatio),
+        new("endpoint.os.supported_versions", DeviceChecks.SupportedVersions),
+        new("apps.office.macros_blocked_from_internet", OfficeChecks.MacrosBlockedFromInternet),
+        new("endpoint.asr.office_rules_enabled", OfficeChecks.AsrOfficeRulesEnabled),
     ];
 }

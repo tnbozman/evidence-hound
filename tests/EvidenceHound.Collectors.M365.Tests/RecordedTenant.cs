@@ -27,7 +27,12 @@ internal sealed class RecordedTenant : IDisposable
         ["role-assignments"] = "/v1.0/roleManagement/directory/roleAssignments",
         ["role-eligibility-schedules"] = "/v1.0/roleManagement/directory/roleEligibilitySchedules",
         ["role-assignment-schedule-instances"] = "/v1.0/roleManagement/directory/roleAssignmentScheduleInstances",
+        ["managed-devices"] = "/v1.0/deviceManagement/managedDevices",
+        ["device-configurations"] = "/v1.0/deviceManagement/deviceConfigurations",
+        ["configuration-policies"] = "/beta/deviceManagement/configurationPolicies",
     };
+
+    public static readonly string SupportedBuilds = "10.0.22631, 10.0.26100";
 
     private readonly RecordedApi _api = RecordedApi.Start();
 
@@ -73,6 +78,7 @@ internal sealed class RecordedTenant : IDisposable
         ["client_id"] = ClientId,
         ["graph_url"] = Url.ToString(),
         ["break_glass_accounts"] = BreakGlass,
+        ["supported_windows_builds"] = SupportedBuilds,
     };
 
     /// <summary>Answers <paramref name="name"/>'s path with an error instead of the recording.</summary>

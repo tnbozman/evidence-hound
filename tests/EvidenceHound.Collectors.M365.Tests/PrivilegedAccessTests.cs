@@ -135,6 +135,7 @@ public class PrivilegedAccessTests
         {
             ["tenant_id"] = RecordedTenant.TenantId,
             ["client_id"] = RecordedTenant.ClientId,
+            ["supported_windows_builds"] = RecordedTenant.SupportedBuilds,
             ["global_admin_min"] = "5",
             ["global_admin_max"] = "2",
         };

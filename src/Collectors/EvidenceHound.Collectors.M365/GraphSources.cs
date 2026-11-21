@@ -18,6 +18,9 @@ internal static class GraphSources
     public const string RoleAssignments = "role-assignments";
     public const string RoleEligibility = "role-eligibility-schedules";
     public const string RoleInstances = "role-assignment-schedule-instances";
+    public const string ManagedDevices = "managed-devices";
+    public const string DeviceConfigurations = "device-configurations";
+    public const string ConfigurationPolicies = "configuration-policies";
 
     public static IReadOnlyList<GraphSource> All { get; } =
     [
@@ -27,5 +30,10 @@ internal static class GraphSources
         new(RoleAssignments, new("v1.0/roleManagement/directory/roleAssignments", "RoleManagement.Read.Directory")),
         new(RoleEligibility, new("v1.0/roleManagement/directory/roleEligibilitySchedules", "RoleManagement.Read.Directory"), NeedsLicence: true),
         new(RoleInstances, new("v1.0/roleManagement/directory/roleAssignmentScheduleInstances", "RoleManagement.Read.Directory"), NeedsLicence: true),
+        new(ManagedDevices, new("v1.0/deviceManagement/managedDevices?$select=id,deviceName,operatingSystem,osVersion,complianceState,userPrincipalName", "DeviceManagementManagedDevices.Read.All")),
+        new(DeviceConfigurations, new("v1.0/deviceManagement/deviceConfigurations?$expand=assignments", "DeviceManagementConfiguration.Read.All")),
+
+        // Settings catalog policies (where Intune keeps Office and attack surface reduction settings) exist only in the Graph beta API.
+        new(ConfigurationPolicies, new("beta/deviceManagement/configurationPolicies?$expand=settings,assignments", "DeviceManagementConfiguration.Read.All")),
     ];
 }

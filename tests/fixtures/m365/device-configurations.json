@@ -1,0 +1,12 @@
+{
+  "@odata.context": "{{graph}}v1.0/$metadata#deviceManagement/deviceConfigurations(assignments())",
+  "value": [
+    {
+      "@odata.type": "#microsoft.graph.windows10GeneralConfiguration",
+      "id": "00000000-0000-4000-8000-00000000dc01",
+      "displayName": "Windows baseline restrictions",
+      "passwordRequired": true,
+      "assignments": [ { "id": "dc01-a1", "target": { "@odata.type": "#microsoft.graph.allDevicesAssignmentTarget" } } ]
+    }
+  ]
+}

@@ -12,6 +12,9 @@ public class OptionsTests
         options.BreakGlass.ShouldBeEmpty();
         options.MfaPartialPercent.ShouldBe(90);
         options.PrivilegedRoles.Count.ShouldBe(14);
+        (options.GlobalAdminMin, options.GlobalAdminMax).ShouldBe((2, 4));
+        (options.CompliantPassPercent, options.CompliantPartialPercent).ShouldBe((95, 80));
+        options.SupportedWindowsBuilds.ShouldBe(["10.0.22631", "10.0.26100"]);
     }
 
     [Fact]
@@ -32,9 +35,17 @@ public class OptionsTests
     [InlineData("include_identities", "maybe")]
     [InlineData("graph_url", "not a url")]
     [InlineData("graph_url", "ftp://graph.example.test/")]
+    [InlineData("compliant_partial_percent", "99")]
+    [InlineData("supported_windows_builds", "Windows 11")]
     public void Invalid_values_are_problems(string setting, string value)
     {
-        var settings = new Dictionary<string, string>(StringComparer.Ordinal) { ["tenant_id"] = RecordedTenant.TenantId, ["client_id"] = RecordedTenant.ClientId, [setting] = value };
+        var settings = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["tenant_id"] = RecordedTenant.TenantId,
+            ["client_id"] = RecordedTenant.ClientId,
+            ["supported_windows_builds"] = RecordedTenant.SupportedBuilds,
+            [setting] = value,
+        };
 
         var problem = M365Options.FromSettings(new CollectorSettings(settings)).Problems().ShouldHaveSingleItem();
 
@@ -47,6 +58,6 @@ public class OptionsTests
     {
         var problems = M365Options.FromSettings(new CollectorSettings(new Dictionary<string, string>())).Problems();
 
-        problems.Select(p => p.Code).ShouldBe(["m365.setting_missing", "m365.setting_missing"]);
+        problems.Select(p => p.Code).ShouldBe(["m365.setting_missing", "m365.setting_missing", "m365.setting_missing"]);
     }
 }

@@ -19,6 +19,7 @@ public sealed class M365CollectorTests : IDisposable
     [
         "identity.mfa.registered_all_users", "identity.mfa.enforced_conditional_access", "identity.legacy_auth_blocked", "identity.mfa.phishing_resistant_admins",
         "identity.privileged.global_admin_count", "identity.privileged.admins_cloud_only", "identity.privileged.pim_eligible_not_permanent",
+        "endpoint.managed.compliant_ratio", "endpoint.os.supported_versions", "apps.office.macros_blocked_from_internet", "endpoint.asr.office_rules_enabled",
     ];
 
     [Fact]
@@ -46,12 +47,25 @@ public sealed class M365CollectorTests : IDisposable
     }
 
     [Fact]
+    public async Task Device_names_and_their_users_are_hashed_in_evidence()
+    {
+        var result = (await CollectAsync(_tenant)).Value();
+
+        var devices = await result.Files.Single(f => f.FileName == "managed-devices.json").ReadAsync(Token);
+        var text = System.Text.Encoding.UTF8.GetString(devices.Content.Span);
+        text.ShouldNotContain("EX-LT-0001");
+        text.ShouldNotContain("@example.com");
+        text.ShouldContain("10.0.26100.2314");
+    }
+
+    [Fact]
     public async Task Writes_one_evidence_file_per_collection()
     {
         var result = (await CollectAsync(_tenant)).Value();
 
         result.Files.Select(f => f.FileName).ShouldBe(
-            ["users.json", "mfa-registration.json", "conditional-access-policies.json", "role-assignments.json", "role-eligibility-schedules.json", "role-assignment-schedule-instances.json"]);
+            ["users.json", "mfa-registration.json", "conditional-access-policies.json", "role-assignments.json", "role-eligibility-schedules.json", "role-assignment-schedule-instances.json",
+             "managed-devices.json", "device-configurations.json", "configuration-policies.json"]);
     }
 
     [Fact]
@@ -129,7 +143,7 @@ public sealed class M365CollectorTests : IDisposable
         var description = new M365Collector(new CapturingFactory(), new RecordingWait()).Describe();
 
         description.Checks.ShouldBe(CheckIds, ignoreOrder: true);
-        description.Settings.Where(s => s.Required).Select(s => s.Name).ShouldBe(["tenant_id", "client_id"], ignoreOrder: true);
+        description.Settings.Where(s => s.Required).Select(s => s.Name).ShouldBe(["tenant_id", "client_id", "supported_windows_builds"], ignoreOrder: true);
         description.Secrets.Select(s => s.Name).ShouldBe(["client_certificate", "client_secret"]);
         description.Secrets.ShouldAllBe(s => !s.Required);
     }

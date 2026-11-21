@@ -19,6 +19,7 @@ internal static class Tenants
             ["tenant_id"] = RecordedTenant.TenantId,
             ["client_id"] = RecordedTenant.ClientId,
             ["break_glass_accounts"] = RecordedTenant.BreakGlass,
+            ["supported_windows_builds"] = RecordedTenant.SupportedBuilds,
         };
         edit?.Invoke(settings);
         return M365Options.FromSettings(new CollectorSettings(settings)).Value();
