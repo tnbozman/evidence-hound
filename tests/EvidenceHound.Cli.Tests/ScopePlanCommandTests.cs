@@ -71,6 +71,28 @@ public sealed class ScopePlanCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Plan_on_the_day_given_opens_the_periods_of_an_audit_with_a_cycle_and_lists_them()
+    {
+        await WriteScopeAsync(ScopeCommandTests.Audit.Replace("EXAMPLE-BASELINE-2026", "EXAMPLE-BASELINE", StringComparison.Ordinal) + "\ncycle: {period: quarter, starts: \"2026-07-01\"}\n");
+        EmptyInstance();
+        var settings = new Dictionary<string, string?> { ["HOUND_CA_URL"] = $"{_ca.Url}/api/", ["HOUND_CA_TOKEN"] = Token, ["HOUND_TODAY"] = "2026-11-21" };
+
+        var exitCode = await Plan(settings);
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var markdown = _output.ToString();
+        markdown.ShouldContain("| Create | audit | EXAMPLE-BASELINE-2026Q3 |");
+        markdown.ShouldContain("### Audit periods");
+        markdown.ShouldContain("| EXAMPLE-BASELINE-2026Q3 | closes: in review, awaiting sign-off |");
+        markdown.ShouldContain("| EXAMPLE-BASELINE-2026Q4 | opens, from EXAMPLE-BASELINE-2026Q3 |");
+        _output.GetStringBuilder().Clear();
+
+        (await Plan(settings, "--format", "json")).ShouldBe(ExitCodes.Ok, _error.ToString());
+        JsonNode.Parse(_output.ToString())!["periods"]!.AsArray().Select(p => (p!["audit"]!.GetValue<string>(), p["event"]!.GetValue<string>(), (string?)p["baseline"]))
+            .ShouldBe([("EXAMPLE-BASELINE-2026Q3", "closes", (string?)null), ("EXAMPLE-BASELINE-2026Q4", "opens", "EXAMPLE-BASELINE-2026Q3")]);
+    }
+
+    [Fact]
     public async Task Plan_refuses_an_invalid_scope_without_reading_ciso_assistant()
     {
         await WriteScopeAsync(ScopeCommandTests.Audit.Replace("systems: [Example 365]", "systems: [Example tablets]", StringComparison.Ordinal));
