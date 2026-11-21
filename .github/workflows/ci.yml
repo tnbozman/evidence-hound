@@ -43,9 +43,9 @@ jobs:
         if: ${{ hashFiles('global.json') != '' }}
         run: >
           dotnet test --no-build -c Release
-          --filter "Category!=Functional"
-          --logger trx --results-directory test-results
-          --collect:"XPlat Code Coverage"
+          --results-directory test-results
+          --filter-not-trait "Category=Functional"
+          --report-trx --coverage --coverage-output-format cobertura
       - name: Upload test results
         if: ${{ always() && hashFiles('global.json') != '' }}
         uses: actions/upload-artifact@v4
@@ -65,7 +65,7 @@ jobs:
           global-json-file: global.json
       - name: Functional tests (Testcontainers starts CISO Assistant)
         if: ${{ hashFiles('global.json') != '' }}
-        run: dotnet test -c Release --filter "Category=Functional" --logger trx --results-directory test-results
+        run: dotnet test -c Release --results-directory test-results --filter-trait "Category=Functional" --report-trx --ignore-exit-code 8
       - name: Upload functional results
         if: ${{ always() && hashFiles('global.json') != '' }}
         uses: actions/upload-artifact@v4

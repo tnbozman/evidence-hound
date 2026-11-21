@@ -7,7 +7,7 @@ Status: In progress
 **Note:** this sprint is bootstrapped by hand (there is no Start sprint workflow until s00-04 lands). Create `sprint/s00-foundations` manually.
 
 ### s00-01 Solution skeleton
-- [ ] Done
+- [x] Done
 
 **Story:** As a developer, I want a standard .NET solution layout, so that every project builds, tests and versions the same way.
 
@@ -24,6 +24,10 @@ Status: In progress
 
 **Functional check**
 - `make build && make test` in the dev container: build succeeds, 1 test passes.
+
+**Result (2026-11-21)**
+- Fresh `git clone` then `make build test`: `Build succeeded`, `total: 1, failed: 0, succeeded: 1`.
+- Tests run on Microsoft.Testing.Platform (xUnit v3 4.x no longer supports VSTest on the .NET 10 SDK), opted in through `global.json`. CI test steps use the MTP options (`--filter-not-trait`, `--report-trx`, `--coverage`).
 
 ### s00-02 Dev container
 - [ ] Done
@@ -132,5 +136,7 @@ Status: In progress
 - Stage a badly formatted file: commit is refused with the format message.
 
 ## Discovered work
+
+- The `functional` CI job passes `--ignore-exit-code 8` (no tests ran) because there are no functional tests yet. Remove it when s02 adds the first functional test.
 
 ## Sprint review
