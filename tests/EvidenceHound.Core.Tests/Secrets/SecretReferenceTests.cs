@@ -18,7 +18,7 @@ public class SecretReferenceTests
 
     [Theory]
     [InlineData("hunter2")]
-    [InlineData("env:")]
+    [InlineData("env:1BAD")]
     [InlineData("env:has space")]
     [InlineData("file:relative/path")]
     [InlineData("vault:kv/ca")]

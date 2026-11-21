@@ -1,4 +1,5 @@
 using System.CommandLine;
+using EvidenceHound.Runtime.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace EvidenceHound.Cli;
@@ -36,13 +37,13 @@ internal static class CollectCommand
             return ExitCodes.Usage;
         }
 
-        return (await ConfigFile.LoadAsync(configFile.FullName, cancellationToken))
+        return (await ConfigCommands.LoadAsync(configFile, cancellationToken))
             .Match(config => Collectors(logger, config), problems => Log.Problems(logger, problems));
     }
 
-    private static int Collectors(ILogger logger, HoundConfig config)
+    private static int Collectors(ILogger logger, DeploymentConfig config)
     {
-        Log.CollectorsConfigured(logger, config.CollectorNames.Count);
+        Log.CollectorsConfigured(logger, config.Collectors.Count);
         return ExitCodes.Ok;
     }
 }
