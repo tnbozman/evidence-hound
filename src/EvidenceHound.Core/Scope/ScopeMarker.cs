@@ -16,15 +16,22 @@ public static partial class ScopeMarker
     }
 
     /// <summary>
-    /// The state <c>hound</c> records on an object of this kind: a fingerprint of its fields except its links. Links are only ever added to,
-    /// and runs add their own (a collector's health evidence on a control), so they are compared field by field instead.
+    /// The state <c>hound</c> records on an object of this kind: a fingerprint of its fields except its links and an audit's status and lock.
+    /// Links are only ever added to, and runs add their own (a collector's health evidence on a control), so they are compared field by field
+    /// instead; so are an audit's status and lock, when declared.
     /// </summary>
     public static string State(ScopeKind kind, IReadOnlyDictionary<string, string> fields)
     {
         ArgumentNullException.ThrowIfNull(fields);
-        var links = LinkFields(kind);
-        return Fingerprint(fields.Where(f => !links.Contains(f.Key, StringComparer.Ordinal)).ToDictionary(StringComparer.Ordinal));
+        string[] left = [.. LinkFields(kind), .. kind == ScopeKind.Audit ? AuditLifecycleFields : []];
+        return Fingerprint(fields.Where(f => !left.Contains(f.Key, StringComparer.Ordinal)).ToDictionary(StringComparer.Ordinal));
     }
+
+    /// <summary>
+    /// An audit's status and lock: only a period audit declares them, and they move on as its period ends and is signed off, so they are
+    /// compared only when declared and left out of the state.
+    /// </summary>
+    public static IReadOnlyList<string> AuditLifecycleFields { get; } = ["status", "locked"];
 
     /// <summary>The fields of a kind that link it to other objects.</summary>
     public static string[] LinkFields(ScopeKind kind) => kind switch
