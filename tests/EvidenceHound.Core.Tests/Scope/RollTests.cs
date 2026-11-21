@@ -96,6 +96,33 @@ public sealed class RollTests
         rows.ShouldBe(["EX-E8-BACKUP-2026Q4/ISM-1515"]);
     }
 
+    [Fact]
+    public void Plan_lists_period_openings_closings_and_pending_sign_offs()
+    {
+        var scope = Scope(Series() with { Cycle = new AuditCycle("quarter", "2026-04-01", At) });
+        var held = Apply(scope, new DateOnly(2026, 9, 30), []);
+        var declared = ScopeDesired.From(scope, Inputs(new DateOnly(2026, 10, 1)));
+
+        var notes = ScopePeriods.Notes(declared, ScopePlanner.Plan(declared, held, prune: false));
+
+        notes.ShouldBe(
+        [
+            new PeriodNote("EX-E8-BACKUP-2026Q2", PeriodEvent.AwaitingSignOff, null),
+            new PeriodNote("EX-E8-BACKUP-2026Q3", PeriodEvent.Closes, null),
+            new PeriodNote("EX-E8-BACKUP-2026Q4", PeriodEvent.Opens, "EX-E8-BACKUP-2026Q3"),
+        ]);
+    }
+
+    [Fact]
+    public void Plan_lists_a_period_locked_by_its_sign_off()
+    {
+        var held = Apply(Scope(Series()), new DateOnly(2026, 10, 1), Apply(Scope(Series()), new DateOnly(2026, 9, 30), []));
+        var signed = Scope(Series() with { SignOffs = [new SignOff("2026Q3", "ceo@example.com", "2026-10-14")] });
+        var declared = ScopeDesired.From(signed, Inputs(new DateOnly(2026, 10, 15)));
+
+        ScopePeriods.Notes(declared, ScopePlanner.Plan(declared, held, prune: false)).ShouldBe([new PeriodNote("EX-E8-BACKUP-2026Q3", PeriodEvent.SignedOff, null)]);
+    }
+
     /// <summary>What CISO Assistant holds after applying the scope on <paramref name="today"/> over what it held: every declared object, as declared.</summary>
     private static ActualObject[] Apply(ScopeDocument scope, DateOnly today, ActualObject[] held)
     {
