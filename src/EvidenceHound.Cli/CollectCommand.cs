@@ -3,7 +3,6 @@ using EvidenceHound.Core.Results;
 using EvidenceHound.Runtime;
 using EvidenceHound.Runtime.Collectors;
 using EvidenceHound.Runtime.Configuration;
-using EvidenceHound.Runtime.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -44,7 +43,7 @@ internal static class CollectCommand
     private static async Task<int> CollectAsync(
         DeploymentConfig config, IConfiguration configuration, CollectorRegistry registry, CollectorServices collectorServices, ILogger logger, CancellationToken cancellationToken)
     {
-        var step = new CollectStep(ConfigCommands.Secrets(configuration), new FileEvidenceStore(config.Evidence.Root), new SystemClock(), config.Evidence.RetentionDays, collectorServices);
+        var step = await AuditSeries.CollectStepAsync(config, configuration, collectorServices, cancellationToken);
         var failed = 0;
         foreach (var instance in config.Collectors)
         {

@@ -1,7 +1,9 @@
 using System.Globalization;
 using EvidenceHound.Core.Scope;
 using EvidenceHound.Core.Yaml;
+using EvidenceHound.Runtime;
 using EvidenceHound.Runtime.Configuration;
+using EvidenceHound.Runtime.Storage;
 using Microsoft.Extensions.Configuration;
 
 namespace EvidenceHound.Cli;
@@ -50,6 +52,20 @@ internal static class AuditSeries
         return cycles.Count == 0
             ? config
             : config with { Targets = [.. config.Targets.Select(t => t with { ComplianceAssessmentRefId = AuditPeriods.Target(t.ComplianceAssessmentRefId, cycles, today) })] };
+    }
+
+    /// <summary>A collect step for the deployment that keeps each ended audit period's final run for the configured years.</summary>
+    public static async Task<CollectStep> CollectStepAsync(
+        DeploymentConfig config, IConfiguration configuration, CollectorServices services, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(config);
+        var today = Today(configuration);
+        var cycles = await CyclesAsync(config.Scope, cancellationToken);
+        return new CollectStep(ConfigCommands.Secrets(configuration), new FileEvidenceStore(config.Evidence.Root), new SystemClock(), config.Evidence.RetentionDays, services)
+        {
+            PeriodEnds = [.. cycles.SelectMany(c => AuditPeriods.Until(c.Key, c.Value, today)).Where(p => p.End < today).Select(p => p.End).Distinct().Order()],
+            PeriodRetentionYears = config.Evidence.PeriodRetentionYears,
+        };
     }
 
     private static async Task<ScopeSource> ReadAsync(string path, CancellationToken cancellationToken) =>

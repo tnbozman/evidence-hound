@@ -9,7 +9,6 @@ using EvidenceHound.Runtime;
 using EvidenceHound.Runtime.Collectors;
 using EvidenceHound.Runtime.Configuration;
 using EvidenceHound.Runtime.Status;
-using EvidenceHound.Runtime.Storage;
 using EvidenceHound.Transport.Kafka;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -57,6 +56,7 @@ internal static class RunCommand
         CancellationToken cancellationToken)
     {
         var publishing = !options.DryRun && !options.NoPublish;
+        config = await AuditSeries.ResolveAsync(config, AuditSeries.Today(configuration), cancellationToken);
         var ready = (await PlanCommand.LoadMappingsAsync(config.Targets, cancellationToken))
             .Bind(loaded => (publishing ? Transport(config, configuration, collectorServices.Loggers) : Result.Ok(Transports.None)).Map(t => (Targets: loaded, Transport: t)));
         return await ready.Match(
@@ -89,7 +89,7 @@ internal static class RunCommand
         CancellationToken cancellationToken)
     {
         using var sinks = transport;
-        var step = new CollectStep(ConfigCommands.Secrets(configuration), new FileEvidenceStore(config.Evidence.Root), new SystemClock(), config.Evidence.RetentionDays, collectorServices);
+        var step = await AuditSeries.CollectStepAsync(config, configuration, collectorServices, cancellationToken);
         var runner = new Runner(
             registry.ByType,
             step,
