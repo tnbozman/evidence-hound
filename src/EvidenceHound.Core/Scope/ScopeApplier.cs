@@ -31,10 +31,89 @@ public sealed record ScopeApplyReport(IReadOnlyList<AppliedChange> Changes, int 
     public int Skipped => Changes.Count(c => c.Outcome == ApplyOutcome.Skipped);
 }
 
-/// <summary>Carries out a scope plan through an <see cref="IScopeWriter"/>.</summary>
+/// <summary>Carries out a scope plan through an <see cref="IScopeWriter"/>, in the plan's order.</summary>
 public static class ScopeApplier
 {
-    public static Task<ScopeApplyReport> ApplyAsync(
-        ScopePlan plan, IReadOnlyList<ScopeObject> declared, IReadOnlyCollection<ScopeKind> kinds, string rootFolder, IScopeWriter writer, CancellationToken cancellationToken) =>
-        throw new NotImplementedException();
+    /// <summary>
+    /// Writes each change of the <paramref name="kinds"/> this version applies; changes of other kinds are counted, not written. A change whose
+    /// domain, parent system, perimeter, framework, system, document or audit failed or was skipped in this apply is skipped too, so a failed
+    /// write stops only what depends on it.
+    /// </summary>
+    public static async Task<ScopeApplyReport> ApplyAsync(
+        ScopePlan plan, IReadOnlyList<ScopeObject> declared, IReadOnlyCollection<ScopeKind> kinds, string rootFolder, IScopeWriter writer, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+        ArgumentNullException.ThrowIfNull(declared);
+        ArgumentNullException.ThrowIfNull(kinds);
+        ArgumentNullException.ThrowIfNull(writer);
+        var objects = declared.GroupBy(d => (d.Kind, d.Key)).ToDictionary(g => g.Key, g => g.First());
+        var notWritten = new HashSet<(ScopeKind, string)>();
+        var applied = new List<AppliedChange>();
+        foreach (var change in plan.Changes.Where(c => kinds.Contains(c.Kind)))
+        {
+            var target = change.Action == ScopeAction.Delete ? null : objects.GetValueOrDefault((change.Kind, change.Key));
+            if (target is not null && DependsOn(target).FirstOrDefault(notWritten.Contains) is { Item2: not null } blocked)
+            {
+                notWritten.Add((change.Kind, change.Key));
+                applied.Add(new AppliedChange(change, ApplyOutcome.Skipped, $"skipped: {Name(blocked.Item1)} '{blocked.Item2}' was not written."));
+                continue;
+            }
+
+            var result = await writer.WriteAsync(new ScopeWrite(change, target, rootFolder), cancellationToken);
+            applied.Add(result.Match(
+                _ => new AppliedChange(change, ApplyOutcome.Written, Done(change.Action)),
+                problems =>
+                {
+                    notWritten.Add((change.Kind, change.Key));
+                    return new AppliedChange(change, ApplyOutcome.Failed, string.Join(" ", problems.Select(p => p.Message)));
+                }));
+        }
+
+        return new ScopeApplyReport(applied, plan.Changes.Count(c => !kinds.Contains(c.Kind)));
+    }
+
+    /// <summary>The objects a declared object refers to, by the fields that name them.</summary>
+    public static IEnumerable<(ScopeKind, string)> DependsOn(ScopeObject declared)
+    {
+        ArgumentNullException.ThrowIfNull(declared);
+        var fields = declared.Fields;
+        if (fields.TryGetValue("domain", out var domain))
+        {
+            yield return (ScopeKind.Domain, domain);
+        }
+
+        foreach (var (field, kind) in new[] { ("parents", ScopeKind.System), ("systems", ScopeKind.System), ("documents", ScopeKind.Document) })
+        {
+            foreach (var name in Split(fields.GetValueOrDefault(field)))
+            {
+                yield return (kind, name);
+            }
+        }
+
+        if (fields.TryGetValue("framework", out var framework))
+        {
+            yield return (ScopeKind.Framework, framework);
+        }
+
+        if (domain is not null && fields.TryGetValue("perimeter", out var perimeter))
+        {
+            yield return (ScopeKind.Perimeter, ScopeDesired.PerimeterKey(domain, perimeter));
+        }
+
+        if (declared.Kind == ScopeKind.Assessment && declared.Key.Split('/', 2) is [var audit, _])
+        {
+            yield return (ScopeKind.Audit, audit);
+        }
+    }
+
+    private static string[] Split(string? joined) => joined is null ? [] : joined.Split(", ", StringSplitOptions.RemoveEmptyEntries);
+
+    private static string Done(ScopeAction action) => action switch
+    {
+        ScopeAction.Create => "created",
+        ScopeAction.Update => "updated",
+        _ => "deleted",
+    };
+
+    private static string Name(ScopeKind kind) => kind.ToString().ToLowerInvariant();
 }

@@ -6,7 +6,7 @@ using EvidenceHound.Core.Scope;
 
 namespace EvidenceHound.Cli;
 
-/// <summary>A scope plan as Markdown, for a pull request comment, or as JSON for tools.</summary>
+/// <summary>A scope plan as Markdown, for a pull request comment, or as JSON for tools; and an apply's report as JSON.</summary>
 internal static class ScopePlanOutput
 {
     private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
@@ -58,6 +58,24 @@ internal static class ScopePlanOutput
                 ["reason"] = d.Reason == DriftReason.Edited ? "edited" : "not_in_scope",
                 ["managed"] = d.Managed,
                 ["fields"] = FieldsJson(d.Fields),
+            })]),
+        }.ToJsonString(Indented) + "\n";
+
+    /// <summary>An apply's report: counts, then each change with what happened to it.</summary>
+    public static string Json(ScopeApplyReport report) =>
+        new JsonObject
+        {
+            ["written"] = report.Written,
+            ["failed"] = report.Failed,
+            ["skipped"] = report.Skipped,
+            ["not_applied"] = report.NotApplied,
+            ["changes"] = new JsonArray([.. report.Changes.Select(c => (JsonNode)new JsonObject
+            {
+                ["kind"] = Kind(c.Change.Kind),
+                ["key"] = c.Change.Key,
+                ["action"] = c.Change.Action.ToString().ToLowerInvariant(),
+                ["outcome"] = c.Outcome.ToString().ToLowerInvariant(),
+                ["detail"] = c.Detail,
             })]),
         }.ToJsonString(Indented) + "\n";
 

@@ -30,5 +30,14 @@ public static class ApiEndpoints
         new("GET", "/api/assets/"),
         new("GET", "/api/assets/{id}/object/"),
         new("GET", "/api/evidences/{id}/object/"),
+        new("POST", "/api/folders/"),
+        new("PATCH", "/api/folders/{id}/"),
+        new("DELETE", "/api/folders/{id}/"),
+        new("POST", "/api/perimeters/"),
+        new("PATCH", "/api/perimeters/{id}/"),
+        new("DELETE", "/api/perimeters/{id}/"),
+        new("POST", "/api/assets/"),
+        new("PATCH", "/api/assets/{id}/"),
+        new("DELETE", "/api/assets/{id}/"),
     ];
 }

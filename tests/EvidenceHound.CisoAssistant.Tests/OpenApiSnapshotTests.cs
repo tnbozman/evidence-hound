@@ -54,6 +54,15 @@ public sealed class OpenApiSnapshotTests : IDisposable
         await client.LinkEvidenceToAppliedControlAsync("R", "x-9", _ct);
         await client.UpdateAppliedControlAsync("R", ControlState.Active, _ct);
         await _ca.Scope.ReadAsync(new ScopeStateQuery("Global", [], new Dictionary<string, IReadOnlyList<RequirementKey>> { ["R"] = [RequirementKey.Ref("R")] }), _ct);
+        foreach (var kind in new[] { ScopeKind.Domain, ScopeKind.Perimeter, ScopeKind.System })
+        {
+            var declared = new ScopeObject(kind, kind == ScopeKind.Perimeter ? "Global/Global" : "Global", new Dictionary<string, string> { ["name"] = "Global" });
+            foreach (var action in Enum.GetValues<ScopeAction>())
+            {
+                var change = new ScopeChange(kind, declared.Key, action, [], "0123456789abcdef");
+                await _ca.Writer.WriteAsync(new ScopeWrite(change, action == ScopeAction.Delete ? null : declared, "Global"), _ct);
+            }
+        }
 
         var templates = ApiEndpoints.Used.Select(e => (e.Method, Pattern: new Regex("^" + Regex.Replace(Regex.Escape(e.Path), @"\\\{[a-z_]+}", "[^/]+") + "$"))).ToArray();
         var unlisted = _ca.Server.LogEntries

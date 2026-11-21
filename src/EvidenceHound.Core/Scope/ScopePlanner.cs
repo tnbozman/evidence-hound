@@ -28,9 +28,10 @@ public static class ScopePlanner
                 continue;
             }
 
-            var differences = Differences(have.Held.Fields, want.Fields);
+            var comparable = Comparable(have.Held.Fields, want.Fields);
+            var differences = Differences(comparable, want.Fields);
             var marked = Marked(want.Kind);
-            if (marked && have.Managed && have.AppliedState != ScopeMarker.Fingerprint(have.Held.Fields))
+            if (marked && have.Managed && have.AppliedState != ScopeMarker.Fingerprint(comparable))
             {
                 drift.Add(new ScopeDrift(want.Kind, want.Key, DriftReason.Edited, Managed: true, differences));
             }
@@ -51,6 +52,10 @@ public static class ScopePlanner
         return new ScopePlan(changes, drift);
     }
 
+    /// <summary>The held fields, without a <c>ref_id</c> the scope leaves out: CISO Assistant fills a blank <c>ref_id</c> in itself.</summary>
+    private static Dictionary<string, string> Comparable(IReadOnlyDictionary<string, string> held, IReadOnlyDictionary<string, string> wanted) =>
+        held.Where(h => h.Key != "ref_id" || wanted.ContainsKey(h.Key)).ToDictionary(StringComparer.Ordinal);
+
     /// <summary>Frameworks come from libraries and assessments are rows of an audit: neither carries a marker, nor is ever deleted.</summary>
     private static bool Marked(ScopeKind kind) => kind is not (ScopeKind.Framework or ScopeKind.Assessment);
 
@@ -67,7 +72,7 @@ public static class ScopePlanner
         declared.Fields.Concat(declared.Initial.Where(i => !declared.Fields.ContainsKey(i.Key))).Select(f => new FieldChange(f.Key, null, f.Value));
 
     /// <summary>Each field whose value differs: the declared fields in order, then fields CISO Assistant holds that the scope clears.</summary>
-    private static List<FieldChange> Differences(IReadOnlyDictionary<string, string> held, IReadOnlyDictionary<string, string> wanted) =>
+    private static List<FieldChange> Differences(Dictionary<string, string> held, IReadOnlyDictionary<string, string> wanted) =>
     [
         .. wanted.Where(w => !held.TryGetValue(w.Key, out var value) || value != w.Value).Select(w => new FieldChange(w.Key, held.GetValueOrDefault(w.Key), w.Value)),
         .. held.Where(h => !wanted.ContainsKey(h.Key)).Select(h => new FieldChange(h.Key, h.Value, null)),

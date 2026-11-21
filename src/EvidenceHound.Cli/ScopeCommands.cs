@@ -68,7 +68,53 @@ internal static class ScopeCommands
                 problems => Task.FromResult(Log.Problems(logger, problems)));
         });
 
-        return new Command("scope", "Work with a compliance repo's scope files.") { validate, newAudit, plan };
+        var dryRun = new Option<bool>("--dry-run") { Description = "Print the plan and write nothing." };
+        var apply = new Command(
+            "apply",
+            $"Write the scope's domains, perimeters and systems to CISO Assistant, in dependency order (needs {PublishCommand.UrlSetting} and {PublishCommand.TokenSetting}). Safe to run again.")
+        {
+            dir, config, dryRun, prune,
+        };
+        apply.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var checkedScope = await ValidateAsync(parseResult.GetRequiredValue(dir), parseResult.GetValue(config), registry, cancellationToken);
+            if (checkedScope.Problems.Count > 0)
+            {
+                return await ReportAsync(checkedScope.Problems, checkedScope.Summary, "text", output, logger);
+            }
+
+            return await PublishCommand.Connection(configuration).Match(
+                connection => ApplyAsync(checkedScope.Scope, connection, parseResult.GetValue(prune), parseResult.GetValue(dryRun), loggers, output, logger, cancellationToken),
+                problems => Task.FromResult(Log.Problems(logger, problems)));
+        });
+
+        return new Command("scope", "Work with a compliance repo's scope files.") { validate, newAudit, plan, apply };
+    }
+
+    /// <summary>The kinds <c>hound scope apply</c> writes so far; the plan lists the rest.</summary>
+    private static readonly ScopeKind[] Applied = [ScopeKind.Domain, ScopeKind.Perimeter, ScopeKind.System];
+
+    private static async Task<int> ApplyAsync(
+        ScopeDocument scope, CisoAssistantOptions connection, bool prune, bool dryRun, ILoggerFactory loggers, TextWriter output, ILogger logger, CancellationToken cancellationToken)
+    {
+        using var services = new ServiceCollection().AddSingleton(loggers).AddCisoAssistantClient(connection).BuildServiceProvider();
+        var actual = await services.GetRequiredService<IScopeStateSource>().ReadAsync(ScopeStateQuery.For(scope), cancellationToken);
+        return await actual.Match(
+            async held =>
+            {
+                var declared = ScopeDesired.From(scope);
+                var plan = ScopePlanner.Plan(declared, held, prune);
+                if (dryRun)
+                {
+                    await output.WriteAsync(ScopePlanOutput.Markdown(plan));
+                    return ExitCodes.Ok;
+                }
+
+                var report = await ScopeApplier.ApplyAsync(plan, declared, Applied, scope.Setup.RootFolder, services.GetRequiredService<IScopeWriter>(), cancellationToken);
+                await output.WriteAsync(ScopePlanOutput.Json(report));
+                return report.Failed > 0 ? ExitCodes.PublishFailed : ExitCodes.Ok;
+            },
+            problems => Task.FromResult(Log.Problems(logger, problems)));
     }
 
     private static async Task<int> PlanAsync(

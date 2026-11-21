@@ -4,15 +4,17 @@ using EvidenceHound.Cli;
 namespace EvidenceHound.Functional.Tests;
 
 /// <summary>
-/// s06-07: <c>hound scope plan</c> on the example scope against the seeded CISO Assistant lists what applying it would create, and what
-/// the seed holds that the scope does not declare. The Markdown and JSON plans land in <c>test-results/scope-plan/</c>, which CI prints.
+/// s06-07 and s06-08: <c>hound scope plan</c> on the example scope against the seeded CISO Assistant lists what applying it would create,
+/// and what the seed holds that the scope does not declare; <c>hound scope apply</c> then writes the structure, and a second apply writes
+/// nothing. One test, so the plan always sees the seed before the apply changes it. The plans and reports land in
+/// <c>test-results/scope-plan/</c>, which CI prints.
 /// </summary>
 [Trait("Category", "Functional")]
 [Collection(SharedCisoAssistant.Name)]
 public sealed class ScopePlanFunctionalTests(CisoAssistantFixture ciso)
 {
     [Fact]
-    public async Task Plan_of_the_example_scope_lists_the_expected_creates_and_the_seed_as_drift()
+    public async Task Plan_lists_the_expected_creates_then_apply_writes_them_and_a_second_apply_writes_nothing()
     {
         var ct = TestContext.Current.CancellationToken;
         var root = RepoRoot();
@@ -45,20 +47,43 @@ public sealed class ScopePlanFunctionalTests(CisoAssistantFixture ciso)
         drift.ShouldContain(("control", "AC-AUTO-EVIDENCE"), json);
         markdown.ShouldStartWith("## Scope plan\n");
         markdown.ShouldContain("| Create | perimeter | Example Pty Ltd/Corporate IT |");
+
+        var (firstExit, first) = await RunAsync("apply", scope, ct);
+        var (secondExit, second) = await RunAsync("apply", scope, ct);
+        await File.WriteAllTextAsync(Path.Combine(output, "first-apply.json"), first, ct);
+        await File.WriteAllTextAsync(Path.Combine(output, "second-apply.json"), second, ct);
+
+        (firstExit, secondExit).ShouldBe((ExitCodes.Ok, ExitCodes.Ok), first + second);
+        JsonNode.Parse(first)!["changes"]!.AsArray()
+            .Where(c => c!["outcome"]!.GetValue<string>() == "written")
+            .Select(c => (c!["action"]!.GetValue<string>(), c["kind"]!.GetValue<string>(), c["key"]!.GetValue<string>()))
+            .ShouldBe(
+            [
+                ("update", "domain", "Example Pty Ltd"),
+                ("create", "perimeter", "Example Pty Ltd/Corporate IT"),
+                ("create", "system", "Example 365"), ("create", "system", "Example laptops"), ("create", "system", "Example backup service"),
+            ],
+            ignoreOrder: true,
+            first);
+        var again = JsonNode.Parse(second)!;
+        (again["written"]!.GetValue<int>(), again["failed"]!.GetValue<int>()).ShouldBe((0, 0), second);
+        again["changes"]!.AsArray().ShouldBeEmpty(second);
     }
 
-    private async Task<(int ExitCode, string Output)> PlanAsync(string scope, CancellationToken ct, params string[] args)
+    private Task<(int ExitCode, string Output)> PlanAsync(string scope, CancellationToken ct, params string[] args) => RunAsync("plan", scope, ct, args);
+
+    private async Task<(int ExitCode, string Output)> RunAsync(string command, string scope, CancellationToken ct, params string[] args)
     {
         using var output = new StringWriter();
         using var error = new StringWriter();
         var exitCode = await HoundCli.RunAsync(
-            ["scope", "plan", scope, .. args],
+            ["scope", command, scope, .. args],
             output,
             error,
             configureLogging: null,
             new Dictionary<string, string?> { ["HOUND_CA_URL"] = ciso.ApiUrl.ToString(), ["HOUND_CA_TOKEN"] = ciso.Token },
             ct);
-        return (exitCode, exitCode == ExitCodes.Ok ? output.ToString() : error.ToString());
+        return (exitCode, output.ToString() + error.ToString());
     }
 
     private static string RepoRoot()

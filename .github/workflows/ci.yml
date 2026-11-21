@@ -68,10 +68,10 @@ jobs:
             jq -c '{openapi, info, all_paths}' "$dir/openapi-paths.json"
             jq -c '.paths | to_entries[] | {(.key): .value}' "$dir/openapi-paths.json"
           fi
-      - name: Show the scope plan
+      - name: Show the scope plan and apply
         if: ${{ always() }}
         run: |
-          for file in test-results/scope-plan/scope-plan.md test-results/scope-plan/scope-plan.json; do
+          for file in test-results/scope-plan/scope-plan.md test-results/scope-plan/scope-plan.json test-results/scope-plan/first-apply.json test-results/scope-plan/second-apply.json; do
             if [ -f "$file" ]; then cat "$file"; fi
           done
       - name: Upload functional results

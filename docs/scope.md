@@ -1,6 +1,6 @@
 # Scope files
 
-A compliance repo declares the organisation's structure in CISO Assistant as files, so it changes through reviewed pull requests rather than clicks. `hound scope validate` checks the files offline, `hound scope plan` shows what they would change in CISO Assistant, and later commands apply them (s06-08 and s06-09).
+A compliance repo declares the organisation's structure in CISO Assistant as files, so it changes through reviewed pull requests rather than clicks. `hound scope validate` checks the files offline, `hound scope plan` shows what they would change in CISO Assistant, and `hound scope apply` writes them.
 
 A complete fictional example is in [`examples/compliance-repo/scope/`](../examples/compliance-repo/scope/). The schema is [`schemas/scope.schema.json`](../schemas/scope.schema.json); add `# yaml-language-server: $schema=…` to the top of each file for editor help.
 
@@ -94,3 +94,17 @@ How objects are matched: a framework by URN, a domain and a system by name, a pe
 `hound` marks the objects it manages by ending their description with `[hound scope <state>]`, a fingerprint of the fields it wrote. That is how the plan tells an object edited in CISO Assistant (drift) from one the scope changed (an update). Frameworks and assessments carry no marker.
 
 What the plan compares: a domain's description; a perimeter's name, `ref_id`, description and domain; a system's `ref_id`, type, description, owner, domain and parents; an audit's name, framework, groups, domain, perimeter, ETA, due date, authors and reviewers; a document's name and domain; a control's name, description, domain, owner, priority, category, ETA, systems and documents; an assessment's status, result and observation. A control's `status` and `reference_control` and a framework's library are written only when the object is created, because collectors and CISO Assistant own them afterwards.
+
+## Apply
+
+```sh
+HOUND_CA_URL=http://localhost:8000/api/ HOUND_CA_TOKEN=… hound scope apply scope/ [--config hound.yaml] [--dry-run] [--prune]
+```
+
+Apply validates the scope, plans it as above, and writes the changes in order. It is safe to run again: a second apply with nothing changed writes nothing. With `--dry-run` it prints the plan and writes nothing. When the scope has problems, it reports them and writes nothing.
+
+This version writes domains (as folders under the root folder), perimeters and systems (as assets). Frameworks, audits, documents, controls and assessments are listed by the plan and counted as `not_applied` until s06-09.
+
+The report is JSON: how many changes were `written`, `failed` and `skipped`, and each change with its outcome. A change that depends on one that failed is skipped, such as a domain's perimeters and systems when the domain could not be written, or a system whose parent could not be; other changes go on. The exit code is 4 when any write failed.
+
+Names are turned into IDs before anything is sent: the domain's folder, parent systems by name, and owners by user email. A name that cannot be found fails that write and sends nothing for it.
