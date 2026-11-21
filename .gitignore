@@ -15,7 +15,7 @@ coverage*/
 
 # Local runtime data, never commit
 .dev/
-evidence/
+/evidence/
 manual/
 dev/ciso-assistant/db/
 *.env

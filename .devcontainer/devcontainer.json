@@ -3,11 +3,11 @@
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
   "features": {
     "ghcr.io/devcontainers/features/dotnet:2": {
-      "version": "10.0"
+      "version": "10.0.1xx"
     },
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/docker-in-docker:4": {},
     "ghcr.io/devcontainers/features/github-cli:1": {},
-    "ghcr.io/devcontainers/features/node:1": {
+    "ghcr.io/devcontainers/features/node:2": {
       "version": "lts"
     },
     "ghcr.io/anthropics/devcontainer-features/claude-code:1": {}

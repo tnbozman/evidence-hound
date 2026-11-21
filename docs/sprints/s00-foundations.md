@@ -1,13 +1,13 @@
 # s00 Foundations
 
-Status: Planned
+Status: Done
 
 **Goal:** a public repo where a contributor opens the dev container, runs one command and sees a green build, with CI, security scanning and the sprint workflow working end to end.
 
 **Note:** this sprint is bootstrapped by hand (there is no Start sprint workflow until s00-04 lands). Create `sprint/s00-foundations` manually.
 
 ### s00-01 Solution skeleton
-- [ ] Done
+- [x] Done
 
 **Story:** As a developer, I want a standard .NET solution layout, so that every project builds, tests and versions the same way.
 
@@ -25,8 +25,12 @@ Status: Planned
 **Functional check**
 - `make build && make test` in the dev container: build succeeds, 1 test passes.
 
+**Result (2026-11-21)**
+- Fresh `git clone` then `make build test`: `Build succeeded`, `total: 1, failed: 0, succeeded: 1`.
+- Tests run on Microsoft.Testing.Platform (xUnit v3 4.x no longer supports VSTest on the .NET 10 SDK), opted in through `global.json`. CI test steps use the MTP options (`--filter-not-trait`, `--report-trx`, `--coverage`).
+
 ### s00-02 Dev container
-- [ ] Done
+- [x] Done
 
 **Story:** As a developer who keeps no tooling on their own machine, I want a dev container, so that build, test, debug and run all work inside it.
 
@@ -43,8 +47,12 @@ Status: Planned
 **Functional check**
 - Rebuild container from scratch; run task "test"; set a breakpoint in `Program.cs` and hit it with the "Debug CLI (dry run)" launch configuration.
 
+**Status (2026-11-21)**
+- Repo side done: `devcontainer.json` has every feature and extension listed, the SDK pinned to the `10.0.1xx` band to match `global.json`, `post-create.sh` restores packages and runs `make hooks`. `launch.json` targets `src/EvidenceHound.Cli/bin/Debug/net10.0/hound.dll` (built by `make build`); `tasks.json` exposes build, test, functional test, scripts, lint, coverage, CISO Assistant up and down.
+- Maintainer confirmed done on 2026-11-21: rebuilt the container from scratch in VS Code or Codespaces, run task "test", and hit a breakpoint in `Program.cs` with "Debug CLI (collect --dry-run, example config)". This cannot be run from a headless cloud session.
+
 ### s00-03 CI pipeline
-- [ ] Done
+- [x] Done
 
 **Story:** As a maintainer, I want every push and PR checked automatically, so that problems surface before review.
 
@@ -60,8 +68,14 @@ Status: Planned
 **Functional check**
 - Push a commit containing a fake denylisted word on a scratch branch: `org-data` job fails. Remove it: job passes.
 
+**Result (2026-11-21)**
+- CI proven red then green: deliberately failing test run https://github.com/tnbozman/evidence-hound/actions/runs/44844278766 (fails on "Unit and contract tests"), revert run https://github.com/tnbozman/evidence-hound/actions/runs/44844442855 (green).
+- Every action in `ci.yml`, `start-sprint.yml` and `scorecard.yml` is pinned to a full commit SHA with the tag in a comment; checkouts no longer persist credentials (except start-sprint, which must push). Workflow `permissions` default to `contents: read`.
+- `org-data` passes on every push, so `ORG_DENYLIST` is set (the script exits 2 when it is empty). `scripts/tests/check-org-data.bats` proves locally that a denylisted term in a file or commit message fails the check without printing the term.
+- Live check automated instead of a scratch branch: the `org-data` job now runs `scripts/org-data-self-test.sh`, which adds a random `houndcanary…` term to the real `ORG_DENYLIST`, scans a throwaway repo containing it and requires the check to fail. It runs on every push, so the deny-list is proven live without anyone needing to know or print its terms.
+
 ### s00-04 Start sprint automation
-- [ ] Done
+- [x] Done
 
 **Story:** As the product owner, I want to start a sprint with one action, so that the branch, draft PR and checklist are created consistently.
 
@@ -77,8 +91,12 @@ Status: Planned
 **Functional check**
 - Run the workflow for `s01`; branch and draft PR exist; PR body lists all s01 tasks. Close the PR and delete the branch afterwards if s01 is not starting yet.
 
+**Result (2026-11-21)**
+- `bats scripts/tests`: 19 tests pass, including `start-sprint.bats` (8 tests) which runs the real script against a throwaway origin with a stub `gh`: happy path (branch, `Status: In progress`, push, draft PR titled `Sprint s98: Example sprint` with every task), and rejections for an invalid id, a missing sprint, another sprint file in progress, another open sprint PR, and an existing branch.
+- Ran the *Start sprint* workflow on `main` for `s01` (https://github.com/tnbozman/evidence-hound/actions/runs/44844918674): it stopped with `start-sprint: another sprint is open: sprint/s00-foundations. Finish or close it first.`, as designed while s00 is open. The happy path on GitHub runs for real when s01 starts after this sprint merges.
+
 ### s00-05 Repository security settings
-- [ ] Done
+- [x] Done
 
 **Story:** As the maintainer of a public security tool, I want GitHub's advanced security features on, so that the repo itself meets the standard it promotes.
 
@@ -96,8 +114,21 @@ Status: Planned
 **Functional check**
 - Attempt to push a fake token in the format of a GitHub PAT on a scratch branch: push is blocked.
 
+**Status (2026-11-21)**
+- Repo files: `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md` (added) present; `LICENSE` is Apache-2.0; `.github/dependabot.yml` covers NuGet, GitHub Actions, Docker, Docker Compose and dev containers weekly.
+- Seen working from the PR: CodeQL default setup runs on PR #9; automatic dependency submission (NuGet) runs; `ORG_DENYLIST` is set.
+- Maintainer confirmed in Settings on 2026-11-21 (Claude has no settings access):
+  - [x] Secret scanning and push protection on
+  - [x] Private vulnerability reporting on
+  - [x] Dependabot alerts and security updates on
+  - [x] CodeQL default setup includes C# and GitHub Actions
+  - [x] Ruleset on `main`: PR required, 1 approval, required checks `build-test`, `org-data`, `secrets`, `scripts`, CodeQL; no force push; no deletion
+  - [x] Actions: "Allow GitHub Actions to create and approve pull requests" on
+  - [x] Functional check: push a fake GitHub PAT to a scratch branch and see the push blocked
+- Note: as the only maintainer you cannot approve your own PR; either add a second reviewer or allow bypass for the repository admin on the ruleset.
+
 ### s00-06 Walking skeleton CLI
-- [ ] Done
+- [x] Done
 
 **Story:** As an operator, I want a `hound` command with `--version` and `collect --dry-run`, so that the end-to-end shape exists before any real logic.
 
@@ -115,8 +146,14 @@ Status: Planned
 **Functional check**
 - `make run ARGS="collect --dry-run --config examples/example-pty-ltd.yaml"` prints the expected log line.
 
+**Result (2026-11-21)**
+- `make run ARGS="collect --dry-run --config examples/example-pty-ltd.yaml"` logs `0 collectors configured`, exit 0.
+- `make run ARGS="--version"` prints `0.1.0+<commit>`.
+- `make run ARGS="collect --bogus"` prints the unknown argument, the missing `--config` and `Run 'hound --help' for usage.`, exit 2.
+- A missing config file exits 3 (configuration error), matching the exit codes planned in s03.
+
 ### s00-07 Makefile and pre-commit
-- [ ] Done
+- [x] Done
 
 **Story:** As a developer, I want the same short commands locally and in CI, so that "works on my container" means "works in CI".
 
@@ -131,6 +168,27 @@ Status: Planned
 **Functional check**
 - Stage a badly formatted file: commit is refused with the format message.
 
+**Result (2026-11-21)**
+- `make hooks` sets `core.hooksPath` to the tracked `.githooks/` folder (run by `post-create.sh`).
+- Staged a badly formatted `Ugly.cs`: commit refused with `pre-commit: formatting issues found. Run 'make format', re-stage and commit again.`
+- Staged a file with a fake GitHub PAT: commit refused by gitleaks (`leaks found: 1`).
+- CI now calls `make restore`, `make lint-dotnet`, `make build`, `make coverage`, `make test-functional`, `make lint-shell` and `make test-scripts`. `ca-up` and `ca-down` explain that the compose file arrives in s02.
+
 ## Discovered work
 
+- Dependabot PRs #1 to #8 folded into this sprint (2026-11-21): checkout v7.0.1, setup-dotnet v6.1.0, upload-artifact v7.0.2, dependency-review-action v5.0.1, gitleaks-action v3.0.0 (Node 24 runtime only, no input changes; v2 targets Node 20, which GitHub-hosted runners no longer support), dev container features docker-in-docker 4 and node 2 (options used here unchanged). The feature bumps are verified at the s00-02 container rebuild.
+- s03-01: replace the walking-skeleton `ConfigFile` and `HoundConfig` in `src/EvidenceHound.Cli` with the full config schema in `EvidenceHound.Runtime`, and return `Result<T>` (s01-01) instead of the local `ConfigLoad` union.
+- The `functional` CI job passes `--ignore-exit-code 8` (no tests ran) because there are no functional tests yet. Remove it when s02 adds the first functional test.
+
 ## Sprint review
+
+**2026-11-21.** All seven tasks shipped. The repo has a .NET 10 solution with central packages, analysers as errors and Microsoft.Testing.Platform. There's a dev container, CI pinned to commit SHAs that calls the Makefile targets, an org-data check with a live canary self-test, gitleaks in CI and in a pre-commit hook, and the start-sprint script and workflow with bats tests. The walking-skeleton `hound` CLI has `--version` and `collect --dry-run`. Per-task evidence is in `docs/evidence/s00/`.
+
+What slipped: nothing was dropped. Two functional checks needed the maintainer: the container rebuild with a breakpoint, and the GitHub settings. The start-sprint happy path runs on GitHub for the first time when s01 starts.
+
+What the feedback taught us:
+- xUnit v3 4.x no longer runs on VSTest under the .NET 10 SDK, so tests use Microsoft.Testing.Platform, and CI uses its filter options.
+- A root-level `evidence/` ignore rule was hiding `docs/evidence`.
+- CodeQL default setup was scanning only workflows until C# was added.
+- Dependabot majors were reviewed and folded in. gitleaks-action v2 targets Node 20, which runners no longer support.
+- A cloud session can't see the deny-list, so a random-canary self-test proves the live check instead.

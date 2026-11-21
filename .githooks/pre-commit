@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Pre-commit hook: refuse commits that are badly formatted or contain secrets.
+# Installed by `make hooks` (the dev container runs it on create).
+set -euo pipefail
+
+if [[ -f global.json ]] && git diff --cached --name-only --diff-filter=ACMR | grep -qE '\.(cs|csproj|props|targets|editorconfig)$|^\.editorconfig$'; then
+  if ! dotnet format --verify-no-changes --no-restore >/dev/null 2>&1; then
+    echo "pre-commit: formatting issues found. Run 'make format', re-stage and commit again." >&2
+    exit 1
+  fi
+fi
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "pre-commit: gitleaks is not installed; rebuild the dev container or install it." >&2
+  exit 1
+fi
+gitleaks git --pre-commit --staged --redact --no-banner --log-level warn

@@ -33,6 +33,17 @@ sprint_status() {
   sed -n 's/^Status: //p' "$1" | head -n1
 }
 
+# sprint_others_in_progress sNN -> paths of other sprint files marked "In progress"
+sprint_others_in_progress() {
+  local id="$1" file
+  for file in "$SPRINTS_DIR"/s[0-9][0-9]-*.md; do
+    [[ -e "$file" ]] || continue
+    [[ "$(basename "$file")" == "$id"-* ]] && continue
+    [[ "$(sprint_status "$file")" == "In progress" ]] && printf '%s\n' "$file"
+  done
+  return 0
+}
+
 # sprint_tasks path -> one "- [ ] sNN-TT Title" line per task heading
 sprint_tasks() {
   sed -n 's/^### \(s[0-9][0-9]-[0-9][0-9]\) \(.*\)$/- [ ] \1 \2/p' "$1"
