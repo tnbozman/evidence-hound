@@ -19,6 +19,7 @@ public sealed class CisoAssistantFixture : IAsyncLifetime
     private readonly IContainer _backend = new ContainerBuilder(BackendImage)
         .WithEnvironment("ALLOWED_HOSTS", "*")
         .WithEnvironment("CISO_ASSISTANT_URL", "http://localhost")
+        .WithEnvironment("DJANGO_SECRET_KEY", Convert.ToHexString(RandomNumberGenerator.GetBytes(32)))
         .WithEnvironment("DJANGO_SUPERUSER_EMAIL", "admin@example.com")
         .WithEnvironment("DJANGO_SUPERUSER_PASSWORD", Convert.ToHexString(RandomNumberGenerator.GetBytes(16)))
         .WithPortBinding(ApiPort, assignRandomHostPort: true)

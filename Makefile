@@ -6,6 +6,7 @@ CONFIGURATION ?= Debug
 RESULTS_DIR ?= test-results
 ARGS ?=
 CA_COMPOSE := dev/ciso-assistant/compose.yml
+CA_ENV := HOUND_CA_SECRET_KEY="$$(scripts/ca-secret-key.sh)"
 SHELL_SCRIPTS := $(wildcard scripts/*.sh scripts/lib/*.sh .devcontainer/*.sh dev/ciso-assistant/seed/*.sh) .githooks/pre-commit
 
 .PHONY: help restore build test test-functional test-scripts coverage lint lint-dotnet lint-shell format run hooks ca-up ca-up-kafka ca-down
@@ -52,11 +53,11 @@ hooks: ## Install the git pre-commit hook (format check and gitleaks)
 	git config core.hooksPath .githooks
 
 ca-up: ## Start and seed a local CISO Assistant (token in .dev/ca.env)
-	docker compose -f $(CA_COMPOSE) up -d --wait
+	$(CA_ENV) docker compose -f $(CA_COMPOSE) up -d --wait
 	scripts/ca-seed.sh
 
 ca-up-kafka: ca-up ## Also start Redpanda and the CISO Assistant dispatcher (compose profile kafka)
-	set -a && . ./.dev/ca.env && set +a && docker compose -f $(CA_COMPOSE) --profile kafka up -d --build
+	set -a && . ./.dev/ca.env && set +a && $(CA_ENV) docker compose -f $(CA_COMPOSE) --profile kafka up -d --build
 
 ca-down: ## Stop the local CISO Assistant (add ARGS=-v to delete its data)
-	docker compose -f $(CA_COMPOSE) --profile kafka down $(ARGS)
+	$(CA_ENV) docker compose -f $(CA_COMPOSE) --profile kafka down $(ARGS)

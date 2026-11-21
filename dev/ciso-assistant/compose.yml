@@ -7,6 +7,8 @@ x-backend-env: &backend-env
   ALLOWED_HOSTS: backend,localhost,127.0.0.1
   CISO_ASSISTANT_URL: https://localhost:8443
   DJANGO_DEBUG: "False"
+  # Generated once into .dev/ca-secret-key by `make ca-up`; never committed.
+  DJANGO_SECRET_KEY: ${HOUND_CA_SECRET_KEY:?run make ca-up so the secret key is generated}
   DJANGO_SUPERUSER_EMAIL: admin@example.com
   DJANGO_SUPERUSER_PASSWORD: ${HOUND_CA_ADMIN_PASSWORD:-change-me-local-only}
   HOME: /tmp
