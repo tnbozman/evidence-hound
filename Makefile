@@ -3,7 +3,7 @@ SHELL := /usr/bin/env bash
 .DEFAULT_GOAL := help
 CONFIGURATION ?= Debug
 
-.PHONY: help restore build test
+.PHONY: help restore build test run
 
 help: ## List targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-16s %s\n", $$1, $$2}'
@@ -16,3 +16,6 @@ build: restore ## Build the solution
 
 test: build ## Unit and contract tests
 	dotnet test --no-build -c $(CONFIGURATION) --filter-not-trait "Category=Functional"
+
+run: ## Run the CLI, for example: make run ARGS="collect --dry-run --config examples/example-pty-ltd.yaml"
+	dotnet run --project src/EvidenceHound.Cli -c $(CONFIGURATION) -- $(ARGS)
