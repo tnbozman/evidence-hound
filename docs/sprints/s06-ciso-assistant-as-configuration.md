@@ -81,7 +81,7 @@ Moved from s13-02, because the Essentials parallel run needs it before 800-171 d
 - Result (2026-11-21): `TwoAuditsFunctionalTests` in CI run [44899216065](https://github.com/tnbozman/evidence-hound/actions/runs/44899216065) passed; both audits are updated with no failures, and the conditional access evidence exists once and is linked from both. Evidence: [docs/evidence/s06/s06-03.md](../evidence/s06/s06-03.md).
 
 ### s06-04 Change-only publishing, traced to the run
-- [ ] Done
+- [x] Done
 
 **Story:** As a compliance owner with daily runs, I want CISO Assistant updated only when a row's state actually changes, so that its history shows real changes rather than daily noise, and every change traces back to the run that made it.
 
@@ -104,6 +104,7 @@ Moved from s13-02, because the Essentials parallel run needs it before 800-171 d
 
 **Functional check**
 - Run `hound run` twice against the local CISO Assistant with the same recordings: the second run sends nothing and the history file shows every row verified unchanged. Edit one row in the UI and run again: only that row is written, and drift is reported.
+- Result (2026-11-21): `ChangeOnlyFunctionalTests` in CI run [44905017778](https://github.com/tnbozman/evidence-hound/actions/runs/44905017778) passed; the second run sends nothing and its history line counts every row unchanged, and after an edit of EX-1.1 through the API the third run writes that row only, reports `publish.drift_corrected` and records drift 1. Evidence: [docs/evidence/s06/s06-04.md](../evidence/s06/s06-04.md).
 
 ### s06-05 CISO Assistant configuration inventory
 - [ ] Done
@@ -313,6 +314,8 @@ The layout follows one that has already been tried against CISO Assistant: one s
 
 ## Discovered work
 
+- Over Kafka, `hound run` has no current state to compare with, so it sends every row (as before s06-04) and reports no drift. A requirement mapped with `rows: all` is not supported over Kafka either, because the dispatcher addresses one row. (Found in s06-04.)
+- Tests that PATCH CISO Assistant must send a sized body: .NET's `PatchAsJsonAsync` streams a chunked body that reaches Django empty, so the call succeeds and changes nothing. The client already uses `StringContent`. (Found in s06-04.)
 - The organisation's own record (CISO Assistant's main entity, used by third-party risk features) is not managed by the scope yet; the scope uses the root folder. Add it once the REST API is confirmed to update it. (Found planning s06.)
 
 ## Sprint review
