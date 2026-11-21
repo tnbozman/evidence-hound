@@ -1,6 +1,6 @@
 # s07 Thin deployment
 
-Status: Planned
+Status: In progress
 
 **Goal:** a small organisation can self-host CISO Assistant and the collector runner on one VM with Docker Compose, with the Microsoft 365 collector running on a schedule, so that evidence starts building history as early as possible. Everything specific to the organisation, from CISO Assistant's deployment settings to its users and the scope from s06, lives in the organisation's own private compliance repo, and a tutorial walks through creating it.
 
