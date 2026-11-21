@@ -94,6 +94,11 @@ jobs:
           ORG_DENYLIST: ${{ secrets.ORG_DENYLIST }}
           RANGE: ${{ github.event_name == 'pull_request' && format('{0}..{1}', github.event.pull_request.base.sha, github.event.pull_request.head.sha) || 'origin/main..HEAD' }}
         run: scripts/check-org-data.sh "$RANGE"
+      - name: Self-test (a denylisted canary must fail the check)
+        if: github.event.pull_request.head.repo.fork != true
+        env:
+          ORG_DENYLIST: ${{ secrets.ORG_DENYLIST }}
+        run: scripts/org-data-self-test.sh
 
   secrets:
     runs-on: ubuntu-latest

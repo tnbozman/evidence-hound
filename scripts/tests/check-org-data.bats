@@ -52,3 +52,9 @@ setup() {
   ORG_DENYLIST=$' first , otherco \n' run "$script" "$base..HEAD"
   [ "$status" -eq 1 ]
 }
+
+@test "self-test passes when the check catches the random canary" {
+  ORG_DENYLIST="acmewidgets" run "$BATS_TEST_DIRNAME/../org-data-self-test.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"as expected"* ]]
+}

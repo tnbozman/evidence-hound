@@ -52,7 +52,7 @@ Status: In progress
 - Maintainer to do: rebuild the container from scratch in VS Code or Codespaces, run task "test", and hit a breakpoint in `Program.cs` with "Debug CLI (collect --dry-run, example config)". This cannot be run from a headless cloud session.
 
 ### s00-03 CI pipeline
-- [ ] Done
+- [x] Done
 
 **Story:** As a maintainer, I want every push and PR checked automatically, so that problems surface before review.
 
@@ -72,7 +72,7 @@ Status: In progress
 - CI proven red then green: deliberately failing test run https://github.com/tnbozman/evidence-hound/actions/runs/44844278766 (fails on "Unit and contract tests"), revert run https://github.com/tnbozman/evidence-hound/actions/runs/44844442855 (green).
 - Every action in `ci.yml`, `start-sprint.yml` and `scorecard.yml` is pinned to a full commit SHA with the tag in a comment; checkouts no longer persist credentials (except start-sprint, which must push). Workflow `permissions` default to `contents: read`.
 - `org-data` passes on every push, so `ORG_DENYLIST` is set (the script exits 2 when it is empty). `scripts/tests/check-org-data.bats` proves locally that a denylisted term in a file or commit message fails the check without printing the term.
-- Maintainer to do for the live check: add a harmless canary term (for example `houndcanary`) to `ORG_DENYLIST`, then push a commit containing it to a scratch branch and confirm `org-data` fails; delete the branch. Claude cannot see the deny-list, by design.
+- Live check automated instead of a scratch branch: the `org-data` job now runs `scripts/org-data-self-test.sh`, which adds a random `houndcanary…` term to the real `ORG_DENYLIST`, scans a throwaway repo containing it and requires the check to fail. It runs on every push, so the deny-list is proven live without anyone needing to know or print its terms.
 
 ### s00-04 Start sprint automation
 - [x] Done
