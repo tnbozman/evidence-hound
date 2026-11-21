@@ -18,5 +18,26 @@ public interface IScopeExportSource
 /// <summary>The <c>ref_id</c> given to an audit, control or document that has none, made from its name. Pure.</summary>
 public static class ScopeRefIds
 {
-    public static string For(ScopeKind kind, string name) => "";
+    /// <summary>
+    /// The name's letters and digits, each run of anything else as one dash: upper case for an audit or a control (<c>EXAMPLE-AUDIT</c>), lower
+    /// case for a document, whose <c>ref_id</c> is its id in the scope files.
+    /// </summary>
+    public static string For(ScopeKind kind, string name)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+        var slug = new System.Text.StringBuilder(name.Length);
+        foreach (var c in name)
+        {
+            if (char.IsAsciiLetterOrDigit(c))
+            {
+                slug.Append(kind == ScopeKind.Document ? char.ToLowerInvariant(c) : char.ToUpperInvariant(c));
+            }
+            else if (slug.Length > 0 && slug[^1] != '-')
+            {
+                slug.Append('-');
+            }
+        }
+
+        return slug.ToString().TrimEnd('-');
+    }
 }
