@@ -20,6 +20,17 @@ public class MappingSchemaTests
     }
 
     [Theory]
+    [InlineData("framework_urn: urn:example:x\nrequirements:\n  - {urn: 'urn:example:x:1', rule: all_pass, checks: [a.b]}\n")]
+    [InlineData("framework_urn: urn:example:x\nrequirements:\n  - {ref: '1', rows: all, rule: all_pass, checks: [a.b]}\n")]
+    public void Requirements_by_urn_or_every_row_of_a_ref_pass_the_schema(string yaml)
+    {
+        Schema.Evaluate(ToJson(yaml)).IsValid.ShouldBeTrue();
+    }
+
+    [Theory]
+    [InlineData("framework_urn: urn:example:x\nrequirements:\n  - {ref: '1', urn: 'urn:example:x:1', rule: all_pass, checks: [a.b]}\n")]
+    [InlineData("framework_urn: urn:example:x\nrequirements:\n  - {urn: 'urn:example:x:1', rows: all, rule: all_pass, checks: [a.b]}\n")]
+    [InlineData("framework_urn: urn:example:x\nrequirements:\n  - {ref: '1', rows: some, rule: all_pass, checks: [a.b]}\n")]
     [InlineData("framework_urn: urn:example:x\nrequirements:\n  - {ref: '1', rule: most_pass, checks: [a.b]}\n")]
     [InlineData("framework_urn: urn:example:x\nrequirements:\n  - {ref: '1', rule: threshold, checks: [a.b]}\n")]
     [InlineData("framework_urn: urn:example:x\nrequirements:\n  - {ref: '1', rule: all_pass, checks: [A.B]}\n")]
