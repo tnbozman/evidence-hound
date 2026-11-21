@@ -1,5 +1,5 @@
 # Seeds a disposable CISO Assistant through `python manage.py shell` (see seed.sh).
-# Creates a service-account user with a personal access token, loads the Essential Eight (November 2023),
+# Creates a service-account user with a personal access token, the example staff users, loads the Essential Eight (November 2023),
 # the ASD Essentials for enterprise IT, the transition mapping between them and the fictional Example
 # baseline libraries, and creates the Example Pty Ltd folder, perimeter, audits and applied controls
 # through the REST API. Everything here is fictional.
@@ -14,6 +14,8 @@ from knox.auth import get_token_model, knox_settings
 
 API = os.environ.get("SEED_API_URL", "http://localhost:8000/api")
 SERVICE_EMAIL = "hound-service@example.com"
+# People the example scope names as owners, authors and reviewers.
+STAFF = ["it@example.com", "ceo@example.com"]
 TOKEN_NAME = "evidence-hound"
 LIBRARIES = [
     "urn:intuitem:risk:library:essential-eight-2023",
@@ -84,6 +86,9 @@ def ensure(token, path, match, body):
 
 
 token = service_token()
+for email in STAFF:
+    if not User.objects.filter(email=email).exists():
+        User.objects.create_user(email=email)
 for urn in LIBRARIES:
     status, body = call(token, "POST", f"/stored-libraries/{urn}/import/")
     if status != 200:
