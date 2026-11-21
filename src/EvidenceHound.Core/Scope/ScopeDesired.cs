@@ -159,4 +159,7 @@ public sealed record ScopeInputs(
     IReadOnlyDictionary<string, FrameworkSnapshot> Snapshots, IReadOnlyList<ScopeTarget>? Targets, IReadOnlyDictionary<string, IReadOnlyList<ScopeFile>> Files)
 {
     public static ScopeInputs None { get; } = new(new Dictionary<string, FrameworkSnapshot>(), null, new Dictionary<string, IReadOnlyList<ScopeFile>>());
+
+    /// <summary>The day the plan is made, which decides the open period of each audit with a cycle; null opens none.</summary>
+    public DateOnly? Today { get; init; }
 }
