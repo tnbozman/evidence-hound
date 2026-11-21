@@ -19,13 +19,36 @@ public static class AuditPeriods
     public static IReadOnlyList<string> Lengths { get; } = ["month", "quarter", "half_year", "year"];
 
     /// <summary>The period that holds <paramref name="date"/>.</summary>
-    public static AuditPeriod On(string series, AuditCycle cycle, DateOnly date) => throw new NotImplementedException();
+    public static AuditPeriod On(string series, AuditCycle cycle, DateOnly date)
+    {
+        ArgumentNullException.ThrowIfNull(cycle);
+        var first = First(cycle);
+        var months = Months(cycle.Period);
+        var elapsed = ((date.Year - first.Year) * 12) + date.Month - first.Month - (date.Day < first.Day ? 1 : 0);
+        var index = (int)Math.Floor(elapsed / (double)months);
+        var start = first.AddMonths(index * months);
+        return new AuditPeriod(series, Label(cycle.Period, start, first), start, first.AddMonths((index + 1) * months).AddDays(-1));
+    }
 
     /// <summary>Every period from the cycle's first up to the one that holds <paramref name="date"/>; none before the cycle starts.</summary>
-    public static IReadOnlyList<AuditPeriod> Until(string series, AuditCycle cycle, DateOnly date) => throw new NotImplementedException();
+    public static IReadOnlyList<AuditPeriod> Until(string series, AuditCycle cycle, DateOnly date)
+    {
+        ArgumentNullException.ThrowIfNull(cycle);
+        var periods = new List<AuditPeriod>();
+        for (var period = On(series, cycle, First(cycle)); period.Start <= date; period = On(series, cycle, period.End.AddDays(1)))
+        {
+            periods.Add(period);
+        }
+
+        return periods;
+    }
 
     /// <summary>The audit a run on <paramref name="date"/> publishes to: the open period when the target names a series, otherwise the target itself.</summary>
-    public static string Target(string auditRefId, IReadOnlyDictionary<string, AuditCycle> series, DateOnly date) => throw new NotImplementedException();
+    public static string Target(string auditRefId, IReadOnlyDictionary<string, AuditCycle> series, DateOnly date)
+    {
+        ArgumentNullException.ThrowIfNull(series);
+        return series.TryGetValue(auditRefId, out var cycle) ? On(auditRefId, cycle, date).RefId : auditRefId;
+    }
 
     /// <summary>The cycle's first day.</summary>
     public static DateOnly First(AuditCycle cycle)
