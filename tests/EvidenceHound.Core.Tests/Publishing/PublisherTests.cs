@@ -43,6 +43,16 @@ public class PublisherTests
     }
 
     [Fact]
+    public async Task A_link_that_fails_fails_the_upload_item()
+    {
+        _ca.MissingControls.Add("AC-NONE");
+
+        var report = await Publisher().PublishAsync([new AuditUpdate.UploadEvidence(Mfa) { AppliedControlRefIds = ["AC-NONE"] }], _ct);
+
+        report.Items.ShouldHaveSingleItem().Problems.ShouldHaveSingleItem().Code.ShouldBe("ciso_assistant.not_found");
+    }
+
+    [Fact]
     public async Task Upload_without_controls_links_nothing()
     {
         await Publisher().PublishAsync([new AuditUpdate.UploadEvidence(Mfa)], _ct);

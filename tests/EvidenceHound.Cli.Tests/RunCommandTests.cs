@@ -38,6 +38,14 @@ public sealed class RunCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task A_missing_config_exits_three()
+    {
+        var exitCode = await Run(Settings(), "run", "--config", Path.Combine(_workDir, "missing.yaml"));
+
+        exitCode.ShouldBe(ExitCodes.Configuration);
+    }
+
+    [Fact]
     public async Task Unknown_only_exits_two()
     {
         var exitCode = await Run(Settings(), "run", "--config", await ConfigAsync(), "--only", "no-such-collector");

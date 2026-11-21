@@ -53,8 +53,15 @@ internal sealed class InMemoryCisoAssistant : ICisoAssistantClient
 
     public Dictionary<string, List<string>> ControlEvidence { get; } = [];
 
+    public HashSet<string> MissingControls { get; } = [];
+
     public Task<Result<Unit>> LinkEvidenceToAppliedControlAsync(string controlRefId, string evidenceId, CancellationToken cancellationToken)
     {
+        if (MissingControls.Contains(controlRefId))
+        {
+            return Task.FromResult(Result.Fail<Unit>(new Problem("ciso_assistant.not_found", $"No applied control {controlRefId}.")));
+        }
+
         var linked = ControlEvidence.TryGetValue(controlRefId, out var list) ? list : ControlEvidence[controlRefId] = [];
         linked.Add(evidenceId);
         return Done($"link {evidenceId} to {controlRefId}");

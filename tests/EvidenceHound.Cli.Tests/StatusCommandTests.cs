@@ -36,6 +36,16 @@ public sealed class StatusCommandTests : IDisposable
         lines[2].Split(' ', StringSplitOptions.RemoveEmptyEntries).ShouldBe(["example-second", "never", "run", "-", "-", "-", "-"]);
     }
 
+    [Fact]
+    public async Task A_missing_config_exits_three()
+    {
+        var exitCode = await HoundCli.RunAsync(
+            ["status", "--config", Path.Combine(_workDir, "missing.yaml")], _output, _error, cancellationToken: TestContext.Current.CancellationToken);
+
+        exitCode.ShouldBe(ExitCodes.Configuration);
+        _error.ToString().ShouldContain("missing.yaml");
+    }
+
     public void Dispose()
     {
         _output.Dispose();
