@@ -1,0 +1,14 @@
+{
+  "@odata.context": "{{graph}}v1.0/$metadata#reports/authenticationMethods/userRegistrationDetails",
+  "value": [
+    { "id": "00000000-0000-4000-8000-0000000000a1", "userPrincipalName": "alex.admin@example.com", "userDisplayName": "Alex Admin", "userType": "member", "isAdmin": true, "isMfaCapable": true, "isMfaRegistered": true, "isPasswordlessCapable": true, "methodsRegistered": ["fido2", "microsoftAuthenticatorPush"] },
+    { "id": "00000000-0000-4000-8000-0000000000a2", "userPrincipalName": "sam.admin@example.com", "userDisplayName": "Sam Admin", "userType": "member", "isAdmin": true, "isMfaCapable": true, "isMfaRegistered": true, "isPasswordlessCapable": true, "methodsRegistered": ["fido2"] },
+    { "id": "00000000-0000-4000-8000-0000000000b1", "userPrincipalName": "breakglass1@example.com", "userDisplayName": "Break glass 1", "userType": "member", "isAdmin": true, "isMfaCapable": true, "isMfaRegistered": true, "isPasswordlessCapable": true, "methodsRegistered": ["fido2"] },
+    { "id": "00000000-0000-4000-8000-0000000000b2", "userPrincipalName": "breakglass2@example.com", "userDisplayName": "Break glass 2", "userType": "member", "isAdmin": true, "isMfaCapable": true, "isMfaRegistered": true, "isPasswordlessCapable": true, "methodsRegistered": ["fido2"] },
+    { "id": "00000000-0000-4000-8000-0000000000c1", "userPrincipalName": "jo.example@example.com", "userDisplayName": "Jo Example", "userType": "member", "isAdmin": false, "isMfaCapable": true, "isMfaRegistered": true, "isPasswordlessCapable": false, "methodsRegistered": ["microsoftAuthenticatorPush"] },
+    { "id": "00000000-0000-4000-8000-0000000000c2", "userPrincipalName": "kim.example@example.com", "userDisplayName": "Kim Example", "userType": "member", "isAdmin": false, "isMfaCapable": true, "isMfaRegistered": true, "isPasswordlessCapable": false, "methodsRegistered": ["microsoftAuthenticatorPush", "mobilePhone"] },
+    { "id": "00000000-0000-4000-8000-0000000000c3", "userPrincipalName": "lee.example@example.com", "userDisplayName": "Lee Example", "userType": "member", "isAdmin": false, "isMfaCapable": true, "isMfaRegistered": true, "isPasswordlessCapable": false, "methodsRegistered": ["softwareOneTimePasscode"] },
+    { "id": "00000000-0000-4000-8000-0000000000d1", "userPrincipalName": "former.staff@example.com", "userDisplayName": "Former Staff", "userType": "member", "isAdmin": false, "isMfaCapable": false, "isMfaRegistered": false, "isPasswordlessCapable": false, "methodsRegistered": [] },
+    { "id": "00000000-0000-4000-8000-0000000000e1", "userPrincipalName": "partner_example.net#EXT#@example.com", "userDisplayName": "Partner Guest", "userType": "guest", "isAdmin": false, "isMfaCapable": false, "isMfaRegistered": false, "isPasswordlessCapable": false, "methodsRegistered": [] }
+  ]
+}

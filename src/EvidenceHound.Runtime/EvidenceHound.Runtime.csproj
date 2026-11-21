@@ -9,6 +9,7 @@
     <InternalsVisibleTo Include="EvidenceHound.Runtime.Tests" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Collectors\EvidenceHound.Collectors.M365\EvidenceHound.Collectors.M365.csproj" />
     <ProjectReference Include="..\Collectors\EvidenceHound.Collectors.Manual\EvidenceHound.Collectors.Manual.csproj" />
     <ProjectReference Include="..\EvidenceHound.Collectors.Abstractions\EvidenceHound.Collectors.Abstractions.csproj" />
     <ProjectReference Include="..\EvidenceHound.Core\EvidenceHound.Core.csproj" />

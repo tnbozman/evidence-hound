@@ -43,3 +43,10 @@ internal sealed class RecordingWait : IGraphWait
         return Task.CompletedTask;
     }
 }
+
+/// <summary>Hands every collector the working test credential, whatever the app registration.</summary>
+internal sealed class TestCredentialFactory : IGraphCredentialFactory
+{
+    public EvidenceHound.Core.Results.Result<Azure.Core.TokenCredential> Create(GraphConnection connection) =>
+        EvidenceHound.Core.Results.Result.Ok(TestCredentials.Working);
+}

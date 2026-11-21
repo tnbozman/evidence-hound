@@ -23,6 +23,10 @@ public sealed class CollectorsCommandTests : IDisposable
               checks: backup.daily, backup.restore_tested, identity.mfa.admins, identity.mfa.users
               settings: tenant (optional)
               secrets: none
+            m365 1.0.0
+              checks: identity.legacy_auth_blocked, identity.mfa.enforced_conditional_access, identity.mfa.phishing_resistant_admins, identity.mfa.registered_all_users
+              settings: tenant_id (required), client_id (required), graph_url (optional), include_identities (optional), break_glass_accounts (optional), mfa_partial_percent (optional), privileged_roles (optional)
+              secrets: client_certificate (optional), client_secret (optional)
             manual 1.0.0
               checks: set per instance by setting 'checks'
               settings: drop_folder (required), patterns (optional), checks (required), due_days (required), owner (required)

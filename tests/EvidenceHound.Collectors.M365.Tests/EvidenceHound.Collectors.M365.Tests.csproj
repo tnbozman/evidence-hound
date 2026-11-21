@@ -4,6 +4,6 @@
     <ProjectReference Include="..\..\src\EvidenceHound.Collectors.Testing\EvidenceHound.Collectors.Testing.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="recorded\**" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\fixtures\m365\*.json" Link="m365\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
