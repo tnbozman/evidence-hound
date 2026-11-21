@@ -123,6 +123,76 @@ public sealed class ScopeStateReaderTests : IDisposable
         result.Problems().ShouldHaveSingleItem().Code.ShouldBe("ciso_assistant.not_found");
     }
 
+    [Fact]
+    public async Task Reading_everything_gives_every_row_of_every_audit_and_a_snapshot_of_its_framework()
+    {
+        RecordFramework();
+
+        var state = (await _ca.Export.ReadAllAsync("Global", _ct)).Value();
+
+        state.RootFolder.ShouldBe("Global");
+        state.Objects.Where(o => o.Held.Kind == ScopeKind.Assessment).Select(o => o.Held.Key).ShouldBe(["EX-E8-2026/ISM-1486", "EX-E8-2026/ISM-1504"], ignoreOrder: true);
+        state.Objects.Where(o => o.Held.Kind == ScopeKind.Framework).Select(o => (o.Held.Key, o.Held.Fields["version"]))
+            .ShouldBe([("urn:intuitem:risk:framework:essential-eight-2023", "2")]);
+        var snapshot = state.Frameworks.ShouldHaveSingleItem();
+        (snapshot.LibraryUrn, snapshot.FrameworkUrn, snapshot.Version).ShouldBe(("urn:intuitem:risk:library:essential-eight-2023", "urn:intuitem:risk:framework:essential-eight-2023", 2));
+        snapshot.Groups.Select(g => g.RefId).ShouldBe(["1", "2"]);
+        snapshot.Nodes.Select(n => (n.RefId, n.Title, string.Join(",", n.Groups))).ShouldBe([("ISM-1486", "Java is blocked", "1,2"), ("ISM-1504", "ISM-1504", "1,2")]);
+        _ca.Server.LogEntries.ShouldAllBe(e => e.RequestMessage!.Method == "GET");
+    }
+
+    [Fact]
+    public async Task An_audit_without_a_ref_id_is_keyed_by_one_made_from_its_name()
+    {
+        RecordFramework();
+        _ca.Server.Given(Request.Create().WithPath("/api/compliance-assessments/").UsingGet()).AtPriority(0)
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject { ["count"] = 1, ["results"] = new JsonArray(Listed("ca-noref", "f-ex")) }.ToJsonString()));
+        Object("compliance-assessments", "ca-noref", new JsonObject
+        {
+            ["id"] = "ca-noref",
+            ["name"] = "Example review 2026",
+            ["ref_id"] = "",
+            ["framework"] = "fw-e8",
+            ["perimeter"] = "p-corp",
+            ["folder"] = "f-ex",
+        });
+
+        var state = (await _ca.Export.ReadAllAsync("Global", _ct)).Value();
+
+        state.Objects.Where(o => o.Held.Kind == ScopeKind.Audit).Select(o => o.Held.Key).ShouldBe(["EXAMPLE-REVIEW-2026"]);
+    }
+
+    /// <summary>The Essential Eight framework's own record and its requirement nodes, one of them not assessable.</summary>
+    private void RecordFramework()
+    {
+        Object("frameworks", "fw-e8", new JsonObject
+        {
+            ["id"] = "fw-e8",
+            ["urn"] = "urn:intuitem:risk:framework:essential-eight-2023",
+            ["library"] = "lib-e8",
+            ["implementation_groups_definition"] = new JsonArray(new JsonObject { ["ref_id"] = "1", ["name"] = "ML1" }, new JsonObject { ["ref_id"] = "2", ["name"] = "ML2" }),
+        });
+        List("requirement-nodes",
+            new JsonObject { ["urn"] = "urn:intuitem:risk:req_node:essential-eight-2023:node1", ["ref_id"] = null, ["name"] = "Patch applications", ["assessable"] = false },
+            new JsonObject
+            {
+                ["urn"] = "urn:intuitem:risk:req_node:essential-eight-2023:ism-1486",
+                ["ref_id"] = "ISM-1486",
+                ["name"] = "Java is blocked",
+                ["assessable"] = true,
+                ["parent_urn"] = "urn:intuitem:risk:req_node:essential-eight-2023:node1",
+                ["implementation_groups"] = new JsonArray("1", "2"),
+            },
+            new JsonObject
+            {
+                ["urn"] = "urn:intuitem:risk:req_node:essential-eight-2023:ism-1504",
+                ["ref_id"] = "ISM-1504",
+                ["name"] = null,
+                ["assessable"] = true,
+                ["implementation_groups"] = new JsonArray("1", "2"),
+            });
+    }
+
     private void RecordInstance()
     {
         List("folders", Folder("f-global", "Global", null), Folder("f-ex", "Example Pty Ltd", "f-global"), Folder("f-other", "Other Pty Ltd", "f-other-parent"));

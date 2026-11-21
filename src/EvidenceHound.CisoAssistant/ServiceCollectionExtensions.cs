@@ -19,6 +19,7 @@ public static class CisoAssistantServiceCollectionExtensions
 
         Configure(services.AddHttpClient<ICisoAssistantClient, CisoAssistantClient>(), options);
         Configure(services.AddHttpClient<IScopeStateSource, ScopeStateReader>(), options);
+        Configure(services.AddHttpClient<IScopeExportSource, ScopeStateReader>(), options);
         Configure(services.AddHttpClient<IScopeWriter, ScopeWriter>(), options);
         return services;
     }

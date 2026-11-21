@@ -11,8 +11,11 @@ namespace EvidenceHound.CisoAssistant;
 /// domains directly under it; each object's <c>/object/</c> view gives its fields as IDs and codes, which are turned into the names the scope
 /// uses. Fields come out exactly as <see cref="ScopeDesired"/> writes them, so an unchanged object compares equal.
 /// </summary>
-internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource
+internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, IScopeExportSource
 {
+    public Task<Result<ScopeExportState>> ReadAllAsync(string rootFolder, CancellationToken cancellationToken) =>
+        Task.FromResult(Result.Fail<ScopeExportState>(new Problem("not_implemented", "Not yet.")));
+
     public async Task<Result<IReadOnlyList<ActualObject>>> ReadAsync(ScopeStateQuery query, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(query);

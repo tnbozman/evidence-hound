@@ -22,6 +22,7 @@ internal sealed class FakeCisoAssistant : IDisposable
             .BuildServiceProvider();
         Client = _services.GetRequiredService<ICisoAssistantClient>();
         Scope = _services.GetRequiredService<IScopeStateSource>();
+        Export = _services.GetRequiredService<IScopeExportSource>();
         Writer = _services.GetRequiredService<IScopeWriter>();
     }
 
@@ -32,6 +33,8 @@ internal sealed class FakeCisoAssistant : IDisposable
     public ICisoAssistantClient Client { get; }
 
     public IScopeStateSource Scope { get; }
+
+    public IScopeExportSource Export { get; }
 
     public IScopeWriter Writer { get; }
 
