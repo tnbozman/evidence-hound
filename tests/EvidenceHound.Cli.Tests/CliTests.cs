@@ -29,7 +29,7 @@ public sealed class CliTests : IDisposable
     public async Task Collect_dry_run_with_empty_config_exits_zero()
     {
         var config = Path.Combine(_workDir, "empty.yaml");
-        await File.WriteAllTextAsync(config, "collectors: []\n", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(config, ConfigWithoutCollectors, TestContext.Current.CancellationToken);
 
         var exitCode = await Run("collect", "--dry-run", "--config", config);
 
@@ -60,7 +60,7 @@ public sealed class CliTests : IDisposable
     public async Task Collect_without_dry_run_exits_two_until_collectors_exist()
     {
         var config = Path.Combine(_workDir, "empty.yaml");
-        await File.WriteAllTextAsync(config, "collectors: []\n", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(config, ConfigWithoutCollectors, TestContext.Current.CancellationToken);
 
         var exitCode = await Run("collect", "--config", config);
 
@@ -262,9 +262,15 @@ public sealed class CliTests : IDisposable
         var exitCode = await Run("collect", "--dry-run", "--config", config);
 
         exitCode.ShouldBe(3);
-        _error.ToString().ShouldStartWith("error: Config file ");
-        _error.ToString().ShouldContain("not valid YAML at line");
+        _error.ToString().ShouldStartWith($"error: {config} line 2: not valid YAML");
     }
+
+    private static readonly string ConfigWithoutCollectors = """
+        ciso_assistant: {url: "http://localhost:8000/api/", token: "env:HOUND_CA_TOKEN"}
+        evidence: {root: ./evidence}
+        collectors: []
+        target: {mapping: ./mapping.yaml, compliance_assessment: EXAMPLE-1}
+        """;
 
     private static string RepoFile(string folder, string name) => Path.Combine(AppContext.BaseDirectory, "files", folder, name);
 
