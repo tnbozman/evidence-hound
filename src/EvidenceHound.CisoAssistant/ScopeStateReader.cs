@@ -64,6 +64,8 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
         });
     }
 
+    public Task<Result<IReadOnlyList<UserAccess>>> ReadAccessAsync(CancellationToken cancellationToken) => throw new NotImplementedException();
+
     public async Task<Result<IReadOnlyList<ActualObject>>> ReadAsync(ScopeStateQuery query, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(query);

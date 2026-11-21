@@ -6,6 +6,9 @@ namespace EvidenceHound.Core.Scope;
 /// <summary>What to read: the root folder, the frameworks and other libraries the scope loads, and the rows of each audit the scope writes.</summary>
 public sealed record ScopeStateQuery(string RootFolder, IReadOnlyList<string> FrameworkUrns, IReadOnlyDictionary<string, IReadOnlyList<RequirementKey>> Rows)
 {
+    /// <summary>Whether to read users, teams and role assignments: only when the scope declares access.</summary>
+    public bool Access { get; init; }
+
     /// <summary>The query for a scope: its root folder, its frameworks and other libraries, and the rows its <paramref name="declared"/> objects write.</summary>
     public static ScopeStateQuery For(ScopeDocument scope, IReadOnlyList<ScopeObject> declared)
     {
@@ -29,4 +32,10 @@ public sealed record ScopeStateQuery(string RootFolder, IReadOnlyList<string> Fr
 public interface IScopeStateSource
 {
     Task<Result<IReadOnlyList<ActualObject>>> ReadAsync(ScopeStateQuery query, CancellationToken cancellationToken);
+
+    /// <summary>Every user with whether MFA is on and every role they hold, directly or through a user group, as "role on domain".</summary>
+    Task<Result<IReadOnlyList<UserAccess>>> ReadAccessAsync(CancellationToken cancellationToken);
 }
+
+/// <summary>A user as CISO Assistant holds them: whether MFA is on, and their roles as "BI-RL-APP on Example Pty Ltd".</summary>
+public sealed record UserAccess(string Email, bool MfaEnabled, IReadOnlyList<string> Roles);

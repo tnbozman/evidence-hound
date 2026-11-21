@@ -47,7 +47,7 @@ public static class ScopeLoader
     private static readonly string[] SystemTypes = ["primary", "supporting"];
     private static readonly string[] ControlStatuses = ["to_do", "in_progress", "on_hold", "active", "degraded", "deprecated", "--"];
 
-    public static ScopeParse Parse(ScopeSource setup, ScopeSource? controls, IReadOnlyList<ScopeSource> audits)
+    public static ScopeParse Parse(ScopeSource setup, ScopeSource? controls, IReadOnlyList<ScopeSource> audits, ScopeSource? access = null)
     {
         ArgumentNullException.ThrowIfNull(setup);
         ArgumentNullException.ThrowIfNull(audits);
