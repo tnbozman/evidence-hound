@@ -103,12 +103,13 @@ public class ScopeDesiredTests
     }
 
     [Fact]
-    public void Query_reads_the_root_folder_frameworks_and_rows_with_hand_written_results()
+    public void Query_reads_the_root_folder_and_frameworks()
     {
-        var query = ScopeStateQuery.For(ScopeFixture.Parse().Scope);
+        var scope = ScopeFixture.Parse().Scope;
+
+        var query = ScopeStateQuery.For(scope, ScopeDesired.From(scope));
 
         (query.RootFolder, query.FrameworkUrns.ShouldHaveSingleItem()).ShouldBe(("Global", ScopeFixture.FrameworkUrn));
-        query.Rows.ShouldHaveSingleItem().ShouldBe(new KeyValuePair<string, IReadOnlyList<RequirementKey>>("EXAMPLE-BASELINE-2026", [RequirementKey.Ref("EX-1.2")]), new RowsComparer());
     }
 
     [Fact]

@@ -24,10 +24,8 @@ public static class ScopeDesired
         var setup = scope.Setup;
         return
         [
-            .. setup.Frameworks.Select(f => new ScopeObject(ScopeKind.Framework, f.Urn, Fields(("version", inputs.Snapshots.GetValueOrDefault(f.Urn)?.Version.ToString(CultureInfo.InvariantCulture))))
-            {
-                Initial = Fields(("library", f.LibraryUrn), ("file", f.LibraryFile)),
-            }),
+            .. setup.Frameworks.Select(f => Framework(f, inputs)),
+            .. setup.Libraries.Select(l => new ScopeObject(ScopeKind.Framework, l.Value, Fields()) { Initial = Fields(("library", l.Value)) }),
             .. setup.Domains.Select(d => new ScopeObject(ScopeKind.Domain, d.Name, Fields(("description", d.Description)))),
             .. setup.Domains.SelectMany(d => d.Perimeters.Select(p => new ScopeObject(
                 ScopeKind.Perimeter, PerimeterKey(d.Name, p.Name), Fields(("name", p.Name), ("ref_id", p.RefId), ("description", p.Description), ("domain", d.Name))))),
@@ -46,6 +44,17 @@ public static class ScopeDesired
             }),
             .. scope.Audits.SelectMany(a => Rows(scope, a, inputs)),
         ];
+    }
+
+    /// <summary>A framework, with its version and library URN from its snapshot, and its custom library file to upload.</summary>
+    private static ScopeObject Framework(ScopeFramework framework, ScopeInputs inputs)
+    {
+        var snapshot = inputs.Snapshots.GetValueOrDefault(framework.Urn);
+        return new ScopeObject(ScopeKind.Framework, framework.Urn, Fields(("version", snapshot?.Version.ToString(CultureInfo.InvariantCulture))))
+        {
+            Initial = Fields(("library", framework.LibraryUrn ?? snapshot?.LibraryUrn), ("file", framework.LibraryFile)),
+            Files = framework.LibraryFile is null ? [] : inputs.Files.GetValueOrDefault(framework.Urn) ?? [],
+        };
     }
 
     private static ScopeObject Document(ScopeAudit audit, ScopeEvidenceDocument document, ScopeInputs inputs)
@@ -143,7 +152,8 @@ public static class ScopeDesired
 
 /// <summary>
 /// What the scope's objects need from outside the scope files: the framework snapshots by framework URN, the deployment's targets (null when no
-/// deployment config was given, so the rows a mapping computes are unknown and <c>unlisted</c> is not applied), and each document's files by id.
+/// deployment config was given, so the rows a mapping computes are unknown and <c>unlisted</c> is not applied), and the files to upload: each
+/// document's by its id, and a custom library file by its framework's URN.
 /// </summary>
 public sealed record ScopeInputs(
     IReadOnlyDictionary<string, FrameworkSnapshot> Snapshots, IReadOnlyList<ScopeTarget>? Targets, IReadOnlyDictionary<string, IReadOnlyList<ScopeFile>> Files)

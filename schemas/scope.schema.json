@@ -4,14 +4,31 @@
   "title": "Evidence Hound scope file",
   "description": "One file of a compliance repo's scope: setup.yaml (organisation, frameworks, domains), controls.yaml (applied controls), or audits/<audit>.yaml (one compliance assessment). Guide: docs/scope.md.",
   "oneOf": [
-    { "$ref": "#/$defs/setup" },
-    { "$ref": "#/$defs/controls" },
-    { "$ref": "#/$defs/audit" }
+    {
+      "$ref": "#/$defs/setup"
+    },
+    {
+      "$ref": "#/$defs/controls"
+    },
+    {
+      "$ref": "#/$defs/audit"
+    }
   ],
   "$defs": {
-    "text": { "type": "string", "minLength": 1 },
-    "names": { "type": "array", "items": { "$ref": "#/$defs/text" } },
-    "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "names": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/text"
+      }
+    },
+    "date": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
     "requirement": {
       "description": "A requirement by ref_id, or by URN (a value starting with urn:).",
       "$ref": "#/$defs/text"
@@ -19,135 +36,339 @@
     "setup": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["domains"],
+      "required": [
+        "domains"
+      ],
       "properties": {
         "organisation": {
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "root_folder": { "description": "The existing folder the domains sit under. Default Global.", "$ref": "#/$defs/text" }
+            "root_folder": {
+              "description": "The existing folder the domains sit under. Default Global.",
+              "$ref": "#/$defs/text"
+            }
           }
         },
-        "frameworks": { "type": "array", "items": { "$ref": "#/$defs/framework" } },
-        "domains": { "type": "array", "items": { "$ref": "#/$defs/domain" } }
+        "frameworks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/framework"
+          }
+        },
+        "libraries": {
+          "description": "Other libraries to load by URN, such as the mapping sets between the frameworks.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "domains": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/domain"
+          }
+        }
       }
     },
     "framework": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["urn"],
+      "required": [
+        "urn"
+      ],
       "properties": {
-        "urn": { "description": "The framework URN.", "type": "string", "pattern": "^urn:" },
-        "library": { "description": "The library URN to load from CISO Assistant's stored libraries.", "type": "string", "pattern": "^urn:" },
-        "file": { "description": "A custom library file to upload, relative to setup.yaml.", "$ref": "#/$defs/text" },
-        "snapshot": { "description": "The framework snapshot (hound framework snapshot), relative to setup.yaml, for offline checks.", "$ref": "#/$defs/text" }
+        "urn": {
+          "description": "The framework URN.",
+          "type": "string",
+          "pattern": "^urn:"
+        },
+        "library": {
+          "description": "The library URN to load from CISO Assistant's stored libraries.",
+          "type": "string",
+          "pattern": "^urn:"
+        },
+        "file": {
+          "description": "A custom library file to upload, relative to setup.yaml.",
+          "$ref": "#/$defs/text"
+        },
+        "snapshot": {
+          "description": "The framework snapshot (hound framework snapshot), relative to setup.yaml, for offline checks.",
+          "$ref": "#/$defs/text"
+        }
       }
     },
     "domain": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name"],
-      "not": { "required": ["perimeter", "perimeters"] },
+      "required": [
+        "name"
+      ],
+      "not": {
+        "required": [
+          "perimeter",
+          "perimeters"
+        ]
+      },
       "properties": {
-        "name": { "$ref": "#/$defs/text" },
-        "description": { "type": "string" },
-        "perimeter": { "$ref": "#/$defs/perimeter" },
-        "perimeters": { "type": "array", "items": { "$ref": "#/$defs/perimeter" } },
-        "systems": { "type": "array", "items": { "$ref": "#/$defs/system" } }
+        "name": {
+          "$ref": "#/$defs/text"
+        },
+        "description": {
+          "type": "string"
+        },
+        "perimeter": {
+          "$ref": "#/$defs/perimeter"
+        },
+        "perimeters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/perimeter"
+          }
+        },
+        "systems": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/system"
+          }
+        }
       }
     },
     "perimeter": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name"],
+      "required": [
+        "name"
+      ],
       "properties": {
-        "name": { "$ref": "#/$defs/text" },
-        "ref_id": { "$ref": "#/$defs/text" },
-        "description": { "type": "string" }
+        "name": {
+          "$ref": "#/$defs/text"
+        },
+        "ref_id": {
+          "$ref": "#/$defs/text"
+        },
+        "description": {
+          "type": "string"
+        }
       }
     },
     "system": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "type"],
+      "required": [
+        "name",
+        "type"
+      ],
       "properties": {
-        "name": { "$ref": "#/$defs/text" },
-        "ref_id": { "$ref": "#/$defs/text" },
-        "type": { "enum": ["primary", "supporting"] },
-        "description": { "type": "string" },
-        "owner": { "$ref": "#/$defs/text" },
-        "parents": { "$ref": "#/$defs/names" },
+        "name": {
+          "$ref": "#/$defs/text"
+        },
+        "ref_id": {
+          "$ref": "#/$defs/text"
+        },
+        "type": {
+          "enum": [
+            "primary",
+            "supporting"
+          ]
+        },
+        "description": {
+          "type": "string"
+        },
+        "owner": {
+          "$ref": "#/$defs/text"
+        },
+        "parents": {
+          "$ref": "#/$defs/names"
+        },
         "tags": {
           "description": "Per-framework labels, such as an Essentials domain or cui: \"true\".",
           "type": "object",
-          "additionalProperties": { "type": "string" }
+          "additionalProperties": {
+            "type": "string"
+          }
         }
       }
     },
     "controls": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["controls"],
+      "required": [
+        "controls"
+      ],
       "properties": {
-        "controls": { "type": "array", "items": { "$ref": "#/$defs/control" } }
+        "controls": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/control"
+          }
+        }
       }
     },
     "control": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["ref_id", "name"],
+      "required": [
+        "ref_id",
+        "name"
+      ],
       "properties": {
-        "ref_id": { "$ref": "#/$defs/text" },
-        "name": { "$ref": "#/$defs/text" },
-        "description": { "type": "string" },
-        "domain": { "description": "A domain from setup.yaml; left out for the global domain.", "$ref": "#/$defs/text" },
-        "owner": { "$ref": "#/$defs/text" },
-        "status": { "enum": ["to_do", "in_progress", "on_hold", "active", "degraded", "deprecated", "--"] },
-        "priority": { "type": "string", "pattern": "^[1-4]$" },
-        "category": { "$ref": "#/$defs/text" },
-        "eta": { "$ref": "#/$defs/date" },
-        "systems": { "$ref": "#/$defs/names" },
-        "reference_control": { "type": "string", "pattern": "^urn:" },
-        "documents": { "description": "Ids of documents declared in audit files.", "$ref": "#/$defs/names" }
+        "ref_id": {
+          "$ref": "#/$defs/text"
+        },
+        "name": {
+          "$ref": "#/$defs/text"
+        },
+        "description": {
+          "type": "string"
+        },
+        "domain": {
+          "description": "A domain from setup.yaml; left out for the global domain.",
+          "$ref": "#/$defs/text"
+        },
+        "owner": {
+          "$ref": "#/$defs/text"
+        },
+        "status": {
+          "enum": [
+            "to_do",
+            "in_progress",
+            "on_hold",
+            "active",
+            "degraded",
+            "deprecated",
+            "--"
+          ]
+        },
+        "priority": {
+          "type": "string",
+          "pattern": "^[1-4]$"
+        },
+        "category": {
+          "$ref": "#/$defs/text"
+        },
+        "eta": {
+          "$ref": "#/$defs/date"
+        },
+        "systems": {
+          "$ref": "#/$defs/names"
+        },
+        "reference_control": {
+          "type": "string",
+          "pattern": "^urn:"
+        },
+        "documents": {
+          "description": "Ids of documents declared in audit files.",
+          "$ref": "#/$defs/names"
+        }
       }
     },
     "audit": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["ref_id", "name", "framework", "domain", "perimeter", "unlisted"],
+      "required": [
+        "ref_id",
+        "name",
+        "framework",
+        "domain",
+        "perimeter",
+        "unlisted"
+      ],
       "properties": {
-        "ref_id": { "$ref": "#/$defs/text" },
-        "name": { "$ref": "#/$defs/text" },
-        "framework": { "type": "string", "pattern": "^urn:" },
-        "groups": { "$ref": "#/$defs/names" },
-        "domain": { "$ref": "#/$defs/text" },
-        "perimeter": { "$ref": "#/$defs/text" },
-        "eta": { "$ref": "#/$defs/date" },
-        "due_date": { "$ref": "#/$defs/date" },
-        "authors": { "$ref": "#/$defs/names" },
-        "reviewers": { "$ref": "#/$defs/names" },
+        "ref_id": {
+          "$ref": "#/$defs/text"
+        },
+        "name": {
+          "$ref": "#/$defs/text"
+        },
+        "framework": {
+          "type": "string",
+          "pattern": "^urn:"
+        },
+        "groups": {
+          "$ref": "#/$defs/names"
+        },
+        "domain": {
+          "$ref": "#/$defs/text"
+        },
+        "perimeter": {
+          "$ref": "#/$defs/text"
+        },
+        "eta": {
+          "$ref": "#/$defs/date"
+        },
+        "due_date": {
+          "$ref": "#/$defs/date"
+        },
+        "authors": {
+          "$ref": "#/$defs/names"
+        },
+        "reviewers": {
+          "$ref": "#/$defs/names"
+        },
         "field_visibility": {
           "type": "object",
           "additionalProperties": {
             "type": "object",
             "additionalProperties": false,
             "properties": {
-              "auditor": { "enum": ["edit", "read", "hidden"] },
-              "respondent": { "enum": ["edit", "read", "hidden"] }
+              "auditor": {
+                "enum": [
+                  "edit",
+                  "read",
+                  "hidden"
+                ]
+              },
+              "respondent": {
+                "enum": [
+                  "edit",
+                  "read",
+                  "hidden"
+                ]
+              }
             }
           }
         },
-        "systems": { "$ref": "#/$defs/names" },
-        "documents": { "type": "array", "items": { "$ref": "#/$defs/document" } },
-        "controls": { "type": "array", "items": { "$ref": "#/$defs/auditControl" } },
-        "assessments": { "type": "array", "items": { "$ref": "#/$defs/assessment" } },
+        "systems": {
+          "$ref": "#/$defs/names"
+        },
+        "documents": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/document"
+          }
+        },
+        "controls": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/auditControl"
+          }
+        },
+        "assessments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/assessment"
+          }
+        },
         "cycle": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["period", "starts"],
+          "required": [
+            "period",
+            "starts"
+          ],
           "properties": {
-            "period": { "enum": ["month", "quarter", "half_year", "year"] },
-            "starts": { "$ref": "#/$defs/date" }
+            "period": {
+              "enum": [
+                "month",
+                "quarter",
+                "half_year",
+                "year"
+              ]
+            },
+            "starts": {
+              "$ref": "#/$defs/date"
+            }
           }
         },
         "sign_offs": {
@@ -155,56 +376,147 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["role", "name"],
-            "properties": { "role": { "$ref": "#/$defs/text" }, "name": { "$ref": "#/$defs/text" } }
+            "required": [
+              "role",
+              "name"
+            ],
+            "properties": {
+              "role": {
+                "$ref": "#/$defs/text"
+              },
+              "name": {
+                "$ref": "#/$defs/text"
+              }
+            }
           }
         },
         "unlisted": {
           "description": "What happens to in-group requirements this file does not list.",
           "type": "object",
           "additionalProperties": false,
-          "required": ["result"],
+          "required": [
+            "result"
+          ],
           "properties": {
-            "result": { "enum": ["not_assessed", "not_applicable"] },
-            "reason": { "$ref": "#/$defs/text" }
+            "result": {
+              "enum": [
+                "not_assessed",
+                "not_applicable"
+              ]
+            },
+            "reason": {
+              "$ref": "#/$defs/text"
+            }
           },
-          "if": { "properties": { "result": { "const": "not_applicable" } } },
-          "then": { "required": ["reason"] }
+          "if": {
+            "properties": {
+              "result": {
+                "const": "not_applicable"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "reason"
+            ]
+          }
         }
       }
     },
     "document": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "name"],
+      "required": [
+        "id",
+        "name"
+      ],
       "properties": {
-        "id": { "$ref": "#/$defs/text" },
-        "name": { "$ref": "#/$defs/text" },
-        "files": { "description": "Paths or globs, relative to the compliance repo.", "$ref": "#/$defs/names" },
-        "systems": { "$ref": "#/$defs/names" },
-        "requirements": { "type": "array", "items": { "$ref": "#/$defs/requirement" } }
+        "id": {
+          "$ref": "#/$defs/text"
+        },
+        "name": {
+          "$ref": "#/$defs/text"
+        },
+        "files": {
+          "description": "Paths or globs, relative to the compliance repo.",
+          "$ref": "#/$defs/names"
+        },
+        "systems": {
+          "$ref": "#/$defs/names"
+        },
+        "requirements": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/requirement"
+          }
+        }
       }
     },
     "auditControl": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["ref_id"],
+      "required": [
+        "ref_id"
+      ],
       "properties": {
-        "ref_id": { "$ref": "#/$defs/text" },
-        "requirements": { "type": "array", "items": { "$ref": "#/$defs/requirement" } }
+        "ref_id": {
+          "$ref": "#/$defs/text"
+        },
+        "requirements": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/requirement"
+          }
+        }
       }
     },
     "assessment": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["status", "result"],
-      "oneOf": [{ "required": ["ref"] }, { "required": ["urn"] }],
+      "required": [
+        "status",
+        "result"
+      ],
+      "oneOf": [
+        {
+          "required": [
+            "ref"
+          ]
+        },
+        {
+          "required": [
+            "urn"
+          ]
+        }
+      ],
       "properties": {
-        "ref": { "$ref": "#/$defs/text" },
-        "urn": { "type": "string", "pattern": "^urn:" },
-        "status": { "enum": ["to_do", "in_progress", "in_review", "done"] },
-        "result": { "enum": ["compliant", "partially_compliant", "non_compliant", "not_assessed", "not_applicable"] },
-        "observation": { "type": "string" }
+        "ref": {
+          "$ref": "#/$defs/text"
+        },
+        "urn": {
+          "type": "string",
+          "pattern": "^urn:"
+        },
+        "status": {
+          "enum": [
+            "to_do",
+            "in_progress",
+            "in_review",
+            "done"
+          ]
+        },
+        "result": {
+          "enum": [
+            "compliant",
+            "partially_compliant",
+            "non_compliant",
+            "not_assessed",
+            "not_applicable"
+          ]
+        },
+        "observation": {
+          "type": "string"
+        }
       }
     }
   }

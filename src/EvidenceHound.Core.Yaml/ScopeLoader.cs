@@ -17,7 +17,7 @@ public sealed record ScopeParse(ScopeDocument Scope, IReadOnlyList<ScopeProblem>
 /// </summary>
 public static class ScopeLoader
 {
-    private static readonly string[] SetupKeys = ["organisation", "frameworks", "domains"];
+    private static readonly string[] SetupKeys = ["organisation", "frameworks", "libraries", "domains"];
     private static readonly string[] OrganisationKeys = ["root_folder"];
     private static readonly string[] FrameworkKeys = ["urn", "library", "file", "snapshot"];
     private static readonly string[] DomainKeys = ["name", "description", "perimeters", "perimeter", "systems"];
@@ -75,7 +75,10 @@ public static class ScopeLoader
         return new ScopeSetup(
             (organisation is null ? null : file.Text(organisation, "root_folder")) ?? "Global",
             [.. file.Items(root, "frameworks").Select(item => ReadFramework(item, file)).OfType<ScopeFramework>()],
-            [.. file.Items(root, "domains").Select(item => ReadDomain(item, file)).OfType<ScopeDomain>()]);
+            [.. file.Items(root, "domains").Select(item => ReadDomain(item, file)).OfType<ScopeDomain>()])
+        {
+            Libraries = file.Refs(root, "libraries"),
+        };
     }
 
     private static ScopeFramework? ReadFramework(YamlMappingNode item, FileReader file)

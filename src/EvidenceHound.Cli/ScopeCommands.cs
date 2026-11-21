@@ -10,6 +10,7 @@ using EvidenceHound.Core.Yaml;
 using EvidenceHound.Runtime.Collectors;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.Extensions.Logging;
 
 namespace EvidenceHound.Cli;
@@ -64,14 +65,14 @@ internal static class ScopeCommands
             }
 
             return await PublishCommand.Connection(configuration).Match(
-                connection => PlanAsync(checkedScope.Scope, connection, parseResult.GetValue(prune), parseResult.GetRequiredValue(planFormat), loggers, output, logger, cancellationToken),
+                connection => PlanAsync(checkedScope, connection, parseResult.GetValue(prune), parseResult.GetRequiredValue(planFormat), loggers, output, logger, cancellationToken),
                 problems => Task.FromResult(Log.Problems(logger, problems)));
         });
 
         var dryRun = new Option<bool>("--dry-run") { Description = "Print the plan and write nothing." };
         var apply = new Command(
             "apply",
-            $"Write the scope's domains, perimeters and systems to CISO Assistant, in dependency order (needs {PublishCommand.UrlSetting} and {PublishCommand.TokenSetting}). Safe to run again.")
+            $"Write the scope to CISO Assistant, in dependency order: libraries, domains, perimeters, systems, audits, documents, controls and rows (needs {PublishCommand.UrlSetting} and {PublishCommand.TokenSetting}). Safe to run again. Give --config so the unlisted rule leaves the rows a mapping computes alone.")
         {
             dir, config, dryRun, prune,
         };
@@ -84,25 +85,22 @@ internal static class ScopeCommands
             }
 
             return await PublishCommand.Connection(configuration).Match(
-                connection => ApplyAsync(checkedScope.Scope, connection, parseResult.GetValue(prune), parseResult.GetValue(dryRun), loggers, output, logger, cancellationToken),
+                connection => ApplyAsync(checkedScope, connection, parseResult.GetValue(prune), parseResult.GetValue(dryRun), loggers, output, logger, cancellationToken),
                 problems => Task.FromResult(Log.Problems(logger, problems)));
         });
 
         return new Command("scope", "Work with a compliance repo's scope files.") { validate, newAudit, plan, apply };
     }
 
-    /// <summary>The kinds <c>hound scope apply</c> writes so far; the plan lists the rest.</summary>
-    private static readonly ScopeKind[] Applied = [ScopeKind.Domain, ScopeKind.Perimeter, ScopeKind.System];
-
     private static async Task<int> ApplyAsync(
-        ScopeDocument scope, CisoAssistantOptions connection, bool prune, bool dryRun, ILoggerFactory loggers, TextWriter output, ILogger logger, CancellationToken cancellationToken)
+        CheckedScope checkedScope, CisoAssistantOptions connection, bool prune, bool dryRun, ILoggerFactory loggers, TextWriter output, ILogger logger, CancellationToken cancellationToken)
     {
         using var services = new ServiceCollection().AddSingleton(loggers).AddCisoAssistantClient(connection).BuildServiceProvider();
-        var actual = await services.GetRequiredService<IScopeStateSource>().ReadAsync(ScopeStateQuery.For(scope), cancellationToken);
+        var declared = ScopeDesired.From(checkedScope.Scope, checkedScope.Inputs);
+        var actual = await services.GetRequiredService<IScopeStateSource>().ReadAsync(ScopeStateQuery.For(checkedScope.Scope, declared), cancellationToken);
         return await actual.Match(
             async held =>
             {
-                var declared = ScopeDesired.From(scope);
                 var plan = ScopePlanner.Plan(declared, held, prune);
                 if (dryRun)
                 {
@@ -110,7 +108,7 @@ internal static class ScopeCommands
                     return ExitCodes.Ok;
                 }
 
-                var report = await ScopeApplier.ApplyAsync(plan, declared, Applied, scope.Setup.RootFolder, services.GetRequiredService<IScopeWriter>(), cancellationToken);
+                var report = await ScopeApplier.ApplyAsync(plan, declared, Enum.GetValues<ScopeKind>(), checkedScope.Scope.Setup.RootFolder, services.GetRequiredService<IScopeWriter>(), cancellationToken);
                 await output.WriteAsync(ScopePlanOutput.Json(report));
                 return report.Failed > 0 ? ExitCodes.PublishFailed : ExitCodes.Ok;
             },
@@ -118,14 +116,15 @@ internal static class ScopeCommands
     }
 
     private static async Task<int> PlanAsync(
-        ScopeDocument scope, CisoAssistantOptions connection, bool prune, string format, ILoggerFactory loggers, TextWriter output, ILogger logger, CancellationToken cancellationToken)
+        CheckedScope checkedScope, CisoAssistantOptions connection, bool prune, string format, ILoggerFactory loggers, TextWriter output, ILogger logger, CancellationToken cancellationToken)
     {
         using var services = new ServiceCollection().AddSingleton(loggers).AddCisoAssistantClient(connection).BuildServiceProvider();
-        var actual = await services.GetRequiredService<IScopeStateSource>().ReadAsync(ScopeStateQuery.For(scope), cancellationToken);
+        var declared = ScopeDesired.From(checkedScope.Scope, checkedScope.Inputs);
+        var actual = await services.GetRequiredService<IScopeStateSource>().ReadAsync(ScopeStateQuery.For(checkedScope.Scope, declared), cancellationToken);
         return await actual.Match(
             async held =>
             {
-                var plan = ScopePlanner.Plan(ScopeDesired.From(scope), held, prune);
+                var plan = ScopePlanner.Plan(declared, held, prune);
                 await output.WriteAsync(format == "json" ? ScopePlanOutput.Json(plan) : ScopePlanOutput.Markdown(plan));
                 return ExitCodes.Ok;
             },
@@ -150,13 +149,16 @@ internal static class ScopeCommands
         return ExitCodes.Ok;
     }
 
-    private static async Task<(IReadOnlyList<ScopeProblem> Problems, string Summary, ScopeDocument Scope)> ValidateAsync(
+    /// <summary>A checked scope: its problems, a one-line summary, the parsed files, and what planning it needs from outside them.</summary>
+    private sealed record CheckedScope(IReadOnlyList<ScopeProblem> Problems, string Summary, ScopeDocument Scope, ScopeInputs Inputs);
+
+    private static async Task<CheckedScope> ValidateAsync(
         DirectoryInfo dir, FileInfo? configFile, CollectorRegistry registry, CancellationToken cancellationToken)
     {
         var setupPath = Path.Combine(dir.ToString(), "setup.yaml");
         if (!File.Exists(setupPath))
         {
-            return ([new ScopeProblem("scope.file_missing", new SourceLine(setupPath, 0), "the scope has no setup.yaml.", "Create setup.yaml with the organisation, frameworks and domains.")], "", new ScopeDocument(new ScopeSetup("Global", [], []), [], []));
+            return new([new ScopeProblem("scope.file_missing", new SourceLine(setupPath, 0), "the scope has no setup.yaml.", "Create setup.yaml with the organisation, frameworks and domains.")], "", new ScopeDocument(new ScopeSetup("Global", [], []), [], []), ScopeInputs.None);
         }
 
         var controlsPath = Path.Combine(dir.ToString(), "controls.yaml");
@@ -170,16 +172,80 @@ internal static class ScopeCommands
         var snapshots = await SnapshotsAsync(parsed.Scope.Setup.Frameworks, Path.GetDirectoryName(Path.GetFullPath(setupPath))!, cancellationToken);
         var targets = configFile is null ? Result.Ok<IReadOnlyList<ScopeTarget>>([]) : await TargetsAsync(configFile, registry, cancellationToken);
         var scope = parsed.Scope;
+        var files = await FilesAsync(scope, Path.GetDirectoryName(Path.GetFullPath(dir.ToString().TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)))!, Path.GetDirectoryName(Path.GetFullPath(setupPath))!, cancellationToken);
         IReadOnlyList<ScopeProblem> problems =
         [
             .. parsed.Problems,
             .. snapshots.Problems,
+            .. files.Problems,
             .. targets.Match(_ => [], ps => ps.Select(p => new ScopeProblem(p.Code, new SourceLine(configFile!.ToString(), 0), p.Message, "Fix the deployment config first."))),
             .. ScopeValidator.Validate(scope, snapshots.Loaded, targets.Match(t => t, _ => [])),
         ];
-        return (problems, string.Create(
-            CultureInfo.InvariantCulture,
-            $"scope valid: {scope.Setup.Domains.Count} domain(s), {scope.Controls.Count} control(s), {scope.Audits.Count} audit(s)"), scope);
+        return new(
+            problems,
+            string.Create(CultureInfo.InvariantCulture, $"scope valid: {scope.Setup.Domains.Count} domain(s), {scope.Controls.Count} control(s), {scope.Audits.Count} audit(s)"),
+            scope,
+            new ScopeInputs(snapshots.Loaded, configFile is null ? null : targets.Match(t => t, _ => []), files.Found));
+    }
+
+    /// <summary>
+    /// The files to upload, with their SHA-256: each document's, by path or glob relative to the compliance repo (the folder that holds the
+    /// scope folder), and each custom library file, relative to setup.yaml. A path that names no file is a problem.
+    /// </summary>
+    private static async Task<(Dictionary<string, IReadOnlyList<ScopeFile>> Found, IReadOnlyList<ScopeProblem> Problems)> FilesAsync(
+        ScopeDocument scope, string repoDir, string setupDir, CancellationToken cancellationToken)
+    {
+        var found = new Dictionary<string, IReadOnlyList<ScopeFile>>(StringComparer.Ordinal);
+        var problems = new List<ScopeProblem>();
+        foreach (var document in scope.Audits.SelectMany(a => a.Documents).DistinctBy(d => d.Id))
+        {
+            var files = new List<ScopeFile>();
+            foreach (var pattern in document.Files)
+            {
+                var matched = Matched(repoDir, pattern);
+                if (matched.Length == 0)
+                {
+                    problems.Add(new ScopeProblem("scope.document_file_missing", document.At, $"document '{document.Id}' names {pattern}, which matches no file.", "Add the file to the compliance repo, or fix the path: it is relative to the folder that holds scope/."));
+                }
+
+                foreach (var path in matched)
+                {
+                    files.Add(new ScopeFile(path, await Sha256Async(path, cancellationToken)));
+                }
+            }
+
+            found[document.Id] = files;
+        }
+
+        foreach (var framework in scope.Setup.Frameworks.Where(f => f.LibraryFile is not null))
+        {
+            var path = Path.GetFullPath(framework.LibraryFile!, setupDir);
+            if (File.Exists(path))
+            {
+                found[framework.Urn] = [new ScopeFile(path, await Sha256Async(path, cancellationToken))];
+            }
+        }
+
+        return (found, problems);
+    }
+
+    private static string[] Matched(string baseDir, string pattern)
+    {
+        if (pattern.IndexOfAny(['*', '?']) < 0)
+        {
+            var path = Path.GetFullPath(pattern, baseDir);
+            return File.Exists(path) ? [path] : [];
+        }
+
+        var matcher = new Matcher(StringComparison.Ordinal);
+        matcher.AddInclude(pattern);
+        return [.. matcher.GetResultsInFullPath(baseDir).Order(StringComparer.Ordinal)];
+    }
+
+    private static async Task<string> Sha256Async(string path, CancellationToken cancellationToken)
+    {
+        await using var stream = File.OpenRead(path);
+        return Convert.ToHexStringLower(await System.Security.Cryptography.SHA256.HashDataAsync(stream, cancellationToken));
     }
 
     private static async Task<ScopeSource> ReadAsync(string path, CancellationToken cancellationToken) =>

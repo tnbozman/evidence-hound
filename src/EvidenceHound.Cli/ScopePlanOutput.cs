@@ -32,7 +32,13 @@ internal static class ScopePlanOutput
             markdown.Append("\n### Drift\n\n| Kind | Object | Why | Managed by hound | Fields |\n| --- | --- | --- | --- | --- |\n");
             foreach (var drift in plan.Drift)
             {
-                var why = drift.Reason == DriftReason.Edited ? "edited in CISO Assistant" : "not in the scope";
+                var why = drift.Reason switch
+                {
+                    DriftReason.Edited => "edited in CISO Assistant",
+                    DriftReason.Locked => "audit locked: not changed",
+                    DriftReason.Outdated => "older library loaded: not upgraded",
+                    _ => "not in the scope",
+                };
                 markdown.Append(CultureInfo.InvariantCulture, $"| {Kind(drift.Kind)} | {Cell(drift.Key)} | {why} | {(drift.Managed ? "yes" : "no")} | {Changed(drift.Fields)} |\n");
             }
         }
@@ -51,14 +57,7 @@ internal static class ScopePlanOutput
                 ["fields"] = FieldsJson(c.Fields),
                 ["state"] = c.State,
             })]),
-            ["drift"] = new JsonArray([.. plan.Drift.Select(d => (JsonNode)new JsonObject
-            {
-                ["kind"] = Kind(d.Kind),
-                ["key"] = d.Key,
-                ["reason"] = d.Reason == DriftReason.Edited ? "edited" : "not_in_scope",
-                ["managed"] = d.Managed,
-                ["fields"] = FieldsJson(d.Fields),
-            })]),
+            ["drift"] = DriftJson(plan.Drift),
         }.ToJsonString(Indented) + "\n";
 
     /// <summary>An apply's report: counts, then each change with what happened to it.</summary>
@@ -77,7 +76,26 @@ internal static class ScopePlanOutput
                 ["outcome"] = c.Outcome.ToString().ToLowerInvariant(),
                 ["detail"] = c.Detail,
             })]),
+            ["drift"] = DriftJson(report.Drift),
         }.ToJsonString(Indented) + "\n";
+
+    private static JsonArray DriftJson(IReadOnlyList<ScopeDrift> drift) =>
+    [
+        .. drift.Select(d => (JsonNode)new JsonObject
+        {
+            ["kind"] = Kind(d.Kind),
+            ["key"] = d.Key,
+            ["reason"] = d.Reason switch
+            {
+                DriftReason.Edited => "edited",
+                DriftReason.Locked => "locked",
+                DriftReason.Outdated => "outdated",
+                _ => "not_in_scope",
+            },
+            ["managed"] = d.Managed,
+            ["fields"] = FieldsJson(d.Fields),
+        }),
+    ];
 
     private static JsonArray FieldsJson(IReadOnlyList<FieldChange> fields) =>
         [.. fields.Select(f => (JsonNode)new JsonObject { ["field"] = f.Field, ["old"] = f.Old, ["new"] = f.New })];

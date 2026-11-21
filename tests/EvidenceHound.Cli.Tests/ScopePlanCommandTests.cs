@@ -205,7 +205,8 @@ public sealed class ScopePlanCommandTests : IDisposable
     /// </summary>
     private void HeldStructure()
     {
-        static JsonObject In(string id, string folder, string? refId = null) => new() { ["id"] = id, ["ref_id"] = refId, ["folder"] = new JsonObject { ["id"] = folder, ["str"] = folder } };
+        static JsonObject In(string id, string folder, string? refId = null, string? name = null) =>
+            new() { ["id"] = id, ["name"] = name, ["ref_id"] = refId, ["folder"] = new JsonObject { ["id"] = folder, ["str"] = folder } };
         static string Marked(params (string Name, string Value)[] fields) =>
             $"[hound scope {Core.Scope.ScopeMarker.Fingerprint(fields.ToDictionary(f => f.Name, f => f.Value, StringComparer.Ordinal))}]";
 
@@ -213,9 +214,9 @@ public sealed class ScopePlanCommandTests : IDisposable
         Object("folders", "f-ex", new JsonObject { ["id"] = "f-ex", ["name"] = "Example Pty Ltd", ["parent_folder"] = "f-global", ["description"] = Marked() });
         List("frameworks", new JsonObject { ["id"] = "fw-1", ["urn"] = Snapshot.FrameworkUrn, ["library"] = new JsonObject { ["id"] = "lib-1", ["urn"] = Snapshot.LibraryUrn } });
         List("loaded-libraries", new JsonObject { ["id"] = "lib-1", ["urn"] = Snapshot.LibraryUrn, ["version"] = Snapshot.Version });
-        List("perimeters", In("p-1", "f-ex"));
+        List("perimeters", In("p-1", "f-ex", name: "Example baseline"));
         Object("perimeters", "p-1", new JsonObject { ["id"] = "p-1", ["name"] = "Example baseline", ["folder"] = "f-ex", ["description"] = Marked(("name", "Example baseline"), ("domain", "Example Pty Ltd")) });
-        List("assets", In("a-1", "f-ex"));
+        List("assets", In("a-1", "f-ex", name: "Example 365"));
         Object("assets", "a-1", new JsonObject
         {
             ["id"] = "a-1",
