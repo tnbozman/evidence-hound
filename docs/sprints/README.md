@@ -12,7 +12,7 @@ Release 1 is delivered in one-week sprints. Each sprint has its own file, `sNN-<
 | [s05](s05-m365-collector.md) | Microsoft 365 reference collector | 1 |
 | [s06](s06-sophos-veeam-collectors.md) | Sophos Central and Veeam reference collectors | 1 |
 | [s07](s07-reference-deployment.md) | Reference Docker deployment, scheduling, secrets, backups | 1 |
-| [s08](s08-e8-mapping-and-adoption.md) | Essential Eight mapping and adoption guides | 1 |
+| [s08](s08-e8-mapping-and-adoption.md) | Essential Eight mapping, adoption guides, committee and board reporting | 1 |
 | [s09](s09-release-1.md) | Packaging, release pipeline, docs site | 1 |
 | [s10](s10-nist-800-171.md) | NIST SP 800-171 mapping | 2 |
 | [s11](s11-collector-console.md) | Collector console (optional) | 2 |
