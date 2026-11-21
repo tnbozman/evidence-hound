@@ -126,7 +126,7 @@ Status: In progress
 - A missing config file exits 3 (configuration error), matching the exit codes planned in s03.
 
 ### s00-07 Makefile and pre-commit
-- [ ] Done
+- [x] Done
 
 **Story:** As a developer, I want the same short commands locally and in CI, so that "works on my container" means "works in CI".
 
@@ -140,6 +140,12 @@ Status: In progress
 
 **Functional check**
 - Stage a badly formatted file: commit is refused with the format message.
+
+**Result (2026-11-21)**
+- `make hooks` sets `core.hooksPath` to the tracked `.githooks/` folder (run by `post-create.sh`).
+- Staged a badly formatted `Ugly.cs`: commit refused with `pre-commit: formatting issues found. Run 'make format', re-stage and commit again.`
+- Staged a file with a fake GitHub PAT: commit refused by gitleaks (`leaks found: 1`).
+- CI now calls `make restore`, `make lint-dotnet`, `make build`, `make coverage`, `make test-functional`, `make lint-shell` and `make test-scripts`. `ca-up` and `ca-down` explain that the compose file arrives in s02.
 
 ## Discovered work
 
