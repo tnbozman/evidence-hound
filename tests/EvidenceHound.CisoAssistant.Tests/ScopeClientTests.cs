@@ -214,6 +214,20 @@ public sealed class ScopeClientTests : IDisposable
     }
 
     [Fact]
+    public async Task An_audit_without_a_ref_id_is_found_by_its_name_and_given_the_ref_id_made_from_it()
+    {
+        List("frameworks", new JsonObject { ["id"] = "fw-e8", ["urn"] = E8 });
+        List("compliance-assessments", new JsonObject { ["id"] = "ca-noref", ["ref_id"] = "", ["name"] = "Example review 2026" });
+        Respond("PATCH", "/api/compliance-assessments/ca-noref/", 200, new JsonObject());
+        var audit = Declared(ScopeKind.Audit, "EXAMPLE-REVIEW-2026", ("name", "Example review 2026"), ("framework", E8), ("domain", "Example Pty Ltd"), ("perimeter", "Corporate IT"));
+
+        (await Write(audit, ScopeAction.Update, State)).Value();
+
+        Sent().ShouldBe([("PATCH", "/api/compliance-assessments/ca-noref/")]);
+        JsonNode.Parse(Logged("PATCH", "/api/compliance-assessments/ca-noref/").Body!)!["ref_id"]!.GetValue<string>().ShouldBe("EXAMPLE-REVIEW-2026");
+    }
+
+    [Fact]
     public async Task Updates_document_and_uploads_only_new_files()
     {
         var kept = await FileAsync("identity-policy.pdf", "policy v1");
