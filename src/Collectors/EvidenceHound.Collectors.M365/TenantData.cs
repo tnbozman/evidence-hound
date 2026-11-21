@@ -8,7 +8,14 @@ internal sealed record TenantData(
     IReadOnlyList<MfaRegistration> Registrations,
     IReadOnlyList<CaPolicy> Policies)
 {
-    public static TenantData Parse(IReadOnlyDictionary<string, JsonArray?> collections) => throw new NotImplementedException();
+    public static TenantData Parse(IReadOnlyDictionary<string, JsonArray?> collections)
+    {
+        ArgumentNullException.ThrowIfNull(collections);
+        return new(
+            Items(collections, GraphSources.Users).Select(DirectoryUser.From).ToArray(),
+            Items(collections, GraphSources.MfaRegistration).Select(MfaRegistration.From).ToArray(),
+            Items(collections, GraphSources.ConditionalAccess).Select(CaPolicy.From).ToArray());
+    }
 
     internal static IEnumerable<JsonObject> Items(IReadOnlyDictionary<string, JsonArray?> collections, string name) =>
         collections.GetValueOrDefault(name)?.OfType<JsonObject>() ?? [];

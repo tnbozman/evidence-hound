@@ -1,4 +1,6 @@
+using EvidenceHound.Core.Checks;
 using EvidenceHound.Core.Results;
+using EvidenceHound.Core.Secrets;
 
 namespace EvidenceHound.Collectors.M365;
 
@@ -30,5 +32,47 @@ public sealed class M365Collector(IGraphCredentialFactory credentials, IGraphWai
             new(M365Settings.ClientSecret, "Client secret of the app registration, if no certificate is used.", Required: false),
         ]);
 
-    public Task<Result<CollectionResult>> CollectAsync(CollectorContext context, CancellationToken cancellationToken) => throw new NotImplementedException($"{credentials}{wait}");
+    public async Task<Result<CollectionResult>> CollectAsync(CollectorContext context, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        return await M365Options.FromSettings(context.Settings)
+            .Bind(options => credentials.Create(Connection(options, context.Secrets)).Map(credential => (options, credential)))
+            .BindAsync(async pair =>
+            {
+                using var http = context.HttpClients.CreateClient(TypeName);
+                var client = new GraphClient(http, pair.credential, pair.options.GraphUrl, wait);
+                return (await ReadAsync(client, cancellationToken)).Bind(collections => Evaluate(collections, pair.options, context));
+            });
+    }
+
+    private static GraphConnection Connection(M365Options options, IReadOnlyDictionary<string, Secret> secrets) => new(
+        options.TenantId,
+        options.ClientId,
+        secrets.GetValueOrDefault(M365Settings.ClientCertificate),
+        secrets.GetValueOrDefault(M365Settings.ClientSecret));
+
+    private static async Task<Result<IReadOnlyList<(GraphSource Source, GraphCollection Collection)>>> ReadAsync(GraphClient client, CancellationToken cancellationToken)
+    {
+        var read = new List<Result<(GraphSource, GraphCollection)>>();
+        foreach (var source in GraphSources.All)
+        {
+            read.Add((await client.GetAllAsync(source.Request, cancellationToken)).Map(collection => (source, collection)));
+        }
+
+        return Result.Combine(read);
+    }
+
+    private static Result<CollectionResult> Evaluate(IReadOnlyList<(GraphSource Source, GraphCollection Collection)> collections, M365Options options, CollectorContext context)
+    {
+        var tenant = TenantData.Parse(collections.ToDictionary(c => c.Source.Name, c => (System.Text.Json.Nodes.JsonArray?)c.Collection.Items, StringComparer.Ordinal));
+        var files = collections.Select(c => GraphEvidence.File(c.Source.EvidenceFile, c.Collection, options.IncludeIdentities)).ToArray();
+        var now = context.Clock.UtcNow;
+        var checks = M365Checks.All
+            .Select(check => check.Evaluate(tenant, options))
+            .Select(finding => CheckId.Create(finding.CheckId)
+                .Bind(id => CheckResult.Create(id, finding.Outcome, finding.Observation, finding.Sources.Select(s => s + ".json"), now, context.Name)));
+        return Result.Combine(checks).Map(results => new CollectionResult(results, files, []));
+    }
 }

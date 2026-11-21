@@ -29,7 +29,30 @@ internal sealed record M365Options(
 {
     public static readonly Uri DefaultGraphUrl = new("https://graph.microsoft.com/");
 
-    public static Result<M365Options> FromSettings(CollectorSettings settings) => throw new NotImplementedException();
+    public static Result<M365Options> FromSettings(CollectorSettings settings)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
+        var tenant = Required(settings, M365Settings.TenantId);
+        var client = Required(settings, M365Settings.ClientId);
+        var graph = GraphUrlOf(settings);
+        var identities = Flag(settings, M365Settings.IncludeIdentities);
+        var partial = Percent(settings, M365Settings.MfaPartialPercent, 90);
+        Result<object>[] all = [Box(tenant), Box(client), Box(graph), Box(identities), Box(partial)];
+        var problems = all.SelectMany(r => r.Match(_ => [], p => p)).ToArray();
+        if (problems.Length > 0)
+        {
+            return Result.Fail<M365Options>(problems);
+        }
+
+        return Result.Ok(new M365Options(
+            Get(tenant),
+            Get(client),
+            Get(graph),
+            Get(identities),
+            List(settings, M365Settings.BreakGlassAccounts).ToHashSet(StringComparer.OrdinalIgnoreCase),
+            Get(partial),
+            List(settings, M365Settings.PrivilegedRoles) is { Length: > 0 } roles ? roles : M365.PrivilegedRoles.Default));
+    }
 
     /// <summary>A comma-separated setting as a list; empty when not set.</summary>
     internal static string[] List(CollectorSettings settings, string name) =>
