@@ -12,4 +12,7 @@ public static class Retention
         var latestComplete = runs.Where(r => r.Complete).MaxBy(r => r.StartedAt);
         return [.. runs.Where(r => r.StartedAt < cutoff && r != latestComplete).OrderBy(r => r.StartedAt)];
     }
+
+    public static IReadOnlyList<StoredRun> RunsToDelete(IReadOnlyList<StoredRun> runs, DateTimeOffset now, int days, IReadOnlyList<DateOnly> periodEnds, int periodRetentionYears) =>
+        RunsToDelete(runs, now, days);
 }
