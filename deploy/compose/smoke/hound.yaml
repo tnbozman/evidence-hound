@@ -1,0 +1,26 @@
+# Smoke-test config for deploy/compose (deploy/compose/smoke-test.sh): the built-in fake collector, with fixed,
+# fictional results, publishing to the example baseline audit that examples/compliance-repo/scope declares.
+# The smoke test mounts examples/compliance-repo at /config and this file at /config-smoke/hound.yaml.
+
+ciso_assistant:
+  url: http://backend:8000/api/
+  token: env:HOUND_CA_TOKEN          # set from /run/secrets/hound_ca_token through HOUND_CA_TOKEN_FILE
+
+evidence:
+  root: /var/lib/evidence-hound/evidence
+  retention_days: 7
+
+collectors:
+  - name: smoke-fake
+    type: fake
+    schedule: "*/15 * * * *"
+    settings:
+      tenant: example.com
+
+target:
+  mapping: /config/mappings/example.yaml
+  compliance_assessment: EXAMPLE-BASELINE-2026
+  controls:
+    mfa: AC-MFA
+    backups: AC-BACKUP
+  health_control: AC-AUTO-EVIDENCE

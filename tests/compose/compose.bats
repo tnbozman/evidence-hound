@@ -1,0 +1,83 @@
+#!/usr/bin/env bats
+# Static checks of the reference Compose stack (deploy/compose). Needs Docker Compose and jq, no images.
+# Run: make test-compose. The smoke test (make compose-smoke) brings the stack up for real.
+
+setup() {
+  root="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
+  dir="$root/deploy/compose"
+  config() { docker compose --project-directory "$dir" -f "$dir/compose.yml" --env-file "$dir/.env.example" "$@" config --format json; }
+}
+
+@test "the stack validates with the documented example settings" {
+  run docker compose --project-directory "$dir" -f "$dir/compose.yml" --env-file "$dir/.env.example" config --quiet
+  [ "$status" -eq 0 ]
+}
+
+@test "the stack has CISO Assistant, PostgreSQL, Caddy and the runner" {
+  services="$(config | jq -r '.services | keys | sort | join(" ")')"
+  [ "$services" = "backend caddy frontend postgres runner worker" ]
+}
+
+@test "the CISO Assistant images are pinned to one release" {
+  tags="$(config | jq -r '[.services.backend.image, .services.worker.image, .services.frontend.image] | map(split(":")[1]) | unique | join(" ")')"
+  [[ "$tags" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+}
+
+@test "only Caddy publishes ports" {
+  published="$(config | jq -r '[.services | to_entries[] | select(.value.ports != null and (.value.ports | length) > 0) | .key] | join(" ")')"
+  [ "$published" = "caddy" ]
+}
+
+@test "Caddy serves HTTPS with its internal certificate authority" {
+  grep -Eq '^\s*tls internal' "$dir/Caddyfile"
+}
+
+@test "the runner is only on its own network, which it shares only with the CISO Assistant API" {
+  runner_networks="$(config | jq -r '.services.runner.networks | keys | join(" ")')"
+  [ "$runner_networks" = "collect" ]
+  sharing="$(config | jq -r '[.services | to_entries[] | select(.value.networks.collect != null) | .key] | sort | join(" ")')"
+  [ "$sharing" = "backend runner" ]
+  internal="$(config | jq -r '.networks.collect.internal // false')"
+  [ "$internal" = "false" ]
+}
+
+@test "the database network is internal" {
+  [ "$(config | jq -r '.networks.data.internal')" = "true" ]
+  [ "$(config | jq -r '.services.postgres.networks | keys | join(" ")')" = "data" ]
+}
+
+@test "secrets come from Docker secrets files, never from plain variables" {
+  json="$(config)"
+  [ "$(jq -r '.services.postgres.environment.POSTGRES_PASSWORD_FILE' <<<"$json")" = "/run/secrets/postgres_password" ]
+  [ "$(jq -r '.services.postgres.environment.POSTGRES_PASSWORD // "unset"' <<<"$json")" = "unset" ]
+  [ "$(jq -r '.services.runner.environment.HOUND_CA_TOKEN_FILE' <<<"$json")" = "/run/secrets/hound_ca_token" ]
+  for service in backend worker runner; do
+    [ "$(jq -r --arg s "$service" '.services[$s].environment | to_entries | map(select(.key | test("PASSWORD$|SECRET_KEY$|TOKEN$"))) | length' <<<"$json")" = "0" ]
+  done
+  [ "$(jq -r '.secrets | to_entries | map(select(.value.file == null)) | length' <<<"$json")" = "0" ]
+}
+
+@test "the runner is locked down: read-only, no capabilities, no new privileges" {
+  json="$(config)"
+  [ "$(jq -r '.services.runner.read_only' <<<"$json")" = "true" ]
+  [ "$(jq -r '.services.runner.cap_drop | join(" ")' <<<"$json")" = "ALL" ]
+  jq -e '.services.runner.security_opt | index("no-new-privileges:true")' <<<"$json" >/dev/null
+}
+
+@test "every variable the stack uses is documented in .env.example" {
+  [ -f "$dir/compose.yml" ]
+  used="$(grep -oE '\$\{[A-Z0-9_]+' "$dir/compose.yml" | tr -d '${' | sort -u)"
+  for name in $used; do
+    grep -Eq "^#? ?${name}=" "$dir/.env.example" || { echo "undocumented: $name"; false; }
+  done
+}
+
+@test "the real .env and the secrets folder are git-ignored" {
+  git -C "$root" check-ignore -q deploy/compose/.env
+  git -C "$root" check-ignore -q deploy/compose/secrets/postgres_password
+}
+
+@test "the kafka profile adds Redpanda and the official dispatcher" {
+  services="$(config --profile kafka | jq -r '.services | keys | sort | join(" ")')"
+  [ "$services" = "backend caddy dispatcher frontend postgres redpanda runner worker" ]
+}
