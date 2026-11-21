@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text.Json.Nodes;
 using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Publishing;
@@ -14,8 +13,6 @@ namespace EvidenceHound.CisoAssistant;
 /// </summary>
 internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource
 {
-    private static readonly int PageSize = 500;
-
     public async Task<Result<IReadOnlyList<ActualObject>>> ReadAsync(ScopeStateQuery query, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(query);
@@ -82,7 +79,7 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource
         var found = new List<ActualObject>();
         foreach (var (audit, requirements) in query.Rows.Where(r => heldAudits.Contains(r.Key)))
         {
-            var rows = await reading.ListAsync($"requirement-assessments/?{Selector.RowsOfAudit(audit).ToQueryString()}&");
+            var rows = await reading.ListAsync($"requirement-assessments/?{Selector.RowsOfAudit(audit).ToQueryString()}");
             foreach (var requirement in requirements)
             {
                 if (rows.FirstOrDefault(r => Matches(r["requirement"], requirement)) is { } row)
@@ -158,24 +155,9 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource
     {
         public List<Problem> Problems { get; } = [];
 
-        /// <summary>Every object of a list, paged by limit and offset. <paramref name="path"/> ends in <c>/</c> or in a query ending <c>&amp;</c>.</summary>
-        public async Task<List<JsonNode>> ListAsync(string path)
-        {
-            var listed = new List<JsonNode>();
-            while (Problems.Count == 0)
-            {
-                var separator = path.EndsWith('&') ? "" : "?";
-                var page = await GetAsync(string.Create(CultureInfo.InvariantCulture, $"{path}{separator}limit={PageSize}&offset={listed.Count}"), $"to list {path.Split('?')[0]}");
-                var found = page is null ? [] : ApiRequests.Results(page);
-                listed.AddRange(found);
-                if (page is null || found.Count == 0 || listed.Count >= ((int?)page["count"] ?? 0))
-                {
-                    break;
-                }
-            }
-
-            return listed;
-        }
+        /// <summary>Every object of a list. <paramref name="path"/> may carry a query of its own.</summary>
+        public async Task<List<JsonNode>> ListAsync(string path) =>
+            Problems.Count > 0 ? [] : Kept(await http.ListAllAsync(path, cancellationToken)) ?? [];
 
         /// <summary>The <c>/object/</c> view of each listed object whose folder is one of <paramref name="folders"/>.</summary>
         public async Task<List<JsonNode>> ObjectsInAsync(string resource, HashSet<string> folders) =>
@@ -195,16 +177,18 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource
             return objects;
         }
 
-        private async Task<JsonNode?> GetAsync(string path, string action)
-        {
-            var result = await http.SendForJsonAsync(new HttpRequestMessage(HttpMethod.Get, path), action, cancellationToken);
-            return result.Match<JsonNode?>(
+        private async Task<JsonNode?> GetAsync(string path, string action) =>
+            Kept(await http.SendForJsonAsync(new HttpRequestMessage(HttpMethod.Get, path), action, cancellationToken));
+
+        /// <summary>The value, or null with its problems kept for the end of the read.</summary>
+        private T? Kept<T>(Result<T> result)
+            where T : class =>
+            result.Match<T?>(
                 found => found,
                 problems =>
                 {
                     Problems.AddRange(problems);
                     return null;
                 });
-        }
     }
 }
