@@ -204,6 +204,85 @@ public class PublisherTests
         ]);
     }
 
+    [Fact]
+    public async Task Rows_all_writes_one_result_to_every_matching_row()
+    {
+        _ca.Rows.AddRange([Row("ra-bnd", "bnd", "ACT-01", "1"), Row("ra-idn", "idn", "ACT-01", "1")]);
+
+        var report = await Publisher().PublishAsync([Requirement(RequirementKey.Ref("ACT-01", allRows: true))], _ct);
+
+        report.Items.ShouldHaveSingleItem().Outcome.ShouldBe(PublishOutcome.Sent);
+        _ca.Requirements.Keys.Order(StringComparer.Ordinal).ShouldBe(["ra-bnd", "ra-idn"]);
+    }
+
+    [Fact]
+    public async Task Ref_matching_several_rows_without_rows_all_fails_listing_their_urns()
+    {
+        _ca.Rows.AddRange([Row("ra-bnd", "bnd", "ACT-01", "1"), Row("ra-idn", "idn", "ACT-01", "1")]);
+
+        var report = await Publisher().PublishAsync([Requirement(RequirementKey.Ref("ACT-01"))], _ct);
+
+        var problem = report.Items.ShouldHaveSingleItem().Problems.ShouldHaveSingleItem();
+        problem.Code.ShouldBe("mapping.ref_ambiguous");
+        problem.Message.ShouldContain("urn:example:req:bnd:ACT-01");
+        problem.Message.ShouldContain("urn:example:req:idn:ACT-01");
+        _ca.Requirements.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task Requirement_named_by_urn_writes_only_that_row()
+    {
+        _ca.Rows.AddRange([Row("ra-bnd", "bnd", "ACT-01", "1"), Row("ra-idn", "idn", "ACT-01", "1")]);
+
+        await Publisher().PublishAsync([Requirement(RequirementKey.Urn("urn:example:req:idn:ACT-01"))], _ct);
+
+        _ca.Requirements.Keys.ShouldBe(["ra-idn"]);
+    }
+
+    [Fact]
+    public async Task Requirements_outside_selected_groups_are_skipped()
+    {
+        _ca.SelectedGroups.AddRange(["1", "2"]);
+        _ca.Rows.AddRange([Row("ra-bnd", "bnd", "ACT-01", "1"), Row("ra-ml3", "idn", "ACT-03", "3"), Row("ra-none", "idn", "ACT-04")]);
+
+        var report = await Publisher().PublishAsync(
+            [Requirement(RequirementKey.Ref("ACT-01")), Requirement(RequirementKey.Ref("ACT-03")), Requirement(RequirementKey.Ref("ACT-04"))], _ct);
+
+        report.Items.Select(i => (i.Outcome, i.Note)).ShouldBe([
+            (PublishOutcome.Sent, null),
+            (PublishOutcome.Skipped, "outside selected groups"),
+            (PublishOutcome.Skipped, "outside selected groups"),
+        ]);
+        report.Failed.ShouldBe(0);
+        _ca.Requirements.Keys.ShouldBe(["ra-bnd"]);
+    }
+
+    [Fact]
+    public async Task Rows_all_writes_only_the_rows_in_selected_groups()
+    {
+        _ca.SelectedGroups.Add("1");
+        _ca.Rows.AddRange([Row("ra-bnd", "bnd", "ACT-01", "1"), Row("ra-idn", "idn", "ACT-01", "2")]);
+
+        var report = await Publisher().PublishAsync([Requirement(RequirementKey.Ref("ACT-01", allRows: true))], _ct);
+
+        report.Sent.ShouldBe(1);
+        _ca.Requirements.Keys.ShouldBe(["ra-bnd"]);
+    }
+
+    [Fact]
+    public async Task Audit_groups_are_read_once_per_audit()
+    {
+        await Publisher().PublishAsync([Requirement(RequirementKey.Ref("EX-1.1")), Requirement(RequirementKey.Ref("EX-1.2"))], _ct);
+
+        _ca.Calls.Count(c => c.StartsWith("audit", StringComparison.Ordinal)).ShouldBe(1);
+    }
+
+    private static RemoteRequirementAssessment Row(string id, string domain, string refId, params string[] groups) =>
+        new(id, $"urn:example:req:{domain}:{refId}", refId, groups);
+
+    private static AuditUpdate.UpdateRequirementAssessment Requirement(RequirementKey key) =>
+        new("EXAMPLE-2026", key.Value, ComplianceResult.Compliant, "Checked.", []) { Requirement = key };
+
     private static Evidence Evidence(string id, string fileName, byte[] content) =>
         Core.Checks.Evidence.Create(id, fileName, "application/json", Convert.ToHexStringLower(SHA256.HashData(content)), content.Length, CheckTestData.CollectedAt).Value();
 

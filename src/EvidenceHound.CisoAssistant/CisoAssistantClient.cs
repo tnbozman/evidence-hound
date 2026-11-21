@@ -18,6 +18,12 @@ internal sealed class CisoAssistantClient(HttpClient http) : ICisoAssistantClien
     public Task<Result<string>> FindRequirementAssessmentAsync(string complianceAssessmentRefId, string requirementRefId, CancellationToken cancellationToken) =>
         FindOneAsync("requirement-assessments/", "requirement assessment", Selector.RequirementInAudit(complianceAssessmentRefId, requirementRefId), cancellationToken);
 
+    public Task<Result<IReadOnlyList<RemoteRequirementAssessment>>> FindRequirementAssessmentsAsync(string complianceAssessmentRefId, RequirementKey requirement, CancellationToken cancellationToken) =>
+        throw new NotImplementedException();
+
+    public Task<Result<RemoteAudit>> FindAuditAsync(string complianceAssessmentRefId, CancellationToken cancellationToken) =>
+        throw new NotImplementedException();
+
     public async Task<Result<Unit>> UpdateRequirementAssessmentAsync(string requirementAssessmentId, RequirementAssessmentValues values, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(values);

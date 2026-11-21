@@ -16,6 +16,9 @@ public sealed record RequirementMapping
     /// <summary>The requirement's reference in the framework library, for example its ref ID or URN.</summary>
     public string RequirementRef { get; }
 
+    /// <summary>How the requirement is named: ref or URN, and for a ref whether every matching row gets the result.</summary>
+    public RequirementKey Key => throw new NotImplementedException();
+
     public IReadOnlyList<CheckId> Checks { get; }
 
     public MappingRule Rule { get; }

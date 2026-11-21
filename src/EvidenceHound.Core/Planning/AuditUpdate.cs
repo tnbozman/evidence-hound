@@ -42,6 +42,9 @@ public abstract record AuditUpdate
         string Observation,
         IReadOnlyList<string> EvidenceRefIds) : AuditUpdate
     {
+        /// <summary>How the requirement is named. Defaults to <see cref="RequirementRefId"/> as a ref.</summary>
+        public RequirementKey Requirement { get; init; } = RequirementKey.Ref(RequirementRefId);
+
         public override T Match<T>(Func<UploadEvidence, T> upload, Func<UpdateRequirementAssessment, T> requirement, Func<UpdateAppliedControl, T> control)
         {
             ArgumentNullException.ThrowIfNull(requirement);

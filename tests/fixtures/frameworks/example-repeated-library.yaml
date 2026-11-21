@@ -1,0 +1,67 @@
+# A small fictional framework library in CISO Assistant's library format, for tests.
+# ACT-01 is repeated in two domains, as the ASD Essentials repeats an action in every domain it applies to.
+urn: urn:example:risk:library:example-repeated
+locale: en
+ref_id: Example repeated
+name: Example repeated framework
+description: Fictional framework for Evidence Hound tests. Example Pty Ltd.
+copyright: Fictional, for tests.
+version: 2
+publication_date: '2026-01-01'
+provider: Example Pty Ltd
+packager: example
+objects:
+  framework:
+    urn: urn:example:risk:framework:example-repeated
+    ref_id: Example repeated
+    name: Example repeated framework
+    implementation_groups_definition:
+    - ref_id: '1'
+      name: Phase one
+    - ref_id: '2'
+      name: Phase two
+    - ref_id: '3'
+      name: Phase three
+    requirement_nodes:
+    - urn: urn:example:risk:req_node:example-repeated:bnd
+      assessable: false
+      depth: 1
+      ref_id: BND
+      name: Boundary services
+    - urn: urn:example:risk:req_node:example-repeated:bnd:act-01
+      assessable: true
+      depth: 2
+      parent_urn: urn:example:risk:req_node:example-repeated:bnd
+      ref_id: ACT-01
+      name: Multi-factor authentication is enforced for every remote access path into the boundary services of the organisation.
+      implementation_groups:
+      - '1'
+    - urn: urn:example:risk:req_node:example-repeated:bnd:act-02
+      assessable: true
+      depth: 2
+      parent_urn: urn:example:risk:req_node:example-repeated:bnd
+      ref_id: ACT-02
+      description: Backups of boundary services are restored and tested.
+      implementation_groups:
+      - '2'
+    - urn: urn:example:risk:req_node:example-repeated:idn
+      assessable: false
+      depth: 1
+      ref_id: IDN
+      name: Identity services
+    - urn: urn:example:risk:req_node:example-repeated:idn:act-01
+      assessable: true
+      depth: 2
+      parent_urn: urn:example:risk:req_node:example-repeated:idn
+      ref_id: ACT-01
+      name: Multi-factor authentication is enforced for every remote access path into the identity services of the organisation.
+      implementation_groups:
+      - '1'
+    - urn: urn:example:risk:req_node:example-repeated:idn:act-03
+      assessable: true
+      depth: 2
+      parent_urn: urn:example:risk:req_node:example-repeated:idn
+      ref_id: ACT-03
+      name: Unused identities are disabled.
+      implementation_groups:
+      - '3'

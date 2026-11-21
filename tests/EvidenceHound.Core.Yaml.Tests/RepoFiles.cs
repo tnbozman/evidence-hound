@@ -7,6 +7,8 @@ internal static class RepoFiles
 {
     public static string ExampleMapping => File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "files", "mappings", "example.yaml"));
 
+    public static string RepeatedLibrary => File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "files", "frameworks", "example-repeated-library.yaml"));
+
     public static string MappingSchema => File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "files", "schemas", "mapping.schema.json"));
 
     public static T Value<T>(this Result<T> result)

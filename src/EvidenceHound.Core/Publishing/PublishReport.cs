@@ -18,6 +18,9 @@ public enum PublishOutcome
 /// <summary>One update's outcome, a description for people, and the problems if it failed.</summary>
 public sealed record PublishItem(AuditUpdate Update, string Description, PublishOutcome Outcome, IReadOnlyList<Problem> Problems)
 {
+    /// <summary>Why an item was skipped, when there is more to say than "already there", such as "outside selected groups".</summary>
+    public string? Note { get; init; }
+
     /// <summary>The item for an update whose sending ended in <paramref name="outcome"/>: its outcome, or Failed with the problems.</summary>
     public static PublishItem For(AuditUpdate update, Result<PublishOutcome> outcome)
     {
