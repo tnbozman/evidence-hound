@@ -1,3 +1,6 @@
+using System.Security.Cryptography;
+using System.Text;
+using EvidenceHound.Core.Checks;
 using EvidenceHound.Core.Packaging;
 using EvidenceHound.Core.Planning;
 
@@ -10,5 +13,14 @@ public sealed record HealthEvidence(CollectedFile File, AuditUpdate.UploadEviden
 public static class Health
 {
     /// <summary>Evidence <c>hound-health/&lt;collector&gt;</c> holding the run record as JSON, linked to <paramref name="controlRefId"/> when one is configured.</summary>
-    public static HealthEvidence Plan(RunRecord record, string? controlRefId) => throw new NotImplementedException();
+    public static HealthEvidence Plan(RunRecord record, string? controlRefId)
+    {
+        ArgumentNullException.ThrowIfNull(record);
+        var content = Encoding.UTF8.GetBytes(RunRecords.ToJson(record));
+        var file = new CollectedFile($"collector-health-{record.Collector}.json", "application/json", content);
+        var evidence = Evidence.Create(
+            $"hound-health/{record.Collector}", file.FileName, file.MediaType, Convert.ToHexStringLower(SHA256.HashData(content)), content.Length, record.EndedAt)
+            .Match(e => e, problems => throw new InvalidOperationException(problems[0].Message));
+        return new HealthEvidence(file, new AuditUpdate.UploadEvidence(evidence) { AppliedControlRefIds = controlRefId is null ? [] : [controlRefId] });
+    }
 }

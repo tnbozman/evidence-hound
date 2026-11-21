@@ -167,7 +167,7 @@ public sealed class RunnerTests : IDisposable
         _sink.HealthUploads.Select(u => u.Evidence.Id).ShouldBe(["hound-health/first", "hound-health/second"]);
         _sink.HealthUploads.ShouldAllBe(u => u.AppliedControlRefIds.Count == 1 && u.AppliedControlRefIds[0] == "AC-AUTO");
         summary.Collectors.Select(c => c.Health!.Sent).ShouldBe([1, 1]);
-        _sink.Batches.Select(b => b[0] is AuditUpdate.UploadEvidence u ? u.Evidence.Id : "main").ShouldBe(["hound-health/first", "main", "hound-health/second"]);
+        _sink.Batches.Select(b => b[0] is AuditUpdate.UploadEvidence u && u.Evidence.Id.StartsWith("hound-health/", StringComparison.Ordinal) ? u.Evidence.Id : "main").ShouldBe(["hound-health/first", "main", "hound-health/second"]);
     }
 
     [Fact]

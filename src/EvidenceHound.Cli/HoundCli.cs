@@ -100,6 +100,7 @@ public static class HoundCli
             PlanCommand.Build(output, loggers),
             PublishCommand.Build(output, loggers, configuration),
             RunCommand.Build(output, loggers, configuration),
+            StatusCommand.Build(output, loggers),
         };
 
     /// <summary>One host per run. Logs go to <paramref name="error"/>; the level comes from configuration (for example <c>Logging__LogLevel__Default</c>).</summary>

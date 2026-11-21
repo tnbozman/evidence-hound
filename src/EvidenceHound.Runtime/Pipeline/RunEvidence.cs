@@ -1,4 +1,5 @@
 using EvidenceHound.Core.Checks;
+using EvidenceHound.Core.Packaging;
 using EvidenceHound.Core.Planning;
 using EvidenceHound.Core.Publishing;
 using EvidenceHound.Core.Results;
@@ -30,8 +31,12 @@ public static class RunEvidence
     public static IEvidenceFiles Files(CollectedRun run)
     {
         ArgumentNullException.ThrowIfNull(run);
-        return new InMemoryFiles(run.Output.Files.ToDictionary(f => f.FileName, f => f.Content, StringComparer.Ordinal));
+        return Files(run.Output.Files);
     }
+
+    /// <summary>Reads evidence content from files held in memory, by file name.</summary>
+    public static IEvidenceFiles Files(IReadOnlyList<CollectedFile> files) =>
+        new InMemoryFiles(files.ToDictionary(f => f.FileName, f => f.Content, StringComparer.Ordinal));
 
     private sealed class InMemoryFiles(Dictionary<string, ReadOnlyMemory<byte>> files) : IEvidenceFiles
     {

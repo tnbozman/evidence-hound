@@ -79,42 +79,58 @@ public sealed class Runner(
         return new RunSummary(results);
     }
 
-    private static string Unused(IClock clock, IRunRecordStore records, string? health) => string.Join(", ", clock, records, health);
-
     private async Task<CollectorRunResult> RunOneAsync(CollectorInstance instance, RunOptions options, CancellationToken cancellationToken)
     {
-        _ = Unused(clock, records, healthControlRefId);
-        Result<CollectedRun> collected;
+        var started = clock.UtcNow;
+        var collected = await CollectAsync(instance, cancellationToken);
+        var result = options.NoPublish
+            ? collected.Match(_ => Succeeded(instance, null), problems => Failed(instance, problems, null))
+            : await PublishAsync(instance, collected, options, cancellationToken);
+
+        var checks = collected.Match(run => run.Output.Checks, _ => []);
+        var record = RunRecords.Summarise(instance.Name, started, clock.UtcNow, result.Outcome, checks, result.Problems, result.Publish);
+        await records.SaveAsync(record, cancellationToken);
+        if (options.NoPublish)
+        {
+            return result with { Record = record };
+        }
+
+        var health = Health.Plan(record, healthControlRefId);
+        var healthReport = options.DryRun ? Publisher.DryRun([health.Upload]) : await SendAsync(RunEvidence.Files([health.File]), [health.Upload], cancellationToken);
+        var healthProblems = FailedItems(healthReport);
+        return (healthProblems.Count > 0 ? Failed(instance, [.. result.Problems, .. healthProblems], result.Publish) : result) with { Record = record, Health = healthReport };
+    }
+
+    private async Task<Result<CollectedRun>> CollectAsync(CollectorInstance instance, CancellationToken cancellationToken)
+    {
         try
         {
-            collected = await collect.RunAsync(instance, collectors[instance.Type], cancellationToken);
+            return await collect.RunAsync(instance, collectors[instance.Type], cancellationToken);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            collected = Result.Fail<CollectedRun>(new Problem("collector.crashed", $"The {instance.Type} collector failed unexpectedly: {ex.GetType().Name}: {ex.Message}"));
+            return Result.Fail<CollectedRun>(new Problem("collector.crashed", $"The {instance.Type} collector failed unexpectedly: {ex.GetType().Name}: {ex.Message}"));
         }
+    }
 
-        if (options.NoPublish)
-        {
-            return collected.Match(_ => Succeeded(instance, null), problems => Failed(instance, problems, null));
-        }
-
+    private async Task<CollectorRunResult> PublishAsync(CollectorInstance instance, Result<CollectedRun> collected, RunOptions options, CancellationToken cancellationToken)
+    {
         var planned = collected.Bind(run => RunEvidence.From(run).Bind(results => AuditPlanner.PlanUpdates(
             target, Ownership.OwnedResults(mapping, results.Checks), results.Evidence, results.ControlStatuses).Map(updates => (Run: run, Updates: updates))));
 
         return await planned.Match(
             async plan =>
             {
-                var report = options.DryRun ? Publisher.DryRun(plan.Updates) : await SendAsync(plan.Run, plan.Updates, cancellationToken);
-                IReadOnlyList<Problem> problems = [.. report.Items.Where(i => i.Outcome == PublishOutcome.Failed).SelectMany(i => i.Problems.Select(p => new Problem(p.Code, $"{i.Description}: {p.Message}")))];
+                var report = options.DryRun ? Publisher.DryRun(plan.Updates) : await SendAsync(RunEvidence.Files(plan.Run), plan.Updates, cancellationToken);
+                var problems = FailedItems(report);
                 return problems.Count > 0 ? Failed(instance, problems, report) : Succeeded(instance, report);
             },
             problems => Task.FromResult(Failed(instance, problems, null)));
     }
 
-    private async Task<PublishReport> SendAsync(CollectedRun run, IReadOnlyList<AuditUpdate> updates, CancellationToken cancellationToken)
+    private async Task<PublishReport> SendAsync(IEvidenceFiles files, IReadOnlyList<AuditUpdate> updates, CancellationToken cancellationToken)
     {
-        var sink = sinkFor(RunEvidence.Files(run));
+        var sink = sinkFor(files);
         try
         {
             return await sink.SendAsync(updates, cancellationToken);
@@ -124,6 +140,9 @@ public sealed class Runner(
             (sink as IDisposable)?.Dispose();
         }
     }
+
+    private static IReadOnlyList<Problem> FailedItems(PublishReport report) =>
+        [.. report.Items.Where(i => i.Outcome == PublishOutcome.Failed).SelectMany(i => i.Problems.Select(p => new Problem(p.Code, $"{i.Description}: {p.Message}")))];
 
     private static CollectorRunResult Succeeded(CollectorInstance instance, PublishReport? report) => new(instance.Name, CollectorOutcome.Succeeded, [], report);
 

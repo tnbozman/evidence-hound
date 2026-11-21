@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using EvidenceHound.Core.Checks;
 using EvidenceHound.Core.Publishing;
 using EvidenceHound.Core.Results;
@@ -30,12 +32,69 @@ public sealed record RunRecord(
 /// <summary>Builds and serialises run records. Pure.</summary>
 public static class RunRecords
 {
+    private static readonly JsonSerializerOptions Options = new()
+    {
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.SnakeCaseLower) },
+        RespectNullableAnnotations = true,
+        RespectRequiredConstructorParameters = true,
+    };
+
     public static RunRecord Summarise(
         string collector, DateTimeOffset startedAt, DateTimeOffset endedAt, CollectorOutcome outcome,
-        IReadOnlyList<CheckResult> checks, IReadOnlyList<Problem> problems, PublishReport? publish) =>
-        throw new NotImplementedException();
+        IReadOnlyList<CheckResult> checks, IReadOnlyList<Problem> problems, PublishReport? publish)
+    {
+        ArgumentNullException.ThrowIfNull(checks);
+        var passed = checks.Count(c => c.Outcome == CheckOutcome.Pass);
+        var failed = checks.Count(c => c.Outcome == CheckOutcome.Fail);
+        return new RunRecord(
+            collector, startedAt, endedAt, outcome, passed, failed, checks.Count - passed - failed, problems,
+            publish is null ? null : new PublishCounts(publish.Planned, publish.Sent, publish.Skipped, publish.Failed));
+    }
 
-    public static string ToJson(RunRecord record) => throw new NotImplementedException();
+    public static string ToJson(RunRecord record)
+    {
+        ArgumentNullException.ThrowIfNull(record);
+        return JsonSerializer.Serialize(Document.From(record), Options);
+    }
 
-    public static Result<RunRecord> Parse(string json, string source) => throw new NotImplementedException();
+    public static Result<RunRecord> Parse(string json, string source)
+    {
+        try
+        {
+            return JsonSerializer.Deserialize<Document>(json, Options) is { } document
+                ? Result.Ok(document.ToRecord())
+                : Invalid(source, "the file holds no run record.");
+        }
+        catch (JsonException ex)
+        {
+            return Invalid(source, ex.Message);
+        }
+    }
+
+    private static Result<RunRecord> Invalid(string source, string why) =>
+        Result.Fail<RunRecord>(new Problem("status.record_invalid", $"Run record {source} cannot be read: {why}"));
+
+    // DTOs exist only for System.Text.Json; they never leave this class.
+    private sealed record Document(
+        string Collector,
+        DateTimeOffset StartedAt,
+        DateTimeOffset EndedAt,
+        CollectorOutcome Outcome,
+        int ChecksPassed,
+        int ChecksFailed,
+        int ChecksOther,
+        IReadOnlyList<ProblemDocument> Problems,
+        PublishCounts? Publish)
+    {
+        public static Document From(RunRecord r) => new(
+            r.Collector, r.StartedAt, r.EndedAt, r.Outcome, r.ChecksPassed, r.ChecksFailed, r.ChecksOther,
+            [.. r.Problems.Select(p => new ProblemDocument(p.Code, p.Message))], r.Publish);
+
+        public RunRecord ToRecord() => new(
+            Collector, StartedAt, EndedAt, Outcome, ChecksPassed, ChecksFailed, ChecksOther, [.. Problems.Select(p => new Problem(p.Code, p.Message))], Publish);
+    }
+
+    private sealed record ProblemDocument(string Code, string Message);
 }

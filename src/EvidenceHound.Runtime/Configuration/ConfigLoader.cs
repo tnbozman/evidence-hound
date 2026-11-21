@@ -17,7 +17,7 @@ public static partial class ConfigLoader
     private static readonly string[] CisoAssistantKeys = ["url", "token", "transport", "kafka_bootstrap_servers"];
     private static readonly string[] EvidenceKeys = ["root", "retention_days"];
     private static readonly string[] CollectorKeys = ["name", "type", "schedule", "settings", "secrets"];
-    private static readonly string[] TargetKeys = ["mapping", "compliance_assessment", "controls"];
+    private static readonly string[] TargetKeys = ["mapping", "compliance_assessment", "controls", "health_control"];
     private static readonly string[] Transports = ["rest", "kafka"];
     private static readonly int NoRetention = -1;
 
@@ -155,11 +155,12 @@ public static partial class ConfigLoader
         var mapping = Scalar(map, "mapping", at).Map(node => at.FullPath(node.Value!));
         var audit = Scalar(map, "compliance_assessment", at).Map(node => node.Value!);
         var controls = OptionalMap(map, "controls", at).Bind(m => Strings(m, at));
+        var health = OptionalScalar(map, "health_control", at).Map(node => node.Value!);
 
-        Problem[] problems = [.. UnknownKeys(map, TargetKeys, at), .. ProblemsOf(mapping), .. ProblemsOf(audit), .. ProblemsOf(controls)];
+        Problem[] problems = [.. UnknownKeys(map, TargetKeys, at), .. ProblemsOf(mapping), .. ProblemsOf(audit), .. ProblemsOf(controls), .. ProblemsOf(health)];
         return problems.Length > 0
             ? Result.Fail<TargetConfig>(problems)
-            : mapping.Bind(m => audit.Bind(a => controls.Map(c => new TargetConfig(m, a, c))));
+            : mapping.Bind(m => audit.Bind(a => controls.Bind(c => health.Map(h => new TargetConfig(m, a, c, h.Length > 0 ? h : null)))));
     }
 
     private static Result<IReadOnlyDictionary<string, string>> Settings(YamlMappingNode map, Locator at) =>

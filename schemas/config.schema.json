@@ -44,6 +44,11 @@
           "description": "Control key to applied control ref_id in CISO Assistant.",
           "type": "object",
           "additionalProperties": { "type": "string", "minLength": 1 }
+        },
+        "health_control": {
+          "description": "ref_id of the applied control that each collector's health evidence is linked to, for example \"Automated evidence collection\".",
+          "type": "string",
+          "minLength": 1
         }
       }
     }
