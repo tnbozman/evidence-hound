@@ -1,4 +1,4 @@
-# s11 Collector console (optional)
+# s14 Collector console (optional)
 
 Status: Planned
 
@@ -8,7 +8,7 @@ Release: 2 (optional)
 
 Stack: ASP.NET Core minimal API in `src/EvidenceHound.Console.Api`, Vue 3 + Vite + TypeScript in `web/console`, EF Core with SQLite (Postgres option), OpenID Connect sign-in.
 
-### s11-01 Console API (read-only)
+### s14-01 Console API (read-only)
 - [ ] Done
 
 **Acceptance criteria**
@@ -24,7 +24,7 @@ Stack: ASP.NET Core minimal API in `src/EvidenceHound.Console.Api`, Vue 3 + Vite
 **Functional check**
 - `curl` with a test token returns the example deployment's status.
 
-### s11-02 Status pages
+### s14-02 Status pages
 - [ ] Done
 
 **Acceptance criteria**
@@ -37,7 +37,7 @@ Stack: ASP.NET Core minimal API in `src/EvidenceHound.Console.Api`, Vue 3 + Vite
 **Functional check**
 - Open the console in the dev container's forwarded port and see the example deployment.
 
-### s11-03 Registration and controls
+### s14-03 Registration and controls
 - [ ] Done
 
 **Acceptance criteria**

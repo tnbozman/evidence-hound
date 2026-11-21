@@ -1,4 +1,4 @@
-# s06 Sophos Central and Veeam reference collectors
+# s07 Sophos Central and Veeam reference collectors
 
 Status: Planned
 
@@ -6,7 +6,7 @@ Status: Planned
 
 Projects: `src/Collectors/EvidenceHound.Collectors.Sophos`, `src/Collectors/EvidenceHound.Collectors.Veeam`. Recorded, fictional responses only.
 
-### s06-01 Sophos Central access
+### s07-01 Sophos Central access
 - [ ] Done
 
 **Story:** As the collector, I want Sophos Central authentication and tenant discovery, so that endpoint and firewall data can be read.
@@ -24,7 +24,7 @@ Projects: `src/Collectors/EvidenceHound.Collectors.Sophos`, `src/Collectors/Evid
 **Functional check**
 - Run against recordings: endpoints and firewalls listed into evidence.
 
-### s06-02 Sophos checks
+### s07-02 Sophos checks
 - [ ] Done
 
 **Story:** As a compliance owner, I want endpoint protection and firewall health measured, so that those controls have live evidence.
@@ -41,7 +41,7 @@ Projects: `src/Collectors/EvidenceHound.Collectors.Sophos`, `src/Collectors/Evid
 **Functional check**
 - `hound run --only sophos-example` against recordings updates the example audit.
 
-### s06-03 Veeam access
+### s07-03 Veeam access
 - [ ] Done
 
 **Story:** As the collector, I want Veeam REST API access with a read-only account, so that backup jobs and restore points can be read.
@@ -59,7 +59,7 @@ Projects: `src/Collectors/EvidenceHound.Collectors.Sophos`, `src/Collectors/Evid
 **Functional check**
 - Run against recordings: jobs and restore points in evidence.
 
-### s06-04 Veeam checks
+### s07-04 Veeam checks
 - [ ] Done
 
 **Story:** As a compliance owner, I want backup success, retention and restore testing measured, so that backup requirements are evidenced.
@@ -76,14 +76,16 @@ Projects: `src/Collectors/EvidenceHound.Collectors.Sophos`, `src/Collectors/Evid
 **Functional check**
 - Both collectors run together in `hound run` against recordings; status shows both healthy.
 
-### s06-05 Documentation
+### s07-05 Documentation
 - [ ] Done
 
 **Acceptance criteria**
 - `docs/collectors/sophos.md` and `docs/collectors/veeam.md` as for M365, with the doc check-ID test.
+- Every Sophos and Veeam check is mapped in `mappings/essential-eight-2023.yaml` (started in s06-02), and requirements they now cover are removed from `manual_only`.
 
 **Tests first**
 - Docs tests for both collectors.
+- `E8MappingTests.Every_reference_check_is_mapped` extended to the Sophos and Veeam checks.
 
 **Functional check**
 - Docs build without warnings.

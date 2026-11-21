@@ -44,7 +44,7 @@ Sprints are in [`docs/sprints/`](sprints/README.md).
 | Supplier owners | Third-party reviews and contract details |
 | Independent reviewer | Periodic external assessment |
 
-Guides and training outlines for each role are delivered in sprint s08.
+Guides and training outlines for each role are delivered in sprint s11.
 
 ## Reporting: operation and governance
 
@@ -59,7 +59,7 @@ Reporting has two tiers with different audiences and questions. Both are generat
 | Owner | Capability owner prepares; committee confirms actions | Authorising official presents; board endorses risk appetite and acceptances |
 | Recorded in CISO Assistant | Actions as tasks and applied controls; exceptions | Risk-acceptance decisions; the report as evidence |
 
-The committee's monthly reports roll up into the board's quarter. Delivered in sprint s08 (tasks s08-04 to s08-07); release 2 adds NIST SP 800-171 SSP and POA&M views (s10).
+The committee's monthly reports roll up into the board's quarter. Delivered in sprint s11 (tasks s11-04 to s11-07); release 2 adds NIST SP 800-171 SSP and POA&M views (s13).
 
 ## Security of the project itself
 

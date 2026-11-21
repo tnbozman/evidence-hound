@@ -10,12 +10,15 @@ Release 1 is delivered in one-week sprints. Each sprint has its own file, `sNN-<
 | [s03](s03-runner-and-evidence.md) | Runner, configuration, evidence packaging and run status | 1 |
 | [s04](s04-collector-sdk-and-manual.md) | Collector SDK, contract test kit, manual-upload collector | 1 |
 | [s05](s05-m365-collector.md) | Microsoft 365 reference collector | 1 |
-| [s06](s06-sophos-veeam-collectors.md) | Sophos Central and Veeam reference collectors | 1 |
-| [s07](s07-reference-deployment.md) | Reference Docker deployment, scheduling, secrets, backups | 1 |
-| [s08](s08-e8-mapping-and-adoption.md) | Essential Eight mapping, adoption guides, committee and board reporting | 1 |
-| [s09](s09-release-1.md) | Packaging, release pipeline, docs site | 1 |
-| [s10](s10-nist-800-171.md) | NIST SP 800-171 mapping | 2 |
-| [s11](s11-collector-console.md) | Collector console (optional) | 2 |
+| [s06](s06-ciso-assistant-as-configuration.md) | Requirement URNs and the Essential Eight 2023 ML2 mapping; several audits per run; change-only publishing; CISO Assistant as configuration (scope files, plan and apply); audit periods with sign-off | 1 |
+| [s07](s07-sophos-veeam-collectors.md) | Sophos Central and Veeam reference collectors | 1 |
+| [s08](s08-reference-deployment.md) | Reference Docker deployment, scheduling, secrets, backups | 1 |
+| [s09](s09-risk-threats-and-bia.md) | Risk matrices, threats, risk register, security exceptions and BIA as configuration | 1 |
+| [s10](s10-third-parties-and-metrics.md) | Suppliers, contracts and supplier assessments; CISO Assistant governance collector; metrics as configuration and from runs | 1 |
+| [s11](s11-essentials-mapping-and-adoption.md) | Essential Eight mapping completed, ASD Essentials mapping for the migration, adoption guides, committee and board reporting | 1 |
+| [s12](s12-release-1.md) | Packaging, release pipeline, docs site | 1 |
+| [s13](s13-nist-800-171.md) | NIST SP 800-171 mapping | 2 |
+| [s14](s14-collector-console.md) | Collector console (optional) | 2 |
 
 ## Lifecycle
 
