@@ -53,6 +53,7 @@ One way, in every command:
 | --- | --- | --- |
 | Expected failure (bad config, invalid mapping, missing file) | The function returns `Result.Fail` with `Problem`s. The command passes them to `Log.Problems`, which logs each at `Error` with its `Code` as structured data. | 3 |
 | Wrong arguments or unsupported mode | Logged at `Error` through `Log.Usage`. | 2 |
+| `hound publish` finished but some items failed | Each failed item's problems go to `Log.Problems`; the JSON report on stdout lists every item. | 4 |
 | Unexpected exception (a bug) | Caught once, by the global handler in `HoundCli.RunAsync`. Logged at `Critical` with a one-line summary; the full exception is logged at `Debug`. | 1 |
 | Cancellation (Ctrl+C) | Logged at `Warning`. | 130 |
 
