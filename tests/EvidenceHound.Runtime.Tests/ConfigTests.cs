@@ -44,9 +44,9 @@ public class ConfigTests
         config.CisoAssistant.Token.ToString().ShouldBe("env:HOUND_CA_TOKEN");
         config.CisoAssistant.Transport.ShouldBe("rest");
         config.Collectors.ShouldHaveSingleItem().Type.ShouldBe("fake");
-        config.Target.ComplianceAssessmentRefId.ShouldBe("EXAMPLE-BASELINE-2026");
-        config.Target.HealthControlRefId.ShouldBe("AC-AUTO-EVIDENCE");
-        File.Exists(config.Target.MappingPath).ShouldBeTrue();
+        config.Targets[0].ComplianceAssessmentRefId.ShouldBe("EXAMPLE-BASELINE-2026");
+        config.Targets[0].HealthControlRefId.ShouldBe("AC-AUTO-EVIDENCE");
+        File.Exists(config.Targets[0].MappingPath).ShouldBeTrue();
     }
 
     [Fact]
@@ -125,7 +125,7 @@ public class ConfigTests
 
         config.CisoAssistant.Url.ShouldBe(new Uri("http://localhost:8000/api/"));
         config.Evidence.ShouldBe(new EvidenceConfig(Path.Combine(Path.GetTempPath(), "deploy", "evidence"), 30));
-        config.Target.MappingPath.ShouldBe(Path.Combine(Path.GetTempPath(), "deploy", "mapping.yaml"));
+        config.Targets[0].MappingPath.ShouldBe(Path.Combine(Path.GetTempPath(), "deploy", "mapping.yaml"));
         var collector = config.Collectors.ShouldHaveSingleItem();
         collector.Name.ShouldBe("idp");
         collector.Schedule.ShouldBe("0 2 * * *");
@@ -239,10 +239,10 @@ public class ConfigTests
     [Fact]
     public void Health_control_is_optional()
     {
-        ConfigLoader.Parse(Valid, Source, Known).Value().Target.HealthControlRefId.ShouldBeNull();
+        ConfigLoader.Parse(Valid, Source, Known).Value().Targets[0].HealthControlRefId.ShouldBeNull();
         var yaml = Valid.Replace("  compliance_assessment: EXAMPLE-1", "  compliance_assessment: EXAMPLE-1\n  health_control: AC-AUTO", StringComparison.Ordinal);
 
-        ConfigLoader.Parse(yaml, Source, Known).Value().Target.HealthControlRefId.ShouldBe("AC-AUTO");
+        ConfigLoader.Parse(yaml, Source, Known).Value().Targets[0].HealthControlRefId.ShouldBe("AC-AUTO");
     }
 
     [Fact]

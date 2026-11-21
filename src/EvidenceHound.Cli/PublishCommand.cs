@@ -110,6 +110,17 @@ internal static class PublishCommand
             new Invariant(!string.IsNullOrWhiteSpace(token), new Problem("config.ca_token_missing", $"Set {TokenSetting} to a CISO Assistant personal access token.")));
     }
 
+    /// <summary>Each audit's requirement items counted, for the publish and run reports.</summary>
+    internal static JsonArray AuditsJson(PublishReport report) =>
+        new([.. report.Audits.Select(a => new JsonObject
+        {
+            ["compliance_assessment"] = a.ComplianceAssessmentRefId,
+            ["planned"] = a.Planned,
+            ["sent"] = a.Sent,
+            ["skipped"] = a.Skipped,
+            ["failed"] = a.Failed,
+        })]);
+
     private static async Task<int> WriteAsync(PublishReport report, TextWriter output)
     {
         var json = new JsonObject
@@ -118,6 +129,7 @@ internal static class PublishCommand
             ["sent"] = report.Sent,
             ["skipped"] = report.Skipped,
             ["failed"] = report.Failed,
+            ["audits"] = AuditsJson(report),
             ["items"] = new JsonArray([.. report.Items.Select(item => new JsonObject
             {
                 ["update"] = item.Description,

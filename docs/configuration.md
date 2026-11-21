@@ -20,12 +20,31 @@ valid
 | `evidence.root` | yes | Evidence folder, relative to the config file. |
 | `evidence.retention_days` | no | Runs older than this many days are deleted; the latest successful run of each collector is always kept. |
 | `collectors[]` | yes (may be empty) | `name` (unique, lowercase letters, digits and hyphens), `type` (a known collector type), `schedule` (five-field cron, UTC), `settings` (plain values) and `secrets` (references). |
-| `target.mapping` | yes | Framework mapping file, relative to the config file. |
-| `target.compliance_assessment` | yes | The audit's `ref_id` in CISO Assistant. |
-| `target.controls` | no | Control key to applied control `ref_id`. |
-| `target.health_control` | no | Applied control `ref_id` that each collector's "collector health" evidence is linked to after every run (see [running.md](running.md)). |
+| `targets[]` | yes, or `target` | The audits results are published to. Each has the keys below. |
+| `targets[].mapping` | yes | Framework mapping file, relative to the config file. |
+| `targets[].compliance_assessment` | yes | The audit's `ref_id` in CISO Assistant. Each audit is targeted once. |
+| `targets[].controls` | no | Control key to applied control `ref_id`. |
+| `targets[].health_control` | no | Applied control `ref_id` that each collector's "collector health" evidence is linked to after every run (see [running.md](running.md)). |
 
 Paths are resolved against the config file's folder. Unknown keys are errors, so a typo never goes unnoticed.
+
+### Several audits from one run
+
+One collection run can feed several audits, for example the Essential Eight and the ASD Essentials during a migration, or the Essentials and NIST SP 800-171 later. List them under `targets`:
+
+```yaml
+targets:
+  - mapping: ../mappings/essential-eight-2023.yaml
+    compliance_assessment: EX-E8-2026
+    health_control: AC-AUTO-EVIDENCE
+  - mapping: ../mappings/asd-essentials-enterprise-it.yaml
+    compliance_assessment: EX-ESSENTIALS-2026
+```
+
+- Each evidence file is uploaded once and linked from every audit whose requirements cite it.
+- An applied control configured by several targets is updated once.
+- A failure publishing to one audit does not stop the others. `hound publish` and `hound run` report sent, skipped and failed items for each audit under `audits`.
+- A single `target:` map is still accepted, and is read as a list of one. Use one form or the other, not both.
 
 ## Secrets are references
 

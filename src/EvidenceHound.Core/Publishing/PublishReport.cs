@@ -56,7 +56,17 @@ public sealed record PublishReport(IReadOnlyList<PublishItem> Items)
     public bool HasFailures => Failed > 0;
 
     /// <summary>Requirement items counted per audit, in the order the audits first appear.</summary>
-    public IReadOnlyList<AuditReport> Audits => throw new NotImplementedException();
+    public IReadOnlyList<AuditReport> Audits =>
+        [.. Items
+            .Select(item => (Audit: (item.Update as AuditUpdate.UpdateRequirementAssessment)?.ComplianceAssessmentRefId, item.Outcome))
+            .Where(item => item.Audit is not null)
+            .GroupBy(item => item.Audit!, StringComparer.Ordinal)
+            .Select(audit => new AuditReport(
+                audit.Key,
+                audit.Count(i => i.Outcome == PublishOutcome.Planned),
+                audit.Count(i => i.Outcome == PublishOutcome.Sent),
+                audit.Count(i => i.Outcome == PublishOutcome.Skipped),
+                audit.Count(i => i.Outcome == PublishOutcome.Failed)))];
 
     private int Count(PublishOutcome outcome) => Items.Count(item => item.Outcome == outcome);
 }

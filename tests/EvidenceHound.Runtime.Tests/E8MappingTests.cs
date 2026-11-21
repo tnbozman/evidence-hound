@@ -86,8 +86,8 @@ public class E8MappingTests
     {
         var config = Config();
 
-        config.Target.ComplianceAssessmentRefId.ShouldBe("EX-E8-2026");
-        Path.GetFileName(config.Target.MappingPath).ShouldBe("essential-eight-2023.yaml");
+        config.Targets[0].ComplianceAssessmentRefId.ShouldBe("EX-E8-2026");
+        Path.GetFileName(config.Targets[0].MappingPath).ShouldBe("essential-eight-2023.yaml");
     }
 
     private static IEnumerable<CheckId> M365Checks() =>

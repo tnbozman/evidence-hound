@@ -19,6 +19,35 @@ public class ConfigSchemaTests
         result.IsValid.ShouldBeTrue(string.Join("; ", (result.Details ?? []).Where(d => d.Errors is not null).SelectMany(d => d.Errors!.Values)));
     }
 
+    [Fact]
+    public void Example_essential_eight_config_validates_against_schema()
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, "files", "examples", "example-essential-eight.yaml");
+
+        var result = Schema.Evaluate(ToJson(File.ReadAllText(path)), new EvaluationOptions { OutputFormat = OutputFormat.List });
+
+        result.IsValid.ShouldBeTrue(string.Join("; ", (result.Details ?? []).Where(d => d.Errors is not null).SelectMany(d => d.Errors!.Values)));
+    }
+
+    [Fact]
+    public void Targets_list_validates_and_target_with_targets_does_not()
+    {
+        var yaml = File.ReadAllText(TestFiles.ExampleConfigPath);
+        var start = yaml.IndexOf("target:", StringComparison.Ordinal);
+        var targets = yaml[..start] + """
+            targets:
+              - mapping: ../mappings/essential-eight-2023.yaml
+                compliance_assessment: EX-E8-2026
+              - mapping: ../mappings/example.yaml
+                compliance_assessment: EXAMPLE-BASELINE-2026
+                health_control: AC-AUTO-EVIDENCE
+            """;
+
+        Schema.Evaluate(ToJson(targets)).IsValid.ShouldBeTrue();
+        Schema.Evaluate(ToJson(yaml + "\ntargets: []\n")).IsValid.ShouldBeFalse();
+        Schema.Evaluate(ToJson(yaml[..start] + "targets: []\n")).IsValid.ShouldBeFalse();
+    }
+
     [Theory]
     [InlineData("token: env:HOUND_CA_TOKEN", "token: plain-value")]
     [InlineData("type: fake", "type: fake\n    colour: blue")]

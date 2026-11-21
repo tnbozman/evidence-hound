@@ -51,23 +51,24 @@ public sealed record RunTarget(FrameworkMapping Mapping, AuditTarget Target, str
 public sealed class Runner(
     IReadOnlyDictionary<string, ICollector> collectors,
     CollectStep collect,
-    FrameworkMapping mapping,
-    AuditTarget target,
+    IReadOnlyList<RunTarget> targets,
     Func<IEvidenceFiles, IAuditUpdateSink> sinkFor,
     IClock clock,
-    IRunRecordStore records,
-    string? healthControlRefId = null)
+    IRunRecordStore records)
 {
-    /// <summary>A runner that publishes each collector's owned results to every target.</summary>
+    /// <summary>A runner that publishes to one audit.</summary>
     public Runner(
         IReadOnlyDictionary<string, ICollector> collectors,
         CollectStep collect,
-        IReadOnlyList<RunTarget> targets,
+        FrameworkMapping mapping,
+        AuditTarget target,
         Func<IEvidenceFiles, IAuditUpdateSink> sinkFor,
         IClock clock,
-        IRunRecordStore records)
-        : this(collectors, collect, targets[0].Mapping, targets[0].Target, sinkFor, clock, records, targets[0].HealthControlRefId) =>
-        throw new NotImplementedException();
+        IRunRecordStore records,
+        string? healthControlRefId = null)
+        : this(collectors, collect, [new RunTarget(mapping, target, healthControlRefId)], sinkFor, clock, records)
+    {
+    }
 
     /// <summary>The instances to run: all of them, or the one named by <paramref name="only"/> (<c>run.collector_unknown</c> if none has that name).</summary>
     public static Result<IReadOnlyList<CollectorInstance>> Select(IReadOnlyList<CollectorInstance> instances, string? only)
@@ -109,7 +110,7 @@ public sealed class Runner(
             return result with { Record = record };
         }
 
-        var health = Health.Plan(record, healthControlRefId);
+        var health = Health.Plan(record, [.. targets.Select(t => t.HealthControlRefId).OfType<string>().Distinct(StringComparer.Ordinal)]);
         var healthReport = options.DryRun ? Publisher.DryRun([health.Upload]) : await SendAsync(RunEvidence.Files([health.File]), [health.Upload], cancellationToken);
         var healthProblems = FailedItems(healthReport);
         return (healthProblems.Count > 0 ? Failed(instance, [.. result.Problems, .. healthProblems], result.Publish) : result) with { Record = record, Health = healthReport };
@@ -130,7 +131,9 @@ public sealed class Runner(
     private async Task<CollectorRunResult> PublishAsync(CollectorInstance instance, Result<CollectedRun> collected, RunOptions options, CancellationToken cancellationToken)
     {
         var planned = collected.Bind(run => RunEvidence.From(run).Bind(results => AuditPlanner.PlanUpdates(
-            target, Ownership.OwnedResults(mapping, results.Checks), results.Evidence, results.ControlStatuses).Map(updates => (Run: run, Updates: updates))));
+            [.. targets.Select(t => new TargetResults(t.Target, Ownership.OwnedResults(t.Mapping, results.Checks)))],
+            results.Evidence,
+            results.ControlStatuses).Map(updates => (Run: run, Updates: updates))));
 
         return await planned.Match(
             async plan =>

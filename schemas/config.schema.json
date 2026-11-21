@@ -5,51 +5,91 @@
   "description": "One deployment: how to reach CISO Assistant, where evidence is stored, which collectors run and which audit they update. Secrets are references only.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["ciso_assistant", "evidence", "collectors", "target"],
+  "required": [
+    "ciso_assistant",
+    "evidence",
+    "collectors"
+  ],
   "properties": {
     "ciso_assistant": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["url", "token"],
+      "required": [
+        "url",
+        "token"
+      ],
       "properties": {
-        "url": { "description": "CISO Assistant API address, for example http://localhost:8000/api/. HOUND_CA_URL overrides it.", "type": "string", "pattern": "^https?://" },
-        "token": { "$ref": "#/$defs/secretReference" },
-        "transport": { "enum": ["rest", "kafka"], "default": "rest" },
-        "kafka_bootstrap_servers": { "type": "string", "minLength": 1 }
+        "url": {
+          "description": "CISO Assistant API address, for example http://localhost:8000/api/. HOUND_CA_URL overrides it.",
+          "type": "string",
+          "pattern": "^https?://"
+        },
+        "token": {
+          "$ref": "#/$defs/secretReference"
+        },
+        "transport": {
+          "enum": [
+            "rest",
+            "kafka"
+          ],
+          "default": "rest"
+        },
+        "kafka_bootstrap_servers": {
+          "type": "string",
+          "minLength": 1
+        }
       },
-      "if": { "properties": { "transport": { "const": "kafka" } }, "required": ["transport"] },
-      "then": { "required": ["kafka_bootstrap_servers"] }
+      "if": {
+        "properties": {
+          "transport": {
+            "const": "kafka"
+          }
+        },
+        "required": [
+          "transport"
+        ]
+      },
+      "then": {
+        "required": [
+          "kafka_bootstrap_servers"
+        ]
+      }
     },
     "evidence": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["root"],
+      "required": [
+        "root"
+      ],
       "properties": {
-        "root": { "description": "Evidence folder, relative to the config file.", "type": "string", "minLength": 1 },
-        "retention_days": { "description": "Delete runs older than this; the latest successful run is always kept.", "type": "integer", "minimum": 1 }
+        "root": {
+          "description": "Evidence folder, relative to the config file.",
+          "type": "string",
+          "minLength": 1
+        },
+        "retention_days": {
+          "description": "Delete runs older than this; the latest successful run is always kept.",
+          "type": "integer",
+          "minimum": 1
+        }
       }
     },
     "collectors": {
       "type": "array",
-      "items": { "$ref": "#/$defs/collector" }
+      "items": {
+        "$ref": "#/$defs/collector"
+      }
     },
     "target": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["mapping", "compliance_assessment"],
-      "properties": {
-        "mapping": { "description": "Framework mapping file, relative to the config file.", "type": "string", "minLength": 1 },
-        "compliance_assessment": { "description": "The audit's ref_id in CISO Assistant.", "type": "string", "minLength": 1 },
-        "controls": {
-          "description": "Control key to applied control ref_id in CISO Assistant.",
-          "type": "object",
-          "additionalProperties": { "type": "string", "minLength": 1 }
-        },
-        "health_control": {
-          "description": "ref_id of the applied control that each collector's health evidence is linked to, for example \"Automated evidence collection\".",
-          "type": "string",
-          "minLength": 1
-        }
+      "description": "The one audit results are published to. Use 'targets' for several.",
+      "$ref": "#/$defs/target"
+    },
+    "targets": {
+      "description": "Every audit results are published to. Each evidence file is uploaded once and linked from every audit that uses it.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/target"
       }
     }
   },
@@ -62,22 +102,107 @@
     "collector": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "type", "schedule"],
+      "required": [
+        "name",
+        "type",
+        "schedule"
+      ],
       "properties": {
-        "name": { "description": "Unique; names the evidence folder.", "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
-        "type": { "description": "A collector type this build knows, for example fake.", "type": "string", "minLength": 1 },
-        "schedule": { "description": "Five-field cron expression, UTC.", "type": "string", "pattern": "^\\s*[0-9A-Za-z*/,-]+(\\s+[0-9A-Za-z*/,-]+){4}\\s*$" },
+        "name": {
+          "description": "Unique; names the evidence folder.",
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$"
+        },
+        "type": {
+          "description": "A collector type this build knows, for example fake.",
+          "type": "string",
+          "minLength": 1
+        },
+        "schedule": {
+          "description": "Five-field cron expression, UTC.",
+          "type": "string",
+          "pattern": "^\\s*[0-9A-Za-z*/,-]+(\\s+[0-9A-Za-z*/,-]+){4}\\s*$"
+        },
         "settings": {
           "description": "Plain, non-secret settings for the collector.",
-          "type": ["object", "null"],
-          "additionalProperties": { "type": ["string", "number", "boolean"] }
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "type": [
+              "string",
+              "number",
+              "boolean"
+            ]
+          }
         },
         "secrets": {
           "description": "Secret references the collector resolves at run time.",
-          "type": ["object", "null"],
-          "additionalProperties": { "$ref": "#/$defs/secretReference" }
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "$ref": "#/$defs/secretReference"
+          }
+        }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mapping",
+        "compliance_assessment"
+      ],
+      "properties": {
+        "mapping": {
+          "description": "Framework mapping file, relative to the config file.",
+          "type": "string",
+          "minLength": 1
+        },
+        "compliance_assessment": {
+          "description": "The audit's ref_id in CISO Assistant.",
+          "type": "string",
+          "minLength": 1
+        },
+        "controls": {
+          "description": "Control key to applied control ref_id in CISO Assistant.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "health_control": {
+          "description": "ref_id of the applied control that each collector's health evidence is linked to, for example \"Automated evidence collection\".",
+          "type": "string",
+          "minLength": 1
         }
       }
     }
-  }
+  },
+  "oneOf": [
+    {
+      "required": [
+        "target"
+      ],
+      "not": {
+        "required": [
+          "targets"
+        ]
+      }
+    },
+    {
+      "required": [
+        "targets"
+      ],
+      "not": {
+        "required": [
+          "target"
+        ]
+      }
+    }
+  ]
 }

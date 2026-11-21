@@ -55,25 +55,33 @@ internal static class PlanCommand
             problems => Task.FromResult(Log.Problems(logger, problems)));
     }
 
-    /// <summary>Loads the config, its mapping and the check results, and plans the audit updates.</summary>
+    /// <summary>Loads the config, its targets' mappings and the check results, and plans the updates of every target audit.</summary>
     internal static async Task<Result<IReadOnlyList<AuditUpdate>>> PlanAsync(FileInfo configFile, FileInfo checksFile, CollectorRegistry registry, CancellationToken cancellationToken)
     {
-        var target = await LoadTargetAsync(configFile, registry, cancellationToken);
-        var mapping = await target.Map(t => new FileInfo(t.MappingPath)).Match(
-            file => MappingCommands.LoadAsync(file, cancellationToken),
-            problems => Task.FromResult(Result.Fail<Core.Yaml.LoadedMapping>(problems)));
+        var targets = await (await ConfigCommands.LoadAsync(configFile, registry, cancellationToken)).Match(
+            config => LoadMappingsAsync(config.Targets, cancellationToken),
+            problems => Task.FromResult(Result.Fail<IReadOnlyList<(TargetConfig Target, FrameworkMapping Mapping)>>(problems)));
         var run = await CheckResultsJson.LoadRunAsync(checksFile, cancellationToken);
 
-        return target.Bind(t => mapping.Bind(m => run.Bind(r => AuditPlanner.PlanUpdates(
-            new AuditTarget(t.ComplianceAssessmentRefId, t.Controls),
-            MappingEngine.ApplyMapping(m.Mapping, r.Checks),
+        return targets.Bind(loaded => run.Bind(r => AuditPlanner.PlanUpdates(
+            [.. loaded.Select(t => new TargetResults(new AuditTarget(t.Target.ComplianceAssessmentRefId, t.Target.Controls), MappingEngine.ApplyMapping(t.Mapping, r.Checks)))],
             r.Evidence,
-            r.ControlStatuses))));
+            r.ControlStatuses)));
+    }
+
+    /// <summary>Each target with its mapping, loaded from the mapping file it names.</summary>
+    internal static async Task<Result<IReadOnlyList<(TargetConfig Target, FrameworkMapping Mapping)>>> LoadMappingsAsync(IReadOnlyList<TargetConfig> targets, CancellationToken cancellationToken)
+    {
+        var loaded = new List<Result<(TargetConfig Target, FrameworkMapping Mapping)>>(targets.Count);
+        foreach (var target in targets)
+        {
+            loaded.Add((await MappingCommands.LoadAsync(new FileInfo(target.MappingPath), cancellationToken)).Map(m => (target, m.Mapping)));
+        }
+
+        return Result.Combine(loaded);
     }
 
     private static string DescribeFile(Core.Checks.Evidence evidence) =>
         string.Create(CultureInfo.InvariantCulture, $"(dry run: base64 of {evidence.FileName}, {evidence.SizeBytes} bytes, sha256 {evidence.Sha256})");
 
-    private static async Task<Result<TargetConfig>> LoadTargetAsync(FileInfo configFile, CollectorRegistry registry, CancellationToken cancellationToken) =>
-        (await ConfigCommands.LoadAsync(configFile, registry, cancellationToken)).Map(config => config.Target);
 }
