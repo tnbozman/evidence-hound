@@ -65,7 +65,7 @@ jobs:
           dir=test-results/ca-inventory
           if [ -f "$dir/answers.json" ]; then cat "$dir/answers.json"; fi
           if [ -f "$dir/openapi-paths.json" ]; then
-            jq -c '{openapi, info}' "$dir/openapi-paths.json"
+            jq -c '{openapi, info, all_paths}' "$dir/openapi-paths.json"
             jq -c '.paths | to_entries[] | {(.key): .value}' "$dir/openapi-paths.json"
           fi
       - name: Upload functional results
