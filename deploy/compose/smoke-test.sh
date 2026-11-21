@@ -18,11 +18,15 @@ export COMPOSE_FILE="$dir/compose.yml:$work/smoke.override.yml"
 export COMPOSE_ENV_FILES="$work/.env"
 compose() { docker compose "$@"; }
 
+step="preparing"
+say() { step="$1"; echo "smoke: $1"; }
+
 cleanup() {
   status=$?
   if [[ $status -ne 0 ]]; then
+    compose logs --no-color --tail 25 || true
     compose ps -a || true
-    compose logs --no-color --tail 80 || true
+    echo "smoke: FAILED while ${step} (exit $status)" >&2
   fi
   compose down --volumes --remove-orphans >/dev/null 2>&1 || true
   rm -rf "$work"
@@ -60,26 +64,26 @@ services:
       - $dir/smoke:/config-smoke:ro
 YAML
 
-echo "smoke: starting the stack"
+say "starting the stack"
 compose up -d --wait --wait-timeout 600 postgres backend worker frontend caddy
 
-echo "smoke: issuing the runner's token"
+say "issuing the runner's token"
 "$dir/runner-token.sh" hound-runner@example.com "$work/secrets" 1
 [[ -s "$work/secrets/hound_ca_token" ]]
 
-echo "smoke: creating the example staff users the example scope names (the dev seed; its own token is discarded)"
+say "creating the example staff users the example scope names (the dev seed; its own token is discarded)"
 compose exec -T backend python manage.py shell <"$root/dev/ciso-assistant/seed/seed.py" | grep -v '^HOUND_CA_TOKEN='
 
-echo "smoke: applying the example scope through the runner image"
+say "applying the example scope through the runner image"
 compose run --rm --no-deps runner scope apply /config/scope --config /config/hound.yaml >"$work/scope-apply.json" \
   || { cat "$work/scope-apply.json"; exit 1; }
 
-echo "smoke: running the runner once with the fake collector"
+say "running the runner once with the fake collector"
 compose run --rm --no-deps runner run --config /config-smoke/hound.yaml
 compose run --rm --no-deps runner status --config /config-smoke/hound.yaml | tee "$work/status.txt"
 grep -q 'smoke-fake' "$work/status.txt"
 
-echo "smoke: serving the fake collector every minute for about three minutes"
+say "serving the fake collector every minute for about three minutes"
 HOUND_CONFIG_FILE=../config-smoke/hound-serve.yaml compose up -d --no-deps runner
 sleep 170
 compose logs --no-color runner | tail -n 20
@@ -89,7 +93,7 @@ echo "smoke: $runs published runs recorded for EXAMPLE-BASELINE-2026"
 [[ "$runs" -ge 3 ]] || { echo "smoke: expected the one-off run and at least two scheduled runs" >&2; exit 1; }
 compose stop runner
 
-echo "smoke: checking HTTPS through Caddy"
+say "checking HTTPS through Caddy"
 curl -fsS --cacert <(compose exec -T caddy cat /data/caddy/pki/authorities/local/root.crt) \
   --resolve "localhost:18443:127.0.0.1" -o /dev/null "https://localhost:18443/api/health/"
 curl -fsS --cacert <(compose exec -T caddy cat /data/caddy/pki/authorities/local/root.crt) \
