@@ -162,6 +162,25 @@ public sealed class ScopeStateReaderTests : IDisposable
         state.Objects.Where(o => o.Held.Kind == ScopeKind.Audit).Select(o => o.Held.Key).ShouldBe(["EXAMPLE-REVIEW-2026"]);
     }
 
+    [Fact]
+    public async Task A_framework_without_group_definitions_takes_its_groups_from_its_nodes_and_its_library_from_the_loaded_libraries()
+    {
+        RecordFramework();
+        _ca.Server.Given(Request.Create().WithPath("/api/frameworks/fw-e8/object/").UsingGet()).AtPriority(0)
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject { ["id"] = "fw-e8", ["urn"] = "urn:intuitem:risk:framework:essential-eight-2023", ["library"] = "lib-e8" }.ToJsonString()));
+        _ca.Server.Given(Request.Create().WithPath("/api/frameworks/").UsingGet()).AtPriority(0)
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject
+            {
+                ["count"] = 1,
+                ["results"] = new JsonArray(new JsonObject { ["id"] = "fw-e8", ["urn"] = "urn:intuitem:risk:framework:essential-eight-2023", ["library"] = new JsonObject { ["id"] = "lib-e8", ["str"] = "Essential Eight" } }),
+            }.ToJsonString()));
+
+        var snapshot = (await _ca.Export.ReadAllAsync("Global", _ct)).Value().Frameworks.ShouldHaveSingleItem();
+
+        snapshot.Groups.Select(g => g.RefId).ShouldBe(["1", "2"]);
+        snapshot.LibraryUrn.ShouldBe("urn:intuitem:risk:library:essential-eight-2023");
+    }
+
     /// <summary>The Essential Eight framework's own record and its requirement nodes, one of them not assessable.</summary>
     private void RecordFramework()
     {
