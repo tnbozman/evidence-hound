@@ -1,4 +1,7 @@
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using Azure.Core;
+using Azure.Identity;
 using EvidenceHound.Core.Results;
 using EvidenceHound.Core.Secrets;
 
@@ -19,5 +22,36 @@ public interface IGraphCredentialFactory
 /// </summary>
 public sealed class AzureIdentityCredentials : IGraphCredentialFactory
 {
-    public Result<TokenCredential> Create(GraphConnection connection) => throw new NotImplementedException();
+    public Result<TokenCredential> Create(GraphConnection connection)
+    {
+        ArgumentNullException.ThrowIfNull(connection);
+        if (connection.ClientCertificate is { } certificate)
+        {
+            return Certificate(certificate).Map(cert => (TokenCredential)new ClientCertificateCredential(connection.TenantId, connection.ClientId, cert));
+        }
+
+        return connection.ClientSecret is { } secret
+            ? Result.Ok<TokenCredential>(new ClientSecretCredential(connection.TenantId, connection.ClientId, secret.Reveal()))
+            : Result.Fail<TokenCredential>(new Problem(
+                "m365.credentials_missing", "The Microsoft 365 collector needs the secret client_certificate (preferred) or client_secret."));
+    }
+
+    private static Result<X509Certificate2> Certificate(Secret pem)
+    {
+        try
+        {
+            var text = pem.Reveal();
+            return Result.Ok(X509Certificate2.CreateFromPem(text, text));
+        }
+        catch (CryptographicException)
+        {
+            return Result.Fail<X509Certificate2>(new Problem(
+                "m365.certificate_invalid", "The client_certificate secret must hold a PEM certificate and its private key (BEGIN CERTIFICATE and BEGIN PRIVATE KEY)."));
+        }
+        catch (ArgumentException)
+        {
+            return Result.Fail<X509Certificate2>(new Problem(
+                "m365.certificate_invalid", "The client_certificate secret must hold a PEM certificate and its private key (BEGIN CERTIFICATE and BEGIN PRIVATE KEY)."));
+        }
+    }
 }
