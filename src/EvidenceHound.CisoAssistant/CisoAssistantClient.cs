@@ -1,4 +1,4 @@
-using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json.Nodes;
 using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Planning;
@@ -68,7 +68,7 @@ internal sealed class CisoAssistantClient(HttpClient http) : ICisoAssistantClien
 
     private async Task<Result<RemoteEvidence>> CreateEvidenceAsync(string refId, string name, CancellationToken cancellationToken)
     {
-        var request = new HttpRequestMessage(HttpMethod.Post, "evidences/") { Content = JsonContent.Create(new JsonObject { ["name"] = name, ["ref_id"] = refId }) };
+        var request = new HttpRequestMessage(HttpMethod.Post, "evidences/") { Content = Json(new JsonObject { ["name"] = name, ["ref_id"] = refId }) };
         return (await SendAsync(request, $"to create evidence {refId}", cancellationToken)).Map(created => new RemoteEvidence(Id(created), null));
     }
 
@@ -91,7 +91,7 @@ internal sealed class CisoAssistantClient(HttpClient http) : ICisoAssistantClien
     }
 
     private Task<Result<JsonNode>> PatchAsync(string path, JsonObject body, string action, CancellationToken cancellationToken) =>
-        SendAsync(new HttpRequestMessage(HttpMethod.Patch, path) { Content = JsonContent.Create(body) }, action, cancellationToken);
+        SendAsync(new HttpRequestMessage(HttpMethod.Patch, path) { Content = Json(body) }, action, cancellationToken);
 
     private async Task<Result<JsonNode>> SendAsync(HttpRequestMessage request, string action, CancellationToken cancellationToken)
     {
@@ -111,6 +111,9 @@ internal sealed class CisoAssistantClient(HttpClient http) : ICisoAssistantClien
             }
         }
     }
+
+    /// <summary>A JSON body with a known length: CISO Assistant's server reads no chunked request body.</summary>
+    private static StringContent Json(JsonNode body) => new(body.ToJsonString(), Encoding.UTF8, "application/json");
 
     /// <summary>The objects in a list response: a paginated <c>{"results": [...]}</c> or a bare array.</summary>
     private static List<JsonNode> Results(JsonNode page) =>
