@@ -94,7 +94,7 @@ public static class HoundCli
     private static RootCommand BuildRootCommand(TextWriter output, ILoggerFactory loggers, IConfiguration configuration) =>
         new("Evidence Hound: collects compliance evidence and publishes it to CISO Assistant.")
         {
-            CollectCommand.Build(loggers),
+            CollectCommand.Build(loggers, configuration),
             ConfigCommands.Build(output, loggers, configuration),
             MappingCommands.Build(output, loggers),
             PlanCommand.Build(output, loggers),

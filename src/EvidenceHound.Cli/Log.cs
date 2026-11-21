@@ -27,6 +27,9 @@ internal static partial class Log
     [LoggerMessage(EventId = 1000, Level = LogLevel.Information, Message = "{Count} collectors configured")]
     public static partial void CollectorsConfigured(ILogger logger, int count);
 
+    [LoggerMessage(EventId = 1001, Level = LogLevel.Information, Message = "Collected {Count} files from {Collector} into {Location}")]
+    public static partial void Collected(ILogger logger, string collector, int count, string location);
+
     [LoggerMessage(EventId = 1100, Level = LogLevel.Information, Message = "Published to CISO Assistant: {Sent} sent, {Skipped} skipped, {Failed} failed")]
     public static partial void Published(ILogger logger, int sent, int skipped, int failed);
 
