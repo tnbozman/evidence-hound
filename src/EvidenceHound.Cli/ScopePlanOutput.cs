@@ -11,7 +11,10 @@ internal static class ScopePlanOutput
 {
     private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
 
-    public static string Markdown(ScopePlan plan)
+    public static string Markdown(ScopePlan plan) => Markdown(plan, []);
+
+    /// <summary>The plan as Markdown, with a table of the audit periods it opens, closes or locks and those awaiting sign-off.</summary>
+    public static string Markdown(ScopePlan plan, IReadOnlyList<PeriodNote> periods)
     {
         var count = (ScopeAction action) => plan.Changes.Count(c => c.Action == action);
         var markdown = new StringBuilder()
@@ -43,12 +46,25 @@ internal static class ScopePlanOutput
             }
         }
 
+        if (periods.Count > 0)
+        {
+            markdown.Append("\n### Audit periods\n\n| Audit | What happens |\n| --- | --- |\n");
+            foreach (var period in periods)
+            {
+                markdown.Append(CultureInfo.InvariantCulture, $"| {Cell(period.Audit)} | {Describe(period)} |\n");
+            }
+        }
+
         return markdown.ToString();
     }
 
-    public static string Json(ScopePlan plan) =>
+    public static string Json(ScopePlan plan) => Json(plan, []);
+
+    /// <summary>The plan as JSON, with the audit periods it opens, closes or locks and those awaiting sign-off.</summary>
+    public static string Json(ScopePlan plan, IReadOnlyList<PeriodNote> periods) =>
         new JsonObject
         {
+            ["periods"] = new JsonArray([.. periods.Select(p => (JsonNode)new JsonObject { ["audit"] = p.Audit, ["event"] = Event(p.Event), ["baseline"] = p.Baseline })]),
             ["changes"] = new JsonArray([.. plan.Changes.Select(c => (JsonNode)new JsonObject
             {
                 ["kind"] = Kind(c.Kind),
@@ -109,6 +125,22 @@ internal static class ScopePlanOutput
 
     private static string Changed(IReadOnlyList<FieldChange> fields) =>
         string.Join("<br>", fields.Select(f => $"{f.Field}: {Cell(f.Old ?? "(none)")} → {Cell(f.New ?? "(none)")}"));
+
+    private static string Describe(PeriodNote period) => period.Event switch
+    {
+        PeriodEvent.Opens => period.Baseline is { } baseline ? $"opens, from {Cell(baseline)}" : "opens",
+        PeriodEvent.Closes => "closes: in review, awaiting sign-off",
+        PeriodEvent.AwaitingSignOff => "awaiting sign-off: add it to the audit file's sign_offs",
+        _ => "signed off: done and locked",
+    };
+
+    private static string Event(PeriodEvent value) => value switch
+    {
+        PeriodEvent.Opens => "opens",
+        PeriodEvent.Closes => "closes",
+        PeriodEvent.AwaitingSignOff => "awaiting_sign_off",
+        _ => "signed_off",
+    };
 
     private static string Kind(ScopeKind kind) => kind.ToString().ToLowerInvariant();
 

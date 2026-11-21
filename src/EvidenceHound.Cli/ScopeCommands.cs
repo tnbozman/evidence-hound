@@ -30,7 +30,7 @@ internal static class ScopeCommands
         var validate = new Command("validate", "Check the scope files offline and report every problem with its file, line and code.") { dir, config, format };
         validate.SetAction(async (parseResult, cancellationToken) =>
         {
-            var checkedScope = await ValidateAsync(parseResult.GetRequiredValue(dir), parseResult.GetValue(config), registry, cancellationToken);
+            var checkedScope = await ValidateAsync(parseResult.GetRequiredValue(dir), parseResult.GetValue(config), registry, AuditSeries.Today(configuration), cancellationToken);
             return await ReportAsync(checkedScope.Problems, checkedScope.Summary, parseResult.GetRequiredValue(format), output, logger);
         });
 
@@ -58,7 +58,7 @@ internal static class ScopeCommands
         };
         plan.SetAction(async (parseResult, cancellationToken) =>
         {
-            var checkedScope = await ValidateAsync(parseResult.GetRequiredValue(dir), parseResult.GetValue(config), registry, cancellationToken);
+            var checkedScope = await ValidateAsync(parseResult.GetRequiredValue(dir), parseResult.GetValue(config), registry, AuditSeries.Today(configuration), cancellationToken);
             if (checkedScope.Problems.Count > 0)
             {
                 return await ReportAsync(checkedScope.Problems, checkedScope.Summary, "text", output, logger);
@@ -78,7 +78,7 @@ internal static class ScopeCommands
         };
         apply.SetAction(async (parseResult, cancellationToken) =>
         {
-            var checkedScope = await ValidateAsync(parseResult.GetRequiredValue(dir), parseResult.GetValue(config), registry, cancellationToken);
+            var checkedScope = await ValidateAsync(parseResult.GetRequiredValue(dir), parseResult.GetValue(config), registry, AuditSeries.Today(configuration), cancellationToken);
             if (checkedScope.Problems.Count > 0)
             {
                 return await ReportAsync(checkedScope.Problems, checkedScope.Summary, "text", output, logger);
@@ -104,7 +104,7 @@ internal static class ScopeCommands
                 var plan = ScopePlanner.Plan(declared, held, prune);
                 if (dryRun)
                 {
-                    await output.WriteAsync(ScopePlanOutput.Markdown(plan));
+                    await output.WriteAsync(ScopePlanOutput.Markdown(plan, ScopePeriods.Notes(declared, plan)));
                     return ExitCodes.Ok;
                 }
 
@@ -125,7 +125,8 @@ internal static class ScopeCommands
             async held =>
             {
                 var plan = ScopePlanner.Plan(declared, held, prune);
-                await output.WriteAsync(format == "json" ? ScopePlanOutput.Json(plan) : ScopePlanOutput.Markdown(plan));
+                var periods = ScopePeriods.Notes(declared, plan);
+                await output.WriteAsync(format == "json" ? ScopePlanOutput.Json(plan, periods) : ScopePlanOutput.Markdown(plan, periods));
                 return ExitCodes.Ok;
             },
             problems => Task.FromResult(Log.Problems(logger, problems)));
@@ -153,7 +154,7 @@ internal static class ScopeCommands
     private sealed record CheckedScope(IReadOnlyList<ScopeProblem> Problems, string Summary, ScopeDocument Scope, ScopeInputs Inputs);
 
     private static async Task<CheckedScope> ValidateAsync(
-        DirectoryInfo dir, FileInfo? configFile, CollectorRegistry registry, CancellationToken cancellationToken)
+        DirectoryInfo dir, FileInfo? configFile, CollectorRegistry registry, DateOnly today, CancellationToken cancellationToken)
     {
         var setupPath = Path.Combine(dir.ToString(), "setup.yaml");
         if (!File.Exists(setupPath))
@@ -185,7 +186,7 @@ internal static class ScopeCommands
             problems,
             string.Create(CultureInfo.InvariantCulture, $"scope valid: {scope.Setup.Domains.Count} domain(s), {scope.Controls.Count} control(s), {scope.Audits.Count} audit(s)"),
             scope,
-            new ScopeInputs(snapshots.Loaded, configFile is null ? null : targets.Match(t => t, _ => []), files.Found));
+            new ScopeInputs(snapshots.Loaded, configFile is null ? null : targets.Match(t => t, _ => []), files.Found) { Today = today });
     }
 
     /// <summary>
