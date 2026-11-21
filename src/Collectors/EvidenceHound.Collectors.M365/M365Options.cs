@@ -38,6 +38,7 @@ internal sealed record M365Options(
         var read = new SettingsReader(settings);
         var adminMin = read.Count(M365Settings.GlobalAdminMin, 2);
         var adminMax = read.Count(M365Settings.GlobalAdminMax, 4);
+        read.Require(adminMin <= adminMax, M365Settings.GlobalAdminMin, $"{adminMin} is more than {M365Settings.GlobalAdminMax} ({adminMax})");
         return read.Finish(new M365Options(
             read.Required(M365Settings.TenantId),
             read.Required(M365Settings.ClientId),
