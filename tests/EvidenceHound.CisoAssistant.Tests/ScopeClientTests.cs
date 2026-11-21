@@ -177,6 +177,43 @@ public sealed class ScopeClientTests : IDisposable
     }
 
     [Fact]
+    public async Task Opens_a_period_audit_from_the_previous_period_as_baseline()
+    {
+        List("frameworks", new JsonObject { ["id"] = "fw-e8", ["urn"] = E8 });
+        List("compliance-assessments", new JsonObject { ["id"] = "ca-q3", ["ref_id"] = "EX-E8-BACKUP-2026Q3" });
+        Respond("POST", "/api/compliance-assessments/", 201, new JsonObject { ["id"] = "ca-q4" });
+        var period = Declared(ScopeKind.Audit, "EX-E8-BACKUP-2026Q4",
+            ("name", "Backups 2026Q4"), ("framework", E8), ("groups", "1, 2"), ("domain", "Example Pty Ltd"), ("perimeter", "Corporate IT"),
+            ("eta", "2026-12-31"), ("status", "in_progress")) with
+        {
+            Initial = new Dictionary<string, string> { ["baseline"] = "EX-E8-BACKUP-2026Q3" },
+        };
+
+        (await Create(period)).Value();
+
+        var posted = JsonNode.Parse(Posted("compliance-assessments"))!;
+        (posted["baseline"]!.GetValue<string>(), posted["status"]!.GetValue<string>()).ShouldBe(("ca-q3", "in_progress"));
+        posted["is_locked"].ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task Closing_a_period_sets_its_status_and_lock_in_one_write()
+    {
+        List("frameworks", new JsonObject { ["id"] = "fw-e8", ["urn"] = E8 });
+        List("compliance-assessments", new JsonObject { ["id"] = "ca-q3", ["ref_id"] = "EX-E8-BACKUP-2026Q3" });
+        Respond("PATCH", "/api/compliance-assessments/ca-q3/", 200, new JsonObject());
+        var period = Declared(ScopeKind.Audit, "EX-E8-BACKUP-2026Q3",
+            ("name", "Backups 2026Q3"), ("framework", E8), ("domain", "Example Pty Ltd"), ("perimeter", "Corporate IT"), ("status", "done"), ("locked", "true"));
+
+        (await Write(period, ScopeAction.Update, State)).Value();
+
+        Sent().ShouldBe([("PATCH", "/api/compliance-assessments/ca-q3/")]);
+        var patched = JsonNode.Parse(Logged("PATCH", "/api/compliance-assessments/ca-q3/").Body!)!;
+        (patched["status"]!.GetValue<string>(), patched["is_locked"]!.GetValue<bool>()).ShouldBe(("done", true));
+        patched["baseline"].ShouldBeNull();
+    }
+
+    [Fact]
     public async Task Updates_document_and_uploads_only_new_files()
     {
         var kept = await FileAsync("identity-policy.pdf", "policy v1");
