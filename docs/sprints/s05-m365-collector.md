@@ -1,6 +1,6 @@
 # s05 Microsoft 365 reference collector
 
-Status: Planned
+Status: In progress
 
 **Goal:** the first real collector, covering identity, privileged access, device compliance and Office hardening through Microsoft Graph, read-only.
 
