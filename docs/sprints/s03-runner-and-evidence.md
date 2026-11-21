@@ -1,6 +1,6 @@
 # s03 Runner, configuration, evidence packaging and run status
 
-Status: In progress
+Status: Done
 
 **Goal:** one command runs every configured collector, packages its evidence, maps and publishes results, and reports its own health into CISO Assistant.
 
@@ -68,7 +68,7 @@ Projects: `src/EvidenceHound.Runtime` (runner, stores, config), `src/EvidenceHou
 - Result (2026-11-21): `make run ARGS="collect --config examples/example-pty-ltd.yaml"` wrote `.dev/evidence/example-fake/<timestamp>/` with four files and `_manifest.json`; `sha256sum -c` on the manifest's hashes printed `OK` for all four. [Evidence](../evidence/s03/s03-03.md).
 
 ### s03-04 Runner pipeline
-- [ ] Done
+- [x] Done
 
 **Story:** As an operator, I want `hound run` to execute collect, evaluate, map, plan and publish for each collector, so that one command keeps audits current.
 
@@ -86,9 +86,10 @@ Projects: `src/EvidenceHound.Runtime` (runner, stores, config), `src/EvidenceHou
 
 **Functional check**
 - `make ca-up && make run ARGS="run --config examples/example-pty-ltd.yaml"` updates the example audit with the fake collector's results.
+- Result (2026-11-21): the CI functional test ran `hound run` against CISO Assistant v4.3.4: EX-1.1 non_compliant with two evidences, EX-3.1 compliant, exit 0. The dry run planned 8 updates. [Evidence](../evidence/s03/s03-04.md).
 
 ### s03-05 Run status and collector health
-- [ ] Done
+- [x] Done
 
 **Story:** As the security committee, I want to see in CISO Assistant whether each collector ran and when, so that stale evidence is visible without another tool.
 
@@ -104,9 +105,10 @@ Projects: `src/EvidenceHound.Runtime` (runner, stores, config), `src/EvidenceHou
 
 **Functional check**
 - After `make run ARGS="run ..."`, the example audit's control shows a fresh "collector health" evidence revision.
+- Result (2026-11-21): in CI, `hound-health/example-fake` was linked to AC-AUTO-EVIDENCE and a second run added one new health revision. [Evidence](../evidence/s03/s03-05.md).
 
 ### s03-06 Dev container with CISO Assistant on one network (added during the sprint)
-- [ ] Done
+- [x] Done
 
 **Story:** As a developer, I want the dev container and a seeded CISO Assistant on the same Docker network, so that I can develop and run `hound` against CISO Assistant without starting it by hand.
 
@@ -123,6 +125,7 @@ Projects: `src/EvidenceHound.Runtime` (runner, stores, config), `src/EvidenceHou
 
 **Functional check**
 - Rebuild the dev container, then `set -a && . .dev/ca.env && set +a && make run ARGS="run --config examples/example-pty-ltd.yaml"` publishes to `backend:8000`. The person runs this (this cloud box cannot run the dev container).
+- Result (2026-11-21): compose model, seed env file, start-up wait and secret key covered by 18 bats tests that pass in CI; the rebuild check is listed in the [evidence](../evidence/s03/s03-06.md).
 
 ## Discovered work
 
@@ -130,5 +133,21 @@ Projects: `src/EvidenceHound.Runtime` (runner, stores, config), `src/EvidenceHou
 - s03-02: the problem code is `secret.missing`, dotted like the other codes. `hound config validate --check-secrets` resolves every reference before a run.
 - s03-03: `ICollector` (with `Version`) and `CollectorOutput` are minimal: check results cite evidence by file name. s04's SDK and shared collector contract tests build on them. `hound collect` now stores evidence; `--dry-run` still contacts nothing.
 - s03-01: the only collector type is `fake`; s04's SDK should replace `CollectorTypes.BuiltIn` with a registry the CLI builds.
+- s03-04: a collector only publishes requirements it fully owns (every mapped check reported). A requirement fed by two collectors is not updated by either; merging each collector's latest stored results before planning would fix that when a mapping needs it.
+- s03-04: CISO Assistant needs evidence names unique within a folder, so evidence is named by `EvidenceNames.For` (the collector-scoped ID, or `file name (ID)`). Evidence created earlier keeps its old name, because it is found by `ref_id`.
+- s03-04: exit code 1 means both "a collector failed" and "unexpected error". Split them if a scheduler needs to tell them apart.
+- s03-05: over the Kafka transport, health evidence is uploaded but not linked to `health_control` (the dispatcher cannot link evidence to controls), as with requirement evidence in s02.
+- s03-06: not tried in GitHub Codespaces, where the UI port is not published to the host. If the `ca-seed` user cannot write to the fresh `hound-ca-env` volume, give the volume an owner. Kafka in the dev container needs `HOUND_CA_TOKEN` at compose time, so it is started from the host (`--profile kafka`) after the first seed.
 
 ## Sprint review
+
+**2026-11-21.** All six tasks shipped (s03-06 was added during the sprint) with red, green and refactor commits and per-task evidence in `docs/evidence/s03/`. A deployment is now one YAML file with secret references, validated with file and line numbers. `hound run` collects each configured collector into a local evidence store with a SHA-256 manifest, evaluates, maps, plans and publishes, isolating failures per collector. Every run leaves a run record, `hound status` shows the latest, and "collector health" evidence linked to an applied control shows in CISO Assistant when each collector last ran. The dev container now runs on one Docker network with a seeded CISO Assistant. 330 unit and contract tests, 38 script tests, 7 functional tests, lint clean.
+
+What slipped: nothing was dropped. The s03-06 rebuild check needs a developer's machine (steps in the s03-06 evidence). Deviations are listed under "Discovered work".
+
+What the feedback taught us:
+- The real CISO Assistant rejects two evidences with the same name in a folder; WireMock contract tests could not show it. Evidence is now named by its collector-scoped ID.
+- gitleaks flags random-looking fake tokens in tests. Use obviously fake, low-entropy stand-ins rather than working around the scanner.
+- PR CI cancels the running functional job on every push, so batch pushes while a real-instance run is in flight.
+- `docker compose config` checks a compose model without a daemon, so the dev container's network and seed wiring are unit-tested in the scripts job.
+- An `include` entry with an explicit `env_file` fails when the file is missing; the including project's `.env` already reaches included files.

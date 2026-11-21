@@ -23,6 +23,7 @@ valid
 | `target.mapping` | yes | Framework mapping file, relative to the config file. |
 | `target.compliance_assessment` | yes | The audit's `ref_id` in CISO Assistant. |
 | `target.controls` | no | Control key to applied control `ref_id`. |
+| `target.health_control` | no | Applied control `ref_id` that each collector's "collector health" evidence is linked to after every run (see [running.md](running.md)). |
 
 Paths are resolved against the config file's folder. Unknown keys are errors, so a typo never goes unnoticed.
 
