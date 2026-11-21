@@ -2,6 +2,7 @@ using System.CommandLine;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using EvidenceHound.CisoAssistant;
+using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Planning;
 using EvidenceHound.Core.Publishing;
 using EvidenceHound.Core.Results;
@@ -36,14 +37,15 @@ internal static class RunCommand
             var deployment = await ConfigCommands.LoadAsync(parseResult.GetRequiredValue(config), cancellationToken);
             return await deployment.Match(
                 d => Runner.Select(d.Collectors, options.Only).Match(
-                    instances => RunAsync(d, instances, options, configuration, loggers, output, logger, cancellationToken),
+                    instances => PrepareAndRunAsync(d, instances, options, configuration, loggers, output, logger, cancellationToken),
                     problems => Task.FromResult(Usage(logger, problems))),
                 problems => Task.FromResult(Log.Problems(logger, problems)));
         });
         return run;
     }
 
-    private static async Task<int> RunAsync(
+    /// <summary>Loads the mapping and, when publishing, the transport (resolving the token); then runs.</summary>
+    private static async Task<int> PrepareAndRunAsync(
         DeploymentConfig config,
         IReadOnlyList<CollectorInstance> instances,
         RunOptions options,
@@ -53,22 +55,29 @@ internal static class RunCommand
         ILogger logger,
         CancellationToken cancellationToken)
     {
-        var mapping = await MappingCommands.LoadAsync(new FileInfo(config.Target.MappingPath), cancellationToken);
         var publishing = !options.DryRun && !options.NoPublish;
-        var transport = publishing ? Transport(config, configuration, loggers) : Result.Ok(Transports.None);
-        if (Problems(mapping).Concat(Problems(transport)).ToArray() is [_, ..] problems)
-        {
-            return Log.Problems(logger, problems);
-        }
+        var ready = (await MappingCommands.LoadAsync(new FileInfo(config.Target.MappingPath), cancellationToken))
+            .Bind(loaded => (publishing ? Transport(config, configuration, loggers) : Result.Ok(Transports.None)).Map(t => (loaded.Mapping, Transport: t)));
+        return await ready.Match(
+            r => RunAsync(config, instances, options, r.Mapping, r.Transport, configuration, output, logger, cancellationToken),
+            problems => Task.FromResult(Log.Problems(logger, problems)));
+    }
 
-        using var sinks = transport.Match(t => t, _ => Transports.None);
+    private static async Task<int> RunAsync(
+        DeploymentConfig config,
+        IReadOnlyList<CollectorInstance> instances,
+        RunOptions options,
+        FrameworkMapping mapping,
+        Transports transport,
+        IConfiguration configuration,
+        TextWriter output,
+        ILogger logger,
+        CancellationToken cancellationToken)
+    {
+        using var sinks = transport;
         var step = new CollectStep(ConfigCommands.Secrets(configuration), new FileEvidenceStore(config.Evidence.Root), new SystemClock(), config.Evidence.RetentionDays);
         var runner = new Runner(
-            BuiltInCollectors.Create(),
-            step,
-            mapping.Match(m => m.Mapping, _ => throw new InvalidOperationException()),
-            new AuditTarget(config.Target.ComplianceAssessmentRefId, config.Target.Controls),
-            sinks.SinkFor);
+            BuiltInCollectors.Create(), step, mapping, new AuditTarget(config.Target.ComplianceAssessmentRefId, config.Target.Controls), sinks.SinkFor);
 
         var summary = await runner.RunAsync(instances, options, cancellationToken);
         foreach (var collector in summary.Collectors)
@@ -117,9 +126,6 @@ internal static class RunCommand
 
         return ExitCodes.Usage;
     }
-
-    private static IReadOnlyList<Problem> Problems<T>(Result<T> result)
-        where T : notnull => result.Match(_ => [], p => p);
 
     /// <summary>Makes a sink per collector run over that run's files, and owns whatever the sinks share.</summary>
     private sealed class Transports(Func<IEvidenceFiles, IAuditUpdateSink> sinkFor, IDisposable? shared) : IDisposable
