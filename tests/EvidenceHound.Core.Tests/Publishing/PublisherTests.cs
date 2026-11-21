@@ -53,6 +53,14 @@ public class PublisherTests
     }
 
     [Fact]
+    public async Task Evidence_is_created_with_a_name_unique_in_its_folder()
+    {
+        await Publisher().PublishAsync([new AuditUpdate.UploadEvidence(Mfa)], _ct);
+
+        _ca.EvidenceNames["ev-0001"].ShouldBe("mfa-admins.json (ev-0001)");
+    }
+
+    [Fact]
     public async Task Upload_without_controls_links_nothing()
     {
         await Publisher().PublishAsync([new AuditUpdate.UploadEvidence(Mfa)], _ct);

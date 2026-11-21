@@ -20,6 +20,9 @@ internal sealed class InMemoryCisoAssistant : ICisoAssistantClient
 
     public HashSet<string> UnreachableEvidence { get; } = [];
 
+    /// <summary>The name each evidence was created with, by ref_id.</summary>
+    public Dictionary<string, string> EvidenceNames { get; } = [];
+
     public Task<Result<Unit>> CheckHealthAsync(CancellationToken cancellationToken) => Done("health");
 
     public Task<Result<string>> FindRequirementAssessmentAsync(string complianceAssessmentRefId, string requirementRefId, CancellationToken cancellationToken)
@@ -39,6 +42,7 @@ internal sealed class InMemoryCisoAssistant : ICisoAssistantClient
     public Task<Result<RemoteEvidence>> FindOrCreateEvidenceAsync(string refId, string name, CancellationToken cancellationToken)
     {
         Calls.Add($"find-or-create {refId}");
+        EvidenceNames.TryAdd(refId, name);
         return Task.FromResult(UnreachableEvidence.Contains(refId)
             ? Result.Fail<RemoteEvidence>(new Problem("ciso_assistant.unavailable", "CISO Assistant could not be reached."))
             : Result.Ok(_evidenceByRefId.GetOrAdd(refId, id => new RemoteEvidence($"uuid-{id}", null))));
