@@ -1,5 +1,8 @@
 using System.CommandLine;
+using EvidenceHound.Core.Results;
 using EvidenceHound.Runtime.Configuration;
+using EvidenceHound.Runtime.Secrets;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace EvidenceHound.Cli;
@@ -7,24 +10,35 @@ namespace EvidenceHound.Cli;
 /// <summary><c>hound config validate</c>: check a deployment config file and report every problem at once.</summary>
 internal static class ConfigCommands
 {
-    public static Command Build(TextWriter output, ILoggerFactory loggers)
+    public static Command Build(TextWriter output, ILoggerFactory loggers, IConfiguration configuration)
     {
         var logger = loggers.CreateLogger("hound.config");
         var file = new Argument<FileInfo>("file") { Description = "Path to the deployment config file (YAML)." };
-        var validate = new Command("validate", "Check a deployment config file and report every problem.") { file };
+        var checkSecrets = new Option<bool>("--check-secrets") { Description = "Also resolve every secret reference, without printing any secret." };
+        var validate = new Command("validate", "Check a deployment config file and report every problem.") { file, checkSecrets };
         validate.SetAction(async (parseResult, cancellationToken) =>
-            await (await LoadAsync(parseResult.GetRequiredValue(file), cancellationToken)).Match(
+        {
+            var config = await LoadAsync(parseResult.GetRequiredValue(file), cancellationToken);
+            var checkedConfig = parseResult.GetValue(checkSecrets) ? config.Bind(c => WithSecrets(c, configuration)) : config;
+            return await checkedConfig.Match(
                 async _ =>
                 {
                     await output.WriteLineAsync("valid");
                     return ExitCodes.Ok;
                 },
-                problems => Task.FromResult(Log.Problems(logger, problems))));
+                problems => Task.FromResult(Log.Problems(logger, problems)));
+        });
 
         return new Command("config", "Work with deployment config files.") { validate };
     }
 
     /// <summary>Loads a deployment config, knowing the collector types this build ships.</summary>
-    internal static Task<Core.Results.Result<DeploymentConfig>> LoadAsync(FileInfo file, CancellationToken cancellationToken) =>
+    internal static Task<Result<DeploymentConfig>> LoadAsync(FileInfo file, CancellationToken cancellationToken) =>
         ConfigLoader.LoadAsync(file.FullName, CollectorTypes.BuiltIn, cancellationToken);
+
+    /// <summary>The secret provider for this run: <c>env:</c> reads .NET configuration (environment variables and test settings).</summary>
+    internal static Core.Secrets.ISecretProvider Secrets(IConfiguration configuration) => SecretProvider.Standard(name => configuration[name]);
+
+    private static Result<DeploymentConfig> WithSecrets(DeploymentConfig config, IConfiguration configuration) =>
+        SecretCheck.Missing(config, Secrets(configuration)) is { Count: > 0 } missing ? Result.Fail<DeploymentConfig>(missing) : Result.Ok(config);
 }

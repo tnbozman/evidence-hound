@@ -95,7 +95,7 @@ public static class HoundCli
         new("Evidence Hound: collects compliance evidence and publishes it to CISO Assistant.")
         {
             CollectCommand.Build(loggers),
-            ConfigCommands.Build(output, loggers),
+            ConfigCommands.Build(output, loggers, configuration),
             MappingCommands.Build(output, loggers),
             PlanCommand.Build(output, loggers),
             PublishCommand.Build(output, loggers, configuration),
