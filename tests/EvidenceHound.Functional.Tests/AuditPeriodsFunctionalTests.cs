@@ -91,6 +91,10 @@ public sealed class AuditPeriodsFunctionalTests(CisoAssistantFixture ciso) : IDi
             File.Copy(file, copy);
         }
 
+        // The snapshots live outside the compliance repo, in the repository's frameworks folder.
+        var setup = Path.Combine(Scope, "setup.yaml");
+        var frameworks = Path.Combine(CisoAssistantFixture.RepoRoot, "frameworks") + Path.DirectorySeparatorChar;
+        await File.WriteAllTextAsync(setup, (await File.ReadAllTextAsync(setup, ct)).Replace("../../../frameworks/", frameworks, StringComparison.Ordinal), ct);
         await File.WriteAllTextAsync(Path.Combine(Scope, "audits", "ex-period.yaml"), Series.TrimStart() + "\n", ct);
         var files = Path.Combine(AppContext.BaseDirectory, "files");
         var config = (await File.ReadAllTextAsync(Path.Combine(files, "examples", "example-pty-ltd.yaml"), ct))
