@@ -83,7 +83,8 @@ public sealed class ScopePlanFunctionalTests(CisoAssistantFixture ciso)
             configureLogging: null,
             new Dictionary<string, string?> { ["HOUND_CA_URL"] = ciso.ApiUrl.ToString(), ["HOUND_CA_TOKEN"] = ciso.Token },
             ct);
-        return (exitCode, output.ToString() + error.ToString());
+        // Logs go to the error writer; on a failure they are what explains it.
+        return (exitCode, exitCode == ExitCodes.Ok ? output.ToString() : output.ToString() + error.ToString());
     }
 
     private static string RepoRoot()
