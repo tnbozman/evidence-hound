@@ -100,7 +100,7 @@ All code in this sprint lives in `src/EvidenceHound.Core` and is tested in `test
 **Functional check result (2026-11-21):** `make run ARGS="mapping apply mappings/example.yaml tests/fixtures/checks-sample.json"` printed one row per requirement: `EX-1.1 non_compliant`, `EX-1.2 partially_compliant`, `EX-2.1 compliant`, `EX-3.1 not_assessed`. `make test`: `total: 118, failed: 0`. Evidence: [`docs/evidence/s01/s01-04.md`](../evidence/s01/s01-04.md).
 
 ### s01-05 Audit update plan
-- [ ] Done
+- [x] Done
 
 **Story:** As the publisher, I want a plan of exactly which audit updates to send, so that publishing is a dumb loop over a pure plan.
 
@@ -118,11 +118,18 @@ All code in this sprint lives in `src/EvidenceHound.Core` and is tested in `test
 **Functional check**
 - `make run ARGS="plan --dry-run --config examples/example-pty-ltd.yaml --checks tests/fixtures/checks-sample.json"` prints the planned messages as JSON.
 
+**Functional check result (2026-11-21):** `make run ARGS="plan --dry-run --config examples/example-pty-ltd.yaml --checks tests/fixtures/checks-sample.json"` printed 11 dispatcher messages: 5 `upload_attachment`, 4 `update_requirement_assessment`, 2 `update_applied_control`. `make test`: `total: 136, failed: 0`. Evidence: [`docs/evidence/s01/s01-05.md`](../evidence/s01/s01-05.md).
+
 ## Discovered work
 
 - s01-01: the error record is `Problem`, not `Error`, because CA1716 rejects `Error` (a Visual Basic keyword). Later sprint files that say `Error` mean `Problem`.
 - s01-03: "unknown check IDs warn" needs a catalogue of known check IDs. The loader takes an optional known set and returns warnings, but nothing supplies one yet, so `hound mapping validate` cannot warn. Wire it up when collectors declare their checks (s04 collector SDK).
 - s01-04: `ComplianceResult` has a fifth value, `NotApplicable`, for a requirement whose checks are all not applicable (CISO Assistant's `not_applicable`). s01-05 and s02 map it through.
 - s01-04: the check results JSON reader (`CheckResultsJson`) lives in the CLI for now. Move it next to the collector SDK when collectors write that file (s03/s04).
+- s01-05: `PlanUpdates` returns `Result<IReadOnlyList<AuditUpdate>>`: a result citing evidence that is not in the run, or a control key missing from the target, is a returned problem.
+- s01-05: `update_requirement_assessment` values carry `evidences` as evidence `ref_id`s. CISO Assistant's API wants evidence IDs, so the s02 REST publisher must look them up, and the Kafka sink must do the same or drop the field (the dispatcher passes values straight to PATCH).
+- s01-05: the check results file now also carries `evidence` and `control_statuses`, and the config has a single `target` (mapping, `compliance_assessment`, `controls`). s03's full config schema should keep these names or migrate them.
+- s01-05: a dry-run plan describes evidence files in `file_content` instead of reading them; the s02 publisher supplies the real base64 content.
+- Coverage: the s00 code has 7 uncovered lines (`ConfigFile` YAML error branch, `HoundCli` default arm, `Program.cs`). Worth a small test in s02.
 
 ## Sprint review
