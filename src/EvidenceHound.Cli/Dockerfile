@@ -4,14 +4,15 @@
 # Runs as the non-root `app` user and works on a read-only root filesystem.
 # Base images are pinned by digest; Dependabot keeps them current.
 
-FROM mcr.microsoft.com/dotnet/sdk:10.0@sha256:bef136a371963aaa46ec97882845ef6f54dec15728bb4b128b1c2a400ffbc9b4 AS build
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0@sha256:bef136a371963aaa46ec97882845ef6f54dec15728bb4b128b1c2a400ffbc9b4 AS build
 WORKDIR /src
 # global.json is left out: it pins the dev SDK band, and this stage uses the SDK image pinned above.
 COPY Directory.Build.props Directory.Packages.props ./
 COPY src/ src/
 RUN dotnet restore src/EvidenceHound.Cli/EvidenceHound.Cli.csproj --locked-mode
-# Publish for the target architecture only (one of the csproj's RuntimeIdentifiers),
-# so native libraries for other platforms stay out of the image.
+# The SDK stage runs on the build machine's platform and publishes for the target architecture only
+# (one of the csproj's RuntimeIdentifiers), so arm64 needs no emulation and other platforms' native
+# libraries stay out of the image.
 ARG TARGETARCH=amd64
 RUN rid="linux-$([ "$TARGETARCH" = arm64 ] && echo arm64 || echo x64)" \
  && dotnet publish src/EvidenceHound.Cli/EvidenceHound.Cli.csproj --no-restore -c Release -o /app \
