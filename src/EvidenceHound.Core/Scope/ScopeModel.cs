@@ -92,6 +92,12 @@ public sealed record SignOff(string Period, string By, string Date)
     public SourceLine? At { get; init; }
 }
 
+/// <summary>
+/// One period of an audit series, as the plan sees it on the day: the series' <c>ref_id</c>, its status (<c>in_progress</c> while open,
+/// <c>in_review</c> once ended, <c>done</c> once closed), whether it is locked, and the previous period it was opened from.
+/// </summary>
+public sealed record PeriodState(string Series, string Status, bool Locked, string? Baseline);
+
 /// <summary>What happens to in-group requirements the audit file does not list: not assessed, or not applicable with a reason.</summary>
 public sealed record UnlistedRule(ComplianceResult Result, string? Reason, SourceLine At);
 
@@ -126,6 +132,9 @@ public sealed record ScopeAudit(
     public AuditCycle? Cycle { get; init; }
 
     public IReadOnlyList<SignOff> SignOffs { get; init; } = [];
+
+    /// <summary>Set on the period audits a series expands into; null for an audit without a cycle.</summary>
+    public PeriodState? Period { get; init; }
 
     /// <summary>Required; null when the file leaves it out, which validation reports.</summary>
     public UnlistedRule? Unlisted { get; init; }

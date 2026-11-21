@@ -87,7 +87,10 @@ public static class ScopePlanner
     /// object's leave out a <c>ref_id</c> the scope does not declare, because CISO Assistant fills a blank <c>ref_id</c> in itself.
     /// </summary>
     private static Dictionary<string, string> Comparable(ScopeKind kind, IReadOnlyDictionary<string, string> held, IReadOnlyDictionary<string, string> wanted) =>
-        held.Where(h => kind == ScopeKind.Assessment ? wanted.ContainsKey(h.Key) : h.Key != "ref_id" || wanted.ContainsKey(h.Key)).ToDictionary(StringComparer.Ordinal);
+        held.Where(h => kind == ScopeKind.Assessment || Optional(kind, h.Key) ? wanted.ContainsKey(h.Key) : h.Key != "ref_id" || wanted.ContainsKey(h.Key)).ToDictionary(StringComparer.Ordinal);
+
+    /// <summary>Fields compared only when the scope declares them: an audit's status and lock, which only a period audit declares.</summary>
+    private static bool Optional(ScopeKind kind, string field) => kind == ScopeKind.Audit && field is "status" or "locked";
 
     /// <summary>The declared object with the links CISO Assistant already holds added to its own.</summary>
     private static ScopeObject Linked(ScopeObject declared, IReadOnlyDictionary<string, string> held)

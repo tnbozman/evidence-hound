@@ -21,6 +21,7 @@ public static class ScopeDesired
     {
         ArgumentNullException.ThrowIfNull(scope);
         ArgumentNullException.ThrowIfNull(inputs);
+        scope = scope with { Audits = [.. scope.Audits.SelectMany(a => a.Cycle is null ? [a] : Periods(a, a.Cycle, inputs.Today))] };
         var setup = scope.Setup;
         return
         [
@@ -34,7 +35,11 @@ public static class ScopeDesired
                 ("domain", d.Name), ("parents", Joined(s.Parents.Select(p => p.Value))))))),
             .. scope.Audits.Select(a => new ScopeObject(ScopeKind.Audit, a.RefId, Fields(
                 ("name", a.Name), ("framework", a.Framework.Value), ("groups", Joined(a.Groups.Select(g => g.Value))), ("domain", a.Domain.Value),
-                ("perimeter", a.Perimeter.Value), ("eta", a.Eta), ("due_date", a.DueDate), ("authors", Joined(a.Authors)), ("reviewers", Joined(a.Reviewers))))),
+                ("perimeter", a.Perimeter.Value), ("eta", a.Eta), ("due_date", a.DueDate), ("authors", Joined(a.Authors)), ("reviewers", Joined(a.Reviewers)),
+                ("status", a.Period?.Status), ("locked", a.Period is { Locked: true } ? "true" : null)))
+            {
+                Initial = Fields(("baseline", a.Period?.Baseline)),
+            }),
             .. scope.Audits.SelectMany(a => a.Documents.Select(d => (Audit: a, Document: d))).DistinctBy(x => x.Document.Id).Select(x => Document(x.Audit, x.Document, inputs)),
             .. scope.Controls.Select(c => new ScopeObject(ScopeKind.Control, c.RefId, Fields(
                 ("name", c.Name), ("description", c.Description), ("domain", c.Domain?.Value), ("owner", c.Owner), ("priority", c.Priority), ("category", c.Category),
@@ -57,6 +62,32 @@ public static class ScopeDesired
         };
     }
 
+    /// <summary>
+    /// An audit with a cycle as its period audits, from the first period to the one open on <paramref name="today"/>. The open period carries the
+    /// file's documents, controls and assessments; an ended one is in review until it closes (signed off in the file, or at once with
+    /// <c>close: auto</c>), when it is done and locked. Each period opens from the previous one as its baseline.
+    /// </summary>
+    private static IEnumerable<ScopeAudit> Periods(ScopeAudit audit, AuditCycle cycle, DateOnly? today)
+    {
+        var periods = today is { } day ? AuditPeriods.Until(audit.RefId, cycle, day) : [];
+        var signed = audit.SignOffs.Select(s => s.Period).ToHashSet(StringComparer.Ordinal);
+        for (var i = 0; i < periods.Count; i++)
+        {
+            var period = periods[i];
+            var open = i == periods.Count - 1;
+            var closed = !open && (cycle.Close == "auto" || signed.Contains(period.Label));
+            var state = new PeriodState(audit.RefId, open ? "in_progress" : closed ? "done" : "in_review", closed, i > 0 ? periods[i - 1].RefId : null);
+            var periodAudit = audit with
+            {
+                RefId = period.RefId,
+                Name = $"{audit.Name} {period.Label}",
+                Eta = period.End.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                Period = state,
+            };
+            yield return open ? periodAudit : periodAudit with { Documents = [], Controls = [], Assessments = [] };
+        }
+    }
+
     private static ScopeObject Document(ScopeAudit audit, ScopeEvidenceDocument document, ScopeInputs inputs)
     {
         var files = inputs.Files.GetValueOrDefault(document.Id) ?? [];
@@ -73,6 +104,11 @@ public static class ScopeDesired
     /// </summary>
     private static IEnumerable<ScopeObject> Rows(ScopeDocument scope, ScopeAudit audit, ScopeInputs inputs)
     {
+        if (audit.Period is { Status: not "in_progress" })
+        {
+            return [];
+        }
+
         var rows = new Dictionary<string, Dictionary<string, string?>>(StringComparer.Ordinal);
         Dictionary<string, string?> Row(string requirement) =>
             rows.TryGetValue(requirement, out var row) ? row : rows[requirement] = new Dictionary<string, string?>(StringComparer.Ordinal);
@@ -123,7 +159,7 @@ public static class ScopeDesired
         RequirementKey[] covered =
         [
             .. audit.Assessments.Select(h => h.Requirement.Key),
-            .. inputs.Targets.Where(t => t.AuditRefId == audit.RefId).SelectMany(t => t.Computed),
+            .. inputs.Targets.Where(t => t.AuditRefId == (audit.Period?.Series ?? audit.RefId)).SelectMany(t => t.Computed),
         ];
         var repeated = snapshot.Nodes.Where(n => n.RefId is not null).GroupBy(n => n.RefId!, StringComparer.Ordinal).Where(g => g.Count() > 1).Select(g => g.Key).ToHashSet(StringComparer.Ordinal);
         return snapshot.Nodes

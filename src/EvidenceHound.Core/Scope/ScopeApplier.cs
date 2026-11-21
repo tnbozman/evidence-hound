@@ -93,6 +93,11 @@ public static class ScopeApplier
             }
         }
 
+        if (declared.Initial.TryGetValue("baseline", out var baseline))
+        {
+            yield return (ScopeKind.Audit, baseline);
+        }
+
         if (fields.TryGetValue("framework", out var framework))
         {
             yield return (ScopeKind.Framework, framework);
