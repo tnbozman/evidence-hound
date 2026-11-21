@@ -64,6 +64,55 @@ public sealed class CliTests : IDisposable
         _error.ToString().ShouldContain("--dry-run");
     }
 
+    [Fact]
+    public async Task Mapping_validate_prints_requirement_count()
+    {
+        var mapping = Path.Combine(_workDir, "mapping.yaml");
+        await File.WriteAllTextAsync(mapping, """
+            framework_urn: urn:example:risk:library:example-baseline
+            requirements:
+              - ref: "1.1"
+                rule: all_pass
+                checks: [identity.mfa.admins]
+              - ref: "1.2"
+                rule: any_pass
+                checks: [backup.restore_tested]
+            """, TestContext.Current.CancellationToken);
+
+        var exitCode = await Run("mapping", "validate", mapping);
+
+        exitCode.ShouldBe(0);
+        _output.ToString().Trim().ShouldBe("valid: 2 requirements");
+    }
+
+    [Fact]
+    public async Task Mapping_validate_reports_problems_and_exits_three()
+    {
+        var mapping = Path.Combine(_workDir, "bad.yaml");
+        await File.WriteAllTextAsync(mapping, """
+            framework_urn: urn:example:risk:library:example-baseline
+            requirements:
+              - ref: "1.1"
+                rule: most_pass
+                checks: [identity.mfa.admins]
+            """, TestContext.Current.CancellationToken);
+
+        var exitCode = await Run("mapping", "validate", mapping);
+
+        exitCode.ShouldBe(3);
+        _error.ToString().ShouldContain("line 4");
+        _error.ToString().ShouldContain("most_pass");
+    }
+
+    [Fact]
+    public async Task Mapping_validate_with_missing_file_exits_three()
+    {
+        var exitCode = await Run("mapping", "validate", Path.Combine(_workDir, "missing.yaml"));
+
+        exitCode.ShouldBe(3);
+        _error.ToString().ShouldContain("missing.yaml");
+    }
+
     public void Dispose()
     {
         _output.Dispose();

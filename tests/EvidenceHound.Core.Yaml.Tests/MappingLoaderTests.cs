@@ -1,0 +1,141 @@
+using EvidenceHound.Core.Checks;
+using EvidenceHound.Core.Mapping;
+
+namespace EvidenceHound.Core.Yaml.Tests;
+
+public class MappingLoaderTests
+{
+    private const string Source = "mappings/test.yaml";
+
+    [Fact]
+    public void Loads_valid_example_mapping()
+    {
+        var loaded = MappingLoader.Parse(RepoFiles.ExampleMapping, "mappings/example.yaml").Value();
+
+        loaded.Mapping.FrameworkUrn.ShouldStartWith("urn:");
+        loaded.Mapping.Requirements.Count.ShouldBeGreaterThanOrEqualTo(3);
+        loaded.Mapping.Requirements.Select(r => r.Rule).Distinct().Count().ShouldBe(3);
+        loaded.Warnings.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void Parses_every_rule_and_keeps_order()
+    {
+        const string yaml = """
+            framework_urn: urn:example:risk:library:example-baseline
+            requirements:
+              - ref: "1.1"
+                rule: all_pass
+                checks: [identity.mfa.admins, identity.mfa.users]
+              - ref: "1.2"
+                rule: any_pass
+                checks: [backup.restore_tested]
+              - ref: "1.3"
+                rule: threshold
+                threshold: 2
+                checks: [patching.os.critical, patching.apps.critical, patching.os.supported]
+            """;
+
+        var mapping = MappingLoader.Parse(yaml, Source).Value().Mapping;
+
+        mapping.FrameworkUrn.ShouldBe("urn:example:risk:library:example-baseline");
+        mapping.Requirements.Select(r => r.RequirementRef).ShouldBe(["1.1", "1.2", "1.3"]);
+        mapping.Requirements.Select(r => r.Rule).ShouldBe([MappingRule.AllPass, MappingRule.AnyPass, MappingRule.Threshold(2)]);
+        mapping.Requirements[0].Checks.Select(c => c.Value).ShouldBe(["identity.mfa.admins", "identity.mfa.users"]);
+    }
+
+    [Fact]
+    public void Duplicate_requirement_ref_fails_with_line_number()
+    {
+        const string yaml = """
+            framework_urn: urn:example:risk:library:example-baseline
+            requirements:
+              - ref: "1.1"
+                rule: all_pass
+                checks: [identity.mfa.admins]
+              - ref: "1.1"
+                rule: any_pass
+                checks: [identity.mfa.users]
+            """;
+
+        var problem = MappingLoader.Parse(yaml, Source).Problems().Single();
+
+        problem.Code.ShouldBe("mapping.duplicate_requirement_ref");
+        problem.Message.ShouldContain($"{Source} line 6");
+        problem.Message.ShouldContain("'1.1'");
+        problem.Message.ShouldContain("line 3");
+    }
+
+    [Fact]
+    public void Unknown_rule_fails()
+    {
+        const string yaml = """
+            framework_urn: urn:example:risk:library:example-baseline
+            requirements:
+              - ref: "1.1"
+                rule: most_pass
+                checks: [identity.mfa.admins]
+            """;
+
+        var problem = MappingLoader.Parse(yaml, Source).Problems().Single();
+
+        problem.Code.ShouldBe("mapping.rule_unknown");
+        problem.Message.ShouldContain($"{Source} line 4");
+        problem.Message.ShouldContain("most_pass");
+    }
+
+    [Fact]
+    public void Every_problem_is_reported_with_its_line()
+    {
+        const string yaml = """
+            framework_urn: urn:example:risk:library:example-baseline
+            requirements:
+              - ref: "1.1"
+                rule: threshold
+                checks: [identity.mfa.admins]
+              - ref: "1.2"
+                rule: all_pass
+                checks: [Identity.MFA]
+              - ref: "1.3"
+                rule: all_pass
+                colour: blue
+                checks: [identity.mfa.admins]
+            """;
+
+        var problems = MappingLoader.Parse(yaml, Source).Problems();
+
+        problems.Select(p => p.Code).ShouldBe(["mapping.threshold_missing", "check_id.invalid", "mapping.key_unknown"]);
+        problems.Select(p => p.Message).ShouldAllBe(m => m.StartsWith($"{Source} line ", StringComparison.Ordinal));
+        problems[1].Message.ShouldContain("line 8");
+        problems[2].Message.ShouldContain("line 11");
+    }
+
+    [Theory]
+    [InlineData("framework_urn: [", "mapping.yaml_invalid")]
+    [InlineData("", "mapping.document_empty")]
+    [InlineData("- a\n- b\n", "mapping.document_not_a_map")]
+    [InlineData("requirements: []\n", "mapping.key_missing")]
+    [InlineData("framework_urn: urn:example:x\nrequirements: {}\n", "mapping.requirements_not_a_list")]
+    public void Malformed_documents_fail(string yaml, string code)
+    {
+        MappingLoader.Parse(yaml, Source).Problems().First().Code.ShouldBe(code);
+    }
+
+    [Fact]
+    public void Unknown_check_ids_are_allowed_with_a_warning()
+    {
+        const string yaml = """
+            framework_urn: urn:example:risk:library:example-baseline
+            requirements:
+              - ref: "1.1"
+                rule: all_pass
+                checks: [identity.mfa.admins, identity.mfa.contractors]
+            """;
+        var known = new HashSet<CheckId> { CheckId.Create("identity.mfa.admins").Value() };
+
+        var loaded = MappingLoader.Parse(yaml, Source, known).Value();
+
+        loaded.Mapping.Requirements.Single().Checks.Count.ShouldBe(2);
+        loaded.Warnings.Single().ShouldBe($"{Source} line 5: check 'identity.mfa.contractors' is not a known check.");
+    }
+}
