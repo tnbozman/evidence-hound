@@ -159,3 +159,23 @@ It writes every kind:
 The report is JSON: how many changes were `written`, `failed` and `skipped`, and each change with its outcome. A change that depends on one that failed is skipped, such as a domain's perimeters and systems when the domain could not be written, or a system whose parent could not be; other changes go on. The exit code is 4 when any write failed.
 
 Names are turned into IDs before anything is sent: the domain's folder, parent systems by name, frameworks and perimeters, and owners, authors and reviewers by user email (as CISO Assistant actors). A name that cannot be found fails that write and sends nothing for it.
+
+## Export
+
+```sh
+HOUND_CA_URL=http://localhost:8000/api/ HOUND_CA_TOKEN=… hound scope export --out compliance-repo/scope [--root-folder Global] [--with-files]
+```
+
+Export is the way in for an organisation that set up CISO Assistant by hand. It reads CISO Assistant (GET requests only) and writes the scope folder from what it holds under the root folder:
+
+- `setup.yaml`: the root folder, each framework an audit uses (with its library and a snapshot under `frameworks/`, made from CISO Assistant's own copy so the files validate offline), and each domain with its perimeters and systems.
+- `controls.yaml`: every applied control, with its systems and documents.
+- `audits/<ref_id>.yaml`: each compliance assessment, with the documents and controls its rows link (each with the requirements it is linked to), and its hand-written results as `assessments`. `unlisted` is `not_assessed`, which changes nothing until you give `--config`.
+
+What is left out, because collectors and manual sources rebuild it: rows a run computed (their observation ends with a run marker), rows still to do and not assessed, and evidence in the root folder, which is where runs put theirs. A control's status and reference control, a system's tags and an audit's field visibility are not exported; add them by hand if you want the files to set them. Libraries CISO Assistant loaded that no audit uses, such as mapping sets, are not listed either.
+
+Everything is sorted and written the same way each time, so exporting an unchanged instance again gives no diff. With `--with-files`, each document's latest file is downloaded to `documents/<id>/` next to the scope folder and listed in the audit file; without it, documents list no files and CISO Assistant keeps the ones it has.
+
+An audit, control or document without a `ref_id` is given one made from its name (`Essential Eight review 2026` becomes `ESSENTIAL-EIGHT-REVIEW-2026`; a document's is lower case). `scope plan` matches the object by that name until the next `scope apply` writes the `ref_id` to it.
+
+Planning a fresh export of an instance `hound` manages lists no changes. Objects made by hand carry no marker yet, so the first plan lists each as "mark as managed"; the first apply marks them and writes any missing `ref_id`, and nothing else changes.
