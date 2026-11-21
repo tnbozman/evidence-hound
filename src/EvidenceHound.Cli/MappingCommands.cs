@@ -13,9 +13,13 @@ internal static class MappingCommands
     {
         var logger = loggers.CreateLogger("hound.mapping");
         var file = new Argument<FileInfo>("file") { Description = "Path to a framework mapping file (YAML)." };
-        var validate = new Command("validate", "Check a mapping file and report its problems with line numbers.") { file };
+        var framework = new Option<FileInfo?>("--framework")
+        {
+            Description = "A framework snapshot (from 'hound framework snapshot'): also report unknown URNs and refs, and refs that match several rows.",
+        };
+        var validate = new Command("validate", "Check a mapping file and report its problems with line numbers.") { file, framework };
         validate.SetAction((parseResult, cancellationToken) =>
-            ValidateAsync(parseResult.GetRequiredValue(file), output, logger, cancellationToken));
+            ValidateAsync(parseResult.GetRequiredValue(file), parseResult.GetValue(framework), output, logger, cancellationToken));
 
         var mappingFile = new Argument<FileInfo>("mapping") { Description = "Path to a framework mapping file (YAML)." };
         var checksFile = new Argument<FileInfo>("checks") { Description = "Path to a check results file (JSON)." };
@@ -26,9 +30,19 @@ internal static class MappingCommands
         return new Command("mapping", "Work with framework mapping files.") { validate, apply };
     }
 
-    private static async Task<int> ValidateAsync(FileInfo file, TextWriter output, ILogger logger, CancellationToken cancellationToken)
+    private static async Task<int> ValidateAsync(FileInfo file, FileInfo? framework, TextWriter output, ILogger logger, CancellationToken cancellationToken)
     {
         var load = await LoadAsync(file, cancellationToken);
+        if (framework is not null)
+        {
+            var snapshot = await FrameworkCommands.LoadSnapshotAsync(framework, cancellationToken);
+            load = load.Bind(loaded => snapshot.Bind(s => MappingValidator.Validate(loaded, s) switch
+            {
+                [] => Result.Ok(loaded),
+                var problems => Result.Fail<LoadedMapping>(problems),
+            }));
+        }
+
         return await load.Match(
             async loaded =>
             {

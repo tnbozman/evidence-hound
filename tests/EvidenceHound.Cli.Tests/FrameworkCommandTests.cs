@@ -51,7 +51,7 @@ public sealed class FrameworkCommandTests : IDisposable
         var exitCode = await Run("mapping", "validate", mapping, "--framework", snapshot);
 
         exitCode.ShouldBe(ExitCodes.Configuration);
-        _error.ToString().ShouldContain("mapping.ref_ambiguous");
+        _error.ToString().ShouldContain("matches 2 rows");
         _error.ToString().ShouldContain("urn:example:risk:req_node:example-repeated:idn:act-01");
     }
 
