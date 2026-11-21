@@ -9,7 +9,10 @@ public static class ScopePlanner
     /// </summary>
     /// <remarks>
     /// Creates and updates come in dependency order (<see cref="ScopeKind"/>), deletes after them in reverse. A managed object whose fields no
-    /// longer match the state <c>hound</c> recorded on it was edited in CISO Assistant: it is reported as drift and written back.
+    /// longer match the state <c>hound</c> recorded on it was edited in CISO Assistant: it is reported as drift and written back. Links (a
+    /// control's systems and documents, a row's controls and documents, a document's file hashes) are added to what CISO Assistant holds, and
+    /// removed only with <paramref name="prune"/>. A locked audit and its rows are never changed, and a framework loaded from an older library
+    /// version is never upgraded: both are reported as drift.
     /// </remarks>
     public static ScopePlan Plan(IReadOnlyList<ScopeObject> declared, IReadOnlyList<ActualObject> actual, bool prune)
     {
@@ -17,18 +20,36 @@ public static class ScopePlanner
         ArgumentNullException.ThrowIfNull(actual);
         var held = actual.GroupBy(a => (a.Held.Kind, a.Held.Key)).ToDictionary(g => g.Key, g => g.First());
         var wanted = declared.Select(d => (d.Kind, d.Key)).ToHashSet();
+        var locked = actual.Where(a => a.Locked && a.Held.Kind == ScopeKind.Audit).Select(a => a.Held.Key).ToHashSet(StringComparer.Ordinal);
         var changes = new List<ScopeChange>();
         var drift = new List<ScopeDrift>();
 
-        foreach (var want in declared.OrderBy(d => d.Kind))
+        foreach (var declaredObject in declared.OrderBy(d => d.Kind))
         {
-            if (!held.TryGetValue((want.Kind, want.Key), out var have))
+            var isLocked = IsLocked(declaredObject, locked);
+            if (!held.TryGetValue((declaredObject.Kind, declaredObject.Key), out var have))
             {
-                changes.Add(new ScopeChange(want.Kind, want.Key, ScopeAction.Create, [.. Created(want)], StateOf(want)));
+                var created = Created(declaredObject).ToList();
+                if (isLocked)
+                {
+                    drift.Add(new ScopeDrift(declaredObject.Kind, declaredObject.Key, DriftReason.Locked, Managed: false, created));
+                }
+                else
+                {
+                    changes.Add(new ScopeChange(declaredObject.Kind, declaredObject.Key, ScopeAction.Create, created, StateOf(declaredObject)) { Desired = declaredObject });
+                }
+
                 continue;
             }
 
-            var comparable = Comparable(have.Held.Fields, want.Fields);
+            if (declaredObject.Kind == ScopeKind.Framework)
+            {
+                drift.AddRange(Outdated(declaredObject, have));
+                continue;
+            }
+
+            var want = prune ? declaredObject : Linked(declaredObject, have.Held.Fields);
+            var comparable = Comparable(want.Kind, have.Held.Fields, want.Fields);
             var differences = Differences(comparable, want.Fields);
             var marked = Marked(want.Kind);
             if (marked && have.Managed && have.AppliedState != ScopeMarker.Fingerprint(comparable))
@@ -36,9 +57,18 @@ public static class ScopePlanner
                 drift.Add(new ScopeDrift(want.Kind, want.Key, DriftReason.Edited, Managed: true, differences));
             }
 
-            if (differences.Count > 0 || (marked && have.AppliedState != StateOf(want)))
+            if (differences.Count == 0 && !(marked && have.AppliedState != StateOf(want)))
             {
-                changes.Add(new ScopeChange(want.Kind, want.Key, ScopeAction.Update, differences, StateOf(want)));
+                continue;
+            }
+
+            if (isLocked)
+            {
+                drift.Add(new ScopeDrift(want.Kind, want.Key, DriftReason.Locked, have.Managed, differences));
+            }
+            else
+            {
+                changes.Add(new ScopeChange(want.Kind, want.Key, ScopeAction.Update, differences, StateOf(want)) { Desired = want });
             }
         }
 
@@ -46,15 +76,70 @@ public static class ScopePlanner
         drift.AddRange(extra.Select(a => new ScopeDrift(a.Held.Kind, a.Held.Key, DriftReason.NotInScope, a.Managed, [])));
         if (prune)
         {
-            changes.AddRange(extra.Where(a => a.Managed).Select(a => new ScopeChange(a.Held.Kind, a.Held.Key, ScopeAction.Delete, [], null)));
+            changes.AddRange(extra.Where(a => a.Managed && !a.Locked).Select(a => new ScopeChange(a.Held.Kind, a.Held.Key, ScopeAction.Delete, [], null)));
         }
 
         return new ScopePlan(changes, drift);
     }
 
-    /// <summary>The held fields, without a <c>ref_id</c> the scope leaves out: CISO Assistant fills a blank <c>ref_id</c> in itself.</summary>
-    private static Dictionary<string, string> Comparable(IReadOnlyDictionary<string, string> held, IReadOnlyDictionary<string, string> wanted) =>
-        held.Where(h => h.Key != "ref_id" || wanted.ContainsKey(h.Key)).ToDictionary(StringComparer.Ordinal);
+    /// <summary>
+    /// The held fields to compare: a row's are only those the scope declares, because CISO Assistant and the run publisher own the rest. Any other
+    /// object's leave out a <c>ref_id</c> the scope does not declare, because CISO Assistant fills a blank <c>ref_id</c> in itself.
+    /// </summary>
+    private static Dictionary<string, string> Comparable(ScopeKind kind, IReadOnlyDictionary<string, string> held, IReadOnlyDictionary<string, string> wanted) =>
+        held.Where(h => kind == ScopeKind.Assessment ? wanted.ContainsKey(h.Key) : h.Key != "ref_id" || wanted.ContainsKey(h.Key)).ToDictionary(StringComparer.Ordinal);
+
+    /// <summary>The declared object with the links CISO Assistant already holds added to its own.</summary>
+    private static ScopeObject Linked(ScopeObject declared, IReadOnlyDictionary<string, string> held)
+    {
+        var links = LinkFields(declared.Kind);
+        if (links.Length == 0)
+        {
+            return declared;
+        }
+
+        var fields = new Dictionary<string, string>(declared.Fields, StringComparer.Ordinal);
+        foreach (var link in links.Where(held.ContainsKey))
+        {
+            var joined = ScopeDesired.Joined(Split(fields.GetValueOrDefault(link)).Union(Split(held[link]), StringComparer.Ordinal));
+            if (joined is not null)
+            {
+                fields[link] = joined;
+            }
+        }
+
+        return declared with { Fields = fields };
+    }
+
+    private static string[] LinkFields(ScopeKind kind) => kind switch
+    {
+        ScopeKind.Control => ["systems", "documents"],
+        ScopeKind.Assessment => ["controls", "documents"],
+        ScopeKind.Document => ["hashes"],
+        _ => [],
+    };
+
+    private static string[] Split(string? joined) => joined is null ? [] : joined.Split(", ", StringSplitOptions.RemoveEmptyEntries);
+
+    /// <summary>An audit locked in CISO Assistant, or a row of one.</summary>
+    private static bool IsLocked(ScopeObject declared, HashSet<string> lockedAudits) => declared.Kind switch
+    {
+        ScopeKind.Audit => lockedAudits.Contains(declared.Key),
+        ScopeKind.Assessment => lockedAudits.Contains(declared.Key.Split('/', 2)[0]),
+        _ => false,
+    };
+
+    /// <summary>A framework whose loaded library is older than the scope's snapshot.</summary>
+    private static IEnumerable<ScopeDrift> Outdated(ScopeObject declared, ActualObject held)
+    {
+        if (Version(declared.Fields) is { } wanted && Version(held.Held.Fields) is { } loaded && loaded < wanted)
+        {
+            yield return new ScopeDrift(declared.Kind, declared.Key, DriftReason.Outdated, Managed: false, [new FieldChange("version", held.Held.Fields["version"], declared.Fields["version"])]);
+        }
+    }
+
+    private static int? Version(IReadOnlyDictionary<string, string> fields) =>
+        fields.TryGetValue("version", out var text) && int.TryParse(text, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var version) ? version : null;
 
     /// <summary>Frameworks come from libraries and assessments are rows of an audit: neither carries a marker, nor is ever deleted.</summary>
     private static bool Marked(ScopeKind kind) => kind is not (ScopeKind.Framework or ScopeKind.Assessment);

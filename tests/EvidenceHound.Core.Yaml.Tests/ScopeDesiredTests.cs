@@ -22,6 +22,7 @@ public class ScopeDesiredTests
             (ScopeKind.Control, "AC-MFA"),
             (ScopeKind.Control, "AC-BACKUP"),
             (ScopeKind.Assessment, "EXAMPLE-BASELINE-2026/EX-1.2"),
+            (ScopeKind.Assessment, "EXAMPLE-BASELINE-2026/EX-1.1"),
         ]);
     }
 
@@ -61,6 +62,12 @@ public class ScopeDesiredTests
             ["status"] = "done",
             ["result"] = "compliant",
             ["observation"] = "Reviewed by hand.",
+            ["controls"] = "AC-MFA",
+        });
+        declared[(ScopeKind.Assessment, "EXAMPLE-BASELINE-2026/EX-1.1")].Fields.ShouldBe(new Dictionary<string, string>
+        {
+            ["controls"] = "AC-MFA",
+            ["documents"] = "mfa-policy",
         });
     }
 

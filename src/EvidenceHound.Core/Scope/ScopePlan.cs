@@ -55,7 +55,11 @@ public sealed record FieldChange(string Field, string? Old, string? New);
 /// One write the plan makes. <paramref name="State"/> is the fingerprint to record on the object, marking it managed; null for objects that carry
 /// no marker (frameworks and assessments) and for deletes. An update with no fields only marks an object the scope declares as managed.
 /// </summary>
-public sealed record ScopeChange(ScopeKind Kind, string Key, ScopeAction Action, IReadOnlyList<FieldChange> Fields, string? State);
+public sealed record ScopeChange(ScopeKind Kind, string Key, ScopeAction Action, IReadOnlyList<FieldChange> Fields, string? State)
+{
+    /// <summary>The object to write: the declared one, with the links CISO Assistant already holds added unless the plan prunes. Null for a delete.</summary>
+    public ScopeObject? Desired { get; init; }
+}
 
 public enum DriftReason
 {

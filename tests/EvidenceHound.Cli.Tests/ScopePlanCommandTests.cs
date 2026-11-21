@@ -38,7 +38,7 @@ public sealed class ScopePlanCommandTests : IDisposable
         exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
         var markdown = _output.ToString();
         markdown.ShouldStartWith("## Scope plan\n");
-        markdown.ShouldContain("6 to create, 0 to update, 0 to delete. No drift.");
+        markdown.ShouldContain("7 to create, 0 to update, 0 to delete. No drift.");
         markdown.ShouldContain("| Create | framework | urn:example:risk:framework:example-baseline |");
         markdown.ShouldContain("| Create | domain | Example Pty Ltd |");
         markdown.ShouldContain("| Create | perimeter | Example Pty Ltd/Example baseline | name: Example baseline<br>domain: Example Pty Ltd |");
@@ -121,7 +121,7 @@ public sealed class ScopePlanCommandTests : IDisposable
 
         exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
         var report = JsonNode.Parse(_output.ToString())!;
-        (report["written"]!.GetValue<int>(), report["failed"]!.GetValue<int>(), report["skipped"]!.GetValue<int>(), report["not_applied"]!.GetValue<int>()).ShouldBe((3, 0, 0, 3));
+        (report["written"]!.GetValue<int>(), report["failed"]!.GetValue<int>(), report["skipped"]!.GetValue<int>(), report["not_applied"]!.GetValue<int>()).ShouldBe((3, 0, 0, 4));
         report["changes"]!.AsArray().Select(c => (c!["action"]!.GetValue<string>(), c["kind"]!.GetValue<string>(), c["outcome"]!.GetValue<string>())).ShouldBe(
             [("update", "domain", "written"), ("create", "perimeter", "written"), ("create", "system", "written")]);
         _ca.LogEntries.Where(e => e.RequestMessage!.Method != "GET").Select(e => (e.RequestMessage!.Method, e.RequestMessage.Path)).ShouldBe(

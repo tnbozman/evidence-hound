@@ -39,7 +39,7 @@ public static class ScopeApplier
 {
     /// <summary>
     /// Writes each change of the <paramref name="kinds"/> this version applies; changes of other kinds are counted, not written. A change whose
-    /// domain, parent system, perimeter, framework, system, document or audit failed or was skipped in this apply is skipped too, so a failed
+    /// domain, parent system, perimeter, framework, system, document, control or audit failed or was skipped in this apply is skipped too, so a failed
     /// write stops only what depends on it.
     /// </summary>
     public static async Task<ScopeApplyReport> ApplyAsync(
@@ -54,7 +54,7 @@ public static class ScopeApplier
         var applied = new List<AppliedChange>();
         foreach (var change in plan.Changes.Where(c => kinds.Contains(c.Kind)))
         {
-            var target = change.Action == ScopeAction.Delete ? null : objects.GetValueOrDefault((change.Kind, change.Key));
+            var target = change.Action == ScopeAction.Delete ? null : change.Desired ?? objects.GetValueOrDefault((change.Kind, change.Key));
             if (target is not null && DependsOn(target).FirstOrDefault(notWritten.Contains) is { Item2: not null } blocked)
             {
                 notWritten.Add((change.Kind, change.Key));
@@ -72,7 +72,7 @@ public static class ScopeApplier
                 }));
         }
 
-        return new ScopeApplyReport(applied, plan.Changes.Count(c => !kinds.Contains(c.Kind)), []);
+        return new ScopeApplyReport(applied, plan.Changes.Count(c => !kinds.Contains(c.Kind)), plan.Drift);
     }
 
     /// <summary>The objects a declared object refers to, by the fields that name them.</summary>
@@ -85,7 +85,7 @@ public static class ScopeApplier
             yield return (ScopeKind.Domain, domain);
         }
 
-        foreach (var (field, kind) in new[] { ("parents", ScopeKind.System), ("systems", ScopeKind.System), ("documents", ScopeKind.Document) })
+        foreach (var (field, kind) in new[] { ("parents", ScopeKind.System), ("systems", ScopeKind.System), ("documents", ScopeKind.Document), ("controls", ScopeKind.Control) })
         {
             foreach (var name in Split(fields.GetValueOrDefault(field)))
             {

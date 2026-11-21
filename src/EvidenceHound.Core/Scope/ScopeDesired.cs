@@ -1,3 +1,4 @@
+using System.Globalization;
 using EvidenceHound.Core.Frameworks;
 using EvidenceHound.Core.Mapping;
 
@@ -18,12 +19,15 @@ public static class ScopeDesired
 
     public static IReadOnlyList<ScopeObject> From(ScopeDocument scope, ScopeInputs inputs)
     {
-        ArgumentNullException.ThrowIfNull(inputs);
         ArgumentNullException.ThrowIfNull(scope);
+        ArgumentNullException.ThrowIfNull(inputs);
         var setup = scope.Setup;
         return
         [
-            .. setup.Frameworks.Select(f => new ScopeObject(ScopeKind.Framework, f.Urn, Fields()) { Initial = Fields(("library", f.LibraryUrn), ("file", f.LibraryFile)) }),
+            .. setup.Frameworks.Select(f => new ScopeObject(ScopeKind.Framework, f.Urn, Fields(("version", inputs.Snapshots.GetValueOrDefault(f.Urn)?.Version.ToString(CultureInfo.InvariantCulture))))
+            {
+                Initial = Fields(("library", f.LibraryUrn), ("file", f.LibraryFile)),
+            }),
             .. setup.Domains.Select(d => new ScopeObject(ScopeKind.Domain, d.Name, Fields(("description", d.Description)))),
             .. setup.Domains.SelectMany(d => d.Perimeters.Select(p => new ScopeObject(
                 ScopeKind.Perimeter, PerimeterKey(d.Name, p.Name), Fields(("name", p.Name), ("ref_id", p.RefId), ("description", p.Description), ("domain", d.Name))))),
@@ -33,17 +37,90 @@ public static class ScopeDesired
             .. scope.Audits.Select(a => new ScopeObject(ScopeKind.Audit, a.RefId, Fields(
                 ("name", a.Name), ("framework", a.Framework.Value), ("groups", Joined(a.Groups.Select(g => g.Value))), ("domain", a.Domain.Value),
                 ("perimeter", a.Perimeter.Value), ("eta", a.Eta), ("due_date", a.DueDate), ("authors", Joined(a.Authors)), ("reviewers", Joined(a.Reviewers))))),
-            .. scope.Audits.SelectMany(a => a.Documents.Select(d => (Audit: a, Document: d))).DistinctBy(x => x.Document.Id).Select(x => new ScopeObject(
-                ScopeKind.Document, x.Document.Id, Fields(("name", x.Document.Name), ("domain", x.Audit.Domain.Value)))),
+            .. scope.Audits.SelectMany(a => a.Documents.Select(d => (Audit: a, Document: d))).DistinctBy(x => x.Document.Id).Select(x => Document(x.Audit, x.Document, inputs)),
             .. scope.Controls.Select(c => new ScopeObject(ScopeKind.Control, c.RefId, Fields(
                 ("name", c.Name), ("description", c.Description), ("domain", c.Domain?.Value), ("owner", c.Owner), ("priority", c.Priority), ("category", c.Category),
                 ("eta", c.Eta), ("systems", Joined(c.Systems.Select(s => s.Value))), ("documents", Joined(c.Documents.Select(d => d.Value)))))
             {
                 Initial = Fields(("status", c.Status), ("reference_control", c.ReferenceControl)),
             }),
-            .. scope.Audits.SelectMany(a => a.Assessments.Select(h => new ScopeObject(ScopeKind.Assessment, AssessmentKey(a.RefId, h.Requirement.Key), Fields(
-                ("status", h.Status), ("result", Names.Of(h.Result)), ("observation", h.Observation))))),
+            .. scope.Audits.SelectMany(a => Rows(scope, a, inputs)),
         ];
+    }
+
+    private static ScopeObject Document(ScopeAudit audit, ScopeEvidenceDocument document, ScopeInputs inputs)
+    {
+        var files = inputs.Files.GetValueOrDefault(document.Id) ?? [];
+        return new ScopeObject(ScopeKind.Document, document.Id, Fields(("name", document.Name), ("domain", audit.Domain.Value), ("hashes", Joined(files.Select(f => f.Sha256).Distinct()))))
+        {
+            Files = files,
+        };
+    }
+
+    /// <summary>
+    /// The rows of one audit the scope writes: hand-written results, the controls and documents linked to the rows they cite, and, when the
+    /// deployment's targets are known, the <c>unlisted</c> rule for every other in-group requirement that no mapping computes. A document is
+    /// linked in the audit that declares it and in every audit of the same framework that shares one of its systems.
+    /// </summary>
+    private static IEnumerable<ScopeObject> Rows(ScopeDocument scope, ScopeAudit audit, ScopeInputs inputs)
+    {
+        var rows = new Dictionary<string, Dictionary<string, string?>>(StringComparer.Ordinal);
+        Dictionary<string, string?> Row(string requirement) =>
+            rows.TryGetValue(requirement, out var row) ? row : rows[requirement] = new Dictionary<string, string?>(StringComparer.Ordinal);
+
+        foreach (var hand in audit.Assessments)
+        {
+            var row = Row(hand.Requirement.Key.Value);
+            (row["status"], row["result"], row["observation"]) = (hand.Status, Names.Of(hand.Result), hand.Observation);
+        }
+
+        var links = audit.Controls.SelectMany(c => c.Requirements.Select(r => (Field: "controls", Requirement: r.Key.Value, Value: c.Control.Value)))
+            .Concat(DocumentsCiting(scope, audit).SelectMany(d => d.Requirements.Select(r => (Field: "documents", Requirement: r.Key.Value, Value: d.Id))));
+        foreach (var link in links.GroupBy(l => (l.Requirement, l.Field)))
+        {
+            Row(link.Key.Requirement)[link.Key.Field] = Joined(link.Select(l => l.Value).Distinct());
+        }
+
+        foreach (var (requirement, fields) in Unlisted(audit, inputs))
+        {
+            var row = Row(requirement);
+            foreach (var (name, value) in fields)
+            {
+                row[name] = value;
+            }
+        }
+
+        return rows.Select(r => new ScopeObject(ScopeKind.Assessment, $"{audit.RefId}/{r.Key}", Fields([.. r.Value.Select(f => (f.Key, f.Value))])));
+    }
+
+    private static IEnumerable<ScopeEvidenceDocument> DocumentsCiting(ScopeDocument scope, ScopeAudit audit)
+    {
+        var systems = audit.Systems.Select(s => s.Value).ToHashSet(StringComparer.Ordinal);
+        return scope.Audits
+            .Where(other => other == audit || other.Framework.Value == audit.Framework.Value)
+            .SelectMany(other => other.Documents.Where(d => other == audit || d.Systems.Any(s => systems.Contains(s.Value))))
+            .DistinctBy(d => d.Id);
+    }
+
+    /// <summary>The <c>unlisted</c> rule's fields for each in-group requirement that neither the file lists nor a mapping computes.</summary>
+    private static IEnumerable<(string Requirement, (string Name, string? Value)[] Fields)> Unlisted(ScopeAudit audit, ScopeInputs inputs)
+    {
+        if (inputs.Targets is null || audit.Unlisted is not { } rule || inputs.Snapshots.GetValueOrDefault(audit.Framework.Value) is not { } snapshot)
+        {
+            return [];
+        }
+
+        var groups = audit.Groups.Select(g => g.Value).ToHashSet(StringComparer.Ordinal);
+        RequirementKey[] covered =
+        [
+            .. audit.Assessments.Select(h => h.Requirement.Key),
+            .. inputs.Targets.Where(t => t.AuditRefId == audit.RefId).SelectMany(t => t.Computed),
+        ];
+        var repeated = snapshot.Nodes.Where(n => n.RefId is not null).GroupBy(n => n.RefId!, StringComparer.Ordinal).Where(g => g.Count() > 1).Select(g => g.Key).ToHashSet(StringComparer.Ordinal);
+        return snapshot.Nodes
+            .Where(n => groups.Count == 0 || n.Groups.Count == 0 || n.Groups.Any(groups.Contains))
+            .Where(n => !covered.Any(k => k.Kind == RequirementKeyKind.Urn ? k.Value == n.Urn : k.Value == n.RefId))
+            .Select(n => (n.RefId is { } refId && !repeated.Contains(refId) ? refId : n.Urn, new[] { ("result", (string?)Names.Of(rule.Result)), ("observation", rule.Reason) }));
     }
 
     /// <summary>A perimeter's key: its domain and name, because names are unique only within a domain.</summary>
