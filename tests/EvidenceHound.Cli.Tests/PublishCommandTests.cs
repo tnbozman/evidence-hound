@@ -37,6 +37,21 @@ public sealed class PublishCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task A_plan_that_cannot_be_made_exits_three()
+    {
+        var exitCode = await HoundCli.RunAsync(
+            ["publish", "--config", "missing.yaml", "--checks", "missing.json", "--evidence-dir", "."],
+            _output,
+            _error,
+            logging => logging.AddProvider(_logs),
+            Settings(),
+            TestContext.Current.CancellationToken);
+
+        exitCode.ShouldBe(ExitCodes.Configuration);
+        _ca.LogEntries.ShouldBeEmpty();
+    }
+
+    [Fact]
     public async Task Without_a_token_exits_three()
     {
         var exitCode = await Publish(new Dictionary<string, string?> { ["HOUND_CA_URL"] = ApiUrl });

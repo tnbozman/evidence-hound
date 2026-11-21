@@ -120,6 +120,18 @@ public class PublisherTests
     }
 
     [Fact]
+    public async Task Evidence_lookup_failure_fails_its_upload_and_the_requirements_citing_it()
+    {
+        _ca.UnreachableEvidence.Add("ev-0001");
+
+        var report = await Publisher().PublishAsync(Plan(), _ct);
+
+        report.Items[0].Problems.Select(p => p.Code).ShouldBe(["ciso_assistant.unavailable"]);
+        report.Items[2].Problems.Select(p => p.Code).ShouldBe(["publish.evidence_unresolved"]);
+        report.Items[1].Outcome.ShouldBe(PublishOutcome.Sent);
+    }
+
+    [Fact]
     public async Task Missing_evidence_file_fails_its_upload()
     {
         var report = await Publisher(new() { ["ev-0002"] = BackupFile }).PublishAsync([new AuditUpdate.UploadEvidence(Mfa)], _ct);

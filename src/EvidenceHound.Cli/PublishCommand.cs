@@ -40,34 +40,39 @@ internal static class PublishCommand
         return publish;
     }
 
-    private static async Task<int> SendAsync(
+    private static Task<int> SendAsync(
         IReadOnlyList<AuditUpdate> updates,
         DirectoryInfo evidenceDir,
         IConfiguration configuration,
         ILoggerFactory loggers,
         TextWriter output,
         ILogger logger,
+        CancellationToken cancellationToken) =>
+        Connection(configuration).Match(
+            options => SendAsync(updates, evidenceDir, options, loggers, output, logger, cancellationToken),
+            problems => Task.FromResult(Log.Problems(logger, problems)));
+
+    private static async Task<int> SendAsync(
+        IReadOnlyList<AuditUpdate> updates,
+        DirectoryInfo evidenceDir,
+        CisoAssistantOptions options,
+        ILoggerFactory loggers,
+        TextWriter output,
+        ILogger logger,
         CancellationToken cancellationToken)
     {
-        var options = Connection(configuration);
-        if (options is Result<CisoAssistantOptions>.Fail failed)
-        {
-            return Log.Problems(logger, failed.Errors);
-        }
-
         using var services = new ServiceCollection()
             .AddSingleton(loggers)
-            .AddCisoAssistantClient(((Result<CisoAssistantOptions>.Ok)options).Value)
+            .AddCisoAssistantClient(options)
             .BuildServiceProvider();
         var publisher = new Publisher(services.GetRequiredService<ICisoAssistantClient>(), new EvidenceDirectory(evidenceDir));
 
         var report = await publisher.PublishAsync(updates, cancellationToken);
         await WriteAsync(report, output);
         Log.Published(logger, report.Sent, report.Skipped, report.Failed);
-        foreach (var item in report.Items.Where(i => i.Outcome == PublishOutcome.Failed))
-        {
-            Log.Problems(logger, item.Problems.Select(p => new Problem(p.Code, $"{item.Description}: {p.Message}")));
-        }
+        Log.Problems(logger, report.Items
+            .Where(item => item.Outcome == PublishOutcome.Failed)
+            .SelectMany(item => item.Problems.Select(p => new Problem(p.Code, $"{item.Description}: {p.Message}"))));
 
         return report.HasFailures ? ExitCodes.PublishFailed : ExitCodes.Ok;
     }

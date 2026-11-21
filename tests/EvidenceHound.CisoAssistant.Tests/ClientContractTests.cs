@@ -226,6 +226,36 @@ public sealed class ClientContractTests : IDisposable
         request.Body!.ShouldContain("{\"admins\": 4}");
     }
 
+    [Fact]
+    public async Task Evidence_ref_id_matching_several_is_ambiguous()
+    {
+        Respond("/api/evidences/", 200, Page(new JsonObject { ["id"] = "a", ["ref_id"] = "ev-0001" }, new JsonObject { ["id"] = "b", ["ref_id"] = "ev-0001" }));
+
+        var result = await _ca.Client.FindOrCreateEvidenceAsync("ev-0001", "mfa-admins.json", _ct);
+
+        Codes(result).ShouldBe(["ciso_assistant.ambiguous"]);
+    }
+
+    [Fact]
+    public async Task Evidence_search_failure_is_returned()
+    {
+        Respond("/api/evidences/", 401, """{"detail": "Invalid token."}""");
+
+        var result = await _ca.Client.FindOrCreateEvidenceAsync("ev-0001", "mfa-admins.json", _ct);
+
+        Codes(result).ShouldBe(["ciso_assistant.auth"]);
+    }
+
+    [Fact]
+    public async Task Long_rejection_messages_are_shortened()
+    {
+        Respond("/api/requirement-assessments/ra-1/", 400, new string('x', 2000), "PATCH");
+
+        var result = await _ca.Client.UpdateRequirementAssessmentAsync("ra-1", Values(), _ct);
+
+        Messages(result).Single().ShouldEndWith(new string('x', 500) + "...");
+    }
+
     private static RequirementAssessmentValues Values() =>
         new(ComplianceResult.PartiallyCompliant, "2 of 3 checks pass.", ["ev-uuid-1", "ev-uuid-2"]);
 
