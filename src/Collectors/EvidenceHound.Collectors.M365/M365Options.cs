@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using EvidenceHound.Core.Results;
 
 namespace EvidenceHound.Collectors.M365;
@@ -22,7 +23,7 @@ public static class M365Settings
 }
 
 /// <summary>A Microsoft 365 collector instance's settings, validated once.</summary>
-internal sealed record M365Options(
+internal sealed partial record M365Options(
     string TenantId,
     string ClientId,
     Uri GraphUrl,
@@ -47,7 +48,11 @@ internal sealed record M365Options(
         read.Require(adminMin <= adminMax, M365Settings.GlobalAdminMin, $"{adminMin} is more than {M365Settings.GlobalAdminMax} ({adminMax})");
         var compliantPass = read.Percent(M365Settings.CompliantPassPercent, 95);
         var compliantPartial = read.Percent(M365Settings.CompliantPartialPercent, 80);
+        read.Require(compliantPartial <= compliantPass, M365Settings.CompliantPartialPercent, $"{compliantPartial} is more than {M365Settings.CompliantPassPercent} ({compliantPass})");
+        read.Required(M365Settings.SupportedWindowsBuilds);
         var builds = read.List(M365Settings.SupportedWindowsBuilds);
+        var badBuild = builds.FirstOrDefault(b => !WindowsBuild().IsMatch(b));
+        read.Require(badBuild is null, M365Settings.SupportedWindowsBuilds, $"'{badBuild}' is not a Windows build such as 10.0.26100");
         return read.Finish(new M365Options(
             read.Required(M365Settings.TenantId),
             read.Required(M365Settings.ClientId),
@@ -63,4 +68,6 @@ internal sealed record M365Options(
             [.. builds.Select(b => string.Join('.', b.Split('.').Take(3)))]));
     }
 
+    [GeneratedRegex(@"^[0-9]+\.[0-9]+\.[0-9]+(\.[0-9]+)?$", RegexOptions.CultureInvariant)]
+    private static partial Regex WindowsBuild();
 }
