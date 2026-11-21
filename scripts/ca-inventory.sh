@@ -49,7 +49,7 @@ props() { jq --arg p "$1" '[.components.schemas | to_entries[] | select(.key | s
 paths_like() { jq --arg re "$1" '[.paths | keys[] | select(test($re))]' "$schema"; }
 
 # --- Setup: the seeded perimeter and the Essential Eight 2023 framework ---------------------------
-perimeter="$(call GET 'perimeters/?name=Example%20baseline')"
+perimeter="$(call GET 'perimeters/?name=Corporate%20IT')"
 perimeter_id="$(first_id "$perimeter")"
 folder_id="$(body_of "$perimeter" | jq -r '(.results // .)[0].folder.id // empty')"
 framework_id="$(first_id "$(call GET 'frameworks/?urn=urn:intuitem:risk:framework:essential-eight-2023')")"

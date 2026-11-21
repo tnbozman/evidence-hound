@@ -29,11 +29,13 @@ public sealed class ScopePlanFunctionalTests(CisoAssistantFixture ciso)
         written.Select(c => c.Kind).Distinct().ShouldBe(
             ["framework", "domain", "perimeter", "system", "audit", "document", "control", "assessment"], ignoreOrder: true, ciso.SeedApplyReport);
         written.ShouldContain(("framework", "urn:example:risk:framework:example-baseline"), ciso.SeedApplyReport);
-        written.ShouldContain(("framework", "urn:intuitem:risk:library:mapping-essential-eight-2023-and-asd-essentials-enterprise-it"), ciso.SeedApplyReport);
         written.ShouldContain(("audit", "EX-ESSENTIALS-2026"), ciso.SeedApplyReport);
         written.ShouldContain(("document", "identity-policy"), ciso.SeedApplyReport);
         written.ShouldContain(("control", "AC-AUTO-EVIDENCE"), ciso.SeedApplyReport);
         written.ShouldContain(("assessment", "EX-ESSENTIALS-2026/IT.GOV-01.1"), ciso.SeedApplyReport);
+        written.ShouldContain(("assessment", "EX-E8-2026/ISM-1486"), ciso.SeedApplyReport);
+        // CISO Assistant may load the mapping library itself when both its frameworks are loaded; either way it is loaded now.
+        (await LoadedLibraryUrnsAsync(ct)).ShouldContain("urn:intuitem:risk:library:mapping-essential-eight-2023-and-asd-essentials-enterprise-it");
 
         var (jsonExit, json) = await PlanAsync(scope, ct, "--format", "json");
         var (markdownExit, markdown) = await PlanAsync(scope, ct);
@@ -51,6 +53,16 @@ public sealed class ScopePlanFunctionalTests(CisoAssistantFixture ciso)
         var again = JsonNode.Parse(apply)!;
         (again["written"]!.GetValue<int>(), again["failed"]!.GetValue<int>()).ShouldBe((0, 0), apply);
         again["changes"]!.AsArray().ShouldBeEmpty(apply);
+    }
+
+    private async Task<List<string>> LoadedLibraryUrnsAsync(CancellationToken ct)
+    {
+        using var http = new HttpClient();
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri(ciso.ApiUrl, "loaded-libraries/?limit=1000"));
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Token", ciso.Token);
+        using var response = await http.SendAsync(request, ct);
+        var body = JsonNode.Parse(await response.Content.ReadAsStringAsync(ct))!;
+        return [.. (body is JsonObject page ? page["results"]! : body).AsArray().Select(l => l!["urn"]!.GetValue<string>())];
     }
 
     private Task<(int ExitCode, string Output)> PlanAsync(string scope, CancellationToken ct, params string[] args) => RunAsync("plan", scope, ct, args);
