@@ -33,7 +33,7 @@ internal static class PlanCommand
             dryRun, config, checks,
         };
         plan.SetAction((parseResult, cancellationToken) => parseResult.GetValue(dryRun)
-            ? DryRunAsync(parseResult.GetRequiredValue(config), parseResult.GetRequiredValue(checks), registry, output, logger, cancellationToken)
+            ? DryRunAsync(parseResult.GetRequiredValue(config), parseResult.GetRequiredValue(checks), registry, AuditSeries.Today(configuration), output, logger, cancellationToken)
             : LiveAsync(parseResult.GetRequiredValue(config), parseResult.GetRequiredValue(checks), registry, configuration, loggers, output, logger, cancellationToken));
         return plan;
     }
@@ -48,7 +48,7 @@ internal static class PlanCommand
         ILogger logger,
         CancellationToken cancellationToken)
     {
-        var inputs = (await InputsAsync(configFile, checksFile, registry, cancellationToken))
+        var inputs = (await InputsAsync(configFile, checksFile, registry, AuditSeries.Today(configuration), cancellationToken))
             .Bind(i => PublishCommand.Connection(configuration).Map(connection => (Inputs: i, Connection: connection)));
         return await inputs.Match(
             async ready =>
@@ -76,9 +76,9 @@ internal static class PlanCommand
             problems => Task.FromResult(Log.Problems(logger, problems)));
     }
 
-    private static async Task<int> DryRunAsync(FileInfo configFile, FileInfo checksFile, CollectorRegistry registry, TextWriter output, ILogger logger, CancellationToken cancellationToken)
+    private static async Task<int> DryRunAsync(FileInfo configFile, FileInfo checksFile, CollectorRegistry registry, DateOnly today, TextWriter output, ILogger logger, CancellationToken cancellationToken)
     {
-        var plan = await PlanAsync(configFile, checksFile, registry, cancellationToken);
+        var plan = await PlanAsync(configFile, checksFile, registry, today, cancellationToken);
 
         return await plan.Match(
             async updates =>
@@ -90,16 +90,19 @@ internal static class PlanCommand
             problems => Task.FromResult(Log.Problems(logger, problems)));
     }
 
-    /// <summary>Loads the config, its targets' mappings and the check results, and plans the updates of every target audit.</summary>
-    internal static async Task<Result<IReadOnlyList<AuditUpdate>>> PlanAsync(FileInfo configFile, FileInfo checksFile, CollectorRegistry registry, CancellationToken cancellationToken) =>
-        (await InputsAsync(configFile, checksFile, registry, cancellationToken)).Bind(i => AuditPlanner.PlanUpdates(i.Targets, i.Run.Evidence, i.Run.ControlStatuses));
+    /// <summary>
+    /// Loads the config, its targets' mappings and the check results, and plans the updates of every target audit; a target naming an
+    /// audit series is the period open on <paramref name="today"/>.
+    /// </summary>
+    internal static async Task<Result<IReadOnlyList<AuditUpdate>>> PlanAsync(FileInfo configFile, FileInfo checksFile, CollectorRegistry registry, DateOnly today, CancellationToken cancellationToken) =>
+        (await InputsAsync(configFile, checksFile, registry, today, cancellationToken)).Bind(i => AuditPlanner.PlanUpdates(i.Targets, i.Run.Evidence, i.Run.ControlStatuses));
 
     /// <summary>Each target audit with its mapped results, and the run the results came from.</summary>
     private static async Task<Result<(IReadOnlyList<TargetResults> Targets, RunResults Run)>> InputsAsync(
-        FileInfo configFile, FileInfo checksFile, CollectorRegistry registry, CancellationToken cancellationToken)
+        FileInfo configFile, FileInfo checksFile, CollectorRegistry registry, DateOnly today, CancellationToken cancellationToken)
     {
         var targets = await (await ConfigCommands.LoadAsync(configFile, registry, cancellationToken)).Match(
-            config => LoadMappingsAsync(config.Targets, cancellationToken),
+            async config => await LoadMappingsAsync((await AuditSeries.ResolveAsync(config, today, cancellationToken)).Targets, cancellationToken),
             problems => Task.FromResult(Result.Fail<IReadOnlyList<(TargetConfig Target, FrameworkMapping Mapping)>>(problems)));
         var run = await CheckResultsJson.LoadRunAsync(checksFile, cancellationToken);
 
