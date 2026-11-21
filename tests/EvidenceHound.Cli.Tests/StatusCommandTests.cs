@@ -37,6 +37,34 @@ public sealed class StatusCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Shows_changed_unchanged_and_drift_per_audit_from_the_history()
+    {
+        var config = Path.Combine(_workDir, "hound.yaml");
+        await File.WriteAllTextAsync(config, """
+            ciso_assistant: {url: "http://localhost:8000/api/", token: "env:HOUND_CA_TOKEN"}
+            evidence: {root: ./evidence}
+            collectors:
+              - {name: example-fake, type: fake, schedule: "0 2 * * *"}
+            targets:
+              - {mapping: ./mapping.yaml, compliance_assessment: EX-E8-2026}
+              - {mapping: ./other.yaml, compliance_assessment: EX-ESSENTIALS-2026}
+            """, TestContext.Current.CancellationToken);
+        var history = new FileRunHistory(Path.Combine(_workDir, "evidence"));
+        await history.AppendAsync("EX-E8-2026", new HistoryEntry(Start.AddDays(-1), "20260629T020000Z", 16, 0, 0), TestContext.Current.CancellationToken);
+        await history.AppendAsync("EX-E8-2026", new HistoryEntry(Start, "20260630T020000Z", 1, 15, 1), TestContext.Current.CancellationToken);
+
+        var exitCode = await HoundCli.RunAsync(["status", "--config", config], _output, _error, cancellationToken: TestContext.Current.CancellationToken);
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var lines = _output.ToString().Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+        var header = Array.FindIndex(lines, l => l.StartsWith("AUDIT", StringComparison.Ordinal));
+        header.ShouldBeGreaterThan(0);
+        lines[header].Split(' ', StringSplitOptions.RemoveEmptyEntries).ShouldBe(["AUDIT", "LAST", "RUN", "(UTC)", "RUN", "ID", "CHANGED", "UNCHANGED", "DRIFT"]);
+        lines[header + 1].Split(' ', StringSplitOptions.RemoveEmptyEntries).ShouldBe(["EX-E8-2026", "2026-06-30", "02:00:00", "20260630T020000Z", "1", "15", "1"]);
+        lines[header + 2].Split(' ', StringSplitOptions.RemoveEmptyEntries).ShouldBe(["EX-ESSENTIALS-2026", "never", "run", "-", "-", "-", "-"]);
+    }
+
+    [Fact]
     public async Task A_missing_config_exits_three()
     {
         var exitCode = await HoundCli.RunAsync(

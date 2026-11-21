@@ -28,6 +28,9 @@ public sealed record CollectorRunResult(string Collector, CollectorOutcome Outco
     /// <summary>The report of publishing the health evidence, when the run published.</summary>
     public PublishReport? Health { get; init; }
 
+    /// <summary>Rows changed, verified unchanged and restored from drift, per target audit, when the run planned.</summary>
+    public IReadOnlyList<AuditChanges> Changes { get; init; } = [];
+
     public bool Equals(CollectorRunResult? other) =>
         other is not null && Collector == other.Collector && Outcome == other.Outcome && Problems.SequenceEqual(other.Problems) && Equals(Publish, other.Publish);
 
@@ -37,6 +40,12 @@ public sealed record CollectorRunResult(string Collector, CollectorOutcome Outco
 /// <summary>Every collector's result, in config order.</summary>
 public sealed record RunSummary(IReadOnlyList<CollectorRunResult> Collectors)
 {
+    /// <summary>The run's ID, from its start time, as written into each changed row's observation.</summary>
+    public string RunId { get; init; } = "";
+
+    /// <summary>Each audit's changes summed over the collectors.</summary>
+    public IReadOnlyList<AuditChanges> Audits => Collectors.Count < 0 ? [] : [];
+
     /// <summary>The worst outcome: failed if any collector failed.</summary>
     public CollectorOutcome Outcome => Collectors.Any(c => c.Outcome == CollectorOutcome.Failed) ? CollectorOutcome.Failed : CollectorOutcome.Succeeded;
 }
@@ -56,6 +65,12 @@ public sealed class Runner(
     IClock clock,
     IRunRecordStore records)
 {
+    /// <summary>Where the current state comes from; by default nothing is known and everything is sent.</summary>
+    public ICurrentStateSource States { get; init; } = NoCurrentState.Instance;
+
+    /// <summary>Where each published run's per-audit counts are appended; by default nowhere.</summary>
+    public IRunHistory? History { get; init; }
+
     /// <summary>A runner that publishes to one audit.</summary>
     public Runner(
         IReadOnlyDictionary<string, ICollector> collectors,
