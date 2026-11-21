@@ -29,7 +29,11 @@ internal static class ConfigFile
         {
             var document = Deserializer.Deserialize<ConfigDocument?>(yaml) ?? new ConfigDocument();
             var names = (document.Collectors ?? []).Select(c => c.Name ?? "").ToList();
-            return new ConfigLoad.Loaded(new HoundConfig(names));
+            var folder = Path.GetDirectoryName(Path.GetFullPath(source)) ?? ".";
+            var target = document.Target is { Mapping: { } mapping, ComplianceAssessment: { } audit } t
+                ? new TargetConfig(Path.GetFullPath(Path.Combine(folder, mapping)), audit, t.Controls ?? [])
+                : null;
+            return new ConfigLoad.Loaded(new HoundConfig(names, target));
         }
         catch (YamlException ex)
         {
@@ -41,6 +45,17 @@ internal static class ConfigFile
     private sealed class ConfigDocument
     {
         public List<CollectorDocument>? Collectors { get; set; }
+
+        public TargetDocument? Target { get; set; }
+    }
+
+    private sealed class TargetDocument
+    {
+        public string? Mapping { get; set; }
+
+        public string? ComplianceAssessment { get; set; }
+
+        public Dictionary<string, string>? Controls { get; set; }
     }
 
     private sealed class CollectorDocument

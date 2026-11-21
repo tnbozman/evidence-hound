@@ -57,6 +57,7 @@ public static partial class HoundCli
         {
             collect,
             MappingCommands.Build(output, error),
+            PlanCommand.Build(output, error),
         };
     }
 

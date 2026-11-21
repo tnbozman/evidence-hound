@@ -1,5 +1,4 @@
 using System.CommandLine;
-using EvidenceHound.Core.Checks;
 using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Results;
 using EvidenceHound.Core.Yaml;
@@ -48,7 +47,7 @@ internal static class MappingCommands
     private static async Task<int> ApplyAsync(FileInfo mappingFile, FileInfo checksFile, TextWriter output, TextWriter error, CancellationToken cancellationToken)
     {
         var mapping = await LoadAsync(mappingFile, cancellationToken);
-        var checks = await LoadChecksAsync(checksFile, cancellationToken);
+        var checks = (await CheckResultsJson.LoadRunAsync(checksFile, cancellationToken)).Map(run => run.Checks);
         var results = mapping.Bind(loaded => checks.Map(list => MappingEngine.ApplyMapping(loaded.Mapping, list)));
         return await results.Match(
             async rows =>
@@ -66,11 +65,6 @@ internal static class MappingCommands
                 return ExitCodes.Configuration;
             });
     }
-
-    internal static async Task<Result<IReadOnlyList<CheckResult>>> LoadChecksAsync(FileInfo file, CancellationToken cancellationToken) =>
-        file.Exists
-            ? CheckResultsJson.Parse(await File.ReadAllTextAsync(file.FullName, cancellationToken), file.ToString())
-            : Result.Fail<IReadOnlyList<CheckResult>>(new Problem("checks.file_not_found", $"Check results file not found: {file}"));
 
     internal static async Task<Result<LoadedMapping>> LoadAsync(FileInfo file, CancellationToken cancellationToken) =>
         file.Exists
