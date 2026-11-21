@@ -284,7 +284,7 @@ The layout follows one that has already been tried against CISO Assistant: one s
 - Result (2026-11-21): `AuditPeriodsFunctionalTests` ran the series `EX-PERIOD` (quarterly from 2026-07-01) against v4.3.4 with `HOUND_TODAY` in the functional CI job (run [44947813409](https://github.com/tnbozman/evidence-hound/actions/runs/44947813409)). On 2026-09-30 apply created `EX-PERIOD-2026Q3` and publish wrote 5 rows to it; on 2026-10-01 the plan listed "EX-PERIOD-2026Q3 closes: in review, awaiting sign-off" and "EX-PERIOD-2026Q4 opens, from EX-PERIOD-2026Q3", apply did both, Q4 carried Q3's results, and the next publish wrote only to Q4 while Q3's rows stayed unchanged; on 2026-10-15, with the sign-off added, apply set Q3 to done and locked it. Locking does not freeze controls (s06-05), so no fallback was needed. Evidence: [docs/evidence/s06/s06-10.md](../evidence/s06/s06-10.md).
 
 ### s06-11 Export an existing instance
-- [ ] Done
+- [x] Done
 
 **Story:** As an organisation that set up CISO Assistant by hand, I want to export what is there into scope files, so that I can move to managing CISO Assistant as configuration without retyping everything.
 
@@ -300,6 +300,7 @@ The layout follows one that has already been tried against CISO Assistant: one s
 
 **Functional check**
 - Export the seeded local CISO Assistant, then plan against it: no changes.
+- Result (2026-11-21): `ScopeExportFunctionalTests` exported the seeded v4.3.4 instance with `--with-files` in the functional CI job (run [44953205117](https://github.com/tnbozman/evidence-hound/actions/runs/44953205117)): five audits, the controls and documents with their files, and the hand-written results. `scope validate` passed, `scope plan` on the export listed no changes, and a second export was identical. The first run found one period audit planned as "mark as managed", fixed by leaving an audit's status and lock out of its recorded state. Evidence: [docs/evidence/s06/s06-11.md](../evidence/s06/s06-11.md).
 
 ### s06-12 Compliance repo template and guide
 - [ ] Done
