@@ -4,7 +4,7 @@
 # Pty Ltd domain, and deletes them again. Never point it at a production instance.
 #
 # Usage: HOUND_CA_TOKEN=... scripts/ca-inventory.sh <api url ending in /api/> <output folder>
-# Writes <output>/openapi.json and <output>/answers.json, and prints the answers.
+# Writes <output>/openapi.json, <output>/openapi-paths.json and <output>/answers.json, and prints the answers.
 set -uo pipefail
 
 api="${1:?usage: ca-inventory.sh <api url> <output folder>}"
@@ -36,6 +36,9 @@ answer() { answers="$(jq --arg k "$1" --argjson v "$2" '.[$k] = $v' <<< "$answer
 # --- OpenAPI schema -----------------------------------------------------------------------------
 curl -s -H "Authorization: Token $HOUND_CA_TOKEN" "${api}schema/?format=json" > "$out/openapi.json"
 schema="$out/openapi.json"
+# The paths and operations alone, small enough to commit as the snapshot hound's endpoints are checked against.
+jq '{openapi, info: {title: .info.title, version: .info.version}, paths: (.paths | map_values(with_entries(select(.key | test("^(get|post|put|patch|delete)$")) | .value = {operationId: .value.operationId})))}' \
+  "$schema" > "$out/openapi-paths.json"
 answer schema "$(jq '{openapi, version: .info.version, paths: (.paths | length), components: (.components.schemas | length)}' "$schema")"
 
 # Properties of the write and read components whose name starts with $1.

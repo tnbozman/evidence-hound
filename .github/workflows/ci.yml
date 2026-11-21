@@ -59,6 +59,15 @@ jobs:
           global-json-file: global.json
       - name: Functional tests (Testcontainers starts CISO Assistant)
         run: make test-functional CONFIGURATION="$CONFIGURATION"
+      - name: Show the CISO Assistant inventory
+        if: ${{ always() }}
+        run: |
+          dir=test-results/ca-inventory
+          if [ -f "$dir/answers.json" ]; then cat "$dir/answers.json"; fi
+          if [ -f "$dir/openapi-paths.json" ]; then
+            jq -c '{openapi, info}' "$dir/openapi-paths.json"
+            jq -c '.paths | to_entries[] | {(.key): .value}' "$dir/openapi-paths.json"
+          fi
       - name: Upload functional results
         if: ${{ always() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
