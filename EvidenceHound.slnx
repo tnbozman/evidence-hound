@@ -8,5 +8,6 @@
     <Project Path="tests/EvidenceHound.Cli.Tests/EvidenceHound.Cli.Tests.csproj" />
     <Project Path="tests/EvidenceHound.Core.Tests/EvidenceHound.Core.Tests.csproj" />
     <Project Path="tests/EvidenceHound.Core.Yaml.Tests/EvidenceHound.Core.Yaml.Tests.csproj" />
+    <Project Path="tests/EvidenceHound.Functional.Tests/EvidenceHound.Functional.Tests.csproj" />
   </Folder>
 </Solution>
