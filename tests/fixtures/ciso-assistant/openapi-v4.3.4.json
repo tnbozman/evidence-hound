@@ -1,0 +1,2003 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "CISO Assistant API",
+    "version": "v4.3.4"
+  },
+  "all_paths": 1805,
+  "paths": {
+    "/api/actors/": {
+      "get": {
+        "operationId": "actors_list"
+      }
+    },
+    "/api/actors/{id}/": {
+      "get": {
+        "operationId": "actors_retrieve"
+      }
+    },
+    "/api/actors/{id}/cascade-info/": {
+      "get": {
+        "operationId": "actors_cascade_info_retrieve"
+      }
+    },
+    "/api/actors/{id}/neighborhood/": {
+      "get": {
+        "operationId": "actors_neighborhood_retrieve"
+      }
+    },
+    "/api/actors/{id}/object/": {
+      "get": {
+        "operationId": "actors_object_retrieve"
+      }
+    },
+    "/api/actors/autocomplete/": {
+      "get": {
+        "operationId": "actors_autocomplete_retrieve"
+      }
+    },
+    "/api/applied-controls/": {
+      "get": {
+        "operationId": "applied_controls_list"
+      },
+      "post": {
+        "operationId": "applied_controls_create"
+      }
+    },
+    "/api/applied-controls/{id}/": {
+      "get": {
+        "operationId": "applied_controls_retrieve"
+      },
+      "put": {
+        "operationId": "applied_controls_update"
+      },
+      "patch": {
+        "operationId": "applied_controls_partial_update"
+      },
+      "delete": {
+        "operationId": "applied_controls_destroy"
+      }
+    },
+    "/api/applied-controls/{id}/cascade-info/": {
+      "get": {
+        "operationId": "applied_controls_cascade_info_retrieve"
+      }
+    },
+    "/api/applied-controls/{id}/commitment_transitions/": {
+      "get": {
+        "operationId": "applied_controls_commitment_transitions_retrieve"
+      },
+      "post": {
+        "operationId": "applied_controls_commitment_transitions_create"
+      }
+    },
+    "/api/applied-controls/{id}/duplicate/": {
+      "post": {
+        "operationId": "applied_controls_duplicate_create"
+      }
+    },
+    "/api/applied-controls/{id}/neighborhood/": {
+      "get": {
+        "operationId": "applied_controls_neighborhood_retrieve"
+      }
+    },
+    "/api/applied-controls/{id}/object/": {
+      "get": {
+        "operationId": "applied_controls_object_retrieve"
+      }
+    },
+    "/api/applied-controls/{id}/sync-to-reference-control/": {
+      "post": {
+        "operationId": "applied_controls_sync_to_reference_control_create"
+      }
+    },
+    "/api/applied-controls/analytics/": {
+      "get": {
+        "operationId": "applied_controls_analytics_retrieve"
+      }
+    },
+    "/api/applied-controls/autocomplete/": {
+      "get": {
+        "operationId": "applied_controls_autocomplete_retrieve"
+      }
+    },
+    "/api/applied-controls/batch-action/": {
+      "post": {
+        "operationId": "applied_controls_batch_action_create"
+      }
+    },
+    "/api/applied-controls/category/": {
+      "get": {
+        "operationId": "applied_controls_category_retrieve"
+      }
+    },
+    "/api/applied-controls/commitment_state/": {
+      "get": {
+        "operationId": "applied_controls_commitment_state_retrieve"
+      }
+    },
+    "/api/applied-controls/control_impact/": {
+      "get": {
+        "operationId": "applied_controls_control_impact_retrieve"
+      }
+    },
+    "/api/applied-controls/counts_per_folder/": {
+      "get": {
+        "operationId": "applied_controls_counts_per_folder_retrieve"
+      }
+    },
+    "/api/applied-controls/csf_function/": {
+      "get": {
+        "operationId": "applied_controls_csf_function_retrieve"
+      }
+    },
+    "/api/applied-controls/effort/": {
+      "get": {
+        "operationId": "applied_controls_effort_retrieve"
+      }
+    },
+    "/api/applied-controls/export_csv/": {
+      "get": {
+        "operationId": "applied_controls_export_csv_retrieve"
+      }
+    },
+    "/api/applied-controls/export_xlsx/": {
+      "get": {
+        "operationId": "applied_controls_export_xlsx_retrieve"
+      }
+    },
+    "/api/applied-controls/full/": {
+      "get": {
+        "operationId": "applied_controls_full_retrieve"
+      }
+    },
+    "/api/applied-controls/get_controls_info/": {
+      "get": {
+        "operationId": "applied_controls_get_controls_info_retrieve"
+      }
+    },
+    "/api/applied-controls/get_gantt_data/": {
+      "get": {
+        "operationId": "applied_controls_get_gantt_data_retrieve"
+      }
+    },
+    "/api/applied-controls/get_timeline_info/": {
+      "get": {
+        "operationId": "applied_controls_get_timeline_info_retrieve"
+      }
+    },
+    "/api/applied-controls/ids/": {
+      "get": {
+        "operationId": "applied_controls_ids_retrieve"
+      }
+    },
+    "/api/applied-controls/impact_effort/": {
+      "get": {
+        "operationId": "applied_controls_impact_effort_retrieve"
+      }
+    },
+    "/api/applied-controls/impact_graph/": {
+      "get": {
+        "operationId": "applied_controls_impact_graph_retrieve"
+      }
+    },
+    "/api/applied-controls/linked_models/": {
+      "get": {
+        "operationId": "applied_controls_linked_models_retrieve"
+      }
+    },
+    "/api/applied-controls/merge/": {
+      "post": {
+        "operationId": "applied_controls_merge_create"
+      }
+    },
+    "/api/applied-controls/mss_xlsx/": {
+      "get": {
+        "operationId": "applied_controls_mss_xlsx_retrieve"
+      }
+    },
+    "/api/applied-controls/owner/": {
+      "get": {
+        "operationId": "applied_controls_owner_retrieve"
+      }
+    },
+    "/api/applied-controls/per_status/": {
+      "get": {
+        "operationId": "applied_controls_per_status_retrieve"
+      }
+    },
+    "/api/applied-controls/priority/": {
+      "get": {
+        "operationId": "applied_controls_priority_retrieve"
+      }
+    },
+    "/api/applied-controls/priority_chart_data/": {
+      "get": {
+        "operationId": "applied_controls_priority_chart_data_retrieve"
+      }
+    },
+    "/api/applied-controls/status/": {
+      "get": {
+        "operationId": "applied_controls_status_retrieve"
+      }
+    },
+    "/api/applied-controls/sunburst_data/": {
+      "get": {
+        "operationId": "applied_controls_sunburst_data_retrieve"
+      }
+    },
+    "/api/applied-controls/to_review/": {
+      "get": {
+        "operationId": "applied_controls_to_review_retrieve"
+      }
+    },
+    "/api/applied-controls/todo/": {
+      "get": {
+        "operationId": "applied_controls_todo_retrieve"
+      }
+    },
+    "/api/applied-controls/updatables/": {
+      "get": {
+        "operationId": "applied_controls_updatables_retrieve"
+      }
+    },
+    "/api/assets/": {
+      "get": {
+        "operationId": "assets_list"
+      },
+      "post": {
+        "operationId": "assets_create"
+      }
+    },
+    "/api/assets/{id}/": {
+      "get": {
+        "operationId": "assets_retrieve"
+      },
+      "put": {
+        "operationId": "assets_update"
+      },
+      "patch": {
+        "operationId": "assets_partial_update"
+      },
+      "delete": {
+        "operationId": "assets_destroy"
+      }
+    },
+    "/api/assets/{id}/cascade-info/": {
+      "get": {
+        "operationId": "assets_cascade_info_retrieve"
+      }
+    },
+    "/api/assets/{id}/dependency-graph/": {
+      "get": {
+        "operationId": "assets_dependency_graph_retrieve"
+      }
+    },
+    "/api/assets/{id}/neighborhood/": {
+      "get": {
+        "operationId": "assets_neighborhood_retrieve"
+      }
+    },
+    "/api/assets/{id}/object/": {
+      "get": {
+        "operationId": "assets_object_retrieve"
+      }
+    },
+    "/api/assets/asset_class/": {
+      "get": {
+        "operationId": "assets_asset_class_retrieve"
+      }
+    },
+    "/api/assets/autocomplete/": {
+      "get": {
+        "operationId": "assets_autocomplete_retrieve"
+      }
+    },
+    "/api/assets/batch-action/": {
+      "post": {
+        "operationId": "assets_batch_action_create"
+      }
+    },
+    "/api/assets/batch-create/": {
+      "post": {
+        "operationId": "assets_batch_create_create"
+      }
+    },
+    "/api/assets/class-tree/": {
+      "get": {
+        "operationId": "assets_class_tree_retrieve"
+      }
+    },
+    "/api/assets/disaster_recovery_objectives/": {
+      "get": {
+        "operationId": "assets_disaster_recovery_objectives_retrieve"
+      }
+    },
+    "/api/assets/dora_criticality_assessment/": {
+      "get": {
+        "operationId": "assets_dora_criticality_assessment_retrieve"
+      }
+    },
+    "/api/assets/dora_discontinuing_impact/": {
+      "get": {
+        "operationId": "assets_dora_discontinuing_impact_retrieve"
+      }
+    },
+    "/api/assets/dora_licenced_activity/": {
+      "get": {
+        "operationId": "assets_dora_licenced_activity_retrieve"
+      }
+    },
+    "/api/assets/export_csv/": {
+      "get": {
+        "operationId": "assets_export_csv_retrieve"
+      }
+    },
+    "/api/assets/export_xlsx/": {
+      "get": {
+        "operationId": "assets_export_xlsx_retrieve"
+      }
+    },
+    "/api/assets/full/": {
+      "get": {
+        "operationId": "assets_full_retrieve"
+      }
+    },
+    "/api/assets/graph/": {
+      "get": {
+        "operationId": "assets_graph_retrieve"
+      }
+    },
+    "/api/assets/ids/": {
+      "get": {
+        "operationId": "assets_ids_retrieve"
+      }
+    },
+    "/api/assets/security_objectives/": {
+      "get": {
+        "operationId": "assets_security_objectives_retrieve"
+      }
+    },
+    "/api/assets/type/": {
+      "get": {
+        "operationId": "assets_type_retrieve"
+      }
+    },
+    "/api/compliance-assessments/": {
+      "get": {
+        "operationId": "compliance_assessments_list"
+      },
+      "post": {
+        "operationId": "compliance_assessments_create"
+      }
+    },
+    "/api/compliance-assessments/{id}/": {
+      "get": {
+        "operationId": "compliance_assessments_retrieve"
+      },
+      "put": {
+        "operationId": "compliance_assessments_update"
+      },
+      "patch": {
+        "operationId": "compliance_assessments_partial_update"
+      },
+      "delete": {
+        "operationId": "compliance_assessments_destroy"
+      }
+    },
+    "/api/compliance-assessments/{id}/action-plan/": {
+      "get": {
+        "operationId": "compliance_assessments_action_plan_list"
+      }
+    },
+    "/api/compliance-assessments/{id}/action-plan/budget-overview/": {
+      "get": {
+        "operationId": "compliance_assessments_action_plan_budget_overview_list"
+      }
+    },
+    "/api/compliance-assessments/{id}/action_plan_csv/": {
+      "get": {
+        "operationId": "compliance_assessments_action_plan_csv_retrieve"
+      }
+    },
+    "/api/compliance-assessments/{id}/action_plan_pdf/": {
+      "get": {
+        "operationId": "compliance_assessments_action_plan_pdf_retrieve"
+      }
+    },
+    "/api/compliance-assessments/{id}/action_plan_xlsx/": {
+      "get": {
+        "operationId": "compliance_assessments_action_plan_xlsx_retrieve"
+      }
+    },
+    "/api/compliance-assessments/{id}/auditor_preread/": {
+      "get": {
+        "operationId": "compliance_assessments_auditor_preread_retrieve"
+      }
+    },
+    "/api/compliance-assessments/{id}/auditor_preread/pair/": {
+      "post": {
+        "operationId": "compliance_assessments_auditor_preread_pair_create"
+      }
+    },
+    "/api/compliance-assessments/{id}/auditor_preread/preparation/": {
+      "post": {
+        "operationId": "compliance_assessments_auditor_preread_preparation_create"
+      }
+    },
+    "/api/compliance-assessments/{id}/cascade-info/": {
+      "get": {
+        "operationId": "compliance_assessments_cascade_info_retrieve"
+      }
+    },
+    "/api/compliance-assessments/{id}/combined_tree/": {
+      "get": {
+        "operationId": "compliance_assessments_combined_tree_retrieve"
+      }
+    },
+    "/api/compliance-assessments/{id}/comparable_audits/": {
+      "get": {
+        "operationId": "compliance_assessments_comparable_audits_retrieve"
+      }
+    },
+    "/api/compliance-assessments/{id}/compare/": {
+      "get": {
+        "operationId": "compliance_assessments_compare_retrieve"
+      }
+    },
+    "/api/compliance-assessments/{id}/compliance_assessment_csv/": {
+      "get": {
+        "operationId": "compliance_assessments_compliance_assessment_csv_retrieve"
+      }
+    },
+    "/api/compliance-assessments/{id}/compliance_timeline/": {
+      "get": {
+        "operationId": "compliance_assessments_compliance_timeline_retrieve"
+      }
+    },
+    "/api/compliance-assessments/{id}/controls_coverage/": {
+      "get": {
+        "operationId": "compliance_assessments_controls_coverage_retrieve"
+      }
+    },
+    "/api/compliance-assessments/{id}/donut_data/": {
+      "get": {
+        "operationId": "compliance_assessments_donut_data_retrieve"
+      }
+    },
+    "/api/compliance-assessments/{id}/evidence_coverage/": {
+      "get": {
+        "operationId": "compliance_assessments_evidence_coverage_retrieve"
+      }
+    },
+    "/api/compliance-assessments/{id}/evidences-list/": {
+      "get": {
+        "operationId": "compliance_assessments_evidences_list_list"
+      }
+    },
+    "/api/compliance-assessments/{id}/exceptions_summary/": {
+      "get": {
+        "operationId": "compliance_assessments_exceptions_summary_retrieve"
+      }
+    },
+    "/api/compliance-assessments/{id}/export/": {
+      "get": {
+        "operationId": "compliance_assessments_export_retrieve"
+      }
+    },
+    "/api/compliance-assessments/{id}/framework-exports/{export_id}/": {
+      "get": {
+        "operationId": "compliance_assessments_framework_exports_retrieve"
+      }
+    },
+    "/api/compliance-assessments/{id}/frameworks/": {
+      "get": {
+        "operationId": "compliance_assessments_frameworks_retrieve"
+      }
+    },
+    "/api/compliance-assessments/{id}/global_score/": {
+      "get": {
+        "operationId": "compliance_assessments_global_score_retrieve"
+      }
+    },
+    "/api/compliance-assessments/{id}/implementation_groups_breakdown/": {
+      "get": {
+        "operationId": "compliance_assessments_implementation_groups_breakdown_retrieve"
+      }
+    },
+    "/api/compliance-assessments/{id}/is-auditee/": {
+      "get": {
+        "operationId": "compliance_assessments_is_auditee_retrieve"
+      }
+    },
+    "/api/compliance-assessments/{id}/mailing/": {
+      "post": {
+        "operationId": "compliance_assessments_mailing_create"
+      }
+    },
+    "/api/compliance-assessments/{id}/map_from/": {
+      "post": {
+        "operationId": "compliance_assessments_map_from_create"
+      }
+    },
+    "/api/compliance-assessments/{id}/map_from_preview/": {
+      "get": {
+        "operationId": "compliance_assessments_map_from_preview_retrieve"
+      }
+    },
+    "/api/compliance-assessments/{id}/neighborhood/": {
+      "get": {
+        "operationId": "compliance_assessments_neighborhood_retrieve"
+      }
+    },
+    "/api/compliance-assessments/{id}/object/": {
+      "get": {
+        "operationId": "compliance_assessments_object_retrieve"
+      }
+    },
+    "/api/compliance-assessments/{id}/posture-pdf/": {
+      "get": {
+        "operationId": "compliance_assessments_posture_pdf_retrieve"
+      }
+    },
+    "/api/compliance-assessments/{id}/progress_ts/": {
+      "get": {
+        "operationId": "compliance_assessments_progress_ts_retrieve"
+      }
+    },
+    "/api/compliance-assessments/{id}/quality_check/": {
+      "get": {
+        "operationId": "compliance_assessments_quality_check_retrieve_2"
+      }
+    },
+    "/api/compliance-assessments/{id}/requirements_list/": {
+      "get": {
+        "operationId": "compliance_assessments_requirements_list_retrieve"
+      }
+    },
+    "/api/compliance-assessments/{id}/section_compliance/": {
+      "get": {
+        "operationId": "compliance_assessments_section_compliance_retrieve"
+      }
+    },
+    "/api/compliance-assessments/{id}/soa/": {
+      "get": {
+        "operationId": "compliance_assessments_soa_retrieve"
+      }
+    },
+    "/api/compliance-assessments/{id}/suggestions/applied-controls/": {
+      "get": {
+        "operationId": "compliance_assessments_suggestions_applied_controls_retrieve"
+      },
+      "post": {
+        "operationId": "compliance_assessments_suggestions_applied_controls_create"
+      }
+    },
+    "/api/compliance-assessments/{id}/syncToActions/": {
+      "get": {
+        "operationId": "compliance_assessments_syncToActions_retrieve"
+      },
+      "post": {
+        "operationId": "compliance_assessments_syncToActions_create"
+      }
+    },
+    "/api/compliance-assessments/{id}/threats_metrics/": {
+      "get": {
+        "operationId": "compliance_assessments_threats_metrics_retrieve"
+      }
+    },
+    "/api/compliance-assessments/{id}/tree/": {
+      "get": {
+        "operationId": "compliance_assessments_tree_retrieve"
+      }
+    },
+    "/api/compliance-assessments/{id}/update_requirement/": {
+      "post": {
+        "operationId": "compliance_assessments_update_requirement_create"
+      }
+    },
+    "/api/compliance-assessments/{id}/word_report/": {
+      "get": {
+        "operationId": "compliance_assessments_word_report_retrieve"
+      }
+    },
+    "/api/compliance-assessments/{id}/x-rays/": {
+      "get": {
+        "operationId": "compliance_assessments_x_rays_retrieve"
+      }
+    },
+    "/api/compliance-assessments/{id}/xlsx/": {
+      "get": {
+        "operationId": "compliance_assessments_xlsx_retrieve"
+      }
+    },
+    "/api/compliance-assessments/analytics/": {
+      "get": {
+        "operationId": "compliance_assessments_analytics_retrieve"
+      }
+    },
+    "/api/compliance-assessments/auditee-dashboard/": {
+      "get": {
+        "operationId": "compliance_assessments_auditee_dashboard_retrieve"
+      }
+    },
+    "/api/compliance-assessments/auditor_preread_audits/": {
+      "get": {
+        "operationId": "compliance_assessments_auditor_preread_audits_retrieve"
+      }
+    },
+    "/api/compliance-assessments/autocomplete/": {
+      "get": {
+        "operationId": "compliance_assessments_autocomplete_retrieve"
+      }
+    },
+    "/api/compliance-assessments/batch-action/": {
+      "post": {
+        "operationId": "compliance_assessments_batch_action_create"
+      }
+    },
+    "/api/compliance-assessments/per_status/": {
+      "get": {
+        "operationId": "compliance_assessments_per_status_retrieve"
+      }
+    },
+    "/api/compliance-assessments/quality_check/": {
+      "get": {
+        "operationId": "compliance_assessments_quality_check_retrieve"
+      }
+    },
+    "/api/compliance-assessments/recap/": {
+      "get": {
+        "operationId": "compliance_assessments_recap_retrieve"
+      }
+    },
+    "/api/compliance-assessments/score_calculation_method/": {
+      "get": {
+        "operationId": "compliance_assessments_score_calculation_method_retrieve"
+      }
+    },
+    "/api/compliance-assessments/status/": {
+      "get": {
+        "operationId": "compliance_assessments_status_retrieve"
+      }
+    },
+    "/api/entities/": {
+      "get": {
+        "operationId": "entities_list"
+      },
+      "post": {
+        "operationId": "entities_create"
+      }
+    },
+    "/api/entities/{id}/": {
+      "get": {
+        "operationId": "entities_retrieve"
+      },
+      "put": {
+        "operationId": "entities_update"
+      },
+      "patch": {
+        "operationId": "entities_partial_update"
+      },
+      "delete": {
+        "operationId": "entities_destroy"
+      }
+    },
+    "/api/entities/{id}/cascade-info/": {
+      "get": {
+        "operationId": "entities_cascade_info_retrieve"
+      }
+    },
+    "/api/entities/{id}/neighborhood/": {
+      "get": {
+        "operationId": "entities_neighborhood_retrieve"
+      }
+    },
+    "/api/entities/{id}/object/": {
+      "get": {
+        "operationId": "entities_object_retrieve"
+      }
+    },
+    "/api/entities/autocomplete/": {
+      "get": {
+        "operationId": "entities_autocomplete_retrieve"
+      }
+    },
+    "/api/entities/batch-action/": {
+      "post": {
+        "operationId": "entities_batch_action_create"
+      }
+    },
+    "/api/entities/batch-create/": {
+      "post": {
+        "operationId": "entities_batch_create_create"
+      }
+    },
+    "/api/entities/country/": {
+      "get": {
+        "operationId": "entities_country_retrieve"
+      }
+    },
+    "/api/entities/currency/": {
+      "get": {
+        "operationId": "entities_currency_retrieve"
+      }
+    },
+    "/api/entities/dora_entity_hierarchy/": {
+      "get": {
+        "operationId": "entities_dora_entity_hierarchy_retrieve"
+      }
+    },
+    "/api/entities/dora_entity_type/": {
+      "get": {
+        "operationId": "entities_dora_entity_type_retrieve"
+      }
+    },
+    "/api/entities/dora_provider_person_type/": {
+      "get": {
+        "operationId": "entities_dora_provider_person_type_retrieve"
+      }
+    },
+    "/api/entities/dora_roi_lint/": {
+      "get": {
+        "operationId": "entities_dora_roi_lint_retrieve"
+      }
+    },
+    "/api/entities/export_csv/": {
+      "get": {
+        "operationId": "entities_export_csv_retrieve"
+      }
+    },
+    "/api/entities/export_ecosystem/": {
+      "get": {
+        "operationId": "entities_export_ecosystem_retrieve"
+      }
+    },
+    "/api/entities/export_xlsx/": {
+      "get": {
+        "operationId": "entities_export_xlsx_retrieve"
+      }
+    },
+    "/api/entities/generate_dora_roi/": {
+      "get": {
+        "operationId": "entities_generate_dora_roi_retrieve"
+      }
+    },
+    "/api/entities/graph/": {
+      "get": {
+        "operationId": "entities_graph_retrieve"
+      }
+    },
+    "/api/entities/is_active/": {
+      "get": {
+        "operationId": "entities_is_active_retrieve"
+      }
+    },
+    "/api/entities/last_assessment_status/": {
+      "get": {
+        "operationId": "entities_last_assessment_status_retrieve"
+      }
+    },
+    "/api/evidence-revisions/": {
+      "get": {
+        "operationId": "evidence_revisions_list"
+      },
+      "post": {
+        "operationId": "evidence_revisions_create"
+      }
+    },
+    "/api/evidence-revisions/{id}/": {
+      "get": {
+        "operationId": "evidence_revisions_retrieve"
+      },
+      "put": {
+        "operationId": "evidence_revisions_update"
+      },
+      "patch": {
+        "operationId": "evidence_revisions_partial_update"
+      },
+      "delete": {
+        "operationId": "evidence_revisions_destroy"
+      }
+    },
+    "/api/evidence-revisions/{id}/attachment/": {
+      "get": {
+        "operationId": "evidence_revisions_attachment_retrieve"
+      }
+    },
+    "/api/evidence-revisions/{id}/cascade-info/": {
+      "get": {
+        "operationId": "evidence_revisions_cascade_info_retrieve"
+      }
+    },
+    "/api/evidence-revisions/{id}/delete_attachment/": {
+      "post": {
+        "operationId": "evidence_revisions_delete_attachment_create"
+      }
+    },
+    "/api/evidence-revisions/{id}/neighborhood/": {
+      "get": {
+        "operationId": "evidence_revisions_neighborhood_retrieve"
+      }
+    },
+    "/api/evidence-revisions/{id}/object/": {
+      "get": {
+        "operationId": "evidence_revisions_object_retrieve"
+      }
+    },
+    "/api/evidence-revisions/{id}/review/": {
+      "post": {
+        "operationId": "evidence_revisions_review_create"
+      }
+    },
+    "/api/evidence-revisions/{id}/upload/": {
+      "post": {
+        "operationId": "evidence_revisions_upload_create"
+      }
+    },
+    "/api/evidence-revisions/autocomplete/": {
+      "get": {
+        "operationId": "evidence_revisions_autocomplete_retrieve"
+      }
+    },
+    "/api/evidence-revisions/batch-action/": {
+      "post": {
+        "operationId": "evidence_revisions_batch_action_create"
+      }
+    },
+    "/api/evidences/": {
+      "get": {
+        "operationId": "evidences_list"
+      },
+      "post": {
+        "operationId": "evidences_create"
+      }
+    },
+    "/api/evidences/{id}/": {
+      "get": {
+        "operationId": "evidences_retrieve"
+      },
+      "put": {
+        "operationId": "evidences_update"
+      },
+      "patch": {
+        "operationId": "evidences_partial_update"
+      },
+      "delete": {
+        "operationId": "evidences_destroy"
+      }
+    },
+    "/api/evidences/{id}/attachment/": {
+      "get": {
+        "operationId": "evidences_attachment_retrieve"
+      }
+    },
+    "/api/evidences/{id}/cascade-info/": {
+      "get": {
+        "operationId": "evidences_cascade_info_retrieve"
+      }
+    },
+    "/api/evidences/{id}/neighborhood/": {
+      "get": {
+        "operationId": "evidences_neighborhood_retrieve"
+      }
+    },
+    "/api/evidences/{id}/object/": {
+      "get": {
+        "operationId": "evidences_object_retrieve"
+      }
+    },
+    "/api/evidences/{id}/upload/": {
+      "post": {
+        "operationId": "evidences_upload_create"
+      }
+    },
+    "/api/evidences/autocomplete/": {
+      "get": {
+        "operationId": "evidences_autocomplete_retrieve"
+      }
+    },
+    "/api/evidences/batch-action/": {
+      "post": {
+        "operationId": "evidences_batch_action_create"
+      }
+    },
+    "/api/evidences/batch-upload/": {
+      "post": {
+        "operationId": "evidences_batch_upload_create"
+      }
+    },
+    "/api/evidences/owner/": {
+      "get": {
+        "operationId": "evidences_owner_retrieve"
+      }
+    },
+    "/api/evidences/status/": {
+      "get": {
+        "operationId": "evidences_status_retrieve"
+      }
+    },
+    "/api/folders/": {
+      "get": {
+        "operationId": "folders_list"
+      },
+      "post": {
+        "operationId": "folders_create"
+      }
+    },
+    "/api/folders/{id}/": {
+      "get": {
+        "operationId": "folders_retrieve"
+      },
+      "put": {
+        "operationId": "folders_update"
+      },
+      "patch": {
+        "operationId": "folders_partial_update"
+      },
+      "delete": {
+        "operationId": "folders_destroy"
+      }
+    },
+    "/api/folders/{id}/cascade-info/": {
+      "get": {
+        "operationId": "folders_cascade_info_retrieve"
+      }
+    },
+    "/api/folders/{id}/export/": {
+      "get": {
+        "operationId": "folders_export_retrieve"
+      }
+    },
+    "/api/folders/{id}/neighborhood/": {
+      "get": {
+        "operationId": "folders_neighborhood_retrieve"
+      }
+    },
+    "/api/folders/{id}/object/": {
+      "get": {
+        "operationId": "folders_object_retrieve"
+      }
+    },
+    "/api/folders/{id}/quality_check/": {
+      "get": {
+        "operationId": "folders_quality_check_retrieve_2"
+      }
+    },
+    "/api/folders/{id}/users/": {
+      "get": {
+        "operationId": "folders_users_list"
+      }
+    },
+    "/api/folders/autocomplete/": {
+      "get": {
+        "operationId": "folders_autocomplete_retrieve"
+      }
+    },
+    "/api/folders/batch-action/": {
+      "post": {
+        "operationId": "folders_batch_action_create"
+      }
+    },
+    "/api/folders/export_csv/": {
+      "get": {
+        "operationId": "folders_export_csv_retrieve"
+      }
+    },
+    "/api/folders/export_xlsx/": {
+      "get": {
+        "operationId": "folders_export_xlsx_retrieve"
+      }
+    },
+    "/api/folders/get_accessible_objects/": {
+      "get": {
+        "operationId": "folders_get_accessible_objects_retrieve"
+      }
+    },
+    "/api/folders/ids/": {
+      "get": {
+        "operationId": "folders_ids_retrieve"
+      }
+    },
+    "/api/folders/import/": {
+      "post": {
+        "operationId": "folders_import_create"
+      }
+    },
+    "/api/folders/import-dummy/": {
+      "post": {
+        "operationId": "folders_import_dummy_create"
+      }
+    },
+    "/api/folders/my_assignments/": {
+      "get": {
+        "operationId": "folders_my_assignments_retrieve"
+      }
+    },
+    "/api/folders/org_tree/": {
+      "get": {
+        "operationId": "folders_org_tree_retrieve"
+      }
+    },
+    "/api/folders/quality_check/": {
+      "get": {
+        "operationId": "folders_quality_check_retrieve"
+      }
+    },
+    "/api/folders/reorganize/": {
+      "post": {
+        "operationId": "folders_reorganize_create"
+      }
+    },
+    "/api/frameworks/": {
+      "get": {
+        "operationId": "frameworks_list"
+      },
+      "post": {
+        "operationId": "frameworks_create"
+      }
+    },
+    "/api/frameworks/{id}/": {
+      "get": {
+        "operationId": "frameworks_retrieve"
+      },
+      "put": {
+        "operationId": "frameworks_update"
+      },
+      "patch": {
+        "operationId": "frameworks_partial_update"
+      },
+      "delete": {
+        "operationId": "frameworks_destroy"
+      }
+    },
+    "/api/frameworks/{id}/cascade-info/": {
+      "get": {
+        "operationId": "frameworks_cascade_info_retrieve"
+      }
+    },
+    "/api/frameworks/{id}/domain_tree/": {
+      "get": {
+        "operationId": "frameworks_domain_tree_retrieve"
+      }
+    },
+    "/api/frameworks/{id}/excel_template/": {
+      "get": {
+        "operationId": "frameworks_excel_template_retrieve"
+      }
+    },
+    "/api/frameworks/{id}/mapping_stats/": {
+      "get": {
+        "operationId": "frameworks_mapping_stats_retrieve"
+      }
+    },
+    "/api/frameworks/{id}/mappings/": {
+      "get": {
+        "operationId": "frameworks_mappings_retrieve"
+      }
+    },
+    "/api/frameworks/{id}/neighborhood/": {
+      "get": {
+        "operationId": "frameworks_neighborhood_retrieve"
+      }
+    },
+    "/api/frameworks/{id}/object/": {
+      "get": {
+        "operationId": "frameworks_object_retrieve"
+      }
+    },
+    "/api/frameworks/{id}/report/": {
+      "get": {
+        "operationId": "frameworks_report_retrieve"
+      }
+    },
+    "/api/frameworks/{id}/requirement_evidences/": {
+      "post": {
+        "operationId": "frameworks_requirement_evidences_create"
+      }
+    },
+    "/api/frameworks/{id}/serve-image/{attachment_id}/": {
+      "get": {
+        "operationId": "frameworks_serve_image_retrieve"
+      }
+    },
+    "/api/frameworks/{id}/tree/": {
+      "get": {
+        "operationId": "frameworks_tree_retrieve"
+      }
+    },
+    "/api/frameworks/autocomplete/": {
+      "get": {
+        "operationId": "frameworks_autocomplete_retrieve"
+      }
+    },
+    "/api/frameworks/batch-action/": {
+      "post": {
+        "operationId": "frameworks_batch_action_create"
+      }
+    },
+    "/api/frameworks/names/": {
+      "get": {
+        "operationId": "frameworks_names_retrieve"
+      }
+    },
+    "/api/frameworks/provider/": {
+      "get": {
+        "operationId": "frameworks_provider_retrieve"
+      }
+    },
+    "/api/frameworks/used/": {
+      "get": {
+        "operationId": "frameworks_used_retrieve"
+      }
+    },
+    "/api/health/": {
+      "get": {
+        "operationId": "health_retrieve"
+      }
+    },
+    "/api/loaded-libraries/": {
+      "get": {
+        "operationId": "loaded_libraries_list"
+      },
+      "post": {
+        "operationId": "loaded_libraries_create"
+      }
+    },
+    "/api/loaded-libraries/{id}/": {
+      "get": {
+        "operationId": "loaded_libraries_retrieve"
+      },
+      "put": {
+        "operationId": "loaded_libraries_update"
+      },
+      "patch": {
+        "operationId": "loaded_libraries_partial_update"
+      },
+      "delete": {
+        "operationId": "loaded_libraries_destroy"
+      }
+    },
+    "/api/loaded-libraries/{id}/cascade-info/": {
+      "get": {
+        "operationId": "loaded_libraries_cascade_info_retrieve"
+      }
+    },
+    "/api/loaded-libraries/{id}/content/": {
+      "get": {
+        "operationId": "loaded_libraries_content_retrieve"
+      }
+    },
+    "/api/loaded-libraries/{id}/instantiate-workflows/": {
+      "post": {
+        "operationId": "loaded_libraries_instantiate_workflows_create"
+      }
+    },
+    "/api/loaded-libraries/{id}/neighborhood/": {
+      "get": {
+        "operationId": "loaded_libraries_neighborhood_retrieve"
+      }
+    },
+    "/api/loaded-libraries/{id}/object/": {
+      "get": {
+        "operationId": "loaded_libraries_object_retrieve"
+      }
+    },
+    "/api/loaded-libraries/{id}/preview-workflows/": {
+      "get": {
+        "operationId": "loaded_libraries_preview_workflows_retrieve"
+      }
+    },
+    "/api/loaded-libraries/{id}/tree/": {
+      "get": {
+        "operationId": "loaded_libraries_tree_retrieve"
+      }
+    },
+    "/api/loaded-libraries/{id}/update/": {
+      "get": {
+        "operationId": "loaded_libraries_update_retrieve"
+      }
+    },
+    "/api/loaded-libraries/autocomplete/": {
+      "get": {
+        "operationId": "loaded_libraries_autocomplete_retrieve"
+      }
+    },
+    "/api/loaded-libraries/available-updates/": {
+      "get": {
+        "operationId": "loaded_libraries_available_updates_retrieve"
+      }
+    },
+    "/api/loaded-libraries/batch-action/": {
+      "post": {
+        "operationId": "loaded_libraries_batch_action_create"
+      }
+    },
+    "/api/perimeters/": {
+      "get": {
+        "operationId": "perimeters_list"
+      },
+      "post": {
+        "operationId": "perimeters_create"
+      }
+    },
+    "/api/perimeters/{id}/": {
+      "get": {
+        "operationId": "perimeters_retrieve"
+      },
+      "put": {
+        "operationId": "perimeters_update"
+      },
+      "patch": {
+        "operationId": "perimeters_partial_update"
+      },
+      "delete": {
+        "operationId": "perimeters_destroy"
+      }
+    },
+    "/api/perimeters/{id}/cascade-info/": {
+      "get": {
+        "operationId": "perimeters_cascade_info_retrieve"
+      }
+    },
+    "/api/perimeters/{id}/neighborhood/": {
+      "get": {
+        "operationId": "perimeters_neighborhood_retrieve"
+      }
+    },
+    "/api/perimeters/{id}/object/": {
+      "get": {
+        "operationId": "perimeters_object_retrieve"
+      }
+    },
+    "/api/perimeters/{id}/quality_check/": {
+      "get": {
+        "operationId": "perimeters_quality_check_retrieve_2"
+      }
+    },
+    "/api/perimeters/autocomplete/": {
+      "get": {
+        "operationId": "perimeters_autocomplete_retrieve"
+      }
+    },
+    "/api/perimeters/batch-action/": {
+      "post": {
+        "operationId": "perimeters_batch_action_create"
+      }
+    },
+    "/api/perimeters/ids/": {
+      "get": {
+        "operationId": "perimeters_ids_retrieve"
+      }
+    },
+    "/api/perimeters/lc_status/": {
+      "get": {
+        "operationId": "perimeters_lc_status_retrieve"
+      }
+    },
+    "/api/perimeters/names/": {
+      "get": {
+        "operationId": "perimeters_names_retrieve"
+      }
+    },
+    "/api/perimeters/quality_check/": {
+      "get": {
+        "operationId": "perimeters_quality_check_retrieve"
+      }
+    },
+    "/api/reference-controls/": {
+      "get": {
+        "operationId": "reference_controls_list"
+      },
+      "post": {
+        "operationId": "reference_controls_create"
+      }
+    },
+    "/api/reference-controls/{id}/": {
+      "get": {
+        "operationId": "reference_controls_retrieve"
+      },
+      "put": {
+        "operationId": "reference_controls_update"
+      },
+      "patch": {
+        "operationId": "reference_controls_partial_update"
+      },
+      "delete": {
+        "operationId": "reference_controls_destroy"
+      }
+    },
+    "/api/reference-controls/{id}/cascade-info/": {
+      "get": {
+        "operationId": "reference_controls_cascade_info_retrieve"
+      }
+    },
+    "/api/reference-controls/{id}/neighborhood/": {
+      "get": {
+        "operationId": "reference_controls_neighborhood_retrieve"
+      }
+    },
+    "/api/reference-controls/{id}/object/": {
+      "get": {
+        "operationId": "reference_controls_object_retrieve"
+      }
+    },
+    "/api/reference-controls/{id}/sync-applied-controls/": {
+      "post": {
+        "operationId": "reference_controls_sync_applied_controls_create"
+      }
+    },
+    "/api/reference-controls/{id}/syncable-applied-controls/": {
+      "get": {
+        "operationId": "reference_controls_syncable_applied_controls_retrieve"
+      }
+    },
+    "/api/reference-controls/autocomplete/": {
+      "get": {
+        "operationId": "reference_controls_autocomplete_retrieve"
+      }
+    },
+    "/api/reference-controls/batch-action/": {
+      "post": {
+        "operationId": "reference_controls_batch_action_create"
+      }
+    },
+    "/api/reference-controls/category/": {
+      "get": {
+        "operationId": "reference_controls_category_retrieve"
+      }
+    },
+    "/api/reference-controls/csf_function/": {
+      "get": {
+        "operationId": "reference_controls_csf_function_retrieve"
+      }
+    },
+    "/api/reference-controls/provider/": {
+      "get": {
+        "operationId": "reference_controls_provider_retrieve"
+      }
+    },
+    "/api/requirement-assessments/": {
+      "get": {
+        "operationId": "requirement_assessments_list"
+      },
+      "post": {
+        "operationId": "requirement_assessments_create"
+      }
+    },
+    "/api/requirement-assessments/{id}/": {
+      "get": {
+        "operationId": "requirement_assessments_retrieve"
+      },
+      "put": {
+        "operationId": "requirement_assessments_update"
+      },
+      "patch": {
+        "operationId": "requirement_assessments_partial_update"
+      },
+      "delete": {
+        "operationId": "requirement_assessments_destroy"
+      }
+    },
+    "/api/requirement-assessments/{id}/cascade-info/": {
+      "get": {
+        "operationId": "requirement_assessments_cascade_info_retrieve"
+      }
+    },
+    "/api/requirement-assessments/{id}/findings-binder/": {
+      "post": {
+        "operationId": "requirement_assessments_findings_binder_create"
+      }
+    },
+    "/api/requirement-assessments/{id}/neighborhood/": {
+      "get": {
+        "operationId": "requirement_assessments_neighborhood_retrieve"
+      }
+    },
+    "/api/requirement-assessments/{id}/object/": {
+      "get": {
+        "operationId": "requirement_assessments_object_retrieve"
+      }
+    },
+    "/api/requirement-assessments/{id}/quality_check/": {
+      "get": {
+        "operationId": "requirement_assessments_quality_check_retrieve"
+      }
+    },
+    "/api/requirement-assessments/{id}/suggestions/applied-controls/": {
+      "get": {
+        "operationId": "requirement_assessments_suggestions_applied_controls_retrieve"
+      },
+      "post": {
+        "operationId": "requirement_assessments_suggestions_applied_controls_create"
+      }
+    },
+    "/api/requirement-assessments/autocomplete/": {
+      "get": {
+        "operationId": "requirement_assessments_autocomplete_retrieve"
+      }
+    },
+    "/api/requirement-assessments/batch-action/": {
+      "post": {
+        "operationId": "requirement_assessments_batch_action_create"
+      }
+    },
+    "/api/requirement-assessments/extended_result/": {
+      "get": {
+        "operationId": "requirement_assessments_extended_result_retrieve"
+      }
+    },
+    "/api/requirement-assessments/per_status/": {
+      "get": {
+        "operationId": "requirement_assessments_per_status_retrieve"
+      }
+    },
+    "/api/requirement-assessments/result/": {
+      "get": {
+        "operationId": "requirement_assessments_result_retrieve"
+      }
+    },
+    "/api/requirement-assessments/status/": {
+      "get": {
+        "operationId": "requirement_assessments_status_retrieve"
+      }
+    },
+    "/api/requirement-assessments/to_review/": {
+      "get": {
+        "operationId": "requirement_assessments_to_review_retrieve"
+      }
+    },
+    "/api/requirement-assessments/todo/": {
+      "get": {
+        "operationId": "requirement_assessments_todo_retrieve"
+      }
+    },
+    "/api/requirement-assessments/updatables/": {
+      "get": {
+        "operationId": "requirement_assessments_updatables_retrieve"
+      }
+    },
+    "/api/requirement-nodes/": {
+      "get": {
+        "operationId": "requirement_nodes_list"
+      },
+      "post": {
+        "operationId": "requirement_nodes_create"
+      }
+    },
+    "/api/requirement-nodes/{id}/": {
+      "get": {
+        "operationId": "requirement_nodes_retrieve"
+      },
+      "put": {
+        "operationId": "requirement_nodes_update"
+      },
+      "patch": {
+        "operationId": "requirement_nodes_partial_update"
+      },
+      "delete": {
+        "operationId": "requirement_nodes_destroy"
+      }
+    },
+    "/api/requirement-nodes/{id}/cascade-info/": {
+      "get": {
+        "operationId": "requirement_nodes_cascade_info_retrieve"
+      }
+    },
+    "/api/requirement-nodes/{id}/inspect_requirement/": {
+      "get": {
+        "operationId": "requirement_nodes_inspect_requirement_retrieve"
+      }
+    },
+    "/api/requirement-nodes/{id}/neighborhood/": {
+      "get": {
+        "operationId": "requirement_nodes_neighborhood_retrieve"
+      }
+    },
+    "/api/requirement-nodes/{id}/object/": {
+      "get": {
+        "operationId": "requirement_nodes_object_retrieve"
+      }
+    },
+    "/api/requirement-nodes/{id}/serve-image/{attachment_id}/": {
+      "get": {
+        "operationId": "requirement_nodes_serve_image_retrieve"
+      }
+    },
+    "/api/requirement-nodes/autocomplete/": {
+      "get": {
+        "operationId": "requirement_nodes_autocomplete_retrieve"
+      }
+    },
+    "/api/requirement-nodes/batch-action/": {
+      "post": {
+        "operationId": "requirement_nodes_batch_action_create"
+      }
+    },
+    "/api/risk-matrices/": {
+      "get": {
+        "operationId": "risk_matrices_list"
+      },
+      "post": {
+        "operationId": "risk_matrices_create"
+      }
+    },
+    "/api/risk-matrices/{id}/": {
+      "get": {
+        "operationId": "risk_matrices_retrieve"
+      },
+      "put": {
+        "operationId": "risk_matrices_update"
+      },
+      "patch": {
+        "operationId": "risk_matrices_partial_update"
+      },
+      "delete": {
+        "operationId": "risk_matrices_destroy"
+      }
+    },
+    "/api/risk-matrices/{id}/cascade-info/": {
+      "get": {
+        "operationId": "risk_matrices_cascade_info_retrieve"
+      }
+    },
+    "/api/risk-matrices/{id}/neighborhood/": {
+      "get": {
+        "operationId": "risk_matrices_neighborhood_retrieve"
+      }
+    },
+    "/api/risk-matrices/{id}/object/": {
+      "get": {
+        "operationId": "risk_matrices_object_retrieve"
+      }
+    },
+    "/api/risk-matrices/autocomplete/": {
+      "get": {
+        "operationId": "risk_matrices_autocomplete_retrieve"
+      }
+    },
+    "/api/risk-matrices/batch-action/": {
+      "post": {
+        "operationId": "risk_matrices_batch_action_create"
+      }
+    },
+    "/api/risk-matrices/colors/": {
+      "get": {
+        "operationId": "risk_matrices_colors_retrieve"
+      }
+    },
+    "/api/risk-matrices/ids/": {
+      "get": {
+        "operationId": "risk_matrices_ids_retrieve"
+      }
+    },
+    "/api/risk-matrices/impact/": {
+      "get": {
+        "operationId": "risk_matrices_impact_retrieve"
+      }
+    },
+    "/api/risk-matrices/probability/": {
+      "get": {
+        "operationId": "risk_matrices_probability_retrieve"
+      }
+    },
+    "/api/risk-matrices/provider/": {
+      "get": {
+        "operationId": "risk_matrices_provider_retrieve"
+      }
+    },
+    "/api/risk-matrices/risk/": {
+      "get": {
+        "operationId": "risk_matrices_risk_retrieve"
+      }
+    },
+    "/api/risk-matrices/used/": {
+      "get": {
+        "operationId": "risk_matrices_used_retrieve"
+      }
+    },
+    "/api/role-assignments/": {
+      "get": {
+        "operationId": "role_assignments_list"
+      },
+      "post": {
+        "operationId": "role_assignments_create"
+      }
+    },
+    "/api/role-assignments/{id}/": {
+      "get": {
+        "operationId": "role_assignments_retrieve"
+      },
+      "put": {
+        "operationId": "role_assignments_update"
+      },
+      "patch": {
+        "operationId": "role_assignments_partial_update"
+      },
+      "delete": {
+        "operationId": "role_assignments_destroy"
+      }
+    },
+    "/api/role-assignments/{id}/cascade-info/": {
+      "get": {
+        "operationId": "role_assignments_cascade_info_retrieve"
+      }
+    },
+    "/api/role-assignments/{id}/neighborhood/": {
+      "get": {
+        "operationId": "role_assignments_neighborhood_retrieve"
+      }
+    },
+    "/api/role-assignments/{id}/object/": {
+      "get": {
+        "operationId": "role_assignments_object_retrieve"
+      }
+    },
+    "/api/role-assignments/autocomplete/": {
+      "get": {
+        "operationId": "role_assignments_autocomplete_retrieve"
+      }
+    },
+    "/api/role-assignments/batch-action/": {
+      "post": {
+        "operationId": "role_assignments_batch_action_create"
+      }
+    },
+    "/api/settings/feature-flags/": {
+      "get": {
+        "operationId": "settings_feature_flags_retrieve"
+      },
+      "put": {
+        "operationId": "settings_feature_flags_update"
+      },
+      "patch": {
+        "operationId": "settings_feature_flags_partial_update"
+      }
+    },
+    "/api/settings/feature-flags/defaults/": {
+      "get": {
+        "operationId": "settings_feature_flags_defaults_retrieve"
+      }
+    },
+    "/api/settings/feature-flags/effective/": {
+      "get": {
+        "operationId": "settings_feature_flags_effective_retrieve"
+      }
+    },
+    "/api/settings/general/": {
+      "get": {
+        "operationId": "settings_general_retrieve"
+      },
+      "put": {
+        "operationId": "settings_general_update"
+      },
+      "patch": {
+        "operationId": "settings_general_partial_update"
+      }
+    },
+    "/api/settings/general/backfill_ref_ids/": {
+      "post": {
+        "operationId": "settings_general_backfill_ref_ids_create"
+      }
+    },
+    "/api/settings/general/default-language/": {
+      "get": {
+        "operationId": "settings_general_default_language_retrieve"
+      }
+    },
+    "/api/settings/general/default_custom_analytics_dashboard/": {
+      "get": {
+        "operationId": "settings_general_default_custom_analytics_dashboard_retrieve"
+      }
+    },
+    "/api/settings/general/default_language/": {
+      "get": {
+        "operationId": "settings_general_default_language_retrieve_2"
+      }
+    },
+    "/api/settings/general/ebios_radar_parameters/": {
+      "get": {
+        "operationId": "settings_general_ebios_radar_parameters_retrieve"
+      }
+    },
+    "/api/settings/general/force_date_format/": {
+      "post": {
+        "operationId": "settings_general_force_date_format_create"
+      }
+    },
+    "/api/settings/general/force_language/": {
+      "post": {
+        "operationId": "settings_general_force_language_create"
+      }
+    },
+    "/api/settings/general/interface_settings/": {
+      "get": {
+        "operationId": "settings_general_interface_settings_retrieve"
+      }
+    },
+    "/api/settings/general/notifications_settings/": {
+      "get": {
+        "operationId": "settings_general_notifications_settings_retrieve"
+      }
+    },
+    "/api/settings/general/object/": {
+      "get": {
+        "operationId": "settings_general_object_retrieve"
+      }
+    },
+    "/api/settings/general/report_timezone/": {
+      "get": {
+        "operationId": "settings_general_report_timezone_retrieve"
+      }
+    },
+    "/api/settings/general/security_objective_scale/": {
+      "get": {
+        "operationId": "settings_general_security_objective_scale_retrieve"
+      }
+    },
+    "/api/settings/general/set-default-dashboard/": {
+      "post": {
+        "operationId": "settings_general_set_default_dashboard_create"
+      }
+    },
+    "/api/settings/sec-intel-feeds/": {
+      "get": {
+        "operationId": "settings_sec_intel_feeds_retrieve"
+      },
+      "put": {
+        "operationId": "settings_sec_intel_feeds_update"
+      },
+      "patch": {
+        "operationId": "settings_sec_intel_feeds_partial_update"
+      }
+    },
+    "/api/settings/sso/": {
+      "get": {
+        "operationId": "settings_sso_retrieve"
+      },
+      "put": {
+        "operationId": "settings_sso_update"
+      },
+      "patch": {
+        "operationId": "settings_sso_partial_update"
+      }
+    },
+    "/api/settings/sso/cascade-info/": {
+      "get": {
+        "operationId": "settings_sso_cascade_info_retrieve"
+      }
+    },
+    "/api/settings/sso/info/": {
+      "get": {
+        "operationId": "settings_sso_info_retrieve"
+      }
+    },
+    "/api/settings/sso/neighborhood/": {
+      "get": {
+        "operationId": "settings_sso_neighborhood_retrieve"
+      }
+    },
+    "/api/settings/sso/object/": {
+      "get": {
+        "operationId": "settings_sso_object_retrieve"
+      }
+    },
+    "/api/settings/sso/provider/": {
+      "get": {
+        "operationId": "settings_sso_provider_retrieve"
+      }
+    },
+    "/api/settings/vulnerability-sla/": {
+      "get": {
+        "operationId": "settings_vulnerability_sla_retrieve"
+      },
+      "put": {
+        "operationId": "settings_vulnerability_sla_update"
+      },
+      "patch": {
+        "operationId": "settings_vulnerability_sla_partial_update"
+      }
+    },
+    "/api/stored-libraries/": {
+      "get": {
+        "operationId": "stored_libraries_list"
+      },
+      "post": {
+        "operationId": "stored_libraries_create"
+      }
+    },
+    "/api/stored-libraries/{id}/": {
+      "get": {
+        "operationId": "stored_libraries_retrieve"
+      },
+      "put": {
+        "operationId": "stored_libraries_update"
+      },
+      "patch": {
+        "operationId": "stored_libraries_partial_update"
+      },
+      "delete": {
+        "operationId": "stored_libraries_destroy"
+      }
+    },
+    "/api/stored-libraries/{id}/cascade-info/": {
+      "get": {
+        "operationId": "stored_libraries_cascade_info_retrieve"
+      }
+    },
+    "/api/stored-libraries/{id}/content/": {
+      "get": {
+        "operationId": "stored_libraries_content_retrieve"
+      }
+    },
+    "/api/stored-libraries/{id}/import/": {
+      "post": {
+        "operationId": "stored_libraries_import_create"
+      }
+    },
+    "/api/stored-libraries/{id}/neighborhood/": {
+      "get": {
+        "operationId": "stored_libraries_neighborhood_retrieve"
+      }
+    },
+    "/api/stored-libraries/{id}/object/": {
+      "get": {
+        "operationId": "stored_libraries_object_retrieve"
+      }
+    },
+    "/api/stored-libraries/{id}/tree/": {
+      "get": {
+        "operationId": "stored_libraries_tree_retrieve"
+      }
+    },
+    "/api/stored-libraries/{id}/unload/": {
+      "post": {
+        "operationId": "stored_libraries_unload_create"
+      }
+    },
+    "/api/stored-libraries/autocomplete/": {
+      "get": {
+        "operationId": "stored_libraries_autocomplete_retrieve"
+      }
+    },
+    "/api/stored-libraries/batch-action/": {
+      "post": {
+        "operationId": "stored_libraries_batch_action_create"
+      }
+    },
+    "/api/stored-libraries/locale/": {
+      "get": {
+        "operationId": "stored_libraries_locale_retrieve"
+      }
+    },
+    "/api/stored-libraries/object_type/": {
+      "get": {
+        "operationId": "stored_libraries_object_type_retrieve"
+      }
+    },
+    "/api/stored-libraries/provider/": {
+      "get": {
+        "operationId": "stored_libraries_provider_retrieve"
+      }
+    },
+    "/api/stored-libraries/upload/": {
+      "post": {
+        "operationId": "stored_libraries_upload_create"
+      }
+    },
+    "/api/user-groups/": {
+      "get": {
+        "operationId": "user_groups_list"
+      },
+      "post": {
+        "operationId": "user_groups_create"
+      }
+    },
+    "/api/user-groups/{id}/": {
+      "get": {
+        "operationId": "user_groups_retrieve"
+      },
+      "put": {
+        "operationId": "user_groups_update"
+      },
+      "patch": {
+        "operationId": "user_groups_partial_update"
+      },
+      "delete": {
+        "operationId": "user_groups_destroy"
+      }
+    },
+    "/api/user-groups/{id}/add-members/": {
+      "post": {
+        "operationId": "user_groups_add_members_create"
+      }
+    },
+    "/api/user-groups/{id}/cascade-info/": {
+      "get": {
+        "operationId": "user_groups_cascade_info_retrieve"
+      }
+    },
+    "/api/user-groups/{id}/neighborhood/": {
+      "get": {
+        "operationId": "user_groups_neighborhood_retrieve"
+      }
+    },
+    "/api/user-groups/{id}/object/": {
+      "get": {
+        "operationId": "user_groups_object_retrieve"
+      }
+    },
+    "/api/user-groups/{id}/remove-members/": {
+      "post": {
+        "operationId": "user_groups_remove_members_create"
+      }
+    },
+    "/api/user-groups/autocomplete/": {
+      "get": {
+        "operationId": "user_groups_autocomplete_retrieve"
+      }
+    },
+    "/api/user-groups/batch-action/": {
+      "post": {
+        "operationId": "user_groups_batch_action_create"
+      }
+    },
+    "/api/users/": {
+      "get": {
+        "operationId": "users_list"
+      },
+      "post": {
+        "operationId": "users_create"
+      }
+    },
+    "/api/users/{id}/": {
+      "get": {
+        "operationId": "users_retrieve"
+      },
+      "put": {
+        "operationId": "users_update"
+      },
+      "patch": {
+        "operationId": "users_partial_update"
+      },
+      "delete": {
+        "operationId": "users_destroy"
+      }
+    },
+    "/api/users/{id}/cascade-info/": {
+      "get": {
+        "operationId": "users_cascade_info_retrieve"
+      }
+    },
+    "/api/users/{id}/neighborhood/": {
+      "get": {
+        "operationId": "users_neighborhood_retrieve"
+      }
+    },
+    "/api/users/{id}/object/": {
+      "get": {
+        "operationId": "users_object_retrieve"
+      }
+    },
+    "/api/users/{id}/teams/": {
+      "get": {
+        "operationId": "users_teams_retrieve"
+      }
+    },
+    "/api/users/autocomplete/": {
+      "get": {
+        "operationId": "users_autocomplete_retrieve"
+      }
+    },
+    "/api/users/batch-action/": {
+      "post": {
+        "operationId": "users_batch_action_create"
+      }
+    },
+    "/api/users/language/": {
+      "get": {
+        "operationId": "users_language_retrieve"
+      }
+    }
+  }
+}

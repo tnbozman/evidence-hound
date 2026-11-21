@@ -146,6 +146,17 @@ public class MappingEngineTests
         ]);
     }
 
+    [Fact]
+    public void Result_lists_the_outcome_of_each_check_behind_it_in_mapping_order()
+    {
+        var results = Apply(
+            Requirement("EX-1.1", MappingRule.AnyPass, "identity.mfa.users", "identity.mfa.admins", "backup.restore_tested"),
+            Check("identity.mfa.admins", CheckOutcome.Pass),
+            Check("identity.mfa.users", CheckOutcome.Fail));
+
+        results.Single().CheckOutcomes.ShouldBe(["identity.mfa.users:fail", "identity.mfa.admins:pass", "backup.restore_tested:missing"]);
+    }
+
     [Property]
     public void Output_order_is_independent_of_input_order((byte Check, byte Outcome, byte Minute)[] picks, int seed)
     {

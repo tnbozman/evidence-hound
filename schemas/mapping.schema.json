@@ -5,7 +5,10 @@
   "description": "Maps framework-neutral check IDs to the requirements of one framework library in CISO Assistant.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["framework_urn", "requirements"],
+  "required": [
+    "framework_urn",
+    "requirements"
+  ],
   "properties": {
     "framework_urn": {
       "description": "URN of the framework library in CISO Assistant.",
@@ -17,7 +20,16 @@
     },
     "requirements": {
       "type": "array",
-      "items": { "$ref": "#/$defs/requirement" }
+      "items": {
+        "$ref": "#/$defs/requirement"
+      }
+    },
+    "manual_only": {
+      "description": "Requirements no check covers yet, each with a suggested manual source. Not published; a coverage record.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/manualOnly"
+      }
     }
   },
   "$defs": {
@@ -30,15 +42,31 @@
     "requirement": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["ref", "rule", "checks"],
+      "required": [
+        "rule",
+        "checks"
+      ],
       "properties": {
         "ref": {
-          "description": "The requirement's reference in the framework library.",
+          "description": "The requirement's ref_id in the framework library. A ref the framework repeats needs 'rows: all', or name the row by 'urn'.",
           "type": "string",
           "minLength": 1
         },
+        "urn": {
+          "description": "The URN of one requirement node, which names exactly one row.",
+          "type": "string",
+          "pattern": "^urn:"
+        },
+        "rows": {
+          "description": "With 'ref' only: 'all' writes the same result to every row that has the ref.",
+          "const": "all"
+        },
         "rule": {
-          "enum": ["all_pass", "any_pass", "threshold"]
+          "enum": [
+            "all_pass",
+            "any_pass",
+            "threshold"
+          ]
         },
         "threshold": {
           "description": "Minimum number of passing checks; only with rule 'threshold'.",
@@ -49,12 +77,130 @@
           "type": "array",
           "minItems": 1,
           "uniqueItems": true,
-          "items": { "$ref": "#/$defs/checkId" }
+          "items": {
+            "$ref": "#/$defs/checkId"
+          }
         }
       },
-      "if": { "properties": { "rule": { "const": "threshold" } } },
-      "then": { "required": ["threshold"] },
-      "else": { "not": { "required": ["threshold"] } }
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "rule": {
+                "const": "threshold"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "threshold"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "threshold"
+              ]
+            }
+          }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "ref"
+              ],
+              "not": {
+                "required": [
+                  "urn"
+                ]
+              }
+            },
+            {
+              "required": [
+                "urn"
+              ],
+              "not": {
+                "anyOf": [
+                  {
+                    "required": [
+                      "ref"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "rows"
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "manualOnly": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source"
+      ],
+      "properties": {
+        "ref": {
+          "description": "The requirement's ref_id in the framework library. A ref the framework repeats needs 'rows: all', or name the row by 'urn'.",
+          "type": "string",
+          "minLength": 1
+        },
+        "urn": {
+          "description": "The URN of one requirement node, which names exactly one row.",
+          "type": "string",
+          "pattern": "^urn:"
+        },
+        "rows": {
+          "description": "With 'ref' only: 'all' writes the same result to every row that has the ref.",
+          "const": "all"
+        },
+        "source": {
+          "description": "The manual source suggested for this requirement, such as an export and who attests it.",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "ref"
+              ],
+              "not": {
+                "required": [
+                  "urn"
+                ]
+              }
+            },
+            {
+              "required": [
+                "urn"
+              ],
+              "not": {
+                "anyOf": [
+                  {
+                    "required": [
+                      "ref"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "rows"
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   }
 }

@@ -25,7 +25,7 @@ public static class DispatcherMessages
                 new JsonObject
                 {
                     ["compliance_assessment__ref_id"] = requirement.ComplianceAssessmentRefId,
-                    ["requirement__ref_id"] = requirement.RequirementRefId,
+                    [requirement.Requirement.Kind == RequirementKeyKind.Urn ? "requirement__urn" : "requirement__ref_id"] = requirement.Requirement.Value,
                 },
                 new JsonObject
                 {

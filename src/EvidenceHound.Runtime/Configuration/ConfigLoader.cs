@@ -14,13 +14,14 @@ namespace EvidenceHound.Runtime.Configuration;
 /// </summary>
 public static partial class ConfigLoader
 {
-    private static readonly string[] TopKeys = ["ciso_assistant", "evidence", "collectors", "target"];
+    private static readonly string[] TopKeys = ["ciso_assistant", "evidence", "collectors", "target", "targets", "scope"];
     private static readonly string[] CisoAssistantKeys = ["url", "token", "transport", "kafka_bootstrap_servers"];
-    private static readonly string[] EvidenceKeys = ["root", "retention_days"];
+    private static readonly string[] EvidenceKeys = ["root", "retention_days", "period_retention_years"];
     private static readonly string[] CollectorKeys = ["name", "type", "schedule", "settings", "secrets"];
     private static readonly string[] TargetKeys = ["mapping", "compliance_assessment", "controls", "health_control"];
     private static readonly string[] Transports = ["rest", "kafka"];
     private static readonly int NoRetention = -1;
+    private static readonly int DefaultPeriodRetentionYears = 7;
 
     public static async Task<Result<DeploymentConfig>> LoadAsync(string path, IReadOnlyDictionary<string, CollectorDescription> knownCollectorTypes, CancellationToken cancellationToken) =>
         File.Exists(path)
@@ -63,12 +64,35 @@ public static partial class ConfigLoader
         var ca = Section(root, "ciso_assistant", at).Bind(map => ParseCisoAssistant(map, at));
         var evidence = Section(root, "evidence", at).Bind(map => ParseEvidence(map, at));
         var collectors = Required(root, "collectors", at).Bind(node => ParseCollectors(node, at, knownTypes));
-        var target = Section(root, "target", at).Bind(map => ParseTarget(map, at));
+        var targets = ParseTargets(root, at);
+        var scope = OptionalScalar(root, "scope", at).Map(node => node.Value is "" ? "" : at.FullPath(node.Value!));
 
-        Problem[] problems = [.. unknown, .. ProblemsOf(ca), .. ProblemsOf(evidence), .. ProblemsOf(collectors), .. ProblemsOf(target)];
+        Problem[] problems = [.. unknown, .. ProblemsOf(ca), .. ProblemsOf(evidence), .. ProblemsOf(collectors), .. ProblemsOf(targets), .. ProblemsOf(scope)];
         return problems.Length > 0
             ? Result.Fail<DeploymentConfig>(problems)
-            : ca.Bind(c => evidence.Bind(e => collectors.Bind(l => target.Map(t => new DeploymentConfig(c, e, l, t)))));
+            : ca.Bind(c => evidence.Bind(e => collectors.Bind(l => targets.Bind(t => scope.Map(folder => new DeploymentConfig(c, e, l, t) { Scope = folder.Length > 0 ? folder : null })))));
+    }
+
+    /// <summary><c>targets</c>, a list, or a single <c>target</c> read as a list of one; never both, never empty, one target per audit.</summary>
+    private static Result<IReadOnlyList<TargetConfig>> ParseTargets(YamlMappingNode root, Locator at)
+    {
+        var parsed = (Child(root, "target"), Child(root, "targets")) switch
+        {
+            (not null, { } both) => Result.Fail<IReadOnlyList<TargetConfig>>(at.Problem(both.Start, "config.targets_conflict", "use 'target' for one audit or 'targets' for several, not both.")),
+            (null, null) => Result.Fail<IReadOnlyList<TargetConfig>>(at.Problem(root.Start, "config.key_missing", "'targets' (or a single 'target') is missing.")),
+            (not null, null) => Section(root, "target", at).Bind(map => ParseTarget(map, at)).Map(t => (IReadOnlyList<TargetConfig>)[t]),
+            (null, YamlSequenceNode { Children.Count: 0 } empty) => Result.Fail<IReadOnlyList<TargetConfig>>(at.Problem(empty.Start, "config.targets_empty", "'targets' needs at least one audit.")),
+            (null, YamlSequenceNode list) => Result.Combine(list.Children.Select(item => item is YamlMappingNode map
+                ? ParseTarget(map, at)
+                : Result.Fail<TargetConfig>(at.Problem(item.Start, "config.section_not_a_map", "each target must be a map of keys.")))),
+            (null, { } other) => Result.Fail<IReadOnlyList<TargetConfig>>(at.Problem(other.Start, "config.targets_not_a_list", "'targets' must be a list.")),
+        };
+        return parsed.Bind(targets => targets.GroupBy(t => t.ComplianceAssessmentRefId, StringComparer.Ordinal).Where(g => g.Count() > 1).Select(g => g.Key).ToArray() switch
+        {
+            [] => Result.Ok(targets),
+            var duplicates => Result.Fail<IReadOnlyList<TargetConfig>>(new Problem(
+                "config.target_duplicate", $"{at.Source}: audit {string.Join(", ", duplicates)} is targeted more than once; give each audit one target.")),
+        });
     }
 
     private static Result<CisoAssistantConfig> ParseCisoAssistant(YamlMappingNode map, Locator at)
@@ -103,10 +127,17 @@ public static partial class ConfigLoader
             _ => Result.Fail<int>(at.Problem(node.Start, "config.retention_invalid", "'retention_days' must be a whole number of days, 1 or more.")),
         });
 
-        Problem[] problems = [.. UnknownKeys(map, EvidenceKeys, at), .. ProblemsOf(root), .. ProblemsOf(retention)];
+        var years = OptionalScalar(map, "period_retention_years", at).Bind(node => node.Value switch
+        {
+            "" => Result.Ok(DefaultPeriodRetentionYears),
+            _ when int.TryParse(node.Value, NumberStyles.None, CultureInfo.InvariantCulture, out var value) && value > 0 => Result.Ok(value),
+            _ => Result.Fail<int>(at.Problem(node.Start, "config.retention_invalid", "'period_retention_years' must be a whole number of years, 1 or more.")),
+        });
+
+        Problem[] problems = [.. UnknownKeys(map, EvidenceKeys, at), .. ProblemsOf(root), .. ProblemsOf(retention), .. ProblemsOf(years)];
         return problems.Length > 0
             ? Result.Fail<EvidenceConfig>(problems)
-            : root.Bind(r => retention.Map(days => new EvidenceConfig(r, days == NoRetention ? null : days)));
+            : root.Bind(r => retention.Bind(days => years.Map(y => new EvidenceConfig(r, days == NoRetention ? null : days) { PeriodRetentionYears = y })));
     }
 
     private static Result<IReadOnlyList<CollectorInstance>> ParseCollectors(YamlNode node, Locator at, IReadOnlyDictionary<string, CollectorDescription> knownTypes)

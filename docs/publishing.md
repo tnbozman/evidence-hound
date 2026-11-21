@@ -1,6 +1,6 @@
 # Publishing to CISO Assistant
 
-`hound publish` plans a run's updates (the same plan as `hound plan --dry-run`) and sends them to CISO Assistant.
+`hound publish` plans a run's updates (the same plan as `hound plan --dry-run`) and sends them to CISO Assistant. It sends the whole plan; `hound run` sends only what changed (see [Running collectors](running.md#only-changes-are-sent)).
 
 ```console
 $ make ca-up                                    # local CISO Assistant, seeded; writes .dev/ca.env

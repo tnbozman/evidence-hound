@@ -1,0 +1,414 @@
+using EvidenceHound.Core.Mapping;
+using EvidenceHound.Core.Scope;
+using YamlDotNet.Core;
+using YamlDotNet.RepresentationModel;
+
+namespace EvidenceHound.Core.Yaml;
+
+/// <summary>One scope file: its path as shown in problems, and its text.</summary>
+public sealed record ScopeSource(string Path, string Text);
+
+/// <summary>What parsing found: the scope as far as it could be read, and every problem in every file.</summary>
+public sealed record ScopeParse(ScopeDocument Scope, IReadOnlyList<ScopeProblem> Problems);
+
+/// <summary>
+/// Parses a compliance repo's scope files (see <c>schemas/scope.schema.json</c>). Every problem names the file and line. Parsing goes
+/// on past a problem, so one run reports everything; an item missing a required key is left out of the scope.
+/// </summary>
+public static class ScopeLoader
+{
+    private static readonly string[] SetupKeys = ["organisation", "frameworks", "libraries", "domains"];
+    private static readonly string[] OrganisationKeys = ["root_folder"];
+    private static readonly string[] FrameworkKeys = ["urn", "library", "file", "snapshot"];
+    private static readonly string[] DomainKeys = ["name", "description", "perimeters", "perimeter", "systems"];
+    private static readonly string[] PerimeterKeys = ["name", "ref_id", "description"];
+    private static readonly string[] SystemKeys = ["name", "ref_id", "type", "description", "owner", "parents", "tags"];
+    private static readonly string[] ControlsKeys = ["controls"];
+    private static readonly string[] ControlKeys =
+        ["ref_id", "name", "description", "domain", "owner", "status", "priority", "category", "eta", "systems", "reference_control", "documents"];
+
+    private static readonly string[] AuditKeys =
+    [
+        "ref_id", "name", "framework", "groups", "domain", "perimeter", "eta", "due_date", "authors", "reviewers", "field_visibility",
+        "systems", "documents", "controls", "assessments", "cycle", "sign_offs", "unlisted",
+    ];
+
+    private static readonly string[] FieldAccessKeys = ["auditor", "respondent"];
+    private static readonly string[] Accesses = ["edit", "read", "hidden"];
+    private static readonly string[] DocumentKeys = ["id", "name", "files", "systems", "requirements"];
+    private static readonly string[] AuditControlKeys = ["ref_id", "requirements"];
+    private static readonly string[] AssessmentKeys = ["ref", "urn", "status", "result", "observation"];
+    private static readonly string[] Statuses = ["to_do", "in_progress", "in_review", "done"];
+    private static readonly string[] CycleKeys = ["period", "starts", "close"];
+    private static readonly string[] Closes = ["sign_off", "auto"];
+    private static readonly string[] Periods = ["month", "quarter", "half_year", "year"];
+    private static readonly string[] SignOffKeys = ["period", "by", "date"];
+    private static readonly string[] UnlistedKeys = ["result", "reason"];
+    private static readonly string[] SystemTypes = ["primary", "supporting"];
+    private static readonly string[] ControlStatuses = ["to_do", "in_progress", "on_hold", "active", "degraded", "deprecated", "--"];
+
+    public static ScopeParse Parse(ScopeSource setup, ScopeSource? controls, IReadOnlyList<ScopeSource> audits)
+    {
+        ArgumentNullException.ThrowIfNull(setup);
+        ArgumentNullException.ThrowIfNull(audits);
+
+        var setupFile = new FileReader(setup);
+        var parsedSetup = setupFile.Root() is { } setupRoot ? ReadSetup(setupRoot, setupFile) : new ScopeSetup("Global", [], []);
+        var controlsFile = controls is null ? null : new FileReader(controls);
+        var parsedControls = controlsFile?.Root() is { } controlsRoot ? ReadControls(controlsRoot, controlsFile) : [];
+        var auditFiles = audits.Select(a => new FileReader(a)).ToArray();
+        var parsedAudits = auditFiles.Select(file => file.Root() is { } root ? ReadAudit(root, file) : null).OfType<ScopeAudit>().ToArray();
+
+        return new ScopeParse(
+            new ScopeDocument(parsedSetup, parsedControls, parsedAudits),
+            [.. setupFile.Problems, .. controlsFile?.Problems ?? [], .. auditFiles.SelectMany(f => f.Problems)]);
+    }
+
+    private static ScopeSetup ReadSetup(YamlMappingNode root, FileReader file)
+    {
+        file.Keys(root, SetupKeys);
+        var organisation = file.Map(root, "organisation");
+        if (organisation is not null)
+        {
+            file.Keys(organisation, OrganisationKeys);
+        }
+
+        return new ScopeSetup(
+            (organisation is null ? null : file.Text(organisation, "root_folder")) ?? "Global",
+            [.. file.Items(root, "frameworks").Select(item => ReadFramework(item, file)).OfType<ScopeFramework>()],
+            [.. file.Items(root, "domains").Select(item => ReadDomain(item, file)).OfType<ScopeDomain>()])
+        {
+            Libraries = file.Refs(root, "libraries"),
+        };
+    }
+
+    private static ScopeFramework? ReadFramework(YamlMappingNode item, FileReader file)
+    {
+        file.Keys(item, FrameworkKeys);
+        var urn = file.Required(item, "urn");
+        return urn is null ? null : new ScopeFramework(urn, file.Text(item, "library"), file.Text(item, "file"), file.Text(item, "snapshot"), file.At(item));
+    }
+
+    private static ScopeDomain? ReadDomain(YamlMappingNode item, FileReader file)
+    {
+        file.Keys(item, DomainKeys);
+        var name = file.Required(item, "name");
+        var perimeters = FileReader.Child(item, "perimeter") is YamlMappingNode single
+            ? [single]
+            : file.Items(item, "perimeters");
+        return name is null
+            ? null
+            : new ScopeDomain(
+                name,
+                file.Text(item, "description"),
+                [.. perimeters.Select(p => ReadPerimeter(p, file)).OfType<ScopePerimeter>()],
+                [.. file.Items(item, "systems").Select(s => ReadSystem(s, file)).OfType<ScopeSystem>()],
+                file.At(item));
+    }
+
+    private static ScopePerimeter? ReadPerimeter(YamlMappingNode item, FileReader file)
+    {
+        file.Keys(item, PerimeterKeys);
+        var name = file.Required(item, "name");
+        return name is null ? null : new ScopePerimeter(name, file.Text(item, "ref_id"), file.Text(item, "description"), file.At(item));
+    }
+
+    private static ScopeSystem? ReadSystem(YamlMappingNode item, FileReader file)
+    {
+        file.Keys(item, SystemKeys);
+        var name = file.Required(item, "name");
+        var type = file.OneOf(item, "type", SystemTypes, required: true);
+        var tags = file.Map(item, "tags");
+        return name is null || type is null
+            ? null
+            : new ScopeSystem(
+                name,
+                file.Text(item, "ref_id"),
+                type == "primary" ? SystemType.Primary : SystemType.Supporting,
+                file.Text(item, "description"),
+                file.Text(item, "owner"),
+                file.Refs(item, "parents"),
+                tags is null ? new Dictionary<string, string>() : file.TextMap(tags),
+                file.At(item));
+    }
+
+    private static ScopeControl[] ReadControls(YamlMappingNode root, FileReader file)
+    {
+        file.Keys(root, ControlsKeys);
+        return [.. file.Items(root, "controls").Select(item => ReadControl(item, file)).OfType<ScopeControl>()];
+    }
+
+    private static ScopeControl? ReadControl(YamlMappingNode item, FileReader file)
+    {
+        file.Keys(item, ControlKeys);
+        var refId = file.Required(item, "ref_id");
+        var name = file.Required(item, "name");
+        return refId is null || name is null
+            ? null
+            : new ScopeControl(
+                refId,
+                name,
+                file.Text(item, "description"),
+                file.Ref(item, "domain"),
+                file.Text(item, "owner"),
+                file.OneOf(item, "status", ControlStatuses, required: false),
+                file.Text(item, "priority"),
+                file.Text(item, "category"),
+                file.Text(item, "eta"),
+                file.Refs(item, "systems"),
+                file.Text(item, "reference_control"),
+                file.Refs(item, "documents"),
+                file.At(item));
+    }
+
+    private static ScopeAudit? ReadAudit(YamlMappingNode root, FileReader file)
+    {
+        file.Keys(root, AuditKeys);
+        var refId = file.Required(root, "ref_id");
+        var name = file.Required(root, "name");
+        var framework = file.Ref(root, "framework", required: true);
+        var domain = file.Ref(root, "domain", required: true);
+        var perimeter = file.Ref(root, "perimeter", required: true);
+        var groups = file.Refs(root, "groups");
+        var fieldVisibility = file.Map(root, "field_visibility") is { } visibility ? ReadFieldVisibility(visibility, file) : new Dictionary<string, FieldAccess>();
+        var documents = file.Items(root, "documents").Select(d => ReadDocument(d, file)).OfType<ScopeEvidenceDocument>().ToArray();
+        var controls = file.Items(root, "controls").Select(c => ReadAuditControl(c, file)).OfType<AuditControl>().ToArray();
+        var assessments = file.Items(root, "assessments").Select(a => ReadAssessment(a, file)).OfType<HandAssessment>().ToArray();
+        var cycle = file.Map(root, "cycle") is { } cycleNode ? ReadCycle(cycleNode, file) : null;
+        var signOffs = file.Items(root, "sign_offs").Select(s => ReadSignOff(s, file)).OfType<SignOff>().ToArray();
+        var unlisted = file.Map(root, "unlisted") is { } unlistedNode ? ReadUnlisted(unlistedNode, file) : null;
+
+        return refId is null || name is null || framework is null || domain is null || perimeter is null
+            ? null
+            : new ScopeAudit(refId, name, framework, groups, domain, perimeter, file.At(root))
+            {
+                Eta = file.Text(root, "eta"),
+                DueDate = file.Text(root, "due_date"),
+                Authors = [.. file.Refs(root, "authors").Select(r => r.Value)],
+                Reviewers = [.. file.Refs(root, "reviewers").Select(r => r.Value)],
+                FieldVisibility = fieldVisibility,
+                Systems = file.Refs(root, "systems"),
+                Documents = documents,
+                Controls = controls,
+                Assessments = assessments,
+                Cycle = cycle,
+                SignOffs = signOffs,
+                Unlisted = unlisted,
+            };
+    }
+
+    private static Dictionary<string, FieldAccess> ReadFieldVisibility(YamlMappingNode map, FileReader file)
+    {
+        var fields = new Dictionary<string, FieldAccess>(StringComparer.Ordinal);
+        foreach (var (key, value) in map.Children)
+        {
+            if (value is not YamlMappingNode access)
+            {
+                file.Invalid(value, $"'{key}' must be a map of auditor and respondent access.");
+                continue;
+            }
+
+            file.Keys(access, FieldAccessKeys);
+            fields[((YamlScalarNode)key).Value ?? ""] = new FieldAccess(
+                file.OneOf(access, "auditor", Accesses, required: false), file.OneOf(access, "respondent", Accesses, required: false), file.At(key));
+        }
+
+        return fields;
+    }
+
+    private static ScopeEvidenceDocument? ReadDocument(YamlMappingNode item, FileReader file)
+    {
+        file.Keys(item, DocumentKeys);
+        var id = file.Required(item, "id");
+        var name = file.Required(item, "name");
+        return id is null || name is null
+            ? null
+            : new ScopeEvidenceDocument(id, name, [.. file.Refs(item, "files").Select(f => f.Value)], file.Refs(item, "systems"), Requirements(file.Refs(item, "requirements")), file.At(item));
+    }
+
+    private static AuditControl? ReadAuditControl(YamlMappingNode item, FileReader file)
+    {
+        file.Keys(item, AuditControlKeys);
+        var control = file.Ref(item, "ref_id", required: true);
+        return control is null ? null : new AuditControl(control, Requirements(file.Refs(item, "requirements")));
+    }
+
+    private static HandAssessment? ReadAssessment(YamlMappingNode item, FileReader file)
+    {
+        file.Keys(item, AssessmentKeys);
+        var byRef = file.Ref(item, "ref");
+        var byUrn = file.Ref(item, "urn");
+        if ((byRef is null) == (byUrn is null))
+        {
+            file.Invalid(item, "an assessment names its requirement with exactly one of 'ref' or 'urn'.");
+        }
+
+        var status = file.OneOf(item, "status", Statuses, required: true);
+        var result = Result(file, item, "result", Enum.GetValues<ComplianceResult>());
+        var requirement = byUrn is not null
+            ? new RequirementRef(RequirementKey.Urn(byUrn.Value), byUrn.At)
+            : byRef is not null ? new RequirementRef(RequirementKey.Ref(byRef.Value), file.At(item)) : null;
+        return requirement is null || status is null || result is null
+            ? null
+            : new HandAssessment(requirement with { At = file.At(item) }, status, result.Value, file.Text(item, "observation") ?? "");
+    }
+
+    private static AuditCycle? ReadCycle(YamlMappingNode map, FileReader file)
+    {
+        file.Keys(map, CycleKeys);
+        var period = file.OneOf(map, "period", Periods, required: true);
+        var starts = file.Required(map, "starts");
+        var close = file.OneOf(map, "close", Closes, required: false) ?? "sign_off";
+        return period is null || starts is null ? null : new AuditCycle(period, starts, file.At(map)) { Close = close };
+    }
+
+    private static SignOff? ReadSignOff(YamlMappingNode item, FileReader file)
+    {
+        file.Keys(item, SignOffKeys);
+        var period = file.Required(item, "period");
+        var by = file.Required(item, "by");
+        var date = file.Required(item, "date");
+        return period is null || by is null || date is null ? null : new SignOff(period, by, date) { At = file.At(item) };
+    }
+
+    private static UnlistedRule? ReadUnlisted(YamlMappingNode map, FileReader file)
+    {
+        file.Keys(map, UnlistedKeys);
+        var result = Result(file, map, "result", [ComplianceResult.NotAssessed, ComplianceResult.NotApplicable]);
+        return result is null ? null : new UnlistedRule(result.Value, file.Text(map, "reason"), file.At(map));
+    }
+
+    private static ComplianceResult? Result(FileReader file, YamlMappingNode map, string key, ComplianceResult[] allowed)
+    {
+        var name = file.OneOf(map, key, [.. allowed.Select(Names.Of)], required: true);
+        return name is null ? null : allowed.Single(r => Names.Of(r) == name);
+    }
+
+    private static RequirementRef[] Requirements(IReadOnlyList<ScopeRef> refs) =>
+        [.. refs.Select(r => new RequirementRef(r.Value.StartsWith("urn:", StringComparison.Ordinal) ? RequirementKey.Urn(r.Value) : RequirementKey.Ref(r.Value), r.At))];
+
+    /// <summary>Reads one file and collects its problems.</summary>
+    private sealed class FileReader(ScopeSource source)
+    {
+        private readonly List<ScopeProblem> _problems = [];
+
+        public IReadOnlyList<ScopeProblem> Problems => _problems;
+
+        public YamlMappingNode? Root()
+        {
+            var stream = new YamlStream();
+            try
+            {
+                stream.Load(new StringReader(source.Text));
+            }
+            catch (YamlException ex) when (ex.Message.Contains("Duplicate key", StringComparison.Ordinal))
+            {
+                Add("scope.key_duplicate", ex.Start, "a key appears twice in the same map.", "Remove or rename one of them.");
+                return null;
+            }
+            catch (YamlException ex)
+            {
+                Add("scope.yaml_invalid", ex.Start, $"not valid YAML: {ex.Message}", "Fix the YAML syntax at this line.");
+                return null;
+            }
+
+            switch (stream.Documents.FirstOrDefault()?.RootNode)
+            {
+                case YamlMappingNode root:
+                    return root;
+                case var other:
+                    Add("scope.document_not_a_map", other?.Start ?? Mark.Empty, "the file must be a map of keys.", "See schemas/scope.schema.json for the layout.");
+                    return null;
+            }
+        }
+
+        public SourceLine At(YamlNode node) => new(source.Path, (int)Math.Max(node.Start.Line, 1));
+
+        public void Keys(YamlMappingNode map, string[] allowed)
+        {
+            foreach (var key in map.Children.Keys.Where(k => k is not YamlScalarNode { Value: { } name } || !allowed.Contains(name, StringComparer.Ordinal)))
+            {
+                Add("scope.key_unknown", key.Start, $"unknown key '{key}'.", $"Expected one of: {string.Join(", ", allowed)}.");
+            }
+        }
+
+        public static YamlNode? Child(YamlMappingNode map, string key) =>
+            map.Children.TryGetValue(new YamlScalarNode(key), out var value) ? value : null;
+
+        public string? Text(YamlMappingNode map, string key) => Child(map, key) switch
+        {
+            null => null,
+            YamlScalarNode { Value: { Length: > 0 } value } => value,
+            var other => Invalid(other, $"'{key}' must be a non-empty text value."),
+        };
+
+        public string? Required(YamlMappingNode map, string key)
+        {
+            if (Child(map, key) is null)
+            {
+                Add("scope.key_missing", map.Start, $"'{key}' is missing.", $"Add '{key}'.");
+                return null;
+            }
+
+            return Text(map, key);
+        }
+
+        public string? OneOf(YamlMappingNode map, string key, string[] allowed, bool required)
+        {
+            var value = required ? Required(map, key) : Text(map, key);
+            return value is null || allowed.Contains(value, StringComparer.Ordinal)
+                ? value
+                : Invalid(Child(map, key)!, $"'{key}' is '{value}'; expected one of {string.Join(", ", allowed)}.");
+        }
+
+        public ScopeRef? Ref(YamlMappingNode map, string key, bool required = false) =>
+            (required ? Required(map, key) : Text(map, key)) is { } value ? new ScopeRef(value, At(Child(map, key)!)) : null;
+
+        public IReadOnlyList<ScopeRef> Refs(YamlMappingNode map, string key) =>
+            [.. Sequence(map, key).Select(item => item is YamlScalarNode { Value: { Length: > 0 } value } ? new ScopeRef(value, At(item)) : Reject<ScopeRef>(item, $"each item of '{key}' must be a text value."))
+                .OfType<ScopeRef>()];
+
+        public YamlMappingNode? Map(YamlMappingNode map, string key) => Child(map, key) switch
+        {
+            null => null,
+            YamlMappingNode child => child,
+            var other => Reject<YamlMappingNode>(other, $"'{key}' must be a map."),
+        };
+
+        public YamlMappingNode[] Items(YamlMappingNode map, string key) =>
+            [.. Sequence(map, key).Select(item => item as YamlMappingNode ?? Reject<YamlMappingNode>(item, $"each item of '{key}' must be a map.")).OfType<YamlMappingNode>()];
+
+        public Dictionary<string, string> TextMap(YamlMappingNode map) =>
+            map.Children
+                .Select(pair => (Key: (pair.Key as YamlScalarNode)?.Value, Value: pair.Value is YamlScalarNode { Value: { } text } ? text : Invalid(pair.Value, "each value must be text.")))
+                .Where(pair => pair.Key is not null && pair.Value is not null)
+                .ToDictionary(pair => pair.Key!, pair => pair.Value!, StringComparer.Ordinal);
+
+        public string? Invalid(YamlNode node, string message) => Reject<string>(node, message);
+
+        /// <summary>Reports a value of the wrong shape and gives null, so the caller leaves it out.</summary>
+        private T? Reject<T>(YamlNode node, string message)
+            where T : class
+        {
+            Add("scope.value_invalid", node.Start, message, "See schemas/scope.schema.json for the allowed values.");
+            return null;
+        }
+
+        private YamlNode[] Sequence(YamlMappingNode map, string key)
+        {
+            switch (Child(map, key))
+            {
+                case null:
+                    return [];
+                case YamlSequenceNode list:
+                    return [.. list.Children];
+                case var other:
+                    Reject<YamlNode>(other, $"'{key}' must be a list.");
+                    return [];
+            }
+        }
+
+        private void Add(string code, Mark mark, string message, string hint) =>
+            _problems.Add(new ScopeProblem(code, new SourceLine(source.Path, (int)Math.Max(mark.Line, 1)), message, hint));
+    }
+}

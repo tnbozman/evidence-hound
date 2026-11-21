@@ -1,4 +1,5 @@
 using EvidenceHound.Core.Publishing;
+using EvidenceHound.Core.Scope;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using WireMock.Server;
@@ -20,6 +21,9 @@ internal sealed class FakeCisoAssistant : IDisposable
             .AddCisoAssistantClient(new CisoAssistantOptions(new Uri($"{Server.Url}/api/"), Token) { RetryDelay = TimeSpan.FromMilliseconds(1) })
             .BuildServiceProvider();
         Client = _services.GetRequiredService<ICisoAssistantClient>();
+        Scope = _services.GetRequiredService<IScopeStateSource>();
+        Export = _services.GetRequiredService<IScopeExportSource>();
+        Writer = _services.GetRequiredService<IScopeWriter>();
     }
 
     public WireMockServer Server { get; }
@@ -27,6 +31,12 @@ internal sealed class FakeCisoAssistant : IDisposable
     public RecordingLoggerProvider Logs { get; } = new();
 
     public ICisoAssistantClient Client { get; }
+
+    public IScopeStateSource Scope { get; }
+
+    public IScopeExportSource Export { get; }
+
+    public IScopeWriter Writer { get; }
 
     public void Dispose()
     {

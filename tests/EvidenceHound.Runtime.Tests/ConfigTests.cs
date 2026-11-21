@@ -44,9 +44,78 @@ public class ConfigTests
         config.CisoAssistant.Token.ToString().ShouldBe("env:HOUND_CA_TOKEN");
         config.CisoAssistant.Transport.ShouldBe("rest");
         config.Collectors.ShouldHaveSingleItem().Type.ShouldBe("fake");
-        config.Target.ComplianceAssessmentRefId.ShouldBe("EXAMPLE-BASELINE-2026");
-        config.Target.HealthControlRefId.ShouldBe("AC-AUTO-EVIDENCE");
-        File.Exists(config.Target.MappingPath).ShouldBeTrue();
+        config.Targets[0].ComplianceAssessmentRefId.ShouldBe("EXAMPLE-BASELINE-2026");
+        config.Targets[0].HealthControlRefId.ShouldBe("AC-AUTO-EVIDENCE");
+        File.Exists(config.Targets[0].MappingPath).ShouldBeTrue();
+    }
+
+    [Fact]
+    public void Single_target_is_read_as_one_item_list()
+    {
+        var config = ConfigLoader.Parse(Valid, Source, Known).Value();
+
+        var target = config.Targets.ShouldHaveSingleItem();
+        target.ComplianceAssessmentRefId.ShouldBe("EXAMPLE-1");
+        target.Controls["mfa"].ShouldBe("AC-MFA");
+    }
+
+    [Fact]
+    public void Targets_list_is_read_in_order_with_paths_resolved()
+    {
+        var yaml = Valid[..Valid.IndexOf("target:", StringComparison.Ordinal)] + """
+            targets:
+              - mapping: ./essential-eight-2023.yaml
+                compliance_assessment: EX-E8-2026
+                controls:
+                  mfa: AC-MFA
+                health_control: AC-AUTO-EVIDENCE
+              - mapping: ./asd-essentials.yaml
+                compliance_assessment: EX-ESSENTIALS-2026
+            """;
+
+        var config = ConfigLoader.Parse(yaml, Source, Known).Value();
+
+        config.Targets.Select(t => (t.ComplianceAssessmentRefId, Path.GetFileName(t.MappingPath))).ShouldBe([
+            ("EX-E8-2026", "essential-eight-2023.yaml"),
+            ("EX-ESSENTIALS-2026", "asd-essentials.yaml"),
+        ]);
+        config.Targets[1].Controls.ShouldBeEmpty();
+        config.Targets[0].MappingPath.ShouldBe(Path.Combine(Path.GetTempPath(), "deploy", "essential-eight-2023.yaml"));
+    }
+
+    [Fact]
+    public void Target_and_targets_together_is_a_problem()
+    {
+        var yaml = Valid + """
+
+            targets:
+              - mapping: ./other.yaml
+                compliance_assessment: EX-OTHER
+            """;
+
+        ConfigLoader.Parse(yaml, Source, Known).Problems().Select(p => p.Code).ShouldBe(["config.targets_conflict"]);
+    }
+
+    [Fact]
+    public void Targets_list_must_not_be_empty()
+    {
+        var yaml = Valid[..Valid.IndexOf("target:", StringComparison.Ordinal)] + "targets: []\n";
+
+        ConfigLoader.Parse(yaml, Source, Known).Problems().Select(p => p.Code).ShouldBe(["config.targets_empty"]);
+    }
+
+    [Fact]
+    public void Two_targets_for_one_audit_is_a_problem()
+    {
+        var yaml = Valid[..Valid.IndexOf("target:", StringComparison.Ordinal)] + """
+            targets:
+              - mapping: ./a.yaml
+                compliance_assessment: EX-1
+              - mapping: ./b.yaml
+                compliance_assessment: EX-1
+            """;
+
+        ConfigLoader.Parse(yaml, Source, Known).Problems().Select(p => p.Code).ShouldBe(["config.target_duplicate"]);
     }
 
     [Fact]
@@ -56,7 +125,7 @@ public class ConfigTests
 
         config.CisoAssistant.Url.ShouldBe(new Uri("http://localhost:8000/api/"));
         config.Evidence.ShouldBe(new EvidenceConfig(Path.Combine(Path.GetTempPath(), "deploy", "evidence"), 30));
-        config.Target.MappingPath.ShouldBe(Path.Combine(Path.GetTempPath(), "deploy", "mapping.yaml"));
+        config.Targets[0].MappingPath.ShouldBe(Path.Combine(Path.GetTempPath(), "deploy", "mapping.yaml"));
         var collector = config.Collectors.ShouldHaveSingleItem();
         collector.Name.ShouldBe("idp");
         collector.Schedule.ShouldBe("0 2 * * *");
@@ -170,10 +239,10 @@ public class ConfigTests
     [Fact]
     public void Health_control_is_optional()
     {
-        ConfigLoader.Parse(Valid, Source, Known).Value().Target.HealthControlRefId.ShouldBeNull();
+        ConfigLoader.Parse(Valid, Source, Known).Value().Targets[0].HealthControlRefId.ShouldBeNull();
         var yaml = Valid.Replace("  compliance_assessment: EXAMPLE-1", "  compliance_assessment: EXAMPLE-1\n  health_control: AC-AUTO", StringComparison.Ordinal);
 
-        ConfigLoader.Parse(yaml, Source, Known).Value().Target.HealthControlRefId.ShouldBe("AC-AUTO");
+        ConfigLoader.Parse(yaml, Source, Known).Value().Targets[0].HealthControlRefId.ShouldBe("AC-AUTO");
     }
 
     [Fact]
@@ -193,6 +262,25 @@ public class ConfigTests
 
         second.Settings.ShouldBeEmpty();
         second.Secrets.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void Scope_and_period_retention_are_read()
+    {
+        var yaml = "scope: ../compliance-repo/scope\n" + Valid.Replace("retention_days: 30", "retention_days: 30\n  period_retention_years: 10", StringComparison.Ordinal);
+
+        var config = ConfigLoader.Parse(yaml, Source, Known).Value();
+
+        config.Scope.ShouldBe(Path.GetFullPath(Path.Combine(Path.GetTempPath(), "compliance-repo", "scope")));
+        config.Evidence.PeriodRetentionYears.ShouldBe(10);
+    }
+
+    [Fact]
+    public void Scope_is_optional_and_period_retention_defaults_to_seven_years()
+    {
+        var config = ConfigLoader.Parse(Valid, Source, Known).Value();
+
+        (config.Scope, config.Evidence.PeriodRetentionYears).ShouldBe((null, 7));
     }
 
     [Fact]

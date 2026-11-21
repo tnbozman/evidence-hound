@@ -1,22 +1,80 @@
+using System.Collections.Immutable;
 using System.Text;
 using System.Text.Json.Nodes;
 using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Planning;
 using EvidenceHound.Core.Publishing;
 using EvidenceHound.Core.Results;
-using Polly.CircuitBreaker;
-using Polly.Timeout;
 
 namespace EvidenceHound.CisoAssistant;
 
 /// <summary>REST adapter for <see cref="ICisoAssistantClient"/>. Paths are relative to the <c>/api/</c> base address.</summary>
 internal sealed class CisoAssistantClient(HttpClient http) : ICisoAssistantClient
 {
+    private static readonly int PageSize = 500;
+
+    public async Task<Result<IReadOnlyList<string>>> ListScopeDocumentIdsAsync(CancellationToken cancellationToken) =>
+        (await http.ListAllAsync("evidences/", cancellationToken)).Map(all => (IReadOnlyList<string>)
+            [.. all.Where(e => Core.Scope.ScopeMarker.Read((string?)e["description"]).Fingerprint is not null).Select(Id)]);
+
     public async Task<Result<Unit>> CheckHealthAsync(CancellationToken cancellationToken) =>
         (await SendAsync(new HttpRequestMessage(HttpMethod.Get, "health/"), "for the health check", cancellationToken)).Map(_ => Unit.Value);
 
-    public Task<Result<string>> FindRequirementAssessmentAsync(string complianceAssessmentRefId, string requirementRefId, CancellationToken cancellationToken) =>
-        FindOneAsync("requirement-assessments/", "requirement assessment", Selector.RequirementInAudit(complianceAssessmentRefId, requirementRefId), cancellationToken);
+    public async Task<Result<IReadOnlyList<RemoteRequirementAssessment>>> FindRequirementAssessmentsAsync(
+        string complianceAssessmentRefId, RequirementKey requirement, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(requirement);
+        var selector = requirement.Kind == RequirementKeyKind.Urn
+            ? Selector.RequirementUrnInAudit(complianceAssessmentRefId, requirement.Value)
+            : Selector.RequirementInAudit(complianceAssessmentRefId, requirement.Value);
+        var page = await SendAsync(new HttpRequestMessage(HttpMethod.Get, $"requirement-assessments/?{selector.ToQueryString()}"), $"to find the requirement assessments for {selector}", cancellationToken);
+        return page.Bind(p => Results(p) switch
+        {
+            [] => Result.Fail<IReadOnlyList<RemoteRequirementAssessment>>(ApiProblems.NotFound("requirement assessment", selector)),
+            var rows => Result.Ok<IReadOnlyList<RemoteRequirementAssessment>>([.. rows.Select(Row)]),
+        });
+    }
+
+    public async Task<Result<RemoteAudit>> FindAuditAsync(string complianceAssessmentRefId, CancellationToken cancellationToken)
+    {
+        // The read serializer lists the selected groups by name; the write data has their ref_ids.
+        var found = await FindOneAsync("compliance-assessments/", "audit", Selector.ByRefId(complianceAssessmentRefId), cancellationToken);
+        return await found.BindAsync(async id =>
+            (await SendAsync(new HttpRequestMessage(HttpMethod.Get, $"compliance-assessments/{Uri.EscapeDataString(id)}/object/"), $"to read audit {complianceAssessmentRefId}", cancellationToken))
+                .Map(audit => new RemoteAudit(id, Strings(audit["selected_implementation_groups"]))
+                {
+                    Closed = (string?)audit["status"] is "in_review" or "done" || audit["is_locked"] is JsonValue locked && locked.TryGetValue<bool>(out var isLocked) && isLocked,
+                }));
+    }
+
+    // Pages by limit and offset rather than following "next", whose host is whatever the server believes it is.
+    public Task<Result<IReadOnlyList<CurrentRow>>> ListRequirementAssessmentsAsync(string complianceAssessmentRefId, CancellationToken cancellationToken) =>
+        ListRowsAsync(complianceAssessmentRefId, ImmutableList<CurrentRow>.Empty, cancellationToken);
+
+    public async Task<Result<IReadOnlyList<RemoteEvidence>>> FindEvidenceAsync(string refId, CancellationToken cancellationToken)
+    {
+        var matches = await SearchEvidenceAsync(refId, cancellationToken);
+        return await matches.Match(
+            found => found.Count switch
+            {
+                0 => Task.FromResult(Result.Ok<IReadOnlyList<RemoteEvidence>>([])),
+                1 => AsList(LatestHashAsync(Id(found[0]), cancellationToken)),
+                _ => Task.FromResult(Result.Fail<IReadOnlyList<RemoteEvidence>>(ApiProblems.Ambiguous("evidence", Selector.ByRefId(refId), found.Count))),
+            },
+            problems => Task.FromResult(Result.Fail<IReadOnlyList<RemoteEvidence>>(problems)));
+    }
+
+    public async Task<Result<ControlState>> FindAppliedControlStatusAsync(string refId, CancellationToken cancellationToken)
+    {
+        var selector = Selector.ByRefId(refId);
+        var page = await SendAsync(new HttpRequestMessage(HttpMethod.Get, $"applied-controls/?{selector.ToQueryString()}"), $"to find the applied control for {selector}", cancellationToken);
+        return page.Bind(p => Results(p) switch
+        {
+            [] => Result.Fail<ControlState>(ApiProblems.NotFound("applied control", selector)),
+            [var only] => ControlStateOf((string?)only["status"], refId),
+            var many => Result.Fail<ControlState>(ApiProblems.Ambiguous("applied control", selector, many.Count)),
+        });
+    }
 
     public async Task<Result<Unit>> UpdateRequirementAssessmentAsync(string requirementAssessmentId, RequirementAssessmentValues values, CancellationToken cancellationToken)
     {
@@ -33,8 +91,7 @@ internal sealed class CisoAssistantClient(HttpClient http) : ICisoAssistantClien
 
     public async Task<Result<RemoteEvidence>> FindOrCreateEvidenceAsync(string refId, string name, CancellationToken cancellationToken)
     {
-        var search = await SendAsync(new HttpRequestMessage(HttpMethod.Get, $"evidences/?search={Uri.EscapeDataString(refId)}"), $"to find evidence {refId}", cancellationToken);
-        var matches = search.Map(page => Results(page).Where(o => (string?)o["ref_id"] == refId).ToList());
+        var matches = await SearchEvidenceAsync(refId, cancellationToken);
         return await matches.Match(
             found => found.Count switch
             {
@@ -88,6 +145,26 @@ internal sealed class CisoAssistantClient(HttpClient http) : ICisoAssistantClien
         });
     }
 
+    private async Task<Result<IReadOnlyList<CurrentRow>>> ListRowsAsync(string auditRefId, ImmutableList<CurrentRow> listed, CancellationToken cancellationToken)
+    {
+        var path = $"requirement-assessments/?{Selector.RowsOfAudit(auditRefId).ToQueryString()}&limit={PageSize}&offset={listed.Count}";
+        var page = await SendAsync(new HttpRequestMessage(HttpMethod.Get, path), $"to list the rows of audit {auditRefId}", cancellationToken);
+        return await page
+            .Bind(p => Result.Combine(Results(p).Select(StateRow)).Map(found => (Rows: listed.AddRange(found), More: found.Count > 0 && listed.Count + found.Count < ((int?)p["count"] ?? 0))))
+            .Match(
+                next => next.More ? ListRowsAsync(auditRefId, next.Rows, cancellationToken) : Task.FromResult(Result.Ok<IReadOnlyList<CurrentRow>>(next.Rows)),
+                problems => Task.FromResult(Result.Fail<IReadOnlyList<CurrentRow>>(problems)));
+    }
+
+    private static async Task<Result<IReadOnlyList<RemoteEvidence>>> AsList(Task<Result<RemoteEvidence>> found) =>
+        (await found).Map(e => (IReadOnlyList<RemoteEvidence>)[e]);
+
+    private async Task<Result<List<JsonNode>>> SearchEvidenceAsync(string refId, CancellationToken cancellationToken)
+    {
+        var search = await SendAsync(new HttpRequestMessage(HttpMethod.Get, $"evidences/?search={Uri.EscapeDataString(refId)}"), $"to find evidence {refId}", cancellationToken);
+        return search.Map(page => Results(page).Where(o => (string?)o["ref_id"] == refId).ToList());
+    }
+
     private async Task<Result<RemoteEvidence>> CreateEvidenceAsync(string refId, string name, CancellationToken cancellationToken)
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "evidences/") { Content = Json(new JsonObject { ["name"] = name, ["ref_id"] = refId }) };
@@ -115,31 +192,44 @@ internal sealed class CisoAssistantClient(HttpClient http) : ICisoAssistantClien
     private Task<Result<JsonNode>> PatchAsync(string path, JsonObject body, string action, CancellationToken cancellationToken) =>
         SendAsync(new HttpRequestMessage(HttpMethod.Patch, path) { Content = Json(body) }, action, cancellationToken);
 
-    private async Task<Result<JsonNode>> SendAsync(HttpRequestMessage request, string action, CancellationToken cancellationToken)
-    {
-        using (request)
-        {
-            try
-            {
-                using var response = await http.SendAsync(request, cancellationToken);
-                var body = await response.Content.ReadAsStringAsync(cancellationToken);
-                return response.IsSuccessStatusCode
-                    ? Result.Ok(string.IsNullOrWhiteSpace(body) ? new JsonObject() : JsonNode.Parse(body) ?? new JsonObject())
-                    : Result.Fail<JsonNode>(ApiProblems.FromStatus((int)response.StatusCode, body, action));
-            }
-            catch (Exception ex) when (ex is HttpRequestException or TimeoutRejectedException or BrokenCircuitException)
-            {
-                return Result.Fail<JsonNode>(ApiProblems.Unavailable($"CISO Assistant could not be reached {action}: {ex.Message}"));
-            }
-        }
-    }
+    private Task<Result<JsonNode>> SendAsync(HttpRequestMessage request, string action, CancellationToken cancellationToken) =>
+        http.SendForJsonAsync(request, action, cancellationToken);
 
     /// <summary>A JSON body with a known length: CISO Assistant's server reads no chunked request body.</summary>
     private static StringContent Json(JsonNode body) => new(body.ToJsonString(), Encoding.UTF8, "application/json");
 
-    /// <summary>The objects in a list response: a paginated <c>{"results": [...]}</c> or a bare array.</summary>
-    private static List<JsonNode> Results(JsonNode page) =>
-        [.. (page as JsonArray ?? page["results"] as JsonArray ?? []).OfType<JsonNode>()];
+    private static List<JsonNode> Results(JsonNode page) => ApiRequests.Results(page);
+
+    /// <summary>A requirement assessment from the list endpoint, which nests its requirement node.</summary>
+    private static RemoteRequirementAssessment Row(JsonNode row)
+    {
+        var requirement = row["requirement"] as JsonObject ?? throw new InvalidOperationException("CISO Assistant returned a requirement assessment without its requirement.");
+        return new RemoteRequirementAssessment(Id(row), (string?)requirement["urn"] ?? "", (string?)requirement["ref_id"], Strings(requirement["implementation_groups"]));
+    }
+
+    /// <summary>A requirement assessment with its state: result, observation and evidence IDs (the read serializer nests each as {"id", "str"}).</summary>
+    private static Result<CurrentRow> StateRow(JsonNode row)
+    {
+        var at = Row(row);
+        var result = (string?)row["result"] ?? "not_assessed";
+        return Enum.GetValues<ComplianceResult>().Where(r => Names.Of(r) == Normalised(result)).ToArray() is [var known]
+            ? Result.Ok(new CurrentRow(
+                at.Id, at.Urn, at.RefId, at.Groups, known, (string?)row["observation"] ?? "",
+                [.. (row["evidences"] as JsonArray ?? []).Select(e => e is JsonObject o ? (string?)o["id"] : (string?)e).OfType<string>()]))
+            : Result.Fail<CurrentRow>(Unexpected($"requirement assessment {at.Id} has result '{result}'"));
+    }
+
+    private static Result<ControlState> ControlStateOf(string? status, string refId) =>
+        Enum.GetValues<ControlState>().Where(s => Names.Of(s) == Normalised(status ?? "")).ToArray() is [var known]
+            ? Result.Ok(known)
+            : Result.Fail<ControlState>(Unexpected($"applied control {refId} has status '{status}'"));
+
+    /// <summary>A choice's value from its value or its display name: "To do" is "to_do".</summary>
+    private static string Normalised(string value) => value.Trim().ToLowerInvariant().Replace(' ', '_');
+
+    private static Problem Unexpected(string what) => new("ciso_assistant.rejected", $"CISO Assistant returned something this version does not know: {what}.");
+
+    private static List<string> Strings(JsonNode? node) => [.. (node as JsonArray ?? []).Select(n => (string?)n).OfType<string>()];
 
     private static string Id(JsonNode node) => (string?)node["id"] ?? throw new InvalidOperationException("CISO Assistant returned an object without an id.");
 }

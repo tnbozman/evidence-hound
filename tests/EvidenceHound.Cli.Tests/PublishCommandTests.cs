@@ -37,6 +37,51 @@ public sealed class PublishCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task A_target_naming_an_audit_with_a_cycle_publishes_to_the_period_open_that_day()
+    {
+        var dir = Directory.CreateTempSubdirectory("hound-periods-").FullName;
+        try
+        {
+            var files = Path.Combine(AppContext.BaseDirectory, "files");
+            Directory.CreateDirectory(Path.Combine(dir, "scope", "audits"));
+            await File.WriteAllTextAsync(Path.Combine(dir, "scope", "setup.yaml"), "domains: []\n", TestContext.Current.CancellationToken);
+            await File.WriteAllTextAsync(Path.Combine(dir, "scope", "audits", "example-baseline.yaml"), """
+                ref_id: EXAMPLE-BASELINE
+                name: Example baseline
+                framework: urn:example:risk:framework:example-baseline
+                domain: Example Pty Ltd
+                perimeter: Corporate IT
+                cycle: {period: quarter, starts: "2026-07-01"}
+                unlisted: {result: not_assessed}
+                """, TestContext.Current.CancellationToken);
+            var config = (await File.ReadAllTextAsync(Path.Combine(files, "examples", "example-pty-ltd.yaml"), TestContext.Current.CancellationToken))
+                .Replace("../mappings/example.yaml", Path.Combine(files, "mappings", "example.yaml"), StringComparison.Ordinal)
+                .Replace("compliance_assessment: EXAMPLE-BASELINE-2026", "compliance_assessment: EXAMPLE-BASELINE", StringComparison.Ordinal)
+                + "\nscope: scope\n";
+            await File.WriteAllTextAsync(Path.Combine(dir, "hound.yaml"), config, TestContext.Current.CancellationToken);
+
+            var exitCode = await HoundCli.RunAsync(
+                [
+                    "publish", "--dry-run", "--config", Path.Combine(dir, "hound.yaml"),
+                    "--checks", Path.Combine(files, "fixtures", "publish", "checks.json"),
+                    "--evidence-dir", Path.Combine(files, "fixtures", "publish", "evidence"),
+                ],
+                _output,
+                _error,
+                logging => logging.AddProvider(_logs),
+                new Dictionary<string, string?> { ["HOUND_TODAY"] = "2026-11-21" },
+                TestContext.Current.CancellationToken);
+
+            exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+            _output.ToString().ShouldContain("EXAMPLE-BASELINE-2026Q4");
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task A_plan_that_cannot_be_made_exits_three()
     {
         var exitCode = await HoundCli.RunAsync(
@@ -143,7 +188,10 @@ public sealed class PublishCommandTests : IDisposable
         _ca.Given(Request.Create().WithPath("/api/evidences/").UsingGet()).RespondWith(Json(200, """{"count": 0, "results": []}"""));
         _ca.Given(Request.Create().WithPath("/api/evidences/").UsingPost()).RespondWith(Json(201, """{"id": "ev-uuid"}"""));
         _ca.Given(Request.Create().WithPath("/api/evidence-revisions/").UsingPost()).RespondWith(Json(201, """{"id": "rev-uuid"}"""));
-        _ca.Given(Request.Create().WithPath("/api/requirement-assessments/").UsingGet()).RespondWith(Json(200, """{"count": 1, "results": [{"id": "ra-uuid"}]}"""));
+        _ca.Given(Request.Create().WithPath("/api/requirement-assessments/").UsingGet())
+            .RespondWith(Json(200, """{"count": 1, "results": [{"id": "ra-uuid", "requirement": {"urn": "urn:example:risk:req_node:example-baseline:ex-1", "ref_id": "EX-1", "implementation_groups": null}}]}"""));
+        _ca.Given(Request.Create().WithPath("/api/compliance-assessments/").UsingGet()).RespondWith(Json(200, """{"count": 1, "results": [{"id": "ca-uuid"}]}"""));
+        _ca.Given(Request.Create().WithPath("/api/compliance-assessments/ca-uuid/object/").UsingGet()).RespondWith(Json(200, """{"id": "ca-uuid", "selected_implementation_groups": []}"""));
         _ca.Given(Request.Create().WithPath("/api/requirement-assessments/ra-uuid/").UsingPatch()).RespondWith(Json(200, """{"id": "ra-uuid"}"""));
         _ca.Given(Request.Create().WithPath("/api/applied-controls/").UsingGet()).AtPriority(5).RespondWith(Json(200, """{"count": 1, "results": [{"id": "ac-uuid"}]}"""));
         _ca.Given(Request.Create().WithPath("/api/applied-controls/ac-uuid/").UsingPatch()).RespondWith(Json(200, """{"id": "ac-uuid"}"""));

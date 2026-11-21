@@ -1,5 +1,5 @@
 # Fictional framework library for Example Pty Ltd. Its requirement ref_ids match mappings/example.yaml.
-# Loaded into the local CISO Assistant by seed.sh. Not a real standard.
+# Uploaded to CISO Assistant by `hound scope apply` (see ../scope/setup.yaml). Not a real standard.
 urn: urn:example:risk:library:example-baseline
 locale: en
 ref_id: EXAMPLE-BASELINE

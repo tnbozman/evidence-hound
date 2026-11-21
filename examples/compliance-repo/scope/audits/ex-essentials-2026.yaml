@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=../../../../schemas/scope.schema.json
+# Example Pty Ltd's ASD Essentials for enterprise IT, priority phase 1. Everything here is made up.
+ref_id: EX-ESSENTIALS-2026
+name: Essentials phase 1 2026
+framework: urn:intuitem:risk:framework:asd-essentials-enterprise-it
+groups: ["1"]
+domain: Example Pty Ltd
+perimeter: Corporate IT
+eta: "2026-09-30"
+authors: [it@example.com]
+reviewers: [ceo@example.com]
+systems: [Example 365]
+controls:
+  # The same applied control as in the Essential Eight audit: one object in CISO Assistant, linked to rows of both.
+  - ref_id: AC-MFA
+    requirements: ["urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-13:it.pro-13.5"]
+assessments:
+  # Board accountability is a governance record, which no collector reads.
+  - ref: IT.GOV-01.1
+    status: done
+    result: compliant
+    observation: The board charter names the CEO as accountable for cyber security. Checked at the March board meeting.
+unlisted:
+  result: not_assessed

@@ -1,0 +1,1541 @@
+{
+  "library_urn": "urn:intuitem:risk:library:essential-eight-2023",
+  "framework_urn": "urn:intuitem:risk:framework:essential-eight-2023",
+  "version": 3,
+  "groups": [
+    {
+      "ref_id": "1",
+      "name": "Maturity Level One"
+    },
+    {
+      "ref_id": "2",
+      "name": "Maturity Level Two"
+    },
+    {
+      "ref_id": "3",
+      "name": "Maturity Level Three"
+    }
+  ],
+  "nodes": [
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa:ism-1807",
+      "ref_id": "ISM-1807",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "An automated method of asset discovery is used at least fortnightly to support\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa:ism-1808",
+      "ref_id": "ISM-1808",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "A vulnerability scanner with an up-to-date vulnerability database is used for\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa:ism-1698",
+      "ref_id": "ISM-1698",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "A vulnerability scanner is used at least daily to identify missing patches or\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa:ism-1699",
+      "ref_id": "ISM-1699",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "A vulnerability scanner is used at least weekly to identify missing patches or\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa:ism-1700",
+      "ref_id": "ISM-1700",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "A vulnerability scanner is used at least fortnightly to identify missing\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa:ism-1876",
+      "ref_id": "ISM-1876",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Patches, updates or other vendor mitigations for vulnerabilities in online\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa:ism-1690",
+      "ref_id": "ISM-1690",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Patches, updates or other vendor mitigations for vulnerabilities in online\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa:ism-1691",
+      "ref_id": "ISM-1691",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa",
+      "groups": [
+        "1",
+        "2"
+      ],
+      "title": "Patches, updates or other vendor mitigations for vulnerabilities in office\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa:ism-1692",
+      "ref_id": "ISM-1692",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa",
+      "groups": [
+        "3"
+      ],
+      "title": "Patches, updates or other vendor mitigations for vulnerabilities in office\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa:ism-1901",
+      "ref_id": "ISM-1901",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa",
+      "groups": [
+        "3"
+      ],
+      "title": "Patches, updates or other vendor mitigations for vulnerabilities in office\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa:ism-1693",
+      "ref_id": "ISM-1693",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Patches, updates or other vendor mitigations for vulnerabilities in\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa:ism-1905",
+      "ref_id": "ISM-1905",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Online services that are no longer supported by vendors are removed."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa:ism-1704",
+      "ref_id": "ISM-1704",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Office productivity suites, web browsers and their extensions, email clients\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa:ism-0304",
+      "ref_id": "ISM-0304",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa",
+      "groups": [
+        "3"
+      ],
+      "title": "Applications other than office productivity suites, web browsers and their\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1807",
+      "ref_id": "ISM-1807",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "An automated method of asset discovery is used at least fortnightly to support\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1808",
+      "ref_id": "ISM-1808",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "A vulnerability scanner with an up-to-date vulnerability database is used for\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1701",
+      "ref_id": "ISM-1701",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "A vulnerability scanner is used at least daily to identify missing patches or\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1702",
+      "ref_id": "ISM-1702",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "A vulnerability scanner is used at least fortnightly to identify missing\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1703",
+      "ref_id": "ISM-1703",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos",
+      "groups": [
+        "3"
+      ],
+      "title": "A vulnerability scanner is used at least fortnightly to identify missing\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1900",
+      "ref_id": "ISM-1900",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos",
+      "groups": [
+        "3"
+      ],
+      "title": "A vulnerability scanner is used at least fortnightly to identify missing\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1877",
+      "ref_id": "ISM-1877",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Patches, updates or other vendor mitigations for vulnerabilities in operating\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1694",
+      "ref_id": "ISM-1694",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Patches, updates or other vendor mitigations for vulnerabilities in operating\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1695",
+      "ref_id": "ISM-1695",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos",
+      "groups": [
+        "1",
+        "2"
+      ],
+      "title": "Patches, updates or other vendor mitigations for vulnerabilities in operating\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1696",
+      "ref_id": "ISM-1696",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos",
+      "groups": [
+        "3"
+      ],
+      "title": "Patches, updates or other vendor mitigations for vulnerabilities in operating\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1902",
+      "ref_id": "ISM-1902",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos",
+      "groups": [
+        "3"
+      ],
+      "title": "Patches, updates or other vendor mitigations for vulnerabilities in operating\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1879",
+      "ref_id": "ISM-1879",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos",
+      "groups": [
+        "3"
+      ],
+      "title": "Patches, updates or other vendor mitigations for vulnerabilities in drivers\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1697",
+      "ref_id": "ISM-1697",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos",
+      "groups": [
+        "3"
+      ],
+      "title": "Patches, updates or other vendor mitigations for vulnerabilities in drivers\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1903",
+      "ref_id": "ISM-1903",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos",
+      "groups": [
+        "3"
+      ],
+      "title": "Patches, updates or other vendor mitigations for vulnerabilities in firmware\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1904",
+      "ref_id": "ISM-1904",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos",
+      "groups": [
+        "3"
+      ],
+      "title": "Patches, updates or other vendor mitigations for vulnerabilities in firmware\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1407",
+      "ref_id": "ISM-1407",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos",
+      "groups": [
+        "3"
+      ],
+      "title": "The latest release, or the previous release, of operating systems are used."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1501",
+      "ref_id": "ISM-1501",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Operating systems that are no longer supported by vendors are replaced."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1504",
+      "ref_id": "ISM-1504",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Multi-factor authentication is used to authenticate users to their\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1679",
+      "ref_id": "ISM-1679",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Multi-factor authentication is used to authenticate users to third-party\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1680",
+      "ref_id": "ISM-1680",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Multi-factor authentication (where available) is used to authenticate users to\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1892",
+      "ref_id": "ISM-1892",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Multi-factor authentication is used to authenticate users to their\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1893",
+      "ref_id": "ISM-1893",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Multi-factor authentication is used to authenticate users to third-party\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1681",
+      "ref_id": "ISM-1681",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Multi-factor authentication is used to authenticate customers to online\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1173",
+      "ref_id": "ISM-1173",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Multi-factor authentication is used to authenticate privileged users of systems."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-0974",
+      "ref_id": "ISM-0974",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Multi-factor authentication is used to authenticate unprivileged users of\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1505",
+      "ref_id": "ISM-1505",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa",
+      "groups": [
+        "3"
+      ],
+      "title": "Multi-factor authentication is used to authenticate users of data repositories."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1401",
+      "ref_id": "ISM-1401",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Multi-factor authentication uses either: something users have and something\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1872",
+      "ref_id": "ISM-1872",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Multi-factor authentication used for authenticating users of online services\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1873",
+      "ref_id": "ISM-1873",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa",
+      "groups": [
+        "2"
+      ],
+      "title": "Multi-factor authentication used for authenticating customers of online\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1874",
+      "ref_id": "ISM-1874",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa",
+      "groups": [
+        "3"
+      ],
+      "title": "Multi-factor authentication used for authenticating customers of online\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1682",
+      "ref_id": "ISM-1682",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Multi-factor authentication used for authenticating users of systems is\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1894",
+      "ref_id": "ISM-1894",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa",
+      "groups": [
+        "3"
+      ],
+      "title": "Multi-factor authentication used for authenticating users of data repositories\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1683",
+      "ref_id": "ISM-1683",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Successful and unsuccessful multi-factor authentication events are centrally\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1815",
+      "ref_id": "ISM-1815",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Event logs are protected from unauthorised modification and deletion."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1906",
+      "ref_id": "ISM-1906",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Event logs from internet-facing servers are analysed in a timely manner to\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1907",
+      "ref_id": "ISM-1907",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa",
+      "groups": [
+        "3"
+      ],
+      "title": "Event logs from non-internet-facing servers are analysed in a timely manner to\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-0109",
+      "ref_id": "ISM-0109",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa",
+      "groups": [
+        "3"
+      ],
+      "title": "Event logs from workstations are analysed in a timely manner to detect cyber\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1228",
+      "ref_id": "ISM-1228",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Cyber security events are analysed in a timely manner to identify cyber\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-0123",
+      "ref_id": "ISM-0123",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Cyber security incidents are reported to the chief information security\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-0140",
+      "ref_id": "ISM-0140",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Cyber security incidents are reported to ASD as soon as possible after they\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1819",
+      "ref_id": "ISM-1819",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Following the identification of a cyber security incident, the cyber security\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1507",
+      "ref_id": "ISM-1507",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Requests for privileged access to systems, applications and data repositories\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1647",
+      "ref_id": "ISM-1647",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Privileged access to systems, applications and data repositories is disabled\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1648",
+      "ref_id": "ISM-1648",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Privileged access to systems and applications is disabled after 45 days of\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-0445",
+      "ref_id": "ISM-0445",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Privileged users are assigned a dedicated privileged user account to be used\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1508",
+      "ref_id": "ISM-1508",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap",
+      "groups": [
+        "3"
+      ],
+      "title": "Privileged access to systems, applications and data repositories is limited to\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1175",
+      "ref_id": "ISM-1175",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Privileged user accounts (excluding those explicitly authorised to access\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1883",
+      "ref_id": "ISM-1883",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Privileged user accounts explicitly authorised to access online services are\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1898",
+      "ref_id": "ISM-1898",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap",
+      "groups": [
+        "3"
+      ],
+      "title": "Secure Admin Workstations are used in the performance of administrative\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1380",
+      "ref_id": "ISM-1380",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Privileged users use separate privileged and unprivileged operating\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1687",
+      "ref_id": "ISM-1687",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Privileged operating environments are not virtualised within unprivileged\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1688",
+      "ref_id": "ISM-1688",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Unprivileged user accounts cannot logon to privileged operating environments."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1689",
+      "ref_id": "ISM-1689",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Privileged user accounts (excluding local administrator accounts) cannot logon\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1649",
+      "ref_id": "ISM-1649",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap",
+      "groups": [
+        "3"
+      ],
+      "title": "Just-in-time administration is used for administering systems and applications."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1387",
+      "ref_id": "ISM-1387",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Administrative activities are conducted through jump servers."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1685",
+      "ref_id": "ISM-1685",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Credentials for break glass accounts, local administrator accounts and service\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1896",
+      "ref_id": "ISM-1896",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap",
+      "groups": [
+        "3"
+      ],
+      "title": "Memory integrity functionality is enabled."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1861",
+      "ref_id": "ISM-1861",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap",
+      "groups": [
+        "3"
+      ],
+      "title": "Local Security Authority protection functionality is enabled."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1686",
+      "ref_id": "ISM-1686",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap",
+      "groups": [
+        "3"
+      ],
+      "title": "Credential Guard functionality is enabled."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1897",
+      "ref_id": "ISM-1897",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap",
+      "groups": [
+        "3"
+      ],
+      "title": "Remote Credential Guard functionality is enabled."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1509",
+      "ref_id": "ISM-1509",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Privileged access events are centrally logged."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1650",
+      "ref_id": "ISM-1650",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Privileged user account and security group management events are centrally\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1815",
+      "ref_id": "ISM-1815",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Event logs are protected from unauthorised modification and deletion."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1906",
+      "ref_id": "ISM-1906",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Event logs from internet-facing servers are analysed in a timely manner to\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1907",
+      "ref_id": "ISM-1907",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap",
+      "groups": [
+        "3"
+      ],
+      "title": "Event logs from non-internet-facing servers are analysed in a timely manner to\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-0109",
+      "ref_id": "ISM-0109",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap",
+      "groups": [
+        "3"
+      ],
+      "title": "Event logs from workstations are analysed in a timely manner to detect cyber\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1228",
+      "ref_id": "ISM-1228",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Cyber security events are analysed in a timely manner to identify cyber\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-0123",
+      "ref_id": "ISM-0123",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Cyber security incidents are reported to the chief information security\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-0140",
+      "ref_id": "ISM-0140",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Cyber security incidents are reported to ASD as soon as possible after they\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1819",
+      "ref_id": "ISM-1819",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Following the identification of a cyber security incident, the cyber security\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-0843",
+      "ref_id": "ISM-0843",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Application control is implemented on workstations."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1490",
+      "ref_id": "ISM-1490",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Application control is implemented on internet-facing servers."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1656",
+      "ref_id": "ISM-1656",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac",
+      "groups": [
+        "3"
+      ],
+      "title": "Application control is implemented on non-internet-facing servers."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1870",
+      "ref_id": "ISM-1870",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Application control is applied to user profiles and temporary folders used by\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1871",
+      "ref_id": "ISM-1871",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Application control is applied to all locations other than user profiles and\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1657",
+      "ref_id": "ISM-1657",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Application control restricts the execution of executables, software\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1658",
+      "ref_id": "ISM-1658",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac",
+      "groups": [
+        "3"
+      ],
+      "title": "Application control restricts the execution of drivers to an\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1544",
+      "ref_id": "ISM-1544",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Microsoft\u2019s recommended application blocklist is implemented."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1659",
+      "ref_id": "ISM-1659",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac",
+      "groups": [
+        "3"
+      ],
+      "title": "Microsoft\u2019s vulnerable driver blocklist is implemented."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1582",
+      "ref_id": "ISM-1582",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Application control rulesets are validated on an annual or more frequent basis."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1660",
+      "ref_id": "ISM-1660",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Allowed and blocked application control events are centrally logged."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1815",
+      "ref_id": "ISM-1815",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Event logs are protected from unauthorised modification and deletion."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1906",
+      "ref_id": "ISM-1906",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Event logs from internet-facing servers are analysed in a timely manner to\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1907",
+      "ref_id": "ISM-1907",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac",
+      "groups": [
+        "3"
+      ],
+      "title": "Event logs from non-internet-facing servers are analysed in a timely manner to\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-0109",
+      "ref_id": "ISM-0109",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac",
+      "groups": [
+        "3"
+      ],
+      "title": "Event logs from workstations are analysed in a timely manner to detect cyber\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1228",
+      "ref_id": "ISM-1228",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Cyber security events are analysed in a timely manner to identify cyber\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-0123",
+      "ref_id": "ISM-0123",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Cyber security incidents are reported to the chief information security\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-0140",
+      "ref_id": "ISM-0140",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Cyber security incidents are reported to ASD as soon as possible after they\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1819",
+      "ref_id": "ISM-1819",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Following the identification of a cyber security incident, the cyber security\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rmom:ism-1671",
+      "ref_id": "ISM-1671",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rmom",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Microsoft Office macros are disabled for users that do not have a demonstrated\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rmom:ism-1674",
+      "ref_id": "ISM-1674",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rmom",
+      "groups": [
+        "3"
+      ],
+      "title": "Only Microsoft Office macros running from within a sandboxed environment, a\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rmom:ism-1890",
+      "ref_id": "ISM-1890",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rmom",
+      "groups": [
+        "3"
+      ],
+      "title": "Microsoft Office macros are checked to ensure they are free of malicious code\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rmom:ism-1487",
+      "ref_id": "ISM-1487",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rmom",
+      "groups": [
+        "3"
+      ],
+      "title": "Only privileged users responsible for checking that Microsoft Office macros\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rmom:ism-1675",
+      "ref_id": "ISM-1675",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rmom",
+      "groups": [
+        "3"
+      ],
+      "title": "Microsoft Office macros digitally signed by an untrusted publisher cannot be\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rmom:ism-1891",
+      "ref_id": "ISM-1891",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rmom",
+      "groups": [
+        "3"
+      ],
+      "title": "Microsoft Office macros digitally signed by signatures other than V3\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rmom:ism-1676",
+      "ref_id": "ISM-1676",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rmom",
+      "groups": [
+        "3"
+      ],
+      "title": "Microsoft Office\u2019s list of trusted publishers is validated on an annual or\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rmom:ism-1488",
+      "ref_id": "ISM-1488",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rmom",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Microsoft Office macros in files originating from the internet are blocked."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rmom:ism-1672",
+      "ref_id": "ISM-1672",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rmom",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Microsoft Office macro antivirus scanning is enabled."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rmom:ism-1673",
+      "ref_id": "ISM-1673",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rmom",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Microsoft Office macros are blocked from making Win32 API calls."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rmom:ism-1489",
+      "ref_id": "ISM-1489",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rmom",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Microsoft Office macro security settings cannot be changed by users."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1654",
+      "ref_id": "ISM-1654",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Internet Explorer 11 is disabled or removed."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1486",
+      "ref_id": "ISM-1486",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Web browsers do not process Java from the internet."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1485",
+      "ref_id": "ISM-1485",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Web browsers do not process web advertisements from the internet."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1412",
+      "ref_id": "ISM-1412",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Web browsers are hardened using ASD and vendor hardening guidance, with the\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1585",
+      "ref_id": "ISM-1585",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Web browser security settings cannot be changed by users."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1667",
+      "ref_id": "ISM-1667",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Microsoft Office is blocked from creating child processes."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1668",
+      "ref_id": "ISM-1668",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Microsoft Office is blocked from creating executable content."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1669",
+      "ref_id": "ISM-1669",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Microsoft Office is blocked from injecting code into other processes."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1542",
+      "ref_id": "ISM-1542",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Microsoft Office is configured to prevent activation of Object Linking and\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1859",
+      "ref_id": "ISM-1859",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Office productivity suites are hardened using ASD and vendor hardening\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1823",
+      "ref_id": "ISM-1823",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Office productivity suite security settings cannot be changed by users."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1670",
+      "ref_id": "ISM-1670",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "PDF software is blocked from creating child processes."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1860",
+      "ref_id": "ISM-1860",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "PDF software is hardened using ASD and vendor hardening guidance, with the\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1824",
+      "ref_id": "ISM-1824",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "PDF software security settings cannot be changed by users."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1655",
+      "ref_id": "ISM-1655",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah",
+      "groups": [
+        "3"
+      ],
+      "title": ".NET Framework 3.5 (includes .NET 2.0 and 3.0) is disabled or removed."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1621",
+      "ref_id": "ISM-1621",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah",
+      "groups": [
+        "3"
+      ],
+      "title": "Windows PowerShell 2.0 is disabled or removed."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1622",
+      "ref_id": "ISM-1622",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah",
+      "groups": [
+        "3"
+      ],
+      "title": "PowerShell is configured to use Constrained Language Mode."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1623",
+      "ref_id": "ISM-1623",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "PowerShell module logging, script block logging and transcription events are\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1889",
+      "ref_id": "ISM-1889",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Command line process creation events are centrally logged."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1815",
+      "ref_id": "ISM-1815",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Event logs are protected from unauthorised modification and deletion."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1906",
+      "ref_id": "ISM-1906",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Event logs from internet-facing servers are analysed in a timely manner to\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1907",
+      "ref_id": "ISM-1907",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah",
+      "groups": [
+        "3"
+      ],
+      "title": "Event logs from non-internet-facing servers are analysed in a timely manner to\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-0109",
+      "ref_id": "ISM-0109",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah",
+      "groups": [
+        "3"
+      ],
+      "title": "Event logs from workstations are analysed in a timely manner to detect cyber\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1228",
+      "ref_id": "ISM-1228",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Cyber security events are analysed in a timely manner to identify cyber\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-0123",
+      "ref_id": "ISM-0123",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Cyber security incidents are reported to the chief information security\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-0140",
+      "ref_id": "ISM-0140",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Cyber security incidents are reported to ASD as soon as possible after they\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1819",
+      "ref_id": "ISM-1819",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Following the identification of a cyber security incident, the cyber security\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rb:ism-1511",
+      "ref_id": "ISM-1511",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rb",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Backups of data, applications and settings are performed and retained in\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rb:ism-1810",
+      "ref_id": "ISM-1810",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rb",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Backups of data, applications and settings are synchronised to enable\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rb:ism-1811",
+      "ref_id": "ISM-1811",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rb",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Backups of data, applications and settings are retained in a secure and\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rb:ism-1515",
+      "ref_id": "ISM-1515",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rb",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Restoration of data, applications and settings from backups to a common point\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rb:ism-1812",
+      "ref_id": "ISM-1812",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rb",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Unprivileged user accounts cannot access backups belonging to other user\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rb:ism-1813",
+      "ref_id": "ISM-1813",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rb",
+      "groups": [
+        "3"
+      ],
+      "title": "Unprivileged user accounts cannot access their own backups."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rb:ism-1705",
+      "ref_id": "ISM-1705",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rb",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Privileged user accounts (excluding backup administrator accounts) cannot\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rb:ism-1706",
+      "ref_id": "ISM-1706",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rb",
+      "groups": [
+        "3"
+      ],
+      "title": "Privileged user accounts (excluding backup administrator accounts) cannot\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rb:ism-1814",
+      "ref_id": "ISM-1814",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rb",
+      "groups": [
+        "1",
+        "2",
+        "3"
+      ],
+      "title": "Unprivileged user accounts are prevented from modifying and deleting backups."
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rb:ism-1707",
+      "ref_id": "ISM-1707",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rb",
+      "groups": [
+        "2",
+        "3"
+      ],
+      "title": "Privileged user accounts (excluding backup administrator accounts) are\u2026"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rb:ism-1708",
+      "ref_id": "ISM-1708",
+      "parent_urn": "urn:intuitem:risk:req_node:essential-eight-2023:rb",
+      "groups": [
+        "3"
+      ],
+      "title": "Backup administrator accounts are prevented from modifying and deleting\u2026"
+    }
+  ]
+}

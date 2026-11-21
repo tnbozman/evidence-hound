@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=../../../schemas/scope.schema.json
+# Applied controls, declared once and used by any number of audits. Everything here is made up.
+# A status is set only when hound creates the control; after that, runs set it from the evidence (target.controls in the config).
+controls:
+  - ref_id: AC-MFA
+    name: Multi-factor authentication
+    description: Every user signs in to Example 365 with MFA; administrators with phishing-resistant MFA.
+    domain: Example Pty Ltd
+    owner: it@example.com
+    status: to_do
+    priority: "1"
+    category: technical
+    systems: [Example 365]
+    documents: [identity-policy]
+  - ref_id: AC-BACKUP
+    name: Daily backups with quarterly restore tests
+    domain: Example Pty Ltd
+    owner: it@example.com
+    status: to_do
+    priority: "1"
+    category: technical
+    eta: "2026-12-31"
+    systems: [Example backup service, Example 365, Example laptops]
+    documents: [backup-procedure]
+  - ref_id: AC-AUTO-EVIDENCE
+    name: Automated evidence collection
+    description: Evidence Hound collects evidence on a schedule; each collector's health is linked here.
+    domain: Example Pty Ltd
+    owner: it@example.com
+    status: to_do
+    category: process

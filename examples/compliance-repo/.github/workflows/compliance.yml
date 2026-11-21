@@ -1,0 +1,99 @@
+# Validates every pull request, comments what applying it would change in CISO Assistant, and applies it on merge.
+#
+# Setup in your private repo:
+# - A self-hosted runner that can reach CISO Assistant (label: ciso-assistant).
+# - Repository secrets HOUND_CA_URL and HOUND_CA_TOKEN: a read-only token for plan, and, on the environment, the token apply writes with.
+# - An environment named ciso-assistant with required reviewers, so every apply waits for an approval after the merge.
+# - Pin EVIDENCE_HOUND_REF to the Evidence Hound release you run.
+name: compliance
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  EVIDENCE_HOUND_REF: main
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: tnbozman/evidence-hound
+          ref: ${{ env.EVIDENCE_HOUND_REF }}
+          path: .evidence-hound
+          persist-credentials: false
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          global-json-file: .evidence-hound/global.json
+      - name: Validate the config, scope and mappings
+        run: |
+          hound() { dotnet run --project .evidence-hound/src/EvidenceHound.Cli -c Release -- "$@"; }
+          hound config validate hound.yaml
+          hound scope validate scope/ --config hound.yaml
+          for mapping in mappings/*.yaml; do hound mapping validate "$mapping"; done
+
+  plan:
+    if: github.event_name == 'pull_request'
+    needs: validate
+    runs-on: [self-hosted, ciso-assistant]
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: tnbozman/evidence-hound
+          ref: ${{ env.EVIDENCE_HOUND_REF }}
+          path: .evidence-hound
+          persist-credentials: false
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          global-json-file: .evidence-hound/global.json
+      - name: Plan the scope against CISO Assistant
+        env:
+          HOUND_CA_URL: ${{ secrets.HOUND_CA_URL }}
+          HOUND_CA_TOKEN: ${{ secrets.HOUND_CA_TOKEN }}
+        run: dotnet run --project .evidence-hound/src/EvidenceHound.Cli -c Release -- scope plan scope/ --config hound.yaml > plan.md
+      - name: Comment the plan on the pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --body-file plan.md
+
+  apply:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: [self-hosted, ciso-assistant]
+    environment: ciso-assistant
+    concurrency: ciso-assistant-apply
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: tnbozman/evidence-hound
+          ref: ${{ env.EVIDENCE_HOUND_REF }}
+          path: .evidence-hound
+          persist-credentials: false
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          global-json-file: .evidence-hound/global.json
+      - name: Apply the scope to CISO Assistant
+        env:
+          HOUND_CA_URL: ${{ secrets.HOUND_CA_URL }}
+          HOUND_CA_TOKEN: ${{ secrets.HOUND_CA_TOKEN }}
+        run: dotnet run --project .evidence-hound/src/EvidenceHound.Cli -c Release -- scope apply scope/ --config hound.yaml

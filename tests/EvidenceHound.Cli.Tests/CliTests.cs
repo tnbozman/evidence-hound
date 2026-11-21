@@ -184,15 +184,6 @@ public sealed class CliTests : IDisposable
     }
 
     [Fact]
-    public async Task Plan_without_dry_run_exits_two()
-    {
-        var exitCode = await Run("plan", "--config", RepoFile("examples", "example-pty-ltd.yaml"), "--checks", RepoFile("fixtures", "checks-sample.json"));
-
-        exitCode.ShouldBe(2);
-        _error.ToString().ShouldContain("--dry-run");
-    }
-
-    [Fact]
     public async Task Plan_with_config_without_target_exits_three()
     {
         var config = Path.Combine(_workDir, "no-target.yaml");

@@ -99,5 +99,26 @@ public sealed class CollectStepTests : IDisposable
         runs.Select(r => r.StartedAt).ShouldBe([Now.AddDays(-10), Now]);
     }
 
+    [Fact]
+    public async Task Keeps_the_final_run_of_each_closed_audit_period()
+    {
+        var collector = new StubCollector(Output);
+        var step = new CollectStep(Secrets.From(new Dictionary<string, string>()), new FileEvidenceStore(_root), _clock, 30, TestCollectorServices.None)
+        {
+            PeriodEnds = [new DateOnly(2026, 3, 31)],
+            PeriodRetentionYears = 7,
+        };
+        _clock.UtcNow = new DateTimeOffset(2026, 3, 30, 2, 0, 0, TimeSpan.Zero);
+        await step.RunAsync(Instance(), collector, TestContext.Current.CancellationToken);
+        _clock.UtcNow = new DateTimeOffset(2026, 3, 31, 2, 0, 0, TimeSpan.Zero);
+        await step.RunAsync(Instance(), collector, TestContext.Current.CancellationToken);
+        _clock.UtcNow = Now;
+
+        await step.RunAsync(Instance(), collector, TestContext.Current.CancellationToken);
+
+        var runs = await new FileEvidenceStore(_root).ListRunsAsync("idp", TestContext.Current.CancellationToken);
+        runs.Select(r => r.StartedAt).ShouldBe([new DateTimeOffset(2026, 3, 31, 2, 0, 0, TimeSpan.Zero), Now]);
+    }
+
     public void Dispose() => Directory.Delete(_root, recursive: true);
 }

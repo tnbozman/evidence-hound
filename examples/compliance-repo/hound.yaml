@@ -1,0 +1,51 @@
+# yaml-language-server: $schema=../../schemas/config.schema.json
+# Example Pty Ltd's deployment config. Everything here is made up; your own lives in your private compliance repo.
+# Guide: docs/configuration.md. Check it with: hound config validate hound.yaml
+# Relative paths are relative to this file. Secrets are references only, never values.
+
+ciso_assistant:
+  url: https://ciso.example.com/api/     # HOUND_CA_URL overrides this, for example in CI
+  token: env:HOUND_CA_TOKEN              # a personal access token for hound's service account
+
+evidence:
+  root: /var/lib/evidence-hound/evidence # outside the repo: evidence is never committed
+  retention_days: 90
+  period_retention_years: 7
+
+# The scope folder: lets a target name an audit series that runs in periods (see docs/scope.md).
+scope: scope
+
+collectors:
+  - name: example-m365
+    type: m365
+    schedule: "0 3 * * *"
+    settings:
+      tenant_id: 00000000-0000-4000-8000-000000000001     # fictional
+      client_id: 00000000-0000-4000-8000-000000000002     # fictional
+      supported_windows_builds: "10.0.22631, 10.0.26100"
+    secrets:
+      client_certificate: file:/run/secrets/m365_client_certificate
+
+  # Manual sources: people drop their exports here, outside the repo. See manual-sources/README.md.
+  - name: example-incident-register
+    type: manual
+    schedule: "0 6 * * *"
+    settings:
+      drop_folder: /var/lib/evidence-hound/manual/example-incident-register
+      checks: incident.reported_to_ciso, incident.reported_to_asd, incident.response_plan_followed
+      due_days: 31
+      owner: Alex Example
+
+  - name: example-backup-restore-test
+    type: manual
+    schedule: "0 6 * * *"
+    settings:
+      drop_folder: /var/lib/evidence-hound/manual/example-backup-restore-test
+      checks: backup.restore_tested
+      due_days: 92
+      owner: Sam Example
+
+target:
+  mapping: mappings/essential-eight-2023.yaml
+  compliance_assessment: EX-E8-2026
+  health_control: AC-AUTO-EVIDENCE

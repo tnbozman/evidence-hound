@@ -37,4 +37,22 @@ public class RetentionTests
 
         Retention.RunsToDelete(runs, Now, days: 30).ShouldBe([Run(90)]);
     }
+
+    [Fact]
+    public void Closed_period_final_run_is_kept()
+    {
+        var runs = new[] { Run(100), Run(60), Run(40), Run(10) };
+        var periodEnd = DateOnly.FromDateTime(Now.AddDays(-50).UtcDateTime);
+
+        Retention.RunsToDelete(runs, Now, days: 30, [periodEnd], periodRetentionYears: 7).ShouldBe([Run(100), Run(40)]);
+    }
+
+    [Fact]
+    public void Period_final_run_older_than_the_period_retention_goes()
+    {
+        var old = new StoredRun("idp", Now.AddYears(-8), "run-old", Complete: true);
+        var periodEnd = DateOnly.FromDateTime(Now.AddYears(-8).AddDays(1).UtcDateTime);
+
+        Retention.RunsToDelete([old, Run(1)], Now, days: 30, [periodEnd], periodRetentionYears: 7).ShouldBe([old]);
+    }
 }

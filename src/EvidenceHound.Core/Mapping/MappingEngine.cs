@@ -51,6 +51,10 @@ public static class MappingEngine
                 : $"{c.Id}: {Names.Of(c.Result.Outcome)} ({c.Result.Observation})"));
         var evidence = found.SelectMany(r => r.EvidenceRefs).Distinct().Order(StringComparer.Ordinal).ToArray();
 
-        return new RequirementResult(requirement.RequirementRef, result, observation, evidence);
+        return new RequirementResult(requirement.RequirementRef, result, observation, evidence)
+        {
+            Key = requirement.Key,
+            CheckOutcomes = [.. contributing.Select(c => $"{c.Id}:{(c.Result is null ? "missing" : Names.Of(c.Result.Outcome))}")],
+        };
     }
 }

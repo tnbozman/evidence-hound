@@ -42,6 +42,18 @@ public abstract record AuditUpdate
         string Observation,
         IReadOnlyList<string> EvidenceRefIds) : AuditUpdate
     {
+        /// <summary>How the requirement is named. Defaults to <see cref="RequirementRefId"/> as a ref.</summary>
+        public RequirementKey Requirement { get; init; } = RequirementKey.Ref(RequirementRefId);
+
+        /// <summary>The CISO Assistant IDs of the rows to write. Empty: the publisher finds the rows by <see cref="Requirement"/>.</summary>
+        public IReadOnlyList<string> RowIds { get; init; } = [];
+
+        /// <summary>CISO Assistant IDs of cited evidence that is already there and is not uploaded in this plan, by ref_id.</summary>
+        public IReadOnlyDictionary<string, string> KnownEvidenceIds { get; init; } = new Dictionary<string, string>();
+
+        /// <summary>By row ID: the CISO Assistant IDs of the scope's documents a row links, which the update keeps alongside the cited evidence.</summary>
+        public IReadOnlyDictionary<string, IReadOnlyList<string>> KeptEvidenceIds { get; init; } = new Dictionary<string, IReadOnlyList<string>>();
+
         public override T Match<T>(Func<UploadEvidence, T> upload, Func<UpdateRequirementAssessment, T> requirement, Func<UpdateAppliedControl, T> control)
         {
             ArgumentNullException.ThrowIfNull(requirement);

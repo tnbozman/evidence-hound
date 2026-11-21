@@ -89,11 +89,57 @@ public class PublisherTests
         _ca.Calls.ShouldBe([
             "find-or-create ev-0001", "upload uuid-ev-0001 mfa-admins.json",
             "find-or-create ev-0002", "upload uuid-ev-0002 backup-jobs.json",
-            "find EX-1.1", "update ra-EX-1.1",
+            "audit EXAMPLE-BASELINE-2026", "find EX-1.1", "update ra-EX-1.1",
             "find EX-3.1", "update ra-EX-3.1",
             "control AC-MFA",
         ]);
         _ca.Controls["AC-MFA"].ShouldBe(ControlState.Active);
+    }
+
+    [Fact]
+    public async Task Update_with_row_ids_writes_those_rows_without_looking_them_up()
+    {
+        var update = new AuditUpdate.UpdateRequirementAssessment("EXAMPLE-BASELINE-2026", "EX-1.1", ComplianceResult.Compliant, "All admins use MFA.", ["ev-0001"])
+        {
+            RowIds = ["ra-a", "ra-b"],
+            KnownEvidenceIds = new Dictionary<string, string> { ["ev-0001"] = "uuid-known" },
+        };
+
+        var report = await Publisher().PublishAsync([update], _ct);
+
+        report.Sent.ShouldBe(1);
+        _ca.Calls.ShouldBe(["update ra-a", "update ra-b"]);
+        _ca.Requirements["ra-b"].EvidenceIds.ShouldBe(["uuid-known"]);
+    }
+
+    [Fact]
+    public async Task Row_update_keeps_the_scope_documents_on_each_row()
+    {
+        var update = new AuditUpdate.UpdateRequirementAssessment("EXAMPLE-BASELINE-2026", "EX-1.1", ComplianceResult.Compliant, "All admins use MFA.", ["ev-0001"])
+        {
+            RowIds = ["ra-a", "ra-b"],
+            KnownEvidenceIds = new Dictionary<string, string> { ["ev-0001"] = "uuid-known" },
+            KeptEvidenceIds = new Dictionary<string, IReadOnlyList<string>> { ["ra-b"] = ["uuid-policy"] },
+        };
+
+        await Publisher().PublishAsync([update], _ct);
+
+        _ca.Requirements["ra-a"].EvidenceIds.ShouldBe(["uuid-known"]);
+        _ca.Requirements["ra-b"].EvidenceIds.ShouldBe(["uuid-known", "uuid-policy"]);
+    }
+
+    [Fact]
+    public async Task Evidence_uploaded_in_the_plan_wins_over_a_known_id()
+    {
+        var update = new AuditUpdate.UpdateRequirementAssessment("EXAMPLE-BASELINE-2026", "EX-1.1", ComplianceResult.Compliant, "All admins use MFA.", ["ev-0001"])
+        {
+            RowIds = ["ra-a"],
+            KnownEvidenceIds = new Dictionary<string, string> { ["ev-0001"] = "uuid-stale" },
+        };
+
+        await Publisher().PublishAsync([new AuditUpdate.UploadEvidence(Mfa), update], _ct);
+
+        _ca.Requirements["ra-a"].EvidenceIds.ShouldBe(["uuid-ev-0001"]);
     }
 
     [Fact]
@@ -203,6 +249,101 @@ public class PublisherTests
             "set applied control AC-MFA to active",
         ]);
     }
+
+    [Fact]
+    public async Task Rows_all_writes_one_result_to_every_matching_row()
+    {
+        _ca.Rows.AddRange([Row("ra-bnd", "bnd", "ACT-01", "1"), Row("ra-idn", "idn", "ACT-01", "1")]);
+
+        var report = await Publisher().PublishAsync([Requirement(RequirementKey.Ref("ACT-01", allRows: true))], _ct);
+
+        report.Items.ShouldHaveSingleItem().Outcome.ShouldBe(PublishOutcome.Sent);
+        _ca.Requirements.Keys.Order(StringComparer.Ordinal).ShouldBe(["ra-bnd", "ra-idn"]);
+    }
+
+    [Fact]
+    public async Task Ref_matching_several_rows_without_rows_all_fails_listing_their_urns()
+    {
+        _ca.Rows.AddRange([Row("ra-bnd", "bnd", "ACT-01", "1"), Row("ra-idn", "idn", "ACT-01", "1")]);
+
+        var report = await Publisher().PublishAsync([Requirement(RequirementKey.Ref("ACT-01"))], _ct);
+
+        var problem = report.Items.ShouldHaveSingleItem().Problems.ShouldHaveSingleItem();
+        problem.Code.ShouldBe("mapping.ref_ambiguous");
+        problem.Message.ShouldContain("urn:example:req:bnd:ACT-01");
+        problem.Message.ShouldContain("urn:example:req:idn:ACT-01");
+        _ca.Requirements.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task Requirement_named_by_urn_writes_only_that_row()
+    {
+        _ca.Rows.AddRange([Row("ra-bnd", "bnd", "ACT-01", "1"), Row("ra-idn", "idn", "ACT-01", "1")]);
+
+        await Publisher().PublishAsync([Requirement(RequirementKey.Urn("urn:example:req:idn:ACT-01"))], _ct);
+
+        _ca.Requirements.Keys.ShouldBe(["ra-idn"]);
+    }
+
+    [Fact]
+    public async Task Requirements_outside_selected_groups_are_skipped()
+    {
+        _ca.SelectedGroups.AddRange(["1", "2"]);
+        _ca.Rows.AddRange([Row("ra-bnd", "bnd", "ACT-01", "1"), Row("ra-ml3", "idn", "ACT-03", "3"), Row("ra-none", "idn", "ACT-04")]);
+
+        var report = await Publisher().PublishAsync(
+            [Requirement(RequirementKey.Ref("ACT-01")), Requirement(RequirementKey.Ref("ACT-03")), Requirement(RequirementKey.Ref("ACT-04"))], _ct);
+
+        report.Items.Select(i => (i.Outcome, i.Note)).ShouldBe([
+            (PublishOutcome.Sent, null),
+            (PublishOutcome.Skipped, "outside selected groups"),
+            (PublishOutcome.Skipped, "outside selected groups"),
+        ]);
+        report.Failed.ShouldBe(0);
+        _ca.Requirements.Keys.ShouldBe(["ra-bnd"]);
+    }
+
+    [Fact]
+    public async Task Rows_all_writes_only_the_rows_in_selected_groups()
+    {
+        _ca.SelectedGroups.Add("1");
+        _ca.Rows.AddRange([Row("ra-bnd", "bnd", "ACT-01", "1"), Row("ra-idn", "idn", "ACT-01", "2")]);
+
+        var report = await Publisher().PublishAsync([Requirement(RequirementKey.Ref("ACT-01", allRows: true))], _ct);
+
+        report.Sent.ShouldBe(1);
+        _ca.Requirements.Keys.ShouldBe(["ra-bnd"]);
+    }
+
+    [Fact]
+    public async Task Audit_groups_are_read_once_per_audit()
+    {
+        await Publisher().PublishAsync([Requirement(RequirementKey.Ref("EX-1.1")), Requirement(RequirementKey.Ref("EX-1.2"))], _ct);
+
+        _ca.Calls.Count(c => c.StartsWith("audit", StringComparison.Ordinal)).ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task Failure_in_one_audit_does_not_stop_the_next()
+    {
+        _ca.MissingAudits.Add("EX-A");
+
+        var report = await Publisher().PublishAsync(
+        [
+            new AuditUpdate.UpdateRequirementAssessment("EX-A", "R-1", ComplianceResult.Compliant, "Checked.", []),
+            new AuditUpdate.UpdateRequirementAssessment("EX-A", "R-2", ComplianceResult.Compliant, "Checked.", []),
+            new AuditUpdate.UpdateRequirementAssessment("EX-B", "R-1", ComplianceResult.Compliant, "Checked.", []),
+        ], _ct);
+
+        report.Items.Select(i => i.Outcome).ShouldBe([PublishOutcome.Failed, PublishOutcome.Failed, PublishOutcome.Sent]);
+        report.Audits.Select(a => (a.ComplianceAssessmentRefId, a.Sent, a.Failed)).ShouldBe([("EX-A", 0, 2), ("EX-B", 1, 0)]);
+    }
+
+    private static RemoteRequirementAssessment Row(string id, string domain, string refId, params string[] groups) =>
+        new(id, $"urn:example:req:{domain}:{refId}", refId, groups);
+
+    private static AuditUpdate.UpdateRequirementAssessment Requirement(RequirementKey key) =>
+        new("EXAMPLE-2026", key.Value, ComplianceResult.Compliant, "Checked.", []) { Requirement = key };
 
     private static Evidence Evidence(string id, string fileName, byte[] content) =>
         Core.Checks.Evidence.Create(id, fileName, "application/json", Convert.ToHexStringLower(SHA256.HashData(content)), content.Length, CheckTestData.CollectedAt).Value();

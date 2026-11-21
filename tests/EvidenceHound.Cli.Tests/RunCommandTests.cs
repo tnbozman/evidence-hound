@@ -25,6 +25,12 @@ public sealed class RunCommandTests : IDisposable
         collector["name"]!.GetValue<string>().ShouldBe("example-fake");
         collector["outcome"]!.GetValue<string>().ShouldBe("succeeded");
         collector["publish"]!["planned"]!.GetValue<int>().ShouldBe(8);
+        Summary()["run_id"]!.GetValue<string>().ShouldMatch("^[0-9]{8}T[0-9]{6}Z$");
+        var changes = collector["changes"]!.AsArray().ShouldHaveSingleItem()!;
+        changes["compliance_assessment"]!.GetValue<string>().ShouldBe("EXAMPLE-BASELINE-2026");
+        changes["changed"]!.GetValue<int>().ShouldBeGreaterThan(0);
+        (changes["unchanged"]!.GetValue<int>(), changes["drift"]!.GetValue<int>()).ShouldBe((0, 0));
+        collector["drift"]!.AsArray().ShouldBeEmpty();
         Directory.GetDirectories(Path.Combine(_workDir, "evidence", "example-fake")).ShouldHaveSingleItem();
     }
 

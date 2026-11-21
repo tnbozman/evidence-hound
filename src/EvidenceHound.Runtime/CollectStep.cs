@@ -22,6 +22,11 @@ public sealed record CollectedRun(CollectorInstance Instance, CollectorOutput Ou
 /// <summary>Collects from one collector instance and stores its evidence: resolve secrets, collect, build the manifest, write, apply retention.</summary>
 public sealed class CollectStep(ISecretProvider secrets, IEvidenceStore store, IClock clock, int? retentionDays, CollectorServices services)
 {
+    /// <summary>The last day of each audit period that has ended; each one's final run is kept for <see cref="PeriodRetentionYears"/>.</summary>
+    public IReadOnlyList<DateOnly> PeriodEnds { get; init; } = [];
+
+    public int PeriodRetentionYears { get; init; } = 7;
+
     public Task<Result<CollectedRun>> RunAsync(CollectorInstance instance, ICollector collector, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(instance);
@@ -41,7 +46,7 @@ public sealed class CollectStep(ISecretProvider secrets, IEvidenceStore store, I
         if (retentionDays is { } days && stored is Result<StoredRun>.Ok)
         {
             var runs = await store.ListRunsAsync(instance.Name, cancellationToken);
-            foreach (var run in Retention.RunsToDelete(runs, manifest.CollectedAt, days))
+            foreach (var run in Retention.RunsToDelete(runs, manifest.CollectedAt, days, PeriodEnds, PeriodRetentionYears))
             {
                 await store.DeleteRunAsync(run, cancellationToken);
             }

@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=../../../../schemas/scope.schema.json
+# Example Pty Ltd's Essential Eight (November 2023) maturity level 2 audit. Everything here is made up.
+ref_id: EX-E8-2026
+name: Essential Eight ML2 2026
+framework: urn:intuitem:risk:framework:essential-eight-2023
+groups: ["1", "2"]
+domain: Example Pty Ltd
+perimeter: Corporate IT
+eta: "2026-06-30"
+due_date: "2026-07-31"
+authors: [it@example.com]
+reviewers: [ceo@example.com]
+field_visibility:
+  result: {auditor: edit, respondent: read}
+  observation: {auditor: edit, respondent: read}
+  evidences: {auditor: edit, respondent: read}
+systems: [Example 365, Example laptops, Example backup service]
+documents:
+  - id: identity-policy
+    name: Identity and access policy
+    files: [documents/identity-policy.pdf]
+    systems: [Example 365]
+    requirements: [ISM-1504, ISM-1173]
+  - id: backup-procedure
+    name: Backup and restore procedure
+    files: [documents/backup-procedure.pdf]
+    systems: [Example backup service]
+    requirements: [ISM-1511, ISM-1515]
+controls:
+  - ref_id: AC-MFA
+    requirements: [ISM-1504, ISM-1173]
+  - ref_id: AC-BACKUP
+    requirements: [ISM-1511, ISM-1515]
+assessments:
+  # Web browsers do not process Java from the internet. The mapping lists this as manual only: no collector covers it yet.
+  - ref: ISM-1486
+    status: done
+    result: compliant
+    observation: Java is not installed on any laptop, and the browser policy blocks it. Checked at the March review.
+unlisted:
+  result: not_assessed

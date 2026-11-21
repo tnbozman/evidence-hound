@@ -11,10 +11,25 @@ namespace EvidenceHound.Core.Publishing;
 /// </summary>
 public interface ICisoAssistantClient
 {
+    /// <summary>The IDs of the evidence items <c>hound scope apply</c> manages (their description ends with the scope marker).</summary>
+    Task<Result<IReadOnlyList<string>>> ListScopeDocumentIdsAsync(CancellationToken cancellationToken);
+
     Task<Result<Unit>> CheckHealthAsync(CancellationToken cancellationToken);
 
-    /// <summary>The ID of the one requirement assessment for this requirement in this audit.</summary>
-    Task<Result<string>> FindRequirementAssessmentAsync(string complianceAssessmentRefId, string requirementRefId, CancellationToken cancellationToken);
+    /// <summary>Every requirement assessment in this audit for the requirement: one for a URN, one or more for a repeated ref.</summary>
+    Task<Result<IReadOnlyList<RemoteRequirementAssessment>>> FindRequirementAssessmentsAsync(string complianceAssessmentRefId, RequirementKey requirement, CancellationToken cancellationToken);
+
+    /// <summary>The one audit with this ref_id and the implementation groups it selects.</summary>
+    Task<Result<RemoteAudit>> FindAuditAsync(string complianceAssessmentRefId, CancellationToken cancellationToken);
+
+    /// <summary>Every row of the audit with its current result, observation and evidence IDs.</summary>
+    Task<Result<IReadOnlyList<CurrentRow>>> ListRequirementAssessmentsAsync(string complianceAssessmentRefId, CancellationToken cancellationToken);
+
+    /// <summary>The evidence with this ref_id and its latest hash; empty when there is none. Creates nothing.</summary>
+    Task<Result<IReadOnlyList<RemoteEvidence>>> FindEvidenceAsync(string refId, CancellationToken cancellationToken);
+
+    /// <summary>The status of the one applied control with this ref_id.</summary>
+    Task<Result<ControlState>> FindAppliedControlStatusAsync(string refId, CancellationToken cancellationToken);
 
     Task<Result<Unit>> UpdateRequirementAssessmentAsync(string requirementAssessmentId, RequirementAssessmentValues values, CancellationToken cancellationToken);
 
@@ -39,3 +54,13 @@ public sealed record RemoteEvidence(string Id, string? LatestSha256);
 
 /// <summary>A file to upload as an evidence revision.</summary>
 public sealed record EvidenceFile(string FileName, ReadOnlyMemory<byte> Content);
+
+/// <summary>A requirement assessment (one row of an audit), its requirement's URN and ref_id, and the requirement's implementation groups.</summary>
+public sealed record RemoteRequirementAssessment(string Id, string Urn, string? RefId, IReadOnlyList<string> Groups);
+
+/// <summary>An audit and the ref_ids of the implementation groups it selects; none selects all.</summary>
+public sealed record RemoteAudit(string Id, IReadOnlyList<string> SelectedGroups)
+{
+    /// <summary>In review, done or locked: <c>hound</c> never writes to it.</summary>
+    public bool Closed { get; init; }
+}
