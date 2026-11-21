@@ -74,7 +74,7 @@ All code in this sprint lives in `src/EvidenceHound.Core` and is tested in `test
 **Functional check result (2026-11-21):** `make run ARGS="mapping validate mappings/example.yaml"` printed `valid: 4 requirements`; a broken file printed each problem with its line and exited 3. `make test`: `total: 85, failed: 0`. Evidence: [`docs/evidence/s01/s01-03.md`](../evidence/s01/s01-03.md).
 
 ### s01-04 Mapping engine
-- [ ] Done
+- [x] Done
 
 **Story:** As a compliance owner, I want check results turned into requirement results, so that CISO Assistant audits reflect what collectors found.
 
@@ -96,6 +96,8 @@ All code in this sprint lives in `src/EvidenceHound.Core` and is tested in `test
 
 **Functional check**
 - `make run ARGS="mapping apply mappings/example.yaml tests/fixtures/checks-sample.json"` prints a table of requirement results.
+
+**Functional check result (2026-11-21):** `make run ARGS="mapping apply mappings/example.yaml tests/fixtures/checks-sample.json"` printed one row per requirement: `EX-1.1 non_compliant`, `EX-1.2 partially_compliant`, `EX-2.1 compliant`, `EX-3.1 not_assessed`. `make test`: `total: 118, failed: 0`. Evidence: [`docs/evidence/s01/s01-04.md`](../evidence/s01/s01-04.md).
 
 ### s01-05 Audit update plan
 - [ ] Done
@@ -120,5 +122,7 @@ All code in this sprint lives in `src/EvidenceHound.Core` and is tested in `test
 
 - s01-01: the error record is `Problem`, not `Error`, because CA1716 rejects `Error` (a Visual Basic keyword). Later sprint files that say `Error` mean `Problem`.
 - s01-03: "unknown check IDs warn" needs a catalogue of known check IDs. The loader takes an optional known set and returns warnings, but nothing supplies one yet, so `hound mapping validate` cannot warn. Wire it up when collectors declare their checks (s04 collector SDK).
+- s01-04: `ComplianceResult` has a fifth value, `NotApplicable`, for a requirement whose checks are all not applicable (CISO Assistant's `not_applicable`). s01-05 and s02 map it through.
+- s01-04: the check results JSON reader (`CheckResultsJson`) lives in the CLI for now. Move it next to the collector SDK when collectors write that file (s03/s04).
 
 ## Sprint review

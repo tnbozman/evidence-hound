@@ -27,7 +27,24 @@ Rules:
 - `threshold` is required with `rule: threshold`, is between 1 and the number of checks, and is not allowed with the other rules.
 - Unknown keys are errors.
 
-Validate a file:
+## How results are worked out
+
+`hound mapping apply <mapping> <checks.json>` (and later the runner) turns check results into one result per requirement, in file order:
+
+1. Only the latest result of each check counts (by `collected_at`).
+2. If any mapped check has no result, or its result is `error`, the requirement is `not_assessed`.
+3. `not_applicable` checks are ignored. If every mapped check is `not_applicable`, so is the requirement.
+4. The rule decides the rest:
+
+| Rule | `compliant` | `partially_compliant` | `non_compliant` |
+| --- | --- | --- | --- |
+| `all_pass` | every check passes | no failures, some `partial` | any check fails |
+| `any_pass` | every check passes | at least one `pass` or `partial` | nothing passes or partly passes |
+| `threshold` | at least `threshold` checks pass (capped at the number of applicable checks) | fewer pass, but at least one `pass` or `partial` | nothing passes or partly passes |
+
+The observation lists the rule and each check with its outcome and observation; the evidence is the sorted union of the checks' evidence.
+
+## Validate a file
 
 ```console
 $ hound mapping validate mappings/example.yaml
