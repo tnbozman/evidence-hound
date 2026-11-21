@@ -33,7 +33,7 @@ A mapping file per framework (`mappings/<framework>.yaml`) says which checks sat
 | --- | --- |
 | Single responsibility | A collector collects. Evaluation, mapping, planning and publishing are separate functions. |
 | Open/closed | New systems are new collector packages registered as plugins; new frameworks are new mapping files. The core does not change. |
-| Liskov | Every `ICollector` passes the shared collector contract test suite. |
+| Liskov | Every `ICollector` passes the shared collector contract test suite, [`CollectorContractTests<T>`](../src/EvidenceHound.Collectors.Testing/README.md). `ContractCoverageTests` fails if a built-in collector has no contract test class. |
 | Interface segregation | Ports are small: a collector never sees the CISO Assistant client; the publisher never sees vendor APIs. |
 | Dependency inversion | Core defines ports; adapters implement them; the composition root wires them. |
 

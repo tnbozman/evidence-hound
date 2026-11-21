@@ -27,7 +27,7 @@ Projects: `src/EvidenceHound.Collectors.Abstractions` (published package), `src/
 - Result (2026-11-21): lists `fake 1.0.0` with its four check IDs, setting `tenant (optional)` and no secrets, exit 0. `manual` appears once s04-04 adds it. [Evidence](../evidence/s04/s04-01.md).
 
 ### s04-02 Contract test kit
-- [ ] Done
+- [x] Done
 
 **Story:** As a collector author, I want a ready-made test suite every collector must pass, so that all collectors behave consistently.
 
@@ -42,6 +42,7 @@ Projects: `src/EvidenceHound.Collectors.Abstractions` (published package), `src/
 
 **Functional check**
 - `make test` runs the contract suite for every collector in the solution.
+- Result (2026-11-21): `make test` passes 362 of 362 (0 skipped), including the six `FakeCollectorContractTests` contracts and `ContractCoverageTests.Every_built_in_collector_has_contract_tests`; making the fake's contract class non-public fails the coverage test, naming `FakeCollector`. [Evidence](../evidence/s04/s04-02.md).
 
 ### s04-03 Collector template
 - [ ] Done
@@ -85,5 +86,7 @@ Projects: `src/EvidenceHound.Collectors.Abstractions` (published package), `src/
 - `PublishCommandTests.Without_a_url_exits_three` fails when `HOUND_CA_URL` is set in the environment, as it is in the dev container. The CLI tests should not read the developer's environment. (Found in s04-01.)
 - Config validation reports missing required settings but not unknown ones; a typo in an optional setting name goes unnoticed. Consider `config.setting_unknown` once every collector describes its settings. (Found in s04-01.)
 - `CollectStep` reads each evidence stream into memory before hashing and storing it. Stream to the store for large exports (manual collector, s04-04). (Found in s04-01.)
+- The contract kit does not yet check that check results use the context's instance name as `Source` and the context's clock for `CollectedAt`. Consider adding both contracts. (Found in s04-02.)
+- Nothing publishes the `Collectors.Abstractions` and `Collectors.Testing` packages yet; `dotnet pack` works locally. Add a pack-and-publish job before the template (s04-03) refers to them by package. (Found in s04-02.)
 
 ## Sprint review
