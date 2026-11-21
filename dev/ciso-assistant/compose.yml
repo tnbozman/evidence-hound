@@ -1,0 +1,58 @@
+# Disposable CISO Assistant for local development and manual checks. Not for production
+# (see deploy/ for the reference deployment). Start with `make ca-up`, stop with `make ca-down`.
+# Images are pinned to one release; the functional test fixture uses the same tag.
+name: hound-ciso-assistant
+
+x-backend-env: &backend-env
+  ALLOWED_HOSTS: backend,localhost,127.0.0.1
+  CISO_ASSISTANT_URL: https://localhost:8443
+  DJANGO_DEBUG: "False"
+  DJANGO_SUPERUSER_EMAIL: admin@example.com
+  DJANGO_SUPERUSER_PASSWORD: ${HOUND_CA_ADMIN_PASSWORD:-change-me-local-only}
+  HOME: /tmp
+
+services:
+  backend:
+    image: ghcr.io/intuitem/ciso-assistant-community/backend:v4.3.4
+    restart: unless-stopped
+    environment: *backend-env
+    volumes:
+      - ca-db:/code/db
+      - ./seed:/seed:ro
+    ports:
+      # The API on the loopback interface only, so `hound publish` can reach it without TLS.
+      - 127.0.0.1:8000:8000
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health/', timeout=5)"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 180s
+
+  frontend:
+    image: ghcr.io/intuitem/ciso-assistant-community/frontend:v4.3.4
+    restart: unless-stopped
+    environment:
+      PUBLIC_BACKEND_API_URL: http://backend:8000/api
+      PUBLIC_BACKEND_API_EXPOSED_URL: https://localhost:8443/api
+      PROTOCOL_HEADER: x-forwarded-proto
+      HOST_HEADER: x-forwarded-host
+      ADDRESS_HEADER: x-forwarded-for
+      XFF_DEPTH: "1"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2.11.4
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - 127.0.0.1:8443:8443
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+
+volumes:
+  ca-db:

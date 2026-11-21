@@ -6,7 +6,7 @@ CONFIGURATION ?= Debug
 RESULTS_DIR ?= test-results
 ARGS ?=
 CA_COMPOSE := dev/ciso-assistant/compose.yml
-SHELL_SCRIPTS := $(wildcard scripts/*.sh scripts/lib/*.sh .devcontainer/*.sh) .githooks/pre-commit
+SHELL_SCRIPTS := $(wildcard scripts/*.sh scripts/lib/*.sh .devcontainer/*.sh dev/ciso-assistant/seed/*.sh) .githooks/pre-commit
 
 .PHONY: help restore build test test-functional test-scripts coverage lint lint-dotnet lint-shell format run hooks ca-up ca-down
 
@@ -52,10 +52,9 @@ run: ## Run the CLI, for example: make run ARGS="collect --dry-run --config exam
 hooks: ## Install the git pre-commit hook (format check and gitleaks)
 	git config core.hooksPath .githooks
 
-ca-up: ## Start a local CISO Assistant (compose file arrives in s02)
-	@test -f $(CA_COMPOSE) || { echo "$(CA_COMPOSE) not found; it arrives in sprint s02." >&2; exit 1; }
+ca-up: ## Start and seed a local CISO Assistant (token in .dev/ca.env)
 	docker compose -f $(CA_COMPOSE) up -d --wait
+	scripts/ca-seed.sh
 
-ca-down: ## Stop the local CISO Assistant
-	@test -f $(CA_COMPOSE) || { echo "$(CA_COMPOSE) not found; it arrives in sprint s02." >&2; exit 1; }
-	docker compose -f $(CA_COMPOSE) down
+ca-down: ## Stop the local CISO Assistant (add ARGS=-v to delete its data)
+	docker compose -f $(CA_COMPOSE) down $(ARGS)

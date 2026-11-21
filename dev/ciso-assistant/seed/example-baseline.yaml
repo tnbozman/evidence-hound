@@ -1,0 +1,58 @@
+# Fictional framework library for Example Pty Ltd. Its requirement ref_ids match mappings/example.yaml.
+# Loaded into the local CISO Assistant by seed.sh. Not a real standard.
+urn: urn:example:risk:library:example-baseline
+locale: en
+ref_id: EXAMPLE-BASELINE
+name: Example baseline
+description: A made-up baseline used by Evidence Hound's tests, examples and local CISO Assistant.
+copyright: Evidence Hound contributors, Apache-2.0
+version: 1
+publication_date: 2026-01-01
+provider: Example Pty Ltd
+packager: evidence-hound
+objects:
+  framework:
+    urn: urn:example:risk:framework:example-baseline
+    ref_id: EXAMPLE-BASELINE
+    name: Example baseline
+    description: A made-up baseline used by Evidence Hound's tests and examples.
+    requirement_nodes:
+    - urn: urn:example:risk:req_node:example-baseline:ex-1
+      assessable: false
+      depth: 1
+      ref_id: EX-1
+      name: Identity
+    - urn: urn:example:risk:req_node:example-baseline:ex-1.1
+      assessable: true
+      depth: 2
+      parent_urn: urn:example:risk:req_node:example-baseline:ex-1
+      ref_id: EX-1.1
+      name: Every account uses multi-factor authentication
+    - urn: urn:example:risk:req_node:example-baseline:ex-1.2
+      assessable: true
+      depth: 2
+      parent_urn: urn:example:risk:req_node:example-baseline:ex-1
+      ref_id: EX-1.2
+      name: Multi-factor authentication resists phishing
+    - urn: urn:example:risk:req_node:example-baseline:ex-2
+      assessable: false
+      depth: 1
+      ref_id: EX-2
+      name: Patching
+    - urn: urn:example:risk:req_node:example-baseline:ex-2.1
+      assessable: true
+      depth: 2
+      parent_urn: urn:example:risk:req_node:example-baseline:ex-2
+      ref_id: EX-2.1
+      name: Critical patches are applied within 48 hours
+    - urn: urn:example:risk:req_node:example-baseline:ex-3
+      assessable: false
+      depth: 1
+      ref_id: EX-3
+      name: Backups
+    - urn: urn:example:risk:req_node:example-baseline:ex-3.1
+      assessable: true
+      depth: 2
+      parent_urn: urn:example:risk:req_node:example-baseline:ex-3
+      ref_id: EX-3.1
+      name: Backups run daily and restores are tested
