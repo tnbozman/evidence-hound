@@ -6,7 +6,7 @@ Evidence that each s01 task meets its acceptance criteria. Plan: [`docs/sprints/
 | --- | --- | --- |
 | s01-01 Result type | Done | [s01-01.md](s01-01.md) |
 | s01-02 Check results and evidence | Done | [s01-02.md](s01-02.md) |
-| s01-03 Framework mapping model and loader | Not started | |
+| s01-03 Framework mapping model and loader | Done | [s01-03.md](s01-03.md) |
 | s01-04 Mapping engine | Not started | |
 | s01-05 Audit update plan | Not started | |
 

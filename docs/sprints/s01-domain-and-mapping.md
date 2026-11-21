@@ -52,7 +52,7 @@ All code in this sprint lives in `src/EvidenceHound.Core` and is tested in `test
 **Functional check result (2026-11-21):** `make test` gave `total: 45, failed: 0`; lint clean. Evidence: [`docs/evidence/s01/s01-02.md`](../evidence/s01/s01-02.md).
 
 ### s01-03 Framework mapping model and loader
-- [ ] Done
+- [x] Done
 
 **Story:** As a compliance owner, I want to describe in a file how checks satisfy a framework's requirements, so that adding a framework needs no code.
 
@@ -70,6 +70,8 @@ All code in this sprint lives in `src/EvidenceHound.Core` and is tested in `test
 
 **Functional check**
 - `make run ARGS="mapping validate mappings/example.yaml"` prints `valid: N requirements`.
+
+**Functional check result (2026-11-21):** `make run ARGS="mapping validate mappings/example.yaml"` printed `valid: 4 requirements`; a broken file printed each problem with its line and exited 3. `make test`: `total: 85, failed: 0`. Evidence: [`docs/evidence/s01/s01-03.md`](../evidence/s01/s01-03.md).
 
 ### s01-04 Mapping engine
 - [ ] Done
@@ -117,5 +119,6 @@ All code in this sprint lives in `src/EvidenceHound.Core` and is tested in `test
 ## Discovered work
 
 - s01-01: the error record is `Problem`, not `Error`, because CA1716 rejects `Error` (a Visual Basic keyword). Later sprint files that say `Error` mean `Problem`.
+- s01-03: "unknown check IDs warn" needs a catalogue of known check IDs. The loader takes an optional known set and returns warnings, but nothing supplies one yet, so `hound mapping validate` cannot warn. Wire it up when collectors declare their checks (s04 collector SDK).
 
 ## Sprint review
