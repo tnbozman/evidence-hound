@@ -1,0 +1,44 @@
+# The dev container and a disposable, seeded CISO Assistant on one Docker network, so `hound`
+# reaches it as http://backend:8000/api/. Used by devcontainer.json; not for production.
+# The Django secret key comes from .devcontainer/.env, which initialize.sh writes on the host.
+name: evidence-hound-dev
+
+include:
+  - ../dev/ciso-assistant/compose.yml
+
+services:
+  dev:
+    image: mcr.microsoft.com/devcontainers/base:ubuntu-24.04
+    command: sleep infinity
+    volumes:
+      - ..:/workspaces/evidence-hound:cached
+      - hound-ca-env:/run/hound:ro
+    environment:
+      HOUND_CA_URL: http://backend:8000/api/
+      HOUND_SHARED_CA_ENV: /run/hound/ca.env
+
+  # One-shot: waits for a healthy backend, seeds it, and writes the URL and a local-only token
+  # to the shared volume. The token is never printed. `docker compose logs ca-seed` shows the rest.
+  ca-seed:
+    extends:
+      file: ../dev/ciso-assistant/compose.yml
+      service: backend
+    restart: "no"
+    ports: !reset []
+    healthcheck:
+      disable: true
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      SEED_API_URL: http://backend:8000/api
+      # The volume is mounted only here and in dev, whose user copies the file to .dev/ca.env (600).
+      HOUND_CA_ENV_MODE: "644"
+    volumes:
+      - hound-ca-env:/run/hound
+    entrypoint: ["bash", "-c"]
+    command:
+      - set -o pipefail; bash /seed/seed.sh | bash /seed/write-env.sh http://backend:8000/api/ /run/hound/ca.env
+
+volumes:
+  hound-ca-env:
