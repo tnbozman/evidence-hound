@@ -7,7 +7,7 @@ using WireMock.Server;
 
 namespace EvidenceHound.Cli.Tests;
 
-/// <summary><c>hound scope plan</c>: read CISO Assistant and print what applying the scope would change, sending nothing.</summary>
+/// <summary><c>hound scope plan</c> reads CISO Assistant and prints what applying the scope would change; <c>hound scope apply</c> writes it.</summary>
 public sealed class ScopePlanCommandTests : IDisposable
 {
     private static readonly string Token = "example-token-for-cli-tests";
@@ -94,6 +94,65 @@ public sealed class ScopePlanCommandTests : IDisposable
         _ca.LogEntries.ShouldBeEmpty();
     }
 
+    [Fact]
+    public async Task Apply_dry_run_prints_the_plan_and_writes_nothing()
+    {
+        await WriteScopeAsync();
+        EmptyInstance();
+
+        var exitCode = await Run("apply", "--dry-run");
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        _output.ToString().ShouldStartWith("## Scope plan\n");
+        _ca.LogEntries.ShouldAllBe(e => e.RequestMessage!.Method == "GET");
+    }
+
+    [Fact]
+    public async Task Apply_writes_domains_perimeters_and_systems_and_reports_each_write()
+    {
+        await WriteScopeAsync();
+        EmptyInstance(folders: [new JsonObject { ["id"] = "f-ex", ["name"] = "Example Pty Ltd", ["parent_folder"] = new JsonObject { ["id"] = "f-global", ["str"] = "Global" } }]);
+        Object("folders", "f-ex", new JsonObject { ["id"] = "f-ex", ["name"] = "Example Pty Ltd", ["parent_folder"] = "f-global" });
+        Accept("POST", "/api/perimeters/");
+        Accept("POST", "/api/assets/");
+        Accept("PATCH", "/api/folders/f-ex/");
+
+        var exitCode = await Run("apply");
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var report = JsonNode.Parse(_output.ToString())!;
+        (report["written"]!.GetValue<int>(), report["failed"]!.GetValue<int>(), report["skipped"]!.GetValue<int>(), report["not_applied"]!.GetValue<int>()).ShouldBe((3, 0, 0, 3));
+        report["changes"]!.AsArray().Select(c => (c!["action"]!.GetValue<string>(), c["kind"]!.GetValue<string>(), c["outcome"]!.GetValue<string>())).ShouldBe(
+            [("update", "domain", "written"), ("create", "perimeter", "written"), ("create", "system", "written")]);
+        _ca.LogEntries.Where(e => e.RequestMessage!.Method != "GET").Select(e => (e.RequestMessage!.Method, e.RequestMessage.Path)).ShouldBe(
+            [("PATCH", "/api/folders/f-ex/"), ("POST", "/api/perimeters/"), ("POST", "/api/assets/")]);
+    }
+
+    [Fact]
+    public async Task Apply_with_a_failed_write_reports_it_and_exits_with_publish_failed()
+    {
+        await WriteScopeAsync();
+        EmptyInstance();
+        _ca.Given(Request.Create().WithPath("/api/folders/").UsingPost()).RespondWith(Response.Create().WithStatusCode(400).WithBody("""{"name": ["This field is required."]}"""));
+
+        var exitCode = await Run("apply");
+
+        exitCode.ShouldBe(ExitCodes.PublishFailed);
+        var report = JsonNode.Parse(_output.ToString())!;
+        (report["written"]!.GetValue<int>(), report["failed"]!.GetValue<int>(), report["skipped"]!.GetValue<int>()).ShouldBe((0, 1, 2));
+    }
+
+    [Fact]
+    public async Task Apply_refuses_an_invalid_scope_without_reading_ciso_assistant()
+    {
+        await WriteScopeAsync(ScopeCommandTests.Audit.Replace("systems: [Example 365]", "systems: [Example tablets]", StringComparison.Ordinal));
+
+        var exitCode = await Run("apply");
+
+        exitCode.ShouldBe(ExitCodes.Configuration);
+        _ca.LogEntries.ShouldBeEmpty();
+    }
+
     public void Dispose()
     {
         _output.Dispose();
@@ -105,6 +164,19 @@ public sealed class ScopePlanCommandTests : IDisposable
 
     private Task<int> Plan(params string[] args) => Plan(null, args);
 
+    private Task<int> Run(string command, params string[] args) =>
+        HoundCli.RunAsync(
+            ["scope", command, ScopeDir, .. args],
+            _output,
+            _error,
+            logging => logging.AddProvider(_logs),
+            new Dictionary<string, string?> { ["HOUND_CA_URL"] = $"{_ca.Url}/api/", ["HOUND_CA_TOKEN"] = Token },
+            _ct);
+
+    private void Accept(string method, string path) =>
+        _ca.Given(Request.Create().WithPath(path).UsingMethod(method))
+            .RespondWith(Response.Create().WithStatusCode(method == "POST" ? 201 : 200).WithBody(new JsonObject { ["id"] = "new-id" }.ToJsonString()));
+
     private Task<int> Plan(Dictionary<string, string?>? settings, params string[] args) =>
         HoundCli.RunAsync(
             ["scope", "plan", ScopeDir, .. args],
@@ -115,9 +187,9 @@ public sealed class ScopePlanCommandTests : IDisposable
             _ct);
 
     /// <summary>A CISO Assistant with only its Global folder: nothing the scope declares exists yet.</summary>
-    private void EmptyInstance(JsonObject[]? perimeters = null)
+    private void EmptyInstance(JsonObject[]? perimeters = null, JsonObject[]? folders = null)
     {
-        List("folders", new JsonObject { ["id"] = "f-global", ["name"] = "Global", ["parent_folder"] = null });
+        List("folders", [new JsonObject { ["id"] = "f-global", ["name"] = "Global", ["parent_folder"] = null }, .. folders ?? []]);
         foreach (var resource in new[] { "users", "frameworks", "assets", "compliance-assessments", "evidences", "applied-controls", "requirement-assessments" })
         {
             List(resource);

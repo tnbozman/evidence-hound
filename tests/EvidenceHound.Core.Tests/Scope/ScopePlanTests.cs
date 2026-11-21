@@ -143,6 +143,17 @@ public class ScopePlanTests
     }
 
     [Fact]
+    public void Ref_id_that_ciso_assistant_filled_in_is_not_a_change()
+    {
+        var declared = Declared(ScopeKind.Perimeter, "Example Pty Ltd/Corporate IT", ("name", "Corporate IT"), ("domain", "Example Pty Ltd"));
+        var held = new ActualObject(
+            Declared(ScopeKind.Perimeter, "Example Pty Ltd/Corporate IT", ("name", "Corporate IT"), ("domain", "Example Pty Ltd"), ("ref_id", "PER-0001")),
+            ScopeMarker.Fingerprint(declared.Fields));
+
+        ScopePlanner.Plan([declared], [held], prune: false).IsEmpty.ShouldBeTrue();
+    }
+
+    [Fact]
     public void Marker_round_trips_through_the_description()
     {
         var fingerprint = ScopeMarker.Fingerprint(new Dictionary<string, string> { ["name"] = "MFA" });

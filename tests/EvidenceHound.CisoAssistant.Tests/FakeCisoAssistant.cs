@@ -22,6 +22,7 @@ internal sealed class FakeCisoAssistant : IDisposable
             .BuildServiceProvider();
         Client = _services.GetRequiredService<ICisoAssistantClient>();
         Scope = _services.GetRequiredService<IScopeStateSource>();
+        Writer = _services.GetRequiredService<IScopeWriter>();
     }
 
     public WireMockServer Server { get; }
@@ -31,6 +32,8 @@ internal sealed class FakeCisoAssistant : IDisposable
     public ICisoAssistantClient Client { get; }
 
     public IScopeStateSource Scope { get; }
+
+    public IScopeWriter Writer { get; }
 
     public void Dispose()
     {

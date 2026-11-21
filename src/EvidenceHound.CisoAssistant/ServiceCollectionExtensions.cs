@@ -9,7 +9,7 @@ namespace Microsoft.Extensions.DependencyInjection;
 public static class CisoAssistantServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers <see cref="ICisoAssistantClient"/> and the scope reader (<see cref="IScopeStateSource"/>) as typed HTTP clients: token header, standard resilience
+    /// Registers <see cref="ICisoAssistantClient"/> the scope reader (<see cref="IScopeStateSource"/>) and writer (<see cref="IScopeWriter"/>) as typed HTTP clients: token header, standard resilience
     /// (retry with jitter on 5xx, 408 and 429, timeouts, circuit breaker; POST is never retried) and
     /// every logged header value redacted.
     /// </summary>
@@ -19,6 +19,7 @@ public static class CisoAssistantServiceCollectionExtensions
 
         Configure(services.AddHttpClient<ICisoAssistantClient, CisoAssistantClient>(), options);
         Configure(services.AddHttpClient<IScopeStateSource, ScopeStateReader>(), options);
+        Configure(services.AddHttpClient<IScopeWriter, ScopeWriter>(), options);
         return services;
     }
 
