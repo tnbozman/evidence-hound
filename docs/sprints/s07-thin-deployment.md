@@ -1,12 +1,14 @@
-# s08 Reference Docker deployment
+# s07 Thin deployment
 
 Status: Planned
 
-**Goal:** a small organisation can self-host CISO Assistant and the collector runner on one hardened VM with Docker Compose, scheduled runs, secrets, backups and updates.
+**Goal:** a small organisation can self-host CISO Assistant and the collector runner on one VM with Docker Compose, with the Microsoft 365 collector running on a schedule, so that evidence starts building history as early as possible.
+
+This is the first half of the old s08 reference deployment, moved forward. Backups, restore testing and the hardening and update guide follow in [s12](s12-release-1.md). Until then the guide tells operators to snapshot the VM before upgrades.
 
 Folder: `deploy/compose/`. Fictional names only.
 
-### s08-01 Collector runner image
+### s07-01 Collector runner image
 - [ ] Done
 
 **Story:** As an operator, I want a minimal, signed container image for the runner, so that it is easy and safe to deploy.
@@ -22,7 +24,7 @@ Folder: `deploy/compose/`. Fictional names only.
 **Functional check**
 - `docker run --rm ghcr.io/<owner>/<repo>:dev --version`.
 
-### s08-02 Compose stack
+### s07-02 Compose stack
 - [ ] Done
 
 **Story:** As an operator, I want one Compose project for the whole stack, so that install and upgrade are repeatable.
@@ -40,7 +42,7 @@ Folder: `deploy/compose/`. Fictional names only.
 **Functional check**
 - On a fresh VM: follow `deploy/compose/README.md` and reach the CISO Assistant login over HTTPS within 30 minutes.
 
-### s08-03 Scheduling
+### s07-03 Scheduling
 - [ ] Done
 
 **Story:** As an operator, I want collectors to run on their schedules without a human, so that evidence stays fresh.
@@ -48,6 +50,7 @@ Folder: `deploy/compose/`. Fictional names only.
 **Acceptance criteria**
 - The runner has a `serve` mode that runs each collector instance on its cron schedule (Cronos library), with jitter and no overlapping runs per instance.
 - Alternative documented: host cron or systemd timer calling `docker compose run --rm runner run`.
+- The example deployment config runs the Microsoft 365 collector nightly and publishes to the example Essential Eight audit (s06-02); its certificate comes from a Docker secret.
 
 **Tests first**
 - `SchedulerTests.Next_occurrence_respects_cron_and_timezone`
@@ -55,34 +58,6 @@ Folder: `deploy/compose/`. Fictional names only.
 
 **Functional check**
 - Stack runs overnight with a 15-minute test schedule; status shows each run.
-
-### s08-04 Backup and restore
-- [ ] Done
-
-**Story:** As an operator, I want automated backups and a tested restore, so that the system of record survives failure and the restore test becomes evidence.
-
-**Acceptance criteria**
-- `deploy/compose/backup.sh`: `pg_dump`, CISO Assistant attachments volume, encrypted with age to an off-host target.
-- `deploy/compose/restore-test.sh`: restores the latest backup into a scratch stack, checks the health endpoint and an audit count, and drops a result file into a manual-collector source so the restore test is recorded as evidence.
-
-**Tests first**
-- CI smoke job: back up the smoke stack, restore into a second project, compare audit counts.
-
-**Functional check**
-- Run both scripts on the VM; the restore test appears as evidence in CISO Assistant.
-
-### s08-05 Hardening and update guide
-- [ ] Done
-
-**Acceptance criteria**
-- `docs/deploy/hardening.md`: host patching, firewall, disk encryption, Docker daemon settings, log forwarding, certificate and uptime monitoring, MFA for all CISO Assistant users, service accounts per integration.
-- `docs/deploy/updates.md`: Dependabot or Renovate for image tags, monthly window, backup before upgrade, rollback steps.
-
-**Tests first**
-- Markdown lint and link check in CI.
-
-**Functional check**
-- A reviewer applies the guide to the test VM and records the date.
 
 ## Discovered work
 

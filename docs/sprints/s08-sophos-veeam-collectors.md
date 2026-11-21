@@ -1,12 +1,14 @@
-# s07 Sophos Central and Veeam reference collectors
+# s08 Sophos Central and Veeam reference collectors
 
 Status: Planned
+
+Was s07 before the release 1 reorder. It moved after the thin deployment so that Microsoft 365 evidence runs on a schedule first.
 
 **Goal:** two more reference collectors, one SaaS (Sophos Central) and one on-premises (Veeam Backup & Replication), proving the SDK fits both shapes.
 
 Projects: `src/Collectors/EvidenceHound.Collectors.Sophos`, `src/Collectors/EvidenceHound.Collectors.Veeam`. Recorded, fictional responses only.
 
-### s07-01 Sophos Central access
+### s08-01 Sophos Central access
 - [ ] Done
 
 **Story:** As the collector, I want Sophos Central authentication and tenant discovery, so that endpoint and firewall data can be read.
@@ -24,7 +26,7 @@ Projects: `src/Collectors/EvidenceHound.Collectors.Sophos`, `src/Collectors/Evid
 **Functional check**
 - Run against recordings: endpoints and firewalls listed into evidence.
 
-### s07-02 Sophos checks
+### s08-02 Sophos checks
 - [ ] Done
 
 **Story:** As a compliance owner, I want endpoint protection and firewall health measured, so that those controls have live evidence.
@@ -41,7 +43,7 @@ Projects: `src/Collectors/EvidenceHound.Collectors.Sophos`, `src/Collectors/Evid
 **Functional check**
 - `hound run --only sophos-example` against recordings updates the example audit.
 
-### s07-03 Veeam access
+### s08-03 Veeam access
 - [ ] Done
 
 **Story:** As the collector, I want Veeam REST API access with a read-only account, so that backup jobs and restore points can be read.
@@ -59,7 +61,7 @@ Projects: `src/Collectors/EvidenceHound.Collectors.Sophos`, `src/Collectors/Evid
 **Functional check**
 - Run against recordings: jobs and restore points in evidence.
 
-### s07-04 Veeam checks
+### s08-04 Veeam checks
 - [ ] Done
 
 **Story:** As a compliance owner, I want backup success, retention and restore testing measured, so that backup requirements are evidenced.
@@ -76,7 +78,7 @@ Projects: `src/Collectors/EvidenceHound.Collectors.Sophos`, `src/Collectors/Evid
 **Functional check**
 - Both collectors run together in `hound run` against recordings; status shows both healthy.
 
-### s07-05 Documentation
+### s08-05 Documentation
 - [ ] Done
 
 **Acceptance criteria**

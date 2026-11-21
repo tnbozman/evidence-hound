@@ -1,6 +1,6 @@
 # Sprints
 
-Release 1 is delivered in one-week sprints. Each sprint has its own file, `sNN-<slug>.md`, with a goal, tasks, acceptance criteria and the tests to write first.
+Releases are delivered in one-week sprints. Each sprint has its own file, `sNN-<slug>.md`, with a goal, tasks, acceptance criteria and the tests to write first.
 
 | Sprint | Goal | Release |
 | --- | --- | --- |
@@ -11,14 +11,19 @@ Release 1 is delivered in one-week sprints. Each sprint has its own file, `sNN-<
 | [s04](s04-collector-sdk-and-manual.md) | Collector SDK, contract test kit, manual-upload collector | 1 |
 | [s05](s05-m365-collector.md) | Microsoft 365 reference collector | 1 |
 | [s06](s06-ciso-assistant-as-configuration.md) | Requirement URNs and the Essential Eight 2023 ML2 mapping; several audits per run; change-only publishing; CISO Assistant as configuration (scope files, plan and apply); audit periods with sign-off | 1 |
-| [s07](s07-sophos-veeam-collectors.md) | Sophos Central and Veeam reference collectors | 1 |
-| [s08](s08-reference-deployment.md) | Reference Docker deployment, scheduling, secrets, backups | 1 |
-| [s09](s09-risk-threats-and-bia.md) | Risk matrices, threats, risk register, security exceptions and BIA as configuration | 1 |
-| [s10](s10-third-parties-and-metrics.md) | Suppliers, contracts and supplier assessments; CISO Assistant governance collector; metrics as configuration and from runs | 1 |
-| [s11](s11-essentials-mapping-and-adoption.md) | Essential Eight mapping completed, ASD Essentials mapping for the migration, adoption guides, committee and board reporting | 1 |
-| [s12](s12-release-1.md) | Packaging, release pipeline, docs site | 1 |
-| [s13](s13-nist-800-171.md) | NIST SP 800-171 mapping | 2 |
-| [s14](s14-collector-console.md) | Collector console (optional) | 2 |
+| [s07](s07-thin-deployment.md) | Runner image, Compose stack and scheduling, so Microsoft 365 evidence runs nightly | 1 |
+| [s08](s08-sophos-veeam-collectors.md) | Sophos Central and Veeam reference collectors | 1 |
+| [s09](s09-e8-gap-collectors.md) | Essential Eight gap collectors: application control from Intune and Defender, vulnerability scan import, manual-upload templates | 1 |
+| [s10](s10-third-parties.md) | Suppliers, contracts and supplier assessments as configuration | 1 |
+| [s11](s11-e8-mapping-and-adoption.md) | Essential Eight mapping completed, adoption guides, committee and board reporting | 1 |
+| [s12](s12-release-1.md) | Backups, hardening guide, packaging, release pipeline, docs site | 1 |
+| [s13](s13-essentials-mapping.md) | ASD Essentials mapping for the migration | 2 |
+| [s14](s14-risk-threats-and-bia.md) | Risk matrices, threats, risk register, security exceptions and BIA as configuration | 2 |
+| [s15](s15-governance-and-metrics.md) | CISO Assistant governance collector; metrics as configuration and from runs | 2 |
+| [s16](s16-nist-800-171.md) | NIST SP 800-171 mapping | 2 |
+| [s17](s17-collector-console.md) | Collector console (optional) | 2 |
+
+Release 1 is ordered to put Essential Eight evidence on a schedule as early as possible: the thin deployment (s07) comes straight after s06, and the rest of the deployment work (backups and hardening) joins the release sprint (s12).
 
 ## Lifecycle
 

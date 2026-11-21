@@ -2,9 +2,39 @@
 
 Status: Planned
 
-**Goal:** a tagged, signed, documented first release that others can install and extend.
+**Goal:** the deployment from s07 gains tested backups and a hardening and update guide, then a tagged, signed, documented first release that others can install and extend.
 
-### s12-01 Packages and versioning
+Tasks s12-01 and s12-02 were s08-04 and s08-05 before the release 1 reorder.
+
+### s12-01 Backup and restore
+- [ ] Done
+
+**Story:** As an operator, I want automated backups and a tested restore, so that the system of record survives failure and the restore test becomes evidence.
+
+**Acceptance criteria**
+- `deploy/compose/backup.sh`: `pg_dump`, CISO Assistant attachments volume, encrypted with age to an off-host target.
+- `deploy/compose/restore-test.sh`: restores the latest backup into a scratch stack, checks the health endpoint and an audit count, and drops a result file into a manual-collector source so the restore test is recorded as evidence.
+
+**Tests first**
+- CI smoke job: back up the smoke stack, restore into a second project, compare audit counts.
+
+**Functional check**
+- Run both scripts on the VM; the restore test appears as evidence in CISO Assistant.
+
+### s12-02 Hardening and update guide
+- [ ] Done
+
+**Acceptance criteria**
+- `docs/deploy/hardening.md`: host patching, firewall, disk encryption, Docker daemon settings, log forwarding, certificate and uptime monitoring, MFA for all CISO Assistant users, service accounts per integration.
+- `docs/deploy/updates.md`: Dependabot or Renovate for image tags, monthly window, backup before upgrade, rollback steps.
+
+**Tests first**
+- Markdown lint and link check in CI.
+
+**Functional check**
+- A reviewer applies the guide to the test VM and records the date.
+
+### s12-03 Packages and versioning
 - [ ] Done
 
 **Story:** As a collector author, I want the abstractions and test kit on NuGet, so that I can build collectors outside this repo.
@@ -20,7 +50,7 @@ Status: Planned
 **Functional check**
 - Install the template pack from a local feed and build a new collector.
 
-### s12-02 Release workflow
+### s12-04 Release workflow
 - [ ] Done
 
 **Story:** As the maintainer, I want releases built and published from tags with no stored tokens, so that the supply chain is trustworthy.
@@ -35,7 +65,7 @@ Status: Planned
 **Functional check**
 - `gh attestation verify` succeeds on the released container image.
 
-### s12-03 Documentation site
+### s12-05 Documentation site
 - [ ] Done
 
 **Acceptance criteria**
@@ -48,7 +78,7 @@ Status: Planned
 **Functional check**
 - Site reachable; quick start followed on a clean VM by a reviewer.
 
-### s12-04 Release readiness review
+### s12-06 Release readiness review
 - [ ] Done
 
 **Acceptance criteria**

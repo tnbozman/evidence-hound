@@ -18,8 +18,8 @@ A small defence-industry business has to reach and then sustain cyber compliance
 
 | Release | Contents |
 | --- | --- |
-| 1 | Core, publisher, runner, collector SDK and test kit, manual-upload collector, Microsoft 365, Sophos Central and Veeam collectors, reference Docker deployment, Essential Eight mapping, adoption guides and committee (operational) and board (governance) reporting |
-| 2 | NIST SP 800-171 mapping, SSP and POA&M drafts, optional collector console |
+| 1 | Core, publisher, runner, collector SDK and test kit, manual-upload collector, Microsoft 365, Sophos Central and Veeam collectors, CISO Assistant as configuration, a thin reference Docker deployment with scheduled runs (early, so evidence builds history), Essential Eight gap collectors (application control, vulnerability scan import, manual-upload templates), third parties as configuration, the completed Essential Eight mapping, adoption guides, committee (operational) and board (governance) reporting, backups and hardening |
+| 2 | ASD Essentials mapping, risk, threats and BIA as configuration, CISO Assistant governance collector and metrics, NIST SP 800-171 mapping, SSP and POA&M drafts, optional collector console |
 
 Sprints are in [`docs/sprints/`](sprints/README.md).
 
@@ -59,7 +59,7 @@ Reporting has two tiers with different audiences and questions. Both are generat
 | Owner | Capability owner prepares; committee confirms actions | Authorising official presents; board endorses risk appetite and acceptances |
 | Recorded in CISO Assistant | Actions as tasks and applied controls; exceptions | Risk-acceptance decisions; the report as evidence |
 
-The committee's monthly reports roll up into the board's quarter. Delivered in sprint s11 (tasks s11-04 to s11-07); release 2 adds NIST SP 800-171 SSP and POA&M views (s13).
+The committee's monthly reports roll up into the board's quarter. Delivered in sprint s11 (tasks s11-04 to s11-07); release 2 adds the Essentials view (s13) and NIST SP 800-171 SSP and POA&M views (s16).
 
 ## Security of the project itself
 
