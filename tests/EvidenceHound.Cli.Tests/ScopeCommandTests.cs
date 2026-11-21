@@ -114,6 +114,17 @@ public sealed class ScopeCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Validate_reports_a_document_file_that_does_not_exist()
+    {
+        await WriteScopeAsync(Audit.Replace("controls:", "documents:\n  - id: mfa-policy\n    name: MFA policy\n    files: [documents/mfa-policy.pdf]\n    systems: [Example 365]\n    requirements: [EX-1.1]\ncontrols:", StringComparison.Ordinal));
+
+        var exitCode = await Run("scope", "validate", ScopeDir);
+
+        exitCode.ShouldBe(ExitCodes.Configuration);
+        _logs.Messages.ShouldContain(m => m.Contains("scope.document_file_missing", StringComparison.Ordinal) && m.Contains("documents/mfa-policy.pdf", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task Validate_with_config_checks_that_targets_are_in_scope()
     {
         await WriteScopeAsync();

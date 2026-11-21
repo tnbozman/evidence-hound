@@ -111,6 +111,43 @@ public class ScopeDesiredTests
         query.Rows.ShouldHaveSingleItem().ShouldBe(new KeyValuePair<string, IReadOnlyList<RequirementKey>>("EXAMPLE-BASELINE-2026", [RequirementKey.Ref("EX-1.2")]), new RowsComparer());
     }
 
+    [Fact]
+    public void Other_libraries_are_loaded_by_urn_and_read_with_the_frameworks()
+    {
+        var setup = ScopeFixture.Setup.Replace("domains:", "libraries:\n  - urn:example:risk:library:mapping-example\ndomains:", StringComparison.Ordinal);
+        var scope = ScopeFixture.Parse(setup: setup).Scope;
+
+        var declared = ScopeDesired.From(scope);
+        var query = ScopeStateQuery.For(scope, declared);
+
+        declared.Single(o => o.Key == "urn:example:risk:library:mapping-example").ShouldSatisfyAllConditions(
+            o => o.Kind.ShouldBe(ScopeKind.Framework),
+            o => o.Initial.ShouldBe(new Dictionary<string, string> { ["library"] = "urn:example:risk:library:mapping-example" }));
+        query.FrameworkUrns.ShouldBe([ScopeFixture.FrameworkUrn, "urn:example:risk:library:mapping-example"]);
+    }
+
+    [Fact]
+    public void Framework_takes_its_version_and_library_from_the_snapshot()
+    {
+        var setup = ScopeFixture.Setup.Replace("    library: urn:example:risk:library:example-baseline\n", "", StringComparison.Ordinal);
+
+        var framework = ScopeDesired.From(ScopeFixture.Parse(setup: setup).Scope, ScopeInputs.None with { Snapshots = ScopeFixture.Snapshots })[0];
+
+        framework.Fields.ShouldBe(new Dictionary<string, string> { ["version"] = ScopeFixture.Snapshot.Version.ToString(System.Globalization.CultureInfo.InvariantCulture) });
+        framework.Initial.ShouldBe(new Dictionary<string, string> { ["library"] = ScopeFixture.Snapshot.LibraryUrn });
+    }
+
+    [Fact]
+    public void Query_reads_the_rows_the_scope_writes()
+    {
+        var scope = ScopeFixture.Parse().Scope;
+
+        var query = ScopeStateQuery.For(scope, ScopeDesired.From(scope));
+
+        query.Rows.ShouldHaveSingleItem().ShouldBe(
+            new KeyValuePair<string, IReadOnlyList<RequirementKey>>("EXAMPLE-BASELINE-2026", [RequirementKey.Ref("EX-1.2"), RequirementKey.Ref("EX-1.1")]), new RowsComparer());
+    }
+
     private sealed class RowsComparer : IEqualityComparer<KeyValuePair<string, IReadOnlyList<RequirementKey>>>
     {
         public bool Equals(KeyValuePair<string, IReadOnlyList<RequirementKey>> x, KeyValuePair<string, IReadOnlyList<RequirementKey>> y) =>

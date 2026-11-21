@@ -6,6 +6,8 @@ namespace EvidenceHound.Core.Scope;
 /// <summary>What to read: the root folder, the frameworks the scope loads, and the rows of each audit that has hand-written results.</summary>
 public sealed record ScopeStateQuery(string RootFolder, IReadOnlyList<string> FrameworkUrns, IReadOnlyDictionary<string, IReadOnlyList<RequirementKey>> Rows)
 {
+    public static ScopeStateQuery For(ScopeDocument scope, IReadOnlyList<ScopeObject> declared) => For(scope);
+
     public static ScopeStateQuery For(ScopeDocument scope)
     {
         ArgumentNullException.ThrowIfNull(scope);

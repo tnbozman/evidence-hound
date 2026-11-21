@@ -39,6 +39,17 @@ public class ScopeParseTests
     }
 
     [Fact]
+    public void Other_libraries_are_read_by_urn()
+    {
+        var setup = ScopeFixture.Setup.Replace("domains:", "libraries:\n  - urn:example:risk:library:mapping-example\ndomains:", StringComparison.Ordinal);
+
+        var parsed = ScopeFixture.Parse(setup: setup);
+
+        parsed.Problems.ShouldBeEmpty();
+        parsed.Scope.Setup.Libraries.ShouldHaveSingleItem().Value.ShouldBe("urn:example:risk:library:mapping-example");
+    }
+
+    [Fact]
     public void Single_perimeter_is_read_as_one_item_list()
     {
         var setup = ScopeFixture.Setup.Replace("    perimeters:\n      - name: Example baseline\n        ref_id: PER-BASE", "    perimeter:\n      name: Example baseline\n      ref_id: PER-BASE", StringComparison.Ordinal);

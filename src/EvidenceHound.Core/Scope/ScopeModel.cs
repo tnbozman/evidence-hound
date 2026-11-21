@@ -18,7 +18,11 @@ public sealed record RequirementRef(RequirementKey Key, SourceLine At);
 public sealed record ScopeDocument(ScopeSetup Setup, IReadOnlyList<ScopeControl> Controls, IReadOnlyList<ScopeAudit> Audits);
 
 /// <summary><c>scope/setup.yaml</c>: the root folder, the frameworks to load and the domains.</summary>
-public sealed record ScopeSetup(string RootFolder, IReadOnlyList<ScopeFramework> Frameworks, IReadOnlyList<ScopeDomain> Domains);
+public sealed record ScopeSetup(string RootFolder, IReadOnlyList<ScopeFramework> Frameworks, IReadOnlyList<ScopeDomain> Domains)
+{
+    /// <summary>Other libraries to load by URN, such as the mapping sets between the frameworks.</summary>
+    public IReadOnlyList<ScopeRef> Libraries { get; init; } = [];
+}
 
 /// <summary>A framework to load: its URN, and its library by URN or as a custom library file. A snapshot makes it checkable offline.</summary>
 public sealed record ScopeFramework(string Urn, string? LibraryUrn, string? LibraryFile, string? Snapshot, SourceLine At);

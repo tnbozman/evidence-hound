@@ -108,24 +108,24 @@ public sealed class ScopePlanCommandTests : IDisposable
     }
 
     [Fact]
-    public async Task Apply_writes_domains_perimeters_and_systems_and_reports_each_write()
+    public async Task Apply_writes_audits_controls_and_rows_after_the_structure_they_need()
     {
         await WriteScopeAsync();
-        EmptyInstance(folders: [new JsonObject { ["id"] = "f-ex", ["name"] = "Example Pty Ltd", ["parent_folder"] = new JsonObject { ["id"] = "f-global", ["str"] = "Global" } }]);
-        Object("folders", "f-ex", new JsonObject { ["id"] = "f-ex", ["name"] = "Example Pty Ltd", ["parent_folder"] = "f-global" });
-        Accept("POST", "/api/perimeters/");
-        Accept("POST", "/api/assets/");
-        Accept("PATCH", "/api/folders/f-ex/");
+        HeldStructure();
+        Accept("POST", "/api/compliance-assessments/");
+        Accept("POST", "/api/applied-controls/");
+        Accept("PATCH", "/api/requirement-assessments/ra-1/");
 
         var exitCode = await Run("apply");
 
         exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
         var report = JsonNode.Parse(_output.ToString())!;
-        (report["written"]!.GetValue<int>(), report["failed"]!.GetValue<int>(), report["skipped"]!.GetValue<int>(), report["not_applied"]!.GetValue<int>()).ShouldBe((3, 0, 0, 4));
-        report["changes"]!.AsArray().Select(c => (c!["action"]!.GetValue<string>(), c["kind"]!.GetValue<string>(), c["outcome"]!.GetValue<string>())).ShouldBe(
-            [("update", "domain", "written"), ("create", "perimeter", "written"), ("create", "system", "written")]);
+        (report["written"]!.GetValue<int>(), report["failed"]!.GetValue<int>(), report["skipped"]!.GetValue<int>(), report["not_applied"]!.GetValue<int>()).ShouldBe((3, 0, 0, 0));
+        report["changes"]!.AsArray().Select(c => (c!["action"]!.GetValue<string>(), c["kind"]!.GetValue<string>(), c["key"]!.GetValue<string>())).ShouldBe(
+            [("create", "audit", "EXAMPLE-BASELINE-2026"), ("create", "control", "AC-MFA"), ("create", "assessment", "EXAMPLE-BASELINE-2026/EX-1.1")]);
+        report["drift"]!.AsArray().ShouldBeEmpty();
         _ca.LogEntries.Where(e => e.RequestMessage!.Method != "GET").Select(e => (e.RequestMessage!.Method, e.RequestMessage.Path)).ShouldBe(
-            [("PATCH", "/api/folders/f-ex/"), ("POST", "/api/perimeters/"), ("POST", "/api/assets/")]);
+            [("POST", "/api/compliance-assessments/"), ("POST", "/api/applied-controls/"), ("PATCH", "/api/requirement-assessments/ra-1/")]);
     }
 
     [Fact]
@@ -133,13 +133,14 @@ public sealed class ScopePlanCommandTests : IDisposable
     {
         await WriteScopeAsync();
         EmptyInstance();
+        Accept("POST", "/api/stored-libraries/urn:example:risk:library:example-baseline/import/");
         _ca.Given(Request.Create().WithPath("/api/folders/").UsingPost()).RespondWith(Response.Create().WithStatusCode(400).WithBody("""{"name": ["This field is required."]}"""));
 
         var exitCode = await Run("apply");
 
         exitCode.ShouldBe(ExitCodes.PublishFailed);
         var report = JsonNode.Parse(_output.ToString())!;
-        (report["written"]!.GetValue<int>(), report["failed"]!.GetValue<int>(), report["skipped"]!.GetValue<int>()).ShouldBe((0, 1, 2));
+        (report["written"]!.GetValue<int>(), report["failed"]!.GetValue<int>(), report["skipped"]!.GetValue<int>()).ShouldBe((1, 1, 5));
     }
 
     [Fact]
@@ -196,6 +197,44 @@ public sealed class ScopePlanCommandTests : IDisposable
         }
 
         List("perimeters", perimeters ?? []);
+    }
+
+    /// <summary>
+    /// A CISO Assistant holding the scope's framework, domain, perimeter and system as <c>hound</c> last wrote them, and, outside the scope's
+    /// folders, objects the writer finds by ref_id: an audit with one row, and the control.
+    /// </summary>
+    private void HeldStructure()
+    {
+        static JsonObject In(string id, string folder, string? refId = null) => new() { ["id"] = id, ["ref_id"] = refId, ["folder"] = new JsonObject { ["id"] = folder, ["str"] = folder } };
+        static string Marked(params (string Name, string Value)[] fields) =>
+            $"[hound scope {Core.Scope.ScopeMarker.Fingerprint(fields.ToDictionary(f => f.Name, f => f.Value, StringComparer.Ordinal))}]";
+
+        List("folders", new JsonObject { ["id"] = "f-global", ["name"] = "Global", ["parent_folder"] = null }, new JsonObject { ["id"] = "f-ex", ["name"] = "Example Pty Ltd", ["parent_folder"] = new JsonObject { ["id"] = "f-global", ["str"] = "Global" } });
+        Object("folders", "f-ex", new JsonObject { ["id"] = "f-ex", ["name"] = "Example Pty Ltd", ["parent_folder"] = "f-global", ["description"] = Marked() });
+        List("frameworks", new JsonObject { ["id"] = "fw-1", ["urn"] = Snapshot.FrameworkUrn, ["library"] = new JsonObject { ["id"] = "lib-1", ["urn"] = Snapshot.LibraryUrn } });
+        List("loaded-libraries", new JsonObject { ["id"] = "lib-1", ["urn"] = Snapshot.LibraryUrn, ["version"] = Snapshot.Version });
+        List("perimeters", In("p-1", "f-ex"));
+        Object("perimeters", "p-1", new JsonObject { ["id"] = "p-1", ["name"] = "Example baseline", ["folder"] = "f-ex", ["description"] = Marked(("name", "Example baseline"), ("domain", "Example Pty Ltd")) });
+        List("assets", In("a-1", "f-ex"));
+        Object("assets", "a-1", new JsonObject
+        {
+            ["id"] = "a-1",
+            ["name"] = "Example 365",
+            ["type"] = "PR",
+            ["folder"] = "f-ex",
+            ["owner"] = new JsonArray(),
+            ["parent_assets"] = new JsonArray(),
+            ["description"] = Marked(("type", "primary"), ("domain", "Example Pty Ltd")),
+        });
+        List("compliance-assessments", In("ca-1", "f-elsewhere", "EXAMPLE-BASELINE-2026"));
+        _ca.Given(Request.Create().WithPath("/api/compliance-assessments/ca-1/object/").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject { ["id"] = "ca-1", ["selected_implementation_groups"] = new JsonArray("1") }.ToJsonString()));
+        List("requirement-assessments", new JsonObject { ["id"] = "ra-1", ["requirement"] = new JsonObject { ["urn"] = Snapshot.Nodes[0].Urn, ["ref_id"] = "EX-1.1", ["implementation_groups"] = new JsonArray("1") } });
+        List("applied-controls", In("ac-1", "f-elsewhere", "AC-MFA"));
+        foreach (var resource in new[] { "users", "actors", "evidences" })
+        {
+            List(resource);
+        }
     }
 
     private void List(string resource, params JsonObject[] items) =>
