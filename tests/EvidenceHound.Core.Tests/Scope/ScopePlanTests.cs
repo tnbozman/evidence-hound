@@ -233,6 +233,19 @@ public class ScopePlanTests
     }
 
     [Fact]
+    public void Links_added_outside_the_scope_are_neither_drift_nor_an_update()
+    {
+        // A run links its health evidence to the control; the scope declares only its own document.
+        var declared = Declared(ScopeKind.Control, "AC-AUTO-EVIDENCE", ("name", "Automated evidence collection"), ("documents", "identity-policy"));
+        var held = Applied(declared) with
+        {
+            Held = Declared(ScopeKind.Control, declared.Key, ("name", "Automated evidence collection"), ("documents", "identity-policy, example-m365/health.json")),
+        };
+
+        ScopePlanner.Plan([declared], [held], prune: false).IsEmpty.ShouldBeTrue();
+    }
+
+    [Fact]
     public void Assessment_compares_only_the_fields_the_scope_declares()
     {
         var declared = Declared(ScopeKind.Assessment, "EX-E8-2026/ISM-1486", ("result", "not_assessed"), ("documents", "identity-policy"));
@@ -277,7 +290,7 @@ public class ScopePlanTests
     private static ScopeObject Declared(ScopeKind kind, string key, params (string Field, string Value)[] fields) =>
         new(kind, key, fields.ToDictionary(f => f.Field, f => f.Value, StringComparer.Ordinal));
 
-    private static ActualObject Applied(ScopeObject held) => new(held, ScopeMarker.Fingerprint(held.Fields));
+    private static ActualObject Applied(ScopeObject held) => new(held, ScopeMarker.State(held.Kind, held.Fields));
 
     private sealed class ChangeComparer : IEqualityComparer<ScopeChange>
     {

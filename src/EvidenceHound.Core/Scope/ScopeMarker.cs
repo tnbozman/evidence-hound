@@ -15,6 +15,9 @@ public static partial class ScopeMarker
         return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(text)))[..16];
     }
 
+    /// <summary>The state <c>hound</c> records on an object of this kind: a fingerprint of its fields.</summary>
+    public static string State(ScopeKind kind, IReadOnlyDictionary<string, string> fields) => Fingerprint(fields);
+
     /// <summary>The description as written to CISO Assistant: the text, then the marker on its own line.</summary>
     public static string Mark(string? description, string fingerprint) =>
         string.IsNullOrWhiteSpace(description) ? $"[hound scope {fingerprint}]" : $"{description}\n[hound scope {fingerprint}]";
