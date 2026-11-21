@@ -31,17 +31,13 @@ jobs:
         with:
           global-json-file: global.json
       - name: Restore
-        run: dotnet restore --locked-mode
-      - name: Format check
-        run: dotnet format --verify-no-changes --no-restore
+        run: make restore
+      - name: Lint (format and code style)
+        run: make lint-dotnet
       - name: Build
-        run: dotnet build --no-restore -c "$CONFIGURATION" -p:ContinuousIntegrationBuild=true
-      - name: Unit and contract tests
-        run: >
-          dotnet test --no-build -c "$CONFIGURATION"
-          --results-directory test-results
-          --filter-not-trait "Category=Functional"
-          --report-trx --coverage --coverage-output-format cobertura
+        run: make build CONFIGURATION="$CONFIGURATION"
+      - name: Unit and contract tests with coverage
+        run: make coverage CONFIGURATION="$CONFIGURATION"
       - name: Upload test results
         if: ${{ always() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -62,12 +58,7 @@ jobs:
         with:
           global-json-file: global.json
       - name: Functional tests (Testcontainers starts CISO Assistant)
-        # Exit code 8 means "no tests ran"; allowed until the first functional test lands (see s00 Discovered work).
-        run: >
-          dotnet test -c "$CONFIGURATION"
-          --results-directory test-results
-          --filter-trait "Category=Functional"
-          --report-trx --ignore-exit-code 8
+        run: make test-functional CONFIGURATION="$CONFIGURATION"
       - name: Upload functional results
         if: ${{ always() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -82,12 +73,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Install bats
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq bats
       - name: ShellCheck
-        run: shellcheck -x scripts/*.sh scripts/lib/*.sh .devcontainer/*.sh
+        run: make lint-shell
       - name: Script tests
-        run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq bats
-          bats scripts/tests
+        run: make test-scripts
 
   org-data:
     runs-on: ubuntu-latest
