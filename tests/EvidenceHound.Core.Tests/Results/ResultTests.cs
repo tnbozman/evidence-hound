@@ -2,13 +2,14 @@ using EvidenceHound.Core.Results;
 using FsCheck;
 using FsCheck.Fluent;
 using FsCheck.Xunit;
+using Result = EvidenceHound.Core.Results.Result;
 
 namespace EvidenceHound.Core.Tests.Results;
 
 public class ResultTests
 {
-    private static readonly Error NotFound = new("not_found", "The thing was not found.");
-    private static readonly Error Refused = new("refused", "The API refused the request.");
+    private static readonly Problem NotFound = new("not_found", "The thing was not found.");
+    private static readonly Problem Refused = new("refused", "The API refused the request.");
 
     [Fact]
     public void Map_on_ok_applies_function()
@@ -92,8 +93,8 @@ public class ResultTests
     public void Nulls_and_empty_error_lists_are_rejected()
     {
         Should.Throw<ArgumentNullException>(() => Result.Ok<string>(null!));
-        Should.Throw<ArgumentNullException>(() => new Error(null!, "message"));
-        Should.Throw<ArgumentNullException>(() => new Error("code", null!));
+        Should.Throw<ArgumentNullException>(() => new Problem(null!, "message"));
+        Should.Throw<ArgumentNullException>(() => new Problem("code", null!));
         Should.Throw<ArgumentException>(() => Result.Fail<int>([]));
     }
 
@@ -107,7 +108,7 @@ public class ResultTests
         {
             var errors = ArbMap.Default.GeneratorFor<NonEmptyString>()
                 .Two()
-                .Select(pair => new Error(pair.Item1.Get, pair.Item2.Get))
+                .Select(pair => new Problem(pair.Item1.Get, pair.Item2.Get))
                 .NonEmptyListOf()
                 .Select(list => Result.Fail<int>(list));
             var oks = ArbMap.Default.GeneratorFor<int>().Select(Result.Ok);
