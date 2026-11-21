@@ -114,4 +114,5 @@ What the feedback taught us:
 - A test-kit contract that skips cannot itself be tested and shows up as a skip in `make test`. Contracts that do not apply pass instead, and say so in the kit's README.
 - Real files carry quirks that synthetic ones miss: a UTF-8 byte-order mark broke attestation parsing until a test wrote its sidecar the way Notepad does.
 - Example data feeds count assertions in CLI and functional tests. A new example requirement moves those counts, and the functional suite against a real CISO Assistant confirms the seed library and the mapping agree.
+- The first CI run of the `template` job failed. CI sets `CONFIGURATION=Release`, which MSBuild reads as a property, so the build produced Release binaries while `dotnet test --no-build` looked for Debug ones. Scripts that build and then test with `--no-build` now pass `-c` to both. Reproducing CI's environment variables locally found the cause, not the job's output.
 - CI and code-scanning results were not readable from the cloud session that ran this sprint. Check the PR's checks before merging.

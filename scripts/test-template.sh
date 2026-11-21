@@ -25,7 +25,9 @@ dotnet new install "$root/templates/collector" --debug:custom-hive "$hive" >/dev
 
 echo "test-template: building and testing the generated collector"
 cd "$work/Example.Widget"
+# One explicit configuration for build and test: MSBuild reads a CONFIGURATION environment variable (CI sets it), but
+# dotnet test --no-build does not, so without -c the test step looks for binaries the build did not produce.
 dotnet restore --source "$feed" --source https://api.nuget.org/v3/index.json
-dotnet build --no-restore --nologo
-dotnet test --no-build
+dotnet build --no-restore --nologo -c Release
+dotnet test --no-build -c Release
 echo "test-template: ok"
