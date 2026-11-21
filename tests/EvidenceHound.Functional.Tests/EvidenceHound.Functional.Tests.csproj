@@ -11,7 +11,15 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\EvidenceHound.CisoAssistant\EvidenceHound.CisoAssistant.csproj" />
     <ProjectReference Include="..\..\src\EvidenceHound.Cli\EvidenceHound.Cli.csproj" />
+    <ProjectReference Include="..\..\src\EvidenceHound.Collectors.Testing\EvidenceHound.Collectors.Testing.csproj" />
     <ProjectReference Include="..\..\src\EvidenceHound.Transport.Kafka\EvidenceHound.Transport.Kafka.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- The recorded example.com tenant, shared with the M365 collector's own tests. -->
+    <Compile Include="..\EvidenceHound.Collectors.M365.Tests\RecordedTenant.cs" Link="M365\RecordedTenant.cs" />
+    <Compile Include="..\EvidenceHound.Collectors.M365.Tests\TestCredentials.cs" Link="M365\TestCredentials.cs" />
+    <None Include="..\fixtures\m365\*.json" Link="m365\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\fixtures\m365-mapping.yaml" Link="files\fixtures\m365-mapping.yaml" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\dev\ciso-assistant\seed\*" Link="seed\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />

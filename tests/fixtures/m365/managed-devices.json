@@ -1,0 +1,11 @@
+{
+  "@odata.context": "{{graph}}v1.0/$metadata#deviceManagement/managedDevices(id,deviceName,operatingSystem,osVersion,complianceState,userPrincipalName)",
+  "value": [
+    { "id": "00000000-0000-4000-8000-00000000d001", "deviceName": "EX-LT-0001", "operatingSystem": "Windows", "osVersion": "10.0.26100.2314", "complianceState": "compliant", "userPrincipalName": "alex.admin@example.com" },
+    { "id": "00000000-0000-4000-8000-00000000d002", "deviceName": "EX-LT-0002", "operatingSystem": "Windows", "osVersion": "10.0.26100.2314", "complianceState": "compliant", "userPrincipalName": "sam.admin@example.com" },
+    { "id": "00000000-0000-4000-8000-00000000d003", "deviceName": "EX-LT-0003", "operatingSystem": "Windows", "osVersion": "10.0.22631.4460", "complianceState": "compliant", "userPrincipalName": "jo.example@example.com" },
+    { "id": "00000000-0000-4000-8000-00000000d004", "deviceName": "EX-LT-0004", "operatingSystem": "Windows", "osVersion": "10.0.22631.4460", "complianceState": "compliant", "userPrincipalName": "kim.example@example.com" },
+    { "id": "00000000-0000-4000-8000-00000000d005", "deviceName": "EX-DT-0005", "operatingSystem": "Windows", "osVersion": "10.0.26100.2605", "complianceState": "compliant", "userPrincipalName": "lee.example@example.com" },
+    { "id": "00000000-0000-4000-8000-00000000d006", "deviceName": "EX-PH-0006", "operatingSystem": "iOS", "osVersion": "18.1", "complianceState": "noncompliant", "userPrincipalName": "lee.example@example.com" }
+  ]
+}

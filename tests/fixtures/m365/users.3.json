@@ -1,0 +1,8 @@
+{
+  "@odata.context": "{{graph}}v1.0/$metadata#users(id,userPrincipalName,displayName,accountEnabled,userType,onPremisesSyncEnabled)",
+  "value": [
+    { "id": "00000000-0000-4000-8000-0000000000c3", "userPrincipalName": "lee.example@example.com", "displayName": "Lee Example", "accountEnabled": true, "userType": "Member", "onPremisesSyncEnabled": null },
+    { "id": "00000000-0000-4000-8000-0000000000d1", "userPrincipalName": "former.staff@example.com", "displayName": "Former Staff", "accountEnabled": false, "userType": "Member", "onPremisesSyncEnabled": null },
+    { "id": "00000000-0000-4000-8000-0000000000e1", "userPrincipalName": "partner_example.net#EXT#@example.com", "displayName": "Partner Guest", "accountEnabled": true, "userType": "Guest", "onPremisesSyncEnabled": null }
+  ]
+}

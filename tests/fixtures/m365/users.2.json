@@ -1,0 +1,9 @@
+{
+  "@odata.context": "{{graph}}v1.0/$metadata#users(id,userPrincipalName,displayName,accountEnabled,userType,onPremisesSyncEnabled)",
+  "value": [
+    { "id": "00000000-0000-4000-8000-0000000000b2", "userPrincipalName": "breakglass2@example.com", "displayName": "Break glass 2", "accountEnabled": true, "userType": "Member", "onPremisesSyncEnabled": null },
+    { "id": "00000000-0000-4000-8000-0000000000c1", "userPrincipalName": "jo.example@example.com", "displayName": "Jo Example", "accountEnabled": true, "userType": "Member", "onPremisesSyncEnabled": null },
+    { "id": "00000000-0000-4000-8000-0000000000c2", "userPrincipalName": "kim.example@example.com", "displayName": "Kim Example", "accountEnabled": true, "userType": "Member", "onPremisesSyncEnabled": true }
+  ],
+  "@odata.nextLink": "{{graph}}v1.0/users?$select=id,userPrincipalName,displayName,accountEnabled,userType,onPremisesSyncEnabled&$skiptoken=3"
+}

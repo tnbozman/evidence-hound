@@ -1,0 +1,10 @@
+# Mapping used by the functional test that runs the m365 collector against the recorded example.com tenant.
+# Fictional framework (the example baseline); only requirements this collector fully owns are listed.
+framework_urn: urn:example:risk:library:example-baseline
+description: Example baseline requirements assessed from the recorded Microsoft 365 tenant.
+requirements:
+  - ref: "EX-1.2"
+    rule: all_pass
+    checks:
+      - identity.mfa.phishing_resistant_admins
+      - identity.privileged.pim_eligible_not_permanent

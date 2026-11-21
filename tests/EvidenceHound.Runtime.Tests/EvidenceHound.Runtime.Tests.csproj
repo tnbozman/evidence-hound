@@ -9,8 +9,14 @@
     <ProjectReference Include="..\..\src\EvidenceHound.Runtime\EvidenceHound.Runtime.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <!-- The recorded example.com tenant, shared with the M365 collector's own tests. -->
+    <Compile Include="..\EvidenceHound.Collectors.M365.Tests\RecordedTenant.cs" Link="M365\RecordedTenant.cs" />
+    <Compile Include="..\EvidenceHound.Collectors.M365.Tests\TestCredentials.cs" Link="M365\TestCredentials.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <None Include="..\..\mappings\example.yaml" Link="files\mappings\example.yaml" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\examples\*.yaml" Link="files\examples\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\fixtures\m365\*.json" Link="m365\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\schemas\config.schema.json" Link="files\schemas\config.schema.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
