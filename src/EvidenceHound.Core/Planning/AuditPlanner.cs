@@ -7,6 +7,12 @@ namespace EvidenceHound.Core.Planning;
 /// <summary>Works out exactly which updates to send, so publishing is a plain loop over the plan. Pure.</summary>
 public static class AuditPlanner
 {
+    /// <summary>Plans several audits at once.</summary>
+    public static Result<IReadOnlyList<AuditUpdate>> PlanUpdates(
+        IReadOnlyList<TargetResults> targets,
+        IReadOnlyList<Evidence> evidence,
+        IReadOnlyList<ControlStatus> controlStatuses) => throw new NotImplementedException();
+
     /// <summary>
     /// Evidence uploads (by ID) first, then one requirement update per result (in result order), then control updates (by key).
     /// Fails if a result cites evidence that is not in <paramref name="evidence"/> or a control key is not in the target.

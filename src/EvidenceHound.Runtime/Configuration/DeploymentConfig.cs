@@ -7,7 +7,11 @@ public sealed record DeploymentConfig(
     CisoAssistantConfig CisoAssistant,
     EvidenceConfig Evidence,
     IReadOnlyList<CollectorInstance> Collectors,
-    TargetConfig Target);
+    TargetConfig Target)
+{
+    /// <summary>Every audit results are published to, in config order. A single <c>target</c> is a list of one.</summary>
+    public IReadOnlyList<TargetConfig> Targets => throw new NotImplementedException();
+}
 
 /// <summary>How to reach CISO Assistant. <paramref name="Transport"/> is <c>rest</c> or <c>kafka</c>.</summary>
 public sealed record CisoAssistantConfig(Uri Url, SecretReference Token, string Transport, string? KafkaBootstrapServers);

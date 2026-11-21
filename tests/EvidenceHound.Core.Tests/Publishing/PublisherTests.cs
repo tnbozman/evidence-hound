@@ -277,6 +277,22 @@ public class PublisherTests
         _ca.Calls.Count(c => c.StartsWith("audit", StringComparison.Ordinal)).ShouldBe(1);
     }
 
+    [Fact]
+    public async Task Failure_in_one_audit_does_not_stop_the_next()
+    {
+        _ca.MissingAudits.Add("EX-A");
+
+        var report = await Publisher().PublishAsync(
+        [
+            new AuditUpdate.UpdateRequirementAssessment("EX-A", "R-1", ComplianceResult.Compliant, "Checked.", []),
+            new AuditUpdate.UpdateRequirementAssessment("EX-A", "R-2", ComplianceResult.Compliant, "Checked.", []),
+            new AuditUpdate.UpdateRequirementAssessment("EX-B", "R-1", ComplianceResult.Compliant, "Checked.", []),
+        ], _ct);
+
+        report.Items.Select(i => i.Outcome).ShouldBe([PublishOutcome.Failed, PublishOutcome.Failed, PublishOutcome.Sent]);
+        report.Audits.Select(a => (a.ComplianceAssessmentRefId, a.Sent, a.Failed)).ShouldBe([("EX-A", 0, 2), ("EX-B", 1, 0)]);
+    }
+
     private static RemoteRequirementAssessment Row(string id, string domain, string refId, params string[] groups) =>
         new(id, $"urn:example:req:{domain}:{refId}", refId, groups);
 

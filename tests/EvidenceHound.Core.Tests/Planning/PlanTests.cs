@@ -63,6 +63,42 @@ public class PlanTests
     }
 
     [Fact]
+    public void Two_targets_share_one_evidence_upload()
+    {
+        var e8 = new AuditTarget("EX-E8-2026", new Dictionary<string, string> { ["mfa"] = "AC-MFA" });
+        var essentials = new AuditTarget("EX-ESSENTIALS-2026", new Dictionary<string, string> { ["mfa"] = "AC-MFA" });
+
+        var plan = AuditPlanner.PlanUpdates(
+            [
+                new TargetResults(e8, [Requirement("ISM-1504", ComplianceResult.Compliant, "ev-0001")]),
+                new TargetResults(essentials, [Requirement("IT.IDE-01.1", ComplianceResult.Compliant, "ev-0001")]),
+            ],
+            [MfaAdmins],
+            [new ControlStatus("mfa", ControlState.Active)]).Value();
+
+        plan.OfType<AuditUpdate.UploadEvidence>().ShouldHaveSingleItem().Evidence.Id.ShouldBe("ev-0001");
+        plan.OfType<AuditUpdate.UpdateRequirementAssessment>().Select(u => (u.ComplianceAssessmentRefId, u.RequirementRefId, string.Join(",", u.EvidenceRefIds))).ShouldBe([
+            ("EX-E8-2026", "ISM-1504", "ev-0001"),
+            ("EX-ESSENTIALS-2026", "IT.IDE-01.1", "ev-0001"),
+        ]);
+        plan.OfType<AuditUpdate.UpdateAppliedControl>().ShouldHaveSingleItem().RefId.ShouldBe("AC-MFA");
+    }
+
+    [Fact]
+    public void A_control_key_configured_by_any_target_is_known()
+    {
+        var first = new AuditTarget("EX-A", new Dictionary<string, string> { ["mfa"] = "AC-MFA" });
+        var second = new AuditTarget("EX-B", new Dictionary<string, string> { ["backups"] = "AC-BACKUP" });
+
+        var plan = AuditPlanner.PlanUpdates(
+            [new TargetResults(first, []), new TargetResults(second, [])],
+            [],
+            [new ControlStatus("backups", ControlState.Active), new ControlStatus("mfa", ControlState.OnHold)]).Value();
+
+        plan.OfType<AuditUpdate.UpdateAppliedControl>().Select(u => u.RefId).ShouldBe(["AC-BACKUP", "AC-MFA"]);
+    }
+
+    [Fact]
     public void Unknown_control_key_and_unknown_evidence_ref_fail()
     {
         var plan = PlanUpdates(

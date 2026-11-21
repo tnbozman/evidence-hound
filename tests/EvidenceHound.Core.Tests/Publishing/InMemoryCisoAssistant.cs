@@ -48,10 +48,14 @@ internal sealed class InMemoryCisoAssistant : ICisoAssistantClient
             : [new RemoteRequirementAssessment($"ra-{requirement.Value}", $"urn:example:req:{requirement.Value}", requirement.Value, [])]));
     }
 
+    public HashSet<string> MissingAudits { get; } = [];
+
     public Task<Result<RemoteAudit>> FindAuditAsync(string complianceAssessmentRefId, CancellationToken cancellationToken)
     {
         Calls.Add($"audit {complianceAssessmentRefId}");
-        return Task.FromResult(Result.Ok(new RemoteAudit($"ca-{complianceAssessmentRefId}", [.. SelectedGroups])));
+        return Task.FromResult(MissingAudits.Contains(complianceAssessmentRefId)
+            ? Result.Fail<RemoteAudit>(new Problem("ciso_assistant.not_found", $"No audit {complianceAssessmentRefId}."))
+            : Result.Ok(new RemoteAudit($"ca-{complianceAssessmentRefId}", [.. SelectedGroups])));
     }
 
     public Task<Result<Unit>> UpdateRequirementAssessmentAsync(string requirementAssessmentId, RequirementAssessmentValues values, CancellationToken cancellationToken)

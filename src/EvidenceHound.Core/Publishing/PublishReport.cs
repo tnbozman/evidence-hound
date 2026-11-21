@@ -55,5 +55,11 @@ public sealed record PublishReport(IReadOnlyList<PublishItem> Items)
 
     public bool HasFailures => Failed > 0;
 
+    /// <summary>Requirement items counted per audit, in the order the audits first appear.</summary>
+    public IReadOnlyList<AuditReport> Audits => throw new NotImplementedException();
+
     private int Count(PublishOutcome outcome) => Items.Count(item => item.Outcome == outcome);
 }
+
+/// <summary>How one audit's requirement updates went.</summary>
+public sealed record AuditReport(string ComplianceAssessmentRefId, int Planned, int Sent, int Skipped, int Failed);

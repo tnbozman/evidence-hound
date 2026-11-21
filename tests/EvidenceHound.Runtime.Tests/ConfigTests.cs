@@ -50,6 +50,75 @@ public class ConfigTests
     }
 
     [Fact]
+    public void Single_target_is_read_as_one_item_list()
+    {
+        var config = ConfigLoader.Parse(Valid, Source, Known).Value();
+
+        var target = config.Targets.ShouldHaveSingleItem();
+        target.ComplianceAssessmentRefId.ShouldBe("EXAMPLE-1");
+        target.Controls["mfa"].ShouldBe("AC-MFA");
+    }
+
+    [Fact]
+    public void Targets_list_is_read_in_order_with_paths_resolved()
+    {
+        var yaml = Valid[..Valid.IndexOf("target:", StringComparison.Ordinal)] + """
+            targets:
+              - mapping: ./essential-eight-2023.yaml
+                compliance_assessment: EX-E8-2026
+                controls:
+                  mfa: AC-MFA
+                health_control: AC-AUTO-EVIDENCE
+              - mapping: ./asd-essentials.yaml
+                compliance_assessment: EX-ESSENTIALS-2026
+            """;
+
+        var config = ConfigLoader.Parse(yaml, Source, Known).Value();
+
+        config.Targets.Select(t => (t.ComplianceAssessmentRefId, Path.GetFileName(t.MappingPath))).ShouldBe([
+            ("EX-E8-2026", "essential-eight-2023.yaml"),
+            ("EX-ESSENTIALS-2026", "asd-essentials.yaml"),
+        ]);
+        config.Targets[1].Controls.ShouldBeEmpty();
+        config.Targets[0].MappingPath.ShouldBe(Path.Combine(Path.GetTempPath(), "deploy", "essential-eight-2023.yaml"));
+    }
+
+    [Fact]
+    public void Target_and_targets_together_is_a_problem()
+    {
+        var yaml = Valid + """
+
+            targets:
+              - mapping: ./other.yaml
+                compliance_assessment: EX-OTHER
+            """;
+
+        ConfigLoader.Parse(yaml, Source, Known).Problems().Select(p => p.Code).ShouldBe(["config.targets_conflict"]);
+    }
+
+    [Fact]
+    public void Targets_list_must_not_be_empty()
+    {
+        var yaml = Valid[..Valid.IndexOf("target:", StringComparison.Ordinal)] + "targets: []\n";
+
+        ConfigLoader.Parse(yaml, Source, Known).Problems().Select(p => p.Code).ShouldBe(["config.targets_empty"]);
+    }
+
+    [Fact]
+    public void Two_targets_for_one_audit_is_a_problem()
+    {
+        var yaml = Valid[..Valid.IndexOf("target:", StringComparison.Ordinal)] + """
+            targets:
+              - mapping: ./a.yaml
+                compliance_assessment: EX-1
+              - mapping: ./b.yaml
+                compliance_assessment: EX-1
+            """;
+
+        ConfigLoader.Parse(yaml, Source, Known).Problems().Select(p => p.Code).ShouldBe(["config.target_duplicate"]);
+    }
+
+    [Fact]
     public void Valid_config_is_parsed_with_paths_resolved_against_the_config_folder()
     {
         var config = ConfigLoader.Parse(Valid, Source, Known).Value();

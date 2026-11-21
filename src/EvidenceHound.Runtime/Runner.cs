@@ -41,6 +41,9 @@ public sealed record RunSummary(IReadOnlyList<CollectorRunResult> Collectors)
     public CollectorOutcome Outcome => Collectors.Any(c => c.Outcome == CollectorOutcome.Failed) ? CollectorOutcome.Failed : CollectorOutcome.Succeeded;
 }
 
+/// <summary>One audit a run publishes to: its mapping, where results go, and the applied control its health evidence is linked to.</summary>
+public sealed record RunTarget(FrameworkMapping Mapping, AuditTarget Target, string? HealthControlRefId = null);
+
 /// <summary>
 /// Runs collect, store, evaluate, map, plan and publish for each collector instance. One collector failing, even by throwing,
 /// does not stop the others.
@@ -55,6 +58,17 @@ public sealed class Runner(
     IRunRecordStore records,
     string? healthControlRefId = null)
 {
+    /// <summary>A runner that publishes each collector's owned results to every target.</summary>
+    public Runner(
+        IReadOnlyDictionary<string, ICollector> collectors,
+        CollectStep collect,
+        IReadOnlyList<RunTarget> targets,
+        Func<IEvidenceFiles, IAuditUpdateSink> sinkFor,
+        IClock clock,
+        IRunRecordStore records)
+        : this(collectors, collect, targets[0].Mapping, targets[0].Target, sinkFor, clock, records, targets[0].HealthControlRefId) =>
+        throw new NotImplementedException();
+
     /// <summary>The instances to run: all of them, or the one named by <paramref name="only"/> (<c>run.collector_unknown</c> if none has that name).</summary>
     public static Result<IReadOnlyList<CollectorInstance>> Select(IReadOnlyList<CollectorInstance> instances, string? only)
     {
