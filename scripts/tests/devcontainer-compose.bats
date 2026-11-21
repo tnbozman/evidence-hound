@@ -46,3 +46,7 @@ model() {
   run docker compose -f "$compose" --env-file /dev/null config --quiet
   [ "$status" -ne 0 ]
 }
+
+@test "the seed leaves the shared env file readable by the dev container user" {
+  [ "$(model | jq -r '.services["ca-seed"].environment.HOUND_CA_ENV_MODE')" = "644" ]
+}

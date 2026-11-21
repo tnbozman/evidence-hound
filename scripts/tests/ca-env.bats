@@ -36,3 +36,8 @@ setup() {
   [[ "$output" == *"printed no token"* ]]
   [ ! -e "$env_file" ]
 }
+
+@test "can leave the file readable by other users of a shared volume" {
+  HOUND_CA_ENV_MODE=644 bash "$script" "http://backend:8000/api/" "$env_file" <<<"$seed_output"
+  [ "$(stat -c %a "$env_file")" = "644" ]
+}
