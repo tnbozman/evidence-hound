@@ -256,7 +256,7 @@ The layout follows one that has already been tried against CISO Assistant: one s
 **Functional check result**: the functional suite seeds through `hound scope apply` and passes, 14 of 14 (CI run 44933838879). After the other tests' runs, `hound scope plan` shows 0 changes and no drift, and a second apply writes nothing.
 
 ### s06-10 Audit periods: open, close and sign off
-- [ ] Done
+- [x] Done
 
 **Story:** As an authorising official, I want each audit to run in periods that close and open on a configured schedule, so that every period is a clean, signed-off record while daily runs carry on into the next one.
 
@@ -281,6 +281,7 @@ The layout follows one that has already been tried against CISO Assistant: one s
 
 **Functional check**
 - With a fixed clock, run across a quarter boundary against the local CISO Assistant: the old period goes to in review with its final results, the new one opens with them carried over, the next run writes only to the new one, and adding a sign-off and running `scope apply` locks the old one.
+- Result (2026-11-21): `AuditPeriodsFunctionalTests` ran the series `EX-PERIOD` (quarterly from 2026-07-01) against v4.3.4 with `HOUND_TODAY` in the functional CI job (run [44947813409](https://github.com/tnbozman/evidence-hound/actions/runs/44947813409)). On 2026-09-30 apply created `EX-PERIOD-2026Q3` and publish wrote 5 rows to it; on 2026-10-01 the plan listed "EX-PERIOD-2026Q3 closes: in review, awaiting sign-off" and "EX-PERIOD-2026Q4 opens, from EX-PERIOD-2026Q3", apply did both, Q4 carried Q3's results, and the next publish wrote only to Q4 while Q3's rows stayed unchanged; on 2026-10-15, with the sign-off added, apply set Q3 to done and locked it. Locking does not freeze controls (s06-05), so no fallback was needed. Evidence: [docs/evidence/s06/s06-10.md](../evidence/s06/s06-10.md).
 
 ### s06-11 Export an existing instance
 - [ ] Done
