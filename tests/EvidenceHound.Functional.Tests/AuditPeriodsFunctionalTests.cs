@@ -74,7 +74,7 @@ public sealed class AuditPeriodsFunctionalTests(CisoAssistantFixture ciso) : IDi
             return
             [
                 "publish", "--config", Config,
-                "--checks", Path.Combine(files, "fixtures", "publish", "checks.json"),
+                "--checks", Path.Combine(_repo, "checks.json"),
                 "--evidence-dir", Path.Combine(files, "fixtures", "publish", "evidence"),
             ];
         }
@@ -102,6 +102,10 @@ public sealed class AuditPeriodsFunctionalTests(CisoAssistantFixture ciso) : IDi
             .Replace("../.dev/evidence", Path.Combine(_repo, "evidence"), StringComparison.Ordinal)
             .Replace("compliance_assessment: EXAMPLE-BASELINE-2026", "compliance_assessment: EX-PERIOD", StringComparison.Ordinal);
         await File.WriteAllTextAsync(Config, "scope: scope\n" + config, ct);
+
+        // Its own evidence ids, so the evidence other functional tests publish first is not already in CISO Assistant.
+        var checks = await File.ReadAllTextAsync(Path.Combine(files, "fixtures", "publish", "checks.json"), ct);
+        await File.WriteAllTextAsync(Path.Combine(_repo, "checks.json"), checks.Replace("\"ev-", "\"ev-period-", StringComparison.Ordinal), ct);
     }
 
     /// <summary>Runs one hound command on <paramref name="today"/>, records its output, and returns it; it must exit 0.</summary>
