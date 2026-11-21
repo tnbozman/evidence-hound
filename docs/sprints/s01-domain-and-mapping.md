@@ -7,7 +7,7 @@ Status: In progress
 All code in this sprint lives in `src/EvidenceHound.Core` and is tested in `tests/EvidenceHound.Core.Tests`. No package references beyond the BCL.
 
 ### s01-01 Result type
-- [ ] Done
+- [x] Done
 
 **Story:** As a developer, I want a small `Result<T>` type, so that expected failures are values, not exceptions.
 
@@ -25,6 +25,8 @@ All code in this sprint lives in `src/EvidenceHound.Core` and is tested in `test
 
 **Functional check**
 - `make test` green; coverage of `Result` 100 %.
+
+**Functional check result (2026-11-21):** `make coverage` gave `total: 16, failed: 0`; Cobertura shows 100 % line and branch coverage for `Result`, `Result<T>` and `Problem`. Evidence: [`docs/evidence/s01/s01-01.md`](../evidence/s01/s01-01.md).
 
 ### s01-02 Check results and evidence
 - [ ] Done
@@ -111,5 +113,7 @@ All code in this sprint lives in `src/EvidenceHound.Core` and is tested in `test
 - `make run ARGS="plan --dry-run --config examples/example-pty-ltd.yaml --checks tests/fixtures/checks-sample.json"` prints the planned messages as JSON.
 
 ## Discovered work
+
+- s01-01: the error record is `Problem`, not `Error`, because CA1716 rejects `Error` (a Visual Basic keyword). Later sprint files that say `Error` mean `Problem`.
 
 ## Sprint review
