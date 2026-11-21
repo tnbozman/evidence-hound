@@ -2,6 +2,8 @@
 
 One YAML file per deployment says how to reach CISO Assistant, where evidence is stored, which collectors run and which audit they update. Nothing organisation-specific lives in code. The fictional [`examples/example-pty-ltd.yaml`](../examples/example-pty-ltd.yaml) is a complete example, and [`schemas/config.schema.json`](../schemas/config.schema.json) describes every key for editors and other tools.
 
+The config lives in your private compliance repo next to the scope files that say what CISO Assistant should hold; the template is [`examples/compliance-repo/`](../examples/compliance-repo/) (its `hound.yaml`), and [scope.md](scope.md) explains the scope files and the review workflow.
+
 ```
 $ hound config validate examples/example-pty-ltd.yaml
 valid

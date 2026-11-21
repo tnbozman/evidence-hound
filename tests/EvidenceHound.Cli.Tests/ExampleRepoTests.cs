@@ -37,9 +37,12 @@ public sealed partial class ExampleRepoTests : IDisposable
     }
 
     [Fact]
-    public void Every_yaml_file_but_the_workflow_links_a_schema_that_exists()
+    public void Every_yaml_file_but_the_workflow_and_custom_libraries_links_a_schema_that_exists()
     {
-        var files = Directory.GetFiles(Repo, "*.yaml", SearchOption.AllDirectories).Where(f => !f.Contains(".github", StringComparison.Ordinal)).ToArray();
+        // A custom library under frameworks/ is CISO Assistant's own format, which has no schema here.
+        var files = Directory.GetFiles(Repo, "*.yaml", SearchOption.AllDirectories)
+            .Where(f => !f.Contains(".github", StringComparison.Ordinal) && !f.Contains($"{Path.DirectorySeparatorChar}frameworks{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+            .ToArray();
 
         files.ShouldNotBeEmpty();
         foreach (var file in files)

@@ -6,10 +6,10 @@ organisation:
 frameworks:
   - urn: urn:intuitem:risk:framework:essential-eight-2023
     library: urn:intuitem:risk:library:essential-eight-2023
-    snapshot: ../../../frameworks/essential-eight-2023.json
+    snapshot: ../frameworks/essential-eight-2023.json
   - urn: urn:intuitem:risk:framework:asd-essentials-enterprise-it
     library: urn:intuitem:risk:library:asd-essentials-enterprise-it
-    snapshot: ../../../frameworks/asd-essentials-enterprise-it.json
+    snapshot: ../frameworks/asd-essentials-enterprise-it.json
   # A custom library: uploaded from the file, then loaded.
   - urn: urn:example:risk:framework:example-baseline
     library: urn:example:risk:library:example-baseline

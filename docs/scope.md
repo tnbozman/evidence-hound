@@ -2,17 +2,22 @@
 
 A compliance repo declares the organisation's structure in CISO Assistant as files, so it changes through reviewed pull requests rather than clicks. `hound scope validate` checks the files offline, `hound scope plan` shows what they would change in CISO Assistant, and `hound scope apply` writes them.
 
-A complete fictional example is in [`examples/compliance-repo/scope/`](../examples/compliance-repo/scope/). The schema is [`schemas/scope.schema.json`](../schemas/scope.schema.json); add `# yaml-language-server: $schema=…` to the top of each file for editor help.
+A complete fictional compliance repo is in [`examples/compliance-repo/`](../examples/compliance-repo/): copy it to a new private repository to start your own (see [The review workflow](#the-review-workflow)). The schema is [`schemas/scope.schema.json`](../schemas/scope.schema.json); add `# yaml-language-server: $schema=…` to the top of each file for editor help.
 
 ```
 compliance-repo/
+  hound.yaml            the deployment config (docs/configuration.md)
   scope/
     setup.yaml          organisation, frameworks, other libraries, domains with their perimeters and systems
     controls.yaml       applied controls, each declared once
     audits/
       ex-e8-2026.yaml   one file per audit (compliance assessment)
+  mappings/             which checks satisfy which requirements (docs/mapping-files.md)
+  frameworks/           framework snapshots and custom library files
   documents/            the files that documents name, relative to the compliance repo (the scope folder's parent)
-  frameworks/           custom library files, if any
+  manual-sources/       the hand-exported sources; their exports go outside the repo
+  CLAUDE.md             instructions for an AI assistant
+  .github/workflows/compliance.yml
 ```
 
 The local CISO Assistant (`make ca-up`, the dev container and the functional tests) is seeded by applying this example scope, so every pull request exercises `hound scope apply`.
@@ -87,6 +92,20 @@ A deployment target may name the series (`compliance_assessment: EX-E8-BACKUP`):
 The plan lists what happens to each period under **Audit periods**: opens (with its baseline), closes (in review, awaiting sign-off), awaiting sign-off (still in review from an earlier period), or signed off (done and locked). In JSON these are `periods[]`, each `{audit, event, baseline}`.
 
 CISO Assistant v4.3.4 audits have no start or end dates, so the period shows in the `ref_id`, the name (`Backups 2026Q4`) and the ETA. Locking an audit does not freeze the applied controls it links to, so a locked period never blocks the open one.
+
+## The review workflow
+
+Every change to CISO Assistant's structure goes in as a pull request to the compliance repo:
+
+1. **Copy the template.** Copy [`examples/compliance-repo/`](../examples/compliance-repo/) to a new private repository, replace Example Pty Ltd with your own organisation, and point `hound.yaml` at your CISO Assistant. If CISO Assistant is already set up, start from an [export](#export) instead.
+2. **Change the files.** By hand, or with an assistant: the repo's `CLAUDE.md` tells it the layout, to validate after every change, never to write secrets or evidence into the repo, and to use the plan as the pull request's summary.
+3. **Validate.** `hound scope validate scope/ --config hound.yaml` and `hound mapping validate mappings/<file>.yaml` report every problem with its file and line.
+4. **Review the plan.** The pull request's workflow validates again and comments `hound scope plan` as Markdown: every create, field-by-field update, delete (only with `--prune`) and drift. Reviewers approve the change in CISO Assistant terms, not just the YAML diff.
+5. **Apply on merge.** Merging runs `hound scope apply` in a protected environment with required reviewers, so a second person approves the write itself. Apply is safe to run again; drift found later is written back the same way.
+
+For example, to change who owns a system: edit its `owner` in `scope/setup.yaml`, run `hound scope validate scope/ --config hound.yaml` (it passes), and `hound scope plan scope/ --config hound.yaml` lists one update, `| Update | system | Example laptops | owner: it@example.com → ceo@example.com |`. `hound scope apply scope/ --config hound.yaml` writes it and reports `"written": 1`.
+
+The workflow in the template, [`.github/workflows/compliance.yml`](../examples/compliance-repo/.github/workflows/compliance.yml), needs a self-hosted runner that can reach CISO Assistant, the `HOUND_CA_URL` and `HOUND_CA_TOKEN` secrets, and an environment named `ciso-assistant` with required reviewers. Audit periods are closed the same way: a period's sign-off is a line in its audit file, reviewed and merged like any other change ([Audit periods](#audit-periods)).
 
 ## Validate
 
