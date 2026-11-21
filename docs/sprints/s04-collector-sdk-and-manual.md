@@ -1,6 +1,6 @@
 # s04 Collector SDK, contract test kit and manual-upload collector
 
-Status: Planned
+Status: In progress
 
 **Goal:** anyone can write a collector for their system in about a day, and systems without APIs are covered from day one.
 
