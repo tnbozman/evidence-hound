@@ -367,9 +367,19 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
 
     private static bool IsBuiltin(JsonNode entity) => entity["builtin"] is JsonValue b && b.TryGetValue<bool>(out var builtin) && builtin;
 
-    /// <summary>Legal identifiers as <see cref="ScopeDesired.Identifiers"/> writes them: a JSON object with sorted keys, or null when empty.</summary>
+    /// <summary>
+    /// Legal identifiers as <see cref="ScopeDesired.Identifiers"/> writes them: a JSON object with sorted keys, or null when empty. v4.3.4's read
+    /// serializer gives them as display text, one <c>name: value</c> per line; an object is read as is.
+    /// </summary>
     private static string? Identifiers(JsonNode? identifiers) =>
-        ScopeDesired.Identifiers((identifiers as JsonObject ?? []).Where(i => Text(i.Value) is not null).ToDictionary(i => i.Key, i => Text(i.Value)!, StringComparer.Ordinal));
+        ScopeDesired.Identifiers(identifiers switch
+        {
+            JsonObject map => map.Where(i => Text(i.Value) is not null).ToDictionary(i => i.Key, i => Text(i.Value)!, StringComparer.Ordinal),
+            _ => (Text(identifiers) ?? "").Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(line => line.Split(": ", 2))
+                .Where(parts => parts.Length == 2)
+                .ToDictionary(parts => parts[0], parts => parts[1], StringComparer.Ordinal),
+        });
 
     private sealed record ThirdPartyLists(List<JsonNode> Entities, List<JsonNode> Solutions, List<JsonNode> Contracts, List<JsonNode> Representatives);
 
