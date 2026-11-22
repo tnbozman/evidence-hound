@@ -7,6 +7,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\mappings\example.yaml" Link="files\mappings\example.yaml" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\profiles\*.yaml" Link="files\profiles\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\examples\*.yaml" Link="files\examples\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\fixtures\frameworks\*" Link="files\frameworks\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\fixtures\*.json" Link="files\fixtures\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />

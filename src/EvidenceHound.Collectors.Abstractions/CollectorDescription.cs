@@ -9,7 +9,14 @@ public sealed record CollectorDescription(
     IReadOnlyList<string> Checks,
     IReadOnlyList<SettingDescription> Settings,
     IReadOnlyList<SettingDescription> Secrets,
-    string? ChecksSetting = null);
+    string? ChecksSetting = null)
+{
+    /// <summary>
+    /// For a collector whose checks depend on more than one setting (such as the rest collector's profile): the check IDs an instance
+    /// with these settings can emit.
+    /// </summary>
+    public Func<CollectorSettings, IReadOnlyList<string>>? ChecksFrom { get; init; }
+}
 
 /// <summary>
 /// One setting or secret a collector reads, by its config key. Config without a required one is invalid. A setting with
