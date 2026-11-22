@@ -7,9 +7,14 @@ namespace EvidenceHound.Core.Scope;
 /// <summary>
 /// The feature flags (with their defaults) and general settings of the CISO Assistant release the stack pins, from the snapshot committed
 /// as <c>src/EvidenceHound.Core/Scope/ciso-assistant-settings.json</c>. Validation checks <c>settings.yaml</c> against it, offline.
+/// <see cref="GatedFeatureFlags"/> are the flags the API only offers when a backend setting the stack leaves off is on, with that setting.
 /// </summary>
 public sealed record CisoAssistantSettings(
-    string Version, IReadOnlyDictionary<string, bool> FeatureFlags, IReadOnlySet<string> General, IReadOnlySet<string> SecretGeneral)
+    string Version,
+    IReadOnlyDictionary<string, bool> FeatureFlags,
+    IReadOnlyDictionary<string, string> GatedFeatureFlags,
+    IReadOnlySet<string> General,
+    IReadOnlySet<string> SecretGeneral)
 {
     private static readonly JsonSerializerOptions Compact = new() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
 
@@ -34,6 +39,7 @@ public sealed record CisoAssistantSettings(
         return new(
             snapshot["ciso_assistant"]!.GetValue<string>(),
             snapshot["feature_flags"]!.AsObject().ToDictionary(p => p.Key, p => p.Value!.GetValue<bool>(), StringComparer.Ordinal),
+            (snapshot["gated_feature_flags"] as JsonObject ?? []).ToDictionary(p => p.Key, p => p.Value!.GetValue<string>(), StringComparer.Ordinal),
             Names(snapshot["general_settings"]),
             Names(snapshot["secret_general_settings"]));
     }

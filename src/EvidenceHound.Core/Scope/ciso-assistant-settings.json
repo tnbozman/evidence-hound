@@ -1,13 +1,12 @@
 {
   "ciso_assistant": "v4.3.4",
-  "source": "backend/global_settings/serializers.py at v4.3.4: FeatureFlagsSerializer (flags and their defaults) and GENERAL_SETTINGS_KEYS. Refresh it when CA_VERSION changes; the functional tests compare it with a running instance.",
+  "source": "backend/global_settings/serializers.py at v4.3.4: FeatureFlagsSerializer (flags and their defaults; get_fields drops the gated ones unless their backend setting is on) and GENERAL_SETTINGS_KEYS. Refresh it when CA_VERSION changes; the functional tests compare it with a running instance.",
   "feature_flags": {
     "accreditations": true,
     "advanced_analytics": true,
     "audit_tree_inheritance": false,
     "auditee_mode": true,
     "bia": true,
-    "chat_mode": false,
     "comments": true,
     "commitment_management": false,
     "compliance": true,
@@ -27,7 +26,6 @@
     "follow_up": true,
     "generic_collections": true,
     "incidents": true,
-    "infra_config_management": true,
     "inherent_risk": false,
     "jit_provisioning": false,
     "journeys": true,
@@ -66,6 +64,10 @@
     "vulnerability_sla": true,
     "workflows": false,
     "xrays": true
+  },
+  "gated_feature_flags": {
+    "chat_mode": "ENABLE_CHAT",
+    "infra_config_management": "ENABLE_INFRA_CONFIG_MANAGEMENT"
   },
   "general_settings": [
     "allow_assignments_to_entities",

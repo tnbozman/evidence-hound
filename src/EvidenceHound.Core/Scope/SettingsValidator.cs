@@ -17,7 +17,12 @@ internal static class SettingsValidator
         var settings = scope.Settings;
         return
         [
-            .. settings.FeatureFlags.Where(f => !known.FeatureFlags.ContainsKey(f.Name)).Select(f => new ScopeProblem(
+            .. settings.FeatureFlags.Where(f => known.GatedFeatureFlags.ContainsKey(f.Name)).Select(f => new ScopeProblem(
+                "settings.flag_gated",
+                f.At,
+                $"CISO Assistant {known.Version} only offers feature flag '{f.Name}' when its backend sets {known.GatedFeatureFlags[f.Name]}, which the stack leaves off.",
+                $"Remove '{f.Name}' from settings.yaml.")),
+            .. settings.FeatureFlags.Where(f => !known.FeatureFlags.ContainsKey(f.Name) && !known.GatedFeatureFlags.ContainsKey(f.Name)).Select(f => new ScopeProblem(
                 "settings.flag_unknown",
                 f.At,
                 $"CISO Assistant {known.Version} has no feature flag '{f.Name}'.",
