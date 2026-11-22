@@ -13,6 +13,7 @@ compliance-repo/
     audits/
       ex-e8-2026.yaml   one file per audit (compliance assessment)
     access.yaml         users, teams and role assignments (optional)
+    settings.yaml       feature flags and general settings (optional)
   mappings/             which checks satisfy which requirements (docs/mapping-files.md)
   frameworks/           framework snapshots and custom library files
   documents/            the files that documents name, relative to the compliance repo (the scope folder's parent)
@@ -50,7 +51,26 @@ Who can do what in CISO Assistant, so access changes are reviewed as pull reques
 
 Each role becomes one role assignment per user, role and domain, keyed `BI-RL-APP|Example Pty Ltd|ceo@example.com`. A user removed from the file stays in CISO Assistant: `scope apply --prune` deactivates them (never deletes, so their history stays attributable), and removes the role assignments `hound` made that the file no longer declares. Role assignments to user groups, such as the built-in administrators group, are CISO Assistant's own and never changed.
 
-`scope plan` ends with an **Access review**: active people who have not turned on multi-factor authentication, and each role a `publish` service account holds beyond analyst, whether given directly or through a user group (`runner-token.sh` starts the runner's account in the administrators group; narrow it here). CISO Assistant's API reports MFA (`has_mfa_enabled`) but cannot require it per user, so turning it on is a step for every person when the instance is set up, and the access review lists anyone who has not.
+`scope plan` ends with an **Access review**: active people who have not turned on multi-factor authentication, and each role a `publish` service account holds beyond analyst, whether given directly or through a user group (`runner-token.sh` starts the runner's account in the administrators group; narrow it here). CISO Assistant requires MFA for everyone or no one: set `enforce_mfa: true` in [settings.yaml](#settingsyaml) and each person turns it on at their next sign-in. Its API reports who has (`has_mfa_enabled`) but cannot turn it on for a person, so the access review lists anyone who has not yet.
+
+## settings.yaml
+
+CISO Assistant's feature flags (which modules people see) and general settings (instance-wide behaviour such as `enforce_mfa`), by name. The file is optional, and only the settings it names change: `hound` never resets a setting the file leaves out.
+
+```yaml
+feature_flags:
+  tprm: true       # third-party records
+  dora: false      # an EU regulation the organisation is not subject to
+general:
+  enforce_mfa: true
+```
+
+- `feature_flags`: each flag `true` or `false`.
+- `general`: each setting's value as CISO Assistant stores it: a boolean, a number, text or a list.
+
+Names are checked offline against the settings snapshot of the CISO Assistant release the stack pins ([`ciso-assistant-settings.json`](../src/EvidenceHound.Core/Scope/ciso-assistant-settings.json), with each flag's default); an unknown name is an error (`settings.flag_unknown`, `settings.setting_unknown`) whose hint lists the valid ones. A secret setting such as `openai_api_key` is an error (`scope.secret_in_file`): set it in CISO Assistant itself. Turning off a module the scope still uses is an error too: `compliance: false` would hide the audits the scope declares (`settings.feature_disabled_in_use`). Upgrading CISO Assistant means refreshing the snapshot, and the functional tests compare it with the pinned release.
+
+`scope plan` lists each named setting whose value differs (`| Update | feature_flag | tprm | value: true → false |`). `scope plan --show-unmanaged` adds an **Unmanaged settings** section: every flag and general setting the file does not name, with its current value, to help decide what to manage. Settings carry no marker and are never deleted, so `--prune` leaves them alone.
 
 ## audits/&lt;audit&gt;.yaml
 

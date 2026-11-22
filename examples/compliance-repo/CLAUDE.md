@@ -8,6 +8,7 @@ Instructions for an AI assistant working in this compliance repo. The repo says 
 - `scope/setup.yaml`: root folder, frameworks (with snapshots in `frameworks/`), domains with their perimeters and systems.
 - `scope/controls.yaml`: every applied control, declared once.
 - `scope/access.yaml`: users, teams and the roles they hold on each domain.
+- `scope/settings.yaml`: CISO Assistant's feature flags and general settings, by name; only the named ones change.
 - `scope/audits/<audit>.yaml`: one audit each: framework, groups, systems, documents, controls with the requirements they support, hand-written `assessments`, `unlisted`, and optionally `cycle` and `sign_offs`.
 - `mappings/<framework>.yaml`: which checks satisfy which requirements.
 - `frameworks/`: snapshots (`hound framework snapshot`) and custom framework libraries.

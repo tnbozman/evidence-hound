@@ -15,6 +15,9 @@
     },
     {
       "$ref": "#/$defs/access"
+    },
+    {
+      "$ref": "#/$defs/settings"
     }
   ],
   "$defs": {
@@ -677,6 +680,160 @@
         },
         "teams": {
           "$ref": "#/$defs/names"
+        }
+      }
+    },
+    "settings": {
+      "description": "CISO Assistant's feature flags and general settings, by name, as in the settings snapshot of the pinned release (src/EvidenceHound.Core/Scope/ciso-assistant-settings.json). Only the settings named here change. Never secrets such as openai_api_key.",
+      "type": "object",
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "required": [
+            "feature_flags"
+          ]
+        },
+        {
+          "required": [
+            "general"
+          ]
+        }
+      ],
+      "properties": {
+        "feature_flags": {
+          "description": "Each flag on (true) or off (false).",
+          "type": "object",
+          "propertyNames": {
+            "enum": [
+              "accreditations",
+              "advanced_analytics",
+              "audit_tree_inheritance",
+              "auditee_mode",
+              "bia",
+              "chat_mode",
+              "comments",
+              "commitment_management",
+              "compliance",
+              "contracts",
+              "control_plan",
+              "custom_portals",
+              "cwes",
+              "data_breaches",
+              "document_management",
+              "dora",
+              "dpias",
+              "ebiosrm",
+              "exceptions",
+              "experimental",
+              "external_ratings",
+              "findings_from_requirements",
+              "follow_up",
+              "generic_collections",
+              "incidents",
+              "infra_config_management",
+              "inherent_risk",
+              "jit_provisioning",
+              "journeys",
+              "mcp",
+              "mcp_write",
+              "metrology",
+              "nis2",
+              "notification_center",
+              "organisation_issues",
+              "organisation_objectives",
+              "outgoing_webhooks",
+              "personal_data",
+              "policy_documents",
+              "posture_assessments",
+              "privacy",
+              "project_management",
+              "projects",
+              "purposes",
+              "quantitative_risk_studies",
+              "quick_forms",
+              "relations_graph",
+              "reports",
+              "responsibility_matrices",
+              "right_requests",
+              "risk_acceptances",
+              "risk_management",
+              "scoring_assistant",
+              "security_advisories",
+              "tasks",
+              "terminologies",
+              "threat_modeling",
+              "tprm",
+              "ttps",
+              "validation_flows",
+              "vulnerabilities",
+              "vulnerability_sla",
+              "workflows",
+              "xrays"
+            ]
+          },
+          "additionalProperties": {
+            "enum": [
+              "true",
+              "false",
+              true,
+              false
+            ]
+          }
+        },
+        "general": {
+          "description": "Each general setting's value, as CISO Assistant stores it.",
+          "type": "object",
+          "propertyNames": {
+            "enum": [
+              "allow_assignments_to_entities",
+              "allow_self_validation",
+              "audit_tree_aggregation_strategy",
+              "auto_lock_overdue_assessments",
+              "auto_ref_id",
+              "auto_ref_id_prefixes",
+              "builtin_metrics_retention_days",
+              "chat_system_prompt",
+              "chat_temperature",
+              "chat_temperature_enabled",
+              "currency",
+              "daily_rate",
+              "default_custom_analytics_dashboard",
+              "default_date_format",
+              "default_landing",
+              "default_language",
+              "default_packager",
+              "disable_partially_compliant_result",
+              "disabled_email_templates",
+              "documentation_score_first",
+              "ebios_radar_green_zone_radius",
+              "ebios_radar_max",
+              "ebios_radar_red_zone_radius",
+              "ebios_radar_yellow_zone_radius",
+              "embedding_backend",
+              "enforce_mfa",
+              "evidence_four_eyes",
+              "interface_agg_scenario_matrix",
+              "llm_provider",
+              "mapping_max_depth",
+              "notifications_enable_mailing",
+              "ollama_base_url",
+              "ollama_embed_model",
+              "ollama_model",
+              "openai_api_base",
+              "openai_model",
+              "organisation_score_scale",
+              "personal_folders",
+              "personal_folders_parent",
+              "report_timezone",
+              "risk_matrix_flip_vertical",
+              "risk_matrix_labels",
+              "risk_matrix_swap_axes",
+              "security_objective_scale",
+              "show_get_started",
+              "show_warning_external_links",
+              "use_risk_category_label"
+            ]
+          }
         }
       }
     }
