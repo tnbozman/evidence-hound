@@ -14,7 +14,7 @@ Releases are delivered in one-week sprints. Each sprint has its own file, `sNN-<
 | [s07](s07-thin-deployment.md) | Runner image, Compose stack and scheduling, so Microsoft 365 evidence runs nightly; users and settings as configuration; tutorial for the private compliance repo and first deployment | 1 |
 | [s08](s08-sophos-veeam-collectors.md) | Sophos Central and Veeam reference collectors | 1 |
 | [s09](s09-e8-gap-collectors.md) | Essential Eight gap collectors: application control from Intune and Defender, vulnerability scan import, manual-upload templates | 1 |
-| [s10](s10-third-parties.md) | Suppliers, contracts and supplier assessments as configuration | 1 |
+| [s10](s10-third-parties.md) | Suppliers, contracts and supplier assessments as configuration; the evidence plan as recurring CISO Assistant tasks | 1 |
 | [s11](s11-e8-mapping-and-adoption.md) | Essential Eight mapping completed, adoption guides, committee and board reporting | 1 |
 | [s12](s12-release-1.md) | Backups, hardening guide, packaging, release pipeline, docs site | 1 |
 | [s13](s13-essentials-mapping.md) | ASD Essentials mapping for the migration | 2 |
