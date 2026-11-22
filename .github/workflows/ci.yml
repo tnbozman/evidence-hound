@@ -38,6 +38,8 @@ jobs:
         run: make build CONFIGURATION="$CONFIGURATION"
       - name: Unit and contract tests with coverage
         run: make coverage CONFIGURATION="$CONFIGURATION"
+      - name: Library profile tests
+        run: make test-profiles CONFIGURATION="$CONFIGURATION"
       - name: Upload test results
         if: ${{ always() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

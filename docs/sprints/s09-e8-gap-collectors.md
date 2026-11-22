@@ -288,9 +288,11 @@ Built straight after s09-21, before s09-22, because every later onboarding step 
 **Acceptance criteria**
 - `hound onboard environment --framework <framework file>` walks each mitigation of the framework (Essential Eight ML2 first; NIST SP 800-171 families later) and records, for each, the authoritative product or products: a system in scope (for example Microsoft 365 with Intune, Defender for Endpoint, Airlock Digital, ThreatLocker, Sophos, Veeam), manual evidence, or a gap.
 - The result is `scope/capabilities.yaml` in the organisation's config repo: mitigation, the system that provides it, its supplier, the owner, the evidence route (collector, profile or manual) and who approved the entry. A schema and `hound config validate` check it.
+- **No blob.** The map only decides which system answers each requirement. Results stay in CISO Assistant's existing structure: one audit per system (scope/audits, as today), each with its own owner. In each system's audit, a requirement another system provides is not applicable with the reason "Provided by <system> (audit <ref>)"; nothing is merged into a combined audit. The map writes those decisions into the existing per-system audit files for review, and `hound scope plan` shows them before anything is applied.
 - Signals pre-fill answers that the person confirms, never decide them: read-only Microsoft Graph lookups (subscribed licences, Intune compliance and app control policies present, devices onboarded to Defender) and the systems already in scope. Each pre-filled answer shows the signal it came from.
-- The map drives the rest. A system named for a mitigation goes through `hound onboard <system>` (s09-22), and its supplier goes through the supplier gate (s09-19/20). Checks for a mitigation run only on the system the map names. A mitigation with no product shows as a gap in plan output and reports, never as a fail.
-- A check for a capability that is not in use cannot give pass or fail. It is not applicable, with the reason "provided by <system>" or "gap", and the mapping engine treats it so.
+- The map drives the rest. A system named for a mitigation goes through `hound onboard <system>` (s09-22), and its supplier goes through the supplier gate (s09-19/20). Checks for a mitigation run only on the system the map names.
+- A mitigation with no product is a gap: `hound plan` and reports list it as a requirement no system's audit answers, never as a fail on some system.
+- A check for a capability that is not in use cannot give pass or fail on that system's audit row; the row is not applicable with the reason naming the providing system.
 - Default skill `environment-capabilities` (s09-26): how to tell which product is authoritative per mitigation, common third-party products, and what evidence each gives. Organisation skills can extend it.
 - `--no-model` runs the same steps with only the signals and the person's answers.
 
@@ -299,10 +301,11 @@ Built straight after s09-21, before s09-22, because every later onboarding step 
 - `CapabilityMapTests.Gap_is_reported_as_a_gap_not_a_fail`
 - `CapabilitySignalsTests.Signals_prefill_but_never_decide`
 - `CapabilityScopeTests.Check_for_an_unused_capability_is_not_applicable_with_the_reason`
+- `CapabilityScopeTests.Decisions_land_in_each_systems_own_audit_not_a_combined_one`
 - `OnboardEnvironmentTests.Named_system_and_supplier_are_queued_for_onboarding`
 
 **Functional check**
-- With a fake model and recorded Graph answers, `hound onboard environment` for Example Pty Ltd records application control as provided by a third-party product, and a following `hound plan --dry-run` shows the Microsoft 365 application control checks as not applicable, provided by that product.
+- With a fake model and recorded Graph answers, `hound onboard environment` for Example Pty Ltd records application control as provided by a third-party product, and a following `hound plan --dry-run` shows the application control rows of the Microsoft 365 audit as not applicable, provided by that product, while the third-party product's own audit holds the application control requirements.
 
 ### s09-29 Microsoft 365 checks follow the capability map (added 2026-11-22)
 - [ ] Done
