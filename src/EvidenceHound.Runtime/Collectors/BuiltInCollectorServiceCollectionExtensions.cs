@@ -8,7 +8,7 @@ public static class BuiltInCollectorServiceCollectionExtensions
 {
     /// <summary>Registers the collectors this build ships.</summary>
     public static IServiceCollection AddBuiltInCollectors(this IServiceCollection services) =>
-        services.AddCollector<FakeCollector>().AddCollector<ManualCollector>().AddM365Collector().AddSophosCollector().AddRestCollector();
+        services.AddCollector<FakeCollector>().AddCollector<ManualCollector>().AddM365Collector().AddRestCollector();
 
     /// <summary>The rest collector, with a client that hands every redirect back to it so it can refuse one to another host.</summary>
     private static IServiceCollection AddRestCollector(this IServiceCollection services)

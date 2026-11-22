@@ -218,14 +218,18 @@ TEXT
 
 sophos() {
   step "6. Add your Sophos Central tenant"
+  mkdir -p "$ws/profiles"
+  cp -R "$root/profiles/sophos-central.yaml" "$root/profiles/sophos-central.tests" "$ws/profiles/"
   case "$(trial_collector_step "$yes" "$ws/repo/hound.yaml" sophos)" in
     unattended) say "Unattended run: stopping before Sophos, which needs your credential."; return ;;
-    "added already") say "A sophos collector is already in repo/hound.yaml." ;;
+    "added already") say "A collector named sophos is already in repo/hound.yaml." ;;
     add)
       say "You need a Sophos Central API credential with the Service Principal Read-Only role (docs/collectors/sophos.md)."
-      say "hound asks for its client ID and secret, and for the firewall firmware versions still in support (such as 21.5, 22.0)."
+      say "Sophos Central is read by the rest collector with the sophos-central profile, copied into ${ws#"$root"/}/profiles with its tests."
+      say "hound asks for the profile's client ID and secret, and for the firewall firmware versions still in support (such as 21.5, 22.0)."
       say "The secret is not shown as you type, and is saved under ${ws#"$root"/}/secrets (git-ignored, mode 600), never printed."
-      hound yes add collector sophos --config hound.yaml --schedule "0 4 * * *" --secrets-dir /trial/secrets
+      hound yes add collector rest --name sophos --config hound.yaml --schedule "0 4 * * *" --secrets-dir /trial/secrets \
+        --set profile=sophos-central --set profiles_path=/trial/profiles
       ;;
   esac
   run_collector sophos "ISM-1501, which the firewall firmware check feeds" "reads the firewalls"

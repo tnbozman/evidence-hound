@@ -59,10 +59,10 @@ Declares an applied control in `scope/controls.yaml`: its ref ID, name, owner, c
 
 ```bash
 hound add collector manual --config hound.yaml
-hound add collector sophos --config hound.yaml --secrets-dir /etc/evidence-hound/secrets
+hound add collector rest --name sophos --set profile=sophos-central --config hound.yaml --secrets-dir /etc/evidence-hound/secrets
 ```
 
-Adds a collector of any type `hound collectors` lists. It asks for the collector's name (default: the type), its schedule (default `0 3 * * *`) and each setting the collector requires, using the collector's own description of it. `--set key=value` gives any setting, optional ones included, without asking.
+Adds a collector of any type `hound collectors` lists. It asks for the collector's name (default: the type), its schedule (default `0 3 * * *`) and each setting the collector requires, using the collector's own description of it. `--set key=value` gives any setting, optional ones included, without asking. For the `rest` collector, once it knows the profile (`--set profile=<name>`, and `--set profiles_path=<folder>` when the profiles folder is not the default), it also asks for each parameter the profile requires and has no default for, and takes the profile's secrets as the collector's.
 
 For each secret the collector needs:
 

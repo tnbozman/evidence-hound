@@ -133,7 +133,7 @@ $ echo $?
 - Result (2026-11-22): copied `profiles/example.yaml` and `profiles/example.tests/` into a scratch folder. `hound profile test example --profiles <scratch>` printed `example/all-pass: passed (4 checks)` and `example/roles-unreadable: passed (4 checks)`, exit 0. After changing `example.identity.owner_count: pass` to `fail` in `all-pass.yaml`: `example/all-pass: FAILED` and `example.identity.owner_count: expected fail, got pass. 1 of 2 active users hold the Owner role; at most 2 allowed. Evidence: dataset.user_roles.json.`, exit 1. `make test-profiles` (new, also in CI) passes. Unit suite green, lint clean. Decisions made here: profile tests are folders of case files (`<profile>.tests/<case>.yaml` with `recordings/`); `require_profile_tests` is a per-instance rest setting rather than a deployment setting; `hound profile diff` takes `--library <evidence-hound checkout>` (or `HOUND_LIBRARY_PATH`) and resolves `source` inside it; the code-check library starts with `sophos.super_admin_count` (moved from the Sophos collector for s09-13).
 
 ### s09-13 Sophos as a profile
-- [ ] Done
+- [x] Done
 
 **Story:** As an operator, I want Sophos Central read through a profile, so that changes to Sophos checks are configuration, and as the proof that the REST collector can replace a coded one.
 
@@ -150,6 +150,22 @@ $ echo $?
 
 **Functional check**
 - `hound run --only sophos-example --dry-run` with the profile gives the same results as before; the trial's Sophos step passes with the profile.
+
+**Result**
+- `profiles/sophos-central.yaml` (1.0.0) with three test cases (all pass, unsupported firmware, partner credential). The checks run straight over the `firewalls`, `admins` and `roles` queries (the Super Admin count is the `sophos.super_admin_count` code check over admins and roles), so the `admin_accounts` and `firewall_firmware` datasets were not needed and were not added.
+- `SophosProfileParityTests` passed on six recordings (as recorded, unsupported firmware, no firmware, no firewalls, every admin a super admin, no super admin role): same check IDs, outcomes and items in `firewalls.json`, `admins.json` and `roles.json`. The profile hashes `geoLocation`, which the coded collector dropped. The test was removed with the coded collector, since it needs both.
+- Removed: the coded collector, its tests, its contract test and its registration. `RecordedSophos` moved to the functional tests, which now run the profile. `type: sophos` fails with `config.collector_type_retired` and the `type: rest`, `profile: sophos-central` replacement.
+- One behaviour change: partner and organisation credentials (`tenant_id`) are not supported by the profile; a tenant credential is. The guide says so.
+- `hound add collector rest --set profile=<name>` now asks for the profile's required parameters and takes its secrets (`CollectorDescription.SettingsFrom`). The trial copies the profile and its tests into `.dev/trial/profiles` and adds the collector by name; `trial_collector_step` matches by name.
+
+**Functional check (run)**
+```console
+$ hound config validate hound.yaml --check-secrets      # type: rest, profile: sophos-central, stand-in API on 127.0.0.1 serving tests/fixtures/sophos
+valid
+$ hound run --config hound.yaml --only sophos-example --dry-run
+outcome succeeded, checks_passed 2, checks_failed 0, publish planned 4, sent 0; firewalls.json, admins.json, roles.json; manifest names sophos-central 1.0.0
+```
+The coded collector gave the same two passes on the same recording (the parity test above). `make test-profiles`: sophos-central all-pass, firmware-unsupported and partner-credential pass. The trial's Sophos step needs a real credential, so it is left for s09-17 (the person's trial); its unattended run and `bats scripts/tests` pass.
 
 ### s09-14 REST collector documentation
 - [ ] Done

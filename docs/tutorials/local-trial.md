@@ -47,6 +47,7 @@ In both cases the API is `http://backend:8000/api/`. The token is copied from `.
 | --- | --- |
 | `repo/` | The organisation's compliance repo, as `hound init` writes it |
 | `secrets/` | The API token and, later, the Sophos client secret (folder 700, files 600) |
+| `profiles/` | The `sophos-central` profile and its tests, copied from the repository for the Sophos step |
 | `manual/` | The manual source's drop folder |
 | `evidence/` | Evidence and run records |
 | `inbox/` | The example export the trial uploads |
@@ -83,9 +84,9 @@ It plans and applies the scope again, so the system and the control reach CISO A
 
 ## 6. Your Sophos Central tenant
 
-`hound add collector sophos --config hound.yaml --secrets-dir /trial/secrets` asks for what the Sophos collector needs:
+The trial copies the `sophos-central` library profile and its tests into `.dev/trial/profiles`, then `hound add collector rest --name sophos --config hound.yaml --schedule "0 4 * * *" --secrets-dir /trial/secrets --set profile=sophos-central --set profiles_path=/trial/profiles` asks for what the profile needs:
 
-1. The credential's client ID, and the firewall firmware versions still in support (see Sophos's firmware lifecycle), such as `21.5, 22.0`. Other settings, such as a partner credential's `tenant_id`, are optional; add them with `--set key=value`.
+1. The credential's client ID, and the firewall firmware versions still in support (see Sophos's firmware lifecycle), such as `21.5, 22.0`. Other settings, such as `super_admin_max`, keep their defaults; add them with `--set key=value`. The credential must be the tenant's own: partner and organisation credentials are not supported.
 2. The client secret, which is not shown as you type. It is saved to `.dev/trial/secrets/sophos_client_secret` (mode 600), never in git, and the config references it as `file:/trial/secrets/sophos_client_secret`.
 
 The trial then runs:

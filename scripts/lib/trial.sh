@@ -61,13 +61,13 @@ trial_hound_argv() {
   printf '%s\n' "${words[@]}"
 }
 
-# trial_collector_step UNATTENDED(1|0) CONFIG TYPE -> unattended | added already | add
-# A collector step needs the person's credential, so an unattended run stops before it; one already in the config is kept.
+# trial_collector_step UNATTENDED(1|0) CONFIG NAME -> unattended | added already | add
+# A collector step needs the person's credential, so an unattended run stops before it; one already in the config, by name, is kept.
 trial_collector_step() {
-  local unattended="$1" config="$2" type="$3"
+  local unattended="$1" config="$2" name="$3"
   if [[ "$unattended" == 1 ]]; then
     echo "unattended"
-  elif [[ -f "$config" ]] && grep -q "^    type: $type\$" "$config"; then
+  elif [[ -f "$config" ]] && grep -q "^  - name: $name\$" "$config"; then
     echo "added already"
   else
     echo "add"

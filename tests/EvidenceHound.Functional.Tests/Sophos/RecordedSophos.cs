@@ -3,7 +3,7 @@ using EvidenceHound.Collectors.Testing;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 
-namespace EvidenceHound.Collectors.Sophos.Tests;
+namespace EvidenceHound.Functional.Tests;
 
 /// <summary>
 /// A fictional <c>example.com</c> Sophos Central tenant replayed from the recorded responses in <c>tests/fixtures/sophos</c>.
