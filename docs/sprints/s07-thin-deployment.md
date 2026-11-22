@@ -129,6 +129,23 @@ Folder: `deploy/compose/`. Fictional names only.
 **Functional check**
 - A reviewer follows the tutorial verbatim on a fresh VM with a new private repo and reaches a scheduled run that publishes to the example audit. Record the time taken and every step that needed help.
 
+### s07-07 `hound publish` writes the run marker
+- [ ] Done
+
+**Story:** As the capability owner, I want results published with `hound publish` to be marked as a run's, like those of `hound run`, so that applying the scope after a nightly publish keeps that night's results.
+
+**Acceptance criteria**
+- `hound publish` ends each requirement observation it writes with the same `[hound run <id> state <fingerprint>]` marker `hound run` writes, with the fingerprint of the result, its checks' outcomes and its evidence hashes.
+- `scope apply` then keeps those rows (they are the runs' own, not `unlisted: not_assessed`), and `scope export` leaves them out (s06 discovered work).
+- `publish` still sends every update, as before; only the observation changes.
+
+**Tests first**
+- `PlanTests.Planning_every_update_for_a_run_marks_each_observation_as_planning_only_changes_does`
+- `PublishCommandTests.Each_result_it_writes_carries_the_run_marker_so_scope_apply_and_export_leave_it_to_the_runs`
+
+**Functional check**
+- Publish a run's results with `hound publish`, then `scope plan` on the example scope lists no change to those rows.
+
 ## Discovered work
 
 ## Sprint review

@@ -29,6 +29,10 @@ public sealed class PublishFunctionalTests(CisoAssistantFixture ciso)
 
         var requirement = (await Get("requirement-assessments/?compliance_assessment__ref_id=EXAMPLE-BASELINE-2026&requirement__ref_id=EX-1.1", ct))["results"]![0]!;
         requirement["result"]!.GetValue<string>().ShouldBe("non_compliant");
+        // s07-07: publish marks the row as a run's, so applying the scope afterwards leaves it alone.
+        EvidenceHound.Core.Planning.RowState.ReadMark(requirement["observation"]!.GetValue<string>()).ShouldNotBeNull(requirement.ToJsonString());
+        var plan = await ScopePlanAsync(ct);
+        plan["changes"]!.AsArray().Select(c => c!["key"]!.GetValue<string>()).ShouldNotContain("EXAMPLE-BASELINE-2026/EX-1.1", plan.ToJsonString());
         var control = (await Get("applied-controls/?ref_id=AC-BACKUP", ct))["results"]![0]!;
         control["status"]!.GetValue<string>().ShouldBe("active");
     }
@@ -52,6 +56,21 @@ public sealed class PublishFunctionalTests(CisoAssistantFixture ciso)
             ct);
         var text = output.ToString();
         return (exitCode, string.IsNullOrWhiteSpace(text) ? new JsonObject { ["stderr"] = error.ToString() } : JsonNode.Parse(text)!);
+    }
+
+    private async Task<JsonNode> ScopePlanAsync(CancellationToken ct)
+    {
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+        var exitCode = await HoundCli.RunAsync(
+            ["scope", "plan", CisoAssistantFixture.ExampleScope, "--format", "json"],
+            output,
+            error,
+            configureLogging: null,
+            new Dictionary<string, string?> { ["HOUND_CA_URL"] = ciso.ApiUrl.ToString(), ["HOUND_CA_TOKEN"] = ciso.Token },
+            ct);
+        exitCode.ShouldBe(ExitCodes.Ok, output.ToString() + error);
+        return JsonNode.Parse(output.ToString())!;
     }
 
     private async Task<JsonNode> Get(string path, CancellationToken ct)
