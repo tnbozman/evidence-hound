@@ -167,6 +167,8 @@ jobs:
         run: HOUND_TRIAL_YES=1 make trial
       - name: Run it again (finished steps are skipped, the scope plans nothing new)
         run: HOUND_TRIAL_YES=1 make trial
+      - name: Saved plans against the trial's CISO Assistant (s08-07)
+        run: scripts/check-saved-plan.sh
 
   scripts:
     runs-on: ubuntu-latest
