@@ -58,38 +58,3 @@ setup() {
   run trial_hound_argv img "--network host" /w 1:1 http://backend:8000/api/ yes manual upload
   [[ "$(printf '%s ' $output)" == "docker run --rm -i -t "* ]]
 }
-
-@test "trial config has the manual collectors and no Microsoft 365" {
-  run trial_render_config /trial no
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"type: manual"* ]]
-  [[ "$output" == *"name: example-backup-restore-test"* ]]
-  [[ "$output" == *"drop_folder: /trial/manual/example-backup-restore-test"* ]]
-  [[ "$output" == *"root: /trial/evidence"* ]]
-  [[ "$output" == *"compliance_assessment: EX-E8-2026"* ]]
-  [[ "$output" != *"m365"* ]]
-  [[ "$output" != *"sophos"* ]]
-}
-
-@test "the Sophos collector uses file references for its secret only" {
-  run trial_render_config /trial yes 00000000-0000-4000-8000-0000000050d1 "21.5, 22.0" 14
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"type: sophos"* ]]
-  [[ "$output" == *"client_id: 00000000-0000-4000-8000-0000000050d1"* ]]
-  [[ "$output" == *'supported_firewall_firmware: "21.5, 22.0"'* ]]
-  [[ "$output" == *"stale_agent_days: \"14\""* ]]
-  [[ "$output" == *"client_secret: file:/trial/secrets/sophos_client_secret"* ]]
-  [[ "$output" != *"client_secret: "[!f]* ]]
-}
-
-@test "a client ID that is not a plain ID is refused before it reaches the config" {
-  run trial_valid_client_id 'abc"; rm -rf /'
-  [ "$status" -ne 0 ]
-  trial_valid_client_id 00000000-0000-4000-8000-0000000050d1
-}
-
-@test "a firmware list must be versions" {
-  trial_valid_firmware "21.5, 22.0"
-  run trial_valid_firmware "latest"
-  [ "$status" -ne 0 ]
-}

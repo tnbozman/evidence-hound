@@ -1,0 +1,156 @@
+using Microsoft.Extensions.Logging;
+
+namespace EvidenceHound.Cli.Tests;
+
+/// <summary>s08-09: <c>hound add collector</c> adds a collector of any type from its own description, keeping the config as it was.</summary>
+public sealed class AddCollectorCommandTests : IDisposable
+{
+    private const string Config = """
+        # Example Pty Ltd's trial config. Everything here is made up.
+        ciso_assistant:
+          url: https://ciso.example.com/api/
+          token: env:HOUND_CA_TOKEN
+
+        evidence:
+          root: ./evidence
+
+        collectors: []   # added with hound add collector
+
+        target:
+          mapping: mapping.yaml
+          compliance_assessment: EX-E8-2026
+
+        """;
+
+    private const string Secret = "example-sophos-client-secret-4b7d2e";
+
+    private const string ClientId = "00000000-0000-4000-8000-0000000050d1";
+
+    private readonly string _root = Directory.CreateTempSubdirectory("hound-add-collector-tests-").FullName;
+    private readonly StringWriter _output = new();
+    private readonly StringWriter _error = new();
+    private readonly RecordingLoggerProvider _logs = new();
+
+    private string ConfigFile => Path.Combine(_root, "hound.yaml");
+
+    [Fact]
+    public async Task Asks_for_the_required_settings_from_the_collector_description()
+    {
+        await WriteConfigAsync(Config);
+
+        // Name, schedule, client_id, supported_firewall_firmware, the client secret's reference.
+        var exitCode = await Run($"\n\n{ClientId}\n21.0, 22.0\n\n", "add", "collector", "sophos", "--config", ConfigFile);
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var config = await File.ReadAllTextAsync(ConfigFile, TestContext.Current.CancellationToken);
+        config.ShouldStartWith("# Example Pty Ltd's trial config.");
+        config.ShouldContain($"""
+            collectors:   # added with hound add collector
+              - name: sophos
+                type: sophos
+                schedule: "0 3 * * *"
+                settings:
+                  client_id: {ClientId}
+                  supported_firewall_firmware: "21.0, 22.0"
+                secrets:
+                  client_secret: file:/run/secrets/sophos_client_secret
+            """.ReplaceLineEndings("\n"));
+        _error.ToString().ShouldContain("Client ID of the Sophos Central API credential");
+        (await Run("", "config", "validate", ConfigFile)).ShouldBe(ExitCodes.Ok, _error.ToString());
+    }
+
+    [Fact]
+    public async Task Set_gives_any_setting_and_yes_asks_nothing()
+    {
+        await WriteConfigAsync(Config);
+
+        var exitCode = await Run(
+            "", "add", "collector", "sophos", "--config", ConfigFile, "--yes", "--name", "home-sophos",
+            "--set", $"client_id={ClientId}", "--set", "supported_firewall_firmware=21.0", "--set", "stale_agent_days=7");
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var config = await File.ReadAllTextAsync(ConfigFile, TestContext.Current.CancellationToken);
+        config.ShouldContain("      stale_agent_days: \"7\"");
+        config.ShouldContain("      client_secret: file:/run/secrets/home-sophos_client_secret");
+        _error.ToString().ShouldNotContain("[");
+    }
+
+    [Fact]
+    public async Task Secrets_dir_stores_the_secret_mode_600_and_never_shows_it()
+    {
+        await WriteConfigAsync(Config);
+        var secrets = Path.Combine(_root, "secrets");
+
+        var exitCode = await Run(
+            $"{Secret}\n", "add", "collector", "sophos", "--config", ConfigFile, "--yes", "--secrets-dir", secrets,
+            "--set", $"client_id={ClientId}", "--set", "supported_firewall_firmware=21.0");
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var file = Path.Combine(secrets, "sophos_client_secret");
+        (await File.ReadAllTextAsync(file, TestContext.Current.CancellationToken)).ShouldBe(Secret);
+        if (!OperatingSystem.IsWindows())
+        {
+            File.GetUnixFileMode(file).ShouldBe(UnixFileMode.UserRead | UnixFileMode.UserWrite);
+            File.GetUnixFileMode(secrets).ShouldBe(UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        }
+
+        (await File.ReadAllTextAsync(ConfigFile, TestContext.Current.CancellationToken)).ShouldContain($"client_secret: file:{file}");
+        (_output.ToString() + _error).ShouldNotContain(Secret);
+        _logs.Entries.ShouldNotContain(e => e.Message.Contains(Secret, StringComparison.Ordinal));
+        (await Run("", "config", "validate", ConfigFile, "--check-secrets")).ShouldBe(ExitCodes.Ok, _error.ToString());
+    }
+
+    [Fact]
+    public async Task Manual_source_is_added_with_its_drop_folder_checks_and_owner()
+    {
+        await WriteConfigAsync(Config);
+
+        // Name, schedule, drop_folder, checks, due_days, owner.
+        var exitCode = await Run("example-restore-test\n0 6 * * *\n./manual/restore\nbackup.restore_tested\n92\nSam Example\n", "add", "collector", "manual", "--config", ConfigFile);
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var config = await File.ReadAllTextAsync(ConfigFile, TestContext.Current.CancellationToken);
+        config.ShouldContain("""
+              - name: example-restore-test
+                type: manual
+                schedule: "0 6 * * *"
+                settings:
+                  drop_folder: ./manual/restore
+                  checks: backup.restore_tested
+                  due_days: "92"
+                  owner: Sam Example
+            """.ReplaceLineEndings("\n"));
+        (await Run("", "config", "validate", ConfigFile)).ShouldBe(ExitCodes.Ok, _error.ToString());
+    }
+
+    [Fact]
+    public async Task Duplicate_name_or_unknown_type_is_refused_and_nothing_is_written()
+    {
+        await WriteConfigAsync(Config);
+        (await Run("", "add", "collector", "sophos", "--config", ConfigFile, "--yes", "--set", $"client_id={ClientId}", "--set", "supported_firewall_firmware=21.0")).ShouldBe(ExitCodes.Ok, _error.ToString());
+        var before = await File.ReadAllTextAsync(ConfigFile, TestContext.Current.CancellationToken);
+
+        (await Run("", "add", "collector", "sophos", "--config", ConfigFile, "--yes", "--set", $"client_id={ClientId}", "--set", "supported_firewall_firmware=21.0")).ShouldBe(ExitCodes.Configuration);
+        _error.ToString().ShouldContain("'sophos' is already used");
+        (await Run("", "add", "collector", "no-such-type", "--config", ConfigFile, "--yes")).ShouldBe(ExitCodes.Configuration);
+        _error.ToString().ShouldContain("known types");
+        (await File.ReadAllTextAsync(ConfigFile, TestContext.Current.CancellationToken)).ShouldBe(before);
+    }
+
+    public void Dispose()
+    {
+        _output.Dispose();
+        _error.Dispose();
+        _logs.Dispose();
+        Directory.Delete(_root, recursive: true);
+    }
+
+    private async Task WriteConfigAsync(string text)
+    {
+        await File.WriteAllTextAsync(ConfigFile, text, TestContext.Current.CancellationToken);
+        File.Copy(Path.Combine(ExampleRepoTests.RepoRoot, "mappings", "essential-eight-2023.yaml"), Path.Combine(_root, "mapping.yaml"), overwrite: true);
+    }
+
+    private Task<int> Run(string input, params string[] args) =>
+        HoundCli.RunAsync(args, new StringReader(input), _output, _error, logging => logging.AddProvider(_logs), TestContext.Current.CancellationToken);
+}
