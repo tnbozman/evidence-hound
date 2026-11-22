@@ -33,6 +33,21 @@ internal static partial class Log
     [LoggerMessage(EventId = 1002, Level = LogLevel.Information, Message = "Collector {Collector}: {Outcome}")]
     public static partial void CollectorRan(ILogger logger, string collector, Runtime.CollectorOutcome outcome);
 
+    [LoggerMessage(EventId = 1003, Level = LogLevel.Information, Message = "{Collector}: next run {Next}")]
+    public static partial void NextRun(ILogger logger, string collector, NextRun next);
+
+    [LoggerMessage(EventId = 1004, Level = LogLevel.Information, Message = "{Collector}: scheduled run finished with exit code {ExitCode}; next run {Next}")]
+    public static partial void ScheduledRunFinished(ILogger logger, string collector, int exitCode, NextRun next);
+
+    [LoggerMessage(EventId = 1005, Level = LogLevel.Error, Message = "{Collector}: scheduled run failed unexpectedly; the schedule carries on")]
+    public static partial void ScheduledRunFailed(ILogger logger, Exception exception, string collector);
+
+    [LoggerMessage(EventId = 1006, Level = LogLevel.Warning, Message = "{Collector}: skipped a scheduled run because the previous one is still going")]
+    public static partial void ScheduledRunSkipped(ILogger logger, string collector);
+
+    [LoggerMessage(EventId = 1007, Level = LogLevel.Information, Message = "Stopped serving.")]
+    public static partial void Stopped(ILogger logger);
+
     [LoggerMessage(EventId = 1100, Level = LogLevel.Information, Message = "Published to CISO Assistant: {Sent} sent, {Skipped} skipped, {Failed} failed")]
     public static partial void Published(ILogger logger, int sent, int skipped, int failed);
 

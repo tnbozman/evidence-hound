@@ -3,6 +3,7 @@
     <RootNamespace>EvidenceHound.Runtime</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Cronos" />
     <PackageReference Include="YamlDotNet" />
   </ItemGroup>
   <ItemGroup>

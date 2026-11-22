@@ -64,6 +64,36 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
         });
     }
 
+    public async Task<Result<IReadOnlyList<UserAccess>>> ReadAccessAsync(CancellationToken cancellationToken)
+    {
+        var reading = new Reading(http, cancellationToken);
+        var folders = await reading.ListAsync("folders/");
+        var users = await reading.ListAsync("users/");
+        var roles = await reading.ListAsync("roles/");
+        var assignments = await reading.ListAsync("role-assignments/");
+        if (reading.Problems.Count > 0)
+        {
+            return Result.Fail<IReadOnlyList<UserAccess>>(reading.Problems);
+        }
+
+        var folderNames = Names(folders, "name");
+        var roleNames = RoleCodes.ById(roles, Id);
+        string Held(JsonNode assignment) =>
+            $"{Lookup(assignment["role"], roleNames)} on {string.Join(", ", (assignment["perimeter_folders"] as JsonArray ?? []).Select(f => Lookup(f, folderNames)).OfType<string>())}";
+        return Result.Ok<IReadOnlyList<UserAccess>>(
+        [
+            .. users.Select(u =>
+            {
+                var groups = (u["user_groups"] as JsonArray ?? []).Select(RelationId).OfType<string>().ToHashSet(StringComparer.Ordinal);
+                var held = assignments.Where(a => RelationId(a["user"]) == Id(u) || (RelationId(a["user_group"]) is { } group && groups.Contains(group)));
+                return new UserAccess(
+                    (Text(u["email"]) ?? Id(u)).ToLowerInvariant(),
+                    u["has_mfa_enabled"] is JsonValue mfa && mfa.TryGetValue<bool>(out var enabled) && enabled,
+                    [.. held.Select(Held).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)]);
+            }),
+        ]);
+    }
+
     public async Task<Result<IReadOnlyList<ActualObject>>> ReadAsync(ScopeStateQuery query, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(query);
@@ -90,7 +120,8 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
         var rootId = Id(root);
         var domainIds = folders.Where(f => RelationId(f["parent_folder"]) == rootId).Select(Id).ToArray();
         var domainObjects = await reading.ObjectsAsync("folders", domainIds);
-        var users = Actors(await reading.ListAsync("users/"), await reading.ListAsync("actors/"));
+        var userList = await reading.ListAsync("users/");
+        var users = Actors(userList, await reading.ListAsync("actors/"));
         var frameworkList = await reading.ListAsync("frameworks/");
         var frameworks = frameworkList.ToDictionary(Id, f => Text(f["urn"]) ?? Id(f), StringComparer.Ordinal);
         var libraries = await reading.ListAsync("loaded-libraries/");
@@ -101,6 +132,8 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
         var evidences = await reading.ObjectsInAsync("evidences", inScope);
         var controls = await reading.ObjectsInAsync("applied-controls", inScope);
         var hashes = await HashesAsync(reading, evidences);
+        var access = query.Access ? await AccessAsync(reading, folders, userList, inScope) : [];
+        var settings = query.Settings ? await SettingsAsync(reading) : [];
         var auditedFrameworks = audits.Select(a => Lookup(a["framework"], frameworks)).OfType<string>().Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
         if (allRows)
         {
@@ -146,9 +179,57 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
                     ("status", Choice(Text(r.Row["status"]))), ("result", Choice(Text(r.Row["result"]))), ("observation", Text(r.Row["observation"])),
                     ("controls", Joined(r.Row["applied_controls"], names.Controls)), ("documents", Joined(r.Row["evidences"], names.Evidence)))),
                 null)),
+            .. access,
+            .. settings,
         ];
         return Result.Ok(new HeldState(objects, frameworkList, libraries.ToDictionary(Id, l => (Text(l["urn"]), Text(l["version"])), StringComparer.Ordinal), auditedFrameworks));
     }
+
+    /// <summary>
+    /// Users (marked in their observation), each with the roles their user groups give as <c>roles</c>, and the teams in the scope's folders.
+    /// Role assignments made straight to a user cannot be made through the API, so they are not read as roles here; the access review
+    /// (<see cref="ReadAccessAsync"/>) reports every role a user holds, however it was given.
+    /// </summary>
+    private static async Task<List<ActualObject>> AccessAsync(Reading reading, List<JsonNode> folders, List<JsonNode> users, HashSet<string> inScope)
+    {
+        var teams = await reading.ObjectsInAsync("teams", inScope);
+        var groups = await reading.ListAsync("user-groups/");
+        var folderNames = Names(folders, "name");
+        var emails = users.ToDictionary(Id, u => (Text(u["email"]) ?? Id(u)).ToLowerInvariant(), StringComparer.Ordinal);
+        var groupRoles = groups.Select(g => (Id: Id(g), Role: RoleCodes.GroupRole(g, folderNames))).Where(g => g.Role is not null).ToDictionary(g => g.Id, g => g.Role!, StringComparer.Ordinal);
+        return
+        [
+            .. users.Select(u =>
+            {
+                var (_, state) = ScopeMarker.Read(Text(u["observation"]));
+                var active = u["is_active"] is JsonValue value && value.TryGetValue<bool>(out var isActive) && !isActive ? "false" : "true";
+                var roles = (u["user_groups"] as JsonArray ?? []).Select(RelationId).OfType<string>().Select(groupRoles.GetValueOrDefault).OfType<string>();
+                return new ActualObject(
+                    new ScopeObject(ScopeKind.User, emails[Id(u)], Fields(
+                        ("first_name", Text(u["first_name"])), ("last_name", Text(u["last_name"])), ("active", active), ("roles", ScopeDesired.Roles(roles)))),
+                    state);
+            }),
+            .. teams.Select(t => Marked(ScopeKind.Team, Text(t["name"]), t,
+                ("domain", Lookup(t["folder"], folderNames)), ("leader", Lookup(t["leader"], emails)), ("members", Joined(t["members"], emails)))),
+        ];
+    }
+
+    /// <summary>Every feature flag and general setting, each as an object whose <c>value</c> is its JSON; the plan compares only those the scope names.</summary>
+    private static async Task<List<ActualObject>> SettingsAsync(Reading reading)
+    {
+        var flags = await reading.ObjectAsync("settings/feature-flags/", "to read the feature flags") as JsonObject ?? [];
+        var general = (await reading.ObjectAsync("settings/general/", "to read the general settings"))?["value"] as JsonObject ?? [];
+        static ActualObject Setting(ScopeKind kind, string name, string value) =>
+            new(new ScopeObject(kind, name, new Dictionary<string, string>(StringComparer.Ordinal) { ["value"] = value }), null);
+        return
+        [
+            .. flags.Where(f => f.Value is JsonValue v && v.TryGetValue<bool>(out _)).Select(f => Setting(ScopeKind.FeatureFlag, f.Key, f.Value!.GetValue<bool>() ? "true" : "false")),
+            .. general.Select(g => Setting(ScopeKind.Setting, g.Key, CisoAssistantSettings.Json(g.Value))),
+        ];
+    }
+
+    private static Dictionary<string, string> Names(List<JsonNode> objects, string field) =>
+        objects.ToDictionary(Id, o => Text(o[field]) ?? Id(o), StringComparer.Ordinal);
 
     /// <summary>What a read found, with what an export also needs: every framework, each loaded library's URN and version, and the audits' frameworks.</summary>
     private sealed record HeldState(IReadOnlyList<ActualObject> Objects, List<JsonNode> Frameworks, Dictionary<string, (string? Urn, string? Version)> Libraries, string[] AuditedFrameworks);
@@ -349,6 +430,9 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
 
             return objects;
         }
+
+        /// <summary>A single object, such as a settings endpoint's, or null with its problem kept.</summary>
+        public Task<JsonNode?> ObjectAsync(string path, string action) => GetAsync(path, action);
 
         private async Task<JsonNode?> GetAsync(string path, string action) =>
             Kept(await http.SendForJsonAsync(new HttpRequestMessage(HttpMethod.Get, path), action, cancellationToken));

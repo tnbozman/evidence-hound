@@ -1,0 +1,27 @@
+# Smoke-test config for `hound serve` (deploy/compose/smoke-test.sh): the fake collector every minute, no jitter.
+ciso_assistant:
+  url: http://backend:8000/api/
+  token: env:HOUND_CA_TOKEN
+
+evidence:
+  root: /var/lib/evidence-hound/evidence
+  retention_days: 7
+
+scheduler:
+  time_zone: Australia/Sydney
+  jitter_seconds: 0
+
+collectors:
+  - name: smoke-fake
+    type: fake
+    schedule: "* * * * *"
+    settings:
+      tenant: example.com
+
+target:
+  mapping: /config/mappings/example.yaml
+  compliance_assessment: EXAMPLE-BASELINE-2026
+  controls:
+    mfa: AC-MFA
+    backups: AC-BACKUP
+  health_control: AC-AUTO-EVIDENCE

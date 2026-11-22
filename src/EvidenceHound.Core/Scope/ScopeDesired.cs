@@ -25,6 +25,8 @@ public static class ScopeDesired
         var setup = scope.Setup;
         return
         [
+            .. scope.Settings.FeatureFlags.Select(f => new ScopeObject(ScopeKind.FeatureFlag, f.Name, Fields(("value", f.Enabled ? "true" : "false")))),
+            .. scope.Settings.General.Select(g => new ScopeObject(ScopeKind.Setting, g.Name, Fields(("value", g.Json)))),
             .. setup.Frameworks.Select(f => Framework(f, inputs)),
             .. setup.Libraries.Select(l => new ScopeObject(ScopeKind.Framework, l.Value, Fields()) { Initial = Fields(("library", l.Value)) }),
             .. setup.Domains.Select(d => new ScopeObject(ScopeKind.Domain, d.Name, Fields(("description", d.Description)))),
@@ -48,8 +50,37 @@ public static class ScopeDesired
                 Initial = Fields(("status", c.Status), ("reference_control", c.ReferenceControl)),
             }),
             .. scope.Audits.SelectMany(a => Rows(scope, a, inputs)),
+            .. Access(scope.Access, setup.RootFolder),
         ];
     }
+
+    /// <summary>
+    /// Users by email, each with the roles they hold (directly and through teams) as <c>roles</c>, such as
+    /// <c>BI-RL-ADM on Global, BI-RL-APP on Example Pty Ltd</c>; and teams by name. CISO Assistant gives a role on a domain through
+    /// membership of that domain's group for it, which is part of the user, so a user's roles are one field of the user.
+    /// </summary>
+    private static IEnumerable<ScopeObject> Access(ScopeAccess access, string rootFolder)
+    {
+        var roles = AccessRoles.Assignments(access).ToLookup(a => a.Email, StringComparer.Ordinal);
+        return
+        [
+            .. access.Users.Select(u => new ScopeObject(ScopeKind.User, u.Email, Fields(
+                ("first_name", u.FirstName), ("last_name", u.LastName), ("active", u.Active ? "true" : "false"),
+                ("roles", Roles(roles[u.Email].Select(Role)))))),
+            .. access.Teams.Select(t => new ScopeObject(ScopeKind.Team, t.Name, Fields(
+                ("description", t.Description), ("domain", t.Domain?.Value ?? rootFolder), ("leader", t.Leader?.Value), ("members", Joined(t.Members.Select(m => m.Value)))))),
+        ];
+    }
+
+    /// <summary>One role a user holds, as the <c>roles</c> field lists it: <c>BI-RL-APP on Example Pty Ltd</c>.</summary>
+    public static string Role(AccessAssignment assignment)
+    {
+        ArgumentNullException.ThrowIfNull(assignment);
+        return $"{assignment.RoleCode} on {assignment.Domain}";
+    }
+
+    /// <summary>A user's <c>roles</c> field: each role once, in order, so the same roles always have the same text.</summary>
+    public static string? Roles(IEnumerable<string> roles) => Joined(roles.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal));
 
     /// <summary>A framework, with its version and library URN from its snapshot, and its custom library file to upload.</summary>
     private static ScopeObject Framework(ScopeFramework framework, ScopeInputs inputs)

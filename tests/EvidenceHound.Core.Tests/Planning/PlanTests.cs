@@ -89,6 +89,20 @@ public class PlanTests
     }
 
     [Fact]
+    public void Planning_every_update_for_a_run_marks_each_observation_as_planning_only_changes_does()
+    {
+        var target = new AuditTarget("EX-E8-2026", new Dictionary<string, string> { ["mfa"] = "AC-MFA" });
+        TargetResults[] targets = [new(target, [Requirement("ISM-1504", ComplianceResult.Compliant, "ev-0001"), Requirement("ISM-1173", ComplianceResult.NonCompliant)])];
+
+        var every = AuditPlanner.PlanUpdates(targets, [MfaAdmins], [], Run1).Value();
+        var changes = AuditPlanner.PlanChanges(targets, [MfaAdmins], [], new CurrentState([], [], []), Run1).Value();
+
+        var observations = every.OfType<AuditUpdate.UpdateRequirementAssessment>().Select(u => u.Observation).ToArray();
+        observations.ShouldBe(changes.Updates.OfType<AuditUpdate.UpdateRequirementAssessment>().Select(u => u.Observation));
+        observations.ShouldAllBe(o => RowState.ReadMark(o)!.RunId == Run1);
+    }
+
+    [Fact]
     public void A_control_key_configured_by_any_target_is_known()
     {
         var first = new AuditTarget("EX-A", new Dictionary<string, string> { ["mfa"] = "AC-MFA" });

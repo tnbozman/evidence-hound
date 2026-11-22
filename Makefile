@@ -5,11 +5,12 @@ SHELL := /usr/bin/env bash
 CONFIGURATION ?= Debug
 RESULTS_DIR ?= test-results
 ARGS ?=
+HOUND_IMAGE ?= evidence-hound-runner:test
 CA_COMPOSE := dev/ciso-assistant/compose.yml
 CA_ENV := HOUND_CA_SECRET_KEY="$$(scripts/ca-secret-key.sh)"
-SHELL_SCRIPTS := $(wildcard scripts/*.sh scripts/lib/*.sh .devcontainer/*.sh dev/ciso-assistant/seed/*.sh) .githooks/pre-commit
+SHELL_SCRIPTS := $(wildcard scripts/*.sh scripts/lib/*.sh deploy/compose/*.sh .devcontainer/*.sh dev/ciso-assistant/seed/*.sh) .githooks/pre-commit
 
-.PHONY: help restore build test test-functional test-template test-scriptscoverage lint lint-dotnet lint-shell format run hooks ca-up ca-up-kafka ca-down
+.PHONY: help restore build test test-functional test-template test-scripts coverage image test-image test-compose compose-smoke lint lint-dotnet lint-shell format run hooks ca-up ca-up-kafka ca-down
 
 help: ## List targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-16s %s\n", $$1, $$2}'
@@ -37,6 +38,18 @@ test-template: ## Generate a collector from templates/collector, then build and 
 
 test-scripts: ## Shell script tests (bats)
 	bats scripts/tests
+
+image: ## Build the collector runner image (HOUND_IMAGE, default evidence-hound-runner:test)
+	docker build -f src/EvidenceHound.Cli/Dockerfile -t $(HOUND_IMAGE) .
+
+test-compose: ## Static checks of the reference Compose stack (deploy/compose)
+	bats tests/compose
+
+compose-smoke: ## Bring the reference stack up, wait for health, run the runner once with the fake collector, tear down
+	deploy/compose/smoke-test.sh
+
+test-image: image ## Build the runner image, then check it starts, runs as non-root, has no shell and runs read-only
+	HOUND_IMAGE=$(HOUND_IMAGE) bats tests/image
 
 lint: lint-dotnet lint-shell ## All linters (analysers also run on every build)
 

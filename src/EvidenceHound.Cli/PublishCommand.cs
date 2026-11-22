@@ -34,7 +34,9 @@ internal static class PublishCommand
         var publish = new Command("publish", $"Publish a run's check results to CISO Assistant (needs {UrlSetting} and {TokenSetting}).") { dryRun, config, checks, evidenceDir };
         publish.SetAction(async (parseResult, cancellationToken) =>
         {
-            var plan = await PlanCommand.PlanAsync(parseResult.GetRequiredValue(config), parseResult.GetRequiredValue(checks), registry, AuditSeries.Today(configuration), cancellationToken);
+            // Each result carries the run marker hound run writes, so scope apply keeps it and scope export leaves it out.
+            var plan = await PlanCommand.PlanAsync(
+                parseResult.GetRequiredValue(config), parseResult.GetRequiredValue(checks), registry, AuditSeries.Today(configuration), cancellationToken, RunIds.From(DateTimeOffset.UtcNow));
             return await plan.Match(
                 updates => parseResult.GetValue(dryRun)
                     ? WriteAsync(Publisher.DryRun(updates), output)

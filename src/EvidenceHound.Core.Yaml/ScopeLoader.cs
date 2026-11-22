@@ -1,3 +1,6 @@
+using System.Globalization;
+using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Scope;
 using YamlDotNet.Core;
@@ -15,7 +18,7 @@ public sealed record ScopeParse(ScopeDocument Scope, IReadOnlyList<ScopeProblem>
 /// Parses a compliance repo's scope files (see <c>schemas/scope.schema.json</c>). Every problem names the file and line. Parsing goes
 /// on past a problem, so one run reports everything; an item missing a required key is left out of the scope.
 /// </summary>
-public static class ScopeLoader
+public static partial class ScopeLoader
 {
     private static readonly string[] SetupKeys = ["organisation", "frameworks", "libraries", "domains"];
     private static readonly string[] OrganisationKeys = ["root_folder"];
@@ -46,8 +49,18 @@ public static class ScopeLoader
     private static readonly string[] UnlistedKeys = ["result", "reason"];
     private static readonly string[] SystemTypes = ["primary", "supporting"];
     private static readonly string[] ControlStatuses = ["to_do", "in_progress", "on_hold", "active", "degraded", "deprecated", "--"];
+    private static readonly string[] AccessKeys = ["custom_roles", "users", "teams", "roles"];
+    private static readonly string[] UserKeys = ["email", "first_name", "last_name", "active", "service_account"];
+    private static readonly string[] TeamKeys = ["name", "description", "domain", "leader", "members"];
+    private static readonly string[] RoleKeys = ["role", "domain", "users", "teams"];
+    private static readonly string[] Booleans = ["true", "false"];
+    private static readonly string[] ServiceAccounts = ["true", "publish", "apply"];
+    private static readonly string[] SettingsKeys = ["feature_flags", "general"];
 
-    public static ScopeParse Parse(ScopeSource setup, ScopeSource? controls, IReadOnlyList<ScopeSource> audits)
+    /// <summary>Keys that would hold a credential: rejected wherever they appear in <c>access.yaml</c>, without echoing the value.</summary>
+    private static readonly string[] SecretKeys = ["password", "password_hash", "api_token", "token", "secret", "totp_secret"];
+
+    public static ScopeParse Parse(ScopeSource setup, ScopeSource? controls, IReadOnlyList<ScopeSource> audits, ScopeSource? access = null, ScopeSource? settings = null)
     {
         ArgumentNullException.ThrowIfNull(setup);
         ArgumentNullException.ThrowIfNull(audits);
@@ -58,10 +71,126 @@ public static class ScopeLoader
         var parsedControls = controlsFile?.Root() is { } controlsRoot ? ReadControls(controlsRoot, controlsFile) : [];
         var auditFiles = audits.Select(a => new FileReader(a)).ToArray();
         var parsedAudits = auditFiles.Select(file => file.Root() is { } root ? ReadAudit(root, file) : null).OfType<ScopeAudit>().ToArray();
+        var accessFile = access is null ? null : new FileReader(access);
+        var parsedAccess = accessFile?.Root() is { } accessRoot ? ReadAccess(accessRoot, accessFile) : ScopeAccess.None;
+        var settingsFile = settings is null ? null : new FileReader(settings);
+        var parsedSettings = settingsFile?.Root() is { } settingsRoot ? ReadSettings(settingsRoot, settingsFile) : ScopeSettings.None;
 
         return new ScopeParse(
-            new ScopeDocument(parsedSetup, parsedControls, parsedAudits),
-            [.. setupFile.Problems, .. controlsFile?.Problems ?? [], .. auditFiles.SelectMany(f => f.Problems)]);
+            new ScopeDocument(parsedSetup, parsedControls, parsedAudits) { Access = parsedAccess, Settings = parsedSettings },
+            [
+                .. setupFile.Problems, .. controlsFile?.Problems ?? [], .. auditFiles.SelectMany(f => f.Problems), .. accessFile?.Problems ?? [],
+                .. settingsFile?.Problems ?? [],
+            ]);
+    }
+
+    /// <summary>Feature flags as true or false, and general settings as any YAML value, kept as JSON. Names are checked by validation.</summary>
+    private static ScopeSettings ReadSettings(YamlMappingNode root, FileReader file)
+    {
+        file.Keys(root, SettingsKeys);
+        var flags = file.Map(root, "feature_flags") is { } flagMap
+            ? flagMap.Children.Select(pair => ReadFlag(pair.Key, pair.Value, file)).OfType<ScopeFlag>().ToArray()
+            : [];
+        var general = file.Map(root, "general") is { } generalMap ? generalMap : null;
+        var secrets = general is null ? [] : CisoAssistantSettings.Current.SecretGeneral.Concat(SecretKeys).ToArray();
+        if (general is not null)
+        {
+            file.Secrets(general, secrets);
+        }
+
+        return new ScopeSettings(
+            flags,
+            general is null
+                ? []
+                : [.. general.Children
+                    .Where(pair => pair.Key is YamlScalarNode { Value: { } name } && !secrets.Contains(name, StringComparer.Ordinal))
+                    .Select(pair => new ScopeGeneralSetting(((YamlScalarNode)pair.Key).Value!, CisoAssistantSettings.Json(ToJson(pair.Value)), file.At(pair.Key)))]);
+    }
+
+    private static ScopeFlag? ReadFlag(YamlNode key, YamlNode value, FileReader file)
+    {
+        if (key is not YamlScalarNode { Value: { } name })
+        {
+            return null;
+        }
+
+        if (value is YamlScalarNode { Style: ScalarStyle.Plain, Value: "true" or "false" } flag)
+        {
+            return new ScopeFlag(name, flag.Value == "true", file.At(key));
+        }
+
+        file.Invalid(value, $"feature flag '{name}' must be true or false.");
+        return null;
+    }
+
+    /// <summary>A YAML value as JSON: unquoted true, false, numbers and null keep their type; everything else is text.</summary>
+    private static JsonNode? ToJson(YamlNode node) => node switch
+    {
+        YamlMappingNode map => new JsonObject(map.Children.Select(c => KeyValuePair.Create(((YamlScalarNode)c.Key).Value ?? "", ToJson(c.Value)))),
+        YamlSequenceNode list => new JsonArray([.. list.Children.Select(ToJson)]),
+        YamlScalarNode { Style: ScalarStyle.Plain, Value: "true" or "false" } scalar => JsonValue.Create(scalar.Value == "true"),
+        YamlScalarNode { Style: ScalarStyle.Plain, Value: null or "" or "null" or "~" } => null,
+        YamlScalarNode { Style: ScalarStyle.Plain, Value: { } text } when long.TryParse(text, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var whole) => JsonValue.Create(whole),
+        YamlScalarNode { Style: ScalarStyle.Plain, Value: { } text } when double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var number) => JsonValue.Create(number),
+        YamlScalarNode scalar => JsonValue.Create(scalar.Value),
+        _ => null,
+    };
+
+    private static ScopeAccess ReadAccess(YamlMappingNode root, FileReader file)
+    {
+        file.Keys(root, AccessKeys);
+        var users = new List<ScopeUser>();
+        foreach (var user in file.Items(root, "users").Select(item => ReadUser(item, file)).OfType<ScopeUser>())
+        {
+            if (users.Find(u => u.Email == user.Email) is { } first)
+            {
+                file.Problem(
+                    "access.email_duplicate",
+                    user.At,
+                    $"'{user.Email}' is already listed at line {first.At.Line} (emails are compared without case).",
+                    "List each person once.");
+                continue;
+            }
+
+            users.Add(user);
+        }
+
+        return new ScopeAccess(
+            users,
+            [.. file.Items(root, "teams").Select(item => ReadTeam(item, file)).OfType<ScopeTeam>()],
+            [.. file.Items(root, "roles").Select(item => ReadRoleGrant(item, file)).OfType<ScopeRoleGrant>()])
+        {
+            CustomRoles = file.Refs(root, "custom_roles"),
+        };
+    }
+
+    private static ScopeUser? ReadUser(YamlMappingNode item, FileReader file)
+    {
+        file.Keys(item, [.. UserKeys, .. SecretKeys]);
+        file.Secrets(item, SecretKeys);
+        var email = file.Email(item, "email", required: true);
+        var active = file.OneOf(item, "active", Booleans, required: false);
+        return email is null
+            ? null
+            : new ScopeUser(email.Value, file.Text(item, "first_name"), file.Text(item, "last_name"), active != "false", file.OneOf(item, "service_account", ServiceAccounts, required: false), email.At);
+    }
+
+    private static ScopeTeam? ReadTeam(YamlMappingNode item, FileReader file)
+    {
+        file.Keys(item, [.. TeamKeys, .. SecretKeys]);
+        file.Secrets(item, SecretKeys);
+        var name = file.Required(item, "name");
+        return name is null
+            ? null
+            : new ScopeTeam(name, file.Text(item, "description"), file.Ref(item, "domain"), file.Email(item, "leader"), file.Emails(item, "members"), file.At(item));
+    }
+
+    private static ScopeRoleGrant? ReadRoleGrant(YamlMappingNode item, FileReader file)
+    {
+        file.Keys(item, RoleKeys);
+        var role = file.Ref(item, "role", required: true);
+        var domain = file.Ref(item, "domain", required: true);
+        return role is null || domain is null ? null : new ScopeRoleGrant(role, domain, file.Emails(item, "users"), file.Refs(item, "teams"), file.At(item));
     }
 
     private static ScopeSetup ReadSetup(YamlMappingNode root, FileReader file)
@@ -386,6 +515,43 @@ public static class ScopeLoader
 
         public string? Invalid(YamlNode node, string message) => Reject<string>(node, message);
 
+        public void Problem(string code, SourceLine at, string message, string hint) => _problems.Add(new ScopeProblem(code, at, message, hint));
+
+        /// <summary>Reports each credential key in <paramref name="map"/>, naming the key and never its value.</summary>
+        public void Secrets(YamlMappingNode map, string[] secretKeys)
+        {
+            foreach (var key in map.Children.Keys.OfType<YamlScalarNode>().Where(k => secretKeys.Contains(k.Value, StringComparer.Ordinal)))
+            {
+                Add(
+                    "scope.secret_in_file",
+                    key.Start,
+                    $"'{key.Value}' holds a credential, which must never be in a scope file (its value is not shown).",
+                    "Remove it, and rotate it if it was ever committed. People set their own password from CISO Assistant's invitation email; "
+                    + "a service account's token is issued into a secrets file (deploy/compose/runner-token.sh).");
+            }
+        }
+
+        /// <summary>An email address, in lower case, so references to it match whatever case they are written in.</summary>
+        public ScopeRef? Email(YamlMappingNode map, string key, bool required = false) =>
+            Ref(map, key, required) is { } email ? Checked(email, Child(map, key)!) : null;
+
+        public IReadOnlyList<ScopeRef> Emails(YamlMappingNode map, string key) =>
+            [.. Sequence(map, key).Select(item => item is YamlScalarNode { Value: { Length: > 0 } value }
+                    ? Checked(new ScopeRef(value, At(item)), item)
+                    : Reject<ScopeRef>(item, $"each item of '{key}' must be an email address."))
+                .OfType<ScopeRef>()];
+
+        private ScopeRef? Checked(ScopeRef email, YamlNode node)
+        {
+            if (EmailShape().IsMatch(email.Value))
+            {
+                return email with { Value = email.Value.ToLowerInvariant() };
+            }
+
+            Add("access.email_invalid", node.Start, $"'{email.Value}' is not an email address.", "Write the address the person signs in to CISO Assistant with, such as it@example.com.");
+            return null;
+        }
+
         /// <summary>Reports a value of the wrong shape and gives null, so the caller leaves it out.</summary>
         private T? Reject<T>(YamlNode node, string message)
             where T : class
@@ -411,4 +577,7 @@ public static class ScopeLoader
         private void Add(string code, Mark mark, string message, string hint) =>
             _problems.Add(new ScopeProblem(code, new SourceLine(source.Path, (int)Math.Max(mark.Line, 1)), message, hint));
     }
+
+    [GeneratedRegex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.CultureInvariant)]
+    private static partial Regex EmailShape();
 }

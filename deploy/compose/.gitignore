@@ -1,0 +1,3 @@
+# Real settings and secrets never go in git (see .env.example and README.md).
+.env
+secrets/

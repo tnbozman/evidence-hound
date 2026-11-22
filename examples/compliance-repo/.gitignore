@@ -1,0 +1,27 @@
+# Never in this repo: secrets, certificates and keys, and evidence. Secrets are Docker secrets files on the host
+# (HOUND_SECRETS_DIR, outside any repo); evidence stays on the server, and manual exports go to the drop folders
+# in manual-sources/README.md. Secret scanning with push protection and the workflow's gitleaks step back this up.
+
+# Secrets and settings files with secrets
+.env
+.env.*
+*.env
+!deploy/deploy.env
+secrets/
+**/secrets/
+
+# Certificates and keys
+*.pem
+*.key
+*.pfx
+*.p12
+*.crt
+*.cer
+
+# Evidence and hand exports
+evidence/
+**/evidence/
+exports/
+*.xlsx
+*.xls
+*.csv

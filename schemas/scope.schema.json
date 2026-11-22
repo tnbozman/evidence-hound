@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/tnbozman/evidence-hound/schemas/scope.schema.json",
   "title": "Evidence Hound scope file",
-  "description": "One file of a compliance repo's scope: setup.yaml (organisation, frameworks, domains), controls.yaml (applied controls), or audits/<audit>.yaml (one compliance assessment). Guide: docs/scope.md.",
+  "description": "One file of a compliance repo's scope: setup.yaml (organisation, frameworks, domains), controls.yaml (applied controls), audits/<audit>.yaml (one compliance assessment), or access.yaml (users, teams and role assignments). Guide: docs/scope.md.",
   "oneOf": [
     {
       "$ref": "#/$defs/setup"
@@ -12,6 +12,12 @@
     },
     {
       "$ref": "#/$defs/audit"
+    },
+    {
+      "$ref": "#/$defs/access"
+    },
+    {
+      "$ref": "#/$defs/settings"
     }
   ],
   "$defs": {
@@ -531,6 +537,301 @@
         },
         "observation": {
           "type": "string"
+        }
+      }
+    },
+    "email": {
+      "type": "string",
+      "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"
+    },
+    "access": {
+      "description": "Who can do what in CISO Assistant. Never passwords or tokens: people set their own password from CISO Assistant's invitation.",
+      "type": "object",
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "required": [
+            "users"
+          ]
+        },
+        {
+          "required": [
+            "teams"
+          ]
+        },
+        {
+          "required": [
+            "roles"
+          ]
+        }
+      ],
+      "properties": {
+        "custom_roles": {
+          "description": "Roles created in CISO Assistant, by name, that 'roles' may name beside the built-in ones.",
+          "$ref": "#/$defs/names"
+        },
+        "users": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/user"
+          }
+        },
+        "teams": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/team"
+          }
+        },
+        "roles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/role_grant"
+          }
+        }
+      }
+    },
+    "user": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "email"
+      ],
+      "properties": {
+        "email": {
+          "description": "The key: the address the person signs in with. Compared without case.",
+          "$ref": "#/$defs/email"
+        },
+        "first_name": {
+          "$ref": "#/$defs/text"
+        },
+        "last_name": {
+          "$ref": "#/$defs/text"
+        },
+        "active": {
+          "description": "false keeps the user but blocks sign-in. A user removed from the file is deactivated by 'scope apply --prune', never deleted.",
+          "enum": [
+            "true",
+            "false",
+            true,
+            false
+          ]
+        },
+        "service_account": {
+          "description": "A non-person account: 'publish' (or true) for the collector runner, which needs only analyst; 'apply' for an account that applies the scope.",
+          "enum": [
+            "true",
+            "publish",
+            "apply",
+            true
+          ]
+        }
+      }
+    },
+    "team": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/text"
+        },
+        "description": {
+          "type": "string"
+        },
+        "domain": {
+          "description": "A domain from setup.yaml, or the root folder (Global); left out for the root folder.",
+          "$ref": "#/$defs/text"
+        },
+        "leader": {
+          "$ref": "#/$defs/email"
+        },
+        "members": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/email"
+          }
+        }
+      }
+    },
+    "role_grant": {
+      "description": "A role on a domain, for users and for every member and the leader of teams: one role assignment per user.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "role",
+        "domain"
+      ],
+      "properties": {
+        "role": {
+          "description": "administrator, domain_manager, analyst, approver, auditor, baseline_reader, or a name from custom_roles.",
+          "$ref": "#/$defs/text"
+        },
+        "domain": {
+          "description": "A domain from setup.yaml, or the root folder (Global) for the whole organisation.",
+          "$ref": "#/$defs/text"
+        },
+        "users": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/email"
+          }
+        },
+        "teams": {
+          "$ref": "#/$defs/names"
+        }
+      }
+    },
+    "settings": {
+      "description": "CISO Assistant's feature flags and general settings, by name, as in the settings snapshot of the pinned release (src/EvidenceHound.Core/Scope/ciso-assistant-settings.json). Only the settings named here change. Never secrets such as openai_api_key.",
+      "type": "object",
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "required": [
+            "feature_flags"
+          ]
+        },
+        {
+          "required": [
+            "general"
+          ]
+        }
+      ],
+      "properties": {
+        "feature_flags": {
+          "description": "Each flag on (true) or off (false).",
+          "type": "object",
+          "propertyNames": {
+            "enum": [
+              "accreditations",
+              "advanced_analytics",
+              "audit_tree_inheritance",
+              "auditee_mode",
+              "bia",
+              "comments",
+              "commitment_management",
+              "compliance",
+              "contracts",
+              "control_plan",
+              "custom_portals",
+              "cwes",
+              "data_breaches",
+              "document_management",
+              "dora",
+              "dpias",
+              "ebiosrm",
+              "exceptions",
+              "experimental",
+              "external_ratings",
+              "findings_from_requirements",
+              "follow_up",
+              "generic_collections",
+              "incidents",
+              "inherent_risk",
+              "jit_provisioning",
+              "journeys",
+              "mcp",
+              "mcp_write",
+              "metrology",
+              "nis2",
+              "notification_center",
+              "organisation_issues",
+              "organisation_objectives",
+              "outgoing_webhooks",
+              "personal_data",
+              "policy_documents",
+              "posture_assessments",
+              "privacy",
+              "project_management",
+              "projects",
+              "purposes",
+              "quantitative_risk_studies",
+              "quick_forms",
+              "relations_graph",
+              "reports",
+              "responsibility_matrices",
+              "right_requests",
+              "risk_acceptances",
+              "risk_management",
+              "scoring_assistant",
+              "security_advisories",
+              "tasks",
+              "terminologies",
+              "threat_modeling",
+              "tprm",
+              "ttps",
+              "validation_flows",
+              "vulnerabilities",
+              "vulnerability_sla",
+              "workflows",
+              "xrays"
+            ]
+          },
+          "additionalProperties": {
+            "enum": [
+              "true",
+              "false",
+              true,
+              false
+            ]
+          }
+        },
+        "general": {
+          "description": "Each general setting's value, as CISO Assistant stores it.",
+          "type": "object",
+          "propertyNames": {
+            "enum": [
+              "allow_assignments_to_entities",
+              "allow_self_validation",
+              "audit_tree_aggregation_strategy",
+              "auto_lock_overdue_assessments",
+              "auto_ref_id",
+              "auto_ref_id_prefixes",
+              "builtin_metrics_retention_days",
+              "chat_system_prompt",
+              "chat_temperature",
+              "chat_temperature_enabled",
+              "currency",
+              "daily_rate",
+              "default_custom_analytics_dashboard",
+              "default_date_format",
+              "default_landing",
+              "default_language",
+              "default_packager",
+              "disable_partially_compliant_result",
+              "disabled_email_templates",
+              "documentation_score_first",
+              "ebios_radar_green_zone_radius",
+              "ebios_radar_max",
+              "ebios_radar_red_zone_radius",
+              "ebios_radar_yellow_zone_radius",
+              "embedding_backend",
+              "enforce_mfa",
+              "evidence_four_eyes",
+              "interface_agg_scenario_matrix",
+              "llm_provider",
+              "mapping_max_depth",
+              "notifications_enable_mailing",
+              "ollama_base_url",
+              "ollama_embed_model",
+              "ollama_model",
+              "openai_api_base",
+              "openai_model",
+              "organisation_score_scale",
+              "personal_folders",
+              "personal_folders_parent",
+              "report_timezone",
+              "risk_matrix_flip_vertical",
+              "risk_matrix_labels",
+              "risk_matrix_swap_axes",
+              "security_objective_scale",
+              "show_get_started",
+              "show_warning_external_links",
+              "use_risk_category_label"
+            ]
+          }
         }
       }
     }

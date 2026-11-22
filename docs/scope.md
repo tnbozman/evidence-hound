@@ -12,6 +12,8 @@ compliance-repo/
     controls.yaml       applied controls, each declared once
     audits/
       ex-e8-2026.yaml   one file per audit (compliance assessment)
+    access.yaml         users with their roles, and teams (optional)
+    settings.yaml       feature flags and general settings (optional)
   mappings/             which checks satisfy which requirements (docs/mapping-files.md)
   frameworks/           framework snapshots and custom library files
   documents/            the files that documents name, relative to the compliance repo (the scope folder's parent)
@@ -36,6 +38,39 @@ The local CISO Assistant (`make ca-up`, the dev container and the functional tes
 ## controls.yaml
 
 `controls` lists each applied control once, because CISO Assistant treats an applied control as a reusable object serving many requirements across frameworks: `ref_id` (the stable key), `name`, and optionally `description`, `domain` (left out for the global domain), `owner`, `status` (`to_do`, `in_progress`, `on_hold`, `active`, `degraded`, `deprecated`), `priority` (`"1"` to `"4"`), `category`, `eta`, `systems`, `reference_control` (a URN) and `documents` (ids of documents declared in audit files).
+
+## access.yaml
+
+Who can do what in CISO Assistant, so access changes are reviewed as pull requests and a rebuilt instance gets the same access. The file is optional; without it `hound` neither reads nor changes users.
+
+- `users`: `email` (the key, compared without case), `first_name`, `last_name`, `active` (default `true`), and `service_account` for an account that is not a person: `publish` (or `true`) for the collector runner, `apply` for an account that applies the scope.
+- `teams`: `name`, `description`, `domain` (left out for the root folder), `leader` and `members` by email.
+- `roles`: a `role` on a `domain` (or the root folder, `Global`, for the whole organisation), for `users` and for every leader and member of `teams`. Built-in roles are `administrator`, `domain_manager`, `analyst`, `approver`, `auditor` (CISO Assistant calls it Reader) and `baseline_reader`; list user groups you created in CISO Assistant under `custom_roles` to use them as roles.
+
+`hound` never sets or reads a password and never creates an API token: a key such as `password` or `api_token` anywhere in the file is an error (`scope.secret_in_file`) whose message never shows the value. A new user gets CISO Assistant's own invitation and sets their password there. Validation also reports duplicate or malformed emails, unknown roles, domains, users and teams, and any domain without an active user who can approve (an approver, domain manager or administrator on it or on `Global`), because risk acceptances and period sign-offs need one.
+
+CISO Assistant gives a role on a domain through membership of that domain's built-in user group for the role ("Example Pty Ltd - Approver"); its API lets no one create role assignments directly. So each user's roles, given directly and through teams, become one field of the user, such as `roles: BI-RL-ADM on Global, BI-RL-APP on Example Pty Ltd`, and `scope apply` sets the user's groups to exactly those. A role removed from the file is taken away on the next apply, and the plan shows it as an update of the user (`roles: … → …`). A custom role is a user group you made in CISO Assistant on that domain, named as `custom_roles` lists it. A user removed from the file stays in CISO Assistant: `scope apply --prune` deactivates them (never deletes, so their history stays attributable) and leaves their groups as they were. Users the file does not list keep their groups.
+
+`scope plan` ends with an **Access review**: active people who have not turned on multi-factor authentication, and each role a `publish` service account holds beyond analyst, however it was given (`runner-token.sh` starts the runner's account in the administrators group; declare it here to narrow it). CISO Assistant requires MFA for everyone or no one: set `enforce_mfa: true` in [settings.yaml](#settingsyaml) and each person turns it on at their next sign-in. Its API reports who has (`has_mfa_enabled`) but cannot turn it on for a person, so the access review lists anyone who has not yet.
+
+## settings.yaml
+
+CISO Assistant's feature flags (which modules people see) and general settings (instance-wide behaviour such as `enforce_mfa`), by name. The file is optional, and only the settings it names change: `hound` never resets a setting the file leaves out.
+
+```yaml
+feature_flags:
+  tprm: true       # third-party records
+  dora: false      # an EU regulation the organisation is not subject to
+general:
+  enforce_mfa: true
+```
+
+- `feature_flags`: each flag `true` or `false`.
+- `general`: each setting's value as CISO Assistant stores it: a boolean, a number, text or a list.
+
+Names are checked offline against the settings snapshot of the CISO Assistant release the stack pins ([`ciso-assistant-settings.json`](../src/EvidenceHound.Core/Scope/ciso-assistant-settings.json), with each flag's default); an unknown name is an error (`settings.flag_unknown`, `settings.setting_unknown`) whose hint lists the valid ones. Two flags exist in the release but its API only offers them when a backend setting the stack leaves off is on: `chat_mode` (`ENABLE_CHAT`) and `infra_config_management` (`ENABLE_INFRA_CONFIG_MANAGEMENT`). Naming either is an error (`settings.flag_gated`). A secret setting such as `openai_api_key` is an error (`scope.secret_in_file`): set it in CISO Assistant itself. Turning off a module the scope still uses is an error too: `compliance: false` would hide the audits the scope declares (`settings.feature_disabled_in_use`). Upgrading CISO Assistant means refreshing the snapshot, and the functional tests compare it with the pinned release.
+
+`scope plan` lists each named setting whose value differs (`| Update | feature_flag | tprm | value: true → false |`). `scope plan --show-unmanaged` adds an **Unmanaged settings** section: every flag and general setting the file does not name, with its current value, to help decide what to manage. Settings carry no marker and are never deleted, so `--prune` leaves them alone.
 
 ## audits/&lt;audit&gt;.yaml
 

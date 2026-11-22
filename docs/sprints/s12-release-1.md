@@ -86,12 +86,13 @@ Tasks s12-01 and s12-02 were s08-04 and s08-05 before the release 1 reorder.
 - OpenSSF Scorecard reviewed; findings fixed or recorded as issues.
 - Org-data check passes on the full history (`git log -p` scan), not just the diff.
 - README badges: CI, CodeQL, Scorecard, licence, latest release.
+- **Release 1 is version 1.0.0:** the annotated git tag `v1.0.0` on `main`, and a published (not draft or pre-release) GitHub release named `v1.0.0`, made by `release.yml` (s12-04), with release notes from `CHANGELOG.md`, the runner image `ghcr.io/tnbozman/evidence-hound:1.0.0`, the CLI and template packages, the SBOM and the provenance attestations.
 
 **Tests first**
 - None (review).
 
 **Functional check**
-- Tag `v1.0.0`.
+- Tag `v1.0.0` (`git tag -a v1.0.0 -m "Release 1"` and push it), approve the release environment, then check that GitHub shows release `v1.0.0` as the latest release with its assets, and that `ghcr.io/tnbozman/evidence-hound:1.0.0` pulls.
 
 ## Discovered work
 

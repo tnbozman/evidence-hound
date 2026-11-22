@@ -1,6 +1,6 @@
 # s07 Thin deployment
 
-Status: Planned
+Status: Done
 
 **Goal:** a small organisation can self-host CISO Assistant and the collector runner on one VM with Docker Compose, with the Microsoft 365 collector running on a schedule, so that evidence starts building history as early as possible. Everything specific to the organisation, from CISO Assistant's deployment settings to its users and the scope from s06, lives in the organisation's own private compliance repo, and a tutorial walks through creating it.
 
@@ -9,7 +9,7 @@ This is the first half of the old s08 reference deployment, moved forward. Backu
 Folder: `deploy/compose/`. Fictional names only.
 
 ### s07-01 Collector runner image
-- [ ] Done
+- [x] Done
 
 **Story:** As an operator, I want a minimal, signed container image for the runner, so that it is easy and safe to deploy.
 
@@ -23,9 +23,10 @@ Folder: `deploy/compose/`. Fictional names only.
 
 **Functional check**
 - `docker run --rm ghcr.io/<owner>/<repo>:dev --version`.
+- Result (2026-11-21): the same Dockerfile built locally passed `make test-image` (starts, `--version` prints `0.1.0`, user `app`, no shell, read-only root); amd64 and arm64 both build; CI job `image` passed with no high or critical Grype finding. The `dev` tag is published from main after merge. Evidence: [`docs/evidence/s07/s07-01.md`](../evidence/s07/s07-01.md).
 
 ### s07-02 Compose stack
-- [ ] Done
+- [x] Done
 
 **Story:** As an operator, I want one Compose project for the whole stack, so that install and upgrade are repeatable.
 
@@ -41,9 +42,10 @@ Folder: `deploy/compose/`. Fictional names only.
 
 **Functional check**
 - On a fresh VM: follow `deploy/compose/README.md` and reach the CISO Assistant login over HTTPS within 30 minutes.
+- Result (2026-11-22): the `compose` job in [CI run 44975475229](https://github.com/tnbozman/evidence-hound/actions/runs/44975475229) brought the stack up, issued the runner token, applied the example scope through the runner image, recorded 4 scheduled runs and reached CISO Assistant over HTTPS through Caddy. The fresh-VM run is part of the s07-06 check. Evidence: [`docs/evidence/s07/s07-02.md`](../evidence/s07/s07-02.md).
 
 ### s07-03 Scheduling
-- [ ] Done
+- [x] Done
 
 **Story:** As an operator, I want collectors to run on their schedules without a human, so that evidence stays fresh.
 
@@ -58,9 +60,10 @@ Folder: `deploy/compose/`. Fictional names only.
 
 **Functional check**
 - Stack runs overnight with a 15-minute test schedule; status shows each run.
+- Result (2026-11-22): in [CI run 44975475229](https://github.com/tnbozman/evidence-hound/actions/runs/44975475229), `hound serve` ran the fake collector every minute and 4 runs were recorded. **Owed by the person:** the overnight run with a 15-minute schedule. Evidence: [`docs/evidence/s07/s07-03.md`](../evidence/s07/s07-03.md).
 
 ### s07-04 Users, teams and role assignments as configuration
-- [ ] Done
+- [x] Done
 
 **Story:** As the capability owner, I want who can do what in CISO Assistant declared in the private compliance repo, so that access is reviewed through pull requests and a rebuilt instance gets the same access.
 
@@ -79,13 +82,14 @@ Folder: `deploy/compose/`. Fictional names only.
 
 **Functional check**
 - Apply a fictional `access.yaml` with two users and a team to the local CISO Assistant; both appear with their roles; re-applying writes nothing.
+- Result (2026-11-22): the functional seed applies the example `access.yaml` (four users, a team, their roles); `ScopePlanFunctionalTests` finds them with their groups and a second plan is empty; 19 of 19 functional tests passed in [CI run 44975475229](https://github.com/tnbozman/evidence-hound/actions/runs/44975475229). Roles are given as memberships of built-in user groups, not role assignments (see Discovered work). Evidence: [`docs/evidence/s07/s07-04.md`](../evidence/s07/s07-04.md).
 
 **Notes**
 - Users' names and emails are personal data. They belong only in the private repo; the public example uses fictional `example.com` users.
 - Check whether the API can require MFA per user; record the answer and, if it cannot, make MFA a step in the tutorial (s07-06).
 
 ### s07-05 CISO Assistant settings as configuration
-- [ ] Done
+- [x] Done
 
 **Story:** As the capability owner, I want CISO Assistant's feature flags and general settings declared in the repo, so that the instance is configured the same way after every rebuild or upgrade.
 
@@ -102,9 +106,10 @@ Folder: `deploy/compose/`. Fictional names only.
 
 **Functional check**
 - Turn a fictional flag off and on through the file against the local CISO Assistant; the UI follows.
+- Result (2026-11-22): `ttps` turned on and off through the file against the local CISO Assistant, read back from the API each time, and a second plan was empty; the snapshot matches the live flags; 19 of 19 functional tests passed in [CI run 44975475229](https://github.com/tnbozman/evidence-hound/actions/runs/44975475229). Evidence: [`docs/evidence/s07/s07-05.md`](../evidence/s07/s07-05.md).
 
 ### s07-06 Tutorial: your private compliance repo and first deployment
-- [ ] Done
+- [x] Done
 
 **Story:** As an organisation adopting Evidence Hound, I want a step-by-step tutorial from an empty VM and an empty private repo to a scheduled collection run, so that I can stand up the whole thing without guessing where each setting belongs.
 
@@ -127,7 +132,47 @@ Folder: `deploy/compose/`. Fictional names only.
 
 **Functional check**
 - A reviewer follows the tutorial verbatim on a fresh VM with a new private repo and reaches a scheduled run that publishes to the example audit. Record the time taken and every step that needed help.
+- Result (2026-11-22): `TutorialTests` and `ExampleRepoTests` pass, and the template's deploy folder validates with the stack. **Owed by a reviewer:** following the tutorial on a fresh VM, which a cloud session cannot do. Evidence: [`docs/evidence/s07/s07-06.md`](../evidence/s07/s07-06.md).
+
+### s07-07 `hound publish` writes the run marker
+- [x] Done
+
+**Story:** As the capability owner, I want results published with `hound publish` to be marked as a run's, like those of `hound run`, so that applying the scope after a nightly publish keeps that night's results.
+
+**Acceptance criteria**
+- `hound publish` ends each requirement observation it writes with the same `[hound run <id> state <fingerprint>]` marker `hound run` writes, with the fingerprint of the result, its checks' outcomes and its evidence hashes.
+- `scope apply` then keeps those rows (they are the runs' own, not `unlisted: not_assessed`), and `scope export` leaves them out (s06 discovered work).
+- `publish` still sends every update, as before; only the observation changes.
+
+**Tests first**
+- `PlanTests.Planning_every_update_for_a_run_marks_each_observation_as_planning_only_changes_does`
+- `PublishCommandTests.Each_result_it_writes_carries_the_run_marker_so_scope_apply_and_export_leave_it_to_the_runs`
+
+**Functional check**
+- Publish a run's results with `hound publish`, then `scope plan` on the example scope lists no change to those rows.
+- Result (2026-11-22): `PublishFunctionalTests` publishes with `hound publish`, finds the marker on the row, and `scope plan` lists no change to `EXAMPLE-BASELINE-2026/EX-1.1`; passed in [CI run 44975475229](https://github.com/tnbozman/evidence-hound/actions/runs/44975475229). Evidence: [`docs/evidence/s07/s07-07.md`](../evidence/s07/s07-07.md).
 
 ## Discovered work
 
+- **Roles are user groups (s07-04).** CISO Assistant v4.3.4 returns HTTP 403 to administrators on POST `/api/role-assignments/`. A role on a domain is membership of that domain's built-in group, so each user carries a `roles` field and apply sets their `user_groups`. The task's "role assignments" wording and its contract test name changed to match. Folders made through the API need `create_iam_groups: true` to get those groups.
+- **Translated names.** Roles and user groups are listed by display name in the request's language. hound sends `Accept-Language: en` and maps English names to codes. A future CISO Assistant release that renames a role breaks this; the functional tests would catch it.
+- **Gated feature flags (s07-05).** `chat_mode` and `infra_config_management` exist only when the backend sets `ENABLE_CHAT` or `ENABLE_INFRA_CONFIG_MANAGEMENT`. The snapshot keeps them apart and validation reports `settings.flag_gated`. If the stack ever turns either on, it moves back.
+- **Runner image time zones (s07-02).** The chiseled runtime has no tzdata; the image copies it from the SDK stage. Check this again when the base image changes.
+- **Owed checks:** the overnight 15-minute schedule (s07-03, the person) and the tutorial on a fresh VM (s07-06, a reviewer).
+
 ## Sprint review
+
+**2026-11-22.** All seven tasks shipped with red and green commits and evidence in `docs/evidence/s07/`. s07-07 (the run marker for `hound publish`) was added during the sprint at the person's request.
+
+- **One Compose stack** pinned to CISO Assistant v4.3.4, with Caddy TLS, Docker secrets files, a locked-down runner on its own network and an optional Kafka profile. CI's smoke test brings it up, applies the example scope and watches scheduled runs publish.
+- **Scheduling** with `hound serve`: cron schedules in a time zone, jitter, no overlapping runs, missed runs caught up once.
+- **Access and settings as configuration**: `access.yaml` (users, teams, roles, service accounts, an access review in `scope plan`) and `settings.yaml` (feature flags and general settings, checked offline against a snapshot).
+- **A tutorial and template** for an organisation's private compliance repo, with a test that keeps every path and command in the tutorial real.
+
+852 unit and contract tests, 19 functional tests, 17 compose checks, 5 image checks and lint pass.
+
+What slipped: two checks only a person can do, the overnight schedule and the fresh-VM tutorial run. They are listed under Discovered work.
+
+What the feedback taught us:
+- The real stack finds what contract tests cannot. Translated role names, the 403 on role assignments, folders without IAM groups and the gated flags all came from CI's functional and smoke runs, each turned into a failing test first.
+- Run the image the way it runs in production. The missing time zone database only showed in the image, never in `dotnet test`.

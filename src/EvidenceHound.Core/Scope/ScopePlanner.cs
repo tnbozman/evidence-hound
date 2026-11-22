@@ -76,10 +76,31 @@ public static class ScopePlanner
         drift.AddRange(extra.Select(a => new ScopeDrift(a.Held.Kind, a.Held.Key, DriftReason.NotInScope, a.Managed, [])));
         if (prune)
         {
-            changes.AddRange(extra.Where(a => a.Managed && !a.Locked).Select(a => new ScopeChange(a.Held.Kind, a.Held.Key, ScopeAction.Delete, [], null)));
+            changes.AddRange(extra.Where(a => a.Managed && !a.Locked).Select(Pruned).OfType<ScopeChange>());
         }
 
         return new ScopePlan(changes, drift);
+    }
+
+    /// <summary>
+    /// How a managed object the scope no longer declares is removed: deleted, except a user, who is deactivated (once) so their history in
+    /// CISO Assistant stays attributable.
+    /// </summary>
+    private static ScopeChange? Pruned(ActualObject held)
+    {
+        if (held.Held.Kind != ScopeKind.User)
+        {
+            return new ScopeChange(held.Held.Kind, held.Held.Key, ScopeAction.Delete, [], null);
+        }
+
+        var active = held.Held.Fields.GetValueOrDefault("active");
+        if (active == "false")
+        {
+            return null;
+        }
+
+        var deactivated = held.Held with { Fields = new Dictionary<string, string>(held.Held.Fields, StringComparer.Ordinal) { ["active"] = "false" } };
+        return new ScopeChange(ScopeKind.User, held.Held.Key, ScopeAction.Update, [new FieldChange("active", active, "false")], StateOf(deactivated)) { Desired = deactivated };
     }
 
     /// <summary>
@@ -136,8 +157,11 @@ public static class ScopePlanner
     private static int? Version(IReadOnlyDictionary<string, string> fields) =>
         fields.TryGetValue("version", out var text) && int.TryParse(text, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var version) ? version : null;
 
-    /// <summary>Frameworks come from libraries and assessments are rows of an audit: neither carries a marker, nor is ever deleted.</summary>
-    private static bool Marked(ScopeKind kind) => kind is not (ScopeKind.Framework or ScopeKind.Assessment);
+    /// <summary>
+    /// Frameworks come from libraries, assessments are rows of an audit, and flags and settings are CISO Assistant's own: none carries a marker,
+    /// nor is ever deleted, and those the scope does not name are not drift.
+    /// </summary>
+    private static bool Marked(ScopeKind kind) => kind is not (ScopeKind.Framework or ScopeKind.Assessment or ScopeKind.FeatureFlag or ScopeKind.Setting);
 
     /// <summary>
     /// Objects the scope does not declare are drift when <c>hound</c> manages them, or when they are structure (domains, perimeters, systems,

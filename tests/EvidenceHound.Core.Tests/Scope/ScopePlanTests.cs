@@ -177,28 +177,29 @@ public class ScopePlanTests
 
     /// <summary>
     /// Whatever CISO Assistant holds, applying the plan and planning again leaves nothing to write, and the only drift left is objects
-    /// <c>hound</c> does not manage and must not delete.
+    /// <c>hound</c> does not manage and must not delete, and managed users it deactivated (users are kept, never deleted).
     /// </summary>
     [Property(MaxTest = 100)]
     public void Planning_against_the_result_of_applying_its_own_plan_is_empty((byte Kind, byte Key, byte Value, byte State)[] picks)
     {
+        var kinds = Enum.GetValues<ScopeKind>();
         var declared = (picks ?? []).Take(8)
-            .Select(p => Declared((ScopeKind)(p.Kind % 8), $"key-{p.Key % 4}", ("name", $"value-{p.Value % 3}")))
+            .Select(p => Declared(kinds[p.Kind % kinds.Length], $"key-{p.Key % 4}", ("name", $"value-{p.Value % 3}")))
             .DistinctBy(o => (o.Kind, o.Key))
             .ToArray();
         ActualObject[] actual = [.. (picks ?? []).Take(8).Select(p => (p.State % 4) switch
         {
-            0 => new ActualObject(Declared((ScopeKind)(p.Kind % 8), $"key-{p.Key % 4}", ("name", $"held-{p.Value % 2}")), AppliedState: null),
-            1 => Applied(Declared((ScopeKind)(p.Kind % 8), $"key-{p.Key % 4}", ("name", $"value-{p.Value % 3}"))),
-            2 => new ActualObject(Declared((ScopeKind)(p.Kind % 8), $"key-{p.Key % 4}", ("name", "edited")), "0000000000000000"),
-            _ => Applied(Declared((ScopeKind)(p.Kind % 8), $"other-{p.Key % 2}", ("name", "gone"))),
+            0 => new ActualObject(Declared(kinds[p.Kind % kinds.Length], $"key-{p.Key % 4}", ("name", $"held-{p.Value % 2}")), AppliedState: null),
+            1 => Applied(Declared(kinds[p.Kind % kinds.Length], $"key-{p.Key % 4}", ("name", $"value-{p.Value % 3}"))),
+            2 => new ActualObject(Declared(kinds[p.Kind % kinds.Length], $"key-{p.Key % 4}", ("name", "edited")), "0000000000000000"),
+            _ => Applied(Declared(kinds[p.Kind % kinds.Length], $"other-{p.Key % 2}", ("name", "gone"))),
         }).DistinctBy(a => (a.Held.Kind, a.Held.Key))];
 
         var plan = ScopePlanner.Plan(declared, actual, prune: true);
         var replan = ScopePlanner.Plan(declared, InMemoryApply(actual, declared, plan), prune: true);
 
         replan.Changes.ShouldBeEmpty();
-        replan.Drift.ShouldAllBe(d => d.Reason == DriftReason.NotInScope && !d.Managed);
+        replan.Drift.ShouldAllBe(d => d.Reason == DriftReason.NotInScope && (!d.Managed || d.Kind == ScopeKind.User));
     }
 
     /// <summary>What CISO Assistant holds once the plan is applied: created and updated objects carry their declared fields and the plan's marker.</summary>
@@ -278,7 +279,7 @@ public class ScopePlanTests
             var fields = held.TryGetValue((change.Kind, change.Key), out var before)
                 ? before.Held.Fields.ToDictionary(StringComparer.Ordinal)
                 : [];
-            var initial = declared.Single(d => (d.Kind, d.Key) == (change.Kind, change.Key)).Initial;
+            var initial = (declared.SingleOrDefault(d => (d.Kind, d.Key) == (change.Kind, change.Key)) ?? change.Desired)!.Initial;
             foreach (var field in change.Fields)
             {
                 if (field.New is null)

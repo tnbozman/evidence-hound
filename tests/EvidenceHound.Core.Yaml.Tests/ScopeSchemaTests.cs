@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using EvidenceHound.Core.Scope;
 using Json.Schema;
 using YamlDotNet.RepresentationModel;
 
@@ -26,6 +27,17 @@ public class ScopeSchemaTests
         Errors(ScopeFixture.Setup).ShouldBeEmpty();
         Errors(ScopeFixture.Controls).ShouldBeEmpty();
         Errors(ScopeFixture.Audit).ShouldBeEmpty();
+        Errors(AccessScopeTests.Access).ShouldBeEmpty();
+        Errors("custom_roles: [Evidence reviewer]\n" + AccessScopeTests.Access).ShouldBeEmpty();
+        Errors(SettingsScopeTests.Settings).ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void Settings_schema_names_the_flags_and_general_settings_of_the_snapshot()
+    {
+        var defs = JsonNode.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "files", "schemas", "scope.schema.json")))!["$defs"]!;
+        Names(defs["settings"]!["properties"]!["feature_flags"]).ShouldBe(CisoAssistantSettings.Current.FeatureFlags.Keys.Order(StringComparer.Ordinal), ignoreOrder: true);
+        Names(defs["settings"]!["properties"]!["general"]).ShouldBe(CisoAssistantSettings.Current.General.Order(StringComparer.Ordinal), ignoreOrder: true);
     }
 
     [Theory]
@@ -35,10 +47,21 @@ public class ScopeSchemaTests
     [InlineData("domains:\n  - name: D\n    perimeter: {name: P}\n    perimeters: [{name: Q}]\n")]
     [InlineData("domains:\n  - name: D\n    systems: [{name: S, type: secondary}]\n")]
     [InlineData("controls:\n  - {ref_id: AC-1, name: N, colour: blue}\n")]
+    [InlineData("users:\n  - {email: it@example.com, password: not-a-real-secret}\n")]
+    [InlineData("users:\n  - {email: it@example.com, service_account: robot}\n")]
+    [InlineData("roles:\n  - {role: approver, users: [it@example.com]}\n")]
+    [InlineData("teams:\n  - {name: IT team, colour: blue}\n")]
+    [InlineData("feature_flags:\n  third_parties: true\n")]
+    [InlineData("feature_flags:\n  tprm: yes\n")]
+    [InlineData("general:\n  openai_api_key: not-a-real-secret\n")]
+    [InlineData("general:\n  colour: blue\n")]
+    [InlineData("feature_flags: {tprm: true}\nusers: []\n")]
     public void Invalid_scope_files_fail_the_schema(string yaml)
     {
         Errors(yaml).ShouldNotBeEmpty();
     }
+
+    private static string[] Names(JsonNode? map) => [.. map!["propertyNames"]!["enum"]!.AsArray().Select(n => n!.GetValue<string>())];
 
     private static string[] Errors(string yaml)
     {

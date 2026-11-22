@@ -30,6 +30,8 @@ public static class CisoAssistantServiceCollectionExtensions
             {
                 http.BaseAddress = options.ApiUrl;
                 http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", options.Token);
+                // CISO Assistant translates built-in names (such as roles) to the request's language; hound reads them in English.
+                http.DefaultRequestHeaders.AcceptLanguage.ParseAdd("en");
             })
             .RedactLoggedHeaders(_ => true)
             .AddStandardResilienceHandler(resilience =>

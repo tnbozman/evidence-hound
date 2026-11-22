@@ -170,6 +170,7 @@ public static class HoundCli
             PlanCommand.Build(output, loggers, configuration, registry),
             PublishCommand.Build(output, loggers, configuration, registry),
             RunCommand.Build(output, loggers, configuration, registry, collectorServices),
+            ServeCommand.Build(output, loggers, configuration, registry, collectorServices),
             StatusCommand.Build(output, loggers, registry),
         };
     }
@@ -183,6 +184,7 @@ public static class HoundCli
     {
         var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { EnvironmentName = "Production" });
         builder.Configuration.AddInMemoryCollection(settings);
+        builder.Configuration.AddFileVariables();
         builder.Logging.ClearProviders();
         builder.Logging.AddFilter("System.Net.Http.HttpClient", LogLevel.Warning);
         builder.Logging.AddProvider(new StderrLoggerProvider(error));

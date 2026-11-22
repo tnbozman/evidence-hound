@@ -15,7 +15,14 @@ public sealed record RequirementRef(RequirementKey Key, SourceLine At);
 /// The organisation's structure as declared in a compliance repo's <c>scope/</c> folder: <c>setup.yaml</c>, <c>controls.yaml</c>
 /// and one file per audit under <c>audits/</c>. See <c>schemas/scope.schema.json</c>.
 /// </summary>
-public sealed record ScopeDocument(ScopeSetup Setup, IReadOnlyList<ScopeControl> Controls, IReadOnlyList<ScopeAudit> Audits);
+public sealed record ScopeDocument(ScopeSetup Setup, IReadOnlyList<ScopeControl> Controls, IReadOnlyList<ScopeAudit> Audits)
+{
+    /// <summary><c>scope/access.yaml</c>: users, teams and role assignments; empty when the repo has no such file.</summary>
+    public ScopeAccess Access { get; init; } = ScopeAccess.None;
+
+    /// <summary><c>scope/settings.yaml</c>: feature flags and general settings; empty when the repo has no such file.</summary>
+    public ScopeSettings Settings { get; init; } = ScopeSettings.None;
+}
 
 /// <summary><c>scope/setup.yaml</c>: the root folder, the frameworks to load and the domains.</summary>
 public sealed record ScopeSetup(string RootFolder, IReadOnlyList<ScopeFramework> Frameworks, IReadOnlyList<ScopeDomain> Domains)

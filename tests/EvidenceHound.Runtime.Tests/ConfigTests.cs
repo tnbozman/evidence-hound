@@ -50,6 +50,36 @@ public class ConfigTests
     }
 
     [Fact]
+    public void Scheduler_defaults_to_utc_with_five_minutes_of_jitter()
+    {
+        var config = ConfigLoader.Parse(Valid, Source, Known).Value();
+
+        config.Scheduler.TimeZone.ShouldBe(TimeZoneInfo.Utc);
+        config.Scheduler.MaxJitter.ShouldBe(TimeSpan.FromMinutes(5));
+    }
+
+    [Fact]
+    public void Scheduler_time_zone_and_jitter_are_read()
+    {
+        var config = ConfigLoader.Parse(Valid + "\nscheduler:\n  time_zone: Australia/Sydney\n  jitter_seconds: 0\n", Source, Known).Value();
+
+        config.Scheduler.TimeZone.Id.ShouldBe("Australia/Sydney");
+        config.Scheduler.MaxJitter.ShouldBe(TimeSpan.Zero);
+    }
+
+    [Theory]
+    [InlineData("  time_zone: Mars/Olympus_Mons", "config.time_zone_unknown")]
+    [InlineData("  jitter_seconds: -1", "config.jitter_invalid")]
+    [InlineData("  every: 5", "config.key_unknown")]
+    public void Scheduler_problems_are_reported_with_line(string line, string code)
+    {
+        var problem = ConfigLoader.Parse(Valid + "\nscheduler:\n" + line + "\n", Source, Known).Match(_ => throw new InvalidOperationException("parsed"), p => p[0]);
+
+        problem.Code.ShouldBe(code);
+        problem.Message.ShouldContain($"line {Valid.Split('\n').Length + 2}:");
+    }
+
+    [Fact]
     public void Single_target_is_read_as_one_item_list()
     {
         var config = ConfigLoader.Parse(Valid, Source, Known).Value();

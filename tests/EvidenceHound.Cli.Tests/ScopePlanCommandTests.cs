@@ -51,6 +51,80 @@ public sealed class ScopePlanCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Plan_with_access_yaml_sets_users_and_their_roles_and_reviews_mfa_and_service_accounts()
+    {
+        await WriteScopeAsync();
+        await File.WriteAllTextAsync(Path.Combine(ScopeDir, "access.yaml"), """
+            users:
+              - email: it@example.com
+                first_name: Alex
+                last_name: Example
+              - email: hound-runner@example.com
+                service_account: publish
+            roles:
+              - role: administrator
+                domain: Global
+                users: [it@example.com]
+              - role: analyst
+                domain: Example Pty Ltd
+                users: [hound-runner@example.com]
+            """, _ct);
+        EmptyInstance();
+        List("users",
+            new JsonObject { ["id"] = "u-it", ["email"] = "it@example.com", ["is_active"] = true, ["has_mfa_enabled"] = false, ["user_groups"] = new JsonArray() },
+            new JsonObject { ["id"] = "u-run", ["email"] = "hound-runner@example.com", ["is_active"] = true, ["has_mfa_enabled"] = false, ["user_groups"] = new JsonArray(new JsonObject { ["id"] = "g-adm", ["str"] = "Global - Administrator" }) });
+        List("user-groups", new JsonObject { ["id"] = "g-adm", ["name"] = "Global - Administrator", ["folder"] = new JsonObject { ["id"] = "f-global", ["str"] = "Global" }, ["builtin"] = true });
+        List("roles", new JsonObject { ["id"] = "r-adm", ["name"] = "Administrator", ["builtin"] = true });
+        List("role-assignments", new JsonObject
+        {
+            ["id"] = "ra-adm",
+            ["name"] = "BI-RA-ADM",
+            ["role"] = new JsonObject { ["id"] = "r-adm", ["str"] = "Administrator" },
+            ["user"] = null,
+            ["user_group"] = new JsonObject { ["id"] = "g-adm", ["str"] = "BI-UG-ADM" },
+            ["perimeter_folders"] = new JsonArray(new JsonObject { ["id"] = "f-global", ["str"] = "Global" }),
+            ["builtin"] = true,
+        });
+
+        var exitCode = await Plan();
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var markdown = _output.ToString();
+        // A role is membership of the domain's group for it, so it shows as the user's roles; the runner leaves the administrators group.
+        markdown.ShouldContain("| Update | user | it@example.com |");
+        markdown.ShouldContain("| Update | user | hound-runner@example.com |");
+        markdown.ShouldContain("roles: BI-RL-ADM on Global → BI-RL-ANA on Example Pty Ltd");
+        markdown.ShouldContain("roles: (none) → BI-RL-ADM on Global");
+        markdown.ShouldNotContain("role_assignment");
+        markdown.ShouldContain("### Access review");
+        markdown.ShouldContain("| it@example.com | has not turned on multi-factor authentication |");
+        markdown.ShouldContain("| hound-runner@example.com | holds BI-RL-ADM on Global; a publishing service account needs only analyst on the domains it publishes to |");
+    }
+
+    [Fact]
+    public async Task Plan_with_settings_yaml_changes_only_named_settings_and_lists_the_others_when_asked()
+    {
+        await WriteScopeAsync();
+        await File.WriteAllTextAsync(Path.Combine(ScopeDir, "settings.yaml"), "feature_flags:\n  tprm: false\ngeneral:\n  enforce_mfa: true\n", _ct);
+        EmptyInstance();
+        _ca.Given(Request.Create().WithPath("/api/settings/feature-flags/").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject { ["name"] = "feature-flags", ["tprm"] = true, ["bia"] = false }.ToJsonString()));
+        _ca.Given(Request.Create().WithPath("/api/settings/general/").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject { ["name"] = "general", ["value"] = new JsonObject { ["enforce_mfa"] = false, ["currency"] = "€" } }.ToJsonString()));
+
+        var exitCode = await Plan("--show-unmanaged");
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var markdown = _output.ToString();
+        markdown.ShouldContain("| Update | feature_flag | tprm | value: true → false |");
+        markdown.ShouldContain("| Update | setting | enforce_mfa | value: false → true |");
+        markdown.ShouldContain("### Unmanaged settings");
+        markdown.ShouldContain("| feature_flag | bia | false |");
+        markdown.ShouldContain("| setting | currency | \"€\" |");
+        markdown.ShouldNotContain("| feature_flag | tprm | true |");
+    }
+
+    [Fact]
     public async Task Plan_as_json_lists_changes_field_by_field_and_drift()
     {
         await WriteScopeAsync();
@@ -317,7 +391,7 @@ public sealed class ScopePlanCommandTests : IDisposable
     private void EmptyInstance(JsonObject[]? perimeters = null, JsonObject[]? folders = null)
     {
         List("folders", [new JsonObject { ["id"] = "f-global", ["name"] = "Global", ["parent_folder"] = null }, .. folders ?? []]);
-        foreach (var resource in new[] { "users", "actors", "frameworks", "loaded-libraries", "assets", "compliance-assessments", "evidences", "applied-controls", "requirement-assessments" })
+        foreach (var resource in new[] { "users", "actors", "frameworks", "loaded-libraries", "assets", "compliance-assessments", "evidences", "applied-controls", "requirement-assessments", "teams", "roles", "role-assignments", "user-groups" })
         {
             List(resource);
         }

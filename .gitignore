@@ -21,6 +21,7 @@ dev/ciso-assistant/db/
 *.env
 .env*
 !.env.example
+!examples/compliance-repo/deploy/deploy.env
 .clica.env
 .mcp.env
 

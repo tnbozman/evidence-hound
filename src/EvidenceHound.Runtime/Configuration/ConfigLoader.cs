@@ -14,7 +14,8 @@ namespace EvidenceHound.Runtime.Configuration;
 /// </summary>
 public static partial class ConfigLoader
 {
-    private static readonly string[] TopKeys = ["ciso_assistant", "evidence", "collectors", "target", "targets", "scope"];
+    private static readonly string[] TopKeys = ["ciso_assistant", "evidence", "scheduler", "collectors", "target", "targets", "scope"];
+    private static readonly string[] SchedulerKeys = ["time_zone", "jitter_seconds"];
     private static readonly string[] CisoAssistantKeys = ["url", "token", "transport", "kafka_bootstrap_servers"];
     private static readonly string[] EvidenceKeys = ["root", "retention_days", "period_retention_years"];
     private static readonly string[] CollectorKeys = ["name", "type", "schedule", "settings", "secrets"];
@@ -66,11 +67,37 @@ public static partial class ConfigLoader
         var collectors = Required(root, "collectors", at).Bind(node => ParseCollectors(node, at, knownTypes));
         var targets = ParseTargets(root, at);
         var scope = OptionalScalar(root, "scope", at).Map(node => node.Value is "" ? "" : at.FullPath(node.Value!));
+        var scheduler = Child(root, "scheduler") is null
+            ? Result.Ok(SchedulerConfig.Default)
+            : Section(root, "scheduler", at).Bind(map => ParseScheduler(map, at));
 
-        Problem[] problems = [.. unknown, .. ProblemsOf(ca), .. ProblemsOf(evidence), .. ProblemsOf(collectors), .. ProblemsOf(targets), .. ProblemsOf(scope)];
+        Problem[] problems = [.. unknown, .. ProblemsOf(ca), .. ProblemsOf(evidence), .. ProblemsOf(scheduler), .. ProblemsOf(collectors), .. ProblemsOf(targets), .. ProblemsOf(scope)];
         return problems.Length > 0
             ? Result.Fail<DeploymentConfig>(problems)
-            : ca.Bind(c => evidence.Bind(e => collectors.Bind(l => targets.Bind(t => scope.Map(folder => new DeploymentConfig(c, e, l, t) { Scope = folder.Length > 0 ? folder : null })))));
+            : ca.Bind(c => evidence.Bind(e => collectors.Bind(l => targets.Bind(t => scheduler.Bind(s => scope.Map(folder =>
+                new DeploymentConfig(c, e, l, t) { Scope = folder.Length > 0 ? folder : null, Scheduler = s }))))));
+    }
+
+    /// <summary><c>scheduler</c>: the IANA time zone schedules are read in (default UTC) and the most a run is delayed by (default 300 seconds).</summary>
+    private static Result<SchedulerConfig> ParseScheduler(YamlMappingNode map, Locator at)
+    {
+        var zone = OptionalScalar(map, "time_zone", at).Bind(node => node.Value switch
+        {
+            "" => Result.Ok(SchedulerConfig.Default.TimeZone),
+            _ when TimeZoneInfo.TryFindSystemTimeZoneById(node.Value!, out var found) => Result.Ok(found),
+            _ => Result.Fail<TimeZoneInfo>(at.Problem(node.Start, "config.time_zone_unknown", $"unknown time zone '{node.Value}'; use an IANA name such as Australia/Sydney or UTC.")),
+        });
+        var jitter = OptionalScalar(map, "jitter_seconds", at).Bind(node => node.Value switch
+        {
+            "" => Result.Ok(SchedulerConfig.Default.MaxJitter),
+            _ when int.TryParse(node.Value, NumberStyles.None, CultureInfo.InvariantCulture, out var seconds) && seconds <= 3600 => Result.Ok(TimeSpan.FromSeconds(seconds)),
+            _ => Result.Fail<TimeSpan>(at.Problem(node.Start, "config.jitter_invalid", "'jitter_seconds' must be a whole number of seconds from 0 to 3600.")),
+        });
+
+        Problem[] problems = [.. UnknownKeys(map, SchedulerKeys, at), .. ProblemsOf(zone), .. ProblemsOf(jitter)];
+        return problems.Length > 0
+            ? Result.Fail<SchedulerConfig>(problems)
+            : zone.Bind(z => jitter.Map(j => new SchedulerConfig(z, j)));
     }
 
     /// <summary><c>targets</c>, a list, or a single <c>target</c> read as a list of one; never both, never empty, one target per audit.</summary>

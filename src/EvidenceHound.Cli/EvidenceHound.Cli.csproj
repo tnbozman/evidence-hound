@@ -3,6 +3,8 @@
     <OutputType>Exe</OutputType>
     <AssemblyName>hound</AssemblyName>
     <RootNamespace>EvidenceHound.Cli</RootNamespace>
+    <!-- The runner image publishes for one of these, so native libraries for other platforms stay out of it. -->
+    <RuntimeIdentifiers>linux-x64;linux-arm64</RuntimeIdentifiers>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" />

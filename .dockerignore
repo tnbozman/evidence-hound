@@ -1,0 +1,12 @@
+# Keep the runner image build context small and free of local data.
+**/bin/
+**/obj/
+.git/
+.dev/
+.vs/
+.vscode/
+test-results/
+evidence/
+manual/
+**/*.env
+**/.env*

@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=../../../schemas/scope.schema.json
+# CISO Assistant's feature flags and general settings, by name (docs/scope.md#settingsyaml). Only what is named here
+# changes; `hound scope plan --show-unmanaged` lists the rest with their current values.
+# Never put a secret here (such as openai_api_key); set those in CISO Assistant itself.
+feature_flags:
+  # Audits, controls and evidence: the heart of the compliance work.
+  compliance: true
+  # Third-party records move here from the spreadsheet.
+  tprm: true
+  # EU regulations Example Pty Ltd is not subject to.
+  dora: false
+  nis2: false
+
+general:
+  # Every person must turn on MFA at their first sign-in (Essential Eight: multi-factor authentication).
+  enforce_mfa: true

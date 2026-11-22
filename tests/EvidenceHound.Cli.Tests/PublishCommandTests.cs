@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using EvidenceHound.Core.Planning;
 using Microsoft.Extensions.Logging;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
@@ -127,6 +128,18 @@ public sealed class PublishCommandTests : IDisposable
         (report["sent"]!.GetValue<int>(), report["failed"]!.GetValue<int>()).ShouldBe((10, 0));
         _ca.LogEntries.ShouldAllBe(e => e.RequestMessage!.Headers!["Authorization"][0] == $"Token {Token}");
         _logs.Messages.ShouldContain("Published to CISO Assistant: 10 sent, 0 skipped, 0 failed");
+    }
+
+    [Fact]
+    public async Task Each_result_it_writes_carries_the_run_marker_so_scope_apply_and_export_leave_it_to_the_runs()
+    {
+        FakeEverything();
+
+        (await Publish(Settings())).ShouldBe(ExitCodes.Ok);
+
+        var patches = _ca.LogEntries.Where(e => e.RequestMessage!.Method == "PATCH" && e.RequestMessage.Path.StartsWith("/api/requirement-assessments/", StringComparison.Ordinal)).ToArray();
+        patches.ShouldNotBeEmpty();
+        patches.ShouldAllBe(e => RowState.ReadMark(JsonNode.Parse(e.RequestMessage!.Body!)!["observation"]!.GetValue<string>()) != null);
     }
 
     [Fact]

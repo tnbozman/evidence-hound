@@ -22,9 +22,12 @@ public sealed class FileSecretProvider : ISecretProvider
     {
         ArgumentNullException.ThrowIfNull(reference);
         return File.Exists(reference.Name)
-            ? Result.Ok(new Secret(TrimOneNewline(File.ReadAllText(reference.Name))))
+            ? Result.Ok(new Secret(ReadSecretFile(reference.Name)))
             : SecretProblems.Missing(reference, "the file does not exist");
     }
+
+    /// <summary>Reads a secrets file as Docker writes them: the contents without one trailing newline.</summary>
+    public static string ReadSecretFile(string path) => TrimOneNewline(File.ReadAllText(path));
 
     private static string TrimOneNewline(string text) =>
         text.EndsWith("\r\n", StringComparison.Ordinal) ? text[..^2]

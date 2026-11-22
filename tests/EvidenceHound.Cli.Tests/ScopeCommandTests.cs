@@ -103,6 +103,28 @@ public sealed class ScopeCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Validate_reads_access_yaml_and_rejects_a_password_in_it()
+    {
+        await WriteScopeAsync();
+        await File.WriteAllTextAsync(Path.Combine(ScopeDir, "access.yaml"), """
+            users:
+              - email: it@example.com
+                password: not-a-real-secret
+            roles:
+              - role: administrator
+                domain: Global
+                users: [it@example.com]
+            """, _ct);
+
+        var exitCode = await Run("scope", "validate", ScopeDir);
+
+        exitCode.ShouldBe(ExitCodes.Configuration);
+        _error.ToString().ShouldContain($"{Path.Combine(ScopeDir, "access.yaml")} line 3");
+        _error.ToString().ShouldContain("scope.secret_in_file");
+        _error.ToString().ShouldNotContain("not-a-real-secret");
+    }
+
+    [Fact]
     public async Task Missing_setup_file_is_reported()
     {
         Directory.CreateDirectory(ScopeDir);
