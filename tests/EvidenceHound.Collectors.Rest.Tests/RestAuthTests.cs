@@ -63,7 +63,7 @@ public sealed class RestAuthTests : IDisposable
               first:
                 get: v1/first
                 items: $.items
-                vars: { first_done: $.items[0].id }
+                vars: { first_done: "$.items[0].id" }
               second:
                 get: v1/second?after=${first_done}
                 items: $.items

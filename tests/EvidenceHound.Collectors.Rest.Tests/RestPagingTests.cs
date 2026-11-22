@@ -1,5 +1,5 @@
-using EvidenceHound.Collectors.Rest.Engine;
 using System.Text.Json.Nodes;
+using EvidenceHound.Collectors.Rest.Engine;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 using WireMock.Server;
@@ -75,8 +75,8 @@ public sealed class RestPagingTests : IDisposable
     public async Task Follows_the_link_header()
     {
         _api.Given(Request.Create().WithPath("/v1/things")).AtPriority(10).RespondWith(Response.Create().WithStatusCode(200)
-            .WithHeader("Link", $"<{_api.Url}/v1/things?page=2>; rel=\"next\", <{_api.Url}/v1/things?page=9>; rel=\"last\"").WithBody(new JsonArray(Ids(1)).ToJsonString()));
-        _api.Given(Request.Create().WithPath("/v1/things").WithParam("page", "2")).RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonArray(Ids(2)).ToJsonString()));
+            .WithHeader("Link", $"<{_api.Url}/v1/things?page=2>; rel=\"next\", <{_api.Url}/v1/things?page=9>; rel=\"last\"").WithBody(Ids(1).ToJsonString()));
+        _api.Given(Request.Create().WithPath("/v1/things").WithParam("page", "2")).RespondWith(Response.Create().WithStatusCode(200).WithBody(Ids(2).ToJsonString()));
 
         var snapshot = await Run("paging: { style: link_header }", items: "$");
 

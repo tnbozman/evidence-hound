@@ -46,11 +46,12 @@ public sealed class RestRateLimitTests : IDisposable
     [Fact]
     public async Task Requests_are_spaced_by_the_rate_limit()
     {
-        _api.Given(Request.Create().WithPath("/v1/things")).RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject { ["items"] = new JsonArray(), ["next"] = "v1/things?p=2" }.ToJsonString()));
+        _api.Given(Request.Create().WithPath("/v1/things")).AtPriority(10).RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject { ["items"] = new JsonArray(), ["next"] = "v1/things?p=2" }.ToJsonString()));
         _api.Given(Request.Create().WithPath("/v1/things").WithParam("p", "2")).AtPriority(1).RespondWith(Response.Create().WithStatusCode(200).WithBody("""{"items":[]}"""));
         var clock = new TestClock();
         var profile = Engines.Profile(Things.Replace("items: $.items", "items: $.items\n    paging: { style: next_link, next: $.next }", StringComparison.Ordinal))
-            with { Connection = Engines.Profile(Things).Connection with { RateLimit = new EvidenceHound.Collectors.Rest.Profiles.RateLimit(2, 2) } };
+            with
+        { Connection = Engines.Profile(Things).Connection with { RateLimit = new EvidenceHound.Collectors.Rest.Profiles.RateLimit(2, 2) } };
 
         await Engines.RunAsync(profile, _api, clock);
 

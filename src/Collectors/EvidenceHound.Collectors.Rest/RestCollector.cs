@@ -1,4 +1,5 @@
 using System.Reflection;
+using EvidenceHound.Collectors.Rest.Engine;
 using EvidenceHound.Collectors.Rest.Profiles;
 using EvidenceHound.Core.Checks;
 using EvidenceHound.Core.Results;
@@ -20,6 +21,15 @@ public static class RestSettings
 public sealed class RestCollector : ICollector, IInstanceValidator
 {
     public const string TypeName = "rest";
+
+    private readonly IDelay _delay;
+
+    public RestCollector()
+        : this(SystemDelay.Instance)
+    {
+    }
+
+    internal RestCollector(IDelay delay) => _delay = delay;
 
     public string Type => TypeName;
 
@@ -47,16 +57,47 @@ public sealed class RestCollector : ICollector, IInstanceValidator
     public IReadOnlyList<Problem> ValidateInstance(CollectorSettings settings, IReadOnlyCollection<string> secrets) =>
         Load(settings).Match(loaded => Problems(loaded.Profile, settings, secrets), problems => problems);
 
-    public Task<Result<CollectionResult>> CollectAsync(CollectorContext context, CancellationToken cancellationToken)
+    public async Task<Result<CollectionResult>> CollectAsync(CollectorContext context, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(context);
         cancellationToken.ThrowIfCancellationRequested();
-        return Task.FromResult(Load(context.Settings).Bind(loaded => Problems(loaded.Profile, context.Settings, [.. context.Secrets.Keys]) switch
+        var loaded = Load(context.Settings);
+        if (loaded is not Result<LoadedProfile>.Ok { Value.Profile: var profile })
         {
-            [] => Result.Fail<CollectionResult>(new Problem("rest.not_built", "Collection by profile is not built yet.")),
-            var problems => UnableToAssess(loaded.Profile, problems, context),
-        }));
+            return Result.Fail<CollectionResult>(((Result<LoadedProfile>.Fail)loaded).Errors);
+        }
+
+        return Problems(profile, context.Settings, [.. context.Secrets.Keys]) switch
+        {
+            [] => await CollectValidAsync(profile, context, cancellationToken).ConfigureAwait(false),
+            var problems => UnableToAssess(profile, problems, context),
+        };
     }
+
+    /// <summary>Runs every query and saves each one that was read as one evidence file.</summary>
+    private async Task<Result<CollectionResult>> CollectValidAsync(Profile profile, CollectorContext context, CancellationToken cancellationToken)
+    {
+        var values = InstanceValuesOf(profile, context);
+        var engine = new QueryEngine(context.HttpClients.CreateClient(TypeName), context.Clock, _delay);
+        var snapshot = await engine.CollectAsync(profile, values, cancellationToken).ConfigureAwait(false);
+        var secrets = context.Secrets.Values.ToArray();
+        var files = snapshot.Queries.Values
+            .OfType<QueryResult.Collected>()
+            .Where(q => !q.IsBootstrap)
+            .Select(q => QueryEvidence.File(q, values.IncludeIdentities, secrets))
+            .OfType<Result<CollectedEvidence>.Ok>()
+            .Select(f => f.Value)
+            .ToArray();
+        return Result.Ok(new CollectionResult([], files, []));
+    }
+
+    private static InstanceValues InstanceValuesOf(Profile profile, CollectorContext context) => new(
+        profile.Parameters
+            .Select(p => (p.Name, Value: context.Settings.Find(p.Name) ?? p.Default))
+            .Where(p => p.Value is not null)
+            .ToDictionary(p => p.Name, p => p.Value!, StringComparer.Ordinal),
+        context.Secrets,
+        bool.TryParse(context.Settings.Find(RestSettings.IncludeIdentities), out var include) && include);
 
     private static Result<LoadedProfile> Load(CollectorSettings settings) =>
         settings.Find(RestSettings.Profile) is { Length: > 0 } name

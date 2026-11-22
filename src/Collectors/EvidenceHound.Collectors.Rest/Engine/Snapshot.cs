@@ -12,6 +12,9 @@ public abstract record QueryResult(string Name)
         public IReadOnlyList<string> Identities { get; init; } = [];
 
         public bool IsBootstrap { get; init; }
+
+        /// <summary>The first answer's whole body, where variables are read from. Not saved as evidence.</summary>
+        public JsonNode? First { get; init; }
     }
 
     /// <summary>The API answered with a status the profile lists in <c>optional_on</c>, such as a missing licence.</summary>
