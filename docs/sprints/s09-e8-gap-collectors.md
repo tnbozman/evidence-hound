@@ -740,6 +740,30 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 
 **Order:** after the first usable onboarding path (s09-21, s09-26, s09-22, s09-24).
 
+### s09-31 Draft organisation skills from onboarding (added 2026-11-22)
+- [ ] Done
+
+**Story:** As a GRC team member, I want onboarding to help me write skills about my own organisation (its business, risk appetite, IT and AI landscape and conventions), so that later onboarding and `hound explain` give advice that fits us rather than generic advice.
+
+**Acceptance criteria**
+- `hound skill draft` (and an optional last step of environment onboarding, s09-28) asks short questions and reads what the config repo already holds (the capability map, systems, suppliers, AI systems in use, naming and approval conventions), then drafts one or more organisation skills, for example `organisation-profile`, `risk-appetite`, `it-landscape` and `ai-landscape`, each tagged with the steps it applies to (`supplier`, `system`, `applicability`, `explain`).
+- Drafts are written to the organisation skills folder in the private config repo (`/config/skills`, s09-26), never anywhere in this repo. The person reviews, edits and commits them; nothing is used until it is in that folder and passes `hound skill validate`.
+- Everything sent to the model passes the same gate as onboarding (s09-21): the outbound guard, the deny terms, the budget, the session record and `--show-requests`. A draft that holds a secret, tenant ID, host name, IP address or a person's details is refused by `hound skill validate` with `skill.sensitive_content`, and the draft step strips those before writing.
+- Each draft carries a version, starting at 1; re-drafting an existing skill shows a diff and bumps the version. Onboarding records (s09-24) and `hound explain` summaries (s09-30) already list each skill's source, version and SHA-256, so the organisation skills used are traceable.
+- `--no-model` writes the same skills as templates with the questions as headings, for teams without a model key.
+
+**Tests first**
+- `OrganisationSkillTests.Draft_reads_the_capability_map_systems_and_suppliers`
+- `OrganisationSkillTests.Sensitive_content_is_stripped_and_refused`
+- `OrganisationSkillTests.Redraft_shows_a_diff_and_bumps_the_version`
+- `SkillDraftCommandTests.Writes_only_to_the_organisation_skills_folder`
+- `SkillDraftCommandTests.No_model_writes_templates`
+
+**Functional check**
+- With a fake model, `hound skill draft --skills <temp>` on the example repo writes draft skills that pass `hound skill validate`, and `--show-requests` shows no secret or identifier.
+
+**Order:** after s09-30.
+
 ## Discovered work
 
 - Open items from s08's discovered work (trial token refresh, the seed's compliance owner, HTTP logging at `info`, wizard prompts, trial re-runs, evidence on applied controls, the "unlisted rule" wording, `HOUND_CA_URL` in the dev container) are listed in [s08](s08-sophos-veeam-collectors.md#discovered-work); pick them up here or in s12.
