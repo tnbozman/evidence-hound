@@ -111,3 +111,12 @@ setup() {
   run grep -rnE 'exec[^|]* backend python manage\.py' "$dir" "$root/docs" --include='*.sh' --include='*.md' --include='*.yml'
   [ "$status" -eq 1 ]
 }
+
+@test "the template compliance repo's deploy folder validates with the stack and adds its override" {
+  repo="$root/examples/compliance-repo"
+  # deploy.env names the override by its path on the host; here it is the template's copy.
+  files="$dir/compose.yml:$repo/deploy/compose.override.yml"
+  run env COMPOSE_FILE="$files" docker compose --project-directory "$dir" --env-file "$repo/deploy/deploy.env" config --quiet
+  [ "$status" -eq 0 ]
+  grep -Eq '^COMPOSE_FILE=compose\.yml:/opt/compliance/deploy/compose\.override\.yml$' "$repo/deploy/deploy.env"
+}

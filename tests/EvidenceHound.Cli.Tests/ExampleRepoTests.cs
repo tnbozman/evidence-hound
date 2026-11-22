@@ -11,6 +11,8 @@ public sealed partial class ExampleRepoTests : IDisposable
     private readonly RecordingLoggerProvider _logs = new();
     private readonly CancellationToken _ct = TestContext.Current.CancellationToken;
 
+    private static readonly string[] RequiredDeploySettings = ["CA_VERSION", "CA_HOSTNAME", "TZ", "HOUND_RUNNER_IMAGE", "HOUND_CONFIG_DIR", "HOUND_SECRETS_DIR", "COMPOSE_FILE"];
+
     private static string Repo => Path.Combine(RepoRoot, "examples", "compliance-repo");
 
     [Fact]
@@ -31,9 +33,58 @@ public sealed partial class ExampleRepoTests : IDisposable
         [
             "README.md", "CLAUDE.md", "hound.yaml", ".github/workflows/compliance.yml", "manual-sources/README.md",
             "scope/setup.yaml", "scope/controls.yaml", "mappings/essential-eight-2023.yaml", "frameworks/essential-eight-2023.json",
+            "scope/access.yaml", "scope/settings.yaml", "deploy/deploy.env", "deploy/compose.override.yml", "deploy/README.md", ".gitignore",
         ];
 
         expected.Where(f => !File.Exists(Path.Combine(Repo, f))).ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void Deploy_env_sets_only_documented_non_secret_settings_and_every_one_the_stack_requires()
+    {
+        var documented = Settings(Path.Combine(RepoRoot, "deploy", "compose", ".env.example"));
+        var deploy = Settings(Path.Combine(Repo, "deploy", "deploy.env"));
+
+        deploy.Keys.Except(documented.Keys).ShouldBeEmpty("deploy.env sets only settings .env.example documents");
+        RequiredDeploySettings.Except(deploy.Keys).ShouldBeEmpty();
+        deploy["CA_VERSION"].ShouldBe(documented["CA_VERSION"], "the template pins the release the stack is tested with");
+        deploy.Keys.Where(k => SecretName().IsMatch(k)).ShouldBeEmpty("secrets are files in HOUND_SECRETS_DIR, never settings");
+    }
+
+    [Theory]
+    [InlineData(".env")]
+    [InlineData("deploy/.env")]
+    [InlineData("secrets/postgres_password")]
+    [InlineData("deploy/secrets/hound_ca_token")]
+    [InlineData("m365.pfx")]
+    [InlineData("deploy/client.pem")]
+    [InlineData("tls.key")]
+    [InlineData("caddy-root.crt")]
+    [InlineData("evidence/m365/2026-01-01/run.json")]
+    [InlineData("exports/backup-report.xlsx")]
+    [InlineData("users.csv")]
+    public void Gitignore_excludes_secret_and_evidence_paths(string path)
+    {
+        Ignored(path).ShouldBeTrue($"{path} is ignored");
+    }
+
+    [Theory]
+    [InlineData("deploy/deploy.env")]
+    [InlineData("deploy/compose.override.yml")]
+    [InlineData("scope/access.yaml")]
+    [InlineData("documents/identity-policy.pdf")]
+    public void Gitignore_keeps_the_files_the_repo_holds(string path)
+    {
+        Ignored(path).ShouldBeFalse($"{path} is kept");
+    }
+
+    [Fact]
+    public void The_workflow_scans_every_change_for_secrets()
+    {
+        var workflow = File.ReadAllText(Path.Combine(Repo, ".github", "workflows", "compliance.yml"));
+
+        workflow.ShouldContain("gitleaks/gitleaks-action@");
+        workflow.ShouldContain("fetch-depth: 0");
     }
 
     [Fact]
@@ -94,7 +145,7 @@ public sealed partial class ExampleRepoTests : IDisposable
         _logs.Dispose();
     }
 
-    private static string RepoRoot
+    internal static string RepoRoot
     {
         get
         {
@@ -108,6 +159,37 @@ public sealed partial class ExampleRepoTests : IDisposable
         }
     }
 
+    /// <summary>Whether the template's own .gitignore ignores a path, as git decides it, with no other ignore rules.</summary>
+    private static bool Ignored(string path)
+    {
+        var info = new System.Diagnostics.ProcessStartInfo("git", ["-c", "core.excludesFile=", "check-ignore", "--no-index", "-q", path])
+        {
+            WorkingDirectory = Repo,
+            RedirectStandardError = true,
+        };
+        // Only the template's .gitignore applies: GIT_DIR points at a repository of its own, so the parent repo's rules do not.
+        var gitDir = Directory.CreateTempSubdirectory("hound-gitignore").FullName;
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("git", ["init", "-q", gitDir]))!.WaitForExit();
+        info.Environment["GIT_DIR"] = Path.Combine(gitDir, ".git");
+        info.Environment["GIT_WORK_TREE"] = Repo;
+        using var git = System.Diagnostics.Process.Start(info)!;
+        git.WaitForExit();
+        Directory.Delete(gitDir, recursive: true);
+        return git.ExitCode switch
+        {
+            0 => true,
+            1 => false,
+            _ => throw new InvalidOperationException($"git check-ignore failed: {git.StandardError.ReadToEnd()}"),
+        };
+    }
+
+    private static Dictionary<string, string> Settings(string file) =>
+        File.ReadLines(file)
+            .Select(l => l.Trim())
+            .Where(l => l.Length > 0 && !l.StartsWith('#'))
+            .Select(l => l.Split('=', 2))
+            .ToDictionary(p => p[0], p => p.Length > 1 ? p[1] : "", StringComparer.Ordinal);
+
     private static string[] WithoutSchemaComment(string path) =>
         [.. File.ReadAllLines(path).Where(l => !l.StartsWith("# yaml-language-server:", StringComparison.Ordinal))];
 
@@ -116,6 +198,9 @@ public sealed partial class ExampleRepoTests : IDisposable
 
     [GeneratedRegex(@"^# yaml-language-server: \$schema=(?<schema>\S+)$")]
     private static partial Regex SchemaComment();
+
+    [GeneratedRegex("^(?!.*_DIR$).*(PASSWORD|SECRET|TOKEN|_KEY$|CERTIFICATE)")]
+    private static partial Regex SecretName();
 
     [GeneratedRegex(@"\]\((?<target>[^)\s]+)\)")]
     private static partial Regex MarkdownLink();
