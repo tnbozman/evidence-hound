@@ -581,6 +581,21 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 - Record `docs/evidence/s08/s08-10.md`: date, versions, the kind of tenant, each step's and check's outcome, defects with links to their fixes. No tenant or client IDs, domains, user or device names.
 - Fix any defect test-first; correct the tutorial wherever it was wrong or unclear.
 
+### s09-27 Record a Microsoft 365 tenant with Dev Proxy and publish it scrubbed (added 2026-11-22)
+- [ ] Done
+
+**Story:** As a maintainer, I want my trial tenant's Microsoft Graph answers recorded once, scrubbed and published, so that `hound`'s Microsoft 365 tests and tutorial run offline against realistic, internally consistent data, and others can learn from it.
+
+**Background (checked 2026-11-22):** the public Dev Proxy Graph mocks (`waldekmastykarz/graph-mocks`, MIT, also published as the PnP "Microsoft Graph sandbox mocks" sample, updated for Dev Proxy v4) cover about 3,200 v1.0 endpoints, including conditional access, Intune `deviceManagement`, authentication method reports, directory roles and secure score. They are built from the Graph API documentation's examples, one example per endpoint, so the same users and devices do not appear across endpoints. Use them for response shapes and credit them; they do not replace a consistent recording.
+
+**Acceptance criteria**
+- `docs/tutorials/record-m365-with-dev-proxy.md`: step-by-step for a Business Premium trial tenant: install Dev Proxy v4, trust its root certificate in the dev container (`update-ca-certificates`), run it with `--ip-address 0.0.0.0` and `MockGeneratorPlugin`, point `hound` at it through `HTTPS_PROXY`, record a run, then replay offline with `MockResponsePlugin` (confirm that a generated file replays as is).
+- A scrub step (`hound recordings scrub` or a script under `tools/`): replaces tenant IDs, domains, user and device names, emails, IP addresses and serials with consistent fictional `example.com` values (the same input always gives the same output, so joins still work), and fails if anything from a denylist or the tenant's own domains remains. The `org-data` check runs on the result.
+- The scrubbed recording is committed as the Microsoft 365 test fixtures and used by at least one replay test; the tutorial's Microsoft 365 section can run against it offline.
+- Credits and licence notes for any reused public mocks.
+
+**Order:** after the Sophos onboarding (s09-25); needs the person's recording from s09-18.
+
 ## Discovered work
 
 - Open items from s08's discovered work (trial token refresh, the seed's compliance owner, HTTP logging at `info`, wizard prompts, trial re-runs, evidence on applied controls, the "unlisted rule" wording, `HOUND_CA_URL` in the dev container) are listed in [s08](s08-sophos-veeam-collectors.md#discovered-work); pick them up here or in s12.
