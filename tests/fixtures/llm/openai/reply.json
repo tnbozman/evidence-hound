@@ -1,0 +1,18 @@
+{
+  "id": "chatcmpl-example-0001",
+  "object": "chat.completion",
+  "created": 1795392000,
+  "model": "gpt-6.2-astra",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "{\"decision\":\"api_check\",\"reason\":\"The devices list holds each device's operating system version.\"}",
+        "refusal": null
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": { "prompt_tokens": 812, "completion_tokens": 64, "total_tokens": 876 }
+}

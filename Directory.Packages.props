@@ -4,6 +4,10 @@
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
   <ItemGroup Label="Runtime">
+    <!-- Onboarding only (EvidenceHound.Onboarding): the model SDKs never reach the runner, the core or the collectors. -->
+    <PackageVersion Include="Anthropic" Version="13.12.0" />
+    <PackageVersion Include="OpenAI" Version="2.15.0" />
+    <PackageVersion Include="JsonSchema.Net" Version="9.7.0" />
     <PackageVersion Include="Azure.Identity" Version="1.21.0" />
     <PackageVersion Include="Confluent.Kafka" Version="2.15.1" />
     <PackageVersion Include="Cronos" Version="0.13.0" />
@@ -19,7 +23,6 @@
     <PackageVersion Include="FsCheck.Xunit.v3" Version="3.6.0" />
     <!-- WireMock.Net brings Humanizer 2.x, whose locale packages pin Humanizer.Core 2.x; JsonSchema.Net needs Humanizer.Core 3.x. -->
     <PackageVersion Include="Humanizer" Version="3.0.10" />
-    <PackageVersion Include="JsonSchema.Net" Version="9.7.0" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.14" />
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.11.2" />
     <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="2.5.1" />

@@ -1,0 +1,14 @@
+{
+  "id": "chatcmpl-example-0002",
+  "object": "chat.completion",
+  "created": 1795392000,
+  "model": "gpt-6.2-astra",
+  "choices": [
+    {
+      "index": 0,
+      "message": { "role": "assistant", "content": null, "refusal": "The request was declined." },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": { "prompt_tokens": 812, "completion_tokens": 0, "total_tokens": 812 }
+}
