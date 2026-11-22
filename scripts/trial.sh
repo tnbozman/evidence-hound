@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Interactive local trial: from the dev container, with CISO Assistant already running, run Evidence Hound in a
-# container next to it and walk through the example organisation, manual evidence and controls, then Sophos.
+# container next to it. The guided steps are hound's own wizards: a new organisation (hound init), a system, a
+# control and a manual evidence source (hound add), then Sophos.
 # Guide: docs/tutorials/local-trial.md
 #
 # Usage: make trial (or scripts/trial.sh). Safe to stop and run again: finished steps are skipped.
@@ -48,7 +49,7 @@ hound() {
   local mode argv
   mode="$(cat "$state/ca-mode")"
   mapfile -t argv < <(trial_hound_argv "$image" "$(trial_network_args "$mode")" "$ws" "$(id -u):$(id -g)" "$(trial_ca_url "$mode")" "$tty" "$@")
-  show "hound $*"
+  show "hound$(printf ' %s' "${@@Q}" | sed "s/ '\([^' ]*\)'/ \1/g")"
   "${argv[@]}"
 }
 
@@ -123,55 +124,92 @@ build_image() {
 
 workspace() {
   step "3. Trial workspace in ${ws#"$root"/}"
-  if ! done_already workspace; then
-    mkdir -p "$ws/repo" "$ws/evidence" "$ws/manual/example-incident-register" "$ws/manual/example-backup-restore-test" "$ws/inbox"
-    cp -R "$root/examples/compliance-repo/." "$ws/repo/"
-    trial_render_config /trial no >"$ws/repo/hound.yaml"
-    mark_done workspace
-  fi
+  mkdir -p "$ws/repo" "$ws/evidence" "$ws/manual" "$ws/inbox"
   token
-  say "Example Pty Ltd's compliance repo is copied to repo/, with a trial hound.yaml (manual collectors, no Microsoft 365)."
-  hound no config validate hound.yaml
+  say "hound writes the organisation's compliance repo into repo/, evidence into evidence/, and secrets into secrets/."
 }
 
-example_organisation() {
-  step "4. Apply the example organisation (scope as configuration)"
-  say "The scope folder declares Example Pty Ltd's domain, controls, documents and audits. Plan first, then apply."
+# audit_ref -> the audit hound init wrote into the trial config
+audit_ref() { sed -n 's/^  compliance_assessment: *//p' "$ws/repo/hound.yaml" | tr -d '"'; }
+
+organisation() {
+  step "4. A new organisation: hound init, then apply its scope"
+  if [[ -s "$ws/repo/hound.yaml" ]]; then
+    say "Already written: repo/hound.yaml and repo/scope. Remove ${ws#"$root"/} (make trial-clean) to start again."
+  else
+    say "hound init asks about the organisation. Press Enter to take each default: the fictional Example Pty Ltd, the same"
+    say "organisation the dev container seeds, so the plan below updates its domain and adds a new audit."
+    if [[ "$yes" == 1 ]]; then
+      hound no init /trial/repo --evidence-root /trial/evidence --yes
+    else
+      hound yes init /trial/repo --evidence-root /trial/evidence
+    fi
+  fi
+  hound no config validate hound.yaml
+  apply_scope scope
+}
+
+# apply_scope STEP validates and plans the scope, then asks before applying it; STEP marks it done
+apply_scope() {
+  say "The scope folder declares the domain, systems, controls and the audit. Plan first, then apply."
   hound no scope validate scope --config hound.yaml
   hound no scope plan scope --config hound.yaml
-  if done_already scope; then say "Applied before; the plan above shows anything that changed since."; fi
   if ask "Apply this plan to CISO Assistant?"; then
     hound no scope apply scope --config hound.yaml >"$ws/scope-apply.json"
     say "Applied. The report is in ${ws#"$root"/}/scope-apply.json."
-    mark_done scope
+    mark_done "$1"
   fi
+}
+
+# add WIZARD ARGS... runs one hound add wizard: with every answer given when unattended, asking otherwise
+add() {
+  if [[ "$yes" == 1 ]]; then hound no add "$@" --yes; else hound yes add "$@"; fi
 }
 
 manual_evidence() {
   step "5. Manual evidence and controls"
-  local today file
+  local audit source=example-backup-restore-test today file system=() control=() manual=()
+  audit="$(audit_ref)"
+  if [[ "$yes" == 1 ]]; then
+    system=(--name "Example backup service" --owner it@example.com --description "Daily backups of the file share.")
+    control=(--ref-id AC-BACKUP --name "Daily backups with quarterly restore tests" --owner it@example.com --systems "Example backup service" --requirements "ISM-1511, ISM-1515")
+    manual=(--set due_days=92 --set "owner=Sam Example")
+  fi
+  if ! done_already additions; then
+    say "Add the system that holds the backups. Suggested answers: Example backup service, then Enter for the rest."
+    add system --scope scope --audit "$audit" "${system[@]}"
+    say "Declare the control the team relies on, linked to the audit's backup requirements."
+    say "Suggested answers: AC-BACKUP, Daily backups with quarterly restore tests, your email, Enter, Example backup service, ISM-1511, ISM-1515."
+    add control --scope scope --audit "$audit" "${control[@]}"
+    say "Add a manual evidence source: the system owner sends the GRC team a restore test record every quarter."
+    add collector manual --config hound.yaml --name "$source" --schedule "0 6 * * *" \
+      --set "drop_folder=/trial/manual/$source" --set checks=backup.restore_tested "${manual[@]}"
+    mark_done additions
+  fi
+  done_already scope-additions || apply_scope scope-additions
+
   today="$(date +%F)"
   file="restore-test-$today.txt"
   printf 'Example Pty Ltd restore test, %s\nRestored the example file share to a scratch folder and compared checksums: all files matched.\n' "$today" >"$ws/inbox/$file"
   say "A system owner has sent the GRC team an example restore test record: inbox/$file."
-  say "Upload it into the example-backup-restore-test source and attest it (answer the prompts: y, your name, pass, a note)."
+  say "Upload it into the $source source and attest it (answer the prompts: y, your name, pass, a note)."
   if [[ "$yes" == 1 ]]; then
-    printf 'y\nSam Example\npass\nTrial restore test.\n' | hound no manual upload --config hound.yaml --source example-backup-restore-test "/trial/inbox/$file"
+    printf 'y\nSam Example\npass\nTrial restore test.\n' | hound no manual upload --config hound.yaml --source "$source" "/trial/inbox/$file"
   else
-    hound yes manual upload --config hound.yaml --source example-backup-restore-test "/trial/inbox/$file"
+    hound yes manual upload --config hound.yaml --source "$source" "/trial/inbox/$file"
   fi
-  say "Now collect it and publish the result to the EX-E8-2026 audit."
-  hound no run --config hound.yaml --only example-backup-restore-test
+  say "Now collect it and publish the result to the $audit audit."
+  hound no run --config hound.yaml --only "$source"
   hound no status --config hound.yaml
   mark_done manual
   cat <<TEXT
 
 Look in CISO Assistant (https://localhost:8443, sign in as admin@example.com):
-  - Compliance > Audits > Essential Eight ML2 2026 > ISM-1515: the result, the observation naming who attested,
-    and the evidence example-backup-restore-test/$file.
-  - Operations > Applied controls: AC-BACKUP (declared in scope/controls.yaml) and AC-AUTO-EVIDENCE, the
+  - Compliance > Audits > $audit > ISM-1515: the result, the observation naming who attested,
+    and the evidence $source/$file.
+  - Operations > Applied controls: AC-BACKUP (added with hound add control) and AC-AUTO-EVIDENCE, the
     health control, which now has this run's health evidence.
-  - Evidence: the run's evidence, with SHA-256 hashes in its description.
+  - Assets: Example backup service, added with hound add system.
 TEXT
   ask "Seen it? Carry on to Sophos?" || { say "Stopped before Sophos. Run make trial again to add it."; exit 0; }
 }
@@ -179,28 +217,14 @@ TEXT
 sophos() {
   step "6. Add your Sophos Central tenant"
   if [[ "$yes" == 1 ]]; then say "Unattended run: stopping before Sophos, which needs your credential."; return; fi
-  say "You need a Sophos Central API credential with the Service Principal Read-Only role (docs/collectors/sophos.md)."
-  say "The client ID and secret are saved under ${ws#"$root"/}/secrets (git-ignored, mode 600) and never printed."
-  local client_id secret firmware stale
-  if [[ ! -s "$ws/secrets/sophos_client_secret" ]]; then
-    read -r -p "Client ID: " client_id
-    trial_valid_client_id "$client_id" || die "That does not look like a client ID (letters, digits and dashes)."
-    read -r -s -p "Client secret (not shown): " secret
-    echo
-    [[ -n "$secret" ]] || die "The client secret is empty."
-    (umask 077 && printf '%s' "$secret" >"$ws/secrets/sophos_client_secret")
-    unset secret
-    printf '%s\n' "$client_id" >"$state/sophos-client-id"
+  if grep -q '^    type: sophos' "$ws/repo/hound.yaml"; then
+    say "A sophos collector is already in repo/hound.yaml."
+  else
+    say "You need a Sophos Central API credential with the Service Principal Read-Only role (docs/collectors/sophos.md)."
+    say "hound asks for its client ID and secret, and for the firewall firmware versions still in support (such as 21.5, 22.0)."
+    say "The secret is not shown as you type, and is saved under ${ws#"$root"/}/secrets (git-ignored, mode 600), never printed."
+    hound yes add collector sophos --config hound.yaml --schedule "0 4 * * *" --secrets-dir /trial/secrets
   fi
-  client_id="$(cat "$state/sophos-client-id")"
-  read -r -p "Firewall firmware versions still in support [21.5, 22.0]: " firmware
-  firmware="${firmware:-21.5, 22.0}"
-  trial_valid_firmware "$firmware" || die "Firmware versions look like 21.5, 22.0."
-  read -r -p "Days an endpoint may go unseen before it is stale [14]: " stale
-  stale="${stale:-14}"
-  [[ "$stale" =~ ^[0-9]+$ ]] || die "Days must be a whole number."
-  trial_render_config /trial yes "$client_id" "$firmware" "$stale" >"$ws/repo/hound.yaml"
-  say "Added a sophos collector to repo/hound.yaml."
 
   hound no config validate hound.yaml --check-secrets
   say "A dry run signs in, reads endpoints and firewalls, stores the evidence locally and plans the updates, sending nothing."
@@ -209,7 +233,7 @@ sophos() {
     hound no run --config hound.yaml --only sophos
     hound no status --config hound.yaml
     mark_done sophos
-    say "Look at the EX-E8-2026 audit in CISO Assistant for the requirements the Sophos checks map to."
+    say "Look at the $(audit_ref) audit in CISO Assistant for the requirements the Sophos checks map to."
   fi
   say "Paste any output you want reviewed with the identifiers removed: no tenant IDs, host names, IP addresses or serial numbers."
 }
@@ -217,7 +241,7 @@ sophos() {
 preflight
 build_image
 workspace
-example_organisation
+organisation
 manual_evidence
 sophos
 step "Done"

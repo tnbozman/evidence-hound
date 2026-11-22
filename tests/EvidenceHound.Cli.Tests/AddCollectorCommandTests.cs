@@ -5,7 +5,7 @@ namespace EvidenceHound.Cli.Tests;
 /// <summary>s08-09: <c>hound add collector</c> adds a collector of any type from its own description, keeping the config as it was.</summary>
 public sealed class AddCollectorCommandTests : IDisposable
 {
-    private const string Config = """
+    private static readonly string Config = """
         # Example Pty Ltd's trial config. Everything here is made up.
         ciso_assistant:
           url: https://ciso.example.com/api/
@@ -22,9 +22,9 @@ public sealed class AddCollectorCommandTests : IDisposable
 
         """;
 
-    private const string Secret = "example-sophos-client-secret-4b7d2e";
+    private static readonly string Secret = "example-sophos-client-secret-4b7d2e";
 
-    private const string ClientId = "00000000-0000-4000-8000-0000000050d1";
+    private static readonly string ClientId = "00000000-0000-4000-8000-0000000050d1";
 
     private readonly string _root = Directory.CreateTempSubdirectory("hound-add-collector-tests-").FullName;
     private readonly StringWriter _output = new();
@@ -97,7 +97,8 @@ public sealed class AddCollectorCommandTests : IDisposable
         (await File.ReadAllTextAsync(ConfigFile, TestContext.Current.CancellationToken)).ShouldContain($"client_secret: file:{file}");
         (_output.ToString() + _error).ShouldNotContain(Secret);
         _logs.Entries.ShouldNotContain(e => e.Message.Contains(Secret, StringComparison.Ordinal));
-        (await Run("", "config", "validate", ConfigFile, "--check-secrets")).ShouldBe(ExitCodes.Ok, _error.ToString());
+        var token = new Dictionary<string, string?> { ["HOUND_CA_TOKEN"] = "fake-ca-token-for-tests" };
+        (await HoundCli.RunAsync(["config", "validate", ConfigFile, "--check-secrets"], _output, _error, configureLogging: null, token, TestContext.Current.CancellationToken)).ShouldBe(ExitCodes.Ok, _error.ToString());
     }
 
     [Fact]

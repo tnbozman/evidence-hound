@@ -1,6 +1,6 @@
 # Local trial: Evidence Hound next to your CISO Assistant
 
-This tutorial is interactive: `make trial` runs it step by step from the dev container. It takes Evidence Hound from nothing to results in CISO Assistant, using the fictional Example Pty Ltd, and then adds your own Sophos Central tenant. You need no server and no Microsoft 365 tenant. Allow an hour, most of it the first image build.
+This tutorial is interactive: `make trial` runs it step by step from the dev container. It takes Evidence Hound from nothing to results in CISO Assistant with `hound`'s own wizards ([guided setup](../guided-setup.md)): a new organisation (the fictional Example Pty Ltd, if you press Enter through the questions), a system, a control and a manual evidence source, and then your own Sophos Central tenant. You need no server and no Microsoft 365 tenant. Allow an hour, most of it the first image build.
 
 ```bash
 make trial
@@ -44,19 +44,18 @@ In both cases the API is `http://backend:8000/api/`. The token is copied from `.
 
 | Path | Holds |
 | --- | --- |
-| `repo/` | A copy of the [example compliance repo](../../examples/compliance-repo/README.md), with a trial `hound.yaml`: the manual collectors and the Essential Eight target `EX-E8-2026`, and no Microsoft 365 |
+| `repo/` | The organisation's compliance repo, as `hound init` writes it |
 | `secrets/` | The API token and, later, the Sophos client secret (folder 700, files 600) |
-| `manual/` | The manual collectors' drop folders |
+| `manual/` | The manual source's drop folder |
 | `evidence/` | Evidence and run records |
 | `inbox/` | The example export the trial uploads |
 
-The trial checks the config with `hound config validate hound.yaml`.
+## 4. A new organisation
 
-## 4. The example organisation
-
-The scope folder declares Example Pty Ltd as configuration: its domain, applied controls, documents and audits (see [scope](../scope.md)). The trial runs:
+`hound init /trial/repo` asks about the organisation: its name, a short code for ref IDs, the CISO Assistant address, the time zone, the Essential Eight maturity level, the audit's due date and the compliance owner. Press Enter to take each default, the fictional Example Pty Ltd at maturity level 2. That is the organisation the dev container seeds, so the plan updates its domain and perimeter and adds a new audit; give another name to keep them apart. It writes the config, the scope (the domain, the health control and the audit) and the Essential Eight mapping, and checks them. The trial then runs:
 
 ```bash
+hound config validate hound.yaml
 hound scope validate scope --config hound.yaml
 hound scope plan scope --config hound.yaml
 hound scope apply scope --config hound.yaml
@@ -66,26 +65,36 @@ Read the plan before you answer: it lists every object and field the apply would
 
 ## 5. Manual evidence and controls
 
-Some evidence has no API. Here a system owner has sent the GRC team a restore test record, and the trial writes an example of one to `inbox/`. You then:
+Some evidence has no API. Here a system owner sends the GRC team a restore test record every quarter. The trial walks you through three wizards, suggesting answers for each:
+
+1. `hound add system --scope scope --audit <audit>`: the system that holds the backups (Example backup service), added to the domain and the audit.
+2. `hound add control --scope scope --audit <audit>`: the control the team relies on (AC-BACKUP, daily backups with quarterly restore tests), linked to the audit's backup requirements ISM-1511 and ISM-1515.
+3. `hound add collector manual --config hound.yaml`: the manual source `example-backup-restore-test`, for the `backup.restore_tested` check. You give how often fresh evidence is due and who owns it.
+
+It plans and applies the scope again, so the system and the control reach CISO Assistant, and writes an example restore test record to `inbox/`. You then:
 
 1. **Upload and attest** it with `hound manual upload --config hound.yaml --source example-backup-restore-test …`. Answer `y`, your name, `pass` and a note.
 2. **Collect and publish**: `hound run --config hound.yaml --only example-backup-restore-test`, then `hound status --config hound.yaml`.
 3. **Look in CISO Assistant** at `https://localhost:8443`, signed in as `admin@example.com`:
-   - The Essential Eight ML2 2026 audit, requirement ISM-1515: its result, an observation naming who attested, and the uploaded evidence.
-   - The applied controls AC-BACKUP (from `scope/controls.yaml`) and AC-AUTO-EVIDENCE, the health control, which links each run's health evidence.
+   - The audit, requirement ISM-1515: its result, an observation naming who attested, and the uploaded evidence.
+   - The applied controls AC-BACKUP and AC-AUTO-EVIDENCE, the health control, which links each run's health evidence.
+   - The asset Example backup service.
 
 ## 6. Your Sophos Central tenant
 
-1. Paste the client ID, then the client secret (it is not shown). Both are saved under `.dev/trial/secrets/` and `.dev/trial/state/`, never in git.
-2. Give the firewall firmware versions still in support (see Sophos's firmware lifecycle) and the number of days an endpoint may go unseen (default 14).
-3. The trial adds a `sophos` collector to `repo/hound.yaml`, with `client_secret: file:/trial/secrets/sophos_client_secret`, then runs:
+`hound add collector sophos --config hound.yaml --secrets-dir /trial/secrets` asks for what the Sophos collector needs:
 
-   ```bash
-   hound config validate hound.yaml --check-secrets
-   hound run --config hound.yaml --only sophos --dry-run
-   hound run --config hound.yaml --only sophos
-   hound status --config hound.yaml
-   ```
+1. The credential's client ID, and the firewall firmware versions still in support (see Sophos's firmware lifecycle), such as `21.5, 22.0`. Other settings, such as `stale_agent_days` or a partner credential's `tenant_id`, are optional; add them with `--set key=value`.
+2. The client secret, which is not shown as you type. It is saved to `.dev/trial/secrets/sophos_client_secret` (mode 600), never in git, and the config references it as `file:/trial/secrets/sophos_client_secret`.
+
+The trial then runs:
+
+```bash
+hound config validate hound.yaml --check-secrets
+hound run --config hound.yaml --only sophos --dry-run
+hound run --config hound.yaml --only sophos
+hound status --config hound.yaml
+```
 
 The dry run signs in, reads endpoints and firewalls, stores the evidence locally and plans the updates, and sends nothing. The real run publishes the four Sophos checks to the requirements they map to in the Essential Eight audit.
 
@@ -93,4 +102,4 @@ If you share output for help, remove identifiers first: tenant IDs, host names, 
 
 ## Unattended
 
-`HOUND_TRIAL_YES=1 make trial` answers yes to every question. It stops before the Sophos step, which needs your credential. CI uses it to check the trial against a fresh CISO Assistant.
+`HOUND_TRIAL_YES=1 make trial` answers yes to every question and gives the wizards their answers as options (`--yes`). It stops before the Sophos step, which needs your credential. CI uses it to check the trial against a fresh CISO Assistant.

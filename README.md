@@ -52,6 +52,8 @@ The UI is at <https://localhost:8443> on your machine. To seed again (a new toke
 
 Outside the dev container, `make ca-up` starts a disposable CISO Assistant (pinned release, SQLite) and seeds it with a service-account token, then applies the fictional Example Pty Ltd scope: its libraries, perimeter, systems, audits, documents and applied controls. Open <https://localhost:8443> and sign in as `admin@example.com` (password `HOUND_CA_ADMIN_PASSWORD`, default `change-me-local-only`). Then follow [`docs/publishing.md`](docs/publishing.md) to publish the example run. `make ca-down ARGS=-v` removes it.
 
+To try the whole product step by step, run `make trial` ([local trial](docs/tutorials/local-trial.md)): it sets up a new organisation with `hound init` and `hound add` ([guided setup](docs/guided-setup.md)), adds manual evidence and controls, then your own Sophos Central tenant.
+
 ## Licence
 
 Apache-2.0. CISO Assistant itself is AGPL-3.0 and is used over its API only.

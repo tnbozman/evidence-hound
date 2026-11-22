@@ -229,11 +229,18 @@ internal static class ScopeCommands
     }
 
     /// <summary>A checked scope: its problems, a one-line summary, the parsed files, and what planning it needs from outside them.</summary>
-    private sealed record CheckedScope(IReadOnlyList<ScopeProblem> Problems, string Summary, ScopeDocument Scope, ScopeInputs Inputs);
+    internal sealed record CheckedScope(IReadOnlyList<ScopeProblem> Problems, string Summary, ScopeDocument Scope, ScopeInputs Inputs);
 
-    private static async Task<CheckedScope> ValidateAsync(
-        DirectoryInfo dir, FileInfo? configFile, CollectorRegistry registry, DateOnly today, CancellationToken cancellationToken)
+    /// <summary>
+    /// Checks the scope folder offline. <paramref name="edits"/> stands in for files by full path, so a wizard checks its change before
+    /// it writes anything.
+    /// </summary>
+    internal static async Task<CheckedScope> ValidateAsync(
+        DirectoryInfo dir, FileInfo? configFile, CollectorRegistry registry, DateOnly today, CancellationToken cancellationToken, IReadOnlyDictionary<string, string>? edits = null)
     {
+        Task<ScopeSource> ReadAsync(string path, CancellationToken ct) =>
+            edits is not null && edits.TryGetValue(Path.GetFullPath(path), out var text) ? Task.FromResult(new ScopeSource(path, text)) : ScopeCommands.ReadAsync(path, ct);
+
         var setupPath = Path.Combine(dir.ToString(), "setup.yaml");
         if (!File.Exists(setupPath))
         {
