@@ -1,0 +1,23 @@
+{
+  "items": [
+    {
+      "id": "00000000-0000-4000-8000-00000000ad01",
+      "tenant": { "id": "00000000-0000-4000-8000-0000000050a1", "name": "Example Pty Ltd" },
+      "users": [ { "id": "00000000-0000-4000-8000-00000000ae01", "name": "Alex Example" } ],
+      "profile": { "name": "Alex Example", "firstName": "Alex", "lastName": "Example", "email": "alex.admin@example.com" },
+      "roleAssignments": [ { "id": "00000000-0000-4000-8000-00000000af01", "roleId": "00000000-0000-4000-8000-00000000a501" } ],
+      "createdAt": "2026-01-12T01:00:00.000Z",
+      "updatedAt": "2026-10-02T01:00:00.000Z"
+    },
+    {
+      "id": "00000000-0000-4000-8000-00000000ad02",
+      "tenant": { "id": "00000000-0000-4000-8000-0000000050a1", "name": "Example Pty Ltd" },
+      "users": [ { "id": "00000000-0000-4000-8000-00000000ae02", "name": "Sam Example" } ],
+      "profile": { "name": "Sam Example", "firstName": "Sam", "lastName": "Example", "email": "sam.it@example.com" },
+      "roleAssignments": [ { "id": "00000000-0000-4000-8000-00000000af02", "roleId": "00000000-0000-4000-8000-00000000a502" } ],
+      "createdAt": "2026-02-03T01:00:00.000Z",
+      "updatedAt": "2026-10-02T01:00:00.000Z"
+    }
+  ],
+  "pages": { "current": 1, "size": 2, "total": 2, "items": 3, "maxSize": 100 }
+}

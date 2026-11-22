@@ -1,0 +1,9 @@
+{
+  "items": [
+    { "id": "00000000-0000-4000-8000-00000000a501", "name": "Super Admin", "type": "predefined", "principalType": "user", "description": "Full access" },
+    { "id": "00000000-0000-4000-8000-00000000a502", "name": "Admin", "type": "predefined", "principalType": "user", "description": "Manage settings" },
+    { "id": "00000000-0000-4000-8000-00000000a503", "name": "Read-only", "type": "predefined", "principalType": "user", "description": "View only" },
+    { "id": "00000000-0000-4000-8000-00000000a504", "name": "Service Principal Read-Only", "type": "predefined", "principalType": "service", "description": "API read only" }
+  ],
+  "pages": { "current": 1, "size": 100, "total": 1, "items": 4, "maxSize": 100 }
+}

@@ -1,0 +1,93 @@
+# Sophos Central: the firewalls it manages, and its admins and their roles. Replaces the coded sophos collector (s09-13).
+# Needs a tenant-level API credential (Sophos Central > Global settings > API credentials, role Service Principal Read-Only).
+# Partner and organization credentials are not supported: create the credential in the tenant itself.
+profile: sophos-central
+version: "1.0.0"
+source: evidence-hound/profiles/sophos-central.yaml
+description: Sophos Central firewalls (firmware) and admins (Super Admin count), read with a tenant API credential.
+requires:
+  hound: ">=0.1"
+
+parameters:
+  client_id:
+    type: string
+    required: true
+    description: The API credential's client ID.
+  id_url:
+    type: url
+    default: https://id.sophos.com/
+    description: Sophos ID, where the token comes from.
+  api_url:
+    type: url
+    default: https://api.central.sophos.com/
+    description: The global Sophos Central API, which answers whoami.
+  supported_firewall_firmware:
+    type: list
+    required: true
+    description: Supported SFOS versions, for example "21.0, 21.5". 21.0 covers 21.0.1 and later 21.0 builds.
+  super_admin_max:
+    type: int
+    default: 2
+    description: Most Sophos Central admins allowed to hold Super Admin.
+
+secrets:
+  client_secret:
+    required: true
+    description: The API credential's client secret.
+
+connection:
+  base_url: ${api_url}
+  allowed_hosts: ["*.central.sophos.com", "${id_url}", "${api_url}"]
+  auth:
+    type: oauth2_client_credentials
+    token_url: ${id_url}api/v2/oauth2/token
+    client_id: ${client_id}
+    client_secret: ${secrets.client_secret}
+    scope: token
+  rate_limit:
+    per_second: 5
+    max_retries: 3
+
+bootstrap:
+  whoami:
+    get: whoami/v1
+    vars:
+      tenant_id: $.id
+      data_region: $.apiHosts.dataRegion
+
+queries:
+  firewalls:
+    get: ${data_region}/firewall/v1/firewalls
+    headers: { X-Tenant-ID: "${tenant_id}" }
+    query: { pageSize: "100", pageTotal: "true" }
+    paging: { style: page_number, page: page, total_pages: $.pages.total }
+    items: $.items
+    identities: [hostname, name, serialNumber, ipv4Addresses, ipv6Addresses, macAddresses, externalIpv4Addresses, externalIpv6Addresses, internalIpv4Addresses, geoLocation]
+  admins:
+    get: ${data_region}/common/v1/admins
+    headers: { X-Tenant-ID: "${tenant_id}" }
+    query: { pageSize: "100", pageTotal: "true" }
+    paging: { style: page_number, page: page, total_pages: $.pages.total }
+    items: $.items
+    identities: [name, firstName, lastName, email, viaLogin]
+  roles:
+    get: ${data_region}/common/v1/roles
+    headers: { X-Tenant-ID: "${tenant_id}" }
+    query: { pageSize: "100", pageTotal: "true" }
+    paging: { style: page_number, page: page, total_pages: $.pages.total }
+    items: $.items
+
+checks:
+  - id: network.firewall.firmware_supported
+    title: Firewalls run supported firmware
+    over: firewalls
+    each: { field: $.firmwareVersion, version_in: "${supported_firewall_firmware}", missing: fail }
+    require: all
+    when_empty: not_applicable
+    describe: "{passed} of {total} firewalls run supported firmware. Supported: ${supported_firewall_firmware}."
+
+  - id: network.management.super_admin_count
+    title: Few Sophos Central admins hold Super Admin
+    over: [admins, roles]
+    code: sophos.super_admin_count
+    with: { max: "${super_admin_max}" }
