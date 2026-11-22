@@ -32,6 +32,14 @@ public static class AuditPlanner
             .. controls,
         ]);
 
+    /// <summary>Every update for a run. Not yet marked: the signature only, so the tests that need it compile.</summary>
+    public static Result<IReadOnlyList<AuditUpdate>> PlanUpdates(
+        IReadOnlyList<TargetResults> targets,
+        IReadOnlyList<Evidence> evidence,
+        IReadOnlyList<ControlStatus> controlStatuses,
+        string runId) =>
+        PlanUpdates(targets, evidence, controlStatuses);
+
     /// <summary>
     /// Like <see cref="PlanUpdates(IReadOnlyList{TargetResults}, IReadOnlyList{Evidence}, IReadOnlyList{ControlStatus})"/>, but leaves out
     /// whatever <paramref name="current"/> already holds. A row's state is its result, its checks' outcomes and its evidence hashes; a row
