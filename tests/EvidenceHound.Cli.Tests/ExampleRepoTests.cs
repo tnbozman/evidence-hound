@@ -88,6 +88,17 @@ public sealed partial class ExampleRepoTests : IDisposable
     }
 
     [Fact]
+    public void The_apply_job_applies_the_plan_it_saved()
+    {
+        var workflow = File.ReadAllText(Path.Combine(Repo, ".github", "workflows", "compliance.yml"));
+        var apply = workflow[workflow.IndexOf("\n  apply:", StringComparison.Ordinal)..];
+
+        apply.ShouldContain("scope plan scope/ --config hound.yaml --out \"$RUNNER_TEMP/plan.json\"");
+        apply.ShouldContain("scope apply \"$RUNNER_TEMP/plan.json\"");
+        apply.ShouldNotContain("scope apply scope/");
+    }
+
+    [Fact]
     public void Every_yaml_file_but_the_workflow_and_custom_libraries_links_a_schema_that_exists()
     {
         // A custom library under frameworks/ is CISO Assistant's own format, which has no schema here.
