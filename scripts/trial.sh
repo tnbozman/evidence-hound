@@ -153,9 +153,11 @@ organisation() {
 apply_scope() {
   say "The scope folder declares the domain, systems, controls and the audit. Plan first, then apply."
   hound no scope validate scope --config hound.yaml
-  hound no scope plan scope --config hound.yaml
+  hound no scope plan scope --config hound.yaml --out /trial/scope-plan.json
   if ask "Apply this plan to CISO Assistant?"; then
-    hound no scope apply scope --config hound.yaml >"$ws/scope-apply.json"
+    say "Apply writes exactly the plan you saw, and refuses it if the scope or CISO Assistant changed since."
+    hound no scope apply /trial/scope-plan.json >"$ws/scope-apply.json"
+    rm -f "$ws/scope-plan.json"
     say "Applied. The report is in ${ws#"$root"/}/scope-apply.json."
     mark_done "$1"
   fi

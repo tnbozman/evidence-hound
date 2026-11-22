@@ -57,6 +57,7 @@ public sealed partial class ExampleRepoTests : IDisposable
     [InlineData("secrets/postgres_password")]
     [InlineData("deploy/secrets/hound_ca_token")]
     [InlineData("m365.pfx")]
+    [InlineData("plan.json")]
     [InlineData("deploy/client.pem")]
     [InlineData("tls.key")]
     [InlineData("caddy-root.crt")]

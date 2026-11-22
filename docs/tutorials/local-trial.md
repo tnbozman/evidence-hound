@@ -57,11 +57,11 @@ In both cases the API is `http://backend:8000/api/`. The token is copied from `.
 ```bash
 hound config validate hound.yaml
 hound scope validate scope --config hound.yaml
-hound scope plan scope --config hound.yaml
-hound scope apply scope --config hound.yaml
+hound scope plan scope --config hound.yaml --out /trial/scope-plan.json
+hound scope apply /trial/scope-plan.json
 ```
 
-Read the plan before you answer: it lists every object and field the apply would create or change. A second run plans nothing new.
+Read the plan before you answer: it lists every object and field the apply would create or change. The plan is saved outside the repo, and apply writes exactly that saved plan. If the scope or CISO Assistant changed in between, it refuses with `scope.plan_stale` ([Saved plans](../scope.md#saved-plans)). A second run plans nothing new.
 
 ## 5. Manual evidence and controls
 
