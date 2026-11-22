@@ -11,7 +11,7 @@ public sealed class CodeCheckRegistryTests
 {
     private static readonly DateTimeOffset Now = new(2026, 11, 22, 2, 0, 0, TimeSpan.Zero);
 
-    private const string Admins = """
+    private static readonly string Admins = """
         [
           { "id": "adm-1", "roleAssignments": [{ "roleId": "r-super" }] },
           { "id": "adm-2", "roleAssignments": [{ "roleId": "r-super" }, { "roleId": "r-help" }] },
@@ -19,7 +19,7 @@ public sealed class CodeCheckRegistryTests
         ]
         """;
 
-    private const string Roles = """
+    private static readonly string Roles = """
         [
           { "id": "r-super", "name": "Super Admin", "type": "predefined" },
           { "id": "r-help", "name": "Helpdesk", "type": "predefined" },
