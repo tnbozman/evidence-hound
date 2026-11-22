@@ -241,7 +241,7 @@ internal static class ScopePlanOutput
         _ => "signed_off",
     };
 
-    private static string Kind(ScopeKind kind) => kind switch
+    internal static string Kind(ScopeKind kind) => kind switch
     {
         ScopeKind.FeatureFlag => "feature_flag",
         _ => kind.ToString().ToLowerInvariant(),
