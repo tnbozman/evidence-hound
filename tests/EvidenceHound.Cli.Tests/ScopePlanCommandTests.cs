@@ -281,6 +281,73 @@ public sealed class ScopePlanCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Markdown_has_changes_to_compliance_section()
+    {
+        await WriteScopeAsync(HandWritten("compliant"));
+        HeldStructure();
+        HeldAuditWithRow("not_assessed");
+
+        var exitCode = await Plan();
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var markdown = _output.ToString();
+        markdown.ShouldContain("""
+
+            ### Changes to compliance
+
+            **EXAMPLE-BASELINE-2026**: 1 result changes, no regressions.
+
+            - Level one: 0 → 1 compliant of 1
+
+            |  | Requirement | Title | Strategy | Result | Why |
+            | --- | --- | --- | --- | --- | --- |
+            |  | EX-1.1 | Every account uses multi-factor authentication | (none) | not_assessed → compliant | hand-written in the audit file |
+
+            """.ReplaceLineEndings("\n"));
+        markdown.IndexOf("| Change | Kind |", StringComparison.Ordinal).ShouldBeLessThan(markdown.IndexOf("### Changes to compliance", StringComparison.Ordinal));
+        if (markdown.Contains("### Drift", StringComparison.Ordinal))
+        {
+            markdown.IndexOf("### Changes to compliance", StringComparison.Ordinal).ShouldBeLessThan(markdown.IndexOf("### Drift", StringComparison.Ordinal));
+        }
+
+        _ca.LogEntries.ShouldAllBe(e => e.RequestMessage!.Method == "GET");
+    }
+
+    [Fact]
+    public async Task Markdown_has_changes_to_compliance_section_json_has_compliance()
+    {
+        await WriteScopeAsync(HandWritten("non_compliant"));
+        HeldStructure();
+        HeldAuditWithRow("compliant");
+
+        var exitCode = await Plan("--format", "json");
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var compliance = JsonNode.Parse(_output.ToString())!["compliance"]!.AsArray().ShouldHaveSingleItem()!;
+        compliance["audit"]!.GetValue<string>().ShouldBe("EXAMPLE-BASELINE-2026");
+        var group = compliance["groups"]!.AsArray().ShouldHaveSingleItem()!;
+        (group["group"]!.GetValue<string>(), group["before"]!.GetValue<int>(), group["after"]!.GetValue<int>(), group["total"]!.GetValue<int>()).ShouldBe(("1", 1, 0, 1));
+        var row = compliance["rows"]!.AsArray().ShouldHaveSingleItem()!;
+        (row["requirement"]!.GetValue<string>(), row["old"]!.GetValue<string>(), row["new"]!.GetValue<string>(), row["regresses"]!.GetValue<bool>())
+            .ShouldBe(("EX-1.1", "compliant", "non_compliant", true));
+        row["title"]!.GetValue<string>().ShouldBe("Every account uses multi-factor authentication");
+        row["why"]!.GetValue<string>().ShouldBe("hand-written in the audit file");
+        row["parent"].ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task Plan_with_no_result_changes_has_no_compliance_section()
+    {
+        await WriteScopeAsync(HandWritten("compliant"));
+        HeldStructure();
+        HeldAuditWithRow("compliant");
+
+        (await Plan()).ShouldBe(ExitCodes.Ok, _error.ToString());
+
+        _output.ToString().ShouldNotContain("Changes to compliance");
+    }
+
+    [Fact]
     public async Task Apply_refuses_an_invalid_scope_without_reading_ciso_assistant()
     {
         await WriteScopeAsync(ScopeCommandTests.Audit.Replace("systems: [Example 365]", "systems: [Example tablets]", StringComparison.Ordinal));
@@ -363,6 +430,45 @@ public sealed class ScopePlanCommandTests : IDisposable
             ["assessable"] = true,
             ["implementation_groups"] = new JsonArray("1"),
         });
+    }
+
+    /// <summary>The scope's audit with EX-1.1 written by hand: done, with <paramref name="result"/>.</summary>
+    private static string HandWritten(string result) =>
+        ScopeCommandTests.Audit.Replace("unlisted:", $"assessments:\n  - ref: EX-1.1\n    status: done\n    result: {result}\n    observation: Checked at the March review.\nunlisted:", StringComparison.Ordinal);
+
+    /// <summary>The scope's audit held in the domain's folder, with its one row (EX-1.1) at <paramref name="result"/>.</summary>
+    private void HeldAuditWithRow(string result)
+    {
+        _ca.Given(Request.Create().WithPath("/api/compliance-assessments/").UsingGet()).AtPriority(0)
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject
+            {
+                ["count"] = 1,
+                ["results"] = new JsonArray(new JsonObject { ["id"] = "ca-1", ["ref_id"] = "EXAMPLE-BASELINE-2026", ["folder"] = new JsonObject { ["id"] = "f-ex", ["str"] = "f-ex" } }),
+            }.ToJsonString()));
+        _ca.Given(Request.Create().WithPath("/api/compliance-assessments/ca-1/object/").UsingGet()).AtPriority(0)
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject
+            {
+                ["id"] = "ca-1",
+                ["ref_id"] = "EXAMPLE-BASELINE-2026",
+                ["name"] = "Example baseline 2026",
+                ["framework"] = "fw-1",
+                ["perimeter"] = "p-1",
+                ["folder"] = "f-ex",
+                ["selected_implementation_groups"] = new JsonArray("1"),
+            }.ToJsonString()));
+        _ca.Given(Request.Create().WithPath("/api/requirement-assessments/").UsingGet()).AtPriority(0)
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject
+            {
+                ["count"] = 1,
+                ["results"] = new JsonArray(new JsonObject
+                {
+                    ["id"] = "ra-1",
+                    ["status"] = "done",
+                    ["result"] = result,
+                    ["observation"] = "Checked at the March review.",
+                    ["requirement"] = new JsonObject { ["urn"] = Snapshot.Nodes[0].Urn, ["ref_id"] = "EX-1.1" },
+                }),
+            }.ToJsonString()));
     }
 
     private Task<int> Run(string command, params string[] args) =>
