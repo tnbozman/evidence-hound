@@ -8,6 +8,146 @@ New sprint, added in the release 1 reorder. Application control extends the Micr
 
 The patch windows and scan intervals below are settings, not constants, so the checks stay framework-neutral. The example config sets them to the Essential Eight ML2 values, and the mapping file quotes the ISM control each one comes from.
 
+### REST collector (s09-09 to s09-14)
+
+These tasks come first in this sprint, before s09-01, so the Microsoft 365 application control checks and the Veeam tasks can be written as profile checks instead of new code. They build the generic `rest` collector agreed in [`docs/design/rest-collector.md`](../design/rest-collector.md): every query is called once per run, evidence datasets are extracted from one or more responses, and checks test dataset fields, giving pass, fail or unable to assess. Profiles are YAML loaded only from the organisation's profiles folder; this repo keeps a tested public library in `profiles/` to copy from. There are no runtime code plugins. Where the Veeam tasks (s09-07, s09-08) and s09-01/02 say "collector", read "profile in the library" once these tasks are done.
+
+### s09-09 Profile model and validation
+- [ ] Done
+
+**Story:** As an operator, I want a profile checked before anything is called, so that a typo or a wrong reference fails clearly instead of producing misleading results.
+
+**Acceptance criteria**
+- Immutable records for a profile: `parameters`, `secrets`, `connection` (base URL, `allowed_hosts`, auth, rate limit), `bootstrap`, `queries`, `datasets`, `checks`, `requires`, `source` and `version`; parsed from YAML into the core once.
+- Collector type `rest` with settings `profile` plus the profile's own parameters; secrets as for other collectors.
+- Validation (pure) reports every problem at once with a code: unknown parameter or secret, missing required one, bad path syntax, a check `over` or dataset `from`/`join` naming nothing, a cycle in query dependencies, a code check name that is not built in, a check without `when_empty`, a request or auth URL outside `allowed_hosts`, `requires` newer than this `hound`.
+- `hound profile validate <name>` and `hound plan` both run it; a profile that fails stops only its own instances, which report unable to assess.
+- Profiles are read only from `profiles_path` (default `/config/profiles`), mounted read-only.
+
+**Tests first**
+- `ProfileParserTests.Reads_example_profile_into_records`
+- `ProfileValidationTests.Check_over_unknown_dataset_is_reported`
+- `ProfileValidationTests.Query_dependency_cycle_is_reported`
+- `ProfileValidationTests.Host_outside_allowed_hosts_is_reported`
+- `ProfileValidationTests.Check_without_when_empty_is_reported`
+- `ProfileValidationTests.Reports_all_problems_not_just_the_first`
+
+**Functional check**
+- `hound profile validate example` passes for `profiles/example.yaml`, and a broken copy lists each problem with its code.
+
+### s09-10 Query engine
+- [ ] Done
+
+**Story:** As an operator, I want every endpoint read once per run, with sign-in, paging and rate limits handled for me, so that a new system needs a profile, not code.
+
+**Acceptance criteria**
+- Auth: OAuth 2.0 client credentials (secret or certificate), API key (header or query), bearer token, basic, mutual TLS. Tokens refresh on expiry and are sent only to `allowed_hosts`; cross-host redirects are refused.
+- Paging: next link in the body, page number with total, cursor, offset and limit, `Link` header; a per-query page cap.
+- Rate limits: per-profile rate, `Retry-After` on 429 and 503, bounded retries.
+- Queries run as a dependency graph: `bootstrap` variables first, `for_each` fan-out capped by `max_calls`, `post:` bodies, `async` jobs (start, poll with a timeout, download), `optional_on` status codes for licence-dependent endpoints.
+- JSON, XML and CSV responses become the same tree (XML attributes as `@name`, text as `#text`, profile-listed paths always arrays).
+- Item and byte caps per query, with `keep:` to hold only listed fields.
+- Each query is saved as one evidence file (request without headers, page count, item count, items) with `identities` hashed unless `include_identities`. A final scan refuses to save any file containing a secret in use.
+- A failed query is a result for that query, not a failed run: later phases see which queries failed and why.
+
+**Tests first**
+- `RestAuthTests.Client_credentials_token_is_sent_only_to_allowed_hosts`
+- `RestPagingTests.Follows_next_link_until_absent` (and one test per paging style)
+- `RestPagingTests.Stops_at_page_cap_and_reports_it`
+- `RestRateLimitTests.Honours_retry_after_then_gives_up`
+- `QueryGraphTests.Bootstrap_variables_feed_later_requests`
+- `QueryGraphTests.For_each_is_capped_by_max_calls`
+- `AsyncQueryTests.Polls_until_done_then_downloads`
+- `XmlTreeTests.Repeated_and_single_elements_read_the_same`
+- `QueryEvidenceTests.Identities_hashed_and_secrets_never_saved`
+- Contract tests against WireMock with fictional recordings.
+
+**Functional check**
+- `hound run --only rest-example --dry-run` against the recorded example API lists every query with its page and item counts and its evidence file.
+
+### s09-11 Datasets and declarative checks
+- [ ] Done
+
+**Story:** As a compliance owner, I want evidence from several API calls combined into one dataset and tested field by field, so that a control is judged on exactly the evidence it needs and a broken query never shows as a failure.
+
+**Acceptance criteria**
+- Datasets: `from`, `join` (on a key, one-to-many, `optional` for a left join), `where`, `fields`, `flatten`. Each dataset is saved as an evidence file listing the query files and SHA-256 hashes it came from, and how many rows did not match a required join.
+- A check reads one dataset (or one query directly, for a one-to-one check) and has `where`, `each` and `require` (`all`, `any`, `none`, `count_at_most`, `count_at_least`, `ratio_at_least` with an optional partial band).
+- Operators: `equals`, `not_equals`, `in`, `matches`, `any_matches`, `exists`, `version_in`, `version_at_least`, `within`, `older_than`, `at_least`, `at_most`, each with `missing:` and `negate`.
+- Results: pass, fail, partial (ratio bands only), not applicable (empty and `when_empty: not_applicable`), and unable to assess when a query the check depends on failed, paging stopped early, a cap was hit, a field was missing (unless `missing:` says otherwise) or a value had the wrong type. The observation names the cause.
+- Failure propagates only to what depends on the failed query; a dataset is never built from part of its inputs.
+- User-facing text says "unable to assess" for `CheckOutcome.Error`; the mapping still turns it into `not_assessed`.
+- Observations use `describe` templates with counts, list offending rows capped at 20, and cite the dataset file.
+
+**Tests first**
+- `DatasetTests.Join_attaches_matching_rows_and_counts_unmatched`
+- `DatasetTests.Failed_input_query_fails_the_dataset_with_its_name`
+- `CheckEvaluatorTests.All_over_empty_uses_when_empty`
+- `CheckEvaluatorTests.Missing_field_is_unable_to_assess`
+- `CheckEvaluatorTests.Missing_pass_treats_absent_field_as_pass`
+- `CheckEvaluatorTests.Ratio_band_gives_partial`
+- `CheckEvaluatorTests.Independent_checks_still_run_when_one_query_fails`
+- Property tests: evaluation is deterministic for the same snapshot and clock; adding a failed query never turns a fail into a pass.
+
+**Functional check**
+- `hound run --only rest-example --dry-run` shows each check's result and dataset evidence; breaking one recorded query makes only its checks unable to assess.
+
+### s09-12 Code checks, profiles folder and profile tests
+- [ ] Done
+
+**Story:** As a profile author, I want to test a profile against recorded responses before it is trusted, and to use a built-in code check when the operators are not enough.
+
+**Acceptance criteria**
+- A code-check library in `hound`: named, pure functions taking the datasets they name, parameters and the clock, returning a finding. A profile names them with `code:`; nothing is loaded at runtime.
+- `hound profile test <name>` runs a profile offline against its recordings and expected results (`<profile>.tests/`), reporting each check's expected and actual result. `hound` warns when a profile in the folder has no tests; `require_profile_tests: true` makes it an error.
+- `hound profile diff <name>` compares a copied profile with the library version named in its `source`.
+- Each run's manifest records every profile's name, version, `source` and SHA-256.
+- The public library `profiles/` starts with `example.yaml` (a fictional API) and its tests; CI runs every library profile's tests.
+
+**Tests first**
+- `CodeCheckRegistryTests.Unknown_name_is_a_validation_problem`
+- `ProfileTestRunnerTests.Reports_expected_and_actual_per_check`
+- `ProfileTestRunnerTests.Profile_without_tests_warns_or_fails_by_setting`
+- `ProfileDiffTests.Shows_changes_from_library_version`
+- `RunManifestTests.Records_profile_name_version_and_hash`
+
+**Functional check**
+- Copy `profiles/example.yaml` into a scratch profiles folder, run `hound profile test example`, change an expected result, and see the test fail naming the check.
+
+### s09-13 Sophos as a profile
+- [ ] Done
+
+**Story:** As an operator, I want Sophos Central read through a profile, so that changes to Sophos checks are configuration, and as the proof that the REST collector can replace a coded one.
+
+**Acceptance criteria**
+- `profiles/sophos-central.yaml` with its tests: `whoami` bootstrap, firewalls, admins and roles, the `admin_accounts` and `firewall_firmware` datasets, and every check the coded collector reports (including any added by s08-12 to s08-14).
+- A parity test runs the coded collector and the profile on the same recordings and requires the same check IDs, outcomes and evidence content.
+- When parity passes, the coded Sophos collector is removed. A `type: sophos` instance fails validation with a message showing the `type: rest`, `profile: sophos-central` replacement; the example config and `docs/collectors/sophos.md` are updated.
+- The interactive tutorial (`make trial`) copies the profile into the trial's profiles folder and uses it.
+
+**Tests first**
+- `SophosProfileParityTests.Profile_matches_coded_collector_on_every_recording`
+- `SophosProfileTests` via `hound profile test sophos-central`
+- `CollectorConfigTests.Sophos_type_suggests_rest_profile`
+
+**Functional check**
+- `hound run --only sophos-example --dry-run` with the profile gives the same results as before; the trial's Sophos step passes with the profile.
+
+### s09-14 REST collector documentation
+- [ ] Done
+
+**Acceptance criteria**
+- `docs/collectors/rest.md`: profile reference (connection, auth, paging, queries, datasets, checks, operators, results, limits), the profiles folder, the library and how to copy from it, and security notes (`allowed_hosts`, secrets, identities).
+- `docs/tutorials/write-a-profile.md`: write a profile for the fictional example API test-first, from recording to green `hound profile test`.
+- `docs/design/rest-collector.md` status set to Implemented, with any changes made during the build.
+
+**Tests first**
+- Docs check that every operator and result in the engine appears in `docs/collectors/rest.md`.
+- Docs lint and link check.
+
+**Functional check**
+- Following the tutorial verbatim produces a passing profile.
+
 ### s09-01 Application control policies from Intune
 - [ ] Done
 

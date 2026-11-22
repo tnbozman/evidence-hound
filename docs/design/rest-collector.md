@@ -1,6 +1,6 @@
 # Design: a generic REST collector
 
-Status: Draft for discussion. Nothing here is built yet. When it is agreed, it becomes tasks in s09.
+Status: Agreed (Nov 22). Not built yet; the build is tasks s09-09 to s09-14 in [the s09 sprint](../sprints/s09-e8-gap-collectors.md).
 
 ## The problem
 
@@ -354,18 +354,18 @@ The biggest risk of configuration is that a wrong path quietly returns nothing a
 - **Manual** and **vuln-scan** are not REST and stay as they are.
 - New systems after that (the roughly 13 SaaS systems) start as profiles. Where an API is weak, the manual collector stays the answer.
 
-## Decisions for you
+## Decisions (all agreed Nov 22)
 
-1. **Option B with the code hatch**, adding JMESPath later only if the operators keep falling short. (Recommended.)
-2. **XML converted to the JSON tree** rather than a second path language (XPath). (Recommended.)
-3. **Evidence keeps the full response minus identities and secrets**, rather than only the fields checks use. Fuller evidence for auditors, at the cost of size; `keep:` is there for very large lists. (Recommended.)
-4. **Missing fields mean unable to assess** unless the profile says otherwise. (Recommended.)
-5. **No profiles built into `hound`.** Every profile loads from the organisation's mounted profiles folder. This repo keeps a tested public library to copy from, and the interactive tutorial uses it. No runtime code plugins. (Agreed Nov 22.)
-6. **Collect, extract, assess as three phases**, with joins in named datasets rather than in checks, and joins across separate collector instances left until a real case needs one. (Recommended.)
+1. **Option B with the code hatch**, adding JMESPath later only if the operators keep falling short.
+2. **XML converted to the JSON tree** rather than a second path language (XPath).
+3. **Evidence keeps the full response minus identities and secrets**, rather than only the fields checks use. Fuller evidence for auditors, at the cost of size; `keep:` is there for very large lists.
+4. **Missing fields mean unable to assess** unless the profile says otherwise.
+5. **No profiles built into `hound`.** Every profile loads from the organisation's mounted profiles folder. This repo keeps a tested public library to copy from, and the interactive tutorial uses it. No runtime code plugins.
+6. **Collect, extract, assess as three phases**, with joins in named datasets rather than in checks, and joins across separate collector instances left until a real case needs one.
 
-## Draft s09 tasks (once agreed)
+## s09 tasks
 
-Added to s09 rather than a new sprint, ahead of s09-01 so new Microsoft 365 work can choose a profile check:
+Added to s09 rather than a new sprint, ahead of s09-01 so new Microsoft 365 and Veeam work can be profile checks. Full acceptance criteria are in the sprint file:
 
 - **s09-09 Profile model and validation.** Profile and instance schema, parameters, secrets, `allowed_hosts`, `hound profile validate`. Pure; no HTTP yet.
 - **s09-10 Query engine.** Auth types, paging styles, rate limits and retries, a dependency graph for bootstrap variables and fan-out, XML conversion, budgets, snapshot evidence with identity hashing and the secret scan. Contract tests with WireMock.
