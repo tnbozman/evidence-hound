@@ -32,6 +32,9 @@ ENV DOTNET_EnableDiagnostics=0 \
     DOTNET_CLI_TELEMETRY_OPTOUT=true
 WORKDIR /app
 COPY --from=build /app ./
+# The chiseled runtime has no time zone database, and schedules run in scheduler.time_zone (an IANA name such as
+# Australia/Sydney), so the build stage's copy (the same Ubuntu release) is added.
+COPY --from=build /usr/share/zoneinfo /usr/share/zoneinfo
 COPY frameworks/ /app/frameworks/
 COPY mappings/ /app/mappings/
 COPY --from=build --chown=1654:1654 /data/var/lib/evidence-hound /var/lib/evidence-hound
