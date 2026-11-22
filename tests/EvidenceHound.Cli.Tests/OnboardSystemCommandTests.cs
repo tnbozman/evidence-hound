@@ -74,6 +74,22 @@ public sealed class OnboardSystemCommandTests : IDisposable
         decisions.Select(d => d!["key"]!.GetValue<string>()).ShouldBe(["EX-1", "EX-2", "EX-3"]);
         decisions[1]!["approver"]!.GetValue<string>().ShouldBe("Sam Example");
         decisions[1]!["accepted_by"]!.GetValue<string>().ShouldBe("Alex Example");
+
+        // Decided: the system's audit and the onboarding record are written into the working copy, nothing else.
+        var audit = await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "audits", "example-assets-example-framework.yaml"), _ct);
+        audit.ShouldContain("ref_id: \"EXAMPLE-ASSETS-EXAMPLE-FRAMEWORK\"");
+        audit.ShouldContain("domain: \"Example Pty Ltd\"");
+        audit.ShouldContain("result: not_applicable");
+        var record = Directory.GetFiles(Path.Combine(Repo, "onboarding"), "example-assets-*.md").ShouldHaveSingleItem();
+        (await File.ReadAllTextAsync(record, _ct)).ShouldContain("| EX-2 | (none) | not_applicable | No privileged users. | Alex Example | Only the supplier administers it. Approved by Sam Example. |");
+        output.ShouldContain("Wrote scope/audits/example-assets-example-framework.yaml");
+        output.ShouldContain("No mappings/example-framework.yaml to add manual rows to");
+        output.ShouldContain("hound scope validate");
+
+        // Run again: already written, nothing is asked or overwritten.
+        (exit, output, _) = await RunAsync("");
+        exit.ShouldBe(ExitCodes.Ok);
+        output.ShouldContain("already written");
     }
 
     [Fact]
