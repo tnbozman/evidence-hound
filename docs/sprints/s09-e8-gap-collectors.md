@@ -168,7 +168,7 @@ outcome succeeded, checks_passed 2, checks_failed 0, publish planned 4, sent 0; 
 The coded collector gave the same two passes on the same recording (the parity test above). `make test-profiles`: sophos-central all-pass, firmware-unsupported and partner-credential pass. The trial's Sophos step needs a real credential, so it is left for s09-17 (the person's trial); its unattended run and `bats scripts/tests` pass.
 
 ### s09-14 REST collector documentation
-- [ ] Done
+- [x] Done
 
 **Acceptance criteria**
 - `docs/collectors/rest.md`: profile reference (connection, auth, paging, queries, datasets, checks, operators, results, limits), the profiles folder, the library and how to copy from it, and security notes (`allowed_hosts`, secrets, identities).
@@ -181,6 +181,22 @@ The coded collector gave the same two passes on the same recording (the parity t
 
 **Functional check**
 - Following the tutorial verbatim produces a passing profile.
+
+**Result**
+- `docs/collectors/rest.md`: the reference (profiles folder and library, `hound profile` commands, every key, auth type, paging style, operator, `require` mode and result, limits, security and run problems). `RestDocsTests` fails if an operator, result, auth type, paging style or parameter type is missing, or a relative link is broken.
+- `docs/tutorials/write-a-profile.md`: `example-devices` written test-first from the example recordings. `RestDocsTests.Tutorial_followed_as_written_gives_a_passing_profile` writes the tutorial's files and runs its tests.
+- `docs/design/rest-collector.md`: Status Implemented, with an "As built" section. `docs/configuration.md` lists the `rest` type.
+
+**Functional check (run)** The tutorial followed by hand with the built CLI, in a scratch folder:
+```console
+$ hound profile test example-devices --profiles my-profiles     # after step 2
+error: profile.not_found: No profile 'example-devices' in the profiles folder .../my-profiles. ...
+$ hound profile validate example-devices --profiles my-profiles # after step 3
+example-devices 0.1.0: valid (1 query, 0 datasets, 1 check)
+$ hound profile test example-devices --profiles my-profiles     # after step 4
+example-devices/all-supported: passed (1 check)
+example-devices/old-version: passed (1 check)
+```
 
 ### Suppliers before systems (s09-19, s09-20, moved from s10)
 
