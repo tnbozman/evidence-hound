@@ -1,10 +1,10 @@
-# s10b AI governance (AI6)
+# s11 AI governance (AI6)
 
 Status: Planned
 
-**Goal:** AI governance runs on the same machinery as cyber compliance. The Australian *Guidance for AI Adoption* (AI6) is loaded into CISO Assistant as a versioned custom framework, the AI system register lives in CISO Assistant as assets, framework-neutral `ai.*` checks are read from CISO Assistant and mapped to AI6 requirements, and the committee and board reports (s11) work per programme, so AI6 is reported beside the Essential Eight rather than bolted on.
+**Goal:** AI governance runs on the same machinery as cyber compliance. The Australian *Guidance for AI Adoption* (AI6) is loaded into CISO Assistant as a versioned custom framework, the AI system register lives in CISO Assistant as assets, framework-neutral `ai.*` checks are read from CISO Assistant and mapped to AI6 requirements, and the committee and board reports (s12) work per programme, so AI6 is reported beside the Essential Eight rather than bolted on.
 
-Comes after s10 and before s11, so that s11's reporting is built framework-neutral from the start. Builds on s06 (custom library upload, framework snapshots, scope files), s09-09 to s09-14 (REST collector and profiles), s09-19 and s09-20 (suppliers and supplier assessments) and s10-04 (evidence plan and manual evidence tasks). All examples use the fictional Example Pty Ltd and `example.com`.
+Comes after s10 and before s12, so that s12's reporting is built framework-neutral from the start. Builds on s06 (custom library upload, framework snapshots, scope files), s09-09 to s09-14 (REST collector and profiles), s09-19 and s09-20 (suppliers and supplier assessments) and s10-04 (evidence plan and manual evidence tasks). All examples use the fictional Example Pty Ltd and `example.com`.
 
 Rules that apply throughout:
 
@@ -35,23 +35,23 @@ What is configuration here, and what is not:
 
 - **Foundations** is for organisations starting out or using AI in low-risk ways. It has the six practices only, each with "Getting started" and "Next steps" actions (30 in all), and no numbered sub-practices.
 - **Implementation** is for organisations that build or customise AI, or have higher-risk uses. It has the 21 sub-practices above and about 73 numbered items (1.1.1 to 6.2.4), some tagged (DEV) or (DEP).
-- The NAIC also publishes AI screening questions, an AI policy template and an AI register template. Their pages were not reachable as links when this sprint was planned (Nov 2026), so the register fields below come from the AI6 text, not the template. Align them with the template in s10b-04 once it is in hand.
+- The NAIC also publishes AI screening questions, an AI policy template and an AI register template. Their pages were not reachable as links when this sprint was planned (Nov 2026), so the register fields below come from the AI6 text, not the template. Task s11-08 obtains the templates and aligns the register fields and screening runbook with them, before s11-04.
 
-Sources read on 2026-11-22: ai.gov.au *Guidance for AI Adoption: Foundations* and *Implementation guidance*, and the SafeAI-Aus AI6 summary. Neither ai.gov.au page states a licence; see open decision 2.
+Sources read on 2026-11-22: ai.gov.au *Guidance for AI Adoption: Foundations* and *Implementation guidance*, and the SafeAI-Aus AI6 summary. Neither ai.gov.au page states a licence; see open decision 1.
 
-### s10b-01 Programmes, and reporting per programme
+### s11-01 Programmes, and reporting per programme
 - [ ] Done
 
 **Story:** As the authorising official, I want reports organised by compliance programme (Essential Eight, AI6, later NIST SP 800-171), so that adding a framework adds a section to the same reports instead of a new report or code that assumes Essential Eight maturity levels.
 
-The reports themselves are built in s11. This task declares programmes in configuration and amends s11-04 to s11-06 so they are built per programme (the amendment is made to the s11 file in the planning PR that adds this sprint). The code is already framework-neutral where it matters: `FrameworkSnapshot` carries implementation groups and parent URNs for any framework, and the scope plan's compliance impact (`ComplianceImpact`) counts per implementation group, not per maturity level.
+The reports themselves are built in s12. This task declares programmes in configuration and amends s12-04 to s12-06 so they are built per programme (the amendment is made to the s12 file in the planning PR that adds this sprint). The code is already framework-neutral where it matters: `FrameworkSnapshot` carries implementation groups and parent URNs for any framework, and the scope plan's compliance impact (`ComplianceImpact`) counts per implementation group, not per maturity level.
 
 **Acceptance criteria**
 - `scope/setup.yaml` gains an optional `programmes` list. Each programme has `id` (lowercase slug, unique), `name`, `framework` (a framework URN declared in the same file), `groups` (the implementation groups the organisation reports against, which must exist in the framework's snapshot), `audit` (the `ref_id` of the audit, or audit series with a cycle, of record) and optional `group_by` (`parent`, the default, groups requirements under their parent node: the Essential Eight strategy, the AI6 practice).
 - Validation: the audit exists and uses the programme's framework; an audit belongs to at most one programme; a framework without a snapshot cannot be a programme (`scope.programme_needs_snapshot`).
 - `hound programme list` prints each programme with its framework, version, groups, audit of record, and assessable requirement counts per group and per parent node, read from the snapshot only (no CISO Assistant call). `--json` gives the same.
 - Programmes create nothing in CISO Assistant and never appear in `scope plan`.
-- s11-04, s11-05 and s11-06 are amended as listed in "Changes to other sprints" below.
+- s12-04, s12-05 and s12-06 are amended as listed in "Changes to other sprints" below.
 
 **Tests first**
 - `ProgrammeScopeTests.Programme_framework_must_be_declared`
@@ -59,20 +59,20 @@ The reports themselves are built in s11. This task declares programmes in config
 - `ProgrammeScopeTests.Audit_in_two_programmes_is_reported`
 - `ProgrammeScopeTests.Programmes_are_not_in_the_plan`
 - `ProgrammeOutlineTests.Counts_requirements_per_group_and_parent` (pure, from the Essential Eight snapshot fixture)
-- `ProgrammeOutlineTests.Ai6_counts_from_snapshot_fixture` (after s10b-02)
+- `ProgrammeOutlineTests.Ai6_counts_from_snapshot_fixture` (after s11-02)
 - Property: every assessable node of a snapshot is counted exactly once per group it belongs to.
 
 **Functional check**
-- `make run ARGS="programme list --scope examples/compliance-repo/scope"` lists the Essential Eight programme with 8 strategies at groups 1 and 2, and (after s10b-07) the AI6 programme with 6 practices.
+- `make run ARGS="programme list --scope examples/compliance-repo/scope"` lists the Essential Eight programme with 8 strategies at groups 1 and 2, and (after s11-07) the AI6 programme with 6 practices.
 
-### s10b-02 AI6 framework library and snapshot
+### s11-02 AI6 framework library and snapshot
 - [ ] Done
 
 **Story:** As the Cyber GRC team, I want AI6 as a framework in CISO Assistant, so that AI governance is assessed in audits like any other framework.
 
 **Acceptance criteria**
-- `frameworks/ai6.yaml`: a CISO Assistant custom library (same format as `examples/compliance-repo/frameworks/example-baseline.yaml`), `urn:evidence-hound:risk:library:ai6`, framework `urn:evidence-hound:risk:framework:ai6`, `version: 1`, `provider` the National AI Centre, `packager: evidence-hound`, publication date of the guidance, and a copyright line and attribution as decided in open decision 2.
-- Requirement nodes: the six practices at depth 1 (not assessable) and the 21 implementation sub-practices at depth 2 (assessable), with `ref_id` `AI6-1.1` to `AI6-6.2`. Titles as in the guidance; descriptions as decided in open decision 2, with a link to the guidance.
+- `frameworks/ai6.yaml`: a CISO Assistant custom library (same format as `examples/compliance-repo/frameworks/example-baseline.yaml`), `urn:evidence-hound:risk:library:ai6`, framework `urn:evidence-hound:risk:framework:ai6`, `version: 1`, `provider` the National AI Centre, `packager: evidence-hound`, publication date of the guidance, and a copyright line and attribution as decided in open decision 1.
+- Requirement nodes: the six practices at depth 1 (not assessable) and the 21 implementation sub-practices at depth 2 (assessable), with `ref_id` `AI6-1.1` to `AI6-6.2`. Titles as in the guidance; descriptions as decided in open decision 1, with a link to the guidance.
 - Two implementation groups: `F` (Foundations) and `I` (Implementation). Every sub-practice is in `I`. A sub-practice is also in `F` when at least one Foundations action falls under it; the trace from each of the 30 Foundations actions to one sub-practice is a table in `docs/ai-grc.md`, so the grouping can be reviewed.
 - The library version goes up whenever its content changes; a change note at the top of the file says what changed. Re-uploading an older version is refused by the existing scope rule (a framework loaded from an older library is reported, never upgraded silently).
 - `frameworks/ai6.json` is the snapshot from `hound framework snapshot frameworks/ai6.yaml`, committed and listed in `frameworks/README.md` with its source and attribution.
@@ -88,13 +88,13 @@ The reports themselves are built in s11. This task declares programmes in config
 **Functional check**
 - `make run ARGS="framework snapshot frameworks/ai6.yaml --out /tmp/ai6.json"` reports 21 assessable requirements and matches the committed snapshot. With the example scope pointing at the library, `scope apply` against the local CISO Assistant (`make ca-up`) uploads and loads it, and an AI6 audit with group `F` shows only the Foundations rows.
 
-### s10b-03 AI6 mapping
+### s11-03 AI6 mapping
 - [ ] Done
 
 **Story:** As a compliance owner, I want a mapping from framework-neutral `ai.*` checks to AI6 requirements, so that AI6 audit rows are filled by runs where a check exists and owned by a named manual source where none does.
 
 **Acceptance criteria**
-- `mappings/ai6.yaml` uses the existing rules only (`all_pass`, `any_pass`, `threshold`), validates against `frameworks/ai6.json`, and covers all 21 sub-practices with checks or a `manual_only` entry naming a manual source. Proposed starting point (checks from s10b-05; supplier checks per open decision 5):
+- `mappings/ai6.yaml` uses the existing rules only (`all_pass`, `any_pass`, `threshold`), validates against `frameworks/ai6.json`, and covers all 21 sub-practices with checks or a `manual_only` entry naming a manual source. Proposed starting point (checks from s11-05; supplier checks per open decision 4):
 
 | Requirement | Rule | Checks, or manual source |
 | --- | --- | --- |
@@ -123,7 +123,7 @@ The reports themselves are built in s11. This task declares programmes in config
 **Tests first**
 - `Ai6MappingTests.All_requirement_refs_exist_in_framework_snapshot`
 - `Ai6MappingTests.Every_sub_practice_is_mapped_or_manual`
-- `Ai6MappingTests.Every_ai_check_is_mapped` (after s10b-05; until then unknown check IDs are warnings from `MappingLoader`, not errors)
+- `Ai6MappingTests.Every_ai_check_is_mapped` (after s11-05; until then unknown check IDs are warnings from `MappingLoader`, not errors)
 - `MappingEngineTests.Ai6_rows_from_fixture_check_results` (golden results for a small fixture)
 
 **Functional check**
@@ -132,7 +132,28 @@ The reports themselves are built in s11. This task declares programmes in config
 **Notes**
 - AI6-5.4 overlaps the cyber programme. A later mapping could reuse cyber checks (for example `identity.mfa.*`) with `any_pass` once the AI systems' platforms are in scope of those collectors; kept manual here to avoid claiming coverage the collectors do not have.
 
-### s10b-04 AI system register in CISO Assistant
+### s11-08 NAIC templates: register, screening questions and policy
+- [ ] Done
+
+Numbered last so the other task numbers stay stable, but done before s11-04, because the register fields and the screening runbook follow from it.
+
+**Story:** As the Cyber GRC team, I want the AI system register, screening and policy to follow the National AI Centre's own templates, so that an assessor sees the government's terms rather than ours.
+
+**Acceptance criteria**
+- The NAIC AI register template, AI screening questions and AI policy template are obtained from ai.gov.au (or supplied by the person if the site cannot be reached from the build environment), with their publication date, version and licence recorded in `docs/ai-grc.md`.
+- A traceability table in `docs/ai-grc.md` maps every register template column to a CISO Assistant asset field (native or custom, s11-04), a linked object (owner, risk scenario, solution) or "not kept, because ...". The custom field table in s11-04 is updated to match before s11-04 starts.
+- Each screening question maps to a field it sets (for example `ai_risk_tier`) or to a step of the screening runbook (s11-07); the questions that trigger a full impact assessment are named.
+- The policy template is linked from the example repo as the source for the AI policy document attached to the AI6 audit (AI6-1.4, AI6-3.1). The template text is copied into the repo only if its licence allows it (open decision 1).
+- If a template conflicts with the AI6 text or with a choice made here (for example the tier names), the conflict is listed under "Discovered work" with a recommendation, rather than changed silently.
+
+**Tests first**
+- `AiRegisterTemplateTests.Every_template_column_is_traced` (reads the table in `docs/ai-grc.md` and the field definitions in the example `scope/fields.yaml`)
+- Docs lint and link check.
+
+**Functional check**
+- Export the example AI systems from the local CISO Assistant with its asset Excel export and confirm every template column the trace table says is kept is present and filled for the example systems.
+
+### s11-04 AI system register in CISO Assistant
 - [ ] Done
 
 **Story:** As the Cyber GRC team, I want every AI system recorded in CISO Assistant with its owner, risk tier, impact assessment status and human-oversight arrangement, so that the register is in the system of record and can be checked and reported on.
@@ -145,7 +166,7 @@ How it works, using CISO Assistant's own features (checked against the v4.3.4 mo
 **Acceptance criteria**
 - `scope/fields.yaml` (new, generic, not AI-specific) declares asset classes (`name`, optional `parent`) and custom field definitions (`model: asset`, `key`, `label`, `type`, `choices` for choice types, `required`, `help`, optional `domain` for scope). Applying creates or updates them by key; removing one needs `--prune`, as for other objects.
 - Systems in `scope/setup.yaml` gain optional `class` (an asset class) and `fields` (custom field values, by key, checked against the definition's type and choices). Fields a system lists are configuration and kept in step; fields it does not list are left to CISO Assistant and never in the plan.
-- The example AI field set, aligned later with the NAIC register template:
+- The example AI field set, as aligned with the NAIC register template in s11-08 (this table is the starting point):
 
 | Key | Type | Set in | Meaning |
 | --- | --- | --- | --- |
@@ -173,13 +194,13 @@ How it works, using CISO Assistant's own features (checked against the v4.3.4 mo
 **Functional check**
 - Apply the example scope to the local CISO Assistant: the *AI system* class and the field definitions exist, the two example AI systems show their tier and oversight in the asset view, and re-applying writes nothing. Setting `ai_last_tested_on` by hand in CISO Assistant does not appear in the next plan.
 
-### s10b-05 AI checks from CISO Assistant
+### s11-05 AI checks from CISO Assistant
 - [ ] Done
 
 **Story:** As a compliance owner, I want the AI register checked on every run, so that missing owners, unassessed systems and stale tests show up as failing checks rather than at the next audit.
 
 **Acceptance criteria**
-- A REST collector profile `ciso-assistant` in the public profile library (`profiles/ciso-assistant/`, s09-12) reads CISO Assistant with a read-only token: assets of class *AI system* with owners and custom fields, risk scenarios with their assets, and (per open decision 5) entities, solutions, contracts and entity assessments. No coded collector.
+- A REST collector profile `ciso-assistant` in the public profile library (`profiles/ciso-assistant/`, s09-12) reads CISO Assistant with a read-only token: assets of class *AI system* with owners and custom fields, risk scenarios with their assets, and (per open decision 4) entities, solutions, contracts and entity assessments. No coded collector.
 - Checks, each over AI systems that are in use unless stated, each evidenced by the saved query results:
 
 | Check | Passes when |
@@ -211,14 +232,14 @@ How it works, using CISO Assistant's own features (checked against the v4.3.4 mo
 **Functional check**
 - Against the local CISO Assistant with the example AI systems, `make run ARGS="run --dry-run"` produces the ten checks with the expected outcomes (one example system is deliberately missing a test date), and `mapping apply mappings/ai6.yaml` on the output fills AI6-4.1 compliant and AI6-5.1 non-compliant.
 
-### s10b-06 Register summary for programme reports
+### s11-06 Register summary for programme reports
 - [ ] Done
 
 **Story:** As the security committee, I want each programme's report section to summarise its register (for AI6: AI systems by tier, new this period, and gaps), so that the AI section answers "what AI do we use and is it governed" as well as "which AI6 rows pass".
 
 **Acceptance criteria**
-- A programme (s10b-01) may declare `registers`: an asset class and the choice fields to count by (for AI6: class *AI system*, by `ai_risk_tier` and `ai_use`).
-- A pure function `RegisterSummary.Of(assets, register, period)` returns counts by field value, assets added and retired in the period, and assets failing any check that names the class. s11-04's `PostureSnapshot` includes it per programme (s11 amendment).
+- A programme (s11-01) may declare `registers`: an asset class and the choice fields to count by (for AI6: class *AI system*, by `ai_risk_tier` and `ai_use`).
+- A pure function `RegisterSummary.Of(assets, register, period)` returns counts by field value, assets added and retired in the period, and assets failing any check that names the class. s12-04's `PostureSnapshot` includes it per programme (s12 amendment).
 - Generic: nothing in the function knows about AI; the Essential Eight programme can declare a register of systems the same way.
 
 **Tests first**
@@ -228,13 +249,13 @@ How it works, using CISO Assistant's own features (checked against the v4.3.4 mo
 - `ProgrammeScopeTests.Register_fields_must_be_choice_fields`
 
 **Functional check**
-- A small console check in the test suite prints the example AI register summary; the figures match the two example AI systems. The report output itself is checked in s11.
+- A small console check in the test suite prints the example AI register summary; the figures match the two example AI systems. The report output itself is checked in s12.
 
-### s10b-07 Documentation and example repo
+### s11-07 Documentation and example repo
 - [ ] Done
 
 **Acceptance criteria**
-- `docs/ai-grc.md`: what AI6 asks, how it maps to CISO Assistant (assets, custom fields, risk scenarios, suppliers, audits), the field set and who sets each field, the checks, the Foundations trace table (s10b-02), adopting at Foundations and moving to Implementation, and the limits (no model testing or monitoring collectors, no AI incident workflow, manual practices).
+- `docs/ai-grc.md`: what AI6 asks, how it maps to CISO Assistant (assets, custom fields, risk scenarios, suppliers, audits), the field set and who sets each field, the checks, the Foundations trace table (s11-02), adopting at Foundations and moving to Implementation, and the limits (no model testing or monitoring collectors, no AI incident workflow, manual practices).
 - A screening runbook template (`examples/compliance-repo/runbooks/ai-screening.md`) the GRC team follows when a new AI system is proposed: answer the NAIC screening questions, set the tier, and when a full impact assessment is needed. Supplier approval (s09-20) comes before an AI system is registered, as for other systems.
 - The example compliance repo gains: the AI6 library reference, an AI6 audit (`EX-AI6-2026`, group `F`), the AI6 programme, two fictional AI systems (*Example Assist*, a third-party chat assistant, tier `medium`; *Example ticket triage*, built in-house, tier `low`), the field definitions, AI rows in the evidence plan (s10-04) and an AI6 mapping copy; all of which validate. A note suggests registering `hound onboard` itself (s09-21 to s09-26) when an organisation uses it, since it is AI use.
 - `docs/plan.md` and the README mention AI governance as a programme alongside cyber compliance.
@@ -250,26 +271,27 @@ How it works, using CISO Assistant's own features (checked against the v4.3.4 mo
 
 Applied in the planning PR that adds this sprint:
 
-- **s11-04** `PostureSnapshot` holds results per programme (framework, audit of record, selected groups, counts per group and per parent node) and each programme's register summaries (s10b-06), instead of assuming Essential Eight ML1 and ML2.
-- **s11-05** committee report sections 2 to 8 are grouped by programme where they hold requirement or register figures; section 3 groups changes by programme, then by parent node (strategy, practice).
-- **s11-06** board report sections 1 and 2 are per programme: one compliance position line and one posture table per programme, with the four-quarter trend; Essential Eight ML1 and ML2, Essentials phases and AI6 Foundations are examples of the same rule.
-- **s11-01** `hound mapping coverage` counts per group and parent node from any snapshot; Essential Eight is the example, not the only case.
+- **s12-04** `PostureSnapshot` holds results per programme (framework, audit of record, selected groups, counts per group and per parent node) and each programme's register summaries (s11-06), instead of assuming Essential Eight ML1 and ML2.
+- **s12-05** committee report sections 2 to 8 are grouped by programme where they hold requirement or register figures; section 3 groups changes by programme, then by parent node (strategy, practice).
+- **s12-06** board report sections 1 and 2 are per programme: one compliance position line and one posture table per programme, with the four-quarter trend; Essential Eight ML1 and ML2, Essentials phases and AI6 Foundations are examples of the same rule.
+- **s12-01** `hound mapping coverage` counts per group and parent node from any snapshot; Essential Eight is the example, not the only case.
 
 Proposed, not applied (see open decisions):
 
-- **s15-01** becomes "extend the `ciso-assistant` profile" with `risk.studies_reviewed`, `risk.exceptions_current` and `bia.recovery_tested`, since s10b-05 creates the profile and (if decision 5 is accepted) its supplier checks.
+- **s16-01** becomes "extend the `ciso-assistant` profile" with `risk.studies_reviewed`, `risk.exceptions_current` and `bia.recovery_tested`, since s11-05 creates the profile and (if decision 4 is accepted) its supplier checks.
 - **README** s10 row still describes suppliers, which moved to s09.
-- **Sprint tooling** (`scripts/lib/sprint.sh`, start-sprint workflow, `/next-task`) only accepts `s00` to `s99` and task IDs `sNN-TT`, so `s10b` cannot be started until it accepts a letter suffix.
 
 ## Open decisions
 
-1. **Sprint ID.** Fix the sprint tooling to accept `s10b` (a small bats-tested PR before this sprint starts; recommended), or renumber this sprint as s11 and shift s11 to s18.
-2. **AI6 text in a public repo.** The ai.gov.au pages state no licence. Recommended: practice and sub-practice titles with a short description in our own words and a link, until the licence is confirmed; full text only if it is CC BY 4.0.
-3. **Library grain.** 21 sub-practices assessable with groups `F` and `I` (recommended), 6 practices only, or the ~73 numbered items.
-4. **Where programmes are declared.** A `programmes` list in `setup.yaml` (recommended) or derived from audits with no new configuration.
-5. **Pull forward from s15.** Recommended: build the `ciso-assistant` profile here with the supplier checks (`ai.suppliers_assessed`, `ai.supplier_contracts_current`, and the generic `supplier.assessments_current`, `supplier.contracts_current` for the cyber programmes), and leave risk-study and BIA checks in s15, which depend on s14.
-6. **Register fields in git or in CISO Assistant.** Recommended split as in the s10b-04 table: identity, owner, tier and oversight reviewed in git; assessment status and dates set by the GRC team in CISO Assistant.
-7. **NAIC templates.** The register template, screening questions and policy template were not read. Align the field set and the screening runbook with them when the person supplies or links them.
+Decided (person, 2026-11-22): this sprint is numbered s11 and the later sprints moved up by one (old s11 to s17 are now s12 to s18), and obtaining the NAIC templates is a task in this sprint (s11-08), not a prerequisite.
+
+Still open, with the recommendation in each:
+
+1. **AI6 text in a public repo.** The ai.gov.au pages state no licence. Recommended: practice and sub-practice titles with a short description in our own words and a link, until the licence is confirmed; full text only if it is CC BY 4.0.
+2. **Library grain.** 21 sub-practices assessable with groups `F` and `I` (recommended), 6 practices only, or the ~73 numbered items.
+3. **Where programmes are declared.** A `programmes` list in `setup.yaml` (recommended) or derived from audits with no new configuration.
+4. **Pull forward from s16.** Recommended: build the `ciso-assistant` profile here with the supplier checks (`ai.suppliers_assessed`, `ai.supplier_contracts_current`, and the generic `supplier.assessments_current`, `supplier.contracts_current` for the cyber programmes), and leave risk-study and BIA checks in s16, which depend on s15.
+5. **Register fields in git or in CISO Assistant.** Recommended split as in the s11-04 table: identity, owner, tier and oversight reviewed in git; assessment status and dates set by the GRC team in CISO Assistant.
 
 ## Discovered work
 

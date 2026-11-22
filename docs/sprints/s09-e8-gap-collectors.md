@@ -566,6 +566,6 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 
 ## Discovered work
 
-- Open items from s08's discovered work (trial token refresh, the seed's compliance owner, HTTP logging at `info`, wizard prompts, trial re-runs, evidence on applied controls, the "unlisted rule" wording, `HOUND_CA_URL` in the dev container) are listed in [s08](s08-sophos-veeam-collectors.md#discovered-work); pick them up here or in s12.
+- Open items from s08's discovered work (trial token refresh, the seed's compliance owner, HTTP logging at `info`, wizard prompts, trial re-runs, evidence on applied controls, the "unlisted rule" wording, `HOUND_CA_URL` in the dev container) are listed in [s08](s08-sophos-veeam-collectors.md#discovered-work); pick them up here or in s13.
 
 ## Sprint review

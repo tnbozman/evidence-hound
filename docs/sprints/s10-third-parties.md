@@ -4,7 +4,7 @@ Status: Planned
 
 **Goal:** suppliers, their solutions and contracts, and supplier assessments live in the private configuration repo and are applied to CISO Assistant by `hound`, replacing the third-party spreadsheet. The evidence plan (which controls are evidenced automatically or manually, by whom and how often) is applied the same way, as recurring CISO Assistant tasks, so manual evidence and supplier reviews are chased by CISO Assistant's own reminders.
 
-The governance collector and metrics, planned here before the release 1 reorder, moved to [s15](s15-governance-and-metrics.md) in release 2.
+The governance collector and metrics, planned here before the release 1 reorder, moved to [s16](s16-governance-and-metrics.md) in release 2.
 
 Builds on s06 (scope files, plan, apply, inventory, framework libraries for questionnaires). Everything is matched by `ref_id`, or by the key CISO Assistant uses where it has no `ref_id` (name and domain; email for representatives). All examples use the fictional Example Pty Ltd and `example.com`.
 
@@ -45,9 +45,9 @@ Moved to s09 as s09-20 on 2026-11-22, with a supplier approval gate added. The r
 How it works, using CISO Assistant's own features only (checked against the v4.3.4 source):
 - A recurring task template (`/api/task-templates/`, keyed by `ref_id`) holds the assignees, the schedule, the runbook as its Markdown description, and the linked evidence, applied control and requirement assessments. CISO Assistant creates an occurrence per due date.
 - CISO Assistant emails assignees 30, 7 and 1 days before each due date (with the description and a link) and daily while an occurrence is overdue. A team assignee is emailed at its team email as well as its leader, deputies and members.
-- Escalation is the monthly committee, not email (person's decision, Nov 2026): the first email carries the instructions, the later ones are the warning, and once overdue the owner gets no more email. The example `settings.yaml` turns the daily overdue email off with the general setting `disabled_email_templates: [task_node_overdue]`; overdue occurrences become open actions in the committee report (s11-05).
+- Escalation is the monthly committee, not email (person's decision, Nov 2026): the first email carries the instructions, the later ones are the warning, and once overdue the owner gets no more email. The example `settings.yaml` turns the daily overdue email off with the general setting `disabled_email_templates: [task_node_overdue]`; overdue occurrences become open actions in the committee report (s12-05).
 - Only the Cyber GRC team uses CISO Assistant. A system owner is an **owner contact**: a team with a team email and no members, so it receives the reminders but has no login. The owner sends evidence to the GRC team as the runbook says; GRC uploads it against the occurrence, marks it complete, reviews it and sets the requirement result.
-- `/api/task-templates/analytics/` counts tasks by assignee and by domain, with overdue and due-soon buckets; the s11 reports read it.
+- `/api/task-templates/analytics/` counts tasks by assignee and by domain, with overdue and due-soon buckets; the s12 reports read it.
 
 **Acceptance criteria**
 - `scope/evidence-plan.yaml` declares one row per control or requirement: `ref_id`, `control` (applied control `ref_id`), `requirements` (optional), `method` (`automated`, `manual` or `hybrid`), `collector` (instance name, for `automated` and `hybrid`), `owner` (a team from `access.yaml`), `grc_team` (default from the file's top level), `every` (`3 months`, `6 months` or `12 months`) and `runbook` (a Markdown file in the repo).
@@ -61,10 +61,10 @@ How it works, using CISO Assistant's own features only (checked against the v4.3
 - The example compliance repo gains a fictional evidence plan with two manual rows, an owner contact and a runbook, all of which validate.
 
 **Limits, accepted rather than built**
-- No timed escalation: the committee's overdue list (s11-05) is the escalation.
+- No timed escalation: the committee's overdue list (s12-05) is the escalation.
 - Reminder days (30, 7, 1) are fixed by CISO Assistant, so an owner gets the instructions plus two warnings before the due date rather than exactly one. Turning off `task_node_due_soon` would remove all three, so it stays on.
 - Disabling an email template applies to every task in the instance, including the GRC team's own.
-- Occurrences have no completion date; the s11 period snapshots record who was overdue at each month end.
+- Occurrences have no completion date; the s12 period snapshots record who was overdue at each month end.
 - The email's link opens a CISO Assistant sign-in that owners cannot use; the runbook text in the email is what they act on.
 
 **Tests first**

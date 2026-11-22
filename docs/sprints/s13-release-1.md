@@ -1,12 +1,12 @@
-# s12 Release 1
+# s13 Release 1
 
 Status: Planned
 
 **Goal:** the deployment from s07 gains tested backups and a hardening and update guide, then a tagged, signed, documented first release that others can install and extend.
 
-Tasks s12-01 and s12-02 were s08-04 and s08-05 before the release 1 reorder.
+Tasks s13-01 and s13-02 were s08-04 and s08-05 before the release 1 reorder.
 
-### s12-01 Backup and restore
+### s13-01 Backup and restore
 - [ ] Done
 
 **Story:** As an operator, I want automated backups and a tested restore, so that the system of record survives failure and the restore test becomes evidence.
@@ -21,7 +21,7 @@ Tasks s12-01 and s12-02 were s08-04 and s08-05 before the release 1 reorder.
 **Functional check**
 - Run both scripts on the VM; the restore test appears as evidence in CISO Assistant.
 
-### s12-02 Hardening and update guide
+### s13-02 Hardening and update guide
 - [ ] Done
 
 **Acceptance criteria**
@@ -34,7 +34,7 @@ Tasks s12-01 and s12-02 were s08-04 and s08-05 before the release 1 reorder.
 **Functional check**
 - A reviewer applies the guide to the test VM and records the date.
 
-### s12-03 Packages and versioning
+### s13-03 Packages and versioning
 - [ ] Done
 
 **Story:** As a collector author, I want the abstractions and test kit on NuGet, so that I can build collectors outside this repo.
@@ -50,7 +50,7 @@ Tasks s12-01 and s12-02 were s08-04 and s08-05 before the release 1 reorder.
 **Functional check**
 - Install the template pack from a local feed and build a new collector.
 
-### s12-04 Release workflow
+### s13-04 Release workflow
 - [ ] Done
 
 **Story:** As the maintainer, I want releases built and published from tags with no stored tokens, so that the supply chain is trustworthy.
@@ -65,7 +65,7 @@ Tasks s12-01 and s12-02 were s08-04 and s08-05 before the release 1 reorder.
 **Functional check**
 - `gh attestation verify` succeeds on the released container image.
 
-### s12-05 Documentation site
+### s13-05 Documentation site
 - [ ] Done
 
 **Acceptance criteria**
@@ -78,7 +78,7 @@ Tasks s12-01 and s12-02 were s08-04 and s08-05 before the release 1 reorder.
 **Functional check**
 - Site reachable; quick start followed on a clean VM by a reviewer.
 
-### s12-06 Release readiness review
+### s13-06 Release readiness review
 - [ ] Done
 
 **Acceptance criteria**
@@ -86,7 +86,7 @@ Tasks s12-01 and s12-02 were s08-04 and s08-05 before the release 1 reorder.
 - OpenSSF Scorecard reviewed; findings fixed or recorded as issues.
 - Org-data check passes on the full history (`git log -p` scan), not just the diff.
 - README badges: CI, CodeQL, Scorecard, licence, latest release.
-- **Release 1 is version 1.0.0:** the annotated git tag `v1.0.0` on `main`, and a published (not draft or pre-release) GitHub release named `v1.0.0`, made by `release.yml` (s12-04), with release notes from `CHANGELOG.md`, the runner image `ghcr.io/tnbozman/evidence-hound:1.0.0`, the CLI and template packages, the SBOM and the provenance attestations.
+- **Release 1 is version 1.0.0:** the annotated git tag `v1.0.0` on `main`, and a published (not draft or pre-release) GitHub release named `v1.0.0`, made by `release.yml` (s13-04), with release notes from `CHANGELOG.md`, the runner image `ghcr.io/tnbozman/evidence-hound:1.0.0`, the CLI and template packages, the SBOM and the provenance attestations.
 
 **Tests first**
 - None (review).
