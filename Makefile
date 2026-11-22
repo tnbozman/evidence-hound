@@ -70,7 +70,7 @@ hooks: ## Install the git pre-commit hook (format check and gitleaks)
 
 ca-up: ## Start and seed a local CISO Assistant (token in .dev/ca.env)
 	$(CA_ENV) docker compose -f $(CA_COMPOSE) up -d --wait
-	scripts/ca-seed.sh
+	$(CA_ENV) scripts/ca-seed.sh
 
 ca-up-kafka: ca-up ## Also start Redpanda and the CISO Assistant dispatcher (compose profile kafka)
 	set -a && . ./.dev/ca.env && set +a && $(CA_ENV) docker compose -f $(CA_COMPOSE) --profile kafka up -d --build
