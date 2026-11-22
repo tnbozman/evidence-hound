@@ -178,7 +178,7 @@ public sealed class CheckEvaluatorTests
         }
     }
 
-    private const string TwoQueries = """
+    private static readonly string TwoQueries = """
         profile: two
         version: "1.0.0"
         connection:

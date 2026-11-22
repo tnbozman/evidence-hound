@@ -31,12 +31,31 @@ public static class QueryEvidence
             ["calls"] = query.Calls,
             ["item_count"] = query.Items.Count,
             ["identities"] = identities.Count == 0 ? "none" : includeIdentities ? "included" : "hashed",
-            ["items"] = includeIdentities || identities.Count == 0 ? query.Items.DeepClone() : new JsonArray([.. query.Items.Select(i => Minimise(i, identities))]),
+            ["items"] = Items(query, includeIdentities),
         };
-        return ContainsSecret(content, secretsInUse)
+        return Save(FileName(query.Name), content, secretsInUse, $"query '{query.Name}'");
+    }
+
+    /// <summary>The query's items as the evidence holds them: identities hashed unless the instance includes them.</summary>
+    public static JsonArray Items(QueryResult.Collected query, bool includeIdentities)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+        var identities = query.Identities.ToHashSet(StringComparer.Ordinal);
+        return includeIdentities || identities.Count == 0 ? (JsonArray)query.Items.DeepClone() : new JsonArray([.. query.Items.Select(i => Minimise(i, identities))]);
+    }
+
+    /// <summary>The file's bytes, or a problem when the content holds the value of a secret in use.</summary>
+    internal static Result<CollectedEvidence> Save(string fileName, JsonObject content, IReadOnlyCollection<Secret> secretsInUse, string what) =>
+        ContainsSecret(content, secretsInUse)
             ? Result.Fail<CollectedEvidence>(new Problem(
-                "rest.secret_in_evidence", $"The evidence for query '{query.Name}' would contain the value of a secret in use, so it was not saved and the query cannot be assessed."))
-            : Result.Ok(CollectedEvidence.FromBytes(FileName(query.Name), "application/json", Encoding.UTF8.GetBytes(content.ToJsonString(Indented))));
+                "rest.secret_in_evidence", $"The evidence for {what} would contain the value of a secret in use, so it was not saved and it cannot be assessed."))
+            : Result.Ok(CollectedEvidence.FromBytes(fileName, "application/json", Encoding.UTF8.GetBytes(content.ToJsonString(Indented))));
+
+    /// <summary>The SHA-256 of a saved file, as lowercase hex.</summary>
+    internal static string Sha256(CollectedEvidence file)
+    {
+        using var stream = file.Open();
+        return Convert.ToHexStringLower(SHA256.HashData(stream));
     }
 
     /// <summary>A short, stable, case-insensitive hash: the same person or device gets the same value in every file and every run.</summary>

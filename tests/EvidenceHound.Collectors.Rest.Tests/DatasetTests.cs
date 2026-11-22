@@ -7,7 +7,7 @@ namespace EvidenceHound.Collectors.Rest.Tests;
 /// <summary>Extract phase: datasets built from the snapshot, never from part of their inputs.</summary>
 public sealed class DatasetTests
 {
-    private const string Queries = """
+    private static readonly string Queries = """
         profile: datasets
         version: "1.0.0"
         connection:

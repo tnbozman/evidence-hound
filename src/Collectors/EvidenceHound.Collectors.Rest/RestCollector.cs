@@ -74,21 +74,62 @@ public sealed class RestCollector : ICollector, IInstanceValidator
         };
     }
 
-    /// <summary>Runs every query and saves each one that was read as one evidence file.</summary>
+    /// <summary>
+    /// Collect, extract, assess: runs every query, saves each one read and each dataset built as one evidence file, then judges every
+    /// check on exactly those files. A file that would hold a secret is not saved, and what reads it is unable to assess.
+    /// </summary>
     private async Task<Result<CollectionResult>> CollectValidAsync(Profile profile, CollectorContext context, CancellationToken cancellationToken)
     {
         var values = InstanceValuesOf(profile, context);
         var engine = new QueryEngine(context.HttpClients.CreateClient(TypeName), context.Clock, _delay);
         var snapshot = await engine.CollectAsync(profile, values, cancellationToken).ConfigureAwait(false);
         var secrets = context.Secrets.Values.ToArray();
-        var files = snapshot.Queries.Values
-            .OfType<QueryResult.Collected>()
-            .Where(q => !q.IsBootstrap)
-            .Select(q => QueryEvidence.File(q, values.IncludeIdentities, secrets))
-            .OfType<Result<CollectedEvidence>.Ok>()
-            .Select(f => f.Value)
-            .ToArray();
-        return Result.Ok(new CollectionResult([], files, []));
+        var now = context.Clock.UtcNow;
+
+        var queries = new Dictionary<string, QueryResult>(snapshot.Queries, StringComparer.Ordinal);
+        var queryFiles = new Dictionary<string, CollectedEvidence>(StringComparer.Ordinal);
+        foreach (var query in snapshot.Queries.Values.OfType<QueryResult.Collected>().Where(q => !q.IsBootstrap))
+        {
+            switch (QueryEvidence.File(query, values.IncludeIdentities, secrets))
+            {
+                case Result<CollectedEvidence>.Ok saved:
+                    queryFiles[query.Name] = saved.Value;
+                    break;
+                case Result<CollectedEvidence>.Fail refused:
+                    queries[query.Name] = new QueryResult.Failed(query.Name, refused.Errors[0].Message);
+                    break;
+            }
+        }
+
+        var renderer = new Renderer(values.Parameters, snapshot.Vars, values.Secrets);
+        var sources = new Dictionary<string, RowSource>(Extraction.Build(profile, queries, values.IncludeIdentities, renderer, now), StringComparer.Ordinal);
+        var datasetFiles = new Dictionary<string, CollectedEvidence>(StringComparer.Ordinal);
+        foreach (var dataset in profile.Datasets.Select(d => sources[d.Name]).OfType<RowSource.Rows>())
+        {
+            switch (DatasetEvidence.File(dataset, queryFiles, secrets))
+            {
+                case Result<CollectedEvidence>.Ok saved:
+                    datasetFiles[dataset.Name] = saved.Value;
+                    break;
+                case Result<CollectedEvidence>.Fail refused:
+                    sources[dataset.Name] = new RowSource.Failed(dataset.Name, refused.Errors[0].Message);
+                    break;
+            }
+        }
+
+        var files = queryFiles.Concat(datasetFiles).ToDictionary(StringComparer.Ordinal);
+        return Result.Combine(profile.Checks.Select(check => Assess(check, sources, files, renderer, now, context.Name)))
+            .Map(checks => new CollectionResult(checks, [.. queryFiles.Values, .. datasetFiles.Values], []));
+    }
+
+    private static Result<CheckResult> Assess(
+        Check check, Dictionary<string, RowSource> sources, Dictionary<string, CollectedEvidence> files, Renderer renderer, DateTimeOffset now, string source)
+    {
+        var over = check.Over[0];
+        var input = sources.GetValueOrDefault(over) ?? new RowSource.Failed(over, "It was not read.");
+        var file = files.GetValueOrDefault(over)?.FileName;
+        var finding = CheckEvaluator.Evaluate(check, input, renderer, now, file);
+        return CheckId.Create(check.Id).Bind(id => CheckResult.Create(id, finding.Outcome, Truncate(finding.Observation), file is null ? [] : [file], now, source));
     }
 
     private static InstanceValues InstanceValuesOf(Profile profile, CollectorContext context) => new(

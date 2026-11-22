@@ -19,6 +19,10 @@ public enum RenderMode
 /// </summary>
 public sealed record Renderer(IReadOnlyDictionary<string, string> Parameters, IReadOnlyDictionary<string, string> Vars, IReadOnlyDictionary<string, Secret> Secrets)
 {
+    /// <summary>No parameters, variables or secrets.</summary>
+    public static Renderer Empty { get; } = new(
+        new Dictionary<string, string>(StringComparer.Ordinal), new Dictionary<string, string>(StringComparer.Ordinal), new Dictionary<string, Secret>(StringComparer.Ordinal));
+
     public Renderer WithVars(IReadOnlyDictionary<string, string> vars) => this with { Vars = vars };
 
     public Result<string> Render(string template, JsonNode? item = null, RenderMode mode = RenderMode.Request, Func<string, string>? escapeItem = null) =>
