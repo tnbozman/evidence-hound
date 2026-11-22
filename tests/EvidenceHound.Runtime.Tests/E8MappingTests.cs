@@ -47,6 +47,21 @@ public class E8MappingTests
     }
 
     [Fact]
+    public void Every_mapped_check_is_reported_by_a_reference_or_example_manual_collector()
+    {
+        var known = ReferenceChecks().Concat(ExampleManualChecks()).ToHashSet();
+
+        Mapping.Mapping.Requirements.SelectMany(r => r.Checks).Distinct().Where(c => !known.Contains(c)).ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void Office_macro_antivirus_scanning_is_manual_because_sophos_reads_network_devices_only()
+    {
+        Mapping.Mapping.Requirements.ShouldNotContain(r => r.RequirementRef == "ISM-1672");
+        Mapping.ManualOnly.ShouldContain(m => m.Key.Value == "ISM-1672");
+    }
+
+    [Fact]
     public void Repeated_ism_refs_use_rows_all()
     {
         var keys = Mapping.Mapping.Requirements.Select(r => r.Key).Concat(Mapping.ManualOnly.Select(m => m.Key));

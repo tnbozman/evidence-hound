@@ -10,8 +10,6 @@ public class SophosOptionsTests
         options.IdUrl.ShouldBe(new Uri("https://id.sophos.com/"));
         options.ApiUrl.ShouldBe(new Uri("https://api.central.sophos.com/"));
         options.TenantId.ShouldBeNull();
-        options.StaleAgentDays.ShouldBe(14);
-        (options.HealthyPassPercent, options.HealthyPartialPercent).ShouldBe((95, 80));
         options.SupportedFirmware.ShouldBe(["20.0", "21.0"]);
         options.IncludeIdentities.ShouldBeFalse();
     }
@@ -27,8 +25,6 @@ public class SophosOptionsTests
     }
 
     [Theory]
-    [InlineData("stale_agent_days", "soon")]
-    [InlineData("healthy_pass_percent", "120")]
     [InlineData("supported_firewall_firmware", "latest")]
     [InlineData("api_url", "ftp://api.example.com")]
     public void Invalid_settings_are_problems(string name, string value)
@@ -42,16 +38,17 @@ public class SophosOptionsTests
     }
 
     [Fact]
-    public void Partial_above_pass_is_a_problem()
+    public void Settings_of_the_removed_endpoint_checks_are_ignored_so_older_configs_still_load()
     {
         var settings = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["client_id"] = "c",
             ["supported_firewall_firmware"] = "21.0",
-            ["healthy_pass_percent"] = "80",
+            ["stale_agent_days"] = "soon",
+            ["healthy_pass_percent"] = "120",
             ["healthy_partial_percent"] = "90",
         };
 
-        SophosOptions.FromSettings(new CollectorSettings(settings)).Problems().ShouldHaveSingleItem().Message.ShouldContain("healthy_partial_percent");
+        SophosOptions.FromSettings(new CollectorSettings(settings)).Value().SupportedFirmware.ShouldBe(["21.0"]);
     }
 }
