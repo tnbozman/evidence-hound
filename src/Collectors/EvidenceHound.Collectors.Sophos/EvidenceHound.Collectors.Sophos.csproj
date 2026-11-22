@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>EvidenceHound.Collectors.Sophos</RootNamespace>
+    <IsPackable>true</IsPackable>
+    <PackageId>EvidenceHound.Collectors.Sophos</PackageId>
+    <Description>The Evidence Hound Sophos Central collector: read-only checks of endpoint protection health, tamper protection, stale agents and firewall firmware.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="EvidenceHound.Collectors.Sophos.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\EvidenceHound.Collectors.Abstractions\EvidenceHound.Collectors.Abstractions.csproj" />
+  </ItemGroup>
+</Project>

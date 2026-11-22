@@ -1,0 +1,137 @@
+{
+  "items": [
+    {
+      "id": "00000000-0000-4000-8000-00000000d004",
+      "type": "computer",
+      "tenant": {
+        "id": "00000000-0000-4000-8000-0000000050a1"
+      },
+      "hostname": "EX-LT-0004",
+      "health": {
+        "overall": "good",
+        "threats": {
+          "status": "good"
+        },
+        "services": {
+          "status": "good",
+          "serviceDetails": [
+            {
+              "name": "Sophos MCS Agent",
+              "status": "running"
+            }
+          ]
+        }
+      },
+      "os": {
+        "isServer": false,
+        "platform": "windows",
+        "name": "Windows 11 Pro",
+        "majorVersion": 10,
+        "minorVersion": 0,
+        "build": 26100
+      },
+      "ipv4Addresses": [
+        "192.0.2.14"
+      ],
+      "macAddresses": [
+        "00-00-5E-00-53-04"
+      ],
+      "associatedPerson": {
+        "name": "EXAMPLE\\person4",
+        "viaLogin": "EXAMPLE\\person4",
+        "id": "00000000-0000-4000-8000-00000000a004"
+      },
+      "tamperProtectionEnabled": true,
+      "assignedProducts": [
+        {
+          "code": "coreAgent",
+          "version": "2024.3.1.2",
+          "status": "installed"
+        },
+        {
+          "code": "interceptX",
+          "version": "2024.3.1.2",
+          "status": "installed"
+        },
+        {
+          "code": "endpointProtection",
+          "version": "2024.3.1.2",
+          "status": "installed"
+        }
+      ],
+      "lastSeenAt": "2026-11-19T08:01:44.000Z",
+      "lockdown": {
+        "status": "notInstalled"
+      }
+    },
+    {
+      "id": "00000000-0000-4000-8000-00000000d005",
+      "type": "server",
+      "tenant": {
+        "id": "00000000-0000-4000-8000-0000000050a1"
+      },
+      "hostname": "EX-SRV-0005",
+      "health": {
+        "overall": "good",
+        "threats": {
+          "status": "good"
+        },
+        "services": {
+          "status": "good",
+          "serviceDetails": [
+            {
+              "name": "Sophos MCS Agent",
+              "status": "running"
+            }
+          ]
+        }
+      },
+      "os": {
+        "isServer": true,
+        "platform": "windows",
+        "name": "Windows Server 2022 Standard",
+        "majorVersion": 10,
+        "minorVersion": 0,
+        "build": 20348
+      },
+      "ipv4Addresses": [
+        "192.0.2.15"
+      ],
+      "macAddresses": [
+        "00-00-5E-00-53-05"
+      ],
+      "associatedPerson": {
+        "name": "EXAMPLE\\person5",
+        "viaLogin": "EXAMPLE\\person5",
+        "id": "00000000-0000-4000-8000-00000000a005"
+      },
+      "tamperProtectionEnabled": true,
+      "assignedProducts": [
+        {
+          "code": "coreAgent",
+          "version": "2024.3.1.2",
+          "status": "installed"
+        },
+        {
+          "code": "interceptX",
+          "version": "2024.3.1.2",
+          "status": "installed"
+        },
+        {
+          "code": "endpointProtection",
+          "version": "2024.3.1.2",
+          "status": "installed"
+        }
+      ],
+      "lastSeenAt": "2026-11-20T22:14:03.118Z",
+      "lockdown": {
+        "status": "notInstalled"
+      }
+    }
+  ],
+  "pages": {
+    "fromKey": "page2-key-7f1c",
+    "size": 2,
+    "maxSize": 500
+  }
+}

@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Collectors\EvidenceHound.Collectors.Sophos\EvidenceHound.Collectors.Sophos.csproj" />
+    <ProjectReference Include="..\..\src\EvidenceHound.Collectors.Testing\EvidenceHound.Collectors.Testing.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\fixtures\sophos\*.json" Link="sophos\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
