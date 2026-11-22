@@ -349,6 +349,100 @@ public sealed class ScopePlanCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Detailed_exitcode_is_0_when_empty_and_2_with_changes()
+    {
+        await WriteScopeAsync();
+        EmptyInstance();
+        (await Plan("--detailed-exitcode")).ShouldBe(2, _error.ToString());
+
+        HeldStructure();
+        var exported = Path.Combine(_workDir, "exported", "scope");
+        (await Export("--out", exported)).ShouldBe(ExitCodes.Ok, _error.ToString());
+        (await HoundCli.RunAsync(
+            ["scope", "plan", exported, "--detailed-exitcode"], _output, _error, logging => logging.AddProvider(_logs),
+            new Dictionary<string, string?> { ["HOUND_CA_URL"] = $"{_ca.Url}/api/", ["HOUND_CA_TOKEN"] = Token }, _ct)).ShouldBe(0, _output.ToString() + _error);
+
+        // Any error is 1 with the flag, so that 2 always means changes: a usage error, and a missing token.
+        (await Plan("--detailed-exitcode", "--format", "yaml")).ShouldBe(1);
+        (await Plan(new Dictionary<string, string?> { ["HOUND_CA_URL"] = $"{_ca.Url}/api/" }, "--detailed-exitcode")).ShouldBe(1);
+        (await Plan(new Dictionary<string, string?> { ["HOUND_CA_URL"] = $"{_ca.Url}/api/" })).ShouldBe(ExitCodes.Configuration);
+    }
+
+    [Fact]
+    public async Task Saved_plan_holds_no_token()
+    {
+        await WriteScopeAsync();
+        EmptyInstance();
+        var saved = Path.Combine(_workDir, "plan.json");
+
+        (await Plan("--out", saved)).ShouldBe(ExitCodes.Ok, _error.ToString());
+
+        var text = await File.ReadAllTextAsync(saved, _ct);
+        text.ShouldNotContain(Token);
+        var json = JsonNode.Parse(text)!;
+        json["ciso_assistant_url"]!.GetValue<string>().ShouldBe($"{_ca.Url}/api/");
+        json["inputs_sha256"]!.GetValue<string>().Length.ShouldBe(64);
+        json["plan"]!["changes"]!.AsArray().Count.ShouldBe(7);
+        _output.ToString().ShouldStartWith("## Scope plan\n");
+    }
+
+    [Fact]
+    public async Task Apply_saved_plan_without_replanning()
+    {
+        await WriteScopeAsync();
+        HeldStructure();
+        Accept("POST", "/api/compliance-assessments/");
+        Accept("POST", "/api/applied-controls/");
+        Accept("PATCH", "/api/requirement-assessments/ra-1/");
+        var saved = Path.Combine(_workDir, "plan.json");
+        (await Plan("--out", saved)).ShouldBe(ExitCodes.Ok, _error.ToString());
+        _output.GetStringBuilder().Clear();
+        _ca.ResetLogEntries();
+
+        var exitCode = await ApplySaved(saved);
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var report = JsonNode.Parse(_output.ToString())!;
+        report["written"]!.GetValue<int>().ShouldBe(3);
+        _ca.LogEntries.Where(e => e.RequestMessage!.Method != "GET").Select(e => (e.RequestMessage!.Method, e.RequestMessage.Path)).ShouldBe(
+            [("POST", "/api/compliance-assessments/"), ("POST", "/api/applied-controls/"), ("PATCH", "/api/requirement-assessments/ra-1/")]);
+    }
+
+    [Fact]
+    public async Task Apply_refuses_a_stale_plan_when_scope_or_instance_changed()
+    {
+        await WriteScopeAsync();
+        HeldStructure();
+        var saved = Path.Combine(_workDir, "plan.json");
+        (await Plan("--out", saved)).ShouldBe(ExitCodes.Ok, _error.ToString());
+
+        // Another CISO Assistant.
+        (await ApplySaved(saved, url: "http://ciso.example.com/api/")).ShouldBe(ExitCodes.Configuration);
+        _error.ToString().ShouldContain("stale");
+
+        // The scope files changed since the plan.
+        var controls = Path.Combine(ScopeDir, "controls.yaml");
+        await File.AppendAllTextAsync(controls, "    owner: it@example.com\n", _ct);
+        (await ApplySaved(saved)).ShouldBe(ExitCodes.Configuration);
+        await File.WriteAllTextAsync(controls, ScopeCommandTests.Controls, _ct);
+
+        // Someone made the audit in CISO Assistant after the plan, which planned to create it.
+        _ca.Given(Request.Create().WithPath("/api/compliance-assessments/").UsingGet()).AtPriority(0)
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject
+            {
+                ["count"] = 1,
+                ["results"] = new JsonArray(new JsonObject { ["id"] = "ca-new", ["ref_id"] = "EXAMPLE-BASELINE-2026", ["folder"] = new JsonObject { ["id"] = "f-ex", ["str"] = "f-ex" } }),
+            }.ToJsonString()));
+        Object("compliance-assessments", "ca-new", new JsonObject { ["id"] = "ca-new", ["ref_id"] = "EXAMPLE-BASELINE-2026", ["name"] = "Made by hand", ["folder"] = "f-ex" });
+        _error.GetStringBuilder().Clear();
+        (await ApplySaved(saved)).ShouldBe(ExitCodes.Configuration);
+        _error.ToString().ShouldContain("scope.plan_stale");
+        _error.ToString().ShouldContain("EXAMPLE-BASELINE-2026");
+
+        _ca.LogEntries.ShouldAllBe(e => e.RequestMessage!.Method == "GET");
+    }
+
+    [Fact]
     public async Task Apply_refuses_an_invalid_scope_without_reading_ciso_assistant()
     {
         await WriteScopeAsync(ScopeCommandTests.Audit.Replace("systems: [Example 365]", "systems: [Example tablets]", StringComparison.Ordinal));
@@ -471,6 +565,15 @@ public sealed class ScopePlanCommandTests : IDisposable
                 }),
             }.ToJsonString()));
     }
+
+    private Task<int> ApplySaved(string saved, string? url = null) =>
+        HoundCli.RunAsync(
+            ["scope", "apply", saved],
+            _output,
+            _error,
+            logging => logging.AddProvider(_logs),
+            new Dictionary<string, string?> { ["HOUND_CA_URL"] = url ?? $"{_ca.Url}/api/", ["HOUND_CA_TOKEN"] = Token },
+            _ct);
 
     private Task<int> Run(string command, params string[] args) =>
         HoundCli.RunAsync(

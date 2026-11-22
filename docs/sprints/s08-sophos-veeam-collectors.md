@@ -103,8 +103,8 @@ Projects: `src/Collectors/EvidenceHound.Collectors.Sophos`. Recorded, fictional 
 - `ScopePlanCommandTests.Detailed_exitcode_is_0_when_empty_and_2_with_changes`
 - `ScopePlanCommandTests.Saved_plan_holds_no_token`
 - `SavedPlanTests.Round_trips_changes_drift_and_fingerprints`
-- `ScopeApplyCommandTests.Applies_saved_plan_without_replanning` (GET calls only for the stale check)
-- `ScopeApplyCommandTests.Stale_plan_is_refused_when_scope_or_instance_changed`
+- `ScopePlanCommandTests.Apply_saved_plan_without_replanning` (GET calls only for the stale check)
+- `ScopePlanCommandTests.Apply_refuses_a_stale_plan_when_scope_or_instance_changed` (in the plan tests, which hold the recorded CISO Assistant)
 
 **Functional check**
 - Against the local CISO Assistant: `hound scope plan examples/compliance-repo/scope --config examples/compliance-repo/hound.yaml --out plan.json --detailed-exitcode` exits 2, then `hound scope apply plan.json` writes the plan. Repeat it after editing one object in the UI between plan and apply, and record the `scope.plan_stale` refusal.
