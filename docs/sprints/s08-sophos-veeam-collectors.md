@@ -8,7 +8,7 @@ Was s07 before the release 1 reorder. It moved after the thin deployment so that
 
 Veeam (s08-03 and s08-04) moved to s09 on 2026-11-22 at the person's request, so this sprint focuses on Sophos.
 
-Also in this sprint, ready for the first real configuration: scope plans show their compliance impact (s08-06), and plans get Terraform-style exit codes and saved plan files (s08-07). The sprint ends with a hands-on trial on a real Sophos Central tenant (s08-08), done together with a person, to prove Evidence Hound works end to end outside recordings.
+Also in this sprint, ready for the first real configuration: scope plans show their compliance impact (s08-06), and plans get Terraform-style exit codes and saved plan files (s08-07). The hands-on trial on a real Sophos Central tenant (s08-08), done together with a person, proves Evidence Hound works end to end outside recordings. The sprint ends with a Microsoft 365 step in the same local trial (s08-10), tried on a test tenant.
 
 Projects: `src/Collectors/EvidenceHound.Collectors.Sophos`. Recorded, fictional responses only.
 
@@ -171,6 +171,30 @@ Added 2026-11-22 at the person's request, as the route for the s08-08 trial. Cha
 **Functional check**
 - In this repo's CI with a fresh local CISO Assistant: `HOUND_TRIAL_YES=1 make trial` runs preflight, `hound init`, applies the scope, adds a manual source, publishes its evidence and stops at the Sophos step; a second run skips the finished steps and plans no changes. Record the transcript (no tokens) in `docs/evidence/s08/s08-09.md`.
 - **(person)** Runs `make trial` in their dev container up to the Sophos step; that run is the start of s08-08.
+
+### s08-10 Microsoft 365 in the local trial
+- [ ] Done
+
+Added 2026-11-22 at the person's request: the M365 collector exists since s05, so the trial gets an M365 step after Sophos. Do it after s08-08. The person has no Microsoft 365 tenant of their own, so the route to a real one is part of the task (below).
+
+**Story:** As the maintainer, or a GRC lead trying Evidence Hound, I want `make trial` to walk me through adding a Microsoft 365 tenant after Sophos, from the app registration to results in CISO Assistant, so that I see the M365 checks work end to end and not only against recordings.
+
+**Which tenant.** A throwaway test tenant, never a work one: the Microsoft 365 Developer Program's E5 sandbox where the person qualifies for it, otherwise a Microsoft 365 Business Premium trial (it has Entra ID P1 and Intune, which the Conditional Access and device checks need). The tutorial says how to get each, what the checks need from it, and to cancel the trial afterwards. The collector itself is tested against the s05 recordings, as before.
+
+**Acceptance criteria**
+- **The trial's M365 step**, after Sophos: says what an app registration needs (the Graph application permissions in `docs/collectors/m365.md`, admin consent, a certificate preferred over a client secret) and how to make a test certificate locally; runs `hound add collector m365 --secrets-dir /trial/secrets` (tenant ID, client ID and supported Windows builds asked, the rest defaulted), then `config validate --check-secrets`, a dry run, a real run after asking, and `status`; and says where to look in CISO Assistant. It skips itself once done, and an unattended run (`HOUND_TRIAL_YES=1`) stops before it, as it does before Sophos.
+- **A multi-line secret can be added.** `hound add collector` takes `--secret-file <secret>=<path>` and copies that file into the secrets folder (mode 600) and references it, so a PEM certificate and key never go through a prompt or a command line value. Without it, a secret is asked as today.
+- **The tutorial** (`docs/tutorials/local-trial.md`) gets an M365 section like the Sophos one, and `docs/collectors/m365.md` links to it.
+- Nothing from the tenant goes in the repo, in chat or in commit text: no tenant or client IDs, domains, user names, device names or screenshots with any of those.
+
+**Tests first**
+- `AddCollectorCommandTests.Secret_file_is_copied_mode_600_and_referenced`
+- `AddCollectorCommandTests.M365_asks_only_its_required_settings`
+- `scripts/tests/trial.bats`: the M365 step is skipped when unattended and when an m365 collector is already in `hound.yaml`.
+
+**Functional check**
+- In CI: the unattended trial still stops before Sophos and M365.
+- **(person)** With a test tenant: `make trial` through the M365 step. Record in `docs/evidence/s08/s08-10.md` only the date, the versions, the kind of tenant (developer sandbox or Business Premium trial), each step's outcome, each check's outcome, and the defects found with links to their fixes.
 
 ## Discovered work
 
