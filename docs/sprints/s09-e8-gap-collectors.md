@@ -169,6 +169,66 @@ Moved from s08 on 2026-11-22 at the person's request (s08 focuses on Sophos). Wa
 
 **Also (from s08-05):** `docs/collectors/veeam.md` as for M365, with the doc check-ID test; every Veeam check mapped in `mappings/essential-eight-2023.yaml` and removed from `manual_only` where it now covers a requirement; `veeam` added back to `E8MappingTests.ReferenceTypes`.
 
+### Moved from s08
+
+Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in the `sophos-central` profile, so they come after s09-13 (Sophos as a profile) and are written in the profile, not in the coded collector. Each still starts by confirming what the Sophos Central API exposes; the Firewall API v1 and Switch API v1 specs could not be reached from the cloud build session, so the person saves them from developer.sophos.com for the build to read (not to commit).
+
+### s09-15 Firewall firmware update timeliness (was s08-13)
+- [ ] Done
+
+**Story:** As a compliance owner, I want to know when a firewall has had a firmware update available for longer than allowed, so that ISM-1694 (internet-facing devices patched within two weeks) has live evidence, not only "still supported".
+
+**Acceptance criteria**
+- First, confirm in the Sophos Central Firewall API v1 spec how to read available firmware upgrades and when each was released. Known so far: `POST firewall/v1/firewalls/actions/firmware-upgrade-check` with `{"firewalls": [ids]}` returns each firewall's `upgradeToVersion` list and a `firmwareVersions` list. Still to confirm: whether any field gives a release date, and whether the Service Principal Read-Only role may call it (it is a POST that changes nothing). If release dates are not exposed, the check reports an available upgrade without age, and the task says what evidence still has to be manual.
+- In the `sophos-central` profile: a `firmware_upgrades` query (fan-out per firewall, or one batched call), joined into the `firewall_firmware` dataset, and `network.firewall.firmware_current`: pass when no firewall has an upgrade outstanding for more than `firmware_update_days` (default 14); fail lists the counts, not names; no firewalls is `not_applicable`.
+- Mapped to ISM-1694 for the perimeter firewall, and removed from `manual_only` only if it covers the requirement.
+
+**Tests first**
+- Profile tests from fictional recordings: up to date, upgrade within the window, upgrade overdue, no firewalls (`not_applicable`), and the check call refused (unable to assess, not fail).
+
+**Functional check**
+- Dry run against the person's tenant.
+
+### s09-16 Sophos switches (was s08-14)
+- [ ] Done
+
+**Story:** As a compliance owner with Sophos switches, I want them read like firewalls, so that non-internet-facing network devices (ISM-1501, ISM-1695) have live evidence.
+
+**Acceptance criteria**
+- First, confirm from the Switch API v1 spec whether a read-only credential can list managed switches and their firmware. Known so far, from public client libraries only: `switch/v1` has `settings/mac-filtering` and `tasks`, with no switch list; the on-switch REST API is per device with its own credentials, so it is out of scope. If there is no list, close the task with that finding in `docs/collectors/sophos.md` and keep switches a manual source.
+- If there is: a `switches` query and `network.switch.firmware_supported` against `supported_switch_firmware` in the profile; no switches is `not_applicable`.
+
+**Tests first**
+- Profile tests from fictional recordings, as for firewalls.
+
+**Functional check**
+- Dry run against the person's tenant, if it has switches.
+
+### s09-17 Finish the Sophos trial on a real tenant (rest of s08-08)
+- [ ] Done
+
+**Story:** As the maintainer, I want the hands-on Sophos trial finished and written up, so that there is a record that Evidence Hound works end to end on a real tenant.
+
+**Done in s08.** The person ran `make trial` through the Sophos dry run against their tenant; that run led to s08-11 (Sophos is read for network devices only) and the s08 discovered work.
+
+**Acceptance criteria (what is left)**
+- **(person)** A dry run with the s08-12 collector (version 2.1.0), confirming the Read-Only role can read `common/v1/admins` and `common/v1/roles` and that the predefined role is named Super Admin; outcomes recorded without names.
+- **(person)** The real run, results on the mapped requirements in CISO Assistant with evidence attached, and a second `hound scope plan` that plans nothing.
+- `docs/evidence/s08/s08-08.md` written from what the person reports: date, versions, the shape of the setup, each step's and check's outcome, compliance counts before and after, defects with links to their fixes. No identifiers.
+- If s09-13 has landed by then, the run uses the `sophos-central` profile.
+
+### s09-18 Microsoft 365 trial on a test tenant (rest of s08-10)
+- [ ] Done
+
+**Done in s08.** The trial's Microsoft 365 step, `hound add collector --secret-file`, and the tutorial section are built and tested (CI's unattended trial stops before Sophos and Microsoft 365).
+
+**Acceptance criteria (what is left)**
+- **(person)** Get a throwaway test tenant (Microsoft 365 Developer Program E5 sandbox if eligible, otherwise a Business Premium trial) and run `make trial` through the Microsoft 365 step.
+- Record `docs/evidence/s08/s08-10.md`: date, versions, the kind of tenant, each step's and check's outcome, defects with links to their fixes. No tenant or client IDs, domains, user or device names.
+- Fix any defect test-first; correct the tutorial wherever it was wrong or unclear.
+
 ## Discovered work
+
+- Open items from s08's discovered work (trial token refresh, the seed's compliance owner, HTTP logging at `info`, wizard prompts, trial re-runs, evidence on applied controls, the "unlisted rule" wording, `HOUND_CA_URL` in the dev container) are listed in [s08](s08-sophos-veeam-collectors.md#discovered-work); pick them up here or in s12.
 
 ## Sprint review

@@ -1,6 +1,6 @@
 # s08 Sophos Central reference collector
 
-Status: In progress
+Status: Done
 
 Was s07 before the release 1 reorder. It moved after the thin deployment so that Microsoft 365 evidence runs on a schedule first.
 
@@ -113,7 +113,9 @@ Projects: `src/Collectors/EvidenceHound.Collectors.Sophos`. Recorded, fictional 
 - Result (2026-11-22): in CI against a fresh CISO Assistant seeded with the example repo (`scripts/check-scope-plans.sh`, [trial job](https://github.com/tnbozman/evidence-hound/actions/runs/44998421402/job/137134420701)): `--detailed-exitcode --out` exited 2 (6 updates, 2 drifted); after an edit to the ISM-1486 row through the API, `scope apply plan.json` exited 3 with `scope.plan_stale` naming `assessment/EX-E8-2026/ISM-1486` and wrote nothing; a fresh saved plan applied with 6 written, 0 failed. Evidence: [`docs/evidence/s08/s08-07.md`](../evidence/s08/s08-07.md).
 
 ### s08-08 Hands-on trial: real Sophos Central tenant
-- [ ] Done
+- [ ] Done (partly; the rest moved to s09-17 when s08 closed on 2026-11-22)
+
+**Where it stands.** The person ran `make trial` through the Sophos dry run against their tenant; that run led to s08-11 and the s08-08 entries under Discovered work. The real run, the second empty plan and the evidence write-up moved to [s09-17](s09-e8-gap-collectors.md#s09-17-finish-the-sophos-trial-on-a-real-tenant-rest-of-s08-08).
 
 Do this task last in the sprint: it needs s08-01, s08-02, s08-05, s08-06, s08-07 and s08-09 merged into the sprint branch. It runs through the interactive local trial (s08-09) in the person's dev container, against the CISO Assistant running there; the s07 thin deployment host is an alternative, not a prerequisite. "The host" in the steps below is whichever the person uses.
 
@@ -176,7 +178,9 @@ Added 2026-11-22 at the person's request, as the route for the s08-08 trial. Cha
 - **(person)** Runs `make trial` in their dev container up to the Sophos step; that run is the start of s08-08.
 
 ### s08-10 Microsoft 365 in the local trial
-- [ ] Done
+- [ ] Done (built; the test-tenant run moved to s09-18 when s08 closed on 2026-11-22)
+
+**Where it stands.** The trial's Microsoft 365 step, `hound add collector --secret-file` and the tutorial section are built and tested, and CI's unattended trial stops before Sophos and Microsoft 365. The run on a test tenant moved to [s09-18](s09-e8-gap-collectors.md#s09-18-microsoft-365-trial-on-a-test-tenant-rest-of-s08-10).
 
 Added 2026-11-22 at the person's request: the M365 collector exists since s05, so the trial gets an M365 step after Sophos. Do it after s08-08. The person has no Microsoft 365 tenant of their own, so the route to a real one is part of the task (below).
 
@@ -223,7 +227,7 @@ Added 2026-11-22 from the s08-08 trial, at the person's request. The trial tenan
 - Result (2026-11-22): rebuilt the trial image and ran `hound run --config hound.yaml --only sophos --dry-run` in the trial container against the person's tenant (a home Sophos Central tenant with one XGS firewall and no endpoints). Collector version 2.0.0, one evidence file (`firewalls.json`), one check, no problems, nothing sent. The check failed correctly: the firewall had moved from 21.5 to 22.0 firmware since the earlier run, and the trial config lists only 21.5 as supported. Unit suite 950 passed (with the dev container's `HOUND_CA_URL` unset; see discovered work), lint clean.
 
 ### s08-12 Sophos Central admins: MFA and roles
-- [ ] Done
+- [x] Done (the dry run on the person's tenant is still to do, carried in s09-17)
 
 **Story:** As a compliance owner, I want the Sophos Central admins, their roles and MFA read, so that privileged access to the console that manages our network devices has live evidence.
 
@@ -248,7 +252,7 @@ Added 2026-11-22 from the s08-08 trial, at the person's request. The trial tenan
 - Functional check: waits for a dry run on the person's tenant, which also confirms the Read-Only role can read admins and roles and the predefined role's exact name.
 
 ### s08-13 Firewall firmware update timeliness
-- [ ] Done
+- [ ] Moved to [s09-15](s09-e8-gap-collectors.md#s09-15-firewall-firmware-update-timeliness-was-s08-13) when s08 closed on 2026-11-22, to be built as a check in the `sophos-central` REST profile (s09-13).
 
 **Story:** As a compliance owner, I want to know when a firewall has had a firmware update available for longer than allowed, so that ISM-1694 (internet-facing devices patched within two weeks) has live evidence, not only "still supported".
 
@@ -264,7 +268,7 @@ Added 2026-11-22 from the s08-08 trial, at the person's request. The trial tenan
 - Dry run against the person's tenant.
 
 ### s08-14 Sophos switches
-- [ ] Done
+- [ ] Moved to [s09-16](s09-e8-gap-collectors.md#s09-16-sophos-switches-was-s08-14) when s08 closed on 2026-11-22, to be built in the `sophos-central` REST profile if the Switch API lists switches.
 
 **Story:** As a compliance owner with Sophos switches, I want them read like firewalls, so that non-internet-facing network devices (ISM-1501, ISM-1695) have live evidence.
 
@@ -293,3 +297,18 @@ Added 2026-11-22 from the s08-08 trial, at the person's request. The trial tenan
 - `PublishCommandTests.Without_a_url_exits_three` fails in the dev container, because the container sets `HOUND_CA_URL` and the test expects no address. The test should clear the variable for its own process (or the command take its environment injected), so `make test` is green in the dev container.
 
 ## Sprint review
+
+**2026-11-22.** Closed at the person's request, to start s09 with the REST collector. Done: s08-01, 02, 05, 06, 07, 09, 11 and 12, each with red and green commits; evidence for 06, 07 and 09 is in `docs/evidence/s08/`, from CI's trial job.
+
+- **Sophos Central collector** (version 2.1.0): reads the firewalls and the admins and roles of Sophos Central itself, read-only, with identities hashed. Two checks: firewall firmware still supported (ISM-1501) and the Super Admin count (ISM-1883). After the hands-on trial it reads network devices only; endpoint protection evidence comes from the endpoints' own antivirus (s08-11).
+- **Scope plans** show their compliance impact (s08-06), and plans have Terraform-style exit codes and saved plan files that `scope apply` refuses when stale (s08-07).
+- **Guided setup in `hound`** (`hound init`, `hound add system|control|collector`, `--secret-file`) and `make trial`, an interactive tutorial with Sophos and Microsoft 365 steps, run unattended in CI twice per push (s08-09, s08-10).
+
+966 unit and contract tests and lint pass; CI's functional, trial, compose and image jobs are green.
+
+Moved to s09: firmware update timeliness (s09-15) and switches (s09-16), both as checks in the REST profile; the rest of the real-tenant Sophos trial, including the s08-12 dry run (s09-17); the Microsoft 365 run on a test tenant (s09-18).
+
+What the feedback taught us:
+- A real tenant changes the plan. The trial showed the person's Sophos Central manages network devices and no endpoints, so three endpoint checks were removed rather than left failing.
+- Confirm the vendor's API before writing a check. Sophos's admin MFA is not in its API at all; its firmware and switch APIs could not be read from the cloud session, so those tasks wait for the specs rather than guessing.
+- CI's CISO Assistant sometimes fails to become healthy within compose's wait; a re-run passes. Watch for it before blaming a change.
