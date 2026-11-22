@@ -9,8 +9,11 @@ internal sealed record SophosConnection(string ClientId, Secret ClientSecret, st
 /// <summary>A signed-in session for one tenant: the bearer token, the tenant ID and the tenant's data region API address.</summary>
 internal sealed record SophosSession(string Token, string TenantId, Uri DataRegion);
 
-/// <summary>One list to read from the tenant's data region, paged by page number: its name (also its evidence file name) and its path.</summary>
-internal sealed record SophosSource(string Name, string Path)
+/// <summary>
+/// One list to read from the tenant's data region, paged by page number: its name (also its evidence file name), its path, and
+/// whether its items identify devices, people or networks.
+/// </summary>
+internal sealed record SophosSource(string Name, string Path, bool HasIdentities = true)
 {
     public string EvidenceFile => Name + ".json";
 }

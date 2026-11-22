@@ -14,26 +14,25 @@ internal static class SophosEvidence
 {
     private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
 
-    /// <summary>Properties of an endpoint or firewall that identify a device, a person or a network.</summary>
+    /// <summary>Properties, at any depth, that identify a device, a person, an organisation or a network.</summary>
     private static readonly HashSet<string> Identifying = new(StringComparer.Ordinal)
     {
         "hostname", "name", "serialNumber", "ipv4Addresses", "ipv6Addresses", "macAddresses", "externalIpv4Addresses", "externalIpv6Addresses", "internalIpv4Addresses",
+        "firstName", "lastName", "email", "viaLogin",
     };
-
-    /// <summary>Properties of an endpoint's associated person.</summary>
-    private static readonly HashSet<string> Person = new(StringComparer.Ordinal) { "name", "viaLogin" };
 
     private static readonly HashSet<string> Locations = new(StringComparer.Ordinal) { "geoLocation" };
 
     public static CollectedEvidence File(SophosCollection collection, bool includeIdentities)
     {
         ArgumentNullException.ThrowIfNull(collection);
+        var keep = includeIdentities || !collection.Source.HasIdentities;
         var content = new JsonObject
         {
             ["request"] = collection.Source.Path,
             ["pages"] = collection.Pages,
-            ["identities"] = includeIdentities ? "included" : "hashed",
-            ["value"] = includeIdentities ? collection.Items.DeepClone() : new JsonArray([.. collection.Items.Select(Minimise)]),
+            ["identities"] = !collection.Source.HasIdentities ? "none" : includeIdentities ? "included" : "hashed",
+            ["value"] = keep ? collection.Items.DeepClone() : new JsonArray([.. collection.Items.Select(Minimise)]),
         };
         return CollectedEvidence.FromBytes(collection.Source.EvidenceFile, "application/json", Encoding.UTF8.GetBytes(content.ToJsonString(Indented)));
     }
@@ -45,35 +44,15 @@ internal static class SophosEvidence
         return "sha256:" + Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(value.ToLowerInvariant())))[..16];
     }
 
-    private static JsonNode? Minimise(JsonNode? item)
+    /// <summary>A copy with locations removed and identifying properties hashed, in nested objects and arrays too.</summary>
+    private static JsonNode? Minimise(JsonNode? item) => item switch
     {
-        if (item?.DeepClone() is not JsonObject copy)
-        {
-            return item?.DeepClone();
-        }
-
-        foreach (var name in copy.Select(p => p.Key).ToArray())
-        {
-            if (Locations.Contains(name))
-            {
-                copy.Remove(name);
-            }
-            else if (Identifying.Contains(name))
-            {
-                copy[name] = Hashed(copy[name]);
-            }
-        }
-
-        if (copy["associatedPerson"] is JsonObject person)
-        {
-            foreach (var name in person.Select(p => p.Key).Where(Person.Contains).ToArray())
-            {
-                person[name] = Hashed(person[name]);
-            }
-        }
-
-        return copy;
-    }
+        JsonObject obj => new JsonObject(obj
+            .Where(p => !Locations.Contains(p.Key))
+            .Select(p => KeyValuePair.Create(p.Key, Identifying.Contains(p.Key) ? Hashed(p.Value) : Minimise(p.Value)))),
+        JsonArray array => new JsonArray([.. array.Select(Minimise)]),
+        _ => item?.DeepClone(),
+    };
 
     private static JsonNode? Hashed(JsonNode? value) => value switch
     {

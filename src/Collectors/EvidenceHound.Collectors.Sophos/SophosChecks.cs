@@ -14,10 +14,34 @@ internal static partial class SophosChecks
 {
     private static readonly string[] FirewallSources = [SophosSources.Firewalls.Name];
 
+    private static readonly string[] AdminSources = [SophosSources.Admins.Name, SophosSources.Roles.Name];
+
     public static IReadOnlyList<SophosCheck> All { get; } =
     [
         new("network.firewall.firmware_supported", FirmwareSupported),
+        new("network.management.super_admin_count", SuperAdminCount),
     ];
+
+    /// <summary>Few Sophos Central admins hold Super Admin, the role that can change every network device and every admin.</summary>
+    public static Finding SuperAdminCount(SophosData data, SophosOptions options, DateTimeOffset now)
+    {
+        ArgumentNullException.ThrowIfNull(data);
+        ArgumentNullException.ThrowIfNull(options);
+        const string id = "network.management.super_admin_count";
+        var superAdmin = data.Roles.Where(r => r.Type == "predefined" && IsSuperAdminName(r.Name)).Select(r => r.Id).ToHashSet(StringComparer.Ordinal);
+        if (superAdmin.Count == 0)
+        {
+            return new(id, CheckOutcome.Error, "Sophos Central listed no predefined Super Admin role, so Super Admins could not be counted.", AdminSources);
+        }
+
+        var count = data.Admins.Count(a => a.RoleIds.Any(superAdmin.Contains));
+        var holds = count == 1 ? "holds" : "hold";
+        var observation = $"{count} of {data.Admins.Count} Sophos Central admins {holds} Super Admin; at most {options.SuperAdminMax} allowed.";
+        return new(id, count <= options.SuperAdminMax ? CheckOutcome.Pass : CheckOutcome.Fail, observation, AdminSources);
+    }
+
+    private static bool IsSuperAdminName(string name) =>
+        string.Equals(name.Replace(" ", string.Empty, StringComparison.Ordinal).Replace("-", string.Empty, StringComparison.Ordinal), "superadmin", StringComparison.OrdinalIgnoreCase);
 
     public static Finding FirmwareSupported(SophosData data, SophosOptions options, DateTimeOffset now)
     {

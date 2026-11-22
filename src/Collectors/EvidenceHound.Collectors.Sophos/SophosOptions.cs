@@ -12,6 +12,7 @@ public static class SophosSettings
     public const string ApiUrl = "api_url";
     public const string IncludeIdentities = "include_identities";
     public const string SupportedFirewallFirmware = "supported_firewall_firmware";
+    public const string SuperAdminMax = "super_admin_max";
     public const string ClientSecret = "client_secret";
 }
 
@@ -22,8 +23,11 @@ internal sealed partial record SophosOptions(
     Uri IdUrl,
     Uri ApiUrl,
     bool IncludeIdentities,
-    IReadOnlyList<string> SupportedFirmware)
+    IReadOnlyList<string> SupportedFirmware,
+    int SuperAdminMax)
 {
+    public const int DefaultSuperAdminMax = 2;
+
     public static readonly Uri DefaultIdUrl = new("https://id.sophos.com/");
 
     public static readonly Uri DefaultApiUrl = new("https://api.central.sophos.com/");
@@ -43,7 +47,8 @@ internal sealed partial record SophosOptions(
             read.Url(SophosSettings.IdUrl, DefaultIdUrl),
             read.Url(SophosSettings.ApiUrl, DefaultApiUrl),
             read.Flag(SophosSettings.IncludeIdentities),
-            firmware));
+            firmware,
+            read.Count(SophosSettings.SuperAdminMax, DefaultSuperAdminMax)));
     }
 
     [GeneratedRegex(@"^[0-9]+(\.[0-9]+)*$", RegexOptions.CultureInvariant)]

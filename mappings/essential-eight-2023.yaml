@@ -20,6 +20,8 @@ requirements:
       - identity.mfa.registered_all_users
       - identity.legacy_auth_blocked
   # Multi-factor authentication. Privileged users of Microsoft 365 must use MFA; the admin check also requires phishing-resistant MFA for every privileged role.
+  # Sophos Central admins are not checked: Sophos Central requires MFA of every admin itself and its API does not show it, so
+  # keep that as manual evidence (docs/collectors/sophos.md).
   - ref: ISM-1173
     rule: all_pass
     checks:
@@ -30,12 +32,14 @@ requirements:
     rule: all_pass
     checks:
       - identity.privileged.admins_cloud_only
-  # Restrict administrative privileges. Privileged roles in Microsoft 365 held by few accounts, and only activated when needed.
+  # Restrict administrative privileges. Privileged roles in Microsoft 365 held by few accounts, and only activated when needed,
+  # and few Sophos Central admins hold Super Admin (Sophos Central is the online service that manages the network devices).
   - ref: ISM-1883
     rule: all_pass
     checks:
       - identity.privileged.global_admin_count
       - identity.privileged.pim_eligible_not_permanent
+      - network.management.super_admin_count
   # Patch operating systems. Every Intune-managed Windows device runs a supported build, and every firewall managed in Sophos
   # Central runs supported firmware (the operating system of an internet-facing network device). Devices outside Intune and
   # Sophos Central are not seen. Without one of the collectors, drop its check here in your own copy (docs/collectors/sophos.md).
