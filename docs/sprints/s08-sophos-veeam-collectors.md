@@ -6,7 +6,7 @@ Was s07 before the release 1 reorder. It moved after the thin deployment so that
 
 **Goal:** two more reference collectors, one SaaS (Sophos Central) and one on-premises (Veeam Backup & Replication), proving the SDK fits both shapes.
 
-Also in this sprint (s08-06): scope plans show their compliance impact, ready for the first real configuration.
+Also in this sprint, ready for the first real configuration: scope plans show their compliance impact (s08-06), and plans get Terraform-style exit codes and saved plan files (s08-07).
 
 Projects: `src/Collectors/EvidenceHound.Collectors.Sophos`, `src/Collectors/EvidenceHound.Collectors.Veeam`. Recorded, fictional responses only.
 
@@ -118,6 +118,27 @@ Projects: `src/Collectors/EvidenceHound.Collectors.Sophos`, `src/Collectors/Evid
 **Functional check**
 - Against the local CISO Assistant with the example compliance repo: change one hand-written assessment to `compliant` and set one `unlisted` row back, run `hound scope plan examples/compliance-repo/scope --config examples/compliance-repo/hound.yaml`, and record the section showing one gain and one `⚠` regression with the right ML counts.
 - `docs/scope.md` Plan section shows an example of the new section.
+
+### s08-07 Terraform-style exit codes and saved plans
+- [ ] Done
+
+**Story:** As an operator used to Terraform, I want `hound scope plan` to report "changes pending" in its exit code and to save a plan that `hound scope apply` then applies exactly, so that pipelines can gate on a plan and what is applied is what was reviewed.
+
+**Acceptance criteria**
+- `hound scope plan --detailed-exitcode` exits 0 when the plan is empty, 2 when it has changes or drift, and 1 on any error, as Terraform does. Without the flag the exit codes stay as they are today. With the flag a usage error also exits 1, so that 2 always means changes.
+- `hound scope plan --out <file>` also writes the plan to a file: the changes, the drift, the compliance impact (s08-06), the CISO Assistant URL, the date the plan was made for (`HOUND_TODAY` or today), a SHA-256 of the scope files and deployment config, and, for each object the plan changes or deletes, a fingerprint of the state it read. The file never holds the token or any document's content (only hashes), and the docs say not to commit it.
+- `hound scope apply <file>` applies only the changes in that file, in order, without planning again. It refuses, writes nothing and exits 3 with `scope.plan_stale` when the scope files or config hash differently, the URL differs, or any object it would change no longer has the state it read. This matches Terraform's "Saved plan is stale". `hound scope apply <dir>` is unchanged.
+- The example compliance repo's workflow plans with `--out` in the apply job and applies that file once the protected environment is approved.
+
+**Tests first**
+- `ScopePlanCommandTests.Detailed_exitcode_is_0_when_empty_and_2_with_changes`
+- `ScopePlanCommandTests.Saved_plan_holds_no_token`
+- `SavedPlanTests.Round_trips_changes_drift_and_fingerprints`
+- `ScopeApplyCommandTests.Applies_saved_plan_without_replanning` (GET calls only for the stale check)
+- `ScopeApplyCommandTests.Stale_plan_is_refused_when_scope_or_instance_changed`
+
+**Functional check**
+- Against the local CISO Assistant: `hound scope plan examples/compliance-repo/scope --config examples/compliance-repo/hound.yaml --out plan.json --detailed-exitcode` exits 2, then `hound scope apply plan.json` writes the plan. Repeat it after editing one object in the UI between plan and apply, and record the `scope.plan_stale` refusal.
 
 ## Discovered work
 
