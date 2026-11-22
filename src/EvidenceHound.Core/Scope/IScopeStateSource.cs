@@ -30,6 +30,7 @@ public sealed record ScopeStateQuery(string RootFolder, IReadOnlyList<string> Fr
                     StringComparer.Ordinal))
         {
             Access = scope.Access.Users.Count > 0 || scope.Access.Teams.Count > 0 || scope.Access.Roles.Count > 0,
+            Settings = scope.Settings.FeatureFlags.Count > 0 || scope.Settings.General.Count > 0,
         };
     }
 }

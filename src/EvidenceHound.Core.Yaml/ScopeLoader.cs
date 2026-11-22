@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Scope;
@@ -53,6 +55,7 @@ public static partial class ScopeLoader
     private static readonly string[] RoleKeys = ["role", "domain", "users", "teams"];
     private static readonly string[] Booleans = ["true", "false"];
     private static readonly string[] ServiceAccounts = ["true", "publish", "apply"];
+    private static readonly string[] SettingsKeys = ["feature_flags", "general"];
 
     /// <summary>Keys that would hold a credential: rejected wherever they appear in <c>access.yaml</c>, without echoing the value.</summary>
     private static readonly string[] SecretKeys = ["password", "password_hash", "api_token", "token", "secret", "totp_secret"];
@@ -70,11 +73,68 @@ public static partial class ScopeLoader
         var parsedAudits = auditFiles.Select(file => file.Root() is { } root ? ReadAudit(root, file) : null).OfType<ScopeAudit>().ToArray();
         var accessFile = access is null ? null : new FileReader(access);
         var parsedAccess = accessFile?.Root() is { } accessRoot ? ReadAccess(accessRoot, accessFile) : ScopeAccess.None;
+        var settingsFile = settings is null ? null : new FileReader(settings);
+        var parsedSettings = settingsFile?.Root() is { } settingsRoot ? ReadSettings(settingsRoot, settingsFile) : ScopeSettings.None;
 
         return new ScopeParse(
-            new ScopeDocument(parsedSetup, parsedControls, parsedAudits) { Access = parsedAccess },
-            [.. setupFile.Problems, .. controlsFile?.Problems ?? [], .. auditFiles.SelectMany(f => f.Problems), .. accessFile?.Problems ?? []]);
+            new ScopeDocument(parsedSetup, parsedControls, parsedAudits) { Access = parsedAccess, Settings = parsedSettings },
+            [
+                .. setupFile.Problems, .. controlsFile?.Problems ?? [], .. auditFiles.SelectMany(f => f.Problems), .. accessFile?.Problems ?? [],
+                .. settingsFile?.Problems ?? [],
+            ]);
     }
+
+    /// <summary>Feature flags as true or false, and general settings as any YAML value, kept as JSON. Names are checked by validation.</summary>
+    private static ScopeSettings ReadSettings(YamlMappingNode root, FileReader file)
+    {
+        file.Keys(root, SettingsKeys);
+        var flags = file.Map(root, "feature_flags") is { } flagMap
+            ? flagMap.Children.Select(pair => ReadFlag(pair.Key, pair.Value, file)).OfType<ScopeFlag>().ToArray()
+            : [];
+        var general = file.Map(root, "general") is { } generalMap ? generalMap : null;
+        var secrets = general is null ? [] : CisoAssistantSettings.Current.SecretGeneral.Concat(SecretKeys).ToArray();
+        if (general is not null)
+        {
+            file.Secrets(general, secrets);
+        }
+
+        return new ScopeSettings(
+            flags,
+            general is null
+                ? []
+                : [.. general.Children
+                    .Where(pair => pair.Key is YamlScalarNode { Value: { } name } && !secrets.Contains(name, StringComparer.Ordinal))
+                    .Select(pair => new ScopeGeneralSetting(((YamlScalarNode)pair.Key).Value!, CisoAssistantSettings.Json(ToJson(pair.Value)), file.At(pair.Key)))]);
+    }
+
+    private static ScopeFlag? ReadFlag(YamlNode key, YamlNode value, FileReader file)
+    {
+        if (key is not YamlScalarNode { Value: { } name })
+        {
+            return null;
+        }
+
+        if (value is YamlScalarNode { Style: ScalarStyle.Plain, Value: "true" or "false" } flag)
+        {
+            return new ScopeFlag(name, flag.Value == "true", file.At(key));
+        }
+
+        file.Invalid(value, $"feature flag '{name}' must be true or false.");
+        return null;
+    }
+
+    /// <summary>A YAML value as JSON: unquoted true, false, numbers and null keep their type; everything else is text.</summary>
+    private static JsonNode? ToJson(YamlNode node) => node switch
+    {
+        YamlMappingNode map => new JsonObject(map.Children.Select(c => KeyValuePair.Create(((YamlScalarNode)c.Key).Value ?? "", ToJson(c.Value)))),
+        YamlSequenceNode list => new JsonArray([.. list.Children.Select(ToJson)]),
+        YamlScalarNode { Style: ScalarStyle.Plain, Value: "true" or "false" } scalar => JsonValue.Create(scalar.Value == "true"),
+        YamlScalarNode { Style: ScalarStyle.Plain, Value: null or "" or "null" or "~" } => null,
+        YamlScalarNode { Style: ScalarStyle.Plain, Value: { } text } when long.TryParse(text, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var whole) => JsonValue.Create(whole),
+        YamlScalarNode { Style: ScalarStyle.Plain, Value: { } text } when double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var number) => JsonValue.Create(number),
+        YamlScalarNode scalar => JsonValue.Create(scalar.Value),
+        _ => null,
+    };
 
     private static ScopeAccess ReadAccess(YamlMappingNode root, FileReader file)
     {

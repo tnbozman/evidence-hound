@@ -5,4 +5,7 @@
     <PackageId>EvidenceHound.Core</PackageId>
     <Description>Evidence Hound's domain types and pure logic: check results, evidence, results and problems. A dependency of EvidenceHound.Collectors.Abstractions.</Description>
   </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Scope/ciso-assistant-settings.json" LogicalName="EvidenceHound.Core.ciso-assistant-settings.json" />
+  </ItemGroup>
 </Project>

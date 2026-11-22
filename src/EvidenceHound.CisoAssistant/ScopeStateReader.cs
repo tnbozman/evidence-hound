@@ -133,6 +133,7 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
         var controls = await reading.ObjectsInAsync("applied-controls", inScope);
         var hashes = await HashesAsync(reading, evidences);
         var access = query.Access ? await AccessAsync(reading, folders, userList, inScope) : [];
+        var settings = query.Settings ? await SettingsAsync(reading) : [];
         var auditedFrameworks = audits.Select(a => Lookup(a["framework"], frameworks)).OfType<string>().Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
         if (allRows)
         {
@@ -179,6 +180,7 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
                     ("controls", Joined(r.Row["applied_controls"], names.Controls)), ("documents", Joined(r.Row["evidences"], names.Evidence)))),
                 null)),
             .. access,
+            .. settings,
         ];
         return Result.Ok(new HeldState(objects, frameworkList, libraries.ToDictionary(Id, l => (Text(l["urn"]), Text(l["version"])), StringComparer.Ordinal), auditedFrameworks));
     }
@@ -215,6 +217,20 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
                 var assignment = new AccessAssignment(role ?? "", domain ?? "", email ?? "");
                 return Marked(ScopeKind.RoleAssignment, ScopeDesired.RoleAssignmentKey(assignment), a, ("role", role), ("domain", domain), ("user", email));
             }),
+        ];
+    }
+
+    /// <summary>Every feature flag and general setting, each as an object whose <c>value</c> is its JSON; the plan compares only those the scope names.</summary>
+    private static async Task<List<ActualObject>> SettingsAsync(Reading reading)
+    {
+        var flags = await reading.ObjectAsync("settings/feature-flags/", "to read the feature flags") as JsonObject ?? [];
+        var general = (await reading.ObjectAsync("settings/general/", "to read the general settings"))?["value"] as JsonObject ?? [];
+        static ActualObject Setting(ScopeKind kind, string name, string value) =>
+            new(new ScopeObject(kind, name, new Dictionary<string, string>(StringComparer.Ordinal) { ["value"] = value }), null);
+        return
+        [
+            .. flags.Where(f => f.Value is JsonValue v && v.TryGetValue<bool>(out _)).Select(f => Setting(ScopeKind.FeatureFlag, f.Key, f.Value!.GetValue<bool>() ? "true" : "false")),
+            .. general.Select(g => Setting(ScopeKind.Setting, g.Key, CisoAssistantSettings.Json(g.Value))),
         ];
     }
 
@@ -422,6 +438,9 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
 
             return objects;
         }
+
+        /// <summary>A single object, such as a settings endpoint's, or null with its problem kept.</summary>
+        public Task<JsonNode?> ObjectAsync(string path, string action) => GetAsync(path, action);
 
         private async Task<JsonNode?> GetAsync(string path, string action) =>
             Kept(await http.SendForJsonAsync(new HttpRequestMessage(HttpMethod.Get, path), action, cancellationToken));

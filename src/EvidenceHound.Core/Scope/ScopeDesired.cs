@@ -25,6 +25,8 @@ public static class ScopeDesired
         var setup = scope.Setup;
         return
         [
+            .. scope.Settings.FeatureFlags.Select(f => new ScopeObject(ScopeKind.FeatureFlag, f.Name, Fields(("value", f.Enabled ? "true" : "false")))),
+            .. scope.Settings.General.Select(g => new ScopeObject(ScopeKind.Setting, g.Name, Fields(("value", g.Json)))),
             .. setup.Frameworks.Select(f => Framework(f, inputs)),
             .. setup.Libraries.Select(l => new ScopeObject(ScopeKind.Framework, l.Value, Fields()) { Initial = Fields(("library", l.Value)) }),
             .. setup.Domains.Select(d => new ScopeObject(ScopeKind.Domain, d.Name, Fields(("description", d.Description)))),

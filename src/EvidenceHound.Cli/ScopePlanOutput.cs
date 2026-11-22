@@ -11,16 +11,18 @@ internal static class ScopePlanOutput
 {
     private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
 
-    public static string Markdown(ScopePlan plan) => Markdown(plan, [], []);
+    public static string Markdown(ScopePlan plan) => Markdown(plan, PlanNotes.None);
 
-    public static string Markdown(ScopePlan plan, IReadOnlyList<PeriodNote> periods) => Markdown(plan, periods, []);
+    public static string Markdown(ScopePlan plan, IReadOnlyList<PeriodNote> periods) => Markdown(plan, PlanNotes.None with { Periods = periods });
 
     /// <summary>
-    /// The plan as Markdown, with a table of the audit periods it opens, closes or locks and those awaiting sign-off, and the access review: people
-    /// without MFA and service accounts holding more than they need.
+    /// The plan as Markdown, with a table of the audit periods it opens, closes or locks and those awaiting sign-off, the access review (people
+    /// without MFA and service accounts holding more than they need), and, when asked, the settings the scope leaves to CISO Assistant.
     /// </summary>
-    public static string Markdown(ScopePlan plan, IReadOnlyList<PeriodNote> periods, IReadOnlyList<AccessNote> access)
+    public static string Markdown(ScopePlan plan, PlanNotes notes)
     {
+        ArgumentNullException.ThrowIfNull(notes);
+        var (periods, access) = (notes.Periods, notes.Access);
         var count = (ScopeAction action) => plan.Changes.Count(c => c.Action == action);
         var markdown = new StringBuilder()
             .Append("## Scope plan\n\n")
@@ -69,15 +71,33 @@ internal static class ScopePlanOutput
             }
         }
 
+        if (notes.Unmanaged.Count > 0)
+        {
+            markdown.Append("\n### Unmanaged settings\n\nCISO Assistant's own: settings.yaml does not name them, so applying leaves them as they are.\n\n| Kind | Name | Value |\n| --- | --- | --- |\n");
+            foreach (var setting in notes.Unmanaged)
+            {
+                markdown.Append(CultureInfo.InvariantCulture, $"| {Kind(setting.Kind)} | {Cell(setting.Key)} | {Cell(setting.Fields.GetValueOrDefault("value") ?? "")} |\n");
+            }
+        }
+
         return markdown.ToString();
     }
 
-    public static string Json(ScopePlan plan) => Json(plan, [], []);
+    public static string Json(ScopePlan plan) => Json(plan, PlanNotes.None);
 
-    /// <summary>The plan as JSON, with the audit periods it opens, closes or locks and those awaiting sign-off, and the access review.</summary>
-    public static string Json(ScopePlan plan, IReadOnlyList<PeriodNote> periods, IReadOnlyList<AccessNote> access) =>
-        new JsonObject
+    /// <summary>The plan as JSON, with the audit periods it opens, closes or locks and those awaiting sign-off, the access review and any unmanaged settings.</summary>
+    public static string Json(ScopePlan plan, PlanNotes notes)
+    {
+        ArgumentNullException.ThrowIfNull(notes);
+        var (periods, access) = (notes.Periods, notes.Access);
+        return new JsonObject
         {
+            ["unmanaged_settings"] = new JsonArray([.. notes.Unmanaged.Select(s => (JsonNode)new JsonObject
+            {
+                ["kind"] = Kind(s.Kind),
+                ["name"] = s.Key,
+                ["value"] = s.Fields.GetValueOrDefault("value"),
+            })]),
             ["access"] = new JsonArray([.. access.Select(n => (JsonNode)new JsonObject
             {
                 ["user"] = n.Email,
@@ -95,6 +115,7 @@ internal static class ScopePlanOutput
             })]),
             ["drift"] = DriftJson(plan.Drift),
         }.ToJsonString(Indented) + "\n";
+    }
 
     /// <summary>An apply's report: counts, then each change with what happened to it.</summary>
     public static string Json(ScopeApplyReport report) =>
@@ -162,8 +183,21 @@ internal static class ScopePlanOutput
         _ => "signed_off",
     };
 
-    private static string Kind(ScopeKind kind) => kind == ScopeKind.RoleAssignment ? "role_assignment" : kind.ToString().ToLowerInvariant();
+    private static string Kind(ScopeKind kind) => kind switch
+    {
+        ScopeKind.RoleAssignment => "role_assignment",
+        ScopeKind.FeatureFlag => "feature_flag",
+        _ => kind.ToString().ToLowerInvariant(),
+    };
 
     /// <summary>Text that is safe in a Markdown table cell: pipes escaped, line breaks as <c>&lt;br&gt;</c>.</summary>
     private static string Cell(string text) => text.Replace("|", "\\|", StringComparison.Ordinal).Replace("\n", "<br>", StringComparison.Ordinal);
+}
+
+/// <summary>What a plan shows besides its changes and drift: audit periods, the access review, and the unmanaged settings when asked.</summary>
+internal sealed record PlanNotes(IReadOnlyList<PeriodNote> Periods, IReadOnlyList<AccessNote> Access)
+{
+    public static PlanNotes None { get; } = new([], []);
+
+    public IReadOnlyList<ScopeObject> Unmanaged { get; init; } = [];
 }

@@ -50,11 +50,12 @@ internal static class ScopeCommands
         var planFormat = new Option<string>("--format") { Description = "markdown (the default, for a pull request comment) or json.", DefaultValueFactory = _ => "markdown" };
         planFormat.AcceptOnlyFromAmong("markdown", "json");
         var prune = new Option<bool>("--prune") { Description = "Also plan deleting the objects hound manages that the scope no longer declares." };
+        var showUnmanaged = new Option<bool>("--show-unmanaged") { Description = "Also list the feature flags and general settings settings.yaml does not name, with their values." };
         var plan = new Command(
             "plan",
             $"Show what applying the scope would create, update or delete in CISO Assistant, and what drifted (reads it; needs {PublishCommand.UrlSetting} and {PublishCommand.TokenSetting}). Sends nothing.")
         {
-            dir, config, planFormat, prune,
+            dir, config, planFormat, prune, showUnmanaged,
         };
         plan.SetAction(async (parseResult, cancellationToken) =>
         {
@@ -65,7 +66,7 @@ internal static class ScopeCommands
             }
 
             return await PublishCommand.Connection(configuration).Match(
-                connection => PlanAsync(checkedScope, connection, parseResult.GetValue(prune), parseResult.GetRequiredValue(planFormat), loggers, output, logger, cancellationToken),
+                connection => PlanAsync(checkedScope, connection, new PlanOptions(parseResult.GetValue(prune), parseResult.GetValue(showUnmanaged), parseResult.GetRequiredValue(planFormat)), loggers, output, logger, cancellationToken),
                 problems => Task.FromResult(Log.Problems(logger, problems)));
         });
 
@@ -174,25 +175,39 @@ internal static class ScopeCommands
             problems => Task.FromResult(Log.Problems(logger, problems)));
     }
 
+    /// <summary>How to plan: whether to prune, whether to list unmanaged settings, and the output format.</summary>
+    private sealed record PlanOptions(bool Prune, bool ShowUnmanaged, string Format);
+
     private static async Task<int> PlanAsync(
-        CheckedScope checkedScope, CisoAssistantOptions connection, bool prune, string format, ILoggerFactory loggers, TextWriter output, ILogger logger, CancellationToken cancellationToken)
+        CheckedScope checkedScope, CisoAssistantOptions connection, PlanOptions options, ILoggerFactory loggers, TextWriter output, ILogger logger, CancellationToken cancellationToken)
     {
         using var services = new ServiceCollection().AddSingleton(loggers).AddCisoAssistantClient(connection).BuildServiceProvider();
         var declared = ScopeDesired.From(checkedScope.Scope, checkedScope.Inputs);
         var source = services.GetRequiredService<IScopeStateSource>();
         var query = ScopeStateQuery.For(checkedScope.Scope, declared);
+        query = query with { Settings = query.Settings || options.ShowUnmanaged };
         var actual = await source.ReadAsync(query, cancellationToken);
         var access = query.Access ? await source.ReadAccessAsync(cancellationToken) : Result.Ok<IReadOnlyList<UserAccess>>([]);
         return await actual.Bind(held => access.Map(users => (Held: held, Users: users))).Match(
             async read =>
             {
-                var plan = ScopePlanner.Plan(declared, read.Held, prune);
-                var periods = ScopePeriods.Notes(declared, plan);
-                var notes = AccessReview.Notes(checkedScope.Scope.Access, read.Users);
-                await output.WriteAsync(format == "json" ? ScopePlanOutput.Json(plan, periods, notes) : ScopePlanOutput.Markdown(plan, periods, notes));
+                var plan = ScopePlanner.Plan(declared, read.Held, options.Prune);
+                var notes = new PlanNotes(ScopePeriods.Notes(declared, plan), AccessReview.Notes(checkedScope.Scope.Access, read.Users))
+                {
+                    Unmanaged = options.ShowUnmanaged ? UnmanagedSettings(declared, read.Held) : [],
+                };
+                await output.WriteAsync(options.Format == "json" ? ScopePlanOutput.Json(plan, notes) : ScopePlanOutput.Markdown(plan, notes));
                 return ExitCodes.Ok;
             },
             problems => Task.FromResult(Log.Problems(logger, problems)));
+    }
+
+    /// <summary>The flags and general settings CISO Assistant holds that the scope does not name, by kind and name.</summary>
+    private static ScopeObject[] UnmanagedSettings(IReadOnlyList<ScopeObject> declared, IReadOnlyList<ActualObject> held)
+    {
+        var named = declared.Select(d => (d.Kind, d.Key)).ToHashSet();
+        return [.. held.Select(h => h.Held).Where(h => h.Kind is ScopeKind.FeatureFlag or ScopeKind.Setting && !named.Contains((h.Kind, h.Key)))
+            .OrderBy(h => h.Kind).ThenBy(h => h.Key, StringComparer.Ordinal)];
     }
 
     private static string[] Groups(string? groups) =>
@@ -229,11 +244,13 @@ internal static class ScopeCommands
         var auditsDir = Path.Combine(dir.ToString(), "audits");
         var audits = Directory.Exists(auditsDir) ? Directory.GetFiles(auditsDir, "*.yaml").Order(StringComparer.Ordinal).ToArray() : [];
         var accessPath = Path.Combine(dir.ToString(), "access.yaml");
+        var settingsPath = Path.Combine(dir.ToString(), "settings.yaml");
         var parsed = ScopeLoader.Parse(
             await ReadAsync(setupPath, cancellationToken),
             File.Exists(controlsPath) ? await ReadAsync(controlsPath, cancellationToken) : null,
             [.. await Task.WhenAll(audits.Select(a => ReadAsync(a, cancellationToken)))],
-            File.Exists(accessPath) ? await ReadAsync(accessPath, cancellationToken) : null);
+            File.Exists(accessPath) ? await ReadAsync(accessPath, cancellationToken) : null,
+            File.Exists(settingsPath) ? await ReadAsync(settingsPath, cancellationToken) : null);
 
         var snapshots = await SnapshotsAsync(parsed.Scope.Setup.Frameworks, Path.GetDirectoryName(Path.GetFullPath(setupPath))!, cancellationToken);
         var targets = configFile is null ? Result.Ok<IReadOnlyList<ScopeTarget>>([]) : await TargetsAsync(configFile, registry, cancellationToken);

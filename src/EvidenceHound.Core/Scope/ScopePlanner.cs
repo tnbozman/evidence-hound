@@ -157,8 +157,11 @@ public static class ScopePlanner
     private static int? Version(IReadOnlyDictionary<string, string> fields) =>
         fields.TryGetValue("version", out var text) && int.TryParse(text, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var version) ? version : null;
 
-    /// <summary>Frameworks come from libraries and assessments are rows of an audit: neither carries a marker, nor is ever deleted.</summary>
-    private static bool Marked(ScopeKind kind) => kind is not (ScopeKind.Framework or ScopeKind.Assessment);
+    /// <summary>
+    /// Frameworks come from libraries, assessments are rows of an audit, and flags and settings are CISO Assistant's own: none carries a marker,
+    /// nor is ever deleted, and those the scope does not name are not drift.
+    /// </summary>
+    private static bool Marked(ScopeKind kind) => kind is not (ScopeKind.Framework or ScopeKind.Assessment or ScopeKind.FeatureFlag or ScopeKind.Setting);
 
     /// <summary>
     /// Objects the scope does not declare are drift when <c>hound</c> manages them, or when they are structure (domains, perimeters, systems,
