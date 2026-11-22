@@ -1,0 +1,22 @@
+# A profile test: the instance settings, the recorded answers the API gives, and the result each check must give.
+# Run it with: hound profile test example --profiles <folder holding example.yaml and example.tests/>
+description: Every device is supported and recent, every active user has MFA, one Owner.
+now: 2026-11-22T02:00:00Z
+settings:
+  client_id: 00000000-0000-4000-8000-0000000000c1
+  supported_os: "14, 15"
+secrets:
+  client_secret: example-test-client-secret
+responses:
+  - { post: /oauth2/token, file: recordings/token.json }
+  - { get: /v1/whoami, file: recordings/whoami.json }
+  - { get: /v1/orgs/org-0001/devices, file: recordings/devices.json }
+  - { get: /v1/orgs/org-0001/devices, query: { cursor: page-2 }, file: recordings/devices.2.json }
+  - { get: /v1/orgs/org-0001/users, query: { offset: "0" }, file: recordings/users.json }
+  - { get: /v1/orgs/org-0001/users, query: { offset: "2" }, file: recordings/users.2.json }
+  - { get: /v1/orgs/org-0001/roles, file: recordings/roles.json }
+expect:
+  example.device.os_supported: pass
+  example.device.recently_seen: pass
+  example.identity.mfa_users: pass
+  example.identity.owner_count: pass
