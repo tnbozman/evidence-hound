@@ -8,6 +8,343 @@ New sprint, added in the release 1 reorder. Application control extends the Micr
 
 The patch windows and scan intervals below are settings, not constants, so the checks stay framework-neutral. The example config sets them to the Essential Eight ML2 values, and the mapping file quotes the ISM control each one comes from.
 
+### REST collector (s09-09 to s09-14)
+
+These tasks come first in this sprint, before s09-01, so the Microsoft 365 application control checks and the Veeam tasks can be written as profile checks instead of new code. They build the generic `rest` collector agreed in [`docs/design/rest-collector.md`](../design/rest-collector.md): every query is called once per run, evidence datasets are extracted from one or more responses, and checks test dataset fields, giving pass, fail or unable to assess. Profiles are YAML loaded only from the organisation's profiles folder; this repo keeps a tested public library in `profiles/` to copy from. There are no runtime code plugins. Where the Veeam tasks (s09-07, s09-08) and s09-01/02 say "collector", read "profile in the library" once these tasks are done.
+
+### s09-09 Profile model and validation
+- [ ] Done
+
+**Story:** As an operator, I want a profile checked before anything is called, so that a typo or a wrong reference fails clearly instead of producing misleading results.
+
+**Acceptance criteria**
+- Immutable records for a profile: `parameters`, `secrets`, `connection` (base URL, `allowed_hosts`, auth, rate limit), `bootstrap`, `queries`, `datasets`, `checks`, `requires`, `source` and `version`; parsed from YAML into the core once.
+- Collector type `rest` with settings `profile` plus the profile's own parameters; secrets as for other collectors.
+- Validation (pure) reports every problem at once with a code: unknown parameter or secret, missing required one, bad path syntax, a check `over` or dataset `from`/`join` naming nothing, a cycle in query dependencies, a code check name that is not built in, a check without `when_empty`, a request or auth URL outside `allowed_hosts`, `requires` newer than this `hound`.
+- `hound profile validate <name>` and `hound plan` both run it; a profile that fails stops only its own instances, which report unable to assess.
+- Profiles are read only from `profiles_path` (default `/config/profiles`), mounted read-only.
+
+**Tests first**
+- `ProfileParserTests.Reads_example_profile_into_records`
+- `ProfileValidationTests.Check_over_unknown_dataset_is_reported`
+- `ProfileValidationTests.Query_dependency_cycle_is_reported`
+- `ProfileValidationTests.Host_outside_allowed_hosts_is_reported`
+- `ProfileValidationTests.Check_without_when_empty_is_reported`
+- `ProfileValidationTests.Reports_all_problems_not_just_the_first`
+
+**Functional check**
+- `hound profile validate example` passes for `profiles/example.yaml`, and a broken copy lists each problem with its code.
+
+### s09-10 Query engine
+- [ ] Done
+
+**Story:** As an operator, I want every endpoint read once per run, with sign-in, paging and rate limits handled for me, so that a new system needs a profile, not code.
+
+**Acceptance criteria**
+- Auth: OAuth 2.0 client credentials (secret or certificate), API key (header or query), bearer token, basic, mutual TLS. Tokens refresh on expiry and are sent only to `allowed_hosts`; cross-host redirects are refused.
+- Paging: next link in the body, page number with total, cursor, offset and limit, `Link` header; a per-query page cap.
+- Rate limits: per-profile rate, `Retry-After` on 429 and 503, bounded retries.
+- Queries run as a dependency graph: `bootstrap` variables first, `for_each` fan-out capped by `max_calls`, `post:` bodies, `async` jobs (start, poll with a timeout, download), `optional_on` status codes for licence-dependent endpoints.
+- JSON, XML and CSV responses become the same tree (XML attributes as `@name`, text as `#text`, profile-listed paths always arrays).
+- Item and byte caps per query, with `keep:` to hold only listed fields.
+- Each query is saved as one evidence file (request without headers, page count, item count, items) with `identities` hashed unless `include_identities`. A final scan refuses to save any file containing a secret in use.
+- A failed query is a result for that query, not a failed run: later phases see which queries failed and why.
+
+**Tests first**
+- `RestAuthTests.Client_credentials_token_is_sent_only_to_allowed_hosts`
+- `RestPagingTests.Follows_next_link_until_absent` (and one test per paging style)
+- `RestPagingTests.Stops_at_page_cap_and_reports_it`
+- `RestRateLimitTests.Honours_retry_after_then_gives_up`
+- `QueryGraphTests.Bootstrap_variables_feed_later_requests`
+- `QueryGraphTests.For_each_is_capped_by_max_calls`
+- `AsyncQueryTests.Polls_until_done_then_downloads`
+- `XmlTreeTests.Repeated_and_single_elements_read_the_same`
+- `QueryEvidenceTests.Identities_hashed_and_secrets_never_saved`
+- Contract tests against WireMock with fictional recordings.
+
+**Functional check**
+- `hound run --only rest-example --dry-run` against the recorded example API lists every query with its page and item counts and its evidence file.
+
+### s09-11 Datasets and declarative checks
+- [ ] Done
+
+**Story:** As a compliance owner, I want evidence from several API calls combined into one dataset and tested field by field, so that a control is judged on exactly the evidence it needs and a broken query never shows as a failure.
+
+**Acceptance criteria**
+- Datasets: `from`, `join` (on a key, one-to-many, `optional` for a left join), `where`, `fields`, `flatten`. Each dataset is saved as an evidence file listing the query files and SHA-256 hashes it came from, and how many rows did not match a required join.
+- A check reads one dataset (or one query directly, for a one-to-one check) and has `where`, `each` and `require` (`all`, `any`, `none`, `count_at_most`, `count_at_least`, `ratio_at_least` with an optional partial band).
+- Operators: `equals`, `not_equals`, `in`, `matches`, `any_matches`, `exists`, `version_in`, `version_at_least`, `within`, `older_than`, `at_least`, `at_most`, each with `missing:` and `negate`.
+- Results: pass, fail, partial (ratio bands only), not applicable (empty and `when_empty: not_applicable`), and unable to assess when a query the check depends on failed, paging stopped early, a cap was hit, a field was missing (unless `missing:` says otherwise) or a value had the wrong type. The observation names the cause.
+- Failure propagates only to what depends on the failed query; a dataset is never built from part of its inputs.
+- User-facing text says "unable to assess" for `CheckOutcome.Error`; the mapping still turns it into `not_assessed`.
+- Observations use `describe` templates with counts, list offending rows capped at 20, and cite the dataset file.
+
+**Tests first**
+- `DatasetTests.Join_attaches_matching_rows_and_counts_unmatched`
+- `DatasetTests.Failed_input_query_fails_the_dataset_with_its_name`
+- `CheckEvaluatorTests.All_over_empty_uses_when_empty`
+- `CheckEvaluatorTests.Missing_field_is_unable_to_assess`
+- `CheckEvaluatorTests.Missing_pass_treats_absent_field_as_pass`
+- `CheckEvaluatorTests.Ratio_band_gives_partial`
+- `CheckEvaluatorTests.Independent_checks_still_run_when_one_query_fails`
+- Property tests: evaluation is deterministic for the same snapshot and clock; adding a failed query never turns a fail into a pass.
+
+**Functional check**
+- `hound run --only rest-example --dry-run` shows each check's result and dataset evidence; breaking one recorded query makes only its checks unable to assess.
+
+### s09-12 Code checks, profiles folder and profile tests
+- [ ] Done
+
+**Story:** As a profile author, I want to test a profile against recorded responses before it is trusted, and to use a built-in code check when the operators are not enough.
+
+**Acceptance criteria**
+- A code-check library in `hound`: named, pure functions taking the datasets they name, parameters and the clock, returning a finding. A profile names them with `code:`; nothing is loaded at runtime.
+- `hound profile test <name>` runs a profile offline against its recordings and expected results (`<profile>.tests/`), reporting each check's expected and actual result. `hound` warns when a profile in the folder has no tests; `require_profile_tests: true` makes it an error.
+- `hound profile diff <name>` compares a copied profile with the library version named in its `source`.
+- Each run's manifest records every profile's name, version, `source` and SHA-256.
+- The public library `profiles/` starts with `example.yaml` (a fictional API) and its tests; CI runs every library profile's tests.
+
+**Tests first**
+- `CodeCheckRegistryTests.Unknown_name_is_a_validation_problem`
+- `ProfileTestRunnerTests.Reports_expected_and_actual_per_check`
+- `ProfileTestRunnerTests.Profile_without_tests_warns_or_fails_by_setting`
+- `ProfileDiffTests.Shows_changes_from_library_version`
+- `RunManifestTests.Records_profile_name_version_and_hash`
+
+**Functional check**
+- Copy `profiles/example.yaml` into a scratch profiles folder, run `hound profile test example`, change an expected result, and see the test fail naming the check.
+
+### s09-13 Sophos as a profile
+- [ ] Done
+
+**Story:** As an operator, I want Sophos Central read through a profile, so that changes to Sophos checks are configuration, and as the proof that the REST collector can replace a coded one.
+
+**Acceptance criteria**
+- `profiles/sophos-central.yaml` with its tests: `whoami` bootstrap, firewalls, admins and roles, the `admin_accounts` and `firewall_firmware` datasets, and every check the coded collector reports (including any added by s08-12 to s08-14).
+- A parity test runs the coded collector and the profile on the same recordings and requires the same check IDs, outcomes and evidence content.
+- When parity passes, the coded Sophos collector is removed. A `type: sophos` instance fails validation with a message showing the `type: rest`, `profile: sophos-central` replacement; the example config and `docs/collectors/sophos.md` are updated.
+- The interactive tutorial (`make trial`) copies the profile into the trial's profiles folder and uses it.
+
+**Tests first**
+- `SophosProfileParityTests.Profile_matches_coded_collector_on_every_recording`
+- `SophosProfileTests` via `hound profile test sophos-central`
+- `CollectorConfigTests.Sophos_type_suggests_rest_profile`
+
+**Functional check**
+- `hound run --only sophos-example --dry-run` with the profile gives the same results as before; the trial's Sophos step passes with the profile.
+
+### s09-14 REST collector documentation
+- [ ] Done
+
+**Acceptance criteria**
+- `docs/collectors/rest.md`: profile reference (connection, auth, paging, queries, datasets, checks, operators, results, limits), the profiles folder, the library and how to copy from it, and security notes (`allowed_hosts`, secrets, identities).
+- `docs/tutorials/write-a-profile.md`: write a profile for the fictional example API test-first, from recording to green `hound profile test`.
+- `docs/design/rest-collector.md` status set to Implemented, with any changes made during the build.
+
+**Tests first**
+- Docs check that every operator and result in the engine appears in `docs/collectors/rest.md`.
+- Docs lint and link check.
+
+**Functional check**
+- Following the tutorial verbatim produces a passing profile.
+
+### Suppliers before systems (s09-19, s09-20, moved from s10)
+
+A system is registered only once its supplier is approved, so the supplier register comes before onboarding. s10-01 and s10-02 moved here unchanged except for the supplier approval gate; s10-03 (documentation and example repo) and s10-04 (evidence plan tasks, including the recurring supplier review task) stay in s10.
+
+### s09-19 Suppliers, solutions and contracts (was s10-01)
+- [ ] Done
+
+**Story:** As a supplier owner, I want our suppliers, what they provide and our contracts with them declared in the repo, so that the supplier register is reviewed and complete.
+
+**Acceptance criteria**
+- `scope/third-parties/<entity>.yaml` declares one entity: `ref_id`, name, description, mission, country (ISO 3166-1 alpha-2), currency (ISO 4217), parent entity, domain, and its dependency (0–4), penetration (0–4), maturity (1–4) and trust (1–4).
+- It also declares the entity's solutions (`ref_id`, name, description, criticality 1–4) and contracts (`ref_id`, name, status `draft`, `active`, `expired` or `terminated`, start and end dates, annual expense, currency, the solutions covered, and identifiers such as LEI or VAT).
+- Representatives are optional. They are personal data, so the guide recommends keeping them in CISO Assistant unless the repo is private and access-controlled; when declared, they are matched by email and never given a login by `hound`.
+- If s06-05 confirmed the API can update the main entity, `organisation` in `scope/setup.yaml` manages it here (the s06 discovered-work item).
+- Validation: country and currency codes; contract end after start; an `active` contract past its end date is reported (`supplier.contract_lapsed`); solutions named by a contract belong to the same entity.
+
+**Tests first**
+- `SupplierScopeTests.Invalid_country_or_currency_is_reported`
+- `SupplierScopeTests.Active_contract_past_end_date_is_reported`
+- `SupplierScopeTests.Contract_solution_must_belong_to_entity`
+- Contract: `SupplierClientTests.Creates_entity_solution_and_contract`
+
+**Functional check**
+- Apply two fictional suppliers to the local CISO Assistant; re-applying writes nothing; a changed contract end date is a one-field update.
+
+### s09-20 Supplier assessments, tiers and approval (was s10-02)
+- [ ] Done
+
+**Story:** As a supplier owner, I want each supplier's assessment set up from the repo on a review cycle, so that reviews start on time and nobody sets them up by hand.
+
+**Acceptance criteria**
+- An entity file may declare assessments: name, solutions, perimeter, due date, criticality, the questionnaire framework (a library URN), and `review_every` (such as `12 months`). Applying creates the entity assessment and its linked questionnaire audit.
+- When a review is due, `hound` opens the next one: a new revision if the API supports it (s06-05), otherwise a new assessment named with its period, using the same periods logic as audits (s06-10).
+- Answers, tiering form results and campaigns are never written by `hound`.
+- `forced_tier` (one of the criticality scale's keys, such as `critical`) with a required `reason` may be declared; `scope plan` reports when CISO Assistant's current tier differs from it.
+- Approval: a supplier is approved when its latest entity assessment is concluded as acceptable in CISO Assistant (its `conclusion` field; confirm the field and its values against the pinned release's schema in the first test) and is within its review cycle, and it has an `active` contract. Approval is read from CISO Assistant, never written by `hound`.
+- Supplier gate: a system in `scope/` names its `solution`, and optionally `supplied_through` (the reseller or provider the contract is with). `scope plan` refuses to register the system, or add it to an audit, until every named supplier is approved (`system.supplier_not_approved`, naming the supplier and what is missing). A supplier whose approval later lapses (review overdue, conclusion changed, contract ended) does not unregister the system; `scope plan` reports `supplier.approval_lapsed` and the system is listed for the committee.
+- The recurring review task for `review_every` comes with s10-04 (evidence plan tasks), which stays in s10.
+
+**Tests first**
+- `SupplierAssessmentTests.Due_review_opens_the_next_one`
+- `SupplierAssessmentTests.Answers_are_never_in_the_plan`
+- `SupplierScopeTests.Forced_tier_requires_reason`
+- `ScopePlanTests.Tier_differing_from_forced_tier_is_reported`
+- `SupplierGateTests.System_with_unapproved_supplier_is_not_registered`
+- `SupplierGateTests.Reseller_named_by_supplied_through_must_also_be_approved`
+- `SupplierGateTests.Lapsed_approval_is_reported_not_unregistered`
+
+**Functional check**
+- With a fixed clock past a review date, `scope apply` opens the next fictional supplier assessment in the local CISO Assistant with its questionnaire.
+- A fictional system whose supplier has no concluded assessment is refused by `scope plan`; concluding the assessment in CISO Assistant lets it through.
+
+### Onboarding assistant (s09-21 to s09-26)
+
+These tasks come after s09-14, because they draft REST profiles, and after s09-20, because onboarding starts with the supplier. They build `hound onboard` from [`docs/design/onboarding-assistant.md`](../design/onboarding-assistant.md): a guided session in which a language model proposes how a system fits a framework and drafts its profile, and a person accepts or edits every decision. Nothing is applied to CISO Assistant by the session; the output is files for a pull request in the organisation's config repo. Tests use a fake model with recorded replies; no test or CI job calls a live model.
+
+### s09-21 Model port, Anthropic and OpenAI adapters, onboarding config and outbound guard
+- [ ] Done
+
+**Story:** As an operator, I want `hound` to use a language model I choose, with my key kept as a secret and nothing sensitive sent, so that I can use the assistant without leaking organisation data.
+
+**Acceptance criteria**
+- Core port `IDraftingModel`: instructions, inputs and a JSON schema in; a reply validated against the schema, or a problem (`llm.refused`, `llm.invalid_reply`, `llm.budget_reached`, `llm.unreachable`), out.
+- Two adapters, each on its provider's official .NET SDK: Anthropic (structured outputs, adaptive thinking, streaming for long replies) and OpenAI (structured outputs with a JSON schema). Both pass one shared adapter contract suite.
+- `onboarding.yaml`, separate from the deployment config: `llm.provider` (`anthropic` or `openai`, required), `llm.model` (empty means the provider's default), `llm.api_key` (a secret reference, `env:` or `file:`; a literal key fails validation), `llm.effort`, `llm.max_tokens_per_session`, `llm.deny_terms_file`, `skills_path`, `profiles_path`.
+- Default models per provider in `onboarding/models.yaml`, shipped with `hound` and editable without a build: each provider's current top model (`claude-opus-5-5` for Anthropic; OpenAI's confirmed from its model list when this task is built).
+- `hound onboard config`: asks for provider and model, reads the key without echo, saves it to `~/.config/hound/secrets/llm_api_key` with owner-only permissions, and writes `onboarding.yaml` with a `file:` reference. `--check` resolves the key and makes one minimal request to confirm it works, never printing the key.
+- Outbound guard (pure): every request is scanned for secret values in use, the deny terms, and IP, MAC and email patterns; a hit returns `llm.blocked_content` naming what matched and nothing is sent.
+- Response shapes (pure): a response reduced to field names, types and counts, keeping values only for settings-like fields (few distinct values, no identity pattern) and never for profile `identities`.
+- Every request and reply is saved locally with the session; `--show-requests` prints each before it is sent.
+- No model in evidence collection: the onboarding code and model adapters live in `EvidenceHound.Onboarding`, used only by `hound onboard`. An architecture test fails if the core, runtime, collectors or `hound run` reference it or any model SDK. `hound run` and the scheduler refuse a deployment config that declares an `llm` section or references the onboarding key (`config.llm_in_runner`).
+
+**Tests first**
+- `ArchitectureTests.Runner_and_collectors_do_not_reference_onboarding_or_model_sdks`
+- `RunnerConfigTests.Llm_key_or_setting_in_runner_config_is_refused`
+- `OutboundGuardTests.Secret_value_in_request_blocks_it`
+- `OutboundGuardTests.Deny_term_and_email_are_reported`
+- `ResponseShapeTests.Keeps_enumerations_drops_identities_and_free_text`
+- `DraftingModelContractTests<T>` run for both adapters against recorded exchanges (WireMock): sends the schema and configured model, maps refusals and invalid replies to problems
+- `OnboardingConfigTests.Literal_api_key_is_refused`
+- `OnboardingConfigTests.Empty_model_uses_provider_default`
+- `OnboardConfigCommandTests.Writes_reference_and_owner_only_key_file`
+
+**Functional check**
+- With a fake model, `hound onboard --show-requests` on the example system prints requests containing no recorded host names, IDs or secrets.
+
+### s09-26 Onboarding skills
+- [ ] Done
+
+Built straight after s09-21, before s09-22, because every later onboarding step reads its guidance from skills.
+
+**Story:** As a GRC team member, I want the assistant's guidance in text files I can read and adjust without a build, with good-practice defaults and a way to add our own, so that onboarding improves as we learn.
+
+**Acceptance criteria**
+- A skill is a Markdown file with YAML frontmatter: `name`, `description`, `version`, `applies_to` (one or more of `supplier`, `system`, `applicability`, `profile`, `mapping`), optional `frameworks` and optional `overrides`. Parsed and validated once into an immutable record.
+- Default skills in `skills/`, built into `hound`: supplier assessment and tiering, supplier assurance documents, applicability and not-applicable justification, Essential Eight ML2 mapping, profile authoring, reading an API specification.
+- Organisation skills load from `skills_path` (default `/config/skills`, read-only). They add to the defaults; a skill with the name of a default is an error unless it declares `overrides:` with that name.
+- `hound skill list` (source, version, SHA-256, overrides), `hound skill new <name>`, `hound skill add <file>` (validate, then copy into the organisation folder) and `hound skill validate` (frontmatter, step names, size budget, and a warning for anything matching the deny terms or identity patterns).
+- Selection (pure): for a step and framework, every matching skill, defaults first, within a size budget; over budget is a problem naming the skills, not a silent cut.
+- Skills are passed to the model as instructions; vendor documents and specifications are passed separately as material to read. The outbound guard scans skills like any other content.
+- The onboarding record lists every skill used with its source, version and SHA-256.
+- Skills cannot change the outbound guard, response shapes, the approver rule, the supplier gate, schema validation or profile tests; a test shows a skill telling the model to skip approval or send raw data has no effect on what is sent or saved.
+
+**Tests first**
+- `SkillParserTests.Reads_frontmatter_and_body`
+- `SkillValidationTests.Unknown_step_and_missing_fields_are_reported`
+- `SkillCatalogueTests.Same_name_without_overrides_is_an_error`
+- `SkillCatalogueTests.Override_replaces_default_and_is_listed`
+- `SkillSelectionTests.Selects_by_step_and_framework_within_budget`
+- `SkillSafetyTests.Skill_cannot_weaken_guard_or_approver_rule`
+- `OnboardRecordTests.Lists_skills_with_version_and_hash`
+
+**Functional check**
+- `hound skill new example-check`, edit it, `hound skill add` it, and `hound skill list` shows it beside the defaults; an onboarding run with a fake model records it.
+
+### s09-22 Understand the system and decide applicability
+- [ ] Done
+
+**Story:** As a GRC team member, I want `hound` to read a system's API documentation and the target framework and propose, for each requirement, whether it is an API check, manual, not applicable or for another system, so that I decide applicability quickly and with reasons.
+
+**Acceptance criteria**
+- `hound onboard <system> --framework <framework file>` asks for the system name, owner and product, and starts from a copy of a library profile when one names the product.
+- Supplier first: the session asks who provides the system and who the contract is with. For a supplier not yet in the repo it drafts the entity, solution and contract files (s09-19) and a supplier assessment (s09-20), with proposed dependency, penetration, maturity, trust and criticality and the reasons for each, and a supplier summary drawn from the vendor's public documents (certifications, where data is held, support lifecycle), each with its source. The person accepts or edits each. The summary is a draft kept in the onboarding record, not evidence: the vendor documents the person keeps are downloaded with source URL, retrieval date and SHA-256 and attached to the supplier assessment as its evidence. Questionnaire answers are never drafted into CISO Assistant.
+- If a named supplier is not yet approved, the session saves, writes the supplier files and stops before applicability; it resumes from there once the supplier is approved.
+- Reads an OpenAPI document, other API specifications or saved documentation from local files or allowed URLs, and shows the model's summary of readable endpoints, sign-in and paging.
+- Reads every in-scope requirement from the framework file and shows one proposal per requirement (API check, manual, not applicable, not this system) with its reasoning; the person accepts, edits or rejects each, and can save and resume.
+- Not applicable cannot be accepted without a justification and an approver name.
+- `--no-model` runs the same steps with empty proposals.
+
+**Tests first**
+- `OnboardSupplierTests.Unapproved_supplier_stops_before_applicability_and_resumes_after`
+- `OnboardSupplierTests.Supplier_proposals_carry_reasons_and_sources`
+- `OnboardSupplierTests.Summary_is_not_evidence_and_kept_documents_are_attached_with_hash`
+- `ApplicabilityTests.Not_applicable_without_justification_or_approver_is_refused`
+- `ApplicabilityTests.Every_in_scope_requirement_gets_one_decision`
+- `OnboardSessionTests.Resume_keeps_accepted_decisions`
+- `SpecReaderTests.Reads_openapi_paths_and_security_schemes`
+
+**Functional check**
+- Onboard the fictional example API against the example framework with a fake model; the decision list covers every requirement and resumes after a stop.
+
+### s09-23 Draft, sample and test the profile
+- [ ] Done
+
+**Story:** As a GRC team member, I want the profile for the accepted API checks drafted, proven against the real system and tested, so that I only review a profile that already works.
+
+**Acceptance criteria**
+- The model drafts queries, datasets and checks for every accepted API check, with framework-neutral check IDs, as a structured reply validated against the profile schema.
+- With the person's go-ahead, the drafted queries run once, read-only, with the configured credentials; responses are saved as test recordings with identities hashed, and only their shapes go to the model.
+- `hound profile validate` and `hound profile test` run after each round; their problems go back to the model, for at most `llm.max_rounds` (default 3) rounds, and the remaining problems are shown.
+- The person confirms each check's expected result before it is saved as a test.
+
+**Tests first**
+- `ProfileDraftTests.Reply_not_matching_schema_is_a_problem`
+- `DraftLoopTests.Validation_problems_are_fed_back_until_clean_or_rounds_used`
+- `SampleRunTests.Recordings_are_hashed_and_only_shapes_are_sent`
+
+**Functional check**
+- Against the recorded example API, a fake model's first draft with a wrong path is fixed in the second round, and `hound profile test` passes.
+
+### s09-24 Write the onboarding output
+- [ ] Done
+
+**Story:** As a GRC team member, I want the session to write the profile, mappings, applicability and a record of how it was decided into my config repo, so that I can review it in a pull request and show auditors how applicability was decided.
+
+**Acceptance criteria**
+- Writes `profiles/<system>.yaml` and its tests, mapping additions to `mappings/<framework>.yaml` (shown as a diff), scope assessments for not-applicable rows (`result: not_applicable`, justification and approver in the observation) and manual rows, and manual source stubs.
+- Writes `onboarding/<system>-<date>.md` with the system summary, every decision with its proposal and who accepted it, the provider and model, and links to the saved requests.
+- Writes only into the working copy; never calls CISO Assistant. `hound scope plan` and `hound plan` then show the changes as for any other edit.
+- Re-running for another framework keeps the profile and adds only new checks, mappings and applicability; `--update` proposes profile changes from a fresh spec and sample, never applying them.
+
+**Tests first**
+- `OnboardOutputTests.Not_applicable_becomes_scope_assessment_with_justification`
+- `OnboardOutputTests.Mapping_additions_do_not_change_existing_rows`
+- `OnboardOutputTests.Record_lists_every_decision_and_model`
+- `OnboardOutputTests.Second_framework_adds_without_rewriting_profile`
+
+**Functional check**
+- After onboarding the example system, `hound scope plan` shows the not-applicable rows with their justifications and `hound plan --dry-run` shows the new checks.
+
+### s09-25 Onboard the Sophos firewall, and documentation
+- [ ] Done
+
+**Story:** As the person running this project, I want to onboard my own Sophos firewall with `hound onboard`, so that the assistant is proven on a real system and real requirements.
+
+**Acceptance criteria**
+- The person runs `hound onboard` in the dev container with their own model key and read-only firewall credentials, registers and approves the supplier (the vendor or the reseller their contract is with) first, against the Essential Eight ML2 framework, and commits the output to their private config repo. Nothing from the run is committed here.
+- What the run showed (steps that were slow or confusing, wrong proposals, missing operators) is recorded as discovered work, without organisation data.
+- `docs/onboarding.md`: how to onboard a system, what is sent to the model and how to check it, how to use another provider or `--no-model`, how to write, add and override skills, and how auditors read the onboarding record. A tutorial section onboards the fictional example API.
+
+**Tests first**
+- Docs check that every `hound onboard` option appears in `docs/onboarding.md`.
+- Docs lint and link check.
+
+**Functional check**
+- The person's onboarding run produces a profile that passes `hound profile test`, and the firewall's checks appear in a `hound plan --dry-run`.
+
 ### s09-01 Application control policies from Intune
 - [ ] Done
 
