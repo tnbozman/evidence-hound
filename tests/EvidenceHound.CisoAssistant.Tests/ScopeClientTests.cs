@@ -282,6 +282,22 @@ public sealed class ScopeClientTests : IDisposable
     }
 
     [Fact]
+    public async Task Updating_a_control_clears_the_priority_and_eta_the_scope_no_longer_declares()
+    {
+        List("applied-controls", new JsonObject { ["id"] = "ac-backup", ["ref_id"] = "AC-BACKUP" });
+        Respond("PATCH", "/api/applied-controls/ac-backup/", 200, new JsonObject());
+        var control = Declared(ScopeKind.Control, "AC-BACKUP", ("name", "Daily backups"), ("domain", "Example Pty Ltd"));
+        var change = new ScopeChange(ScopeKind.Control, "AC-BACKUP", ScopeAction.Update, [new FieldChange("priority", "1", null), new FieldChange("eta", "2026-12-31", null)], State);
+
+        (await _ca.Writer.WriteAsync(new ScopeWrite(change, control, "Global"), _ct)).Value();
+
+        var patched = JsonNode.Parse(Logged("PATCH", "/api/applied-controls/ac-backup/").Body!)!.AsObject();
+        (patched.ContainsKey("priority"), patched["priority"]).ShouldBe((true, null));
+        (patched.ContainsKey("eta"), patched["eta"]).ShouldBe((true, null));
+        patched.ContainsKey("category").ShouldBeFalse("a field the change does not clear is left as it is");
+    }
+
+    [Fact]
     public async Task Writes_row_results_and_links_to_the_in_group_rows()
     {
         List("compliance-assessments", new JsonObject { ["id"] = "ca-e8", ["ref_id"] = "EX-E8-2026" });
