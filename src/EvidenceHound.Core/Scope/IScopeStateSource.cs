@@ -15,6 +15,9 @@ public sealed record ScopeStateQuery(string RootFolder, IReadOnlyList<string> Fr
     /// <summary>Whether to read entities, solutions, contracts and representatives: only when the scope declares third parties.</summary>
     public bool ThirdParties { get; init; }
 
+    /// <summary>Whether to read the organisation's own entity (the builtin main entity): only when setup declares it.</summary>
+    public bool Organisation { get; init; }
+
     /// <summary>
     /// The audits, by ref_id, to read every row of, not only the rows the scope writes, so a plan can show its effect on compliance. Rows the
     /// scope does not declare are never written.
@@ -41,6 +44,7 @@ public sealed record ScopeStateQuery(string RootFolder, IReadOnlyList<string> Fr
             Access = scope.Access.Users.Count > 0 || scope.Access.Teams.Count > 0 || scope.Access.Roles.Count > 0,
             Settings = scope.Settings.FeatureFlags.Count > 0 || scope.Settings.General.Count > 0,
             ThirdParties = scope.ThirdParties.Count > 0,
+            Organisation = scope.Setup.Organisation is not null,
             AllRowsOf = declared.Where(d => d.Kind == ScopeKind.Audit).Select(d => d.Key).ToHashSet(StringComparer.Ordinal),
         };
     }

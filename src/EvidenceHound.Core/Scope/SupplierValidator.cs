@@ -14,7 +14,11 @@ public static class SupplierValidator
     public static IEnumerable<ScopeProblem> Validate(ScopeDocument scope, DateOnly today)
     {
         ArgumentNullException.ThrowIfNull(scope);
-        return scope.ThirdParties.SelectMany(entity => EntityProblems(entity, today));
+        return
+        [
+            .. scope.Setup.Organisation is { } organisation ? EntityProblems(organisation, today) : [],
+            .. scope.ThirdParties.SelectMany(entity => EntityProblems(entity, today)),
+        ];
     }
 
     /// <summary>Third parties declared once (entities, solutions and contracts by ref_id, representatives by email), and the parents and domains they name.</summary>

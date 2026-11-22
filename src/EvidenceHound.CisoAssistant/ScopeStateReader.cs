@@ -134,8 +134,9 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
         var hashes = await HashesAsync(reading, evidences);
         var access = query.Access ? await AccessAsync(reading, folders, userList, inScope) : [];
         var settings = query.Settings ? await SettingsAsync(reading) : [];
+        var entityList = query.ThirdParties || query.Organisation ? await reading.ListAsync("entities/") : [];
         var thirdParties = query.ThirdParties
-            ? new ThirdPartyLists(await reading.ListAsync("entities/"), await reading.ListAsync("solutions/"), await reading.ListAsync("contracts/"), await reading.ListAsync("representatives/"))
+            ? new ThirdPartyLists(entityList, await reading.ListAsync("solutions/"), await reading.ListAsync("contracts/"), await reading.ListAsync("representatives/"))
             : null;
         var auditedFrameworks = audits.Select(a => Lookup(a["framework"], frameworks)).OfType<string>().Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
         if (allRows)
@@ -192,6 +193,7 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
                 null)),
             .. access,
             .. settings,
+            .. query.Organisation ? MainEntity(entityList) : [],
             .. thirdParties is null ? [] : ThirdParties(thirdParties, names),
         ];
         return Result.Ok(new HeldState(objects, frameworkList, libraries.ToDictionary(Id, l => (Text(l["urn"]), Text(l["version"])), StringComparer.Ordinal), auditedFrameworks));
@@ -335,7 +337,7 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
     /// </summary>
     private static IEnumerable<ActualObject> ThirdParties(ThirdPartyLists lists, Lookups names)
     {
-        var entities = lists.Entities.Where(e => !(e["builtin"] is JsonValue b && b.TryGetValue<bool>(out var builtin) && builtin)).ToArray();
+        var entities = lists.Entities.Where(e => !IsBuiltin(e)).ToArray();
         var entityRefs = entities.ToDictionary(Id, e => Text(e["ref_id"]) ?? Id(e), StringComparer.Ordinal);
         var solutionRefs = lists.Solutions.ToDictionary(Id, s => Text(s["ref_id"]) ?? Id(s), StringComparer.Ordinal);
         return
@@ -356,6 +358,14 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
                 ("phone", Text(r["phone"])))),
         ];
     }
+
+    /// <summary>The organisation's own entity (the builtin main entity) as <see cref="ScopeDesired"/> declares it. It carries no marker.</summary>
+    private static IEnumerable<ActualObject> MainEntity(List<JsonNode> entities) =>
+        entities.Where(IsBuiltin).Take(1).Select(e => new ActualObject(new ScopeObject(ScopeKind.MainEntity, ScopeDesired.OrganisationKey, Fields(
+            ("name", Text(e["name"])), ("description", Text(e["description"])), ("mission", Text(e["mission"])), ("country", Text(e["country"])),
+            ("currency", Text(e["currency"])), ("identifiers", Identifiers(e["legal_identifiers"])))), null));
+
+    private static bool IsBuiltin(JsonNode entity) => entity["builtin"] is JsonValue b && b.TryGetValue<bool>(out var builtin) && builtin;
 
     /// <summary>Legal identifiers as <see cref="ScopeDesired.Identifiers"/> writes them: a JSON object with sorted keys, or null when empty.</summary>
     private static string? Identifiers(JsonNode? identifiers) =>

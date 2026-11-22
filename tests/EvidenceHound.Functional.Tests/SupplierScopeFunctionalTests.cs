@@ -11,7 +11,7 @@ namespace EvidenceHound.Functional.Tests;
 [Collection(SharedCisoAssistant.Name)]
 public sealed class SupplierScopeFunctionalTests(CisoAssistantFixture ciso) : IDisposable
 {
-    private const string Cloud = """
+    internal const string Cloud = """
         ref_id: SUP-FT-CLOUD
         name: Example Cloud Pty Ltd
         description: Hosts the customer portal.
@@ -39,7 +39,7 @@ public sealed class SupplierScopeFunctionalTests(CisoAssistantFixture ciso) : ID
             solutions: [SOL-FT-HOST]
         """;
 
-    private const string Backup = """
+    internal const string Backup = """
         ref_id: SUP-FT-BACKUP
         name: Example Backup Ltd
         country: NZ
@@ -63,7 +63,7 @@ public sealed class SupplierScopeFunctionalTests(CisoAssistantFixture ciso) : ID
     private readonly string _results = Directory.CreateDirectory(Path.Combine(CisoAssistantFixture.RepoRoot, "test-results", "suppliers")).FullName;
 
     [Fact]
-    public async Task Two_suppliers_apply_reapply_writes_nothing_and_a_new_end_date_is_one_update()
+    public async Task The_organisation_and_two_suppliers_apply_reapply_writes_nothing_and_a_new_end_date_is_one_update()
     {
         var ct = TestContext.Current.CancellationToken;
         var example = Path.Combine(CisoAssistantFixture.RepoRoot, "examples", "compliance-repo");
@@ -74,6 +74,10 @@ public sealed class SupplierScopeFunctionalTests(CisoAssistantFixture ciso) : ID
             File.Copy(file, copy);
         }
 
+        // The organisation's own entity: CISO Assistant made it itself, so apply only ever patches it, and a re-plan reads it back unchanged.
+        var setup = Path.Combine(_repo, "scope", "setup.yaml");
+        await File.WriteAllTextAsync(setup, (await File.ReadAllTextAsync(setup, ct)).Replace(
+            "  root_folder: Global\n", "  root_folder: Global\n  entity:\n    name: Example Pty Ltd\n    country: AU\n    currency: AUD\n", StringComparison.Ordinal), ct);
         var thirdParties = Directory.CreateDirectory(Path.Combine(_repo, "scope", "third-parties")).FullName;
         await File.WriteAllTextAsync(Path.Combine(thirdParties, "example-cloud.yaml"), Cloud, ct);
         await File.WriteAllTextAsync(Path.Combine(thirdParties, "example-backup.yaml"), Backup, ct);

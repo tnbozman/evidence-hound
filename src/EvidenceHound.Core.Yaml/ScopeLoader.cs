@@ -21,7 +21,7 @@ public sealed record ScopeParse(ScopeDocument Scope, IReadOnlyList<ScopeProblem>
 public static partial class ScopeLoader
 {
     private static readonly string[] SetupKeys = ["organisation", "frameworks", "libraries", "domains"];
-    private static readonly string[] OrganisationKeys = ["root_folder"];
+    private static readonly string[] OrganisationKeys = ["root_folder", "entity"];
     private static readonly string[] FrameworkKeys = ["urn", "library", "file", "snapshot"];
     private static readonly string[] DomainKeys = ["name", "description", "perimeters", "perimeter", "systems"];
     private static readonly string[] PerimeterKeys = ["name", "ref_id", "description"];
@@ -211,6 +211,7 @@ public static partial class ScopeLoader
             [.. file.Items(root, "domains").Select(item => ReadDomain(item, file)).OfType<ScopeDomain>()])
         {
             Libraries = file.Refs(root, "libraries"),
+            Organisation = organisation is not null && file.Map(organisation, "entity") is { } entity ? ReadOrganisation(entity, file) : null,
         };
     }
 

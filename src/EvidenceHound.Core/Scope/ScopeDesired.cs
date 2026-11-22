@@ -51,9 +51,18 @@ public static class ScopeDesired
             }),
             .. scope.Audits.SelectMany(a => Rows(scope, a, inputs)),
             .. Access(scope.Access, setup.RootFolder),
+            .. setup.Organisation is { } organisation ? [Organisation(organisation)] : Array.Empty<ScopeObject>(),
             .. scope.ThirdParties.SelectMany(ThirdParty),
         ];
     }
+
+    /// <summary>The key of the organisation's own entity, which CISO Assistant holds as its builtin main entity.</summary>
+    public const string OrganisationKey = "organisation";
+
+    private static ScopeObject Organisation(ScopeEntity entity) =>
+        new(ScopeKind.MainEntity, OrganisationKey, Fields(
+            ("name", entity.Name), ("description", entity.Description), ("mission", entity.Mission), ("country", entity.Country), ("currency", entity.Currency),
+            ("identifiers", Identifiers(entity.Identifiers))));
 
     /// <summary>
     /// A third party as CISO Assistant holds it: the entity, then its solutions, contracts and representatives, each naming the entity by

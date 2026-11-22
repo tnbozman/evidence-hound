@@ -161,7 +161,7 @@ public static class ScopePlanner
     /// Frameworks come from libraries, assessments are rows of an audit, and flags and settings are CISO Assistant's own: none carries a marker,
     /// nor is ever deleted, and those the scope does not name are not drift.
     /// </summary>
-    private static bool Marked(ScopeKind kind) => kind is not (ScopeKind.Framework or ScopeKind.Assessment or ScopeKind.FeatureFlag or ScopeKind.Setting);
+    private static bool Marked(ScopeKind kind) => kind is not (ScopeKind.Framework or ScopeKind.Assessment or ScopeKind.FeatureFlag or ScopeKind.Setting or ScopeKind.MainEntity);
 
     /// <summary>
     /// Objects the scope does not declare are drift when <c>hound</c> manages them, or when they are structure (domains, perimeters, systems,

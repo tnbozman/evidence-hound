@@ -38,6 +38,7 @@ internal sealed partial class ScopeWriter(HttpClient http, ICisoAssistantClient 
         ScopeKind.Team => TeamAsync(write, folders, cancellationToken),
         ScopeKind.FeatureFlag => FeatureFlagAsync(write, cancellationToken),
         ScopeKind.Setting => GeneralSettingAsync(write, cancellationToken),
+        ScopeKind.MainEntity => MainEntityAsync(write, cancellationToken),
         ScopeKind.Entity => EntityAsync(write, folders, cancellationToken),
         ScopeKind.Solution => SolutionAsync(write, cancellationToken),
         ScopeKind.Contract => ContractAsync(write, folders, cancellationToken),

@@ -50,6 +50,38 @@ internal sealed partial class ScopeWriter
         });
     }
 
+    /// <summary>
+    /// The organisation's own entity: CISO Assistant's builtin main entity, which it creates itself. It is only ever updated in place, so a
+    /// create in the plan (nothing read yet) patches it too, and it carries no marker.
+    /// </summary>
+    private async Task<Result<Unit>> MainEntityAsync(ScopeWrite write, CancellationToken cancellationToken)
+    {
+        if (write.Change.Action == ScopeAction.Delete || write.Declared is not { } declared)
+        {
+            return Result.Fail<Unit>(new Problem("scope.main_entity_not_deleted", "The organisation's own entity is never deleted; remove organisation.entity to stop managing it."));
+        }
+
+        var listed = await http.ListAllAsync("entities/", cancellationToken);
+        return await listed.BindAsync(async entities =>
+        {
+            if (entities.FirstOrDefault(IsBuiltin) is not { } main)
+            {
+                return Result.Fail<Unit>(ApiProblems.NotFound("main entity", "(the organisation's own entity)"));
+            }
+
+            var body = new JsonObject
+            {
+                ["name"] = Field(declared, "name"),
+                ["description"] = Field(declared, "description") ?? "",
+                ["mission"] = Field(declared, "mission") ?? "",
+                ["country"] = Field(declared, "country") ?? "",
+                ["currency"] = Field(declared, "currency") ?? "",
+                ["legal_identifiers"] = Field(declared, "identifiers") is { } identifiers ? JsonNode.Parse(identifiers) : new JsonObject(),
+            };
+            return await SendAsync(HttpMethod.Patch, $"entities/{Uri.EscapeDataString(Id(main))}/", body, "to update the organisation's own entity", cancellationToken);
+        });
+    }
+
     private async Task<Result<Unit>> SolutionAsync(ScopeWrite write, CancellationToken cancellationToken)
     {
         var lists = Result.Combine([await ListAsync("entities/", cancellationToken), await ListAsync("solutions/", cancellationToken)]);

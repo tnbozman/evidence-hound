@@ -56,6 +56,42 @@
             "root_folder": {
               "description": "The existing folder the domains sit under. Default Global.",
               "$ref": "#/$defs/text"
+            },
+            "entity": {
+              "description": "The organisation's own entity (CISO Assistant's main entity). It is only ever updated, never created or deleted.",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "name"
+              ],
+              "properties": {
+                "name": {
+                  "$ref": "#/$defs/text"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "mission": {
+                  "type": "string"
+                },
+                "country": {
+                  "type": "string",
+                  "pattern": "^[A-Z]{2}$",
+                  "description": "ISO 3166-1 alpha-2, such as AU."
+                },
+                "currency": {
+                  "type": "string",
+                  "pattern": "^[A-Z]{3}$",
+                  "description": "ISO 4217, such as AUD."
+                },
+                "identifiers": {
+                  "description": "Legal identifiers, such as ABN, as name: value.",
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                }
+              }
             }
           }
         },

@@ -13,6 +13,8 @@ public static partial class ScopeLoader
         "identifiers", "solutions", "contracts", "representatives",
     ];
 
+    private static readonly string[] OrganisationEntityKeys = ["name", "description", "mission", "country", "currency", "identifiers"];
+
     private static readonly string[] SolutionKeys = ["ref_id", "name", "description", "criticality"];
     private static readonly string[] ContractKeys = ["ref_id", "name", "description", "status", "start", "end", "annual_expense", "currency", "solutions"];
     private static readonly string[] ContractStatuses = ["draft", "active", "expired", "terminated"];
@@ -52,6 +54,25 @@ public static partial class ScopeLoader
             CodesAt = Codes.Where(k => FileReader.Child(root, k) is not null)
                 .ToDictionary(k => k, k => file.At(FileReader.Child(root, k)!), StringComparer.Ordinal),
         };
+    }
+
+    /// <summary><c>organisation.entity</c> in <c>scope/setup.yaml</c>: the organisation's own entity, which CISO Assistant creates itself.</summary>
+    private static ScopeEntity? ReadOrganisation(YamlMappingNode entity, FileReader file)
+    {
+        file.Keys(entity, OrganisationEntityKeys);
+        var name = file.Required(entity, "name");
+        return name is null
+            ? null
+            : new ScopeEntity(ScopeDesired.OrganisationKey, name, file.At(entity))
+            {
+                Description = file.Text(entity, "description"),
+                Mission = file.Text(entity, "mission"),
+                Country = file.Text(entity, "country"),
+                Currency = file.Text(entity, "currency"),
+                Identifiers = file.Map(entity, "identifiers") is { } identifiers ? file.TextMap(identifiers) : new Dictionary<string, string>(),
+                CodesAt = Codes.Where(k => FileReader.Child(entity, k) is not null)
+                    .ToDictionary(k => k, k => file.At(FileReader.Child(entity, k)!), StringComparer.Ordinal),
+            };
     }
 
     private static ScopeSolution? ReadSolution(YamlMappingNode item, FileReader file)

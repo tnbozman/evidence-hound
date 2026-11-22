@@ -214,7 +214,11 @@ public class SupplierScopeTests
         main.Key.ShouldBe("organisation");
         main.Fields.ShouldBe(new Dictionary<string, string>
         {
-            ["name"] = "Example Pty Ltd", ["description"] = "The organisation.", ["country"] = "AU", ["currency"] = "AUD", ["identifiers"] = "{\"ABN\":\"EXAMPLE-ABN\"}",
+            ["name"] = "Example Pty Ltd",
+            ["description"] = "The organisation.",
+            ["country"] = "AU",
+            ["currency"] = "AUD",
+            ["identifiers"] = "{\"ABN\":\"EXAMPLE-ABN\"}",
         }, ignoreOrder: true);
         SupplierValidator.Validate(parsed.Scope with { Setup = parsed.Scope.Setup with { Organisation = parsed.Scope.Setup.Organisation! with { Country = "XX" } } }, Today)
             .ShouldHaveSingleItem().Code.ShouldBe("supplier.country_invalid");

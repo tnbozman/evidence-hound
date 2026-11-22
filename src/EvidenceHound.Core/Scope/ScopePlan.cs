@@ -14,6 +14,7 @@ public enum ScopeKind
     Audit,
     Document,
     Control,
+    MainEntity,
     Entity,
     Solution,
     Contract,

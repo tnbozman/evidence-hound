@@ -32,6 +32,9 @@ public sealed record ScopeSetup(string RootFolder, IReadOnlyList<ScopeFramework>
 {
     /// <summary>Other libraries to load by URN, such as the mapping sets between the frameworks.</summary>
     public IReadOnlyList<ScopeRef> Libraries { get; init; } = [];
+
+    /// <summary>The organisation's own entity (CISO Assistant's main entity), from <c>organisation.entity</c>. It is only ever updated.</summary>
+    public ScopeEntity? Organisation { get; init; }
 }
 
 /// <summary>A framework to load: its URN, and its library by URN or as a custom library file. A snapshot makes it checkable offline.</summary>
