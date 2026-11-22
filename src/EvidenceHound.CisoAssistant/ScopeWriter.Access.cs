@@ -82,7 +82,7 @@ internal sealed partial class ScopeWriter
             var (assignments, roles, users) = (lists[0], lists[1], lists[2]);
             var parts = write.Change.Key.Split('|', 3);
             var (roleCode, domain, email) = parts.Length == 3 ? (parts[0], parts[1], parts[2]) : (write.Change.Key, "", "");
-            var roleIds = roles.Where(r => Text(r["name"]) is not null).GroupBy(r => Text(r["name"])!).ToDictionary(g => g.Key, g => Id(g.First()), StringComparer.Ordinal);
+            var roleIds = roles.Where(r => RoleCodes.Of(r) is not null).GroupBy(r => RoleCodes.Of(r)!).ToDictionary(g => g.Key, g => Id(g.First()), StringComparer.Ordinal);
             var userIds = UserIds(users);
             var folderId = folders.Of(domain);
             var existing = assignments.FirstOrDefault(a =>

@@ -77,7 +77,7 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
         }
 
         var folderNames = Names(folders, "name");
-        var roleNames = Names(roles, "name");
+        var roleNames = RoleCodes.ById(roles, Id);
         string Held(JsonNode assignment) =>
             $"{Lookup(assignment["role"], roleNames)} on {string.Join(", ", (assignment["perimeter_folders"] as JsonArray ?? []).Select(f => Lookup(f, folderNames)).OfType<string>())}";
         return Result.Ok<IReadOnlyList<UserAccess>>(
@@ -196,7 +196,7 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
         var assignments = await reading.ListAsync("role-assignments/");
         var folderNames = Names(folders, "name");
         var emails = users.ToDictionary(Id, u => (Text(u["email"]) ?? Id(u)).ToLowerInvariant(), StringComparer.Ordinal);
-        var roleNames = Names(roles, "name");
+        var roleNames = RoleCodes.ById(roles, Id);
         return
         [
             .. users.Select(u =>
