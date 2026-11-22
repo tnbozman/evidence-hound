@@ -8,6 +8,7 @@ using EvidenceHound.Onboarding.Configuration;
 using EvidenceHound.Onboarding.Decisions;
 using EvidenceHound.Onboarding.Guard;
 using EvidenceHound.Onboarding.Models;
+using EvidenceHound.Onboarding.Output;
 using EvidenceHound.Onboarding.Sessions;
 using EvidenceHound.Onboarding.Skills;
 using EvidenceHound.Onboarding.Specs;
@@ -83,7 +84,7 @@ internal static class OnboardSystemCommand
     }
 
     /// <summary>The model behind the gate and the skills to guide it; none with <c>--no-model</c>.</summary>
-    private sealed record Assistant(IDraftingModel Model, SkillCatalogue Skills, SessionRecord Record);
+    private sealed record Assistant(IDraftingModel Model, SkillCatalogue Skills, SessionRecord Record, ModelUsed Used);
 
     private static async Task<int> RunAsync(Settings settings, Terminal terminal, ILogger logger, IConfiguration configuration, CancellationToken cancellationToken)
     {
@@ -108,6 +109,12 @@ internal static class OnboardSystemCommand
 
         var prompt = new Prompt(terminal);
         var session = ((Result<OnboardSession>.Ok)loaded).Value;
+        if (session.Written.Count > 0)
+        {
+            await terminal.Output.WriteLineAsync($"{settings.System} is onboarded and its files are already written: {string.Join(", ", session.Written)}. Move {Path.GetRelativePath(settings.Repo, settings.SessionFile)} aside to onboard it again.".AsMemory(), cancellationToken);
+            return ExitCodes.Ok;
+        }
+
         if (session.Supplier is null)
         {
             var started = await StartAsync(session, prompt, cancellationToken);
@@ -141,6 +148,11 @@ internal static class OnboardSystemCommand
         }
 
         var decided = await ApplicabilityAsync(settings, session, model, prompt, terminal, cancellationToken);
+        if (decided is Result<OnboardSession>.Ok { Value: { Stage: OnboardStage.Decided } done })
+        {
+            decided = await WriteAsync(settings, done, prompt, terminal, cancellationToken);
+        }
+
         return decided.Match(_ => ExitCodes.Ok, problems => Log.Problems(logger, problems));
     }
 
@@ -174,7 +186,7 @@ internal static class OnboardSystemCommand
             record,
             config.MaxTokensPerSession,
             settings.Show ? terminal.Error : null);
-        return Result.Ok(new Assistant(guarded, catalogue, record));
+        return Result.Ok(new Assistant(guarded, catalogue, record, new ModelUsed(OnboardingConfigLoader.NameOf(config.Llm.Provider), config.Llm.Model)));
     }
 
     /// <summary>The questions that start a session: who reviews, who owns the system, the product, and who supplies it. Null when input ended.</summary>
@@ -378,6 +390,7 @@ internal static class OnboardSystemCommand
                 Groups = settings.Groups,
                 Specs = [.. settings.Specs],
                 Proposals = ((Result<IReadOnlyList<Proposal>>.Ok)proposals).Value,
+                Model = assistant?.Used,
             };
             await SaveAsync(settings, session, cancellationToken);
         }
@@ -388,6 +401,80 @@ internal static class OnboardSystemCommand
             ? string.Create(CultureInfo.InvariantCulture, $"All {decisions.Count} requirements decided: {Count(decisions, DecisionKind.ApiCheck)} API check(s), {Count(decisions, DecisionKind.Manual)} manual, {Count(decisions, DecisionKind.NotApplicable)} not applicable, {Count(decisions, DecisionKind.OtherSystem)} for another system. The session is in {Path.GetRelativePath(settings.Repo, settings.SessionFile)}.")
             : string.Create(CultureInfo.InvariantCulture, $"Saved: {decisions.Count} of {session.Proposals.Count} requirements decided. Run the same command to carry on.")).AsMemory(), cancellationToken);
         return Result.Ok(session);
+    }
+
+    /// <summary>
+    /// Writes the decided session into the working copy: the system's audit, manual rows added to the framework's mapping, and the
+    /// onboarding record. Never calls CISO Assistant; the person reviews the files, then validates, plans and applies.
+    /// </summary>
+    private static async Task<Result<OnboardSession>> WriteAsync(Settings settings, OnboardSession session, Prompt prompt, Terminal terminal, CancellationToken cancellationToken)
+    {
+        var framework = FrameworkSnapshotJson.Read(await File.ReadAllTextAsync(settings.Framework, cancellationToken), settings.Framework);
+        if (framework is Result<FrameworkSnapshot>.Fail { Errors: var frameworkProblems })
+        {
+            return Result.Fail<OnboardSession>(frameworkProblems);
+        }
+
+        var auditFile = Path.Combine("scope", "audits", OnboardOutput.AuditFileName(settings.System, settings.FrameworkName)).Replace('\\', '/');
+        if (File.Exists(Path.Combine(settings.Repo, auditFile)))
+        {
+            return Result.Fail<OnboardSession>(new Problem("onboard.output_exists", $"{auditFile} already exists. Move it aside, or merge the decisions in the session by hand."));
+        }
+
+        var setupPath = Path.Combine(settings.Repo, "scope", "setup.yaml");
+        var domains = File.Exists(setupPath)
+            ? ScopeLoader.Parse(new ScopeSource(setupPath, await File.ReadAllTextAsync(setupPath, cancellationToken)), null, []).Scope.Setup.Domains
+            : [];
+        var domain = await prompt.AskWithDefaultAsync("Domain for the system's audit", (domains is [var first, ..] ? first.Name : ""), cancellationToken);
+        var perimeter = await prompt.AskWithDefaultAsync(
+            "Perimeter", (domains.FirstOrDefault(d => d.Name == domain)?.Perimeters is [var firstPerimeter, ..] ? firstPerimeter.Name : ""), cancellationToken);
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var snapshot = ((Result<FrameworkSnapshot>.Ok)framework).Value;
+        var written = new List<string> { auditFile };
+        await WriteFileAsync(settings.Repo, auditFile, OnboardOutput.Audit(session, snapshot.FrameworkUrn, settings.FrameworkName, new AuditPlace(domain, perimeter), today), cancellationToken);
+
+        var mappingFile = Path.Combine("mappings", $"{settings.FrameworkName}.yaml").Replace('\\', '/');
+        var mappingNote = $"No {mappingFile} to add manual rows to; add the manual requirements to your mapping by hand.";
+        if (File.Exists(Path.Combine(settings.Repo, mappingFile)))
+        {
+            var (text, added) = OnboardOutput.Mapping(await File.ReadAllTextAsync(Path.Combine(settings.Repo, mappingFile), cancellationToken), session);
+            mappingNote = added.Count == 0 ? $"{mappingFile} already names every manual requirement." : $"Added {added.Count} manual requirement(s) to {mappingFile}: {string.Join(", ", added)}.";
+            if (added.Count > 0)
+            {
+                await WriteFileAsync(settings.Repo, mappingFile, text, cancellationToken);
+                written.Add(mappingFile);
+            }
+        }
+
+        var recordFile = $"onboarding/{OnboardOutput.RecordFileName(settings.System, settings.FrameworkName, today)}";
+        await WriteFileAsync(settings.Repo, recordFile, OnboardOutput.Record(session, await SkillsUsedAsync(settings, cancellationToken), settings.FrameworkName, today), cancellationToken);
+        written.Add(recordFile);
+        session = session with { Written = written };
+        await SaveAsync(settings, session, cancellationToken);
+        await terminal.Output.WriteLineAsync(
+            $"Wrote {string.Join(", ", written)}. {mappingNote}\nNext: review the changes in a pull request, then run 'hound scope validate scope', 'hound scope plan scope' and 'hound scope apply scope'.".AsMemory(),
+            cancellationToken);
+        return Result.Ok(session);
+    }
+
+    private static async Task WriteFileAsync(string repo, string relative, string text, CancellationToken cancellationToken)
+    {
+        var path = Path.Combine(repo, relative);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        await File.WriteAllTextAsync(path, text, cancellationToken);
+    }
+
+    /// <summary>The skills the session's requests used, from its skills.json.</summary>
+    private static async Task<IReadOnlyList<SkillUse>> SkillsUsedAsync(Settings settings, CancellationToken cancellationToken)
+    {
+        var path = Path.Combine(settings.Folder, "requests", "skills.json");
+        if (!File.Exists(path))
+        {
+            return [];
+        }
+
+        var list = System.Text.Json.Nodes.JsonNode.Parse(await File.ReadAllTextAsync(path, cancellationToken)) as System.Text.Json.Nodes.JsonArray ?? [];
+        return [.. list.OfType<System.Text.Json.Nodes.JsonObject>().Select(s => new SkillUse((string?)s["name"] ?? "", (string?)s["source"] ?? "", (string?)s["version"] ?? "", (string?)s["sha256"] ?? ""))];
     }
 
     private static int Count(IReadOnlyList<Decision> decisions, DecisionKind kind) => decisions.Count(d => d.Kind == kind);
@@ -501,6 +588,12 @@ internal static class OnboardSystemCommand
             await terminal.Error.WriteAsync($"{question}: ".AsMemory(), cancellationToken);
             await terminal.Error.FlushAsync(cancellationToken);
             return (await terminal.Input.ReadLineAsync(cancellationToken))?.Trim();
+        }
+
+        public async Task<string> AskWithDefaultAsync(string question, string @default, CancellationToken cancellationToken)
+        {
+            var answer = await AskAsync(@default.Length > 0 ? $"{question} [{@default}]" : question, cancellationToken);
+            return string.IsNullOrEmpty(answer) ? @default : answer;
         }
 
         public async Task<string?> AskUntilAnsweredAsync(string question, CancellationToken cancellationToken)

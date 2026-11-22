@@ -55,6 +55,12 @@ public sealed record OnboardSession(string System, OnboardStage Stage)
 
     public IReadOnlyList<Decision> Decisions { get; init; } = [];
 
+    /// <summary>The provider and model that made the proposals; none with <c>--no-model</c>.</summary>
+    public ModelUsed? Model { get; init; }
+
+    /// <summary>The files written from the decided session, relative to the repo. Once written, a re-run writes nothing.</summary>
+    public IReadOnlyList<string> Written { get; init; } = [];
+
     /// <summary>Proposals not yet decided, in framework order.</summary>
     [JsonIgnore]
     public IReadOnlyList<Proposal> Pending => [.. Proposals.Where(p => Decisions.All(d => d.Key != p.Key))];
@@ -75,6 +81,9 @@ public sealed record OnboardSession(string System, OnboardStage Stage)
         return decided.Pending.Count == 0 && Proposals.Count > 0 ? decided with { Stage = OnboardStage.Decided } : decided;
     }
 }
+
+/// <summary>The provider and model a session used, for the onboarding record.</summary>
+public sealed record ModelUsed(string Provider, string Model);
 
 /// <summary>Reads and writes <c>onboarding/&lt;system&gt;/session.json</c>.</summary>
 public static class OnboardSessionJson

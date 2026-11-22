@@ -27,10 +27,13 @@ public sealed class OnboardOutputTests
         parsed.Domain.Value.ShouldBe("Example Pty Ltd");
         parsed.Perimeter.Value.ShouldBe("Corporate IT");
 
+        // Requirements checked through the API are not listed: they start not assessed until the collector's results are published.
+        parsed.Unlisted.ShouldNotBeNull().Result.ShouldBe(ComplianceResult.NotAssessed);
+
         var notApplicable = parsed.Assessments.Single(a => a.Requirement.Key.Value == "EX-2");
         notApplicable.Result.ShouldBe(ComplianceResult.NotApplicable);
         notApplicable.Status.ShouldBe("done");
-        notApplicable.Observation.ShouldBe("Not applicable: Only the supplier administers it. Approved by Sam Example; accepted by Alex Example when onboarding EXAMPLE-ASSETS on 2026-11-23 (onboarding/example-assets-2026-11-23.md).");
+        notApplicable.Observation.ShouldBe("Not applicable: Only the supplier administers it. Approved by Sam Example; accepted by Alex Example when onboarding EXAMPLE-ASSETS on 2026-11-23 (onboarding/example-assets-example-framework-2026-11-23.md).");
 
         var elsewhere = parsed.Assessments.Single(a => a.Requirement.Key.Value == "EX-3");
         elsewhere.Result.ShouldBe(ComplianceResult.NotApplicable);
@@ -66,6 +69,10 @@ public sealed class OnboardOutputTests
         added.ShouldBe(["EX-1"]);
         text.ShouldContain("  - ref: EX-9\n    source: An existing manual source.\n  # EXAMPLE-ASSETS, added by hound onboard: manual evidence.\n  - ref: EX-1\n    source: \"Ask the owner for the patch report.\"\ndescription: Kept after the list.");
         Removed(mapping, text).ShouldBeEmpty();
+
+        // A requirement keyed by URN is already covered when the mapping names its ref_id (for example with rows: all).
+        var urnKeyed = Decided() with { Decisions = [Decided().Decisions[0] with { Key = "urn:example:req:x", RefId = "EX-9" }] };
+        OnboardOutput.Mapping(mapping, urnKeyed).Added.ShouldBeEmpty();
 
         // Run again: nothing more to add.
         OnboardOutput.Mapping(text, Decided()).Added.ShouldBeEmpty();

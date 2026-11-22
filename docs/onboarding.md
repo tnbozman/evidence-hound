@@ -50,8 +50,21 @@ carry on where it stopped; the model is never asked again for what it already an
    `l` to accept every remaining proposal that is not `not_applicable`, or `s` to save and stop. Not applicable always needs a justification
    and the name of who approves it; another system needs that system's name.
 
+5. **Written for review.** Once every requirement is decided, it asks for the domain and perimeter of the system's audit (the first ones in
+   `scope/setup.yaml` by default) and writes, into the working copy only:
+   - `scope/audits/<system>-<framework>.yaml`: the system's own audit. Not applicable rows are done with result `not_applicable` and the
+     justification and approver in the observation; rows another system meets say which system; manual rows are to do. Rows checked
+     through the API are left to the collector (`unlisted: not_assessed` until its results are published).
+   - `mappings/<framework>.yaml`: manual requirements the mapping does not name yet are added to `manual_only`, with your reasoning as the
+     suggested source. Existing lines are never changed.
+   - `onboarding/<system>-<framework>-<date>.md`: the record for auditors: the system, the supplier and its levels, the documents kept
+     with their hashes, the model and skills (with versions and SHA-256), and every decision with its proposal and who accepted it.
+
+   Nothing is sent to CISO Assistant. Review the files in a pull request, then run `hound scope validate scope`, `hound scope plan scope`
+   and `hound scope apply scope`. Running `hound onboard` again for the same system writes nothing; to onboard it against another
+   framework, pass that framework's file and it writes a separate audit and record.
+
 `--no-model` runs the same steps with empty proposals, for teams without a key. `--show-requests` prints each request before it is sent.
-Writing the profile, mappings and applicability into the repo from the decided session is the next step (s09-24).
 
 ## onboarding.yaml
 

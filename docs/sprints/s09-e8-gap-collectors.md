@@ -498,6 +498,23 @@ Requests saved: `001-supplier`, `002`-`004-applicability` (107 requirements in b
 **Functional check**
 - After onboarding the example system, `hound scope plan` shows the not-applicable rows with their justifications and `hound plan --dry-run` shows the new checks.
 
+As built (2026-11-22): the system's audit, manual rows added to the mapping's `manual_only`, and the record. The profile and its tests come from s09-23 (for Sophos, the library `sophos-central` profile is used as it is), so `hound plan --dry-run` has no new checks to show yet; manual source stubs and `--update` move to s09-23.
+
+Run locally against a copy of `examples/compliance-repo` with the fake model of s09-22 (one requirement not applicable, one for another system, the rest accepted):
+
+```console
+$ hound onboard EXAMPLE-ASSETS --repo repo --group 2 --spec examples/apis/example-asset-api.openapi.yaml
+All 107 requirements decided: 53 API check(s), 52 manual, 1 not applicable, 1 for another system. The session is in onboarding/EXAMPLE-ASSETS/session.json.
+Wrote scope/audits/example-assets-essential-eight-2023.yaml, onboarding/example-assets-essential-eight-2023-2026-11-22.md. mappings/essential-eight-2023.yaml already names every manual requirement.
+Next: review the changes in a pull request, then run 'hound scope validate scope', 'hound scope plan scope' and 'hound scope apply scope'.
+$ hound scope validate repo/scope --config repo/hound.yaml
+scope valid: 1 domain(s), 3 control(s), 4 audit(s), 1 third party(ies)
+$ hound onboard EXAMPLE-ASSETS --repo repo ...
+EXAMPLE-ASSETS is onboarded and its files are already written: ... Move onboarding/EXAMPLE-ASSETS/session.json aside to onboard it again.
+```
+
+The first run found that a single-system audit needs `unlisted:` and that a requirement keyed by URN is already covered when the mapping names its ref_id; both fixed. Plan, apply and re-plan against CISO Assistant run in CI as `OnboardFunctionalTests`.
+
 ### s09-25 Onboard the Sophos firewall, and documentation
 - [ ] Done
 
