@@ -1,6 +1,6 @@
 # s08 Sophos Central and Veeam reference collectors
 
-Status: Planned
+Status: In progress
 
 Was s07 before the release 1 reorder. It moved after the thin deployment so that Microsoft 365 evidence runs on a schedule first.
 
