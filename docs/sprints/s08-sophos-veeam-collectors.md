@@ -6,6 +6,8 @@ Was s07 before the release 1 reorder. It moved after the thin deployment so that
 
 **Goal:** two more reference collectors, one SaaS (Sophos Central) and one on-premises (Veeam Backup & Replication), proving the SDK fits both shapes.
 
+Also in this sprint (s08-06): scope plans show their compliance impact, ready for the first real configuration.
+
 Projects: `src/Collectors/EvidenceHound.Collectors.Sophos`, `src/Collectors/EvidenceHound.Collectors.Veeam`. Recorded, fictional responses only.
 
 ### s08-01 Sophos Central access
@@ -91,6 +93,31 @@ Projects: `src/Collectors/EvidenceHound.Collectors.Sophos`, `src/Collectors/Evid
 
 **Functional check**
 - Docs build without warnings.
+
+### s08-06 Compliance impact in scope plans
+- [ ] Done
+
+**Story:** As the reviewer of a compliance pull request, I want `hound scope plan` to say which framework requirements change result and why, not only which objects and fields change, so that I approve the compliance effect of a change, the way a Terraform user reads "Changes to Outputs" below the resource diff.
+
+**Acceptance criteria**
+- The plan has a **Changes to compliance** section after the change table and before Drift, for each audit whose open period has rows that change result. It is built from the framework snapshot (each requirement's title, its parent as the strategy or domain, its implementation groups) and the rows of the open period, so `hound` reads every row of each open audit, not only rows the scope declares (GET only).
+- Per audit, one line per selected implementation group (for the Essential Eight, each maturity level): requirements compliant before and after, out of the in-group total, such as `ML2: 41 → 42 compliant of 96`.
+- Then each row whose result changes: requirement ref and title, strategy, old → new result, and why: a hand-written assessment in the audit file, the `unlisted` rule, or a control or document linked to the row.
+- A result that goes backwards (from compliant or partially compliant to anything lower, or to not assessed) is listed first and marked `⚠`, and the summary line says how many there are. This makes visible, for example, `scope apply` resetting a result that `hound publish` wrote (s06 discovered work).
+- JSON plans add `compliance[]`, each `{audit, groups[{group, before, after, total}], rows[{requirement, title, parent, old, new, why, regresses}]}`. `scope apply` puts the same `compliance` in its report, so the record of each apply carries the effect it had.
+- Rows that collector runs own are not changed by the scope plan and are left out of this section; their impact stays with `hound plan`.
+- A plan with no result changes prints no section, so an unchanged scope still plans to nothing.
+
+**Tests first**
+- `ComplianceImpactTests.Counts_compliant_per_group_before_and_after`
+- `ComplianceImpactTests.Changed_row_names_title_strategy_and_reason`
+- `ComplianceImpactTests.Regression_is_flagged_and_listed_first`
+- `ComplianceImpactTests.Run_owned_rows_are_left_out`
+- `ScopePlanCommandTests.Markdown_has_changes_to_compliance_section` and `..._json_has_compliance` (recorded responses)
+
+**Functional check**
+- Against the local CISO Assistant with the example compliance repo: change one hand-written assessment to `compliant` and set one `unlisted` row back, run `hound scope plan examples/compliance-repo/scope --config examples/compliance-repo/hound.yaml`, and record the section showing one gain and one `⚠` regression with the right ML counts.
+- `docs/scope.md` Plan section shows an example of the new section.
 
 ## Discovered work
 
