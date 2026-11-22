@@ -14,6 +14,9 @@ public class E8MappingTests
     private static readonly string Files = Path.Combine(AppContext.BaseDirectory, "files");
     private static readonly string[] Ml2Groups = ["1", "2"];
 
+    /// <summary>The reference collectors whose checks the mapping must cover: Microsoft 365 (s05), Sophos Central and Veeam (s08).</summary>
+    private static readonly string[] ReferenceTypes = ["m365", "sophos", "veeam"];
+
     private static LoadedMapping Mapping { get; } =
         MappingLoader.Parse(File.ReadAllText(Path.Combine(Files, "mappings", "essential-eight-2023.yaml")), "mappings/essential-eight-2023.yaml").Value();
 
@@ -33,11 +36,11 @@ public class E8MappingTests
     }
 
     [Fact]
-    public void Every_m365_and_manual_check_is_mapped()
+    public void Every_reference_check_is_mapped()
     {
         var mapped = Mapping.Mapping.Requirements.SelectMany(r => r.Checks).ToHashSet();
 
-        var collectorChecks = M365Checks().Concat(ExampleManualChecks()).Distinct().ToList();
+        var collectorChecks = ReferenceChecks().Concat(ExampleManualChecks()).Distinct().ToList();
 
         collectorChecks.ShouldNotBeEmpty();
         collectorChecks.Where(c => !mapped.Contains(c)).ShouldBeEmpty();
@@ -90,8 +93,15 @@ public class E8MappingTests
         Path.GetFileName(config.Targets[0].MappingPath).ShouldBe("essential-eight-2023.yaml");
     }
 
-    private static IEnumerable<CheckId> M365Checks() =>
-        Registry().Descriptions["m365"].Checks.Select(c => CheckId.Create(c).Value());
+    /// <summary>The checks of every reference collector: Microsoft 365, Sophos Central and Veeam (s08).</summary>
+    private static IEnumerable<CheckId> ReferenceChecks()
+    {
+        var descriptions = Registry().Descriptions;
+        return ReferenceTypes
+            .Where(descriptions.ContainsKey)
+            .SelectMany(type => descriptions[type].Checks)
+            .Select(c => CheckId.Create(c).Value());
+    }
 
     private static IEnumerable<CheckId> ExampleManualChecks() =>
         Config().Collectors
