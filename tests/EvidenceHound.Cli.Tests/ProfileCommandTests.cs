@@ -78,11 +78,80 @@ public sealed class ProfileCommandTests : IDisposable
         warnings.ShouldAllBe(w => w.Message.Contains("example-rest") && w.Message.Contains("'people'") && w.State[0].Value!.Equals("profile.reference_unknown"));
     }
 
+    [Fact]
+    public async Task Test_runs_the_example_profile_cases_offline()
+    {
+        CopyExample();
+        CopyTests();
+
+        var exitCode = await Run("profile", "test", "example", "--profiles", Profiles);
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString() + _output);
+        var text = _output.ToString();
+        text.ShouldContain("example/all-pass: passed (4 checks)");
+        text.ShouldContain("example/roles-unreadable: passed (4 checks)");
+    }
+
+    [Fact]
+    public async Task Test_fails_naming_the_check_whose_result_changed()
+    {
+        CopyExample();
+        CopyTests();
+        var allPass = Path.Combine(Profiles, "example.tests", "all-pass.yaml");
+        await File.WriteAllTextAsync(allPass, (await File.ReadAllTextAsync(allPass, TestContext.Current.CancellationToken))
+            .Replace("example.identity.mfa_users: pass", "example.identity.mfa_users: fail", StringComparison.Ordinal), TestContext.Current.CancellationToken);
+
+        var exitCode = await Run("profile", "test", "example", "--profiles", Profiles);
+
+        exitCode.ShouldBe(ExitCodes.ProfileTestsFailed);
+        _output.ToString().ShouldContain("example/all-pass: FAILED");
+        _output.ToString().ShouldContain("example.identity.mfa_users: expected fail, got pass.");
+    }
+
+    [Fact]
+    public async Task Test_without_tests_says_how_to_add_them()
+    {
+        CopyExample();
+
+        var exitCode = await Run("profile", "test", "example", "--profiles", Profiles);
+
+        exitCode.ShouldBe(ExitCodes.Configuration);
+        _logs.Entries.ShouldContain(e => e.Level == LogLevel.Error && e.Message.Contains("example.tests/"));
+    }
+
+    [Fact]
+    public async Task Diff_shows_how_a_copy_differs_from_its_library_version()
+    {
+        CopyExample(yaml => yaml.Replace("    default: 2\n    description: Most users", "    default: 3\n    description: Most users", StringComparison.Ordinal));
+        var library = Path.Combine(_workDir, "evidence-hound");
+        Directory.CreateDirectory(Path.Combine(library, "profiles"));
+        File.Copy(Library("example.yaml"), Path.Combine(library, "profiles", "example.yaml"));
+
+        var exitCode = await Run("profile", "diff", "example", "--profiles", Profiles, "--library", library);
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var text = _output.ToString();
+        text.ShouldStartWith("example: local 1.0.0, library 1.0.0 (evidence-hound/profiles/example.yaml)");
+        text.ShouldContain("-33:     default: 2");
+        text.ShouldContain("+33:     default: 3");
+    }
+
     private void CopyExample(Func<string, string>? edit = null)
     {
         Directory.CreateDirectory(Profiles);
         var yaml = File.ReadAllText(Library("example.yaml"));
         File.WriteAllText(Path.Combine(Profiles, "example.yaml"), edit is null ? yaml : edit(yaml));
+    }
+
+    private void CopyTests()
+    {
+        var source = Library("example.tests");
+        foreach (var file in Directory.EnumerateFiles(source, "*", SearchOption.AllDirectories))
+        {
+            var target = Path.Combine(Profiles, "example.tests", Path.GetRelativePath(source, file));
+            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+            File.Copy(file, target);
+        }
     }
 
     private Task<int> Run(params string[] args) =>
