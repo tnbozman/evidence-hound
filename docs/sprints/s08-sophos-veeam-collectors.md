@@ -199,10 +199,86 @@ Added 2026-11-22 at the person's request: the M365 collector exists since s05, s
 - In CI: the unattended trial still stops before Sophos and M365.
 - **(person)** With a test tenant: `make trial` through the M365 step. Record in `docs/evidence/s08/s08-10.md` only the date, the versions, the kind of tenant (developer sandbox or Business Premium trial), each step's outcome, each check's outcome, and the defects found with links to their fixes.
 
+### s08-11 Sophos collector reads network devices only
+- [ ] Done
+
+Added 2026-11-22 from the s08-08 trial, at the person's request. The trial tenant manages an XGS firewall (and maybe switches) and no endpoints, so the three endpoint checks always failed with "No endpoints were found" and fed ISM-1672 (Office macro antivirus scanning), which Sophos network devices say nothing about. The person decided Sophos Central is a network device source in Evidence Hound; endpoint protection evidence comes from the endpoint's own antivirus (Microsoft Defender through the Microsoft 365 collector, later).
+
+**Story:** As a compliance owner whose Sophos Central manages network devices, I want the Sophos collector to read only those, so that it never reports endpoint protection checks that cannot apply.
+
+**Acceptance criteria**
+- The collector reads only `firewall/v1/firewalls`; it no longer requests `endpoint/v1/endpoints` or saves `endpoints.json`.
+- It describes and reports one check, `network.firewall.firmware_supported`; `endpoint.protection.healthy_ratio`, `tamper_protection_enabled` and `stale_agents` are gone, with the settings only they used (`healthy_pass_percent`, `healthy_partial_percent`, `stale_agent_days`). Configs that still set them keep loading.
+- The default and example Essential Eight mappings move ISM-1672 to `manual_only`, with an antivirus and AMSI policy export as its source.
+- `docs/collectors/sophos.md`, the local trial tutorial and the credential role text say the collector reads firewalls, not endpoints.
+
+**Tests first**
+- `SophosCollectorTests.Reads_only_firewalls`: one check, one evidence file, no request to the endpoints API.
+- `SophosCollectorTests.Describes_its_checks_settings_and_secrets`: one check and no endpoint settings.
+- `CollectorsCommandTests`: `hound collectors` lists the one Sophos check.
+- `E8MappingTests`: ISM-1672 is `manual_only`.
+
+**Functional check**
+- `make trial` Sophos step against the person's tenant: one check, `firewalls.json` only, ISM-1501 still fed.
+
+### s08-12 Sophos Central admins: MFA and roles
+- [ ] Done
+
+**Story:** As a compliance owner, I want the Sophos Central admins, their roles and MFA read, so that privileged access to the console that manages our network devices has live evidence.
+
+**Acceptance criteria**
+- First, confirm against the Sophos Central API documentation what a Service Principal Read-Only credential can read: the admins list and role assignments (Common API) and whether MFA enforcement for admins is exposed. Record what is and is not available in `docs/collectors/sophos.md`; a check whose data is not exposed becomes a manual source instead.
+- Checks, as the API allows: every admin's sign-in requires MFA (ISM-1173); Super Admin limited to a configured maximum (ISM-1508); admins and the evidence list hashed unless `include_identities`.
+- The mapping feeds the requirements with `all_pass` alongside the Microsoft 365 checks where they share a requirement.
+
+**Tests first**
+- Outcome tests per check from new fictional recordings; paging and `sophos.forbidden` for the new list.
+
+**Functional check**
+- Dry run against the person's tenant, outcomes recorded without names.
+
+### s08-13 Firewall firmware update timeliness
+- [ ] Done
+
+**Story:** As a compliance owner, I want to know when a firewall has had a firmware update available for longer than allowed, so that ISM-1694 (internet-facing devices patched within two weeks) has live evidence, not only "still supported".
+
+**Acceptance criteria**
+- First, confirm in the Sophos Central Firewall API how to read available firmware upgrades for a managed firewall and when each was released. If release dates are not exposed, the check reports an available upgrade without age, and the task says what evidence still has to be manual.
+- `network.firewall.firmware_current`: pass when no firewall has an upgrade outstanding for more than `firmware_update_days` (default 14); fail lists the counts, not names.
+- Mapped to ISM-1694 for the perimeter firewall.
+
+**Tests first**
+- Outcome tests from recordings: up to date, upgrade within the window, upgrade overdue, no firewalls (`not_applicable`).
+
+**Functional check**
+- Dry run against the person's tenant.
+
+### s08-14 Sophos switches
+- [ ] Done
+
+**Story:** As a compliance owner with Sophos switches, I want them read like firewalls, so that non-internet-facing network devices (ISM-1501, ISM-1695) have live evidence.
+
+**Acceptance criteria**
+- First, confirm whether Sophos Central exposes managed switches and their firmware through a public API a read-only credential can use. If it does not, close the task with that finding in `docs/collectors/sophos.md` and keep switches a manual source.
+- If it does: a `switches.json` evidence list and `network.switch.firmware_supported` against `supported_switch_firmware`; no switches is `not_applicable`.
+
+**Tests first**
+- Outcome tests from fictional recordings, as for firewalls.
+
+**Functional check**
+- Dry run against the person's tenant, if it has switches.
+
 ## Discovered work
 
 - s08-06: the framework snapshot holds only assessable nodes, so the compliance section shows a requirement's strategy as its parent URN's last part (`RB`, `UAH`), not the strategy's name. Adding parent names to `hound framework snapshot` would show "Regular backups".
 - The recorded tenant helpers order page files by name, so `users.2.json` sorts before `users.json` and is served as the first page. `RecordedSophos` orders by page number; `RecordedTenant` (M365) still has the old order. Its tests pass because they only count pages and items, but a page-order assertion would fail. Fix when M365 is next touched.
 - The cloud build session cannot pull CISO Assistant's images (the `ghcr.io` blob host is blocked there), so functional tests against CISO Assistant run in CI only.
+- s08-08 trial: `scripts/trial.sh` copies the token from the shared seed only when `.dev/ca.env` is missing, so after CISO Assistant is reseeded it keeps a stale token and `scope plan` fails with HTTP 401. Refresh from the shared file whenever it exists, or check the token in preflight and say it is stale.
+- s08-08 trial: `hound init`'s default compliance owner `it@example.com` is not a user in the dev CISO Assistant (only `admin@example.com` is), so taking every default as the trial says fails `AC-AUTO-EVIDENCE` with "No user in CISO Assistant matches". Make the seed create the user, or the trial's default match the seeded one.
+- s08-08 trial: every successful HTTP attempt is logged at `info` by the resilience pipeline (one line per request, hundreds per apply), burying the output. Log it at `debug`, or only retries and failures.
+- s08-08 trial: the suggested answers for `hound add control` read as one answer per comma ("ISM-1511, ISM-1515" looks like two, and "Enter" sits mid-list), and the ref ID has no default, so answers shift and the wizard fails. List one answer per prompt in prompt order.
+- s08-08 trial: when a later wizard in step 5 fails, re-running repeats `hound add system` and stops with `add.system_exists`, so the trial cannot recover. Give each `add` its own done marker.
+- s08-08 trial: evidence is linked to requirements only, so a declared control such as AC-BACKUP shows no evidence in CISO Assistant although its requirement has some. Decide whether to also link evidence to the applied controls that cover the requirement (as the health control is), or say clearly in the trial where the evidence is.
+- s08-08 trial: a requirement moved from collector checks to `manual_only` shows "the unlisted rule" as the reason in the scope plan's compliance table. Say "moved to manual" or similar.
 
 ## Sprint review
