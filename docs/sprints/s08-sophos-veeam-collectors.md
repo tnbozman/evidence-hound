@@ -50,7 +50,7 @@ Projects: `src/Collectors/EvidenceHound.Collectors.Sophos`. Recorded, fictional 
 - Result (2026-11-22): `hound run --only sophos-example --no-publish` against a local stub of the recordings succeeded with 4 checks passed and `endpoints.json` and `firewalls.json` stored (host names hashed). The publish to the example audit is the functional test `SophosRunFunctionalTests` (EX-4.1 compliant, `firewalls.json` attached), run in CI. Evidence: [`docs/evidence/s08/s08-02.md`](../evidence/s08/s08-02.md).
 
 ### s08-05 Documentation
-- [ ] Done
+- [x] Done
 
 **Acceptance criteria**
 - `docs/collectors/sophos.md` as for M365, with the doc check-ID test.
@@ -62,6 +62,7 @@ Projects: `src/Collectors/EvidenceHound.Collectors.Sophos`. Recorded, fictional 
 
 **Functional check**
 - Docs build without warnings.
+- Result (2026-11-22): the docs are plain Markdown with no build step, so the check is that they render and link cleanly: every relative link and heading anchor in the 99 Markdown files under `docs/`, `examples/` and `README.md` resolves (a script over the tree found none broken). `DocsTests` (Sophos) checks that `docs/collectors/sophos.md` names every check ID, and `E8MappingTests.Every_reference_check_is_mapped` covers the Sophos checks. Both are in the unit suite (954 passed).
 
 ### s08-06 Compliance impact in scope plans
 - [ ] Done
