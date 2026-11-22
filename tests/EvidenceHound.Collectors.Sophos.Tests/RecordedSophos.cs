@@ -129,9 +129,8 @@ internal sealed class RecordedSophos : IDisposable
             for (var i = 0; i < pages.Count; i++)
             {
                 var request = Request.Create().WithPath(path).UsingGet().WithHeader("X-Tenant-ID", TenantId).WithHeader("Authorization", $"Bearer {Token}");
-                request = i == 0 ? request : name == "endpoints"
-                    ? request.WithParam("pageFromKey", pages[i]["pages"]!["fromKey"]!.GetValue<string>())
-                    : request.WithParam("page", $"{i + 1}");
+                var (key, value) = name == "endpoints" ? ("pageFromKey", pages[i]["pages"]!["fromKey"]!.GetValue<string>()) : ("page", $"{i + 1}");
+                request = i == 0 ? request : request.WithParam(query => query.TryGetValue(key, out var found) && found.Contains(value));
                 _region.Server.Given(request).AtPriority(i == 0 ? 10 : 1).RespondWith(Json(200, pages[i].ToJsonString()));
             }
         }
@@ -149,7 +148,7 @@ internal sealed class RecordedSophos : IDisposable
     {
         var files = Directory.GetFiles(Folder, $"{name}*.json")
             .Where(f => Path.GetFileName(f) == $"{name}.json" || System.Text.RegularExpressions.Regex.IsMatch(Path.GetFileName(f), $"^{name}\\.[0-9]+\\.json$"))
-            .Order(StringComparer.Ordinal);
+            .OrderBy(f => Path.GetFileName(f).Count(c => c == '.')).ThenBy(f => f, StringComparer.Ordinal);
         return [.. files.Select(f => JsonNode.Parse(Substitute(File.ReadAllText(f), api, region))!.AsObject())];
     }
 
