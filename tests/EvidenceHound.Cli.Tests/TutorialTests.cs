@@ -57,7 +57,7 @@ public sealed partial class TutorialTests
 
     private static bool Exists(string path)
     {
-        var relative = path.TrimStart('.', '/');
+        var relative = path.StartsWith("./", StringComparison.Ordinal) ? path[2..] : path;
         return new[] { Path.Combine(ExampleRepoTests.RepoRoot, "examples", "compliance-repo"), ExampleRepoTests.RepoRoot, Path.Combine(ExampleRepoTests.RepoRoot, "deploy", "compose") }
             .Any(root => Path.Exists(Path.Combine(root, relative.TrimEnd('/'))));
     }
@@ -78,7 +78,8 @@ public sealed partial class TutorialTests
         HoundCli.RunAsync([.. path, "--help"], output, error, configureLogging: null, new Dictionary<string, string?>(), TestContext.Current.CancellationToken).GetAwaiter().GetResult();
         var help = output.ToString();
         var usage = $"hound {string.Join(' ', path)}";
-        if (!help.Contains($"\n  {usage} ", StringComparison.Ordinal) && !help.Contains($"\n  {usage}\n", StringComparison.Ordinal))
+        // The usage line starts with the program's name, which is the test host's here: "  <program> scope plan <scope> [options]".
+        if (!Regex.IsMatch(help, $@"^  \S+ {Regex.Escape(string.Join(' ', path))}(?: |$)", RegexOptions.Multiline, TimeSpan.FromSeconds(1)))
         {
             return $"'{usage}' is not a command";
         }

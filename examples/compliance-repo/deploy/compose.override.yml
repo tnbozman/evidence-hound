@@ -1,0 +1,9 @@
+# Example Pty Ltd's additions to Evidence Hound's reference Compose stack, merged over deploy/compose/compose.yml
+# (COMPOSE_FILE in deploy.env). Keep organisation-specific changes here, so the public stack updates cleanly.
+# Relative paths resolve from deploy/compose. Never put a secret here: add a secrets file to HOUND_SECRETS_DIR and
+# reference it as below.
+services:
+  runner:
+    environment:
+      # Collector logs at information level; set Debug while setting up a collector.
+      Logging__LogLevel__Default: Information
