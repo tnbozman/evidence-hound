@@ -203,7 +203,7 @@ example-devices/old-version: passed (1 check)
 A system is registered only once its supplier is approved, so the supplier register comes before onboarding. s10-01 and s10-02 moved here unchanged except for the supplier approval gate; s10-03 (documentation and example repo) and s10-04 (evidence plan tasks, including the recurring supplier review task) stay in s10.
 
 ### s09-19 Suppliers, solutions and contracts (was s10-01)
-- [ ] Done
+- [x] Done
 
 **Story:** As a supplier owner, I want our suppliers, what they provide and our contracts with them declared in the repo, so that the supplier register is reviewed and complete.
 
@@ -222,6 +222,21 @@ A system is registered only once its supplier is approved, so the supplier regis
 
 **Functional check**
 - Apply two fictional suppliers to the local CISO Assistant; re-applying writes nothing; a changed contract end date is a one-field update.
+
+Run 2026-11-22 in CI (run 280, functional job, CISO Assistant v4.3.4) by `SupplierScopeFunctionalTests`, from a copy of `examples/compliance-repo` with the organisation's own entity and two fictional suppliers (Example Cloud Pty Ltd with an LEI, Example Backup Ltd):
+
+```console
+$ hound scope apply scope --config hound.yaml          # failed: 0
+$ hound scope plan scope --config hound.yaml
+0 to create, 0 to update, 0 to delete.
+$ # end: "2027-12-31" -> "2028-06-30" in example-cloud.yaml
+$ hound scope plan scope --config hound.yaml
+0 to create, 1 to update, 0 to delete.
+| Update | contract | CTR-FT-HOST | end_date: 2027-12-31 → 2028-06-30 |
+$ hound scope apply scope --config hound.yaml          # written: 1
+```
+
+The first CI run found that CISO Assistant returns an entity's legal identifiers as display text ("LEI: …"), so the re-plan showed an update; fixed in the same task.
 
 ### s09-20 Supplier assessments, tiers and approval (was s10-02)
 - [ ] Done
