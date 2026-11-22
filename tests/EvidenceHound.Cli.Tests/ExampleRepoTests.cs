@@ -57,6 +57,7 @@ public sealed partial class ExampleRepoTests : IDisposable
     [InlineData("secrets/postgres_password")]
     [InlineData("deploy/secrets/hound_ca_token")]
     [InlineData("m365.pfx")]
+    [InlineData("plan.json")]
     [InlineData("deploy/client.pem")]
     [InlineData("tls.key")]
     [InlineData("caddy-root.crt")]
@@ -85,6 +86,17 @@ public sealed partial class ExampleRepoTests : IDisposable
 
         workflow.ShouldContain("gitleaks/gitleaks-action@");
         workflow.ShouldContain("fetch-depth: 0");
+    }
+
+    [Fact]
+    public void The_apply_job_applies_the_plan_it_saved()
+    {
+        var workflow = File.ReadAllText(Path.Combine(Repo, ".github", "workflows", "compliance.yml"));
+        var apply = workflow[workflow.IndexOf("\n  apply:", StringComparison.Ordinal)..];
+
+        apply.ShouldContain("scope plan scope/ --config hound.yaml --out \"$RUNNER_TEMP/plan.json\"");
+        apply.ShouldContain("scope apply \"$RUNNER_TEMP/plan.json\"");
+        apply.ShouldNotContain("scope apply scope/");
     }
 
     [Fact]

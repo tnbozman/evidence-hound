@@ -21,7 +21,7 @@ It is designed to be built and run by an ordinary in-house IT and software team,
 | Framework mappings | One file per framework turns neutral checks into requirement results. Essential Eight first; NIST SP 800-171 next. |
 | Collector SDK | A plugin interface, template and test kit. A collector only talks to its target system. |
 | Manual-upload collector | For systems without a usable API: schedule, upload, same audit updates. |
-| Reference collectors | Microsoft 365, Sophos Central, Veeam Backup & Replication. |
+| Reference collectors | Microsoft 365 and Sophos Central; Veeam Backup & Replication next. |
 | Reporting | Monthly security committee report (operational) and quarterly board report (governance), generated from CISO Assistant data. |
 | Reference deployment | Docker Compose for CISO Assistant plus the collector runner, with backups and hardening notes. |
 
@@ -51,6 +51,8 @@ $ make run ARGS="run --config examples/example-pty-ltd.yaml"
 The UI is at <https://localhost:8443> on your machine. To seed again (a new token), run `docker compose -f .devcontainer/compose.yml run --rm ca-seed` on the host, then `scripts/dev-ca-env.sh` and `scripts/ca-apply-scope.sh` in the dev container. `docker compose -f .devcontainer/compose.yml down -v` on the host removes everything, including the data.
 
 Outside the dev container, `make ca-up` starts a disposable CISO Assistant (pinned release, SQLite) and seeds it with a service-account token, then applies the fictional Example Pty Ltd scope: its libraries, perimeter, systems, audits, documents and applied controls. Open <https://localhost:8443> and sign in as `admin@example.com` (password `HOUND_CA_ADMIN_PASSWORD`, default `change-me-local-only`). Then follow [`docs/publishing.md`](docs/publishing.md) to publish the example run. `make ca-down ARGS=-v` removes it.
+
+To try the whole product step by step, run `make trial` ([local trial](docs/tutorials/local-trial.md)): it sets up a new organisation with `hound init` and `hound add` ([guided setup](docs/guided-setup.md)), adds manual evidence and controls, then your own Sophos Central tenant.
 
 ## Licence
 

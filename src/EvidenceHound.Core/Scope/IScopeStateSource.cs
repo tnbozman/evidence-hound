@@ -12,6 +12,12 @@ public sealed record ScopeStateQuery(string RootFolder, IReadOnlyList<string> Fr
     /// <summary>Whether to read feature flags and general settings: when the scope declares settings, or to list the unmanaged ones.</summary>
     public bool Settings { get; init; }
 
+    /// <summary>
+    /// The audits, by ref_id, to read every row of, not only the rows the scope writes, so a plan can show its effect on compliance. Rows the
+    /// scope does not declare are never written.
+    /// </summary>
+    public IReadOnlySet<string> AllRowsOf { get; init; } = new HashSet<string>(StringComparer.Ordinal);
+
     /// <summary>The query for a scope: its root folder, its frameworks and other libraries, and the rows its <paramref name="declared"/> objects write.</summary>
     public static ScopeStateQuery For(ScopeDocument scope, IReadOnlyList<ScopeObject> declared)
     {
@@ -31,6 +37,7 @@ public sealed record ScopeStateQuery(string RootFolder, IReadOnlyList<string> Fr
         {
             Access = scope.Access.Users.Count > 0 || scope.Access.Teams.Count > 0 || scope.Access.Roles.Count > 0,
             Settings = scope.Settings.FeatureFlags.Count > 0 || scope.Settings.General.Count > 0,
+            AllRowsOf = declared.Where(d => d.Kind == ScopeKind.Audit).Select(d => d.Key).ToHashSet(StringComparer.Ordinal),
         };
     }
 }

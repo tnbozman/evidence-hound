@@ -132,7 +132,9 @@ public static class HoundCli
             }
 
             Log.Usage(logger, "Run 'hound --help' for usage.");
-            return ExitCodes.Usage;
+
+            // With --detailed-exitcode, 2 means a plan with changes, so a usage error is 1.
+            return args.Contains(ScopeCommands.DetailedExitCodeFlag, StringComparer.Ordinal) ? ExitCodes.Unexpected : ExitCodes.Usage;
         }
 
         var invocation = new InvocationConfiguration { Output = output, Error = error, EnableDefaultExceptionHandler = false };
@@ -164,6 +166,8 @@ public static class HoundCli
             CollectorsCommand.Build(output, registry),
             ConfigCommands.Build(output, loggers, configuration, registry),
             FrameworkCommands.Build(output, loggers),
+            Setup.InitCommand.Build(terminal, loggers, configuration, registry),
+            Setup.AddCommands.Build(terminal, loggers, configuration, registry),
             ManualCommand.Build(terminal, loggers, registry, new SystemClock()),
             MappingCommands.Build(output, loggers),
             ScopeCommands.Build(output, loggers, configuration, registry),

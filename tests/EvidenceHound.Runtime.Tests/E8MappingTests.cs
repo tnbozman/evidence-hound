@@ -14,6 +14,9 @@ public class E8MappingTests
     private static readonly string Files = Path.Combine(AppContext.BaseDirectory, "files");
     private static readonly string[] Ml2Groups = ["1", "2"];
 
+    /// <summary>The reference collectors whose checks the mapping must cover: Microsoft 365 (s05) and Sophos Central (s08). Veeam joins in s09.</summary>
+    private static readonly string[] ReferenceTypes = ["m365", "sophos"];
+
     private static LoadedMapping Mapping { get; } =
         MappingLoader.Parse(File.ReadAllText(Path.Combine(Files, "mappings", "essential-eight-2023.yaml")), "mappings/essential-eight-2023.yaml").Value();
 
@@ -33,14 +36,38 @@ public class E8MappingTests
     }
 
     [Fact]
-    public void Every_m365_and_manual_check_is_mapped()
+    public void Every_reference_check_is_mapped()
     {
         var mapped = Mapping.Mapping.Requirements.SelectMany(r => r.Checks).ToHashSet();
 
-        var collectorChecks = M365Checks().Concat(ExampleManualChecks()).Distinct().ToList();
+        var collectorChecks = ReferenceChecks().Concat(ExampleManualChecks()).Distinct().ToList();
 
         collectorChecks.ShouldNotBeEmpty();
         collectorChecks.Where(c => !mapped.Contains(c)).ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void Every_mapped_check_is_reported_by_a_reference_or_example_manual_collector()
+    {
+        var known = ReferenceChecks().Concat(ExampleManualChecks()).ToHashSet();
+
+        Mapping.Mapping.Requirements.SelectMany(r => r.Checks).Distinct().Where(c => !known.Contains(c)).ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void Office_macro_antivirus_scanning_is_manual_because_sophos_reads_network_devices_only()
+    {
+        Mapping.Mapping.Requirements.ShouldNotContain(r => r.RequirementRef == "ISM-1672");
+        Mapping.ManualOnly.ShouldContain(m => m.Key.Value == "ISM-1672");
+    }
+
+    [Fact]
+    public void Sophos_central_super_admins_count_towards_limiting_privileged_accounts_of_online_services()
+    {
+        var requirement = Mapping.Mapping.Requirements.Single(r => r.RequirementRef == "ISM-1883");
+
+        requirement.Checks.Select(c => c.Value).ShouldContain("network.management.super_admin_count");
+        requirement.Checks.Select(c => c.Value).ShouldContain("identity.privileged.global_admin_count");
     }
 
     [Fact]
@@ -90,8 +117,15 @@ public class E8MappingTests
         Path.GetFileName(config.Targets[0].MappingPath).ShouldBe("essential-eight-2023.yaml");
     }
 
-    private static IEnumerable<CheckId> M365Checks() =>
-        Registry().Descriptions["m365"].Checks.Select(c => CheckId.Create(c).Value());
+    /// <summary>The checks of every reference collector: Microsoft 365 and Sophos Central.</summary>
+    private static IEnumerable<CheckId> ReferenceChecks()
+    {
+        var descriptions = Registry().Descriptions;
+        return ReferenceTypes
+            .Where(descriptions.ContainsKey)
+            .SelectMany(type => descriptions[type].Checks)
+            .Select(c => CheckId.Create(c).Value());
+    }
 
     private static IEnumerable<CheckId> ExampleManualChecks() =>
         Config().Collectors

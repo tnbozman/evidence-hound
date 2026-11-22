@@ -28,6 +28,8 @@ Two repositories are involved. The public Evidence Hound repo provides the stack
    - An **environment** named `ciso-assistant` with required reviewers, so every apply after a merge waits for a second approval.
 3. Replace Example Pty Ltd with your organisation in `scope/setup.yaml`, `scope/controls.yaml`, `scope/access.yaml` and `hound.yaml`. Each YAML file's first line links a schema with a relative path into the Evidence Hound repo; point it at the schema of the Evidence Hound version you run so your editor keeps checking the files.
 
+To start from a smaller repo instead, `hound init` asks about your organisation and writes the config, scope, audit and mapping, and `hound add` adds systems, controls and collectors ([guided setup](../guided-setup.md)). Copy the template's `deploy/`, `scope/access.yaml`, `scope/settings.yaml` and `.github/` into it.
+
 Commit each step on a branch and merge it through a pull request, so the repo's history starts as it will continue.
 
 ## 2. What goes in the repo, and what never does

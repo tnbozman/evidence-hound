@@ -20,6 +20,11 @@ internal static class ScopeCommands
 {
     private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
 
+    /// <summary>With <c>--detailed-exitcode</c>, the exit code of a plan that changes something or found drift.</summary>
+    internal const int PlanHasChanges = 2;
+
+    internal static readonly string DetailedExitCodeFlag = "--detailed-exitcode";
+
     public static Command Build(TextWriter output, ILoggerFactory loggers, IConfiguration configuration, CollectorRegistry registry)
     {
         var logger = loggers.CreateLogger("hound.scope");
@@ -51,35 +56,56 @@ internal static class ScopeCommands
         planFormat.AcceptOnlyFromAmong("markdown", "json");
         var prune = new Option<bool>("--prune") { Description = "Also plan deleting the objects hound manages that the scope no longer declares." };
         var showUnmanaged = new Option<bool>("--show-unmanaged") { Description = "Also list the feature flags and general settings settings.yaml does not name, with their values." };
+        var detailedExitCode = new Option<bool>(DetailedExitCodeFlag) { Description = "Exit 0 when there is nothing to change and no drift, 2 when there is, and 1 on any error." };
+        var planOut = new Option<FileInfo?>("--out") { Description = "Also save the plan here, for 'hound scope apply <file>' to apply exactly. Holds no token; do not commit it." };
         var plan = new Command(
             "plan",
             $"Show what applying the scope would create, update or delete in CISO Assistant, and what drifted (reads it; needs {PublishCommand.UrlSetting} and {PublishCommand.TokenSetting}). Sends nothing.")
         {
-            dir, config, planFormat, prune, showUnmanaged,
+            dir, config, planFormat, prune, showUnmanaged, detailedExitCode, planOut,
         };
         plan.SetAction(async (parseResult, cancellationToken) =>
         {
+            var detailed = parseResult.GetValue(detailedExitCode);
             var checkedScope = await ValidateAsync(parseResult.GetRequiredValue(dir), parseResult.GetValue(config), registry, AuditSeries.Today(configuration), cancellationToken);
-            if (checkedScope.Problems.Count > 0)
-            {
-                return await ReportAsync(checkedScope.Problems, checkedScope.Summary, "text", output, logger);
-            }
-
-            return await PublishCommand.Connection(configuration).Match(
-                connection => PlanAsync(checkedScope, connection, new PlanOptions(parseResult.GetValue(prune), parseResult.GetValue(showUnmanaged), parseResult.GetRequiredValue(planFormat)), loggers, output, logger, cancellationToken),
-                problems => Task.FromResult(Log.Problems(logger, problems)));
+            var exitCode = checkedScope.Problems.Count > 0
+                ? await ReportAsync(checkedScope.Problems, checkedScope.Summary, "text", output, logger)
+                : await PublishCommand.Connection(configuration).Match(
+                    connection => PlanAsync(
+                        checkedScope,
+                        connection,
+                        new PlanOptions(parseResult.GetValue(prune), parseResult.GetValue(showUnmanaged), parseResult.GetRequiredValue(planFormat))
+                        {
+                            DetailedExitCode = detailed,
+                            Save = parseResult.GetValue(planOut) is { } file ? new PlanSave(file, parseResult.GetRequiredValue(dir), parseResult.GetValue(config)) : null,
+                        },
+                        loggers,
+                        output,
+                        logger,
+                        cancellationToken),
+                    problems => Task.FromResult(Log.Problems(logger, problems)));
+            return detailed && exitCode is not (ExitCodes.Ok or PlanHasChanges) ? ExitCodes.Unexpected : exitCode;
         });
 
         var dryRun = new Option<bool>("--dry-run") { Description = "Print the plan and write nothing." };
+        var scopeOrPlan = new Argument<string>("scope") { Description = "The scope folder, or a plan saved with 'hound scope plan --out' to apply exactly as reviewed." };
         var apply = new Command(
             "apply",
-            $"Write the scope to CISO Assistant, in dependency order: libraries, domains, perimeters, systems, audits, documents, controls and rows (needs {PublishCommand.UrlSetting} and {PublishCommand.TokenSetting}). Safe to run again. Give --config so the unlisted rule leaves the rows a mapping computes alone.")
+            $"Write the scope to CISO Assistant, in dependency order: libraries, domains, perimeters, systems, audits, documents, controls and rows (needs {PublishCommand.UrlSetting} and {PublishCommand.TokenSetting}). Safe to run again. Give --config so the unlisted rule leaves the rows a mapping computes alone. Given a saved plan, applies it without planning again, and refuses it if the scope or CISO Assistant changed since.")
         {
-            dir, config, dryRun, prune,
+            scopeOrPlan, config, dryRun, prune,
         };
         apply.SetAction(async (parseResult, cancellationToken) =>
         {
-            var checkedScope = await ValidateAsync(parseResult.GetRequiredValue(dir), parseResult.GetValue(config), registry, AuditSeries.Today(configuration), cancellationToken);
+            var target = parseResult.GetRequiredValue(scopeOrPlan);
+            if (File.Exists(target))
+            {
+                return await PublishCommand.Connection(configuration).Match(
+                    connection => ApplySavedAsync(target, connection, parseResult.GetValue(dryRun), registry, loggers, output, logger, cancellationToken),
+                    problems => Task.FromResult(Log.Problems(logger, problems)));
+            }
+
+            var checkedScope = await ValidateAsync(new DirectoryInfo(target), parseResult.GetValue(config), registry, AuditSeries.Today(configuration), cancellationToken);
             if (checkedScope.Problems.Count > 0)
             {
                 return await ReportAsync(checkedScope.Problems, checkedScope.Summary, "text", output, logger);
@@ -116,17 +142,109 @@ internal static class ScopeCommands
             async held =>
             {
                 var plan = ScopePlanner.Plan(declared, held, prune);
+                var compliance = ComplianceImpact.Of(plan, declared, held, checkedScope.Inputs);
                 if (dryRun)
                 {
-                    await output.WriteAsync(ScopePlanOutput.Markdown(plan, ScopePeriods.Notes(declared, plan)));
+                    await output.WriteAsync(ScopePlanOutput.Markdown(plan, PlanNotes.None with { Periods = ScopePeriods.Notes(declared, plan), Compliance = compliance }));
                     return ExitCodes.Ok;
                 }
 
                 var report = await ScopeApplier.ApplyAsync(plan, declared, Enum.GetValues<ScopeKind>(), checkedScope.Scope.Setup.RootFolder, services.GetRequiredService<IScopeWriter>(), cancellationToken);
-                await output.WriteAsync(ScopePlanOutput.Json(report));
+                await output.WriteAsync(ScopePlanOutput.Json(report, compliance));
                 return report.Failed > 0 ? ExitCodes.PublishFailed : ExitCodes.Ok;
             },
             problems => Task.FromResult(Log.Problems(logger, problems)));
+    }
+
+    /// <summary>
+    /// Applies a saved plan exactly, without planning again. Refuses it (<c>scope.plan_stale</c>) when it was made against another CISO Assistant,
+    /// when the scope folder, config or document files changed since, or when an object the plan reads changed in CISO Assistant since.
+    /// </summary>
+    private static async Task<int> ApplySavedAsync(
+        string file, CisoAssistantOptions connection, bool dryRun, CollectorRegistry registry, ILoggerFactory loggers, TextWriter output, ILogger logger, CancellationToken cancellationToken)
+    {
+        var read = SavedPlanFile.Read(await File.ReadAllTextAsync(file, cancellationToken), file);
+        if (read is Result<SavedPlan>.Fail failed)
+        {
+            return Log.Problems(logger, failed.Errors);
+        }
+
+        var saved = read.Match(s => s, _ => throw new InvalidOperationException());
+        Problem Stale(string why) => new("scope.plan_stale", $"{file} is stale: {why}. Plan again with 'hound scope plan --out', review it, and apply that. [scope.plan_stale]");
+        if (saved.CisoAssistantUrl != connection.ApiUrl.ToString())
+        {
+            return Log.Problems(logger, [Stale($"it was made against {saved.CisoAssistantUrl}, not {connection.ApiUrl}")]);
+        }
+
+        var scopeDir = new DirectoryInfo(saved.Scope);
+        var config = saved.Config is null ? null : new FileInfo(saved.Config);
+        var checkedScope = await ValidateAsync(scopeDir, config, registry, DateOnly.ParseExact(saved.Day, "yyyy-MM-dd", CultureInfo.InvariantCulture), cancellationToken);
+        if (checkedScope.Problems.Count > 0)
+        {
+            return await ReportAsync(checkedScope.Problems, checkedScope.Summary, "text", output, logger);
+        }
+
+        if (await InputsSha256Async(scopeDir, config, checkedScope.Inputs, cancellationToken) != saved.InputsSha256)
+        {
+            return Log.Problems(logger, [Stale($"the files in {saved.Scope}{(saved.Config is null ? "" : $", {saved.Config}")} or the documents they name changed since it was made")]);
+        }
+
+        using var services = new ServiceCollection().AddSingleton(loggers).AddCisoAssistantClient(connection).BuildServiceProvider();
+        var declared = ScopeDesired.From(checkedScope.Scope, checkedScope.Inputs);
+        var actual = await services.GetRequiredService<IScopeStateSource>().ReadAsync(ScopeStateQuery.For(checkedScope.Scope, declared), cancellationToken);
+        return await actual.Match(
+            async held =>
+            {
+                var now = Fingerprints(saved.Plan, held, saved.Read.Keys);
+                var changed = saved.Read.Where(r => now.GetValueOrDefault(r.Key) != r.Value).Select(r => r.Key).ToArray();
+                if (changed.Length > 0)
+                {
+                    return Log.Problems(logger, [Stale($"CISO Assistant changed since it was made: {string.Join(", ", changed)}")]);
+                }
+
+                if (dryRun)
+                {
+                    await output.WriteAsync(ScopePlanOutput.Markdown(saved.Plan, PlanNotes.None with { Compliance = saved.Compliance }));
+                    return ExitCodes.Ok;
+                }
+
+                var report = await ScopeApplier.ApplyAsync(saved.Plan, declared, Enum.GetValues<ScopeKind>(), saved.RootFolder, services.GetRequiredService<IScopeWriter>(), cancellationToken);
+                await output.WriteAsync(ScopePlanOutput.Json(report, saved.Compliance));
+                return report.Failed > 0 ? ExitCodes.PublishFailed : ExitCodes.Ok;
+            },
+            problems => Task.FromResult(Log.Problems(logger, problems)));
+    }
+
+    /// <summary>
+    /// For each object the plan writes or deletes, by kind and key, the fingerprint of the fields CISO Assistant holds for it, or null when
+    /// it holds none. With <paramref name="keys"/>, those objects instead.
+    /// </summary>
+    private static Dictionary<string, string?> Fingerprints(ScopePlan plan, IReadOnlyList<ActualObject> held, IEnumerable<string>? keys = null)
+    {
+        var byKey = held.GroupBy(h => ReadKey(h.Held.Kind, h.Held.Key), StringComparer.Ordinal).ToDictionary(g => g.Key, g => g.First().Held.Fields, StringComparer.Ordinal);
+        return (keys ?? plan.Changes.Select(c => ReadKey(c.Kind, c.Key))).Distinct(StringComparer.Ordinal)
+            .ToDictionary(k => k, k => byKey.GetValueOrDefault(k) is { } fields ? ScopeMarker.Fingerprint(fields) : null, StringComparer.Ordinal);
+    }
+
+    private static string ReadKey(ScopeKind kind, string key) => $"{ScopePlanOutput.Kind(kind)}/{key}";
+
+    /// <summary>A SHA-256 over the scope folder's files, the config and the documents' files, by content: what a saved plan was made from.</summary>
+    private static async Task<string> InputsSha256Async(DirectoryInfo scopeDir, FileInfo? config, ScopeInputs inputs, CancellationToken cancellationToken)
+    {
+        var lines = new List<string>();
+        var root = Path.GetFullPath(scopeDir.FullName);
+        foreach (var path in Directory.GetFiles(root, "*", SearchOption.AllDirectories).Select(p => (Full: p, Relative: Path.GetRelativePath(root, p).Replace('\\', '/'))).OrderBy(p => p.Relative, StringComparer.Ordinal))
+        {
+            lines.Add($"scope/{path.Relative} {await Sha256Async(path.Full, cancellationToken)}");
+        }
+
+        if (config is not null && config.Exists)
+        {
+            lines.Add($"config {await Sha256Async(config.FullName, cancellationToken)}");
+        }
+
+        lines.AddRange(inputs.Files.OrderBy(f => f.Key, StringComparer.Ordinal).SelectMany(f => f.Value.Select(file => $"file {f.Key} {file.Sha256}")));
+        return Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(string.Join('\n', lines))));
     }
 
     private static async Task<int> ExportAsync(
@@ -175,8 +293,16 @@ internal static class ScopeCommands
             problems => Task.FromResult(Log.Problems(logger, problems)));
     }
 
-    /// <summary>How to plan: whether to prune, whether to list unmanaged settings, and the output format.</summary>
-    private sealed record PlanOptions(bool Prune, bool ShowUnmanaged, string Format);
+    /// <summary>How to plan: whether to prune, whether to list unmanaged settings, the output format, the exit codes, and where to save the plan.</summary>
+    private sealed record PlanOptions(bool Prune, bool ShowUnmanaged, string Format)
+    {
+        public bool DetailedExitCode { get; init; }
+
+        public PlanSave? Save { get; init; }
+    }
+
+    /// <summary>Where to save a plan, and the scope folder and config it is made from, as given.</summary>
+    private sealed record PlanSave(FileInfo File, DirectoryInfo Scope, FileInfo? Config);
 
     private static async Task<int> PlanAsync(
         CheckedScope checkedScope, CisoAssistantOptions connection, PlanOptions options, ILoggerFactory loggers, TextWriter output, ILogger logger, CancellationToken cancellationToken)
@@ -195,9 +321,25 @@ internal static class ScopeCommands
                 var notes = new PlanNotes(ScopePeriods.Notes(declared, plan), AccessReview.Notes(checkedScope.Scope.Access, read.Users))
                 {
                     Unmanaged = options.ShowUnmanaged ? UnmanagedSettings(declared, read.Held) : [],
+                    Compliance = ComplianceImpact.Of(plan, declared, read.Held, checkedScope.Inputs),
                 };
                 await output.WriteAsync(options.Format == "json" ? ScopePlanOutput.Json(plan, notes) : ScopePlanOutput.Markdown(plan, notes));
-                return ExitCodes.Ok;
+                if (options.Save is { } save)
+                {
+                    var saved = new SavedPlan(
+                        connection.ApiUrl.ToString(),
+                        (checkedScope.Inputs.Today ?? DateOnly.FromDateTime(DateTime.UtcNow)).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                        save.Scope.ToString(),
+                        save.Config?.ToString(),
+                        await InputsSha256Async(save.Scope, save.Config, checkedScope.Inputs, cancellationToken),
+                        checkedScope.Scope.Setup.RootFolder,
+                        plan,
+                        notes.Compliance,
+                        Fingerprints(plan, read.Held));
+                    await File.WriteAllTextAsync(save.File.FullName, SavedPlanFile.Write(saved), cancellationToken);
+                }
+
+                return options.DetailedExitCode && !plan.IsEmpty ? PlanHasChanges : ExitCodes.Ok;
             },
             problems => Task.FromResult(Log.Problems(logger, problems)));
     }
@@ -229,11 +371,18 @@ internal static class ScopeCommands
     }
 
     /// <summary>A checked scope: its problems, a one-line summary, the parsed files, and what planning it needs from outside them.</summary>
-    private sealed record CheckedScope(IReadOnlyList<ScopeProblem> Problems, string Summary, ScopeDocument Scope, ScopeInputs Inputs);
+    internal sealed record CheckedScope(IReadOnlyList<ScopeProblem> Problems, string Summary, ScopeDocument Scope, ScopeInputs Inputs);
 
-    private static async Task<CheckedScope> ValidateAsync(
-        DirectoryInfo dir, FileInfo? configFile, CollectorRegistry registry, DateOnly today, CancellationToken cancellationToken)
+    /// <summary>
+    /// Checks the scope folder offline. <paramref name="edits"/> stands in for files by full path, so a wizard checks its change before
+    /// it writes anything.
+    /// </summary>
+    internal static async Task<CheckedScope> ValidateAsync(
+        DirectoryInfo dir, FileInfo? configFile, CollectorRegistry registry, DateOnly today, CancellationToken cancellationToken, IReadOnlyDictionary<string, string>? edits = null)
     {
+        Task<ScopeSource> ReadAsync(string path, CancellationToken ct) =>
+            edits is not null && edits.TryGetValue(Path.GetFullPath(path), out var text) ? Task.FromResult(new ScopeSource(path, text)) : ScopeCommands.ReadAsync(path, ct);
+
         var setupPath = Path.Combine(dir.ToString(), "setup.yaml");
         if (!File.Exists(setupPath))
         {

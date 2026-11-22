@@ -143,6 +143,14 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
         var rows = allRows
             ? await reading.AllRowsAsync(audits.Select(a => (Id(a), AuditKey(a))))
             : await reading.RowsAsync(query, audits.Select(a => Text(a["ref_id"])).OfType<string>().ToHashSet(StringComparer.Ordinal));
+        if (!allRows && query.AllRowsOf.Count > 0)
+        {
+            // Every other row of the audits the scope declares, read only so a plan can show its effect on compliance.
+            var known = rows.Select(r => r.Key).ToHashSet(StringComparer.Ordinal);
+            var everyRow = await reading.AllRowsAsync(audits.Where(a => query.AllRowsOf.Contains(AuditKey(a))).Select(a => (Id(a), AuditKey(a))));
+            rows.AddRange(everyRow.Where(r => known.Add(r.Key)));
+        }
+
         if (reading.Problems.Count > 0)
         {
             return Result.Fail<HeldState>(reading.Problems);

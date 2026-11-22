@@ -1,0 +1,12 @@
+{
+  "id": "00000000-0000-4000-8000-0000000050a1",
+  "name": "Example Pty Ltd",
+  "dataGeography": "AU",
+  "dataRegion": "ap02",
+  "billingType": "term",
+  "partner": {
+    "id": "00000000-0000-4000-8000-0000000050b1"
+  },
+  "apiHost": "{{region}}",
+  "status": "active"
+}

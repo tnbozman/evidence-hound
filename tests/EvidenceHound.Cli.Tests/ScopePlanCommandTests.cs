@@ -220,6 +220,7 @@ public sealed class ScopePlanCommandTests : IDisposable
         report["changes"]!.AsArray().Select(c => (c!["action"]!.GetValue<string>(), c["kind"]!.GetValue<string>(), c["key"]!.GetValue<string>())).ShouldBe(
             [("create", "audit", "EXAMPLE-BASELINE-2026"), ("create", "control", "AC-MFA"), ("create", "assessment", "EXAMPLE-BASELINE-2026/EX-1.1")]);
         report["drift"]!.AsArray().ShouldBeEmpty();
+        report["compliance"]!.AsArray().ShouldNotBeNull();
         _ca.LogEntries.Where(e => e.RequestMessage!.Method != "GET").Select(e => (e.RequestMessage!.Method, e.RequestMessage.Path)).ShouldBe(
             [("POST", "/api/compliance-assessments/"), ("POST", "/api/applied-controls/"), ("PATCH", "/api/requirement-assessments/ra-1/")]);
     }
@@ -278,6 +279,167 @@ public sealed class ScopePlanCommandTests : IDisposable
         exitCode.ShouldBe(ExitCodes.PublishFailed);
         var report = JsonNode.Parse(_output.ToString())!;
         (report["written"]!.GetValue<int>(), report["failed"]!.GetValue<int>(), report["skipped"]!.GetValue<int>()).ShouldBe((1, 1, 5));
+    }
+
+    [Fact]
+    public async Task Markdown_has_changes_to_compliance_section()
+    {
+        await WriteScopeAsync(HandWritten("compliant"));
+        HeldStructure();
+        HeldAuditWithRow("not_assessed");
+
+        var exitCode = await Plan();
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var markdown = _output.ToString();
+        markdown.ShouldContain("""
+
+            ### Changes to compliance
+
+            **EXAMPLE-BASELINE-2026**: 1 result changes, no regressions.
+
+            - Level one: 0 → 1 compliant of 1
+
+            |  | Requirement | Title | Strategy | Result | Why |
+            | --- | --- | --- | --- | --- | --- |
+            |  | EX-1.1 | Every account uses multi-factor authentication | (none) | not_assessed → compliant | hand-written in the audit file |
+
+            """.ReplaceLineEndings("\n"));
+        markdown.IndexOf("| Change | Kind |", StringComparison.Ordinal).ShouldBeLessThan(markdown.IndexOf("### Changes to compliance", StringComparison.Ordinal));
+        if (markdown.Contains("### Drift", StringComparison.Ordinal))
+        {
+            markdown.IndexOf("### Changes to compliance", StringComparison.Ordinal).ShouldBeLessThan(markdown.IndexOf("### Drift", StringComparison.Ordinal));
+        }
+
+        _ca.LogEntries.ShouldAllBe(e => e.RequestMessage!.Method == "GET");
+    }
+
+    [Fact]
+    public async Task Markdown_has_changes_to_compliance_section_json_has_compliance()
+    {
+        await WriteScopeAsync(HandWritten("non_compliant"));
+        HeldStructure();
+        HeldAuditWithRow("compliant");
+
+        var exitCode = await Plan("--format", "json");
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var compliance = JsonNode.Parse(_output.ToString())!["compliance"]!.AsArray().ShouldHaveSingleItem()!;
+        compliance["audit"]!.GetValue<string>().ShouldBe("EXAMPLE-BASELINE-2026");
+        var group = compliance["groups"]!.AsArray().ShouldHaveSingleItem()!;
+        (group["group"]!.GetValue<string>(), group["before"]!.GetValue<int>(), group["after"]!.GetValue<int>(), group["total"]!.GetValue<int>()).ShouldBe(("1", 1, 0, 1));
+        var row = compliance["rows"]!.AsArray().ShouldHaveSingleItem()!;
+        (row["requirement"]!.GetValue<string>(), row["old"]!.GetValue<string>(), row["new"]!.GetValue<string>(), row["regresses"]!.GetValue<bool>())
+            .ShouldBe(("EX-1.1", "compliant", "non_compliant", true));
+        row["title"]!.GetValue<string>().ShouldBe("Every account uses multi-factor authentication");
+        row["why"]!.GetValue<string>().ShouldBe("hand-written in the audit file");
+        row["parent"].ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task Plan_with_no_result_changes_has_no_compliance_section()
+    {
+        await WriteScopeAsync(HandWritten("compliant"));
+        HeldStructure();
+        HeldAuditWithRow("compliant");
+
+        (await Plan()).ShouldBe(ExitCodes.Ok, _error.ToString());
+
+        _output.ToString().ShouldNotContain("Changes to compliance");
+    }
+
+    [Fact]
+    public async Task Detailed_exitcode_is_0_when_empty_and_2_with_changes()
+    {
+        await WriteScopeAsync();
+        EmptyInstance();
+        (await Plan("--detailed-exitcode")).ShouldBe(2, _error.ToString());
+
+        HeldStructure();
+        var exported = Path.Combine(_workDir, "exported", "scope");
+        (await Export("--out", exported)).ShouldBe(ExitCodes.Ok, _error.ToString());
+        (await HoundCli.RunAsync(
+            ["scope", "plan", exported, "--detailed-exitcode"], _output, _error, logging => logging.AddProvider(_logs),
+            new Dictionary<string, string?> { ["HOUND_CA_URL"] = $"{_ca.Url}/api/", ["HOUND_CA_TOKEN"] = Token }, _ct)).ShouldBe(0, _output.ToString() + _error);
+
+        // Any error is 1 with the flag, so that 2 always means changes: a usage error, and a missing token.
+        (await Plan("--detailed-exitcode", "--format", "yaml")).ShouldBe(1);
+        (await Plan(new Dictionary<string, string?> { ["HOUND_CA_URL"] = $"{_ca.Url}/api/" }, "--detailed-exitcode")).ShouldBe(1);
+        (await Plan(new Dictionary<string, string?> { ["HOUND_CA_URL"] = $"{_ca.Url}/api/" })).ShouldBe(ExitCodes.Configuration);
+    }
+
+    [Fact]
+    public async Task Saved_plan_holds_no_token()
+    {
+        await WriteScopeAsync();
+        EmptyInstance();
+        var saved = Path.Combine(_workDir, "plan.json");
+
+        (await Plan("--out", saved)).ShouldBe(ExitCodes.Ok, _error.ToString());
+
+        var text = await File.ReadAllTextAsync(saved, _ct);
+        text.ShouldNotContain(Token);
+        var json = JsonNode.Parse(text)!;
+        json["ciso_assistant_url"]!.GetValue<string>().ShouldBe($"{_ca.Url}/api/");
+        json["inputs_sha256"]!.GetValue<string>().Length.ShouldBe(64);
+        json["plan"]!["changes"]!.AsArray().Count.ShouldBe(7);
+        _output.ToString().ShouldStartWith("## Scope plan\n");
+    }
+
+    [Fact]
+    public async Task Apply_saved_plan_without_replanning()
+    {
+        await WriteScopeAsync();
+        HeldStructure();
+        Accept("POST", "/api/compliance-assessments/");
+        Accept("POST", "/api/applied-controls/");
+        Accept("PATCH", "/api/requirement-assessments/ra-1/");
+        var saved = Path.Combine(_workDir, "plan.json");
+        (await Plan("--out", saved)).ShouldBe(ExitCodes.Ok, _error.ToString());
+        _output.GetStringBuilder().Clear();
+        _ca.ResetLogEntries();
+
+        var exitCode = await ApplySaved(saved);
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var report = JsonNode.Parse(_output.ToString())!;
+        report["written"]!.GetValue<int>().ShouldBe(3);
+        _ca.LogEntries.Where(e => e.RequestMessage!.Method != "GET").Select(e => (e.RequestMessage!.Method, e.RequestMessage.Path)).ShouldBe(
+            [("POST", "/api/compliance-assessments/"), ("POST", "/api/applied-controls/"), ("PATCH", "/api/requirement-assessments/ra-1/")]);
+    }
+
+    [Fact]
+    public async Task Apply_refuses_a_stale_plan_when_scope_or_instance_changed()
+    {
+        await WriteScopeAsync();
+        HeldStructure();
+        var saved = Path.Combine(_workDir, "plan.json");
+        (await Plan("--out", saved)).ShouldBe(ExitCodes.Ok, _error.ToString());
+
+        // Another CISO Assistant.
+        (await ApplySaved(saved, url: "http://ciso.example.com/api/")).ShouldBe(ExitCodes.Configuration);
+        _error.ToString().ShouldContain("stale");
+
+        // The scope files changed since the plan.
+        var controls = Path.Combine(ScopeDir, "controls.yaml");
+        await File.AppendAllTextAsync(controls, "    owner: it@example.com\n", _ct);
+        (await ApplySaved(saved)).ShouldBe(ExitCodes.Configuration);
+        await File.WriteAllTextAsync(controls, ScopeCommandTests.Controls, _ct);
+
+        // Someone made the audit in CISO Assistant after the plan, which planned to create it.
+        _ca.Given(Request.Create().WithPath("/api/compliance-assessments/").UsingGet()).AtPriority(0)
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject
+            {
+                ["count"] = 1,
+                ["results"] = new JsonArray(new JsonObject { ["id"] = "ca-new", ["ref_id"] = "EXAMPLE-BASELINE-2026", ["folder"] = new JsonObject { ["id"] = "f-ex", ["str"] = "f-ex" } }),
+            }.ToJsonString()));
+        Object("compliance-assessments", "ca-new", new JsonObject { ["id"] = "ca-new", ["ref_id"] = "EXAMPLE-BASELINE-2026", ["name"] = "Made by hand", ["folder"] = "f-ex" });
+        _error.GetStringBuilder().Clear();
+        (await ApplySaved(saved)).ShouldBe(ExitCodes.Configuration);
+        _error.ToString().ShouldContain("scope.plan_stale");
+        _error.ToString().ShouldContain("EXAMPLE-BASELINE-2026");
+
+        _ca.LogEntries.ShouldAllBe(e => e.RequestMessage!.Method == "GET");
     }
 
     [Fact]
@@ -364,6 +526,54 @@ public sealed class ScopePlanCommandTests : IDisposable
             ["implementation_groups"] = new JsonArray("1"),
         });
     }
+
+    /// <summary>The scope's audit with EX-1.1 written by hand: done, with <paramref name="result"/>.</summary>
+    private static string HandWritten(string result) =>
+        ScopeCommandTests.Audit.Replace("unlisted:", $"assessments:\n  - ref: EX-1.1\n    status: done\n    result: {result}\n    observation: Checked at the March review.\nunlisted:", StringComparison.Ordinal);
+
+    /// <summary>The scope's audit held in the domain's folder, with its one row (EX-1.1) at <paramref name="result"/>.</summary>
+    private void HeldAuditWithRow(string result)
+    {
+        _ca.Given(Request.Create().WithPath("/api/compliance-assessments/").UsingGet()).AtPriority(0)
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject
+            {
+                ["count"] = 1,
+                ["results"] = new JsonArray(new JsonObject { ["id"] = "ca-1", ["ref_id"] = "EXAMPLE-BASELINE-2026", ["folder"] = new JsonObject { ["id"] = "f-ex", ["str"] = "f-ex" } }),
+            }.ToJsonString()));
+        _ca.Given(Request.Create().WithPath("/api/compliance-assessments/ca-1/object/").UsingGet()).AtPriority(0)
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject
+            {
+                ["id"] = "ca-1",
+                ["ref_id"] = "EXAMPLE-BASELINE-2026",
+                ["name"] = "Example baseline 2026",
+                ["framework"] = "fw-1",
+                ["perimeter"] = "p-1",
+                ["folder"] = "f-ex",
+                ["selected_implementation_groups"] = new JsonArray("1"),
+            }.ToJsonString()));
+        _ca.Given(Request.Create().WithPath("/api/requirement-assessments/").UsingGet()).AtPriority(0)
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject
+            {
+                ["count"] = 1,
+                ["results"] = new JsonArray(new JsonObject
+                {
+                    ["id"] = "ra-1",
+                    ["status"] = "done",
+                    ["result"] = result,
+                    ["observation"] = "Checked at the March review.",
+                    ["requirement"] = new JsonObject { ["urn"] = Snapshot.Nodes[0].Urn, ["ref_id"] = "EX-1.1" },
+                }),
+            }.ToJsonString()));
+    }
+
+    private Task<int> ApplySaved(string saved, string? url = null) =>
+        HoundCli.RunAsync(
+            ["scope", "apply", saved],
+            _output,
+            _error,
+            logging => logging.AddProvider(_logs),
+            new Dictionary<string, string?> { ["HOUND_CA_URL"] = url ?? $"{_ca.Url}/api/", ["HOUND_CA_TOKEN"] = Token },
+            _ct);
 
     private Task<int> Run(string command, params string[] args) =>
         HoundCli.RunAsync(

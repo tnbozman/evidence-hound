@@ -9,6 +9,10 @@ WORKDIR /src
 # global.json is left out: it pins the dev SDK band, and this stage uses the SDK image pinned above.
 COPY Directory.Build.props Directory.Packages.props ./
 COPY src/ src/
+# hound init carries the Essential Eight mapping and snapshot, and the compliance repo template's .gitignore.
+COPY mappings/essential-eight-2023.yaml mappings/
+COPY frameworks/essential-eight-2023.json frameworks/
+COPY examples/compliance-repo/.gitignore examples/compliance-repo/
 RUN dotnet restore src/EvidenceHound.Cli/EvidenceHound.Cli.csproj --locked-mode
 # The SDK stage runs on the build machine's platform and publishes for the target architecture only
 # (one of the csproj's RuntimeIdentifiers), so arm64 needs no emulation and other platforms' native

@@ -25,3 +25,7 @@ exports/
 *.xlsx
 *.xls
 *.csv
+
+# Saved scope plans (hound scope plan --out): apply them, then delete them
+plan.json
+*.plan.json

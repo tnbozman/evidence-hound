@@ -178,6 +178,10 @@ internal sealed partial class ScopeWriter(HttpClient http, ICisoAssistantClient 
         ScopeMarker.Mark(Field(declared, "description"), change.State ?? ScopeMarker.State(declared.Kind, declared.Fields));
 
     /// <summary>Leaves fields out rather than send empty ones, so CISO Assistant fills in what it fills in itself.</summary>
+    /// <summary>Drops the empty <paramref name="fields"/> but those <paramref name="change"/> clears: they stay as null, so CISO Assistant clears them too.</summary>
+    private static void Drop(JsonObject body, ScopeChange change, params string[] fields) =>
+        Drop(body, [.. fields.Where(f => !change.Fields.Any(c => c.Field == f && c.Old is not null && c.New is null))]);
+
     private static void Drop(JsonObject body, params string[] fields)
     {
         foreach (var field in fields.Where(f => body[f] is null))
