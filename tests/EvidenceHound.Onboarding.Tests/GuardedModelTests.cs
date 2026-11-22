@@ -48,6 +48,16 @@ public sealed class GuardedModelTests : IDisposable
         _inner.Sent.Count.ShouldBe(1);
     }
 
+    [Fact]
+    public async Task Numbering_continues_when_a_session_resumes()
+    {
+        var terms = new GuardTerms(new Dictionary<string, string>(), []);
+        (await new GuardedModel(_inner, terms, new SessionRecord(_session), 100_000, null).DraftAsync(Request("One."), _ct)).Value();
+        (await new GuardedModel(_inner, terms, new SessionRecord(_session), 100_000, null).DraftAsync(Request("Two."), _ct)).Value();
+
+        Directory.GetFiles(_session, "*.request.json").Select(Path.GetFileName).Order(StringComparer.Ordinal).ShouldBe(["001-applicability.request.json", "002-applicability.request.json"]);
+    }
+
     public void Dispose() => Directory.Delete(_session, recursive: true);
 
     private static DraftRequest Request(string api) =>

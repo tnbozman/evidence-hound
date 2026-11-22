@@ -8,9 +8,9 @@ namespace EvidenceHound.Cli.Tests;
 /// </summary>
 public sealed class OnboardSystemCommandTests : IDisposable
 {
-    private const string System = "EXAMPLE-ASSETS";
+    internal const string System = "EXAMPLE-ASSETS";
 
-    private const string Framework = """
+    internal const string Framework = """
         {
           "library_urn": "urn:example:library",
           "framework_urn": "urn:example:framework",
@@ -25,7 +25,7 @@ public sealed class OnboardSystemCommandTests : IDisposable
         }
         """;
 
-    private const string SupplierAnswers = "Alex Example\nAlex Example\nExample Asset API\nSUP-EXAMPLE\nExample Assets Ltd\nSOL-EXAMPLE-ASSETS\nAsset inventory\nCTR-EXAMPLE-ASSETS\nAsset inventory subscription\nHosts the asset inventory.\n\n";
+    internal const string SupplierAnswers = "Alex Example\nAlex Example\nExample Asset API\nSUP-EXAMPLE\nExample Assets Ltd\nSOL-EXAMPLE-ASSETS\nAsset inventory\nCTR-EXAMPLE-ASSETS\nAsset inventory subscription\nHosts the asset inventory.\n\n";
 
     private readonly string _root = Directory.CreateTempSubdirectory("hound-onboard-system-").FullName;
     private readonly CancellationToken _ct = TestContext.Current.CancellationToken;
@@ -82,7 +82,7 @@ public sealed class OnboardSystemCommandTests : IDisposable
         var (exit, _, error) = await RunAsync(SupplierAnswers, noModel: false);
 
         exit.ShouldBe(ExitCodes.Configuration);
-        error.ShouldContain("onboarding.config_missing");
+        error.ShouldContain("Run 'hound onboard config' to choose a model");
         Directory.Exists(Path.Combine(Repo, "onboarding", System)).ShouldBeFalse();
     }
 

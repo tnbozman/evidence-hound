@@ -48,7 +48,9 @@ internal static class OnboardCommands
                     new Wizard(terminal, parseResult.GetValue(yes)), terminal, logger, configuration, path, parseResult.GetValue(provider), parseResult.GetValue(model), cancellationToken);
         });
 
-        return new Command("onboard", "Onboard a system with the help of a language model you choose. Never used by collection.") { config };
+        var onboard = new Command("onboard", "Onboard a system with the help of a language model you choose. Never used by collection.") { config };
+        OnboardSystemCommand.Attach(onboard, terminal, loggers, configuration);
+        return onboard;
     }
 
     /// <summary>Where the key file goes: <c>$XDG_CONFIG_HOME/hound/secrets/llm_api_key</c>, else <c>~/.config/hound/secrets/llm_api_key</c>.</summary>

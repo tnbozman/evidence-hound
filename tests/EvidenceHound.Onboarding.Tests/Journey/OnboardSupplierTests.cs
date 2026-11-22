@@ -94,7 +94,7 @@ public sealed class OnboardSupplierTests
         // The summary stays in the onboarding session as a draft; the supplier file holds only the levels.
         var session = new OnboardSession("EXAMPLE-ASSETS", OnboardStage.Supplier) { Supplier = Choice, SupplierSummary = proposal.Summary, Documents = [kept] };
         var yaml = SupplierFile.Write(Choice, proposal.Levels, "EXAMPLE-ASSETS", new DateOnly(2026, 11, 22));
-        yaml.ShouldNotContain("ISO/IEC 27001");
+        yaml.ShouldNotContain("Data is held");
         var read = OnboardSessionJson.Read(OnboardSessionJson.Write(session)).Value();
         read.SupplierSummary.ShouldHaveSingleItem().Evidence.ShouldBeFalse();
         read.Documents.ShouldHaveSingleItem().Sha256.ShouldBe(kept.Sha256);
@@ -105,7 +105,7 @@ public sealed class OnboardSupplierTests
     public async Task Supplier_step_sends_the_answers_and_documents_with_the_supplier_skills()
     {
         var model = new ApplicabilityTests.ScriptedModel(_ => Reply());
-        var skills = SkillSelection.Select(SkillCatalogue.Defaults(), SkillStep.Supplier, null, SkillSelection.DefaultBudgetCharacters).Value();
+        var skills = SkillSelection.Select(SkillCatalogue.Build(SkillCatalogue.Defaults().Value(), []).Value(), SkillStep.Supplier, null, SkillSelection.DefaultBudgetCharacters).Value();
 
         var proposal = await SupplierProposal.DraftAsync(
             model, skills, Choice, "Hosts the asset inventory.", [new Models.DraftInput("https://www.example.com/trust", "Certified to ISO/IEC 27001.")], TestContext.Current.CancellationToken);
@@ -128,7 +128,7 @@ public sealed class OnboardSupplierTests
             {"name":"criticality","value":3,"reason":"Holds the asset register.","sources":["answers"]}
           ],
           "summary": [
-            {"topic":"certifications","text":"Certified to ISO/IEC 27001.","source":"https://www.example.com/trust"}
+            {"topic":"data location","text":"Data is held in Australia.","source":"https://www.example.com/trust"}
           ]
         }
         """)!;

@@ -13,7 +13,7 @@ namespace EvidenceHound.Onboarding.Guard;
 public sealed class GuardedModel(IDraftingModel inner, GuardTerms terms, SessionRecord record, long budget, TextWriter? show) : IDraftingModel
 {
     private long _used;
-    private int _sent;
+    private int _sent = record.LastNumber();
 
     public long TokensUsed => _used;
 
@@ -73,11 +73,23 @@ public sealed class SessionRecord(string folder)
     }
 
     /// <summary>Lists the skills the session used, with source, version and SHA-256, in <c>skills.json</c>, so an auditor can see what guided it.</summary>
+    /// <summary>The number of the last request saved in the folder, so a resumed session carries on from it rather than overwriting.</summary>
+    public int LastNumber() =>
+        !Directory.Exists(folder)
+            ? 0
+            : Directory.GetFiles(folder, "*.request.json")
+                .Select(f => int.TryParse(Path.GetFileName(f).Split('-')[0], NumberStyles.None, CultureInfo.InvariantCulture, out var n) ? n : 0)
+                .DefaultIfEmpty(0)
+                .Max();
+
     public async Task SaveSkillsAsync(IEnumerable<Skills.Skill> skills, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(skills);
         Directory.CreateDirectory(folder);
-        var list = new JsonArray([.. skills.Select(s => new JsonObject
+        var path = Path.Combine(folder, "skills.json");
+        var earlier = File.Exists(path) ? (JsonNode.Parse(await File.ReadAllTextAsync(path, cancellationToken)) as JsonArray ?? []).OfType<JsonObject>().ToArray() : [];
+        var added = skills.Where(s => earlier.All(e => (string?)e["sha256"] != s.Sha256 || (string?)e["name"] != s.Name));
+        var list = new JsonArray([.. earlier.Select(e => e.DeepClone()), .. added.Select(s => new JsonObject
         {
             ["name"] = s.Name,
             ["source"] = s.Source == Skills.SkillSource.Default ? "default" : "organisation",
@@ -85,7 +97,7 @@ public sealed class SessionRecord(string folder)
             ["sha256"] = s.Sha256,
             ["overrides"] = s.Overrides,
         })]);
-        await File.WriteAllTextAsync(Path.Combine(folder, "skills.json"), list.ToJsonString(Indented), cancellationToken);
+        await File.WriteAllTextAsync(path, list.ToJsonString(Indented), cancellationToken);
     }
 
     public async Task SaveAsync(int number, string step, string kind, JsonObject content, CancellationToken cancellationToken)

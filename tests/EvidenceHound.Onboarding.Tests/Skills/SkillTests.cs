@@ -172,5 +172,19 @@ public sealed class OnboardRecordTests : IDisposable
         listed["sha256"]!.GetValue<string>().ShouldBe(skill.Sha256);
     }
 
+    [Fact]
+    public async Task Skills_of_every_step_stay_in_the_list()
+    {
+        var first = SkillText.Parse(SkillText.Of("example-check"));
+        var second = SkillText.Parse(SkillText.Of("example-other"));
+        var record = new SessionRecord(_session);
+
+        await record.SaveSkillsAsync([first], TestContext.Current.CancellationToken);
+        await record.SaveSkillsAsync([second, first], TestContext.Current.CancellationToken);
+
+        var listed = JsonNode.Parse(await File.ReadAllTextAsync(Path.Combine(_session, "skills.json"), TestContext.Current.CancellationToken))!.AsArray();
+        listed.Select(s => s!["name"]!.GetValue<string>()).ShouldBe(["example-check", "example-other"]);
+    }
+
     public void Dispose() => Directory.Delete(_session, recursive: true);
 }

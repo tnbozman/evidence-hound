@@ -400,7 +400,7 @@ $ hound skill validate --skills /tmp/fc21/sk/skills
 **Order:** environment onboarding (s09-28) after s09-21 and s09-26 and before s09-22; the Sophos firewall (s09-25) stays the first system onboarded; s09-29 after s09-25.
 
 ### s09-22 Understand the system and decide applicability
-- [ ] Done
+- [x] Done
 
 **Story:** As a GRC team member, I want `hound` to read a system's API documentation and the target framework and propose, for each requirement, whether it is an API check, manual, not applicable or for another system, so that I decide applicability quickly and with reasons.
 
@@ -424,6 +424,25 @@ $ hound skill validate --skills /tmp/fc21/sk/skills
 
 **Functional check**
 - Onboard the fictional example API against the example framework with a fake model; the decision list covers every requirement and resumes after a stop.
+
+Run 2026-11-22 against a copy of `examples/compliance-repo`, with a local fake of the Anthropic Messages API (`HOUND_ANTHROPIC_BASE_URL`) that proposes `api_check` or `manual` for every requirement it is sent. It also records s09-21's `--show-requests` check.
+
+```console
+$ hound onboard config --provider anthropic --model "" --config repo/onboarding.yaml     # a test key
+$ hound onboard EXAMPLE-ASSETS --repo repo --group 2 --spec examples/apis/example-asset-api.openapi.yaml --show-requests
+--- request 1 (supplier) ---  (the skills supplier-assessment and supplier-assurance-documents in the instructions; no key, address or deny term)
+SUP-EXAMPLE is not approved yet. Review scope/third-parties/sup-example.yaml; once the supplier is approved, make contract CTR-EXAMPLE-ASSETS active and run 'hound onboard EXAMPLE-ASSETS' again to decide applicability.
+$ sed -i 's/status: draft/status: active/' repo/scope/third-parties/sup-example.yaml
+$ hound onboard EXAMPLE-ASSETS --repo repo --group 2 --spec ...     # n, reasoning, justification, approver, then s
+[1/107] ISM-1807: An automated method of asset discovery is used at least fortnightly to support…
+  Proposed: api_check. Fake model proposal.
+Saved: 1 of 107 requirements decided. Run the same command to carry on.
+$ hound onboard EXAMPLE-ASSETS --repo repo --group 2 --spec ...     # l
+[2/107] ...
+All 107 requirements decided: 53 API check(s), 53 manual, 1 not applicable, 0 for another system. The session is in onboarding/EXAMPLE-ASSETS/session.json.
+```
+
+Requests saved: `001-supplier`, `002`-`004-applicability` (107 requirements in batches of 40); the resumed runs sent nothing new. The not-applicable decision keeps its proposal (`api_check`), justification and approver. The test key appears in no file in the repo and in no output.
 
 ### s09-23 Draft, sample and test the profile
 - [ ] Done
@@ -775,6 +794,10 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 - The Anthropic adapter asks for replies of up to 16,000 tokens without streaming. Steps that need longer replies (a whole drafted profile) should stream through the SDK's streaming call (found in s09-21).
 
 - The official Anthropic .NET SDK sends the API key as `Authorization: Bearer`, and reads `ANTHROPIC_BASE_URL` from the environment when no base URL is set. `hound onboard config --check` confirms the key works end to end; note both in the onboarding guide if a provider proxy is used (found in s09-21).
+
+- Vendor documents kept during `hound onboard` are saved with their SHA-256, source and retrieval date, but are attached to the supplier assessment as evidence only once supplier assessments exist (s09-20). The model reads only text documents (HTML, text, Markdown); PDFs are kept but not read (found in s09-22).
+
+- `hound onboard` reads OpenAPI 3 files only. Other API specifications, documentation saved as text, and specifications fetched from allowed URLs need further readers; Sophos Firewall's XML API (s09-15) is the first that will need one (found in s09-22).
 
 - `hound run --dry-run` reports only counts of passed, failed and other checks; it does not print each check's outcome and observation. An operator trying a new profile needs them; `hound profile test` (s09-12) or a `--show-checks` option would help (found in s09-11).
 

@@ -86,10 +86,10 @@ public sealed class ApplicabilityTests
     {
         var model = new ScriptedModel(request =>
         {
-            var refs = request.Inputs.Single(i => i.Name == "requirements").Content.Split('\n').Select(line => line.Split(':')[0]).ToArray();
+            var refs = request.Inputs.Single(i => i.Name == "requirements").Content.Split('\n').Select(line => line[1..line.IndexOf(']', StringComparison.Ordinal)]).ToArray();
             return new JsonObject { ["decisions"] = new JsonArray([.. refs.Select(r => new JsonObject { ["ref"] = r, ["kind"] = "manual", ["reasoning"] = "Ask the owner.", ["other_system"] = null })]) };
         });
-        var skills = SkillSelection.Select(SkillCatalogue.Defaults(), SkillStep.Applicability, "essential-eight-2023", SkillSelection.DefaultBudgetCharacters).Value();
+        var skills = SkillSelection.Select(SkillCatalogue.Build(SkillCatalogue.Defaults().Value(), []).Value(), SkillStep.Applicability, "essential-eight-2023", SkillSelection.DefaultBudgetCharacters).Value();
 
         var proposals = await Applicability.ProposeAsync(model, skills, Applicability.InScope(Framework, []), new SystemFacts("Example asset system", "Example Asset API", "Alex Example"), "GET /v1/devices", batch: 2, TestContext.Current.CancellationToken);
 
@@ -98,7 +98,7 @@ public sealed class ApplicabilityTests
         model.Sent.ShouldAllBe(r => r.Step == "applicability");
         model.Sent[0].Instructions.ShouldContain("<skill name=\"applicability\"");
         model.Sent[0].Inputs.Select(i => i.Name).ShouldBe(["system", "api", "requirements"]);
-        model.Sent[0].Inputs[2].Content.ShouldBe("EX-1: Patch internet-facing services within two weeks.\nEX-2: Multi-factor authentication for privileged users.");
+        model.Sent[0].Inputs[2].Content.ShouldBe("[EX-1] Patch internet-facing services within two weeks.\n[EX-2] Multi-factor authentication for privileged users.");
     }
 
     /// <summary>A model that answers each request with what the script returns, and keeps every request.</summary>

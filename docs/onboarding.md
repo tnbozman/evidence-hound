@@ -25,6 +25,34 @@ The key is saved once, outside the repo, in a file only you can read (`$XDG_CONF
 `~/.config/hound/secrets/llm_api_key`). `onboarding.yaml` holds only a reference to it, so it is safe to commit. `--check` makes one minimal
 request and never prints the key. Options: `--provider`, `--model`, `--config <file>` and `--yes`.
 
+## Onboard a system
+
+```console
+$ hound onboard EXAMPLE-ASSETS --framework frameworks/essential-eight-2023.json --group 2 --spec ../specs/example-asset-api.openapi.yaml
+```
+
+Run it in the config repo (or pass `--repo`). The session goes in this order, and saves after every answer in
+`onboarding/<system>/session.json`, with each request and reply beside it in `onboarding/<system>/requests/`. Run the same command again to
+carry on where it stopped; the model is never asked again for what it already answered.
+
+1. **Who and what.** Your name (recorded as who accepted each decision), the system owner, the product, and who supplies it: the supplier,
+   the solution it provides and the contract covering it, each by `ref_id` and name.
+2. **Supplier first.** A supplier not yet under `scope/third-parties/` is drafted there: the model proposes dependency, penetration,
+   maturity and trust, and the solution's criticality, each with its reason and sources, and you accept each or type your own. Vendor
+   documents you keep (an https URL or a file) are saved under `documents/suppliers/<supplier>/` with their SHA-256 and retrieval date; the
+   model reads only the text ones. Its summary of them stays in the session as a draft, never as evidence. The contract is drafted as
+   `status: draft`, and the session stops: **a system is onboarded only once its supplier is approved.** Until supplier assessments arrive
+   (s09-20), approved means an active contract covering the solution.
+3. **What the API offers.** Each `--spec` (an OpenAPI 3 document, JSON or YAML) is read into a short summary: the endpoints that read,
+   sign-in and paging. Only that summary is sent, never the specification.
+4. **Applicability.** Every requirement in the `--group` implementation groups (all of them without `--group`) gets one proposal: `api_check`,
+   `manual`, `not_applicable` or `other_system`, with its reasoning. For each, type `a` to accept, `c`, `m`, `n` or `o` to decide otherwise,
+   `l` to accept every remaining proposal that is not `not_applicable`, or `s` to save and stop. Not applicable always needs a justification
+   and the name of who approves it; another system needs that system's name.
+
+`--no-model` runs the same steps with empty proposals, for teams without a key. `--show-requests` prints each request before it is sent.
+Writing the profile, mappings and applicability into the repo from the decided session is the next step (s09-24).
+
 ## onboarding.yaml
 
 Separate from `hound.yaml`; only `hound onboard` reads it.
