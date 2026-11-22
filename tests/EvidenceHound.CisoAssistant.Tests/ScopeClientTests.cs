@@ -61,6 +61,8 @@ public sealed class ScopeClientTests : IDisposable
             ["description"] = $"The lab.\n[hound scope {State}]",
             ["parent_folder"] = "f-global",
             ["content_type"] = "DO",
+            // Off by default for a folder made through the API; without it the domain has no groups to give its roles (s07-04).
+            ["create_iam_groups"] = true,
         }));
         Posted("perimeters").ShouldBe(Json(new JsonObject
         {
@@ -91,7 +93,7 @@ public sealed class ScopeClientTests : IDisposable
         result.Value();
         var patch = _ca.Server.LogEntries.Single(e => e.RequestMessage!.Method == "PATCH");
         (patch.RequestMessage!.Path, Json(JsonNode.Parse(patch.RequestMessage.Body!)!)).ShouldBe(
-            ("/api/folders/f-ex/", Json(new JsonObject { ["name"] = "Example Pty Ltd", ["description"] = $"The whole company.\n[hound scope {State}]" })));
+            ("/api/folders/f-ex/", Json(new JsonObject { ["name"] = "Example Pty Ltd", ["description"] = $"The whole company.\n[hound scope {State}]", ["create_iam_groups"] = true })));
     }
 
     [Fact]
