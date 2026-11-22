@@ -58,3 +58,12 @@ setup() {
   run trial_hound_argv img "--network host" /w 1:1 http://backend:8000/api/ yes manual upload
   [[ "$(printf '%s ' $output)" == "docker run --rm -i -t "* ]]
 }
+
+@test "a collector step is skipped when unattended, kept when the collector is already added, otherwise added" {
+  config="$BATS_TEST_TMPDIR/hound.yaml"
+  printf 'collectors:\n  - name: sophos\n    type: sophos\n' >"$config"
+  [ "$(trial_collector_step 1 "$config" m365)" = "unattended" ]
+  [ "$(trial_collector_step 0 "$config" sophos)" = "added already" ]
+  [ "$(trial_collector_step 0 "$config" m365)" = "add" ]
+  [ "$(trial_collector_step 0 "$BATS_TEST_TMPDIR/missing.yaml" m365)" = "add" ]
+}
