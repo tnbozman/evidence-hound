@@ -130,6 +130,45 @@ The patch windows and scan intervals below are settings, not constants, so the c
 **Functional check**
 - Following `docs/collectors/vuln-scan.md` verbatim, import a fictional export and see its checks.
 
+Moved from s08 on 2026-11-22 at the person's request (s08 focuses on Sophos). Was s08-03 and s08-04.
+
+### s09-07 Veeam access
+- [ ] Done
+
+**Story:** As the collector, I want Veeam REST API access with a read-only account, so that backup jobs and restore points can be read.
+
+**Acceptance criteria**
+- OAuth password grant against the VBR REST API, API version header configurable.
+- TLS verification on by default; a pinned certificate thumbprint option for self-signed servers instead of disabling verification.
+- Paged jobs, sessions and restore points.
+
+**Tests first**
+- `VeeamAuthTests.Sends_api_version_header`
+- `VeeamTlsTests.Pinned_thumbprint_accepts_matching_cert`
+- `VeeamTlsTests.Mismatched_thumbprint_fails`
+
+**Functional check**
+- Run against recordings: jobs and restore points in evidence.
+
+### s09-08 Veeam checks and documentation
+- [ ] Done
+
+**Story:** As a compliance owner, I want backup success, retention and restore testing measured, so that backup requirements are evidenced.
+
+**Acceptance criteria**
+- `backup.jobs.success_last_24h`: every enabled job succeeded in its last run within 24 hours (window configurable).
+- `backup.retention.meets_policy`: restore points span at least the configured retention days.
+- `backup.immutable_or_offline_copy`: at least one copy is immutable or on an offline or rotated repository (configured repository names).
+- `backup.restore_tested`: a restore test session (SureBackup or instant recovery) within the configured interval; otherwise `Fail`, with the manual collector as the documented fallback.
+
+**Tests first**
+- Outcome tests per check; contract kit.
+
+**Functional check**
+- Both collectors run together in `hound run` against recordings; status shows both healthy.
+
+**Also (from s08-05):** `docs/collectors/veeam.md` as for M365, with the doc check-ID test; every Veeam check mapped in `mappings/essential-eight-2023.yaml` and removed from `manual_only` where it now covers a requirement; `veeam` added back to `E8MappingTests.ReferenceTypes`.
+
 ## Discovered work
 
 ## Sprint review

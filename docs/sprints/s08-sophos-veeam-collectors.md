@@ -1,14 +1,16 @@
-# s08 Sophos Central and Veeam reference collectors
+# s08 Sophos Central reference collector
 
 Status: In progress
 
 Was s07 before the release 1 reorder. It moved after the thin deployment so that Microsoft 365 evidence runs on a schedule first.
 
-**Goal:** two more reference collectors, one SaaS (Sophos Central) and one on-premises (Veeam Backup & Replication), proving the SDK fits both shapes.
+**Goal:** a second reference collector, Sophos Central, proven on a real tenant.
+
+Veeam (s08-03 and s08-04) moved to s09 on 2026-11-22 at the person's request, so this sprint focuses on Sophos.
 
 Also in this sprint, ready for the first real configuration: scope plans show their compliance impact (s08-06), and plans get Terraform-style exit codes and saved plan files (s08-07). The sprint ends with a hands-on trial on a real Sophos Central tenant (s08-08), done together with a person, to prove Evidence Hound works end to end outside recordings.
 
-Projects: `src/Collectors/EvidenceHound.Collectors.Sophos`, `src/Collectors/EvidenceHound.Collectors.Veeam`. Recorded, fictional responses only.
+Projects: `src/Collectors/EvidenceHound.Collectors.Sophos`. Recorded, fictional responses only.
 
 ### s08-01 Sophos Central access
 - [x] Done
@@ -47,51 +49,16 @@ Projects: `src/Collectors/EvidenceHound.Collectors.Sophos`, `src/Collectors/Evid
 - `hound run --only sophos-example` against recordings updates the example audit.
 - Result (2026-11-22): `hound run --only sophos-example --no-publish` against a local stub of the recordings succeeded with 4 checks passed and `endpoints.json` and `firewalls.json` stored (host names hashed). The publish to the example audit is the functional test `SophosRunFunctionalTests` (EX-4.1 compliant, `firewalls.json` attached), run in CI. Evidence: [`docs/evidence/s08/s08-02.md`](../evidence/s08/s08-02.md).
 
-### s08-03 Veeam access
-- [ ] Done
-
-**Story:** As the collector, I want Veeam REST API access with a read-only account, so that backup jobs and restore points can be read.
-
-**Acceptance criteria**
-- OAuth password grant against the VBR REST API, API version header configurable.
-- TLS verification on by default; a pinned certificate thumbprint option for self-signed servers instead of disabling verification.
-- Paged jobs, sessions and restore points.
-
-**Tests first**
-- `VeeamAuthTests.Sends_api_version_header`
-- `VeeamTlsTests.Pinned_thumbprint_accepts_matching_cert`
-- `VeeamTlsTests.Mismatched_thumbprint_fails`
-
-**Functional check**
-- Run against recordings: jobs and restore points in evidence.
-
-### s08-04 Veeam checks
-- [ ] Done
-
-**Story:** As a compliance owner, I want backup success, retention and restore testing measured, so that backup requirements are evidenced.
-
-**Acceptance criteria**
-- `backup.jobs.success_last_24h`: every enabled job succeeded in its last run within 24 hours (window configurable).
-- `backup.retention.meets_policy`: restore points span at least the configured retention days.
-- `backup.immutable_or_offline_copy`: at least one copy is immutable or on an offline or rotated repository (configured repository names).
-- `backup.restore_tested`: a restore test session (SureBackup or instant recovery) within the configured interval; otherwise `Fail`, with the manual collector as the documented fallback.
-
-**Tests first**
-- Outcome tests per check; contract kit.
-
-**Functional check**
-- Both collectors run together in `hound run` against recordings; status shows both healthy.
-
 ### s08-05 Documentation
 - [ ] Done
 
 **Acceptance criteria**
-- `docs/collectors/sophos.md` and `docs/collectors/veeam.md` as for M365, with the doc check-ID test.
-- Every Sophos and Veeam check is mapped in `mappings/essential-eight-2023.yaml` (started in s06-02), and requirements they now cover are removed from `manual_only`.
+- `docs/collectors/sophos.md` as for M365, with the doc check-ID test.
+- Every Sophos check is mapped in `mappings/essential-eight-2023.yaml` (started in s06-02), and requirements they now cover are removed from `manual_only`.
 
 **Tests first**
-- Docs tests for both collectors.
-- `E8MappingTests.Every_reference_check_is_mapped` extended to the Sophos and Veeam checks.
+- Docs tests for the Sophos collector.
+- `E8MappingTests.Every_reference_check_is_mapped` extended to the Sophos checks.
 
 **Functional check**
 - Docs build without warnings.
@@ -178,7 +145,7 @@ Do this task last in the sprint: it needs s08-01, s08-02, s08-05, s08-06, s08-07
 ### s08-09 Guided setup in hound, and the local trial
 - [ ] Done
 
-Added 2026-11-22 at the person's request, as the route for the s08-08 trial. Changed the same day, by the person's choice: the guided steps live in `hound` itself (wizards that scaffold a new organisation and add systems and collectors), and `make trial` only does the checks a container cannot do before it hands over to them. Build it before s08-08 and before the Veeam tasks, so the person can start testing early.
+Added 2026-11-22 at the person's request, as the route for the s08-08 trial. Changed the same day, by the person's choice: the guided steps live in `hound` itself (wizards that scaffold a new organisation and add systems and collectors), and `make trial` only does the checks a container cannot do before it hands over to them. Build it before s08-08, so the person can start testing early.
 
 **Story:** As the GRC lead setting up a new organisation, or a maintainer testing from my dev container with CISO Assistant already running, I want `hound` to ask me the questions and write the compliance repo files (a new organisation, a system, a manual evidence source, a collector such as Sophos), and `make trial` to run those wizards in a container next to my CISO Assistant, so that I start from valid files instead of editing YAML by hand, and can try the whole product without a server and without breaking what is already running.
 
