@@ -20,8 +20,8 @@ Releases are delivered in one-week sprints. Each sprint has its own file, `sNN-<
 | [s13](s13-release-1.md) | Backups, hardening guide, packaging, release pipeline, docs site | 1 |
 | [s14](s14-essentials-mapping.md) | ASD Essentials mapping for the migration | 2 |
 | [s15](s15-risk-threats-and-bia.md) | Risk matrices, threats, risk register, security exceptions and BIA as configuration | 2 |
-| [s16](s16-governance-and-metrics.md) | CISO Assistant governance collector; metrics as configuration and from runs | 2 |
-| [s17](s17-nist-800-171.md) | NIST SP 800-171 mapping | 2 |
+| [s16](s16-governance-and-metrics.md) | Risk and recovery checks in the `ciso-assistant` profile; metrics as configuration and from runs | 2 |
+| [s17](s17-nist-800-171.md) | NIST SP 800-171 (CMMC Level 2) mapping; system security plan and POA&M drafted from CISO Assistant records, for any programme | 2 |
 | [s18](s18-collector-console.md) | Collector console (optional) | 2 |
 
 Release 1 is ordered to put Essential Eight evidence on a schedule as early as possible: the thin deployment (s07) comes straight after s06, and the rest of the deployment work (backups and hardening) joins the release sprint (s13).
