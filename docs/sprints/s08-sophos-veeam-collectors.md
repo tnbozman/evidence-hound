@@ -238,6 +238,15 @@ Added 2026-11-22 from the s08-08 trial, at the person's request. The trial tenan
 **Functional check**
 - Dry run against the person's tenant, outcomes recorded without names.
 
+**What the API shows (checked Nov 22 against the Common API v1 spec and the Sophos Central help)**
+- `GET common/v1/admins` (paged by `page`/`pageSize`/`pageTotal`) gives each admin's profile (name, email) and `roleAssignments[].roleId`. `GET common/v1/roles` gives each role's `name` and `type` (`predefined` or `custom`).
+- Admins' MFA is not in the API. Sophos Central requires MFA of every admin by design ("Sophos Central admins must sign in with multi-factor authentication"), so ISM-1173 for Sophos admins is documented as manual evidence in `docs/collectors/sophos.md`, not a check.
+- ISM-1508 is ML3 only (outside the ML2 audit), so the Super Admin limit maps to ISM-1883 (privileged accounts of online services strictly limited), next to the Microsoft 365 Global Administrator checks.
+
+**Result**
+- `network.management.super_admin_count`: pass when at most `super_admin_max` (default 2) admins hold the predefined Super Admin role; `error` when no such role is listed. New evidence `admins.json` (names, emails, tenant name hashed) and `roles.json`. Collector version 2.1.0.
+- Functional check: waits for a dry run on the person's tenant, which also confirms the Read-Only role can read admins and roles and the predefined role's exact name.
+
 ### s08-13 Firewall firmware update timeliness
 - [ ] Done
 
