@@ -192,11 +192,12 @@ internal static class AddCommands
         var schedule = new Option<string?>("--schedule") { Description = $"When it runs, as a cron expression. Default: {DefaultSchedule}." };
         var set = new Option<string[]>("--set") { Description = "A setting, as key=value. Repeat for more; optional settings are set only this way." };
         var secretsDir = new Option<DirectoryInfo?>("--secrets-dir") { Description = "Read each secret's value and store it in this folder (mode 700, files mode 600), referenced as file:. Otherwise each secret is asked as a reference." };
+        var secretFile = new Option<string[]>("--secret-file") { Description = "A secret from a file, as secret=path, such as client_certificate=app.pem: copied into --secrets-dir and referenced there. Repeat for more; optional secrets are set only this way." };
         var yes = YesOption();
 
         var command = new Command("collector", "Add a collector to the deployment config, asking for its schedule, required settings and secrets.")
         {
-            type, config, name, schedule, set, secretsDir, yes,
+            type, config, name, schedule, set, secretsDir, secretFile, yes,
         };
         command.SetAction(async (parseResult, cancellationToken) =>
         {
@@ -212,14 +213,27 @@ internal static class AddCommands
                 return Log.Problems(logger, badSet.Errors);
             }
 
+            var store = parseResult.GetValue(secretsDir);
+            var fromFiles = SecretFiles(parseResult.GetValue(secretFile) ?? [], described, store);
+            if (fromFiles is Result<IReadOnlyList<KeyValuePair<string, string>>>.Fail badFile)
+            {
+                return Log.Problems(logger, badFile.Errors);
+            }
+
+            var files = fromFiles.Match(f => f, _ => []);
             var configFile = parseResult.GetRequiredValue(config);
             var wizard = new Wizard(terminal, parseResult.GetValue(yes));
             var collectorName = await wizard.AskAsync("Collector name", parseResult.GetValue(name), typeName, cancellationToken);
             var when = await wizard.AskAsync("Schedule (cron)", parseResult.GetValue(schedule), DefaultSchedule, cancellationToken);
             var settings = await AskSettingsAsync(wizard, described, given.Match(g => g, _ => []), cancellationToken);
-            var store = parseResult.GetValue(secretsDir);
             var secrets = new List<(SettingDescription Secret, string Reference, string? Value)>();
-            foreach (var secret in described.Secrets.Where(s => s.Required))
+            foreach (var (secretName, path) in files)
+            {
+                var secret = described.Secrets.First(s => s.Name == secretName);
+                secrets.Add((secret, $"file:{Path.Combine(Path.GetFullPath(store!.FullName), $"{collectorName}_{secretName}")}", await File.ReadAllTextAsync(path, cancellationToken)));
+            }
+
+            foreach (var secret in described.Secrets.Where(s => s.Required && files.All(f => f.Key != s.Name)))
             {
                 if (store is null)
                 {
@@ -287,6 +301,45 @@ internal static class AddCommands
 
         settings.AddRange(given.Where(g => described.Settings.All(s => s.Name != g.Key)));
         return settings;
+    }
+
+    /// <summary>
+    /// The secrets to read from files, as secret name and path: each must be a secret the collector has, name a file that exists, and come with
+    /// --secrets-dir, where it is copied.
+    /// </summary>
+    private static Result<IReadOnlyList<KeyValuePair<string, string>>> SecretFiles(IEnumerable<string> pairs, CollectorDescription described, DirectoryInfo? store)
+    {
+        var given = pairs.Select(pair => pair.Split('=', 2)).ToArray();
+        if (given.Length == 0)
+        {
+            return Result.Ok<IReadOnlyList<KeyValuePair<string, string>>>([]);
+        }
+
+        if (store is null)
+        {
+            return Result.Fail<IReadOnlyList<KeyValuePair<string, string>>>(new Problem("add.secret_file_without_secrets_dir", "--secret-file copies the file into the secrets folder: give --secrets-dir too."));
+        }
+
+        var problems = new List<Problem>();
+        foreach (var pair in given)
+        {
+            if (pair.Length != 2 || pair[0].Trim().Length == 0)
+            {
+                problems.Add(new Problem("add.secret_file_invalid", $"--secret-file {string.Join('=', pair)} must be secret=path."));
+            }
+            else if (described.Secrets.All(s => s.Name != pair[0].Trim()))
+            {
+                problems.Add(new Problem("add.secret_unknown", $"'{pair[0].Trim()}' is not a secret of this collector; it has: {string.Join(", ", described.Secrets.Select(s => s.Name))}."));
+            }
+            else if (!File.Exists(pair[1].Trim()))
+            {
+                problems.Add(new Problem("add.secret_file_missing", $"{pair[1].Trim()} does not exist."));
+            }
+        }
+
+        return problems.Count > 0
+            ? Result.Fail<IReadOnlyList<KeyValuePair<string, string>>>([.. problems])
+            : Result.Ok<IReadOnlyList<KeyValuePair<string, string>>>([.. given.Select(p => KeyValuePair.Create(p[0].Trim(), p[1].Trim()))]);
     }
 
     private static Result<IReadOnlyList<KeyValuePair<string, string>>> Settings(IEnumerable<string> pairs)

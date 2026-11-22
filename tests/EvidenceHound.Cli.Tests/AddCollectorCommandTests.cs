@@ -141,9 +141,9 @@ public sealed class AddCollectorCommandTests : IDisposable
         string[] settings = ["--set", $"tenant_id={TenantId}", "--set", $"client_id={ClientId}", "--set", "supported_windows_builds=10.0.26100", "--yes"];
 
         (await Run("", ["add", "collector", "m365", "--config", ConfigFile, "--secret-file", $"client_certificate={pem}", .. settings])).ShouldBe(ExitCodes.Configuration);
-        _error.ToString().ShouldContain("add.secret_file_without_secrets_dir");
+        _error.ToString().ShouldContain("give --secrets-dir too");
         (await Run("", ["add", "collector", "m365", "--config", ConfigFile, "--secrets-dir", Path.Combine(_root, "secrets"), "--secret-file", $"api_key={pem}", .. settings])).ShouldBe(ExitCodes.Configuration);
-        _error.ToString().ShouldContain("add.secret_unknown");
+        _error.ToString().ShouldContain("'api_key' is not a secret of this collector");
         (await File.ReadAllTextAsync(ConfigFile, TestContext.Current.CancellationToken)).ShouldBe(Config);
     }
 
