@@ -30,7 +30,7 @@ Projects: `src/Collectors/EvidenceHound.Collectors.Sophos`, `src/Collectors/Evid
 - Result (2026-11-22): `dotnet test --project tests/EvidenceHound.Collectors.Sophos.Tests` passed 21 tests against the recorded fictional tenant: the data region came from whoami, 5 endpoints were read over 2 pages and 1 firewall on 1 page. The evidence files themselves come with the collector in s08-02. Evidence: [`docs/evidence/s08/s08-01.md`](../evidence/s08/s08-01.md).
 
 ### s08-02 Sophos checks
-- [ ] Done
+- [x] Done
 
 **Story:** As a compliance owner, I want endpoint protection and firewall health measured, so that those controls have live evidence.
 
@@ -45,6 +45,7 @@ Projects: `src/Collectors/EvidenceHound.Collectors.Sophos`, `src/Collectors/Evid
 
 **Functional check**
 - `hound run --only sophos-example` against recordings updates the example audit.
+- Result (2026-11-22): `hound run --only sophos-example --no-publish` against a local stub of the recordings succeeded with 4 checks passed and `endpoints.json` and `firewalls.json` stored (host names hashed). The publish to the example audit is the functional test `SophosRunFunctionalTests` (EX-4.1 compliant, `firewalls.json` attached), run in CI. Evidence: [`docs/evidence/s08/s08-02.md`](../evidence/s08/s08-02.md).
 
 ### s08-03 Veeam access
 - [ ] Done
@@ -198,5 +199,8 @@ Added 2026-11-22 at the person's request, as the route for the s08-08 trial. Bui
 - **(person)** Runs `make trial` in their dev container up to the Sophos step; that run is the start of s08-08.
 
 ## Discovered work
+
+- The recorded tenant helpers order page files by name, so `users.2.json` sorts before `users.json` and is served as the first page. `RecordedSophos` orders by page number; `RecordedTenant` (M365) still has the old order. Its tests pass because they only count pages and items, but a page-order assertion would fail. Fix when M365 is next touched.
+- The cloud build session cannot pull CISO Assistant's images (the `ghcr.io` blob host is blocked there), so functional tests against CISO Assistant run in CI only.
 
 ## Sprint review
