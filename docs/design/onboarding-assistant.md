@@ -25,6 +25,14 @@ That is slow, specialist work, and it is the same work for every one of the roug
 
 Not goals: an agent that runs unattended, changes CISO Assistant directly, or decides applicability without a person.
 
+## Rule: no model in evidence collection
+
+The model helps a person onboard systems and suppliers. It never takes part in collecting, extracting or assessing evidence, so every result in CISO Assistant comes from deterministic code and configuration a person reviewed.
+
+- **Separate project.** The onboarding code and the model adapters live in `EvidenceHound.Onboarding`, used only by the `hound onboard` command. The core, the runtime, the collectors and `hound run` do not reference it or any model SDK. An architecture test fails the build if they do.
+- **No key where evidence is collected.** `llm_api_key` belongs to the person running onboarding, typically in their dev container. A scheduled runner's configuration may not declare it or any `llm` setting; `hound run` and the scheduler refuse to start with `config.llm_in_runner` if it does.
+- **Evidence is never model output.** Nothing a model wrote is uploaded as evidence or used as a check result. Drafts become configuration only after a person accepts them and they are committed through a pull request; from then on they are ordinary profile, mapping and scope files.
+
 ## How it works: `hound onboard`
 
 `hound onboard <system> --framework <framework file>` is a guided session in the terminal, in the same style as the `hound add` wizards. It works in the organisation's config repo working copy and writes files there; the person commits them through a pull request.
@@ -36,7 +44,7 @@ registered; stop     product                              manual / not applicabl
 until approved                                            / other system                                                    record
 ```
 
-**0. Supplier.** The session asks who provides the system and who the contract is with (the vendor, or a reseller or managed service provider). For a supplier not yet in the repo, it drafts the supplier files from the third-party design (entity, solution, contract, and a supplier assessment with its questionnaire and review cycle), with proposed dependency, penetration, maturity, trust and criticality and the reason for each. It also drafts a **supplier summary** from the vendor's public documents: certifications, where data is held, support and end-of-life policy, and how they disclose vulnerabilities, each with its source link. The person accepts or edits each item. The summary is attached to the supplier assessment as evidence; questionnaire answers stay with the GRC team in CISO Assistant.
+**0. Supplier.** The session asks who provides the system and who the contract is with (the vendor, or a reseller or managed service provider). For a supplier not yet in the repo, it drafts the supplier files from the third-party design (entity, solution, contract, and a supplier assessment with its questionnaire and review cycle), with proposed dependency, penetration, maturity, trust and criticality and the reason for each. It also drafts a **supplier summary** from the vendor's public documents: certifications, where data is held, support and end-of-life policy, and how they disclose vulnerabilities, each with its source link. The summary is an onboarding draft for the GRC team to review, kept in the onboarding record; it is **not evidence**. The evidence is the cited vendor documents themselves: `hound` downloads each one the person keeps, records its source URL, retrieval date and SHA-256, and attaches it to the supplier assessment. Questionnaire answers stay with the GRC team in CISO Assistant.
 
 If a supplier the system depends on is not approved yet, the session writes the supplier files, saves, and stops. The person commits and applies the supplier, the GRC team completes and concludes the supplier assessment in CISO Assistant, and `hound onboard` resumes from step 1.
 
@@ -130,6 +138,7 @@ Guard rails:
 | Structured replies validated against the schema | No hand-fixing of malformed YAML | More code in the engine to define the schemas |
 | Swappable provider | No lock-in; a local model is possible | One adapter to maintain per provider |
 | Supplier approved before system | No system enters the audit on an unvetted supplier; supplier assurance is gathered while the system is fresh | Onboarding can wait on the GRC team's supplier review; the gate needs supplier assessments concluded in CISO Assistant |
+| Supplier summary as a draft, vendor documents as evidence | Auditors see the vendor's own words, not a model's paraphrase | The GRC team still reads the documents to confirm the summary |
 | Onboarding record kept as evidence | Auditors see how applicability was decided | Another document to keep current when a system changes |
 
 ## Edge cases
@@ -155,3 +164,4 @@ Guard rails:
 5. **Your Sophos firewall is the first real onboarding** (s09-25), run by you in the dev container with your own key, starting with registering and approving its supplier. (Recommended.)
 6. **Supplier first, with a gate in `scope plan`:** a system is registered only when every supplier it names (the vendor and, if set, the reseller) has a concluded supplier assessment, a current review and an active contract. A lapse is reported, not unregistered. (Recommended.)
 7. **s10-01 and s10-02 move into s09** (as s09-19 and s09-20, before onboarding); s10-03 docs and s10-04 evidence plan, including the recurring supplier review task, stay in s10. (Recommended.)
+8. **No model in evidence collection** (your rule, Nov 22): onboarding code in its own project that the runner cannot reach, no model key in a runner's configuration, and the supplier summary is a reviewed draft while the cited vendor documents are the evidence.

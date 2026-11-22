@@ -215,8 +215,11 @@ These tasks come after s09-14, because they draft REST profiles, and after s09-2
 - Outbound guard (pure): every request is scanned for secret values in use, `llm.deny_terms`, and IP, MAC and email patterns; a hit returns `llm.blocked_content` naming what matched and nothing is sent.
 - Response shapes (pure): a response reduced to field names, types and counts, keeping values only for settings-like fields (few distinct values, no identity pattern) and never for profile `identities`.
 - Every request and reply is saved locally with the session; `--show-requests` prints each before it is sent.
+- No model in evidence collection: the onboarding code and model adapters live in `EvidenceHound.Onboarding`, used only by `hound onboard`. An architecture test fails if the core, runtime, collectors or `hound run` reference it or any model SDK. `hound run` and the scheduler refuse a configuration that declares `llm_api_key` or an `llm` setting (`config.llm_in_runner`).
 
 **Tests first**
+- `ArchitectureTests.Runner_and_collectors_do_not_reference_onboarding_or_model_sdks`
+- `RunnerConfigTests.Llm_key_or_setting_in_runner_config_is_refused`
 - `OutboundGuardTests.Secret_value_in_request_blocks_it`
 - `OutboundGuardTests.Deny_term_and_email_are_reported`
 - `ResponseShapeTests.Keeps_enumerations_drops_identities_and_free_text`
@@ -233,7 +236,7 @@ These tasks come after s09-14, because they draft REST profiles, and after s09-2
 
 **Acceptance criteria**
 - `hound onboard <system> --framework <framework file>` asks for the system name, owner and product, and starts from a copy of a library profile when one names the product.
-- Supplier first: the session asks who provides the system and who the contract is with. For a supplier not yet in the repo it drafts the entity, solution and contract files (s09-19) and a supplier assessment (s09-20), with proposed dependency, penetration, maturity, trust and criticality and the reasons for each, and a supplier summary drawn from the vendor's public documents (certifications, where data is held, support lifecycle), each with its source. The person accepts or edits each. Questionnaire answers are never drafted into CISO Assistant.
+- Supplier first: the session asks who provides the system and who the contract is with. For a supplier not yet in the repo it drafts the entity, solution and contract files (s09-19) and a supplier assessment (s09-20), with proposed dependency, penetration, maturity, trust and criticality and the reasons for each, and a supplier summary drawn from the vendor's public documents (certifications, where data is held, support lifecycle), each with its source. The person accepts or edits each. The summary is a draft kept in the onboarding record, not evidence: the vendor documents the person keeps are downloaded with source URL, retrieval date and SHA-256 and attached to the supplier assessment as its evidence. Questionnaire answers are never drafted into CISO Assistant.
 - If a named supplier is not yet approved, the session saves, writes the supplier files and stops before applicability; it resumes from there once the supplier is approved.
 - Reads an OpenAPI document, other API specifications or saved documentation from local files or allowed URLs, and shows the model's summary of readable endpoints, sign-in and paging.
 - Reads every in-scope requirement from the framework file and shows one proposal per requirement (API check, manual, not applicable, not this system) with its reasoning; the person accepts, edits or rejects each, and can save and resume.
@@ -243,6 +246,7 @@ These tasks come after s09-14, because they draft REST profiles, and after s09-2
 **Tests first**
 - `OnboardSupplierTests.Unapproved_supplier_stops_before_applicability_and_resumes_after`
 - `OnboardSupplierTests.Supplier_proposals_carry_reasons_and_sources`
+- `OnboardSupplierTests.Summary_is_not_evidence_and_kept_documents_are_attached_with_hash`
 - `ApplicabilityTests.Not_applicable_without_justification_or_approver_is_refused`
 - `ApplicabilityTests.Every_in_scope_requirement_gets_one_decision`
 - `OnboardSessionTests.Resume_keeps_accepted_decisions`
