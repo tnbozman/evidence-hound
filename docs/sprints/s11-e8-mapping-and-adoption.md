@@ -4,6 +4,8 @@ Status: Planned
 
 **Goal:** the Essential Eight ML2 mapping completed, the guides an organisation needs to adopt the kit (moving registers out of spreadsheets, running manual sources, training), and two tiers of reporting: monthly operational reporting to the security committee and quarterly governance reporting to the board.
 
+Reporting is per **programme** (amended by s10b-01, Nov 2026): a programme is a framework, the implementation groups reported against and the audit of record, declared in `scope/setup.yaml`. The Essential Eight at ML1 and ML2 is one programme; AI6 (s10b) is another, and NIST SP 800-171 (s16) will be a third. No report code assumes a framework, its groups or its strategy names: they come from the programme and its framework snapshot.
+
 Risks, exceptions and risk acceptances in the reports are read from CISO Assistant, whether entered there by hand or, from release 2 (s14), applied from configuration. The ASD Essentials mapping, planned here before the release 1 reorder, is now [s13](s13-essentials-mapping.md).
 
 ### s11-01 Essential Eight mapping completed
@@ -14,7 +16,7 @@ Risks, exceptions and risk acceptances in the reports are read from CISO Assista
 **Acceptance criteria**
 - `mappings/essential-eight-2023.yaml` (started in s06-02, extended in s08 and s09) covers every ML1 and ML2 requirement with checks or a `manual_only` entry, and every `manual_only` entry names a manual source from the example config (s09-05).
 - Every check ID from the reference and manual collectors maps to at least one Essential Eight requirement.
-- `hound mapping coverage` prints automated, manual-only and uncovered counts per Essential Eight strategy and maturity level, for an audit's selected maturity levels.
+- `hound mapping coverage` prints automated, manual-only and uncovered counts per parent node and implementation group of any framework snapshot, for an audit's selected groups (for the Essential Eight: per strategy and maturity level).
 
 **Tests first**
 - `E8MappingTests.All_requirement_urns_exist_in_framework_snapshot`
@@ -62,13 +64,15 @@ Risks, exceptions and risk acceptances in the reports are read from CISO Assista
 **Story:** As the capability owner, I want each reporting period's figures captured as a snapshot, so that reports show trends and can be reproduced later.
 
 **Acceptance criteria**
-- `ReportingPeriod` (month or quarter) and a `PostureSnapshot` record: requirement results per audit and framework, applied control status counts, open exceptions and risk acceptances with expiry, open findings and remediation items with due dates, incidents in the period, collector run summaries, manual sources due and overdue, third-party reviews due.
+- `ReportingPeriod` (month or quarter) and a `PostureSnapshot` record: per programme (s10b-01), its framework and version, audit of record, selected groups, requirement results and counts per group and per parent node, and its register summaries (s10b-06); applied control status counts, open exceptions and risk acceptances with expiry, open findings and remediation items with due dates, incidents in the period, collector run summaries, manual sources due and overdue, third-party reviews due.
 - `hound report snapshot --period YYYY-MM` reads only from the CISO Assistant API and the local run store, and writes the snapshot as JSON to the evidence store, then uploads it to CISO Assistant as evidence on a configurable "Security reporting" applied control.
 - Pure functions compute changes between two snapshots (`DiffSnapshots`), so every report is a function of snapshots, not live calls.
 - When audits run in periods (s06-10), a period's snapshot is taken from its closed audit and the audit history files (s06-04), so a signed-off period's figures never change.
 
 **Tests first**
 - `SnapshotTests.Built_from_fixture_api_responses`
+- `SnapshotTests.Two_programmes_are_counted_separately` (Essential Eight and AI6 fixtures)
+- `SnapshotTests.Counts_use_programme_groups_not_maturity_levels`
 - `DiffTests.Detects_requirement_result_changes_between_periods`
 - `DiffTests.Detects_new_expired_and_closed_exceptions`
 - Property: `DiffSnapshots(a, a)` is empty.
@@ -85,7 +89,7 @@ Risks, exceptions and risk acceptances in the reports are read from CISO Assista
 - `hound report committee --month YYYY-MM` produces Markdown from the month's snapshot and the previous one, with these sections in order:
     1. Summary: three to five lines on what changed and what needs a decision.
     2. Collector health: each collector's last run, success rate for the month, evidence freshness against its window, failures and their cause.
-    3. Control status changes: requirements and applied controls whose status changed, grouped by framework and strategy.
+    3. Control status changes: requirements and applied controls whose status changed, grouped by programme, then by parent node (the Essential Eight strategy, the AI6 practice), with each programme's register summary (s10b-06).
     4. Exceptions and risk acceptances: new, expiring within 60 days, and expired.
     5. Remediation (POA&M-style) progress: open items, completed this month, overdue, by owner and due date.
     6. Incidents: incidents opened and closed in CISO Assistant this month, with status.
@@ -99,6 +103,7 @@ Risks, exceptions and risk acceptances in the reports are read from CISO Assista
 - `CommitteeReportTests.Expiring_exceptions_use_60_day_window`
 - `CommitteeReportTests.Overdue_remediation_sorted_by_due_date`
 - `CommitteeReportTests.Empty_sections_say_none_rather_than_disappear`
+- `CommitteeReportTests.Groups_changes_by_programme_and_parent`
 
 **Functional check**
 - Generate the report from the local stack for the current month and walk through it against the example audit.
@@ -110,8 +115,8 @@ Risks, exceptions and risk acceptances in the reports are read from CISO Assista
 
 **Acceptance criteria**
 - `hound report board --quarter YYYY-Qn` produces a Markdown report of at most two pages plus an appendix, from the quarter-end snapshots, with these sections:
-    1. Compliance position: a one-paragraph statement for the authorising official to confirm (on track, on track with conditions, off track), with the reasons.
-    2. Maturity posture: per framework and strategy (for the Essential Eight, each of the eight at ML1 and ML2; once the Essentials audit exists (s13), each domain by priority phase), with the trend over the last four quarters.
+    1. Compliance position: one statement per programme for the authorising official to confirm (on track, on track with conditions, off track), with the reasons.
+    2. Posture: per programme, each parent node at each of the programme's groups, with the trend over the last four quarters (for example the Essential Eight's eight strategies at ML1 and ML2, the Essentials domains by priority phase (s13), the six AI6 practices at Foundations), and the programme's register summary.
     3. Key risks: the top five risks against appetite, with owner, treatment and target date.
     4. Risk-acceptance decisions: risks and exceptions accepted this quarter, who accepted them, and when they expire; anything needing board endorsement highlighted.
     5. Assurance: collector coverage (automated versus manual share of requirements), evidence freshness, independent review status, tier 1 supplier assurance.
@@ -122,6 +127,7 @@ Risks, exceptions and risk acceptances in the reports are read from CISO Assista
 
 **Tests first**
 - `BoardReportTests.Trend_uses_last_four_quarters`
+- `BoardReportTests.One_position_and_posture_table_per_programme`
 - `BoardReportTests.Lists_risk_acceptances_made_in_quarter_with_expiry`
 - `BoardReportTests.Excludes_operational_detail_from_body`
 - `BoardReportTests.Renders_expected_markdown_from_fixture` (golden file)
