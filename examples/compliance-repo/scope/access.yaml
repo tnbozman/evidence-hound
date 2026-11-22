@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=../../../schemas/scope.schema.json
+# Who can do what in CISO Assistant, reviewed through pull requests like the rest of the scope (docs/scope.md#accessyaml).
+# Names and emails are personal data: they belong only in your private compliance repo. Never put a password or token
+# here; a new user sets their own password from CISO Assistant's invitation, and turns on MFA at first sign-in.
+users:
+  - email: it@example.com
+    first_name: Alex
+    last_name: Example
+  - email: ceo@example.com
+    first_name: Sam
+    last_name: Example
+  - email: auditor@example.com
+    first_name: Jo
+    last_name: Example
+  # The account that applies this scope (the dev seed's). The collector runner's account would be service_account: publish,
+  # with analyst on the domains it publishes to.
+  - email: hound-service@example.com
+    first_name: Evidence Hound
+    last_name: service account
+    service_account: apply
+
+teams:
+  - name: IT team
+    description: Runs the systems and the evidence collection.
+    domain: Example Pty Ltd
+    leader: it@example.com
+
+roles:
+  - role: administrator
+    domain: Global
+    users: [it@example.com, hound-service@example.com]
+  # Every domain needs an active approver, so risk acceptances and period sign-offs have someone to approve them.
+  - role: approver
+    domain: Example Pty Ltd
+    users: [ceo@example.com]
+  - role: analyst
+    domain: Example Pty Ltd
+    teams: [IT team]
+  - role: auditor
+    domain: Example Pty Ltd
+    users: [auditor@example.com]

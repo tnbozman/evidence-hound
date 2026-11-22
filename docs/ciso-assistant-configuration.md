@@ -46,7 +46,7 @@ Audit fields `hound` writes (from the `ComplianceAssessmentWrite` schema): `ref_
 | Entity assessment | s10 | `/api/entity-assessments/` | `ref_id` (Q6) | No revision endpoint (Q6) |
 | Tier | s10 | `/api/tiers/` | Name | |
 | Metric definition, metric instance, sample, dashboard | s10 | under `/api/metrology/` | Definitions by URN; instances by `ref_id` (Q6) | Feature flag `metrology` |
-| Users, teams, role assignments | Later | `/api/users/`, `/api/teams/`, `/api/user-groups/`, `/api/role-assignments/` | User email; team and group name | |
+| Users, teams, role assignments | s07 | `/api/users/`, `/api/teams/`, `/api/role-assignments/` | User email; team name; role, domain and user | `scope/access.yaml`. Users are deactivated, never deleted; group assignments are read, not written. MFA is reported (`has_mfa_enabled`), not settable per user |
 | Feature flags | Later | `/api/settings/feature-flags/` | Flag name | `GET` and `PATCH` work (Q5) |
 | General settings (such as the default score scale) | Later | `/api/settings/general/` | Setting name | `GET`, `PUT`, `PATCH` |
 | Task definitions | Later | `/api/task-templates/` | Name | |

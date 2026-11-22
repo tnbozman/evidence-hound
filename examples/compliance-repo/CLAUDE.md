@@ -7,6 +7,7 @@ Instructions for an AI assistant working in this compliance repo. The repo says 
 - `hound.yaml`: the deployment config (collectors, schedules, the target audit and its mapping). Schema: `config.schema.json`.
 - `scope/setup.yaml`: root folder, frameworks (with snapshots in `frameworks/`), domains with their perimeters and systems.
 - `scope/controls.yaml`: every applied control, declared once.
+- `scope/access.yaml`: users, teams and the roles they hold on each domain.
 - `scope/audits/<audit>.yaml`: one audit each: framework, groups, systems, documents, controls with the requirements they support, hand-written `assessments`, `unlisted`, and optionally `cycle` and `sign_offs`.
 - `mappings/<framework>.yaml`: which checks satisfy which requirements.
 - `frameworks/`: snapshots (`hound framework snapshot`) and custom framework libraries.
@@ -28,6 +29,7 @@ Problems come with a file, a line, a code and a hint. Never weaken a rule to mak
 ## Rules
 
 - **No secrets.** Credentials are references only (`env:NAME`, `file:/run/secrets/name`). Never write a token, password, key or certificate into any file.
+- **Access is a person's decision.** Change `scope/access.yaml` only when asked, never add a password or token to it, and keep at least one active approver on every domain.
 - **No real evidence.** Never add exports, screenshots, logs or other evidence files to the repo. Collectors gather evidence on the server; manual exports go to the drop folders listed in `manual-sources/README.md`, which are outside the repo. Only policies and procedures go in `documents/`.
 - **Never write a result a collector computes.** If a mapping computes a requirement, do not add a hand-written assessment for it (`scope.result_conflict`). Add hand-written results only for requirements no check covers.
 - **Mark nothing not applicable silently.** `unlisted` must say `not_assessed`, or `not_applicable` with a reason.
