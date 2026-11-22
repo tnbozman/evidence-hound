@@ -200,7 +200,7 @@ Added 2026-11-22 at the person's request: the M365 collector exists since s05, s
 - **(person)** With a test tenant: `make trial` through the M365 step. Record in `docs/evidence/s08/s08-10.md` only the date, the versions, the kind of tenant (developer sandbox or Business Premium trial), each step's outcome, each check's outcome, and the defects found with links to their fixes.
 
 ### s08-11 Sophos collector reads network devices only
-- [ ] Done
+- [x] Done
 
 Added 2026-11-22 from the s08-08 trial, at the person's request. The trial tenant manages an XGS firewall (and maybe switches) and no endpoints, so the three endpoint checks always failed with "No endpoints were found" and fed ISM-1672 (Office macro antivirus scanning), which Sophos network devices say nothing about. The person decided Sophos Central is a network device source in Evidence Hound; endpoint protection evidence comes from the endpoint's own antivirus (Microsoft Defender through the Microsoft 365 collector, later).
 
@@ -220,6 +220,7 @@ Added 2026-11-22 from the s08-08 trial, at the person's request. The trial tenan
 
 **Functional check**
 - `make trial` Sophos step against the person's tenant: one check, `firewalls.json` only, ISM-1501 still fed.
+- Result (2026-11-22): rebuilt the trial image and ran `hound run --config hound.yaml --only sophos --dry-run` in the trial container against the person's tenant (a home Sophos Central tenant with one XGS firewall and no endpoints). Collector version 2.0.0, one evidence file (`firewalls.json`), one check, no problems, nothing sent. The check failed correctly: the firewall had moved from 21.5 to 22.0 firmware since the earlier run, and the trial config lists only 21.5 as supported. Unit suite 950 passed (with the dev container's `HOUND_CA_URL` unset; see discovered work), lint clean.
 
 ### s08-12 Sophos Central admins: MFA and roles
 - [ ] Done
@@ -280,5 +281,6 @@ Added 2026-11-22 from the s08-08 trial, at the person's request. The trial tenan
 - s08-08 trial: when a later wizard in step 5 fails, re-running repeats `hound add system` and stops with `add.system_exists`, so the trial cannot recover. Give each `add` its own done marker.
 - s08-08 trial: evidence is linked to requirements only, so a declared control such as AC-BACKUP shows no evidence in CISO Assistant although its requirement has some. Decide whether to also link evidence to the applied controls that cover the requirement (as the health control is), or say clearly in the trial where the evidence is.
 - s08-08 trial: a requirement moved from collector checks to `manual_only` shows "the unlisted rule" as the reason in the scope plan's compliance table. Say "moved to manual" or similar.
+- `PublishCommandTests.Without_a_url_exits_three` fails in the dev container, because the container sets `HOUND_CA_URL` and the test expects no address. The test should clear the variable for its own process (or the command take its environment injected), so `make test` is green in the dev container.
 
 ## Sprint review
