@@ -85,6 +85,22 @@ public sealed class RestCollectorTests : IDisposable
         problems.ShouldHaveSingleItem().Code.ShouldBe("profile.parameter_invalid");
     }
 
+    [Fact]
+    public async Task Saves_each_query_of_the_example_profile_as_one_evidence_file()
+    {
+        await CopyExample();
+        using var api = RecordedExample.Start();
+
+        var result = (await Collect(api.Settings(_folder), RecordedExample.HttpClients)).Value();
+
+        result.Files.Select(f => f.FileName).ShouldBe(["devices.json", "users.json", "roles.json"]);
+        var devices = System.Text.Json.Nodes.JsonNode.Parse((await result.Files[0].ReadAsync(Token)).Content.Span)!;
+        devices["pages"]!.GetValue<int>().ShouldBe(2);
+        devices["item_count"]!.GetValue<int>().ShouldBe(3);
+        devices["request"]!.GetValue<string>().ShouldEndWith("/v1/orgs/org-0001/devices");
+        devices.ToJsonString().ShouldNotContain("laptop-01.example.com");
+    }
+
     private Task CopyExample() => File.WriteAllTextAsync(Path.Combine(_folder, "example.yaml"), Profiles.ExampleYaml, Token);
 
     private Dictionary<string, string> Settings() => new(StringComparer.Ordinal)
@@ -95,15 +111,15 @@ public sealed class RestCollectorTests : IDisposable
         ["supported_os"] = "14, 15",
     };
 
-    private static Task<Core.Results.Result<CollectionResult>> Collect(Dictionary<string, string> settings) =>
+    private static Task<Core.Results.Result<CollectionResult>> Collect(Dictionary<string, string> settings, IHttpClientFactory? clients = null) =>
         new RestCollector().CollectAsync(
             new CollectorContext(
                 "example-rest",
                 new CollectorSettings(settings),
-                new Dictionary<string, Secret>(StringComparer.Ordinal) { ["client_secret"] = new("example-client-secret-0d9e") },
+                new Dictionary<string, Secret>(StringComparer.Ordinal) { ["client_secret"] = new(RecordedExample.ClientSecret) },
                 new FixedClock(Now),
                 NullLogger.Instance,
-                OfflineHttpClients.Instance),
+                clients ?? OfflineHttpClients.Instance),
             Token);
 
     private sealed class FixedClock(DateTimeOffset now) : IClock
