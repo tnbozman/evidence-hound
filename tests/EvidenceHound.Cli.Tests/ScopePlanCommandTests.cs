@@ -51,6 +51,52 @@ public sealed class ScopePlanCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Plan_with_access_yaml_creates_users_and_role_assignments_and_reviews_mfa_and_service_accounts()
+    {
+        await WriteScopeAsync();
+        await File.WriteAllTextAsync(Path.Combine(ScopeDir, "access.yaml"), """
+            users:
+              - email: it@example.com
+                first_name: Alex
+                last_name: Example
+              - email: hound-runner@example.com
+                service_account: publish
+            roles:
+              - role: administrator
+                domain: Global
+                users: [it@example.com]
+              - role: analyst
+                domain: Example Pty Ltd
+                users: [hound-runner@example.com]
+            """, _ct);
+        EmptyInstance();
+        List("users",
+            new JsonObject { ["id"] = "u-it", ["email"] = "it@example.com", ["is_active"] = true, ["has_mfa_enabled"] = false, ["user_groups"] = new JsonArray() },
+            new JsonObject { ["id"] = "u-run", ["email"] = "hound-runner@example.com", ["is_active"] = true, ["has_mfa_enabled"] = false, ["user_groups"] = new JsonArray(new JsonObject { ["id"] = "g-adm", ["str"] = "BI-UG-ADM" }) });
+        List("roles", new JsonObject { ["id"] = "r-adm", ["name"] = "BI-RL-ADM" });
+        List("role-assignments", new JsonObject
+        {
+            ["id"] = "ra-adm",
+            ["name"] = "BI-RA-ADM",
+            ["role"] = new JsonObject { ["id"] = "r-adm", ["str"] = "BI-RL-ADM" },
+            ["user"] = null,
+            ["user_group"] = new JsonObject { ["id"] = "g-adm", ["str"] = "BI-UG-ADM" },
+            ["perimeter_folders"] = new JsonArray(new JsonObject { ["id"] = "f-global", ["str"] = "Global" }),
+            ["builtin"] = true,
+        });
+
+        var exitCode = await Plan();
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var markdown = _output.ToString();
+        markdown.ShouldContain("| Create | role_assignment | BI-RL-ANA\\|Example Pty Ltd\\|hound-runner@example.com |");
+        markdown.ShouldContain("| Update | user | it@example.com |");
+        markdown.ShouldContain("### Access review");
+        markdown.ShouldContain("| it@example.com | has not turned on multi-factor authentication |");
+        markdown.ShouldContain("| hound-runner@example.com | holds BI-RL-ADM on Global; a publishing service account needs only analyst on the domains it publishes to |");
+    }
+
+    [Fact]
     public async Task Plan_as_json_lists_changes_field_by_field_and_drift()
     {
         await WriteScopeAsync();
@@ -317,7 +363,7 @@ public sealed class ScopePlanCommandTests : IDisposable
     private void EmptyInstance(JsonObject[]? perimeters = null, JsonObject[]? folders = null)
     {
         List("folders", [new JsonObject { ["id"] = "f-global", ["name"] = "Global", ["parent_folder"] = null }, .. folders ?? []]);
-        foreach (var resource in new[] { "users", "actors", "frameworks", "loaded-libraries", "assets", "compliance-assessments", "evidences", "applied-controls", "requirement-assessments" })
+        foreach (var resource in new[] { "users", "actors", "frameworks", "loaded-libraries", "assets", "compliance-assessments", "evidences", "applied-controls", "requirement-assessments", "teams", "roles", "role-assignments" })
         {
             List(resource);
         }

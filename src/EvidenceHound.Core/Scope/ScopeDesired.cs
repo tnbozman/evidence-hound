@@ -48,7 +48,26 @@ public static class ScopeDesired
                 Initial = Fields(("status", c.Status), ("reference_control", c.ReferenceControl)),
             }),
             .. scope.Audits.SelectMany(a => Rows(scope, a, inputs)),
+            .. Access(scope.Access, setup.RootFolder),
         ];
+    }
+
+    /// <summary>Users by email, teams by name, and one role assignment per role, domain and user, keyed <c>BI-RL-APP|domain|email</c>.</summary>
+    private static IEnumerable<ScopeObject> Access(ScopeAccess access, string rootFolder) =>
+    [
+        .. access.Users.Select(u => new ScopeObject(ScopeKind.User, u.Email, Fields(
+            ("first_name", u.FirstName), ("last_name", u.LastName), ("active", u.Active ? "true" : "false")))),
+        .. access.Teams.Select(t => new ScopeObject(ScopeKind.Team, t.Name, Fields(
+            ("description", t.Description), ("domain", t.Domain?.Value ?? rootFolder), ("leader", t.Leader?.Value), ("members", Joined(t.Members.Select(m => m.Value)))))),
+        .. AccessRoles.Assignments(access).Select(a => new ScopeObject(ScopeKind.RoleAssignment, RoleAssignmentKey(a), Fields(
+            ("role", a.RoleCode), ("domain", a.Domain), ("user", a.Email)))),
+    ];
+
+    /// <summary>A role assignment's key: its role code, domain and user's email.</summary>
+    public static string RoleAssignmentKey(AccessAssignment assignment)
+    {
+        ArgumentNullException.ThrowIfNull(assignment);
+        return $"{assignment.RoleCode}|{assignment.Domain}|{assignment.Email}";
     }
 
     /// <summary>A framework, with its version and library URN from its snapshot, and its custom library file to upload.</summary>

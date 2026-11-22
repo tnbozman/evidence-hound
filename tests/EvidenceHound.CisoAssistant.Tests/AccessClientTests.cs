@@ -20,7 +20,7 @@ public sealed class AccessClientTests : IDisposable
             User("u-it", "it@example.com", "Alex", "Example", active: true, $"Runs IT.\n[hound scope {State}]", mfa: true),
             User("u-admin", "admin@example.com", "", "", active: true, null, mfa: false));
         List("roles", Role("r-app", "BI-RL-APP"), Role("r-adm", "BI-RL-ADM"), Role("r-ana", "BI-RL-ANA"));
-        List("teams", new JsonObject
+        var team = new JsonObject
         {
             ["id"] = "t-it",
             ["name"] = "IT team",
@@ -29,7 +29,15 @@ public sealed class AccessClientTests : IDisposable
             ["leader"] = Relation("u-it", "it@example.com"),
             ["deputies"] = new JsonArray(),
             ["members"] = new JsonArray(Relation("u-admin", "admin@example.com"), Relation("u-it", "it@example.com")),
-        });
+        };
+        List("teams", team);
+        Detail("teams", team);
+        Detail("folders", Folder("f-ex", "Example Pty Ltd", "f-global"));
+        foreach (var resource in new[] { "actors", "frameworks", "loaded-libraries", "perimeters", "assets", "compliance-assessments", "evidences", "applied-controls" })
+        {
+            List(resource);
+        }
+
         List("role-assignments",
             new JsonObject
             {
@@ -154,7 +162,8 @@ public sealed class AccessClientTests : IDisposable
         ],
             ignoreOrder: true);
         var it = held[(ScopeKind.User, "it@example.com")];
-        (it.AppliedState, it.Held.Fields).ShouldBe((State, new Dictionary<string, string> { ["first_name"] = "Alex", ["last_name"] = "Example", ["active"] = "true" }));
+        it.AppliedState.ShouldBe(State);
+        it.Held.Fields.ShouldBe(new Dictionary<string, string> { ["first_name"] = "Alex", ["last_name"] = "Example", ["active"] = "true" });
         held[(ScopeKind.User, "admin@example.com")].Managed.ShouldBeFalse();
         held[(ScopeKind.Team, "IT team")].Held.Fields.ShouldBe(new Dictionary<string, string>
         {
@@ -225,6 +234,10 @@ public sealed class AccessClientTests : IDisposable
     };
 
     private static JsonObject Role(string id, string name) => new() { ["id"] = id, ["name"] = name, ["builtin"] = true };
+
+    private void Detail(string resource, JsonObject item) =>
+        _ca.Server.Given(Request.Create().WithPath($"/api/{resource}/{item["id"]}/object/").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(item.ToJsonString()));
 
     private void List(string resource, params JsonObject[] items) =>
         _ca.Server.Given(Request.Create().WithPath($"/api/{resource}/").UsingGet())

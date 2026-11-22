@@ -24,7 +24,10 @@ public sealed record ScopeStateQuery(string RootFolder, IReadOnlyList<string> Fr
                 .ToDictionary(
                     g => g.Key,
                     g => (IReadOnlyList<RequirementKey>)[.. g.Select(parts => parts[1].StartsWith("urn:", StringComparison.Ordinal) ? RequirementKey.Urn(parts[1]) : RequirementKey.Ref(parts[1]))],
-                    StringComparer.Ordinal));
+                    StringComparer.Ordinal))
+        {
+            Access = scope.Access.Users.Count > 0 || scope.Access.Teams.Count > 0 || scope.Access.Roles.Count > 0,
+        };
     }
 }
 

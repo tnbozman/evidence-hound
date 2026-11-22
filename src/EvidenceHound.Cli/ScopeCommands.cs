@@ -179,13 +179,17 @@ internal static class ScopeCommands
     {
         using var services = new ServiceCollection().AddSingleton(loggers).AddCisoAssistantClient(connection).BuildServiceProvider();
         var declared = ScopeDesired.From(checkedScope.Scope, checkedScope.Inputs);
-        var actual = await services.GetRequiredService<IScopeStateSource>().ReadAsync(ScopeStateQuery.For(checkedScope.Scope, declared), cancellationToken);
-        return await actual.Match(
-            async held =>
+        var source = services.GetRequiredService<IScopeStateSource>();
+        var query = ScopeStateQuery.For(checkedScope.Scope, declared);
+        var actual = await source.ReadAsync(query, cancellationToken);
+        var access = query.Access ? await source.ReadAccessAsync(cancellationToken) : Result.Ok<IReadOnlyList<UserAccess>>([]);
+        return await actual.Bind(held => access.Map(users => (Held: held, Users: users))).Match(
+            async read =>
             {
-                var plan = ScopePlanner.Plan(declared, held, prune);
+                var plan = ScopePlanner.Plan(declared, read.Held, prune);
                 var periods = ScopePeriods.Notes(declared, plan);
-                await output.WriteAsync(format == "json" ? ScopePlanOutput.Json(plan, periods) : ScopePlanOutput.Markdown(plan, periods));
+                var notes = AccessReview.Notes(checkedScope.Scope.Access, read.Users);
+                await output.WriteAsync(format == "json" ? ScopePlanOutput.Json(plan, periods, notes) : ScopePlanOutput.Markdown(plan, periods, notes));
                 return ExitCodes.Ok;
             },
             problems => Task.FromResult(Log.Problems(logger, problems)));
@@ -224,10 +228,12 @@ internal static class ScopeCommands
         var controlsPath = Path.Combine(dir.ToString(), "controls.yaml");
         var auditsDir = Path.Combine(dir.ToString(), "audits");
         var audits = Directory.Exists(auditsDir) ? Directory.GetFiles(auditsDir, "*.yaml").Order(StringComparer.Ordinal).ToArray() : [];
+        var accessPath = Path.Combine(dir.ToString(), "access.yaml");
         var parsed = ScopeLoader.Parse(
             await ReadAsync(setupPath, cancellationToken),
             File.Exists(controlsPath) ? await ReadAsync(controlsPath, cancellationToken) : null,
-            [.. await Task.WhenAll(audits.Select(a => ReadAsync(a, cancellationToken)))]);
+            [.. await Task.WhenAll(audits.Select(a => ReadAsync(a, cancellationToken)))],
+            File.Exists(accessPath) ? await ReadAsync(accessPath, cancellationToken) : null);
 
         var snapshots = await SnapshotsAsync(parsed.Scope.Setup.Frameworks, Path.GetDirectoryName(Path.GetFullPath(setupPath))!, cancellationToken);
         var targets = configFile is null ? Result.Ok<IReadOnlyList<ScopeTarget>>([]) : await TargetsAsync(configFile, registry, cancellationToken);

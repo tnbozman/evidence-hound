@@ -101,7 +101,6 @@ public class AccessScopeTests
                   - role: administrator
                     domain: Global
                     users: [it@example.com]
-
                 """, "", StringComparison.Ordinal);
 
         var problems = Problems(access, setup);

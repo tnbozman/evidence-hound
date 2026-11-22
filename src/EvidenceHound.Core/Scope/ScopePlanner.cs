@@ -76,10 +76,31 @@ public static class ScopePlanner
         drift.AddRange(extra.Select(a => new ScopeDrift(a.Held.Kind, a.Held.Key, DriftReason.NotInScope, a.Managed, [])));
         if (prune)
         {
-            changes.AddRange(extra.Where(a => a.Managed && !a.Locked).Select(a => new ScopeChange(a.Held.Kind, a.Held.Key, ScopeAction.Delete, [], null)));
+            changes.AddRange(extra.Where(a => a.Managed && !a.Locked).Select(Pruned).OfType<ScopeChange>());
         }
 
         return new ScopePlan(changes, drift);
+    }
+
+    /// <summary>
+    /// How a managed object the scope no longer declares is removed: deleted, except a user, who is deactivated (once) so their history in
+    /// CISO Assistant stays attributable.
+    /// </summary>
+    private static ScopeChange? Pruned(ActualObject held)
+    {
+        if (held.Held.Kind != ScopeKind.User)
+        {
+            return new ScopeChange(held.Held.Kind, held.Held.Key, ScopeAction.Delete, [], null);
+        }
+
+        var active = held.Held.Fields.GetValueOrDefault("active");
+        if (active == "false")
+        {
+            return null;
+        }
+
+        var deactivated = held.Held with { Fields = new Dictionary<string, string>(held.Held.Fields, StringComparer.Ordinal) { ["active"] = "false" } };
+        return new ScopeChange(ScopeKind.User, held.Held.Key, ScopeAction.Update, [new FieldChange("active", active, "false")], StateOf(deactivated)) { Desired = deactivated };
     }
 
     /// <summary>

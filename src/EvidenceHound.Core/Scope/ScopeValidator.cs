@@ -34,6 +34,7 @@ public static class ScopeValidator
             .. scope.Controls.SelectMany(c => ControlProblems(c, index)),
             .. scope.Audits.SelectMany(a => AuditProblems(a, index, snapshots, targets)),
             .. targets.SelectMany(t => TargetProblems(t, index)),
+            .. AccessValidator.Validate(scope),
         ];
     }
 

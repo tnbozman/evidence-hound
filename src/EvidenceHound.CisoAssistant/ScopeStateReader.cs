@@ -64,7 +64,35 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
         });
     }
 
-    public Task<Result<IReadOnlyList<UserAccess>>> ReadAccessAsync(CancellationToken cancellationToken) => throw new NotImplementedException();
+    public async Task<Result<IReadOnlyList<UserAccess>>> ReadAccessAsync(CancellationToken cancellationToken)
+    {
+        var reading = new Reading(http, cancellationToken);
+        var folders = await reading.ListAsync("folders/");
+        var users = await reading.ListAsync("users/");
+        var roles = await reading.ListAsync("roles/");
+        var assignments = await reading.ListAsync("role-assignments/");
+        if (reading.Problems.Count > 0)
+        {
+            return Result.Fail<IReadOnlyList<UserAccess>>(reading.Problems);
+        }
+
+        var folderNames = Names(folders, "name");
+        var roleNames = Names(roles, "name");
+        string Held(JsonNode assignment) =>
+            $"{Lookup(assignment["role"], roleNames)} on {string.Join(", ", (assignment["perimeter_folders"] as JsonArray ?? []).Select(f => Lookup(f, folderNames)).OfType<string>())}";
+        return Result.Ok<IReadOnlyList<UserAccess>>(
+        [
+            .. users.Select(u =>
+            {
+                var groups = (u["user_groups"] as JsonArray ?? []).Select(RelationId).OfType<string>().ToHashSet(StringComparer.Ordinal);
+                var held = assignments.Where(a => RelationId(a["user"]) == Id(u) || (RelationId(a["user_group"]) is { } group && groups.Contains(group)));
+                return new UserAccess(
+                    (Text(u["email"]) ?? Id(u)).ToLowerInvariant(),
+                    u["has_mfa_enabled"] is JsonValue mfa && mfa.TryGetValue<bool>(out var enabled) && enabled,
+                    [.. held.Select(Held).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)]);
+            }),
+        ]);
+    }
 
     public async Task<Result<IReadOnlyList<ActualObject>>> ReadAsync(ScopeStateQuery query, CancellationToken cancellationToken)
     {
@@ -92,7 +120,8 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
         var rootId = Id(root);
         var domainIds = folders.Where(f => RelationId(f["parent_folder"]) == rootId).Select(Id).ToArray();
         var domainObjects = await reading.ObjectsAsync("folders", domainIds);
-        var users = Actors(await reading.ListAsync("users/"), await reading.ListAsync("actors/"));
+        var userList = await reading.ListAsync("users/");
+        var users = Actors(userList, await reading.ListAsync("actors/"));
         var frameworkList = await reading.ListAsync("frameworks/");
         var frameworks = frameworkList.ToDictionary(Id, f => Text(f["urn"]) ?? Id(f), StringComparer.Ordinal);
         var libraries = await reading.ListAsync("loaded-libraries/");
@@ -103,6 +132,7 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
         var evidences = await reading.ObjectsInAsync("evidences", inScope);
         var controls = await reading.ObjectsInAsync("applied-controls", inScope);
         var hashes = await HashesAsync(reading, evidences);
+        var access = query.Access ? await AccessAsync(reading, folders, userList, inScope) : [];
         var auditedFrameworks = audits.Select(a => Lookup(a["framework"], frameworks)).OfType<string>().Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
         if (allRows)
         {
@@ -148,9 +178,50 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
                     ("status", Choice(Text(r.Row["status"]))), ("result", Choice(Text(r.Row["result"]))), ("observation", Text(r.Row["observation"])),
                     ("controls", Joined(r.Row["applied_controls"], names.Controls)), ("documents", Joined(r.Row["evidences"], names.Evidence)))),
                 null)),
+            .. access,
         ];
         return Result.Ok(new HeldState(objects, frameworkList, libraries.ToDictionary(Id, l => (Text(l["urn"]), Text(l["version"])), StringComparer.Ordinal), auditedFrameworks));
     }
+
+    /// <summary>
+    /// Users (marked in their observation), the teams in the scope's folders, and role assignments made directly to a user. Built-in assignments
+    /// and those to user groups are CISO Assistant's own, so they are not read as objects; <see cref="ReadAccessAsync"/> reports them.
+    /// </summary>
+    private static async Task<List<ActualObject>> AccessAsync(Reading reading, List<JsonNode> folders, List<JsonNode> users, HashSet<string> inScope)
+    {
+        var teams = await reading.ObjectsInAsync("teams", inScope);
+        var roles = await reading.ListAsync("roles/");
+        var assignments = await reading.ListAsync("role-assignments/");
+        var folderNames = Names(folders, "name");
+        var emails = users.ToDictionary(Id, u => (Text(u["email"]) ?? Id(u)).ToLowerInvariant(), StringComparer.Ordinal);
+        var roleNames = Names(roles, "name");
+        return
+        [
+            .. users.Select(u =>
+            {
+                var (_, state) = ScopeMarker.Read(Text(u["observation"]));
+                var active = u["is_active"] is JsonValue value && value.TryGetValue<bool>(out var isActive) && !isActive ? "false" : "true";
+                return new ActualObject(
+                    new ScopeObject(ScopeKind.User, emails[Id(u)], Fields(("first_name", Text(u["first_name"])), ("last_name", Text(u["last_name"])), ("active", active))),
+                    state);
+            }),
+            .. teams.Select(t => Marked(ScopeKind.Team, Text(t["name"]), t,
+                ("domain", Lookup(t["folder"], folderNames)), ("leader", Lookup(t["leader"], emails)), ("members", Joined(t["members"], emails)))),
+            .. assignments.Where(a => !IsBuiltin(a) && RelationId(a["user"]) is not null).Select(a =>
+            {
+                var role = Lookup(a["role"], roleNames);
+                var domain = (a["perimeter_folders"] as JsonArray ?? []).Select(f => Lookup(f, folderNames)).FirstOrDefault() ?? Lookup(a["folder"], folderNames);
+                var email = Lookup(a["user"], emails);
+                var assignment = new AccessAssignment(role ?? "", domain ?? "", email ?? "");
+                return Marked(ScopeKind.RoleAssignment, ScopeDesired.RoleAssignmentKey(assignment), a, ("role", role), ("domain", domain), ("user", email));
+            }),
+        ];
+    }
+
+    private static bool IsBuiltin(JsonNode held) => held["builtin"] is JsonValue value && value.TryGetValue<bool>(out var builtin) && builtin;
+
+    private static Dictionary<string, string> Names(List<JsonNode> objects, string field) =>
+        objects.ToDictionary(Id, o => Text(o[field]) ?? Id(o), StringComparer.Ordinal);
 
     /// <summary>What a read found, with what an export also needs: every framework, each loaded library's URN and version, and the audits' frameworks.</summary>
     private sealed record HeldState(IReadOnlyList<ActualObject> Objects, List<JsonNode> Frameworks, Dictionary<string, (string? Urn, string? Version)> Libraries, string[] AuditedFrameworks);
