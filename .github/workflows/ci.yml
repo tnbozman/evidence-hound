@@ -150,6 +150,24 @@ jobs:
         if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
         run: make compose-smoke
 
+  trial:
+    # s08-09: the interactive local trial, unattended, against a fresh local CISO Assistant (stops before Sophos).
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          global-json-file: global.json
+      - name: Start and seed a local CISO Assistant
+        run: make ca-up
+      - name: Run the trial unattended
+        run: HOUND_TRIAL_YES=1 make trial
+      - name: Run it again (finished steps are skipped, the scope plans nothing new)
+        run: HOUND_TRIAL_YES=1 make trial
+
   scripts:
     runs-on: ubuntu-latest
     steps:
