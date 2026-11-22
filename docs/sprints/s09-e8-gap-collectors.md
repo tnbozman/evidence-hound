@@ -280,6 +280,50 @@ Built straight after s09-21, before s09-22, because every later onboarding step 
 **Functional check**
 - `hound skill new example-check`, edit it, `hound skill add` it, and `hound skill list` shows it beside the defaults; an onboarding run with a fake model records it.
 
+### s09-28 Onboard the corporate environment: the capability map (added 2026-11-22)
+- [ ] Done
+
+**Story:** As a GRC team member, I want to record, for each control, which product in our environment actually provides it, before any system is onboarded, so that `hound` only judges a control on the system that provides it and we never fail an audit because of bad data.
+
+**Acceptance criteria**
+- `hound onboard environment --framework <framework file>` walks each mitigation of the framework (Essential Eight ML2 first; NIST SP 800-171 families later) and records, for each, the authoritative product or products: a system in scope (for example Microsoft 365 with Intune, Defender for Endpoint, Airlock Digital, ThreatLocker, Sophos, Veeam), manual evidence, or a gap.
+- The result is `scope/capabilities.yaml` in the organisation's config repo: mitigation, the system that provides it, its supplier, the owner, the evidence route (collector, profile or manual) and who approved the entry. A schema and `hound config validate` check it.
+- Signals pre-fill answers that the person confirms, never decide them: read-only Microsoft Graph lookups (subscribed licences, Intune compliance and app control policies present, devices onboarded to Defender) and the systems already in scope. Each pre-filled answer shows the signal it came from.
+- The map drives the rest. A system named for a mitigation goes through `hound onboard <system>` (s09-22), and its supplier goes through the supplier gate (s09-19/20). Checks for a mitigation run only on the system the map names. A mitigation with no product shows as a gap in plan output and reports, never as a fail.
+- A check for a capability that is not in use cannot give pass or fail. It is not applicable, with the reason "provided by <system>" or "gap", and the mapping engine treats it so.
+- Default skill `environment-capabilities` (s09-26): how to tell which product is authoritative per mitigation, common third-party products, and what evidence each gives. Organisation skills can extend it.
+- `--no-model` runs the same steps with only the signals and the person's answers.
+
+**Tests first**
+- `CapabilityMapTests.Every_mitigation_gets_one_decision_with_an_approver`
+- `CapabilityMapTests.Gap_is_reported_as_a_gap_not_a_fail`
+- `CapabilitySignalsTests.Signals_prefill_but_never_decide`
+- `CapabilityScopeTests.Check_for_an_unused_capability_is_not_applicable_with_the_reason`
+- `OnboardEnvironmentTests.Named_system_and_supplier_are_queued_for_onboarding`
+
+**Functional check**
+- With a fake model and recorded Graph answers, `hound onboard environment` for Example Pty Ltd records application control as provided by a third-party product, and a following `hound plan --dry-run` shows the Microsoft 365 application control checks as not applicable, provided by that product.
+
+### s09-29 Microsoft 365 checks follow the capability map (added 2026-11-22)
+- [ ] Done
+
+**Story:** As a compliance owner, I want the Microsoft 365 collector to assess only the capabilities we use from Microsoft 365, so that a third-party product (for example ThreatLocker for application control) is not reported as a Microsoft 365 failure.
+
+**Acceptance criteria**
+- The m365 collector's checks are grouped by capability (application control, patching, macros, user application hardening, admin privileges, MFA, backups, endpoint detection). Each instance gets the capabilities it provides from `scope/capabilities.yaml`; the others return not applicable naming the providing system.
+- `hound onboard m365` is the Microsoft 365 path of s09-22: it reads licences and policies (read-only), proposes which capabilities Microsoft 365 provides, and the person confirms before any check is enabled.
+- The tutorial's Microsoft 365 section and `docs/collectors/m365.md` explain the capability choice.
+
+**Tests first**
+- `M365CapabilityTests.Unused_capability_is_not_applicable_naming_the_provider`
+- `M365CapabilityTests.Default_without_a_map_keeps_todays_checks`
+- `OnboardM365Tests.Licences_and_policies_prefill_capabilities`
+
+**Functional check**
+- Against the recorded tenant (s09-27 when ready, the existing recorded `example.com` tenant before), an instance without application control reports those checks as not applicable, provided by the named product.
+
+**Order:** environment onboarding (s09-28) after s09-21 and s09-26 and before s09-22; the Sophos firewall (s09-25) stays the first system onboarded; s09-29 after s09-25.
+
 ### s09-22 Understand the system and decide applicability
 - [ ] Done
 
