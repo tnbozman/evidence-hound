@@ -148,6 +148,109 @@ These tasks come first in this sprint, before s09-01, so the Microsoft 365 appli
 **Functional check**
 - Following the tutorial verbatim produces a passing profile.
 
+### Onboarding assistant (s09-19 to s09-23)
+
+These tasks come after s09-14, because they draft REST profiles. They build `hound onboard` from [`docs/design/onboarding-assistant.md`](../design/onboarding-assistant.md): a guided session in which a language model proposes how a system fits a framework and drafts its profile, and a person accepts or edits every decision. Nothing is applied to CISO Assistant by the session; the output is files for a pull request in the organisation's config repo. Tests use a fake model with recorded replies; no test or CI job calls a live model.
+
+### s09-19 Model port, Anthropic adapter and outbound guard
+- [ ] Done
+
+**Story:** As an operator, I want `hound` to use a language model I choose, with my key kept as a secret and nothing sensitive sent, so that I can use the assistant without leaking organisation data.
+
+**Acceptance criteria**
+- Core port `IDraftingModel`: instructions, inputs and a JSON schema in; a reply validated against the schema, or a problem (`llm.refused`, `llm.invalid_reply`, `llm.budget_reached`, `llm.unreachable`), out.
+- Anthropic adapter using the official .NET SDK: adaptive thinking, structured outputs, streaming for long replies. Settings `llm.provider` (default `anthropic`), `llm.model` (default `claude-opus-5-5`), `llm.effort`, `llm.max_tokens_per_session`; secret `llm_api_key` from the secret provider.
+- Outbound guard (pure): every request is scanned for secret values in use, `llm.deny_terms`, and IP, MAC and email patterns; a hit returns `llm.blocked_content` naming what matched and nothing is sent.
+- Response shapes (pure): a response reduced to field names, types and counts, keeping values only for settings-like fields (few distinct values, no identity pattern) and never for profile `identities`.
+- Every request and reply is saved locally with the session; `--show-requests` prints each before it is sent.
+
+**Tests first**
+- `OutboundGuardTests.Secret_value_in_request_blocks_it`
+- `OutboundGuardTests.Deny_term_and_email_are_reported`
+- `ResponseShapeTests.Keeps_enumerations_drops_identities_and_free_text`
+- `AnthropicDraftingModelTests.Sends_schema_and_model_from_settings` (WireMock)
+- `AnthropicDraftingModelTests.Refusal_and_invalid_reply_are_problems`
+
+**Functional check**
+- With a fake model, `hound onboard --show-requests` on the example system prints requests containing no recorded host names, IDs or secrets.
+
+### s09-20 Understand the system and decide applicability
+- [ ] Done
+
+**Story:** As a GRC team member, I want `hound` to read a system's API documentation and the target framework and propose, for each requirement, whether it is an API check, manual, not applicable or for another system, so that I decide applicability quickly and with reasons.
+
+**Acceptance criteria**
+- `hound onboard <system> --framework <framework file>` asks for the system name, owner and product, and starts from a copy of a library profile when one names the product.
+- Reads an OpenAPI document, other API specifications or saved documentation from local files or allowed URLs, and shows the model's summary of readable endpoints, sign-in and paging.
+- Reads every in-scope requirement from the framework file and shows one proposal per requirement (API check, manual, not applicable, not this system) with its reasoning; the person accepts, edits or rejects each, and can save and resume.
+- Not applicable cannot be accepted without a justification and an approver name.
+- `--no-model` runs the same steps with empty proposals.
+
+**Tests first**
+- `ApplicabilityTests.Not_applicable_without_justification_or_approver_is_refused`
+- `ApplicabilityTests.Every_in_scope_requirement_gets_one_decision`
+- `OnboardSessionTests.Resume_keeps_accepted_decisions`
+- `SpecReaderTests.Reads_openapi_paths_and_security_schemes`
+
+**Functional check**
+- Onboard the fictional example API against the example framework with a fake model; the decision list covers every requirement and resumes after a stop.
+
+### s09-21 Draft, sample and test the profile
+- [ ] Done
+
+**Story:** As a GRC team member, I want the profile for the accepted API checks drafted, proven against the real system and tested, so that I only review a profile that already works.
+
+**Acceptance criteria**
+- The model drafts queries, datasets and checks for every accepted API check, with framework-neutral check IDs, as a structured reply validated against the profile schema.
+- With the person's go-ahead, the drafted queries run once, read-only, with the configured credentials; responses are saved as test recordings with identities hashed, and only their shapes go to the model.
+- `hound profile validate` and `hound profile test` run after each round; their problems go back to the model, for at most `llm.max_rounds` (default 3) rounds, and the remaining problems are shown.
+- The person confirms each check's expected result before it is saved as a test.
+
+**Tests first**
+- `ProfileDraftTests.Reply_not_matching_schema_is_a_problem`
+- `DraftLoopTests.Validation_problems_are_fed_back_until_clean_or_rounds_used`
+- `SampleRunTests.Recordings_are_hashed_and_only_shapes_are_sent`
+
+**Functional check**
+- Against the recorded example API, a fake model's first draft with a wrong path is fixed in the second round, and `hound profile test` passes.
+
+### s09-22 Write the onboarding output
+- [ ] Done
+
+**Story:** As a GRC team member, I want the session to write the profile, mappings, applicability and a record of how it was decided into my config repo, so that I can review it in a pull request and show auditors how applicability was decided.
+
+**Acceptance criteria**
+- Writes `profiles/<system>.yaml` and its tests, mapping additions to `mappings/<framework>.yaml` (shown as a diff), scope assessments for not-applicable rows (`result: not_applicable`, justification and approver in the observation) and manual rows, and manual source stubs.
+- Writes `onboarding/<system>-<date>.md` with the system summary, every decision with its proposal and who accepted it, the provider and model, and links to the saved requests.
+- Writes only into the working copy; never calls CISO Assistant. `hound scope plan` and `hound plan` then show the changes as for any other edit.
+- Re-running for another framework keeps the profile and adds only new checks, mappings and applicability; `--update` proposes profile changes from a fresh spec and sample, never applying them.
+
+**Tests first**
+- `OnboardOutputTests.Not_applicable_becomes_scope_assessment_with_justification`
+- `OnboardOutputTests.Mapping_additions_do_not_change_existing_rows`
+- `OnboardOutputTests.Record_lists_every_decision_and_model`
+- `OnboardOutputTests.Second_framework_adds_without_rewriting_profile`
+
+**Functional check**
+- After onboarding the example system, `hound scope plan` shows the not-applicable rows with their justifications and `hound plan --dry-run` shows the new checks.
+
+### s09-23 Onboard the Sophos firewall, and documentation
+- [ ] Done
+
+**Story:** As the person running this project, I want to onboard my own Sophos firewall with `hound onboard`, so that the assistant is proven on a real system and real requirements.
+
+**Acceptance criteria**
+- The person runs `hound onboard` in the dev container with their own model key and read-only firewall credentials, against the Essential Eight ML2 framework, and commits the output to their private config repo. Nothing from the run is committed here.
+- What the run showed (steps that were slow or confusing, wrong proposals, missing operators) is recorded as discovered work, without organisation data.
+- `docs/onboarding.md`: how to onboard a system, what is sent to the model and how to check it, how to use another provider or `--no-model`, and how auditors read the onboarding record. A tutorial section onboards the fictional example API.
+
+**Tests first**
+- Docs check that every `hound onboard` option appears in `docs/onboarding.md`.
+- Docs lint and link check.
+
+**Functional check**
+- The person's onboarding run produces a profile that passes `hound profile test`, and the firewall's checks appear in a `hound plan --dry-run`.
+
 ### s09-01 Application control policies from Intune
 - [ ] Done
 
