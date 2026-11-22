@@ -46,7 +46,10 @@ public class SophosOptionsTests
     {
         var settings = new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            ["client_id"] = "c", ["supported_firewall_firmware"] = "21.0", ["healthy_pass_percent"] = "80", ["healthy_partial_percent"] = "90",
+            ["client_id"] = "c",
+            ["supported_firewall_firmware"] = "21.0",
+            ["healthy_pass_percent"] = "80",
+            ["healthy_partial_percent"] = "90",
         };
 
         SophosOptions.FromSettings(new CollectorSettings(settings)).Problems().ShouldHaveSingleItem().Message.ShouldContain("healthy_partial_percent");
