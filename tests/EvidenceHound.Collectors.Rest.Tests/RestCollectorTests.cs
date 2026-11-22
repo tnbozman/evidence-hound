@@ -93,12 +93,48 @@ public sealed class RestCollectorTests : IDisposable
 
         var result = (await Collect(api.Settings(_folder), RecordedExample.HttpClients)).Value();
 
-        result.Files.Select(f => f.FileName).ShouldBe(["devices.json", "users.json", "roles.json"]);
+        result.Files.Select(f => f.FileName).Take(3).ShouldBe(["devices.json", "users.json", "roles.json"]);
         var devices = System.Text.Json.Nodes.JsonNode.Parse((await result.Files[0].ReadAsync(Token)).Content.Span)!;
         devices["pages"]!.GetValue<int>().ShouldBe(2);
         devices["item_count"]!.GetValue<int>().ShouldBe(3);
         devices["request"]!.GetValue<string>().ShouldEndWith("/v1/orgs/org-0001/devices");
         devices.ToJsonString().ShouldNotContain("laptop-01.example.com");
+    }
+
+    [Fact]
+    public async Task Assesses_every_check_of_the_example_profile_and_saves_its_dataset()
+    {
+        await CopyExample();
+        using var api = RecordedExample.Start();
+
+        var result = (await Collect(api.Settings(_folder), RecordedExample.HttpClients)).Value();
+
+        result.Checks.Select(c => (c.CheckId.Value, c.Outcome)).ShouldBe([
+            ("example.device.os_supported", CheckOutcome.Pass),
+            ("example.device.recently_seen", CheckOutcome.Pass),
+            ("example.identity.mfa_users", CheckOutcome.Pass),
+            ("example.identity.owner_count", CheckOutcome.Pass),
+        ]);
+        result.Checks[0].Observation.ShouldStartWith("3 of 3 devices run a supported operating system.");
+        result.Checks[0].EvidenceRefs.ShouldBe(["devices.json"]);
+        result.Checks[2].EvidenceRefs.ShouldBe(["dataset.user_roles.json"]);
+        var dataset = System.Text.Json.Nodes.JsonNode.Parse((await result.Files.Single(f => f.FileName == "dataset.user_roles.json").ReadAsync(Token)).Content.Span)!;
+        dataset["row_count"]!.GetValue<int>().ShouldBe(2);
+        dataset["sources"]!.AsArray().Select(s => s!["file"]!.GetValue<string>()).ShouldBe(["users.json", "roles.json"]);
+        dataset["sources"]![0]!["sha256"]!.GetValue<string>().Length.ShouldBe(64);
+    }
+
+    [Fact]
+    public async Task Independent_checks_still_run_when_one_query_fails()
+    {
+        await CopyExample();
+        using var api = RecordedExample.Start().Fail("/v1/orgs/org-0001/roles", 500);
+
+        var result = (await Collect(api.Settings(_folder), RecordedExample.HttpClients)).Value();
+
+        result.Checks.Select(c => c.Outcome).ShouldBe([CheckOutcome.Pass, CheckOutcome.Pass, CheckOutcome.Error, CheckOutcome.Error]);
+        result.Checks[2].Observation.ShouldContain("'roles'");
+        result.Files.Select(f => f.FileName).ShouldNotContain("roles.json");
     }
 
     private Task CopyExample() => File.WriteAllTextAsync(Path.Combine(_folder, "example.yaml"), Profiles.ExampleYaml, Token);
