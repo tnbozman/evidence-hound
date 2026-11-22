@@ -82,7 +82,7 @@ $ echo $?
 - Result (2026-11-22): `hound run --config hound.yaml --only rest-example --dry-run` with an instance of `profiles/example.yaml` pointed at a local stand-in serving `tests/fixtures/rest/example`. Succeeded with no problems and nothing sent: token, then `whoami` (bootstrap, no file), then `devices.json` (2 pages by cursor, 3 items, identities hashed), `users.json` (2 pages by offset, 3 items, identities hashed) and `roles.json` (1 page, 2 items). No host name or client secret in any evidence file. The run first failed config validation because `token_url` was read as an inline secret by its name; fixed in this task (address and path settings are judged by value). Unit suite green, lint clean.
 
 ### s09-11 Datasets and declarative checks
-- [ ] Done
+- [x] Done
 
 **Story:** As a compliance owner, I want evidence from several API calls combined into one dataset and tested field by field, so that a control is judged on exactly the evidence it needs and a broken query never shows as a failure.
 
@@ -107,6 +107,7 @@ $ echo $?
 
 **Functional check**
 - `hound run --only rest-example --dry-run` shows each check's result and dataset evidence; breaking one recorded query makes only its checks unable to assess.
+- Result (2026-11-22): `hound run --config hound.yaml --only rest-example --dry-run` against the local stand-in for the recorded example API. Evidence: `devices.json`, `users.json`, `roles.json` and `dataset.user_roles.json` (2 rows, 0 unmatched, sources `users.json` and `roles.json` with SHA-256 values equal to the run manifest's). Status record: 4 checks passed, 0 failed. With `/v1/orgs/org-0001/roles` answering 500: `roles.json` and the dataset file are not saved, the two device checks still pass and the two checks over `user_roles` are unable to assess (status record: 2 passed, 2 other), and the run still succeeds. Observations (counts, offending rows capped at 20, the evidence file cited, and the failed query named) are covered by `RestCollectorTests` and `CheckEvaluatorTests`, because `hound run` does not print them (see discovered work). Unit suite green, lint clean.
 
 ### s09-12 Code checks, profiles folder and profile tests
 - [ ] Done
@@ -585,5 +586,7 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 - Open items from s08's discovered work (trial token refresh, the seed's compliance owner, HTTP logging at `info`, wizard prompts, trial re-runs, evidence on applied controls, the "unlisted rule" wording, `HOUND_CA_URL` in the dev container) are listed in [s08](s08-sophos-veeam-collectors.md#discovered-work); pick them up here or in s12.
 
 - The config check's long-run rule (32+ letters, digits, `/`, `_`) also matches a deep folder path that contains digits, for example a `profiles_path` under a generated temp folder. Short mounted paths such as `/config/profiles` are fine. Consider excluding `/` from the run for `_path` settings (found in s09-10).
+
+- `hound run --dry-run` reports only counts of passed, failed and other checks; it does not print each check's outcome and observation. An operator trying a new profile needs them; `hound profile test` (s09-12) or a `--show-checks` option would help (found in s09-11).
 
 ## Sprint review
