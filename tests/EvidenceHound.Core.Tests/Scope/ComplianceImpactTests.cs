@@ -7,8 +7,8 @@ namespace EvidenceHound.Core.Tests.Scope;
 /// <summary>s08-06: a scope plan's effect on compliance, per audit: counts per implementation group, and each row whose result changes.</summary>
 public sealed class ComplianceImpactTests
 {
-    private const string Audit = "EX-AUDIT-2026";
-    private const string Framework = "urn:example:risk:framework:example-baseline";
+    private static readonly string Audit = "EX-AUDIT-2026";
+    private static readonly string Framework = "urn:example:risk:framework:example-baseline";
 
     private static readonly FrameworkSnapshot Snapshot = new(
         "urn:example:risk:library:example-baseline",
@@ -38,7 +38,7 @@ public sealed class ComplianceImpactTests
 
         var audit = impact.ShouldHaveSingleItem();
         audit.Audit.ShouldBe(Audit);
-        audit.Groups.ShouldBe([new ImpactGroup("1", 1, 1, 2), new ImpactGroup("2", 1, 2, 3)]);
+        audit.Groups.ShouldBe([new ImpactGroup("1", "Level one", 1, 1, 2), new ImpactGroup("2", "Level two", 1, 2, 3)]);
     }
 
     [Fact]
@@ -64,7 +64,7 @@ public sealed class ComplianceImpactTests
 
         impact.Rows.Select(r => (r.Requirement, r.Regresses)).ShouldBe([("EX-1.1", true), ("EX-1.2", false)]);
         impact.Regressions.ShouldBe(1);
-        impact.Groups.ShouldBe([new ImpactGroup("1", 1, 0, 2), new ImpactGroup("2", 1, 1, 3)]);
+        impact.Groups.ShouldBe([new ImpactGroup("1", "Level one", 1, 0, 2), new ImpactGroup("2", "Level two", 1, 1, 3)]);
     }
 
     [Fact]

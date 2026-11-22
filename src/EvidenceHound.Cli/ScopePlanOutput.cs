@@ -37,6 +37,8 @@ internal static class ScopePlanOutput
             }
         }
 
+        AppendCompliance(markdown, notes.Compliance);
+
         if (plan.Drift.Count > 0)
         {
             markdown.Append("\n### Drift\n\n| Kind | Object | Why | Managed by hound | Fields |\n| --- | --- | --- | --- | --- |\n");
@@ -114,11 +116,12 @@ internal static class ScopePlanOutput
                 ["state"] = c.State,
             })]),
             ["drift"] = DriftJson(plan.Drift),
+            ["compliance"] = ComplianceJson(notes.Compliance),
         }.ToJsonString(Indented) + "\n";
     }
 
-    /// <summary>An apply's report: counts, then each change with what happened to it.</summary>
-    public static string Json(ScopeApplyReport report) =>
+    /// <summary>An apply's report: counts, then each change with what happened to it, and the effect on compliance it planned.</summary>
+    public static string Json(ScopeApplyReport report, IReadOnlyList<AuditImpact> compliance) =>
         new JsonObject
         {
             ["written"] = report.Written,
@@ -134,7 +137,62 @@ internal static class ScopePlanOutput
                 ["detail"] = c.Detail,
             })]),
             ["drift"] = DriftJson(report.Drift),
+            ["compliance"] = ComplianceJson(compliance),
         }.ToJsonString(Indented) + "\n";
+
+    /// <summary>
+    /// The plan's effect on each audit, after the change table: compliant counts per implementation group, then each row whose result
+    /// changes, regressions first and marked ⚠. Nothing when no result changes.
+    /// </summary>
+    private static void AppendCompliance(StringBuilder markdown, IReadOnlyList<AuditImpact> compliance)
+    {
+        if (compliance.Count == 0)
+        {
+            return;
+        }
+
+        markdown.Append("\n### Changes to compliance\n");
+        foreach (var audit in compliance)
+        {
+            var regressions = audit.Regressions switch
+            {
+                0 => "no regressions",
+                1 => "1 regression ⚠",
+                var n => string.Create(CultureInfo.InvariantCulture, $"{n} regressions ⚠"),
+            };
+            markdown.Append(CultureInfo.InvariantCulture, $"\n**{Cell(audit.Audit)}**: {audit.Rows.Count} result changes, {regressions}.\n\n");
+            foreach (var group in audit.Groups)
+            {
+                markdown.Append(CultureInfo.InvariantCulture, $"- {Cell(group.Name)}: {group.Before} → {group.After} compliant of {group.Total}\n");
+            }
+
+            markdown.Append("\n|  | Requirement | Title | Strategy | Result | Why |\n| --- | --- | --- | --- | --- | --- |\n");
+            foreach (var row in audit.Rows)
+            {
+                markdown.Append(CultureInfo.InvariantCulture,
+                    $"| {(row.Regresses ? "⚠" : "")} | {Cell(row.Requirement)} | {Cell(row.Title)} | {Cell(row.Parent ?? "(none)")} | {row.Old} → {row.New} | {row.Why} |\n");
+            }
+        }
+    }
+
+    private static JsonArray ComplianceJson(IReadOnlyList<AuditImpact> compliance) =>
+    [
+        .. compliance.Select(a => (JsonNode)new JsonObject
+        {
+            ["audit"] = a.Audit,
+            ["groups"] = new JsonArray([.. a.Groups.Select(g => (JsonNode)new JsonObject { ["group"] = g.Group, ["name"] = g.Name, ["before"] = g.Before, ["after"] = g.After, ["total"] = g.Total })]),
+            ["rows"] = new JsonArray([.. a.Rows.Select(r => (JsonNode)new JsonObject
+            {
+                ["requirement"] = r.Requirement,
+                ["title"] = r.Title,
+                ["parent"] = r.Parent,
+                ["old"] = r.Old,
+                ["new"] = r.New,
+                ["why"] = r.Why,
+                ["regresses"] = r.Regresses,
+            })]),
+        }),
+    ];
 
     private static JsonArray DriftJson(IReadOnlyList<ScopeDrift> drift) =>
     [
@@ -199,4 +257,7 @@ internal sealed record PlanNotes(IReadOnlyList<PeriodNote> Periods, IReadOnlyLis
     public static PlanNotes None { get; } = new([], []);
 
     public IReadOnlyList<ScopeObject> Unmanaged { get; init; } = [];
+
+    /// <summary>The plan's effect on each audit's compliance; empty when no result changes.</summary>
+    public IReadOnlyList<AuditImpact> Compliance { get; init; } = [];
 }

@@ -116,14 +116,15 @@ internal static class ScopeCommands
             async held =>
             {
                 var plan = ScopePlanner.Plan(declared, held, prune);
+                var compliance = ComplianceImpact.Of(plan, declared, held, checkedScope.Inputs);
                 if (dryRun)
                 {
-                    await output.WriteAsync(ScopePlanOutput.Markdown(plan, ScopePeriods.Notes(declared, plan)));
+                    await output.WriteAsync(ScopePlanOutput.Markdown(plan, PlanNotes.None with { Periods = ScopePeriods.Notes(declared, plan), Compliance = compliance }));
                     return ExitCodes.Ok;
                 }
 
                 var report = await ScopeApplier.ApplyAsync(plan, declared, Enum.GetValues<ScopeKind>(), checkedScope.Scope.Setup.RootFolder, services.GetRequiredService<IScopeWriter>(), cancellationToken);
-                await output.WriteAsync(ScopePlanOutput.Json(report));
+                await output.WriteAsync(ScopePlanOutput.Json(report, compliance));
                 return report.Failed > 0 ? ExitCodes.PublishFailed : ExitCodes.Ok;
             },
             problems => Task.FromResult(Log.Problems(logger, problems)));
@@ -195,6 +196,7 @@ internal static class ScopeCommands
                 var notes = new PlanNotes(ScopePeriods.Notes(declared, plan), AccessReview.Notes(checkedScope.Scope.Access, read.Users))
                 {
                     Unmanaged = options.ShowUnmanaged ? UnmanagedSettings(declared, read.Held) : [],
+                    Compliance = ComplianceImpact.Of(plan, declared, read.Held, checkedScope.Inputs),
                 };
                 await output.WriteAsync(options.Format == "json" ? ScopePlanOutput.Json(plan, notes) : ScopePlanOutput.Markdown(plan, notes));
                 return ExitCodes.Ok;

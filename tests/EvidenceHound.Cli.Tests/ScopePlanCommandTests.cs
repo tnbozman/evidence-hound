@@ -220,6 +220,7 @@ public sealed class ScopePlanCommandTests : IDisposable
         report["changes"]!.AsArray().Select(c => (c!["action"]!.GetValue<string>(), c["kind"]!.GetValue<string>(), c["key"]!.GetValue<string>())).ShouldBe(
             [("create", "audit", "EXAMPLE-BASELINE-2026"), ("create", "control", "AC-MFA"), ("create", "assessment", "EXAMPLE-BASELINE-2026/EX-1.1")]);
         report["drift"]!.AsArray().ShouldBeEmpty();
+        report["compliance"]!.AsArray().ShouldNotBeNull();
         _ca.LogEntries.Where(e => e.RequestMessage!.Method != "GET").Select(e => (e.RequestMessage!.Method, e.RequestMessage.Path)).ShouldBe(
             [("POST", "/api/compliance-assessments/"), ("POST", "/api/applied-controls/"), ("PATCH", "/api/requirement-assessments/ra-1/")]);
     }
