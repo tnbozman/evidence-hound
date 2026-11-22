@@ -39,6 +39,19 @@ public class SettingsScopeTests
         problem.Hint.ShouldContain("tprm");
     }
 
+    [Theory]
+    [InlineData("chat_mode", "ENABLE_CHAT")]
+    [InlineData("infra_config_management", "ENABLE_INFRA_CONFIG_MANAGEMENT")]
+    public void A_flag_the_backend_only_offers_behind_a_setting_the_stack_leaves_off_is_reported(string flag, string setting)
+    {
+        var problem = Problems(Settings.Replace("metrology: true", $"{flag}: true", StringComparison.Ordinal)).ShouldHaveSingleItem();
+
+        (problem.Code, problem.At).ShouldBe(("settings.flag_gated", new SourceLine(SettingsPath, 3)));
+        problem.Message.ShouldContain(flag);
+        problem.Message.ShouldContain(setting);
+        CisoAssistantSettings.Current.FeatureFlags.ShouldNotContainKey(flag);
+    }
+
     [Fact]
     public void Unknown_general_setting_is_reported()
     {
