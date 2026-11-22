@@ -26,6 +26,11 @@ public sealed class AddCollectorCommandTests : IDisposable
 
     private static readonly string ClientId = "00000000-0000-4000-8000-0000000050d1";
 
+    private static readonly string TenantId = "00000000-0000-4000-8000-00000000e365";
+
+    /// <summary>Not a certificate: the shape of one, so the test sees a multi-line secret.</summary>
+    private static readonly string Pem = "-----BEGIN CERTIFICATE-----\nEXAMPLE-NOT-A-REAL-KEY\n-----END CERTIFICATE-----\n";
+
     private readonly string _root = Directory.CreateTempSubdirectory("hound-add-collector-tests-").FullName;
     private readonly StringWriter _output = new();
     private readonly StringWriter _error = new();
@@ -99,6 +104,66 @@ public sealed class AddCollectorCommandTests : IDisposable
         _logs.Entries.ShouldNotContain(e => e.Message.Contains(Secret, StringComparison.Ordinal));
         var token = new Dictionary<string, string?> { ["HOUND_CA_TOKEN"] = "fake-ca-token-for-tests" };
         (await HoundCli.RunAsync(["config", "validate", ConfigFile, "--check-secrets"], _output, _error, configureLogging: null, token, TestContext.Current.CancellationToken)).ShouldBe(ExitCodes.Ok, _error.ToString());
+    }
+
+    [Fact]
+    public async Task Secret_file_is_copied_mode_600_and_referenced()
+    {
+        await WriteConfigAsync(Config);
+        var secrets = Path.Combine(_root, "secrets");
+        var pem = Path.Combine(_root, "m365.pem");
+        await File.WriteAllTextAsync(pem, Pem, TestContext.Current.CancellationToken);
+
+        var exitCode = await Run(
+            "", "add", "collector", "m365", "--config", ConfigFile, "--yes", "--secrets-dir", secrets, "--secret-file", $"client_certificate={pem}",
+            "--set", $"tenant_id={TenantId}", "--set", $"client_id={ClientId}", "--set", "supported_windows_builds=10.0.26100");
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var file = Path.Combine(secrets, "m365_client_certificate");
+        (await File.ReadAllTextAsync(file, TestContext.Current.CancellationToken)).ShouldBe(Pem);
+        if (!OperatingSystem.IsWindows())
+        {
+            File.GetUnixFileMode(file).ShouldBe(UnixFileMode.UserRead | UnixFileMode.UserWrite);
+        }
+
+        (await File.ReadAllTextAsync(ConfigFile, TestContext.Current.CancellationToken)).ShouldContain($"client_certificate: file:{file}");
+        (_output.ToString() + _error).ShouldNotContain("EXAMPLE-NOT-A-REAL-KEY");
+        _logs.Entries.ShouldNotContain(e => e.Message.Contains("EXAMPLE-NOT-A-REAL-KEY", StringComparison.Ordinal));
+        (await Run("", "config", "validate", ConfigFile)).ShouldBe(ExitCodes.Ok, _error.ToString());
+    }
+
+    [Fact]
+    public async Task Secret_file_needs_the_secrets_dir_and_a_secret_the_collector_has()
+    {
+        await WriteConfigAsync(Config);
+        var pem = Path.Combine(_root, "m365.pem");
+        await File.WriteAllTextAsync(pem, Pem, TestContext.Current.CancellationToken);
+        string[] settings = ["--set", $"tenant_id={TenantId}", "--set", $"client_id={ClientId}", "--set", "supported_windows_builds=10.0.26100", "--yes"];
+
+        (await Run("", ["add", "collector", "m365", "--config", ConfigFile, "--secret-file", $"client_certificate={pem}", .. settings])).ShouldBe(ExitCodes.Configuration);
+        _error.ToString().ShouldContain("add.secret_file_without_secrets_dir");
+        (await Run("", ["add", "collector", "m365", "--config", ConfigFile, "--secrets-dir", Path.Combine(_root, "secrets"), "--secret-file", $"api_key={pem}", .. settings])).ShouldBe(ExitCodes.Configuration);
+        _error.ToString().ShouldContain("add.secret_unknown");
+        (await File.ReadAllTextAsync(ConfigFile, TestContext.Current.CancellationToken)).ShouldBe(Config);
+    }
+
+    [Fact]
+    public async Task M365_asks_only_its_required_settings()
+    {
+        await WriteConfigAsync(Config);
+        var pem = Path.Combine(_root, "m365.pem");
+        await File.WriteAllTextAsync(pem, Pem, TestContext.Current.CancellationToken);
+
+        // Name, schedule, tenant_id, client_id, supported_windows_builds.
+        var exitCode = await Run(
+            $"\n\n{TenantId}\n{ClientId}\n10.0.22631, 10.0.26100\n", "add", "collector", "m365", "--config", ConfigFile,
+            "--secrets-dir", Path.Combine(_root, "secrets"), "--secret-file", $"client_certificate={pem}");
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        _error.ToString().ShouldContain("Directory (tenant) ID of the Entra tenant.");
+        _error.ToString().ShouldNotContain("Microsoft Graph address");
+        _error.ToString().ShouldNotContain("PEM certificate");
+        (await File.ReadAllTextAsync(ConfigFile, TestContext.Current.CancellationToken)).ShouldContain("supported_windows_builds: \"10.0.22631, 10.0.26100\"");
     }
 
     [Fact]
