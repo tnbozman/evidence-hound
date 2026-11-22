@@ -138,3 +138,9 @@ Note (optional): Rules reviewed with the network team.
 The command refuses a file that does not match the source's patterns, or whose name is already taken by different content (exit 3), and a non-attestable outcome answer (exit 2). A file whose content is already in the drop folder is not copied again.
 
 A collector is a class implementing `ICollector` from `EvidenceHound.Collectors.Abstractions`, registered with `services.AddCollector<T>()`. Two collectors with the same type stop the CLI at startup (`collector.type_duplicate`, exit 3).
+
+## No language model here
+
+A deployment config never sets up a language model. An `llm` section, or any value that refers to the onboarding key (`llm_api_key`), is
+refused with `config.llm_in_runner`. Model settings belong in `onboarding.yaml`, which only `hound onboard` reads; see
+[onboarding.md](onboarding.md).

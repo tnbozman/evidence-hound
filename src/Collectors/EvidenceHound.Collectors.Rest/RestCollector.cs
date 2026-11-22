@@ -21,7 +21,7 @@ public static class RestSettings
 /// The built-in <c>rest</c> collector: reads any REST API described by a profile in the organisation's profiles folder. Each run
 /// validates the profile and the instance first; a profile that is not valid makes only this instance's checks unable to assess.
 /// </summary>
-public sealed class RestCollector : ICollector, IInstanceValidator
+public sealed partial class RestCollector : ICollector, IInstanceValidator
 {
     public const string TypeName = "rest";
 
@@ -93,9 +93,7 @@ public sealed class RestCollector : ICollector, IInstanceValidator
         var profile = file.Profile;
         if (!ProfileTestRunner.HasTests(ProfilesPath(context.Settings), profile.Name) && !IsTrue(context.Settings, RestSettings.RequireProfileTests))
         {
-            context.Logger.LogWarning(
-                "{Collector}: profile '{Profile}' has no tests in {Folder}; add recordings and expected results and run hound profile test {Profile}.",
-                context.Name, profile.Name, ProfileTestRunner.TestsFolder(ProfilesPath(context.Settings), profile.Name), profile.Name);
+            ProfileUntested(context.Logger, context.Name, profile.Name, ProfileTestRunner.TestsFolder(ProfilesPath(context.Settings), profile.Name));
         }
 
         var result = Problems(profile, context.Settings, [.. context.Secrets.Keys]) switch
@@ -198,4 +196,7 @@ public sealed class RestCollector : ICollector, IInstanceValidator
 
     private static string Truncate(string text) =>
         text.Length <= CheckResult.MaxObservationLength ? text : text[..(CheckResult.MaxObservationLength - 1)] + "…";
+
+    [LoggerMessage(EventId = 3100, Level = LogLevel.Warning, Message = "{Collector}: profile '{Profile}' has no tests in {Folder}; add recordings and expected results and run hound profile test {Profile}.")]
+    private static partial void ProfileUntested(ILogger logger, string collector, string profile, string folder);
 }

@@ -32,6 +32,16 @@ public static class HoundCli
         CancellationToken cancellationToken = default) =>
         RunAsync(args, input, output, error, configureLogging, [], new Dictionary<string, string?>(), null, cancellationToken);
 
+    /// <summary>Runs with <paramref name="input"/> for prompts and extra configuration settings on top of the environment.</summary>
+    internal static Task<int> RunAsync(
+        string[] args,
+        TextReader input,
+        TextWriter output,
+        TextWriter error,
+        IReadOnlyDictionary<string, string?> settings,
+        CancellationToken cancellationToken) =>
+        RunAsync(args, input, output, error, null, [], settings, null, cancellationToken);
+
     /// <summary>Runs with extra configuration settings (for example <c>HOUND_CA_TOKEN</c>) on top of the environment.</summary>
     internal static Task<int> RunAsync(
         string[] args,
@@ -168,6 +178,7 @@ public static class HoundCli
             FrameworkCommands.Build(output, loggers),
             Setup.InitCommand.Build(terminal, loggers, configuration, registry),
             Setup.AddCommands.Build(terminal, loggers, configuration, registry),
+            OnboardCommands.Build(terminal, loggers, configuration),
             ManualCommand.Build(terminal, loggers, registry, new SystemClock()),
             MappingCommands.Build(output, loggers),
             ScopeCommands.Build(output, loggers, configuration, registry),

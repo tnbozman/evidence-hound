@@ -7,7 +7,7 @@ namespace EvidenceHound.Cli.Tests;
 /// <summary><c>hound onboard config</c>: the key goes to an owner-only file and onboarding.yaml holds only a reference to it.</summary>
 public sealed class OnboardConfigCommandTests : IDisposable
 {
-    private const string Key = "example-test-llm-key";
+    internal const string Key = "example-test-llm-key";
     private readonly string _root = Directory.CreateTempSubdirectory("hound-onboard-").FullName;
     private readonly CancellationToken _ct = TestContext.Current.CancellationToken;
 
@@ -45,7 +45,8 @@ public sealed class OnboardConfigCommandTests : IDisposable
         exit.ShouldBe(0, error);
         output.ShouldContain("anthropic claude-opus-5-5: the key works.");
         (output + error).ShouldNotContain(Key);
-        server.LogEntries.ShouldHaveSingleItem().RequestMessage!.Headers!["x-api-key"].ShouldBe([Key]);
+        // The key reaches the provider only in a request header, as the official SDK sends it.
+        server.LogEntries.ShouldHaveSingleItem().RequestMessage!.Headers!.Values.SelectMany(v => v).ShouldContain(v => v.EndsWith(Key, StringComparison.Ordinal));
     }
 
     public void Dispose() => Directory.Delete(_root, recursive: true);

@@ -255,7 +255,7 @@ A system is registered only once its supplier is approved, so the supplier regis
 These tasks come after s09-14, because they draft REST profiles, and after s09-20, because onboarding starts with the supplier. They build `hound onboard` from [`docs/design/onboarding-assistant.md`](../design/onboarding-assistant.md): a guided session in which a language model proposes how a system fits a framework and drafts its profile, and a person accepts or edits every decision. Nothing is applied to CISO Assistant by the session; the output is files for a pull request in the organisation's config repo. Tests use a fake model with recorded replies; no test or CI job calls a live model.
 
 ### s09-21 Model port, Anthropic and OpenAI adapters, onboarding config and outbound guard
-- [ ] Done
+- [x] Done
 
 **Story:** As an operator, I want `hound` to use a language model I choose, with my key kept as a secret and nothing sensitive sent, so that I can use the assistant without leaking organisation data.
 
@@ -283,6 +283,25 @@ These tasks come after s09-14, because they draft REST profiles, and after s09-2
 
 **Functional check**
 - With a fake model, `hound onboard --show-requests` on the example system prints requests containing no recorded host names, IDs or secrets.
+
+**Functional check, run 2026-11-22** (the command that onboards a system arrives with s09-22, so its `--show-requests` run is recorded there; the gate it goes through is built and tested here):
+
+```console
+$ echo "$KEY" | XDG_CONFIG_HOME=/tmp/fc21/home hound onboard config --yes --provider anthropic --config /tmp/fc21/onboarding.yaml
+API key for anthropic (not shown): Wrote /tmp/fc21/onboarding.yaml; the key is in /tmp/fc21/home/hound/secrets/llm_api_key, readable only by you.
+$ cat /tmp/fc21/onboarding.yaml
+llm:
+  provider: anthropic
+  model: ""
+  api_key: file:/tmp/fc21/home/hound/secrets/llm_api_key
+$ stat -c '%a %n' /tmp/fc21/home/hound/secrets /tmp/fc21/home/hound/secrets/llm_api_key
+700 /tmp/fc21/home/hound/secrets
+600 /tmp/fc21/home/hound/secrets/llm_api_key
+$ hound config validate /tmp/fc21/hound.yaml      # a deployment config with an llm section
+error: /tmp/fc21/hound.yaml line 2: 'llm' is not allowed here: the runner never uses a language model; ...
+```
+
+`--check` against a stand-in provider (`OnboardConfigCommandTests`) makes one request and prints `anthropic claude-opus-5-5: the key works.` without the key. Both adapters pass the shared contract suite on recorded replies. OpenAI's top model was confirmed as `gpt-6.2-astra` from its published model list.
 
 ### s09-26 Onboarding skills
 - [ ] Done
@@ -676,11 +695,39 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 
 **Order:** after the Sophos onboarding (s09-25); needs the person's recording from s09-18.
 
+### s09-30 Explain a config change in plain English: `hound explain` (added 2026-11-22)
+- [ ] Done
+
+**Story:** As a GRC team member reviewing a lot of new configuration, I want a plain-English summary of what a change does and what looks risky, so that I review config quickly and approve only what I understand.
+
+**Acceptance criteria**
+- `hound explain` reads a config diff (`git diff`, or two files) or the output of `hound plan` or `hound scope plan`, and writes a review summary, for example "marks 12 Essential Eight requirements not applicable on the Microsoft 365 audit because ThreatLocker provides them".
+- It flags anything risky or inconsistent for the reviewer: requirements newly marked not applicable, removed checks or controls, deletions in the plan, a system without an owner, a supplier not yet approved, a mapping that no longer matches a profile's checks.
+- Review only: it never edits config, never applies, and never runs in collection. It uses the onboarding model connection (`onboarding.yaml`, s09-21) through the same gate: the outbound guard, the deny terms, the session record and `--show-requests`.
+- The deterministic plan output stays the source of truth: the summary says so, quotes the plan's counts, and a reply that names an object the plan does not contain is reported as `llm.invalid_reply`.
+
+**Tests first**
+- `ExplainTests.Summary_counts_match_the_plan`
+- `ExplainTests.Object_not_in_the_plan_is_an_invalid_reply`
+- `ExplainTests.Secrets_and_identifiers_are_never_sent`
+- `ExplainCommandTests.Reads_a_diff_or_a_saved_plan`
+
+**Functional check**
+- With a fake model, `hound explain` on a scope plan of the example repo prints a summary whose counts match the plan, and `--show-requests` shows no secret or identifier.
+
+**Order:** after the first usable onboarding path (s09-21, s09-26, s09-22, s09-24).
+
 ## Discovered work
 
 - Open items from s08's discovered work (trial token refresh, the seed's compliance owner, HTTP logging at `info`, wizard prompts, trial re-runs, evidence on applied controls, the "unlisted rule" wording, `HOUND_CA_URL` in the dev container) are listed in [s08](s08-sophos-veeam-collectors.md#discovered-work); pick them up here or in s12.
 
 - The config check's long-run rule (32+ letters, digits, `/`, `_`) also matches a deep folder path that contains digits, for example a `profiles_path` under a generated temp folder. Short mounted paths such as `/config/profiles` are fine. Consider excluding `/` from the run for `_path` settings (found in s09-10).
+
+- Scope export (`hound scope export`) does not yet cover third parties or the organisation's own entity; a tenant that already has suppliers in CISO Assistant has to write their files by hand (found in s09-19).
+
+- The Anthropic adapter asks for replies of up to 16,000 tokens without streaming. Steps that need longer replies (a whole drafted profile) should stream through the SDK's streaming call (found in s09-21).
+
+- The official Anthropic .NET SDK sends the API key as `Authorization: Bearer`, and reads `ANTHROPIC_BASE_URL` from the environment when no base URL is set. `hound onboard config --check` confirms the key works end to end; note both in the onboarding guide if a provider proxy is used (found in s09-21).
 
 - `hound run --dry-run` reports only counts of passed, failed and other checks; it does not print each check's outcome and observation. An operator trying a new profile needs them; `hound profile test` (s09-12) or a `--show-checks` option would help (found in s09-11).
 

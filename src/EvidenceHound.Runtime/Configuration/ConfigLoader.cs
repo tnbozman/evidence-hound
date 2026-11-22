@@ -61,6 +61,12 @@ public static partial class ConfigLoader
 
     private static Result<DeploymentConfig> ParseRoot(YamlMappingNode root, Locator at, IReadOnlyDictionary<string, CollectorDescription> knownTypes)
     {
+        var llm = LlmInRunner(root, at).ToArray();
+        if (llm.Length > 0)
+        {
+            return Result.Fail<DeploymentConfig>(llm);
+        }
+
         var unknown = UnknownKeys(root, TopKeys, at);
         var ca = Section(root, "ciso_assistant", at).Bind(map => ParseCisoAssistant(map, at));
         var evidence = Section(root, "evidence", at).Bind(map => ParseEvidence(map, at));
@@ -329,6 +335,24 @@ public static partial class ConfigLoader
     /// <summary>The text under <paramref name="key"/>, or an empty scalar when the key is absent.</summary>
     private static Result<YamlScalarNode> OptionalScalar(YamlMappingNode map, string key, Locator at) =>
         Child(map, key) is null ? Result.Ok(new YamlScalarNode("")) : Scalar(map, key, at);
+
+    /// <summary>
+    /// No model in evidence collection: an <c>llm</c> section, or any value naming the onboarding key, is refused, so the runner never holds a
+    /// model key. The model belongs in onboarding.yaml, which only <c>hound onboard</c> reads.
+    /// </summary>
+    private static IEnumerable<Problem> LlmInRunner(YamlMappingNode root, Locator at)
+    {
+        const string Hint = "the runner never uses a language model; model settings and their key belong in onboarding.yaml, which only 'hound onboard' reads.";
+        if (root.Children.Keys.OfType<YamlScalarNode>().FirstOrDefault(k => k.Value == "llm") is { } section)
+        {
+            yield return at.Problem(section.Start, "config.llm_in_runner", $"'llm' is not allowed here: {Hint}");
+        }
+
+        foreach (var value in root.AllNodes.OfType<YamlScalarNode>().Where(n => n.Value?.Contains("llm_api_key", StringComparison.OrdinalIgnoreCase) == true))
+        {
+            yield return at.Problem(value.Start, "config.llm_in_runner", $"this refers to the onboarding model key: {Hint}");
+        }
+    }
 
     private static IEnumerable<Problem> UnknownKeys(YamlMappingNode map, string[] allowed, Locator at) =>
         map.Children.Keys

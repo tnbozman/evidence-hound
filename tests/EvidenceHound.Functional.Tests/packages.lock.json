@@ -706,8 +706,8 @@
       },
       "Json.More.Net": {
         "type": "Transitive",
-        "resolved": "2.2.0",
-        "contentHash": "fiyEZJNgiCzDa7/N9bZ+CnM5qnawyJ54+CkHNZ2svwxWBWNNFzydJ7RlroqMdOjokGBiLcKIxdajNvOklzlYqQ=="
+        "resolved": "3.1.0",
+        "contentHash": "7qGdCuzlojAC0u1a3aPoVyZTEmwnQaEThsTpeeMfMVjj3OmSzXwfY4mHvx8tDJbqr4xB1pMqh9PkjV/Dl7kHzA=="
       },
       "JsonConverter.Abstractions": {
         "type": "Transitive",
@@ -739,6 +739,15 @@
         "contentHash": "oARgzvSWx8Xp7Y3oxapPDmB+gIGw31aqY0YS2xA0HfydYJMvWW6e0KeJIfPeCmqiOqKcOOXSwAYF/3yE+VhCOg==",
         "dependencies": {
           "Json.More.Net": "2.2.0"
+        }
+      },
+      "JsonPointer.Net": {
+        "type": "Transitive",
+        "resolved": "7.1.0",
+        "contentHash": "wht0EXfuazcdA0CuTaCuzk7Mpv7jOyj+BEdTDMX/FfyGVuoeB/ecnIqPA+IOr9GCcQpdvNt5NmRQ8KJzPBWgQQ==",
+        "dependencies": {
+          "Humanizer.Core": "3.0.10",
+          "Json.More.Net": "3.1.0"
         }
       },
       "librdkafka.redist": {
@@ -799,6 +808,11 @@
         "type": "Transitive",
         "resolved": "2.2.10",
         "contentHash": "zmGsm6b2y3STDa/Of7rdkkfTDV8VuGB8aCqIkLoJIQh5tL78K3zJ8OUyFKnfsaORXmGr9iOKwDkZfUjeXi+CwA=="
+      },
+      "Microsoft.Extensions.AI.Abstractions": {
+        "type": "Transitive",
+        "resolved": "10.5.1",
+        "contentHash": "nB0l3IlsVbNeUxsE7nZNb9GY8rP1OSeqpj0pseORPejt474HNKEauTWTLdSJPkSvPlRMxowZNMo6nyp7APAiSg=="
       },
       "Microsoft.Extensions.AmbientMetadata.Application": {
         "type": "Transitive",
@@ -1401,13 +1415,13 @@
       },
       "System.ClientModel": {
         "type": "Transitive",
-        "resolved": "1.10.0",
-        "contentHash": "lBEWs54F5Y5pZ9hC+8z4S/X76957ex+DPk7WecRHlbIHtrPfbRMMlOgI3iDn4Jpb3bSxvBnKaaHoD59auFjlBA==",
+        "resolved": "1.16.0",
+        "contentHash": "vLljZON+8lXDUtsPP8uwsPvsBSQaUHhh8NvB+D9TQsXu5n622RLtuLyZAcyIFc98b8ixrwD0AhzUQhtg2NwJnQ==",
         "dependencies": {
-          "Microsoft.Extensions.Configuration.Abstractions": "10.0.3",
-          "Microsoft.Extensions.Hosting.Abstractions": "10.0.3",
-          "Microsoft.Extensions.Logging.Abstractions": "10.0.3",
-          "System.Memory.Data": "10.0.3"
+          "Microsoft.Extensions.Configuration.Abstractions": "10.0.10",
+          "Microsoft.Extensions.Hosting.Abstractions": "10.0.10",
+          "Microsoft.Extensions.Logging.Abstractions": "10.0.10",
+          "System.Memory.Data": "10.0.10"
         }
       },
       "System.CodeDom": {
@@ -1439,8 +1453,8 @@
       },
       "System.Memory.Data": {
         "type": "Transitive",
-        "resolved": "10.0.3",
-        "contentHash": "MaGhRfGunmrj/nHjtsi9XkhlYJ/ERGWrbA+BiSKNtGnAjc9XlG5EhAvak6VRcX5LYzPF6pBO8nJ613dTgzabig=="
+        "resolved": "10.0.10",
+        "contentHash": "roR+5AeOpflUxJQlqSfsZs/Bvi1uw4KBuTkIgF1e8l0RdalG4AUn84+sjJLclEfOV85gAjc8+Pp540qjDE5UIg=="
       },
       "System.Security.AccessControl": {
         "type": "Transitive",
@@ -1693,6 +1707,16 @@
           "YamlDotNet": "[18.1.0, )"
         }
       },
+      "evidencehound.onboarding": {
+        "type": "Project",
+        "dependencies": {
+          "Anthropic": "[13.12.0, )",
+          "EvidenceHound.Core": "[0.1.0, )",
+          "JsonSchema.Net": "[9.7.0, )",
+          "OpenAI": "[2.15.0, )",
+          "YamlDotNet": "[18.1.0, )"
+        }
+      },
       "evidencehound.runtime": {
         "type": "Project",
         "dependencies": {
@@ -1719,11 +1743,21 @@
           "EvidenceHound.CisoAssistant": "[0.1.0, )",
           "EvidenceHound.Core": "[0.1.0, )",
           "EvidenceHound.Core.Yaml": "[0.1.0, )",
+          "EvidenceHound.Onboarding": "[0.1.0, )",
           "EvidenceHound.Runtime": "[0.1.0, )",
           "EvidenceHound.Transport.Kafka": "[0.1.0, )",
           "Microsoft.Extensions.Hosting": "[10.0.14, )",
           "System.CommandLine": "[2.0.14, )",
           "YamlDotNet": "[18.1.0, )"
+        }
+      },
+      "Anthropic": {
+        "type": "CentralTransitive",
+        "requested": "[13.12.0, )",
+        "resolved": "13.12.0",
+        "contentHash": "pIguTtfKb8lfsLRdnsmbzhzmPfwhoVjr2v1M7BVdxYZOR4/2nDiuKcHJBSzS2zsEKyW2is0trrqPKOIuyL1gDg==",
+        "dependencies": {
+          "Microsoft.Extensions.AI.Abstractions": "10.5.1"
         }
       },
       "Azure.Identity": {
@@ -1809,6 +1843,15 @@
           "Humanizer.Core.zh-Hant": "3.0.10"
         }
       },
+      "JsonSchema.Net": {
+        "type": "CentralTransitive",
+        "requested": "[9.7.0, )",
+        "resolved": "9.7.0",
+        "contentHash": "uzAiT0JPDQcco/+HUxDvAHfq6rnAGgfWvoPKJxwe9M+OBa22lh2AEA/ni0DSVDWy/38cDhFUd7Ea3EQd2NO+fw==",
+        "dependencies": {
+          "JsonPointer.Net": "7.1.0"
+        }
+      },
       "Microsoft.Extensions.DependencyInjection": {
         "type": "CentralTransitive",
         "requested": "[10.0.14, )",
@@ -1886,6 +1929,15 @@
         "contentHash": "SwcbEBtkECq3D2oywvHkm46fyrX9Dd2JPWphDnHUc2+cUWR1Mdo41atAjh/9iZjgQxuvbKfZKXqostT/LZfefA==",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.14"
+        }
+      },
+      "OpenAI": {
+        "type": "CentralTransitive",
+        "requested": "[2.15.0, )",
+        "resolved": "2.15.0",
+        "contentHash": "04Lvp/guze35OdYsEcQY58SmSCBWCEDCGkiLiTQXDJy5L3d20n7I/zg94ry9hQ5c4dMDF1ASqlxD/IIMy47gFg==",
+        "dependencies": {
+          "System.ClientModel": "1.16.0"
         }
       },
       "System.CommandLine": {
