@@ -2,13 +2,13 @@ using EvidenceHound.Core.Scope;
 
 namespace EvidenceHound.Core.Yaml.Tests;
 
-/// <summary>How <c>scope/access.yaml</c> becomes users, teams and role assignments, and how the plan treats them.</summary>
+/// <summary>How <c>scope/access.yaml</c> becomes users with their roles, and teams, and how the plan treats them.</summary>
 public class AccessPlanTests
 {
     [Fact]
-    public void Access_declares_users_teams_and_one_role_assignment_per_user_role_and_domain()
+    public void Access_declares_users_with_the_roles_they_hold_directly_and_through_teams()
     {
-        var declared = Declared().Where(o => o.Kind is ScopeKind.User or ScopeKind.Team or ScopeKind.RoleAssignment).ToDictionary(o => (o.Kind, o.Key));
+        var declared = Declared().Where(o => o.Kind is ScopeKind.User or ScopeKind.Team).ToDictionary(o => (o.Kind, o.Key));
 
         declared.Keys.ShouldBe(
         [
@@ -17,13 +17,11 @@ public class AccessPlanTests
             (ScopeKind.User, "former@example.com"),
             (ScopeKind.User, "hound-runner@example.com"),
             (ScopeKind.Team, "IT team"),
-            (ScopeKind.RoleAssignment, "BI-RL-APP|Example Pty Ltd|ceo@example.com"),
-            (ScopeKind.RoleAssignment, "BI-RL-ANA|Example Pty Ltd|hound-runner@example.com"),
-            (ScopeKind.RoleAssignment, "BI-RL-ANA|Example Pty Ltd|it@example.com"),
-            (ScopeKind.RoleAssignment, "BI-RL-ANA|Example Pty Ltd|ceo@example.com"),
-            (ScopeKind.RoleAssignment, "BI-RL-ADM|Global|it@example.com"),
         ],
             ignoreOrder: true);
+        declared[(ScopeKind.User, "it@example.com")].Fields["roles"].ShouldBe("BI-RL-ADM on Global, BI-RL-ANA on Example Pty Ltd");
+        declared[(ScopeKind.User, "ceo@example.com")].Fields["roles"].ShouldBe("BI-RL-ANA on Example Pty Ltd, BI-RL-APP on Example Pty Ltd");
+        declared[(ScopeKind.User, "hound-runner@example.com")].Fields["roles"].ShouldBe("BI-RL-ANA on Example Pty Ltd");
         declared[(ScopeKind.User, "former@example.com")].Fields.ShouldBe(new Dictionary<string, string>
         {
             ["first_name"] = "Robin",
@@ -36,26 +34,33 @@ public class AccessPlanTests
             ["leader"] = "it@example.com",
             ["members"] = "ceo@example.com",
         });
-        declared[(ScopeKind.RoleAssignment, "BI-RL-ADM|Global|it@example.com")].Fields.ShouldBe(new Dictionary<string, string>
-        {
-            ["role"] = "BI-RL-ADM",
-            ["domain"] = "Global",
-            ["user"] = "it@example.com",
-        });
     }
 
     [Fact]
-    public void New_users_teams_and_roles_are_created_and_a_second_plan_is_empty()
+    public void New_users_and_teams_are_created_and_a_second_plan_is_empty()
     {
         var declared = Declared();
-        var access = declared.Where(o => o.Kind is ScopeKind.User or ScopeKind.Team or ScopeKind.RoleAssignment).ToArray();
+        var access = declared.Where(o => o.Kind is ScopeKind.User or ScopeKind.Team).ToArray();
 
         var first = ScopePlanner.Plan(access, [], prune: false);
         var applied = first.Changes.Select(c => new ActualObject(c.Desired!, c.State)).ToArray();
 
         first.Changes.ShouldAllBe(c => c.Action == ScopeAction.Create);
-        first.Changes.Select(c => c.Kind).Distinct().ShouldBe([ScopeKind.User, ScopeKind.Team, ScopeKind.RoleAssignment]);
+        first.Changes.Select(c => c.Kind).Distinct().ShouldBe([ScopeKind.User, ScopeKind.Team]);
         ScopePlanner.Plan(access, applied, prune: false).IsEmpty.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void A_role_removed_from_the_file_is_taken_away_on_the_next_apply_without_prune()
+    {
+        var access = Declared().Where(o => o.Kind == ScopeKind.User).ToArray();
+        var it = access.Single(u => u.Key == "it@example.com");
+        var held = Applied(it with { Fields = new Dictionary<string, string>(it.Fields) { ["roles"] = "BI-RL-ADM on Global, BI-RL-ANA on Example Pty Ltd, BI-RL-DMA on Example Pty Ltd" } });
+
+        var change = ScopePlanner.Plan(access, [.. access.Where(u => u != it).Select(Applied), held], prune: false).Changes.ShouldHaveSingleItem();
+
+        (change.Key, change.Action).ShouldBe(("it@example.com", ScopeAction.Update));
+        change.Fields.ShouldBe([new FieldChange("roles", "BI-RL-ADM on Global, BI-RL-ANA on Example Pty Ltd, BI-RL-DMA on Example Pty Ltd", "BI-RL-ADM on Global, BI-RL-ANA on Example Pty Ltd")]);
     }
 
     [Fact]
@@ -86,17 +91,6 @@ public class AccessPlanTests
         var plan = ScopePlanner.Plan(access, [.. access.Select(Applied), Applied(gone)], prune: true);
 
         plan.Changes.ShouldBeEmpty();
-    }
-
-    [Fact]
-    public void A_removed_role_assignment_is_deleted_only_with_prune()
-    {
-        var access = Declared().Where(o => o.Kind == ScopeKind.RoleAssignment).ToArray();
-        var extra = Applied(new ScopeObject(ScopeKind.RoleAssignment, "BI-RL-DMA|Example Pty Ltd|it@example.com", Fields(("role", "BI-RL-DMA"), ("domain", "Example Pty Ltd"), ("user", "it@example.com"))));
-
-        ScopePlanner.Plan(access, [.. access.Select(Applied), extra], prune: false).Changes.ShouldBeEmpty();
-        var change = ScopePlanner.Plan(access, [.. access.Select(Applied), extra], prune: true).Changes.ShouldHaveSingleItem();
-        (change.Key, change.Action).ShouldBe(("BI-RL-DMA|Example Pty Ltd|it@example.com", ScopeAction.Delete));
     }
 
     private static IReadOnlyList<ScopeObject> Declared()

@@ -6,7 +6,11 @@ using WireMock.ResponseBuilders;
 
 namespace EvidenceHound.CisoAssistant.Tests;
 
-/// <summary>Users, teams and role assignments, read and written from recorded v4.3.4 request and response shapes.</summary>
+/// <summary>
+/// Users with the roles they hold, and teams, read and written from recorded v4.3.4 request and response shapes. CISO Assistant lets no one
+/// create role assignments through the API (administrators only view them); a role on a domain is held by membership of the domain's
+/// built-in user group for it, which the user's <c>user_groups</c> sets.
+/// </summary>
 public sealed class AccessClientTests : IDisposable
 {
     private static readonly string State = "0123456789abcdef";
@@ -32,6 +36,14 @@ public sealed class AccessClientTests : IDisposable
             ["members"] = new JsonArray(Relation("u-admin", "admin@example.com"), Relation("u-it", "it@example.com")),
         };
         List("teams", team);
+        // As v4.3.4 lists them: a group's name is "<folder> - <role's display name>", translated; a built-in group stores its code (BI-UG-APP).
+        List("user-groups",
+            Group("g-adm", "Global - Administrator", "f-global", "Global"),
+            Group("g-gap", "Global - Approver", "f-global", "Global"),
+            Group("g-ex-app", "Example Pty Ltd - Approver", "f-ex", "Example Pty Ltd"),
+            Group("g-ex-ana", "Example Pty Ltd - Analyst", "f-ex", "Example Pty Ltd"),
+            Group("g-ex-aud", "Example Pty Ltd - Reader", "f-ex", "Example Pty Ltd"),
+            Group("g-reviewers", "Global - Evidence reviewer", "f-global", "Global", builtin: false));
         Detail("teams", team);
         Detail("folders", Folder("f-ex", "Example Pty Ltd", "f-global"));
         foreach (var resource in new[] { "actors", "frameworks", "loaded-libraries", "perimeters", "assets", "compliance-assessments", "evidences", "applied-controls" })
@@ -65,7 +77,7 @@ public sealed class AccessClientTests : IDisposable
                 ["is_recursive"] = true,
                 ["builtin"] = true,
             });
-        foreach (var resource in new[] { "users", "teams", "role-assignments" })
+        foreach (var resource in new[] { "users", "teams" })
         {
             _ca.Server.Given(Request.Create().WithPath($"/api/{resource}/").UsingPost())
                 .RespondWith(Response.Create().WithStatusCode(201).WithBody(new JsonObject { ["id"] = $"new-{resource}" }.ToJsonString()));
@@ -77,15 +89,13 @@ public sealed class AccessClientTests : IDisposable
     public void Dispose() => _ca.Dispose();
 
     [Fact]
-    public async Task Creates_user_team_and_role_assignment()
+    public async Task Creates_a_user_in_the_groups_of_their_roles_and_a_team()
     {
-        var user = Declared(ScopeKind.User, "ceo@example.com", ("first_name", "Sam"), ("last_name", "Example"), ("active", "true"));
+        var user = Declared(ScopeKind.User, "ceo@example.com", ("first_name", "Sam"), ("last_name", "Example"), ("active", "true"), ("roles", "BI-RL-ADM on Global, BI-RL-APP on Example Pty Ltd"));
         var team = Declared(ScopeKind.Team, "Leadership", ("description", "The board."), ("domain", "Example Pty Ltd"), ("leader", "it@example.com"), ("members", "admin@example.com, it@example.com"));
-        var role = Declared(ScopeKind.RoleAssignment, "BI-RL-ADM|Global|it@example.com", ("role", "BI-RL-ADM"), ("domain", "Global"), ("user", "it@example.com"));
 
         (await Write(user, ScopeAction.Create)).Value();
         (await Write(team, ScopeAction.Create)).Value();
-        (await Write(role, ScopeAction.Create)).Value();
 
         Posted("users").ShouldBe(Json(new JsonObject
         {
@@ -94,6 +104,7 @@ public sealed class AccessClientTests : IDisposable
             ["last_name"] = "Example",
             ["is_active"] = true,
             ["observation"] = $"[hound scope {State}]",
+            ["user_groups"] = new JsonArray("g-adm", "g-ex-app"),
         }));
         Posted("teams").ShouldBe(Json(new JsonObject
         {
@@ -104,32 +115,28 @@ public sealed class AccessClientTests : IDisposable
             ["deputies"] = new JsonArray(),
             ["members"] = new JsonArray("u-admin", "u-it"),
         }));
-        Posted("role-assignments").ShouldBe(Json(new JsonObject
-        {
-            ["name"] = "BI-RL-ADM on Global for it@example.com",
-            ["description"] = $"[hound scope {State}]",
-            ["role"] = "r-adm",
-            ["user"] = "u-it",
-            ["perimeter_folders"] = new JsonArray("f-global"),
-            ["folder"] = "f-global",
-            ["is_recursive"] = true,
-        }));
+        Sent().ShouldNotContain(r => r.Path.StartsWith("/api/role-assignments/", StringComparison.Ordinal));
         _ca.Server.LogEntries.ShouldAllBe(e => e.RequestMessage!.Body == null || !e.RequestMessage.Body.Contains("password", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
-    public async Task A_custom_role_is_found_by_its_name_and_a_built_in_one_by_its_code()
+    public async Task A_custom_role_is_its_user_group_and_a_built_in_one_the_domains_group_for_its_code()
     {
-        var custom = Declared(ScopeKind.RoleAssignment, "Evidence reviewer|Global|it@example.com", ("role", "Evidence reviewer"), ("domain", "Global"), ("user", "it@example.com"));
-        var reader = Declared(ScopeKind.RoleAssignment, "BI-RL-AUD|Global|it@example.com", ("role", "BI-RL-AUD"), ("domain", "Global"), ("user", "it@example.com"));
+        var user = Declared(ScopeKind.User, "it@example.com", ("first_name", "Alex"), ("last_name", "Example"), ("active", "true"), ("roles", "BI-RL-AUD on Example Pty Ltd, Evidence reviewer on Global"));
 
-        (await Write(custom, ScopeAction.Create)).Value();
-        var customRole = Posted("role-assignments");
-        _ca.Server.ResetLogEntries();
-        (await Write(reader, ScopeAction.Create)).Value();
+        (await Write(user, ScopeAction.Update)).Value();
 
-        customRole.ShouldContain("\"role\":\"r-custom\"");
-        Posted("role-assignments").ShouldContain("\"role\":\"r-aud\"");
+        JsonNode.Parse(Logged("PATCH", "/api/users/u-it/").Body!)!["user_groups"]!.AsArray().Select(g => g!.GetValue<string>()).ShouldBe(["g-ex-aud", "g-reviewers"]);
+    }
+
+    [Fact]
+    public async Task A_user_with_no_roles_leaves_every_group()
+    {
+        var user = Declared(ScopeKind.User, "it@example.com", ("first_name", "Alex"), ("last_name", "Example"), ("active", "true"));
+
+        (await Write(user, ScopeAction.Update)).Value();
+
+        JsonNode.Parse(Logged("PATCH", "/api/users/u-it/").Body!)!["user_groups"]!.AsArray().ShouldBeEmpty();
     }
 
     [Fact]
@@ -146,26 +153,27 @@ public sealed class AccessClientTests : IDisposable
             ["last_name"] = "Example",
             ["is_active"] = false,
             ["observation"] = $"Runs IT.\n[hound scope {State}]",
+            ["user_groups"] = new JsonArray(),
         }));
     }
 
     [Fact]
-    public async Task Unknown_user_or_role_is_a_problem_and_nothing_is_sent()
+    public async Task A_role_with_no_group_on_its_domain_is_a_problem_and_nothing_is_sent()
     {
-        var role = Declared(ScopeKind.RoleAssignment, "BI-RL-AUD|Global|nobody@example.com", ("role", "BI-RL-AUD"), ("domain", "Global"), ("user", "nobody@example.com"));
+        var user = Declared(ScopeKind.User, "it@example.com", ("first_name", "Alex"), ("active", "true"), ("roles", "BI-RL-DMA on Example Pty Ltd"));
 
-        var problems = (await Write(role, ScopeAction.Create)).Match(_ => [], p => p);
+        var problems = (await Write(user, ScopeAction.Update)).Match(_ => [], p => p);
 
         problems.Select(p => p.Code).ShouldContain("ciso_assistant.not_found");
         Sent().ShouldBeEmpty();
     }
 
     [Fact]
-    public async Task Reads_users_teams_and_direct_role_assignments_when_the_scope_declares_access()
+    public async Task Reads_users_with_the_roles_their_groups_give_and_teams_when_the_scope_declares_access()
     {
         var query = new ScopeStateQuery("Global", [], new Dictionary<string, IReadOnlyList<RequirementKey>>()) { Access = true };
 
-        var held = (await _ca.Scope.ReadAsync(query, _ct)).Value().Where(a => a.Held.Kind is ScopeKind.User or ScopeKind.Team or ScopeKind.RoleAssignment)
+        var held = (await _ca.Scope.ReadAsync(query, _ct)).Value().Where(a => a.Held.Kind is ScopeKind.User or ScopeKind.Team)
             .ToDictionary(a => (a.Held.Kind, a.Held.Key));
         var without = (await _ca.Scope.ReadAsync(query with { Access = false }, _ct)).Value();
 
@@ -174,12 +182,18 @@ public sealed class AccessClientTests : IDisposable
             (ScopeKind.User, "it@example.com"),
             (ScopeKind.User, "admin@example.com"),
             (ScopeKind.Team, "IT team"),
-            (ScopeKind.RoleAssignment, "BI-RL-APP|Example Pty Ltd|it@example.com"),
         ],
             ignoreOrder: true);
         var it = held[(ScopeKind.User, "it@example.com")];
         it.AppliedState.ShouldBe(State);
-        it.Held.Fields.ShouldBe(new Dictionary<string, string> { ["first_name"] = "Alex", ["last_name"] = "Example", ["active"] = "true" });
+        it.Held.Fields.ShouldBe(new Dictionary<string, string>
+        {
+            ["first_name"] = "Alex",
+            ["last_name"] = "Example",
+            ["active"] = "true",
+            ["roles"] = "BI-RL-APP on Example Pty Ltd, Evidence reviewer on Global",
+        });
+        held[(ScopeKind.User, "admin@example.com")].Held.Fields["roles"].ShouldBe("BI-RL-ADM on Global");
         held[(ScopeKind.User, "admin@example.com")].Managed.ShouldBeFalse();
         held[(ScopeKind.Team, "IT team")].Held.Fields.ShouldBe(new Dictionary<string, string>
         {
@@ -187,13 +201,7 @@ public sealed class AccessClientTests : IDisposable
             ["leader"] = "it@example.com",
             ["members"] = "admin@example.com, it@example.com",
         });
-        held[(ScopeKind.RoleAssignment, "BI-RL-APP|Example Pty Ltd|it@example.com")].Held.Fields.ShouldBe(new Dictionary<string, string>
-        {
-            ["role"] = "BI-RL-APP",
-            ["domain"] = "Example Pty Ltd",
-            ["user"] = "it@example.com",
-        });
-        without.ShouldNotContain(a => a.Held.Kind == ScopeKind.User || a.Held.Kind == ScopeKind.Team || a.Held.Kind == ScopeKind.RoleAssignment);
+        without.ShouldNotContain(a => a.Held.Kind == ScopeKind.User || a.Held.Kind == ScopeKind.Team);
     }
 
     [Fact]
@@ -246,8 +254,13 @@ public sealed class AccessClientTests : IDisposable
         ["is_active"] = active,
         ["observation"] = observation,
         ["has_mfa_enabled"] = mfa,
-        ["user_groups"] = id == "u-admin" ? new JsonArray(new JsonObject { ["id"] = "g-adm", ["builtin"] = true, ["str"] = "BI-UG-ADM" }) : new JsonArray(),
+        ["user_groups"] = id == "u-admin"
+            ? new JsonArray(Relation("g-adm", "Global - Administrator"))
+            : new JsonArray(Relation("g-ex-app", "Example Pty Ltd - Approver"), Relation("g-reviewers", "Global - Evidence reviewer")),
     };
+
+    private static JsonObject Group(string id, string name, string folder, string folderName, bool builtin = true) =>
+        new() { ["id"] = id, ["name"] = name, ["folder"] = Relation(folder, folderName), ["builtin"] = builtin };
 
     private static JsonObject Role(string id, string name, bool builtin = true) => new() { ["id"] = id, ["name"] = name, ["builtin"] = builtin };
 

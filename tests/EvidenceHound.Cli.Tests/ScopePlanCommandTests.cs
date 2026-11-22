@@ -51,7 +51,7 @@ public sealed class ScopePlanCommandTests : IDisposable
     }
 
     [Fact]
-    public async Task Plan_with_access_yaml_creates_users_and_role_assignments_and_reviews_mfa_and_service_accounts()
+    public async Task Plan_with_access_yaml_sets_users_and_their_roles_and_reviews_mfa_and_service_accounts()
     {
         await WriteScopeAsync();
         await File.WriteAllTextAsync(Path.Combine(ScopeDir, "access.yaml"), """
@@ -72,7 +72,8 @@ public sealed class ScopePlanCommandTests : IDisposable
         EmptyInstance();
         List("users",
             new JsonObject { ["id"] = "u-it", ["email"] = "it@example.com", ["is_active"] = true, ["has_mfa_enabled"] = false, ["user_groups"] = new JsonArray() },
-            new JsonObject { ["id"] = "u-run", ["email"] = "hound-runner@example.com", ["is_active"] = true, ["has_mfa_enabled"] = false, ["user_groups"] = new JsonArray(new JsonObject { ["id"] = "g-adm", ["str"] = "BI-UG-ADM" }) });
+            new JsonObject { ["id"] = "u-run", ["email"] = "hound-runner@example.com", ["is_active"] = true, ["has_mfa_enabled"] = false, ["user_groups"] = new JsonArray(new JsonObject { ["id"] = "g-adm", ["str"] = "Global - Administrator" }) });
+        List("user-groups", new JsonObject { ["id"] = "g-adm", ["name"] = "Global - Administrator", ["folder"] = new JsonObject { ["id"] = "f-global", ["str"] = "Global" }, ["builtin"] = true });
         List("roles", new JsonObject { ["id"] = "r-adm", ["name"] = "Administrator", ["builtin"] = true });
         List("role-assignments", new JsonObject
         {
@@ -89,8 +90,12 @@ public sealed class ScopePlanCommandTests : IDisposable
 
         exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
         var markdown = _output.ToString();
-        markdown.ShouldContain("| Create | role_assignment | BI-RL-ANA\\|Example Pty Ltd\\|hound-runner@example.com |");
+        // A role is membership of the domain's group for it, so it shows as the user's roles; the runner leaves the administrators group.
         markdown.ShouldContain("| Update | user | it@example.com |");
+        markdown.ShouldContain("| Update | user | hound-runner@example.com |");
+        markdown.ShouldContain("roles: BI-RL-ADM on Global → BI-RL-ANA on Example Pty Ltd");
+        markdown.ShouldContain("roles: (none) → BI-RL-ADM on Global");
+        markdown.ShouldNotContain("role_assignment");
         markdown.ShouldContain("### Access review");
         markdown.ShouldContain("| it@example.com | has not turned on multi-factor authentication |");
         markdown.ShouldContain("| hound-runner@example.com | holds BI-RL-ADM on Global; a publishing service account needs only analyst on the domains it publishes to |");
@@ -386,7 +391,7 @@ public sealed class ScopePlanCommandTests : IDisposable
     private void EmptyInstance(JsonObject[]? perimeters = null, JsonObject[]? folders = null)
     {
         List("folders", [new JsonObject { ["id"] = "f-global", ["name"] = "Global", ["parent_folder"] = null }, .. folders ?? []]);
-        foreach (var resource in new[] { "users", "actors", "frameworks", "loaded-libraries", "assets", "compliance-assessments", "evidences", "applied-controls", "requirement-assessments", "teams", "roles", "role-assignments" })
+        foreach (var resource in new[] { "users", "actors", "frameworks", "loaded-libraries", "assets", "compliance-assessments", "evidences", "applied-controls", "requirement-assessments", "teams", "roles", "role-assignments", "user-groups" })
         {
             List(resource);
         }

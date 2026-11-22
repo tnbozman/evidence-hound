@@ -27,7 +27,7 @@ public sealed class ScopePlanFunctionalTests(CisoAssistantFixture ciso)
             .Select(c => (Kind: c!["kind"]!.GetValue<string>(), Key: c["key"]!.GetValue<string>()))
             .ToArray();
         written.Select(c => c.Kind).Distinct().ShouldBe(
-            ["feature_flag", "setting", "framework", "domain", "perimeter", "system", "user", "team", "role_assignment", "audit", "document", "control", "assessment"], ignoreOrder: true, ciso.SeedApplyReport);
+            ["feature_flag", "setting", "framework", "domain", "perimeter", "system", "user", "team", "audit", "document", "control", "assessment"], ignoreOrder: true, ciso.SeedApplyReport);
         written.ShouldContain(("framework", "urn:example:risk:framework:example-baseline"), ciso.SeedApplyReport);
         written.ShouldContain(("audit", "EX-ESSENTIALS-2026"), ciso.SeedApplyReport);
         written.ShouldContain(("document", "identity-policy"), ciso.SeedApplyReport);
@@ -38,8 +38,11 @@ public sealed class ScopePlanFunctionalTests(CisoAssistantFixture ciso)
         written.ShouldContain(("user", "auditor@example.com"), ciso.SeedApplyReport);
         written.ShouldContain(("user", "ceo@example.com"), ciso.SeedApplyReport);
         written.ShouldContain(("team", "IT team"), ciso.SeedApplyReport);
-        written.ShouldContain(("role_assignment", "BI-RL-APP|Example Pty Ltd|ceo@example.com"), ciso.SeedApplyReport);
-        written.ShouldContain(("role_assignment", "BI-RL-ANA|Example Pty Ltd|it@example.com"), ciso.SeedApplyReport);
+        // Roles are memberships of each domain's built-in groups, written with the user, and read back the same way.
+        written.ShouldContain(("user", "it@example.com"), ciso.SeedApplyReport);
+        var groups = (await GetAsync("user-groups/?limit=1000", ct))["results"]!.AsArray().ToDictionary(g => g!["id"]!.GetValue<string>(), g => g!["name"]!.GetValue<string>());
+        var ceo = (await GetAsync("users/?limit=1000", ct))["results"]!.AsArray().Single(u => u!["email"]!.GetValue<string>() == "ceo@example.com")!;
+        ceo["user_groups"]!.AsArray().Select(g => groups.GetValueOrDefault(g!["id"]!.GetValue<string>())).ShouldContain("Example Pty Ltd - Approver", ceo.ToJsonString());
         // s07-05: scope/settings.yaml. dora is on by default and enforce_mfa off; nis2 and compliance already hold the declared value.
         written.ShouldContain(("feature_flag", "dora"), ciso.SeedApplyReport);
         written.ShouldContain(("setting", "enforce_mfa"), ciso.SeedApplyReport);
