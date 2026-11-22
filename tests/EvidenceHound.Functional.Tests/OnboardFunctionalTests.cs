@@ -57,7 +57,7 @@ public sealed class OnboardFunctionalTests(CisoAssistantFixture ciso) : IDisposa
             + "\n\n";
         string[] onboard =
         [
-            "onboard", "EXAMPLE-ASSETS", "--repo", _repo, "--group", "2", "--no-model",
+            "onboard", "EXAMPLE-ASSETS", "--repo", _repo, "--group", "1", "--group", "2", "--no-model",
             "--spec", Path.Combine(CisoAssistantFixture.RepoRoot, "examples", "apis", "example-asset-api.openapi.yaml"),
         ];
         var (onboardExit, onboarded) = await StepAsync("1-onboard", onboard, answers, ct);

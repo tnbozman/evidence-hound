@@ -829,6 +829,8 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 
 - Vendor documents kept during `hound onboard` are saved with their SHA-256, source and retrieval date, but are attached to the supplier assessment as evidence only once supplier assessments exist (s09-20). The model reads only text documents (HTML, text, Markdown); PDFs are kept but not read (found in s09-22).
 
+- An Essential Eight audit that declares `groups: ["2"]` is stored by CISO Assistant as groups 1 and 2, so `hound scope plan` shows it as changed after every apply. `hound scope validate` should warn, or the planner compare the groups CISO Assistant keeps; until then declare ML2 as `["1", "2"]` (found in s09-24's functional test).
+
 - `hound onboard` reads OpenAPI 3 files only. Other API specifications, documentation saved as text, and specifications fetched from allowed URLs need further readers; Sophos Firewall's XML API (s09-15) is the first that will need one (found in s09-22).
 
 - `hound run --dry-run` reports only counts of passed, failed and other checks; it does not print each check's outcome and observation. An operator trying a new profile needs them; `hound profile test` (s09-12) or a `--show-checks` option would help (found in s09-11).

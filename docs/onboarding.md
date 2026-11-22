@@ -28,7 +28,7 @@ request and never prints the key. Options: `--provider`, `--model`, `--config <f
 ## Onboard a system
 
 ```console
-$ hound onboard EXAMPLE-ASSETS --framework frameworks/essential-eight-2023.json --group 2 --spec ../specs/example-asset-api.openapi.yaml
+$ hound onboard EXAMPLE-ASSETS --framework frameworks/essential-eight-2023.json --group 1 --group 2 --spec ../specs/example-asset-api.openapi.yaml
 ```
 
 Run it in the config repo (or pass `--repo`). The session goes in this order, and saves after every answer in
@@ -45,7 +45,8 @@ carry on where it stopped; the model is never asked again for what it already an
    (s09-20), approved means an active contract covering the solution.
 3. **What the API offers.** Each `--spec` (an OpenAPI 3 document, JSON or YAML) is read into a short summary: the endpoints that read,
    sign-in and paging. Only that summary is sent, never the specification.
-4. **Applicability.** Every requirement in the `--group` implementation groups (all of them without `--group`) gets one proposal: `api_check`,
+4. **Applicability.** Every requirement in the `--group` implementation groups (all of them without `--group`) gets one proposal. Give the
+   groups as your audits declare them, so the system's audit matches: for Essential Eight ML2 that is `--group 1 --group 2`. Each requirement gets one of `api_check`,
    `manual`, `not_applicable` or `other_system`, with its reasoning. For each, type `a` to accept, `c`, `m`, `n` or `o` to decide otherwise,
    `l` to accept every remaining proposal that is not `not_applicable`, or `s` to save and stop. Not applicable always needs a justification
    and the name of who approves it; another system needs that system's name.
