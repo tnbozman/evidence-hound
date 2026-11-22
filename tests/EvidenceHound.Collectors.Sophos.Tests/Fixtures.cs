@@ -12,7 +12,7 @@ internal static class Fixtures
     {
         var items = RecordedSophos.Items();
         edit?.Invoke(items);
-        return SophosData.Parse(items["firewalls"]);
+        return SophosData.Parse(items["firewalls"], items["admins"], items["roles"]);
     }
 
     public static SophosOptions Options(Action<Dictionary<string, string>>? edit = null)

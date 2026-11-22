@@ -62,6 +62,15 @@ public class E8MappingTests
     }
 
     [Fact]
+    public void Sophos_central_super_admins_count_towards_limiting_privileged_accounts_of_online_services()
+    {
+        var requirement = Mapping.Mapping.Requirements.Single(r => r.RequirementRef == "ISM-1883");
+
+        requirement.Checks.Select(c => c.Value).ShouldContain("network.management.super_admin_count");
+        requirement.Checks.Select(c => c.Value).ShouldContain("identity.privileged.global_admin_count");
+    }
+
+    [Fact]
     public void Repeated_ism_refs_use_rows_all()
     {
         var keys = Mapping.Mapping.Requirements.Select(r => r.Key).Concat(Mapping.ManualOnly.Select(m => m.Key));

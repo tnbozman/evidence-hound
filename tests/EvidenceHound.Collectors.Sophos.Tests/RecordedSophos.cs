@@ -70,6 +70,8 @@ internal sealed class RecordedSophos : IDisposable
     public static Dictionary<string, JsonArray> Items() => new(StringComparer.Ordinal)
     {
         ["firewalls"] = Merge(Pages("firewalls", "https://api.example.test/", "https://api-r1.example.test/")),
+        ["admins"] = Merge(Pages("admins", "https://api.example.test/", "https://api-r1.example.test/")),
+        ["roles"] = Merge(Pages("roles", "https://api.example.test/", "https://api-r1.example.test/")),
     };
 
     /// <summary>Settings for a collector instance that reads this tenant.</summary>
@@ -113,7 +115,7 @@ internal sealed class RecordedSophos : IDisposable
 
     private void Lists(Func<string, JsonArray, JsonArray>? edit)
     {
-        foreach (var (name, path) in new[] { ("firewalls", "/firewall/v1/firewalls") })
+        foreach (var (name, path) in new[] { ("firewalls", "/firewall/v1/firewalls"), ("admins", "/common/v1/admins"), ("roles", "/common/v1/roles") })
         {
             var pages = Pages(name, ApiUrl.ToString(), RegionUrl.ToString());
             if (edit is not null)

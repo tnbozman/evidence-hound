@@ -30,4 +30,35 @@ public class SophosEvidenceTests
         text.ShouldNotContain("geoLocation");
         text.ShouldContain("00000000-0000-4000-8000-0000000000a1");
     }
+
+    [Fact]
+    public async Task Admins_names_emails_and_tenant_names_are_hashed()
+    {
+        var admin = JsonNode.Parse("""
+            {"id":"00000000-0000-4000-8000-0000000000b1","tenant":{"id":"t1","name":"Example Pty Ltd"},
+             "users":[{"id":"u1","name":"Sam Example"}],
+             "profile":{"name":"Sam Example","firstName":"Sam","lastName":"Example","email":"sam@example.com"},
+             "roleAssignments":[{"id":"a1","roleId":"r1"}]}
+            """)!;
+        var collection = new SophosCollection(SophosSources.Admins, new JsonArray(admin), 1);
+
+        var text = Encoding.UTF8.GetString((await SophosEvidence.File(collection, includeIdentities: false).ReadAsync(Token)).Content.Span);
+
+        text.ShouldNotContain("Sam");
+        text.ShouldNotContain("sam@example.com");
+        text.ShouldNotContain("Example Pty Ltd");
+        text.ShouldContain(SophosEvidence.Hash("sam@example.com"));
+        text.ShouldContain("r1");
+    }
+
+    [Fact]
+    public async Task Role_names_are_kept_because_they_identify_no_one()
+    {
+        var role = new JsonObject { ["id"] = "r1", ["name"] = "Super Admin", ["type"] = "predefined" };
+        var collection = new SophosCollection(SophosSources.Roles, new JsonArray(role), 1);
+
+        var text = Encoding.UTF8.GetString((await SophosEvidence.File(collection, includeIdentities: false).ReadAsync(Token)).Content.Span);
+
+        text.ShouldContain("Super Admin");
+    }
 }

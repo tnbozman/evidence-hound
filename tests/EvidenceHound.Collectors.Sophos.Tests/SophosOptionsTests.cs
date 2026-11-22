@@ -12,6 +12,7 @@ public class SophosOptionsTests
         options.TenantId.ShouldBeNull();
         options.SupportedFirmware.ShouldBe(["20.0", "21.0"]);
         options.IncludeIdentities.ShouldBeFalse();
+        options.SuperAdminMax.ShouldBe(2);
     }
 
     [Fact]
@@ -27,6 +28,8 @@ public class SophosOptionsTests
     [Theory]
     [InlineData("supported_firewall_firmware", "latest")]
     [InlineData("api_url", "ftp://api.example.com")]
+    [InlineData("super_admin_max", "two")]
+    [InlineData("super_admin_max", "-1")]
     public void Invalid_settings_are_problems(string name, string value)
     {
         var settings = new Dictionary<string, string>(StringComparer.Ordinal) { ["client_id"] = "c", ["supported_firewall_firmware"] = "21.0", [name] = value };

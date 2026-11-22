@@ -31,9 +31,9 @@ public sealed class CollectorsCommandTests : IDisposable
               checks: set per instance by setting 'checks'
               settings: drop_folder (required), patterns (optional), checks (required), due_days (required), owner (required)
               secrets: none
-            sophos 2.0.0
-              checks: network.firewall.firmware_supported
-              settings: client_id (required), tenant_id (optional), id_url (optional), api_url (optional), include_identities (optional), supported_firewall_firmware (required)
+            sophos 2.1.0
+              checks: network.firewall.firmware_supported, network.management.super_admin_count
+              settings: client_id (required), tenant_id (optional), id_url (optional), api_url (optional), include_identities (optional), supported_firewall_firmware (required), super_admin_max (optional)
               secrets: client_secret (required)
             widget 0.1.0
               checks: widget.patched

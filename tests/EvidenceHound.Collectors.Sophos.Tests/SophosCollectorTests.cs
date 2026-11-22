@@ -10,7 +10,7 @@ namespace EvidenceHound.Collectors.Sophos.Tests;
 
 public sealed class SophosCollectorTests : IDisposable
 {
-    private static readonly string[] CheckIds = ["network.firewall.firmware_supported"];
+    private static readonly string[] CheckIds = ["network.firewall.firmware_supported", "network.management.super_admin_count"];
 
     private static readonly string[] EndpointSettings = ["healthy_pass_percent", "healthy_partial_percent", "stale_agent_days"];
 
@@ -26,15 +26,16 @@ public sealed class SophosCollectorTests : IDisposable
         result.Checks.Select(c => c.CheckId.Value).ShouldBe(CheckIds);
         result.Checks.ShouldAllBe(c => c.Outcome == CheckOutcome.Pass && c.Source == "example-sophos" && c.CollectedAt == Fixtures.Now);
         result.Checks[0].EvidenceRefs.ShouldBe(["firewalls.json"]);
+        result.Checks[1].EvidenceRefs.ShouldBe(["admins.json", "roles.json"]);
         result.ControlStatuses.ShouldBeEmpty();
     }
 
     [Fact]
-    public async Task Reads_only_firewalls()
+    public async Task Reads_firewalls_admins_and_roles_only()
     {
         var result = (await CollectAsync()).Value();
 
-        result.Files.Select(f => f.FileName).ShouldBe(["firewalls.json"]);
+        result.Files.Select(f => f.FileName).ShouldBe(["firewalls.json", "admins.json", "roles.json"]);
         var firewalls = JsonNode.Parse((await result.Files[0].ReadAsync(Token)).Content.Span)!;
         firewalls["request"]!.GetValue<string>().ShouldBe("firewall/v1/firewalls");
         firewalls["value"]!.AsArray().Count.ShouldBe(1);
@@ -51,6 +52,34 @@ public sealed class SophosCollectorTests : IDisposable
         text.ShouldNotContain("198.51.100.1");
         text.ShouldNotContain("fw.example.com");
         text.ShouldContain("SFOS 21.0.1 MR-1-Build237");
+        text.ShouldNotContain("Alex");
+        text.ShouldNotContain("alex.admin@example.com");
+        text.ShouldNotContain("Example Pty Ltd");
+        text.ShouldContain("Super Admin");
+    }
+
+    [Fact]
+    public async Task Admins_are_read_across_every_page()
+    {
+        var result = (await CollectAsync()).Value();
+
+        var admins = JsonNode.Parse((await result.Files.Single(f => f.FileName == "admins.json").ReadAsync(Token)).Content.Span)!;
+        admins["request"]!.GetValue<string>().ShouldBe("common/v1/admins");
+        admins["pages"]!.GetValue<int>().ShouldBe(2);
+        admins["value"]!.AsArray().Count.ShouldBe(3);
+    }
+
+    [Theory]
+    [InlineData("/common/v1/admins", "admins")]
+    [InlineData("/common/v1/roles", "roles")]
+    public async Task A_role_that_cannot_read_admins_or_roles_fails_with_forbidden(string path, string list)
+    {
+        _sophos.FailRegion(path, 403, "forbidden", "Forbidden");
+
+        var problem = (await CollectAsync()).Problems().ShouldHaveSingleItem();
+
+        problem.Code.ShouldBe("sophos.forbidden");
+        problem.Message.ShouldContain(list);
     }
 
     [Fact]
@@ -91,9 +120,9 @@ public sealed class SophosCollectorTests : IDisposable
     }
 
     [Fact]
-    public void Removing_the_endpoint_checks_is_a_new_major_version()
+    public void Adding_the_super_admin_check_is_a_new_minor_version()
     {
-        new SophosCollector().Version.ShouldBe("2.0.0");
+        new SophosCollector().Version.ShouldBe("2.1.0");
     }
 
     [Fact]
