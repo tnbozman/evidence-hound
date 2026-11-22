@@ -60,7 +60,8 @@ public static partial class ScopeLoader
     /// <summary>Keys that would hold a credential: rejected wherever they appear in <c>access.yaml</c>, without echoing the value.</summary>
     private static readonly string[] SecretKeys = ["password", "password_hash", "api_token", "token", "secret", "totp_secret"];
 
-    public static ScopeParse Parse(ScopeSource setup, ScopeSource? controls, IReadOnlyList<ScopeSource> audits, ScopeSource? access = null, ScopeSource? settings = null)
+    public static ScopeParse Parse(
+        ScopeSource setup, ScopeSource? controls, IReadOnlyList<ScopeSource> audits, ScopeSource? access = null, ScopeSource? settings = null, IReadOnlyList<ScopeSource>? thirdParties = null)
     {
         ArgumentNullException.ThrowIfNull(setup);
         ArgumentNullException.ThrowIfNull(audits);

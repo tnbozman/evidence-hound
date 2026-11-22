@@ -12,6 +12,9 @@ public sealed record ScopeStateQuery(string RootFolder, IReadOnlyList<string> Fr
     /// <summary>Whether to read feature flags and general settings: when the scope declares settings, or to list the unmanaged ones.</summary>
     public bool Settings { get; init; }
 
+    /// <summary>Whether to read entities, solutions, contracts and representatives: only when the scope declares third parties.</summary>
+    public bool ThirdParties { get; init; }
+
     /// <summary>
     /// The audits, by ref_id, to read every row of, not only the rows the scope writes, so a plan can show its effect on compliance. Rows the
     /// scope does not declare are never written.

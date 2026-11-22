@@ -22,6 +22,9 @@ public sealed record ScopeDocument(ScopeSetup Setup, IReadOnlyList<ScopeControl>
 
     /// <summary><c>scope/settings.yaml</c>: feature flags and general settings; empty when the repo has no such file.</summary>
     public ScopeSettings Settings { get; init; } = ScopeSettings.None;
+
+    /// <summary><c>scope/third-parties/*.yaml</c>: suppliers and other third parties, one entity per file.</summary>
+    public IReadOnlyList<ScopeEntity> ThirdParties { get; init; } = [];
 }
 
 /// <summary><c>scope/setup.yaml</c>: the root folder, the frameworks to load and the domains.</summary>
