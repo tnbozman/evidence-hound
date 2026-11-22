@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # Interactive local trial: from the dev container, with CISO Assistant already running, run Evidence Hound in a
 # container next to it. The guided steps are hound's own wizards: a new organisation (hound init), a system, a
-# control and a manual evidence source (hound add), then Sophos.
+# control and a manual evidence source (hound add), then Sophos and Microsoft 365.
 # Guide: docs/tutorials/local-trial.md
 #
 # Usage: make trial (or scripts/trial.sh). Safe to stop and run again: finished steps are skipped.
 # Environment:
 #   HOUND_TRIAL_DIR        the trial workspace (default .dev/trial, git-ignored)
 #   HOUND_TRIAL_IMAGE      the runner image to build and use (default evidence-hound-runner:trial)
-#   HOUND_TRIAL_YES=1      answer yes to every question (for unattended checks); stops before Sophos
+#   HOUND_TRIAL_YES=1      answer yes to every question (for unattended checks); stops before Sophos and M365
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -218,26 +218,60 @@ TEXT
 
 sophos() {
   step "6. Add your Sophos Central tenant"
-  if [[ "$yes" == 1 ]]; then say "Unattended run: stopping before Sophos, which needs your credential."; return; fi
-  if grep -q '^    type: sophos' "$ws/repo/hound.yaml"; then
-    say "A sophos collector is already in repo/hound.yaml."
-  else
-    say "You need a Sophos Central API credential with the Service Principal Read-Only role (docs/collectors/sophos.md)."
-    say "hound asks for its client ID and secret, and for the firewall firmware versions still in support (such as 21.5, 22.0)."
-    say "The secret is not shown as you type, and is saved under ${ws#"$root"/}/secrets (git-ignored, mode 600), never printed."
-    hound yes add collector sophos --config hound.yaml --schedule "0 4 * * *" --secrets-dir /trial/secrets
-  fi
+  case "$(trial_collector_step "$yes" "$ws/repo/hound.yaml" sophos)" in
+    unattended) say "Unattended run: stopping before Sophos, which needs your credential."; return ;;
+    "added already") say "A sophos collector is already in repo/hound.yaml." ;;
+    add)
+      say "You need a Sophos Central API credential with the Service Principal Read-Only role (docs/collectors/sophos.md)."
+      say "hound asks for its client ID and secret, and for the firewall firmware versions still in support (such as 21.5, 22.0)."
+      say "The secret is not shown as you type, and is saved under ${ws#"$root"/}/secrets (git-ignored, mode 600), never printed."
+      hound yes add collector sophos --config hound.yaml --schedule "0 4 * * *" --secrets-dir /trial/secrets
+      ;;
+  esac
+  run_collector sophos "the requirements the Sophos checks map to" "reads endpoints and firewalls"
+}
 
+# run_collector NAME WHAT READS checks the secrets, dry-runs the collector, then publishes it after asking
+run_collector() {
   hound no config validate hound.yaml --check-secrets
-  say "A dry run signs in, reads endpoints and firewalls, stores the evidence locally and plans the updates, sending nothing."
-  hound no run --config hound.yaml --only sophos --dry-run
-  if ask "Publish the Sophos results to CISO Assistant?"; then
-    hound no run --config hound.yaml --only sophos
+  say "A dry run signs in, $3, stores the evidence locally and plans the updates, sending nothing."
+  hound no run --config hound.yaml --only "$1" --dry-run
+  if ask "Publish the $1 results to CISO Assistant?"; then
+    hound no run --config hound.yaml --only "$1"
     hound no status --config hound.yaml
-    mark_done sophos
-    say "Look at the $(audit_ref) audit in CISO Assistant for the requirements the Sophos checks map to."
+    mark_done "$1"
+    say "Look at the $(audit_ref) audit in CISO Assistant for $2."
   fi
   say "Paste any output you want reviewed with the identifiers removed: no tenant IDs, host names, IP addresses or serial numbers."
+}
+
+m365() {
+  step "7. Add a Microsoft 365 test tenant"
+  local pem="$ws/inbox/hound-m365.pem" crt="$ws/inbox/hound-m365.crt"
+  case "$(trial_collector_step "$yes" "$ws/repo/hound.yaml" m365)" in
+    unattended) say "Unattended run: stopping before Microsoft 365, which needs your tenant."; return ;;
+    "added already") say "An m365 collector is already in repo/hound.yaml." ;;
+    add)
+      if ! ask "Try Microsoft 365 now? Use a test tenant, never a work one (docs/tutorials/local-trial.md, section 7)."; then return 0; fi
+      say "In the tenant's Entra admin center, register an app with the six read-only Graph application permissions in"
+      say "docs/collectors/m365.md and grant admin consent. The collector signs in with a certificate."
+      if [[ ! -f "$pem" ]] && command -v openssl >/dev/null && ask "Make a test certificate in ${ws#"$root"/}/inbox now?"; then
+        mkdir -p "$ws/inbox"
+        (umask 077 && openssl req -x509 -newkey rsa:3072 -sha256 -days 90 -nodes -keyout "$ws/inbox/hound-m365-private.pem" \
+          -out "$crt" -subj "/CN=Evidence Hound trial" 2>/dev/null && cat "$crt" "$ws/inbox/hound-m365-private.pem" >"$pem")
+        rm -f "$ws/inbox/hound-m365-private.pem"
+      fi
+      [[ -f "$pem" ]] || die "Put the certificate and its private key, as one PEM file, at ${pem#"$root"/}, then run make trial again."
+      [[ -f "$crt" ]] && say "Upload ${crt#"$root"/} (the public certificate only) under the app's Certificates & secrets."
+      ask "Uploaded the certificate and granted admin consent?" || return 0
+      say "hound asks for the tenant ID, the app's client ID and the Windows builds still in support (such as 10.0.22631, 10.0.26100)."
+      hound yes add collector m365 --config hound.yaml --schedule "30 4 * * *" --secrets-dir /trial/secrets \
+        --secret-file client_certificate=/trial/inbox/hound-m365.pem
+      rm -f "$pem"
+      say "The certificate is now in ${ws#"$root"/}/secrets/m365_client_certificate (mode 600); the copy in inbox is removed."
+      ;;
+  esac
+  run_collector m365 "the identity, device and Office requirements the Microsoft 365 checks map to" "reads users, Conditional Access, roles and Intune"
 }
 
 preflight
@@ -246,5 +280,6 @@ workspace
 organisation
 manual_evidence
 sophos
+m365
 step "Done"
 say "Run make trial again to repeat any step, or make trial-clean to remove the workspace (CISO Assistant keeps running)."

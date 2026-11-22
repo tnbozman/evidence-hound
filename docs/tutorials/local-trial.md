@@ -1,6 +1,6 @@
 # Local trial: Evidence Hound next to your CISO Assistant
 
-This tutorial is interactive: `make trial` runs it step by step from the dev container. It takes Evidence Hound from nothing to results in CISO Assistant with `hound`'s own wizards ([guided setup](../guided-setup.md)): a new organisation (the fictional Example Pty Ltd, if you press Enter through the questions), a system, a control and a manual evidence source, and then your own Sophos Central tenant. You need no server and no Microsoft 365 tenant. Allow an hour, most of it the first image build.
+This tutorial is interactive: `make trial` runs it step by step from the dev container. It takes Evidence Hound from nothing to results in CISO Assistant with `hound`'s own wizards ([guided setup](../guided-setup.md)): a new organisation (the fictional Example Pty Ltd, if you press Enter through the questions), a system, a control and a manual evidence source, then your own Sophos Central tenant, and optionally a Microsoft 365 test tenant. You need no server. Allow an hour, most of it the first image build.
 
 ```bash
 make trial
@@ -12,7 +12,8 @@ Each step shows the `hound` command before it runs and asks before anything that
 
 - The dev container, with Docker answering inside it.
 - A CISO Assistant. The dev container starts its own, at `http://backend:8000` in the dev container and `https://localhost:8443` in your browser. A stack from `make ca-up` works too. If none is running, the trial offers to start one.
-- For the last step: a Sophos Central API credential with the **Service Principal Read-Only** role, created as [the Sophos guide](../collectors/sophos.md) describes.
+- For the Sophos step: a Sophos Central API credential with the **Service Principal Read-Only** role, created as [the Sophos guide](../collectors/sophos.md) describes.
+- For the optional Microsoft 365 step: a test tenant ([section 7](#7-a-microsoft-365-test-tenant)).
 
 ## 1. Preflight
 
@@ -100,6 +101,19 @@ The dry run signs in, reads endpoints and firewalls, stores the evidence locally
 
 If you share output for help, remove identifiers first: tenant IDs, host names, IP addresses and serial numbers.
 
+## 7. A Microsoft 365 test tenant
+
+Use a test tenant, never a work one: the collector only reads, but a trial is the place to make mistakes. Two ways to get one:
+
+- **The Microsoft 365 Developer Program**, if you qualify for its E5 sandbox (Microsoft limits who does). It has Entra ID P2 and Intune, so every check can run.
+- **A Microsoft 365 Business Premium trial** (one month). It has Entra ID P1 and Intune, which the Conditional Access and device checks need; the PIM check reports `not_applicable` without P2. Cancel the trial when you are done.
+
+In the tenant, register the app as [the Microsoft 365 guide](../collectors/m365.md#1-register-the-app) says: the six read-only Graph application permissions, admin consent, and a certificate. The trial offers to make a test certificate with `openssl` in `.dev/trial/inbox/` (valid 90 days): upload `hound-m365.crt` to the app, and the trial keeps `hound-m365.pem` (certificate and key). If you have your own, put it at `.dev/trial/inbox/hound-m365.pem` first.
+
+Then `hound add collector m365 --config hound.yaml --secrets-dir /trial/secrets --secret-file client_certificate=/trial/inbox/hound-m365.pem` asks for the tenant ID, the app's client ID and the Windows builds still in support, such as `10.0.22631, 10.0.26100`. The other settings keep their defaults; add any with `--set key=value`. The PEM is copied to `.dev/trial/secrets/m365_client_certificate` (mode 600) and the inbox copy is removed. As with Sophos, the trial then validates the secrets, runs a dry run and, after asking, a real run and `hound status`.
+
+If you share output for help, remove identifiers first: tenant and client IDs, domains, user names and device names.
+
 ## Unattended
 
-`HOUND_TRIAL_YES=1 make trial` answers yes to every question and gives the wizards their answers as options (`--yes`). It stops before the Sophos step, which needs your credential. CI uses it to check the trial against a fresh CISO Assistant.
+`HOUND_TRIAL_YES=1 make trial` answers yes to every question and gives the wizards their answers as options (`--yes`). It stops before the Sophos and Microsoft 365 steps, which need your credentials. CI uses it to check the trial against a fresh CISO Assistant.
