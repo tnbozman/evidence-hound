@@ -1,0 +1,127 @@
+# A profile for the fictional Example Asset API (api.example.com), used by the tests, the docs and the
+# "write a profile" tutorial. Copy it into your organisation's profiles folder to try the rest collector.
+profile: example
+version: "1.0.0"
+source: evidence-hound/profiles/example.yaml
+description: The fictional Example Asset API of Example Pty Ltd. Devices, users and roles, read with a client credentials token.
+requires:
+  hound: ">=0.1"
+
+parameters:
+  client_id:
+    type: string
+    required: true
+    description: Client ID of the read-only API client.
+  base_url:
+    type: url
+    default: https://api.example.com/
+    description: Where the API is. Change it only for a proxy or a recorded copy of the API.
+  token_url:
+    type: url
+    default: https://login.example.com/oauth2/token
+    description: Where tokens are issued.
+  supported_os:
+    type: list
+    required: true
+    description: Operating system versions still in support, for example 14, 15.
+  stale_after:
+    type: duration
+    default: P30D
+    description: A device not seen for longer than this is stale.
+  admin_max:
+    type: int
+    default: 2
+    description: Most users allowed to hold the Owner role.
+
+secrets:
+  client_secret:
+    required: true
+    description: Client secret of the read-only API client.
+
+connection:
+  base_url: ${base_url}
+  allowed_hosts: [api.example.com, login.example.com, "${base_url}", "${token_url}"]
+  auth:
+    type: oauth2_client_credentials
+    token_url: ${token_url}
+    client_id: ${client_id}
+    client_secret: ${secrets.client_secret}
+    scope: read
+  rate_limit:
+    per_second: 5
+    max_retries: 3
+
+bootstrap:
+  whoami:
+    get: v1/whoami
+    vars:
+      org_id: $.organisation.id
+
+queries:
+  devices:
+    get: v1/orgs/${org_id}/devices
+    paging:
+      style: next_link
+      next: $.next
+    items: $.items
+    identities: [hostname, serial, owner]
+  users:
+    get: v1/orgs/${org_id}/users
+    paging:
+      style: offset
+      offset_param: offset
+      limit_param: limit
+      limit: 100
+      total: $.total
+    items: $.users
+    identities: [name, email]
+  roles:
+    get: v1/orgs/${org_id}/roles
+    items: $.roles
+
+datasets:
+  user_roles:
+    from: users
+    join:
+      - with: roles
+        on: { left: $.roleIds[*], right: $.id }
+        as: roles
+        optional: true
+    where: { field: $.status, equals: active }
+    fields:
+      id: $.id
+      mfa: $.mfa.enabled
+      role_names: $.roles[*].name
+
+checks:
+  - id: example.device.os_supported
+    title: Devices run a supported operating system
+    over: devices
+    each: { field: $.os.version, version_in: "${supported_os}" }
+    require: all
+    when_empty: not_applicable
+    describe: "{passed} of {total} devices run a supported operating system. Supported: ${supported_os}."
+
+  - id: example.device.recently_seen
+    title: Devices have checked in recently
+    over: devices
+    each: { field: $.lastSeen, within: "${stale_after}" }
+    require: { ratio_at_least: 0.95, partial_at: 0.8 }
+    when_empty: not_applicable
+    describe: "{passed} of {total} devices checked in within ${stale_after}."
+
+  - id: example.identity.mfa_users
+    title: Active users have MFA
+    over: user_roles
+    each: { field: $.mfa, equals: true }
+    require: all
+    when_empty: fail
+    describe: "{passed} of {total} active users have MFA."
+
+  - id: example.identity.owner_count
+    title: Few users hold the Owner role
+    over: user_roles
+    where: { field: $.role_names, any_matches: "^Owner$" }
+    require: { count_at_most: "${admin_max}" }
+    when_empty: not_applicable
+    describe: "{matched} of {total} active users hold the Owner role; at most ${admin_max} allowed."
