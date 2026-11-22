@@ -1,0 +1,60 @@
+# The fictional Example Asset API of Example Pty Ltd, as an OpenAPI document. profiles/example.yaml reads this API; hound onboard reads
+# this file in the tests and the onboarding tutorial.
+openapi: 3.0.3
+info:
+  title: Example Asset API
+  version: "1.0"
+servers:
+  - url: https://api.example.com/
+security:
+  - clientCredentials: [read]
+components:
+  securitySchemes:
+    clientCredentials:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://login.example.com/oauth2/token
+          scopes:
+            read: Read devices, users and roles.
+paths:
+  /v1/devices:
+    get:
+      summary: List devices with their operating system and last check-in.
+      parameters:
+        - name: pageToken
+          in: query
+          schema: { type: string }
+      responses:
+        "200": { description: A page of devices. }
+  /v1/devices/{id}:
+    get:
+      summary: Read one device.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: The device. }
+  /v1/users:
+    get:
+      summary: List users and whether each has multi-factor authentication.
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer }
+        - name: offset
+          in: query
+          schema: { type: integer }
+      responses:
+        "200": { description: A page of users. }
+  /v1/roles:
+    get:
+      summary: List roles and their members.
+      responses:
+        "200": { description: The roles. }
+    post:
+      summary: Create a role.
+      responses:
+        "201": { description: Created. }

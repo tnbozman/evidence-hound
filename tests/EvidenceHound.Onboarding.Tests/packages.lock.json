@@ -1283,6 +1283,13 @@
       "evidencehound.core": {
         "type": "Project"
       },
+      "evidencehound.core.yaml": {
+        "type": "Project",
+        "dependencies": {
+          "EvidenceHound.Core": "[0.1.0, )",
+          "YamlDotNet": "[18.1.0, )"
+        }
+      },
       "evidencehound.onboarding": {
         "type": "Project",
         "dependencies": {

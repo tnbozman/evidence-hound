@@ -3,6 +3,7 @@
     <PackageReference Include="WireMock.Net" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\src\EvidenceHound.Core.Yaml\EvidenceHound.Core.Yaml.csproj" />
     <ProjectReference Include="..\..\src\EvidenceHound.Onboarding\EvidenceHound.Onboarding.csproj" />
   </ItemGroup>
   <ItemGroup>
