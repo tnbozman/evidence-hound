@@ -1,7 +1,7 @@
+using EvidenceHound.Collectors.Testing;
 using EvidenceHound.Core;
 using EvidenceHound.Core.Checks;
 using EvidenceHound.Core.Secrets;
-using EvidenceHound.Collectors.Testing;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace EvidenceHound.Collectors.Rest.Tests;

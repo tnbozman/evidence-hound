@@ -32,32 +32,52 @@ public static class ProfileParser
 
     private static readonly Dictionary<string, ParameterType> ParameterTypes = new(StringComparer.Ordinal)
     {
-        ["string"] = ParameterType.Text, ["int"] = ParameterType.WholeNumber, ["number"] = ParameterType.Number, ["bool"] = ParameterType.Flag,
-        ["list"] = ParameterType.List, ["duration"] = ParameterType.Duration, ["url"] = ParameterType.Url,
+        ["string"] = ParameterType.Text,
+        ["int"] = ParameterType.WholeNumber,
+        ["number"] = ParameterType.Number,
+        ["bool"] = ParameterType.Flag,
+        ["list"] = ParameterType.List,
+        ["duration"] = ParameterType.Duration,
+        ["url"] = ParameterType.Url,
     };
 
     /// <summary>The YAML name of each operator.</summary>
     public static IReadOnlyDictionary<string, TestOperator> Operators { get; } = new Dictionary<string, TestOperator>(StringComparer.Ordinal)
     {
-        ["equals"] = TestOperator.EqualTo, ["not_equals"] = TestOperator.NotEqualTo, ["in"] = TestOperator.In, ["matches"] = TestOperator.Matches,
-        ["any_matches"] = TestOperator.AnyMatches, ["exists"] = TestOperator.Exists, ["version_in"] = TestOperator.VersionIn,
-        ["version_at_least"] = TestOperator.VersionAtLeast, ["within"] = TestOperator.Within, ["older_than"] = TestOperator.OlderThan,
-        ["at_least"] = TestOperator.AtLeast, ["at_most"] = TestOperator.AtMost,
+        ["equals"] = TestOperator.EqualTo,
+        ["not_equals"] = TestOperator.NotEqualTo,
+        ["in"] = TestOperator.In,
+        ["matches"] = TestOperator.Matches,
+        ["any_matches"] = TestOperator.AnyMatches,
+        ["exists"] = TestOperator.Exists,
+        ["version_in"] = TestOperator.VersionIn,
+        ["version_at_least"] = TestOperator.VersionAtLeast,
+        ["within"] = TestOperator.Within,
+        ["older_than"] = TestOperator.OlderThan,
+        ["at_least"] = TestOperator.AtLeast,
+        ["at_most"] = TestOperator.AtMost,
     };
 
     private static readonly Dictionary<string, EmptyResult> EmptyResults = new(StringComparer.Ordinal)
     {
-        ["not_applicable"] = EmptyResult.NotApplicable, ["fail"] = EmptyResult.Fail, ["unable_to_assess"] = EmptyResult.UnableToAssess,
+        ["not_applicable"] = EmptyResult.NotApplicable,
+        ["fail"] = EmptyResult.Fail,
+        ["unable_to_assess"] = EmptyResult.UnableToAssess,
     };
 
     private static readonly Dictionary<string, MissingRule> MissingRules = new(StringComparer.Ordinal)
     {
-        ["unable_to_assess"] = MissingRule.UnableToAssess, ["pass"] = MissingRule.Pass, ["fail"] = MissingRule.Fail,
+        ["unable_to_assess"] = MissingRule.UnableToAssess,
+        ["pass"] = MissingRule.Pass,
+        ["fail"] = MissingRule.Fail,
     };
 
     private static readonly Dictionary<string, ResponseFormat> Formats = new(StringComparer.Ordinal)
     {
-        ["auto"] = ResponseFormat.Auto, ["json"] = ResponseFormat.Json, ["xml"] = ResponseFormat.Xml, ["csv"] = ResponseFormat.Csv,
+        ["auto"] = ResponseFormat.Auto,
+        ["json"] = ResponseFormat.Json,
+        ["xml"] = ResponseFormat.Xml,
+        ["csv"] = ResponseFormat.Csv,
     };
 
     public static Result<Profile> Parse(string yaml, string source)

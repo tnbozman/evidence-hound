@@ -13,7 +13,7 @@ The patch windows and scan intervals below are settings, not constants, so the c
 These tasks come first in this sprint, before s09-01, so the Microsoft 365 application control checks and the Veeam tasks can be written as profile checks instead of new code. They build the generic `rest` collector agreed in [`docs/design/rest-collector.md`](../design/rest-collector.md): every query is called once per run, evidence datasets are extracted from one or more responses, and checks test dataset fields, giving pass, fail or unable to assess. Profiles are YAML loaded only from the organisation's profiles folder; this repo keeps a tested public library in `profiles/` to copy from. There are no runtime code plugins. Where the Veeam tasks (s09-07, s09-08) and s09-01/02 say "collector", read "profile in the library" once these tasks are done.
 
 ### s09-09 Profile model and validation
-- [ ] Done
+- [x] Done
 
 **Story:** As an operator, I want a profile checked before anything is called, so that a typo or a wrong reference fails clearly instead of producing misleading results.
 
@@ -34,6 +34,21 @@ These tasks come first in this sprint, before s09-01, so the Microsoft 365 appli
 
 **Functional check**
 - `hound profile validate example` passes for `profiles/example.yaml`, and a broken copy lists each problem with its code.
+
+**Functional check result (2026-11-22)**
+
+```
+$ hound profile validate example --profiles profiles
+example 1.0.0: valid (3 queries, 1 dataset, 4 checks)
+$ hound profile validate example --profiles /tmp/broken    # over: people, and a bad path
+error: profile.path_invalid: check 'example.identity.mfa_users': '$.mfa[' is not a path; use $, .name, ['name'], [0] or [*], for example $.items[*].id.
+error: profile.reference_unknown: Check 'example.identity.mfa_users' is over 'people', which names nothing; queries and datasets: devices, roles, user_roles, users.
+error: profile.reference_unknown: Check 'example.identity.owner_count' is over 'people', which names nothing; queries and datasets: devices, roles, user_roles, users.
+$ echo $?
+3
+```
+
+`hound plan` and `hound config validate` log each problem of a rest instance's profile as a warning naming the instance, and carry on (`ProfileCommandTests.Plan_warns_about_an_invalid_rest_profile_and_carries_on`); at run time that instance's checks are unable to assess (`RestCollectorTests.Invalid_profile_reports_its_checks_unable_to_assess`).
 
 ### s09-10 Query engine
 - [ ] Done

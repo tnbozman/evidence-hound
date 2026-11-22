@@ -1579,6 +1579,13 @@
           "YamlDotNet": "[18.1.0, )"
         }
       },
+      "evidencehound.collectors.rest": {
+        "type": "Project",
+        "dependencies": {
+          "EvidenceHound.Collectors.Abstractions": "[0.1.0, )",
+          "YamlDotNet": "[18.1.0, )"
+        }
+      },
       "evidencehound.collectors.sophos": {
         "type": "Project",
         "dependencies": {
@@ -1602,6 +1609,7 @@
           "EvidenceHound.Collectors.Abstractions": "[0.1.0, )",
           "EvidenceHound.Collectors.M365": "[0.1.0, )",
           "EvidenceHound.Collectors.Manual": "[0.1.0, )",
+          "EvidenceHound.Collectors.Rest": "[0.1.0, )",
           "EvidenceHound.Collectors.Sophos": "[0.1.0, )",
           "EvidenceHound.Core": "[0.1.0, )",
           "EvidenceHound.Core.Yaml": "[0.1.0, )",

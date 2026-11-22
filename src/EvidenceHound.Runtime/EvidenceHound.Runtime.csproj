@@ -13,6 +13,7 @@
     <ProjectReference Include="..\Collectors\EvidenceHound.Collectors.M365\EvidenceHound.Collectors.M365.csproj" />
     <ProjectReference Include="..\Collectors\EvidenceHound.Collectors.Manual\EvidenceHound.Collectors.Manual.csproj" />
     <ProjectReference Include="..\Collectors\EvidenceHound.Collectors.Sophos\EvidenceHound.Collectors.Sophos.csproj" />
+    <ProjectReference Include="..\Collectors\EvidenceHound.Collectors.Rest\EvidenceHound.Collectors.Rest.csproj" />
     <ProjectReference Include="..\EvidenceHound.Collectors.Abstractions\EvidenceHound.Collectors.Abstractions.csproj" />
     <ProjectReference Include="..\EvidenceHound.Core\EvidenceHound.Core.csproj" />
     <ProjectReference Include="..\EvidenceHound.Core.Yaml\EvidenceHound.Core.Yaml.csproj" />

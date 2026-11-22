@@ -172,6 +172,7 @@ public static class HoundCli
             MappingCommands.Build(output, loggers),
             ScopeCommands.Build(output, loggers, configuration, registry),
             PlanCommand.Build(output, loggers, configuration, registry),
+            ProfileCommands.Build(output, loggers, configuration),
             PublishCommand.Build(output, loggers, configuration, registry),
             RunCommand.Build(output, loggers, configuration, registry, collectorServices),
             ServeCommand.Build(output, loggers, configuration, registry, collectorServices),

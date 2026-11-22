@@ -73,9 +73,9 @@ public sealed class ProfileCommandTests : IDisposable
         var exitCode = await Run("plan", "--dry-run", "--config", config, "--checks", Path.Combine(AppContext.BaseDirectory, "files", "fixtures", "checks-sample.json"));
 
         exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
-        var warning = _logs.Entries.Where(e => e.Level == LogLevel.Warning).ShouldHaveSingleItem();
-        warning.Message.ShouldContain("example-rest");
-        warning.Message.ShouldContain("people");
+        var warnings = _logs.Entries.Where(e => e.Level == LogLevel.Warning).ToArray();
+        warnings.Length.ShouldBe(2, "one for each check over the missing dataset");
+        warnings.ShouldAllBe(w => w.Message.Contains("example-rest") && w.Message.Contains("'people'") && w.State[0].Value!.Equals("profile.reference_unknown"));
     }
 
     private void CopyExample(Func<string, string>? edit = null)

@@ -21,6 +21,19 @@ internal static partial class Log
         return ExitCodes.Configuration;
     }
 
+    private static readonly EventId InstanceProblemEvent = new(3001, "InstanceProblem");
+
+    /// <summary>Logs each problem with one collector instance at Warning: the instance will report unable to assess, the others run.</summary>
+    public static void InstanceProblems(ILogger logger, string collector, IEnumerable<Problem> problems)
+    {
+        ArgumentNullException.ThrowIfNull(problems);
+        foreach (var problem in problems)
+        {
+            var named = new Problem(problem.Code, $"{collector}: {problem.Message} Its checks will be unable to assess until this is fixed.");
+            logger.Log(LogLevel.Warning, InstanceProblemEvent, new ProblemState(named), null, static (state, _) => state.Problem.Message);
+        }
+    }
+
     [LoggerMessage(EventId = 2000, Level = LogLevel.Error, Message = "{Message}")]
     public static partial void Usage(ILogger logger, string message);
 
