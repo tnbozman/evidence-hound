@@ -69,7 +69,6 @@ internal sealed class RecordedSophos : IDisposable
     /// <summary>Every recorded list's items, all pages merged, for pure tests that need no server.</summary>
     public static Dictionary<string, JsonArray> Items() => new(StringComparer.Ordinal)
     {
-        ["endpoints"] = Merge(Pages("endpoints", "https://api.example.test/", "https://api-r1.example.test/")),
         ["firewalls"] = Merge(Pages("firewalls", "https://api.example.test/", "https://api-r1.example.test/")),
     };
 
@@ -114,23 +113,21 @@ internal sealed class RecordedSophos : IDisposable
 
     private void Lists(Func<string, JsonArray, JsonArray>? edit)
     {
-        foreach (var (name, path) in new[] { ("endpoints", "/endpoint/v1/endpoints"), ("firewalls", "/firewall/v1/firewalls") })
+        foreach (var (name, path) in new[] { ("firewalls", "/firewall/v1/firewalls") })
         {
             var pages = Pages(name, ApiUrl.ToString(), RegionUrl.ToString());
             if (edit is not null)
             {
                 var only = new JsonObject { ["items"] = edit(name, Merge(pages)) };
-                only["pages"] = name == "endpoints"
-                    ? new JsonObject { ["size"] = only["items"]!.AsArray().Count, ["maxSize"] = 500 }
-                    : new JsonObject { ["current"] = 1, ["total"] = 1, ["size"] = 100, ["items"] = only["items"]!.AsArray().Count, ["maxSize"] = 100 };
+                only["pages"] = new JsonObject { ["current"] = 1, ["total"] = 1, ["size"] = 100, ["items"] = only["items"]!.AsArray().Count, ["maxSize"] = 100 };
                 pages = [only];
             }
 
             for (var i = 0; i < pages.Count; i++)
             {
                 var request = Request.Create().WithPath(path).UsingGet().WithHeader("X-Tenant-ID", TenantId).WithHeader("Authorization", $"Bearer {Token}");
-                var (key, value) = name == "endpoints" ? ("pageFromKey", pages[i]["pages"]!["fromKey"]!.GetValue<string>()) : ("page", $"{i + 1}");
-                request = i == 0 ? request : request.WithParam(query => query.TryGetValue(key, out var found) && found.Contains(value));
+                var page = $"{i + 1}";
+                request = i == 0 ? request : request.WithParam(query => query.TryGetValue("page", out var found) && found.Contains(page));
                 _region.Server.Given(request).AtPriority(i == 0 ? 10 : 1).RespondWith(Json(200, pages[i].ToJsonString()));
             }
         }

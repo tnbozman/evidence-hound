@@ -9,15 +9,8 @@ internal sealed record SophosConnection(string ClientId, Secret ClientSecret, st
 /// <summary>A signed-in session for one tenant: the bearer token, the tenant ID and the tenant's data region API address.</summary>
 internal sealed record SophosSession(string Token, string TenantId, Uri DataRegion);
 
-/// <summary>How a Sophos Central list is paged: by <c>pageFromKey</c> (endpoints) or by page number (firewalls).</summary>
-internal enum SophosPaging
-{
-    Keyed,
-    Numbered,
-}
-
-/// <summary>One list to read from the tenant's data region: its name (also its evidence file name) and its path.</summary>
-internal sealed record SophosSource(string Name, string Path, SophosPaging Paging)
+/// <summary>One list to read from the tenant's data region, paged by page number: its name (also its evidence file name) and its path.</summary>
+internal sealed record SophosSource(string Name, string Path)
 {
     public string EvidenceFile => Name + ".json";
 }

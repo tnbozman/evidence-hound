@@ -15,7 +15,7 @@ internal sealed class SophosClient(HttpClient http, SophosSession session)
         ArgumentNullException.ThrowIfNull(source);
         var items = new JsonArray();
         var pages = 0;
-        var next = (string?)FirstQuery(source);
+        var next = (string?)FirstQuery;
         while (next is not null)
         {
             if (pages == MaxPages)
@@ -38,27 +38,19 @@ internal sealed class SophosClient(HttpClient http, SophosSession session)
                 items.Add(item?.DeepClone());
             }
 
-            next = NextQuery(source, body["pages"] as JsonObject);
+            next = NextQuery(body["pages"] as JsonObject);
         }
 
         return Result.Ok(new SophosCollection(source, items, pages));
     }
 
-    private static string FirstQuery(SophosSource source) => source.Paging == SophosPaging.Keyed
-        ? "pageSize=500&view=full"
-        : "pageSize=100&pageTotal=true";
+    private static readonly string FirstQuery = "pageSize=100&pageTotal=true";
 
     /// <summary>The query for the page after this one, or null after the last page.</summary>
-    internal static string? NextQuery(SophosSource source, JsonObject? pages)
+    internal static string? NextQuery(JsonObject? pages)
     {
-        ArgumentNullException.ThrowIfNull(source);
-        if (source.Paging == SophosPaging.Keyed)
-        {
-            return pages?["nextKey"]?.GetValue<string>() is { Length: > 0 } key ? $"{FirstQuery(source)}&pageFromKey={Uri.EscapeDataString(key)}" : null;
-        }
-
         var current = pages?["current"]?.GetValue<int>() ?? 1;
         var total = pages?["total"]?.GetValue<int>() ?? 1;
-        return current < total ? string.Create(CultureInfo.InvariantCulture, $"{FirstQuery(source)}&page={current + 1}") : null;
+        return current < total ? string.Create(CultureInfo.InvariantCulture, $"{FirstQuery}&page={current + 1}") : null;
     }
 }
