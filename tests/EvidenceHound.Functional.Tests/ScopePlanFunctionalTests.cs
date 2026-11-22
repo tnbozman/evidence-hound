@@ -27,7 +27,7 @@ public sealed class ScopePlanFunctionalTests(CisoAssistantFixture ciso)
             .Select(c => (Kind: c!["kind"]!.GetValue<string>(), Key: c["key"]!.GetValue<string>()))
             .ToArray();
         written.Select(c => c.Kind).Distinct().ShouldBe(
-            ["framework", "domain", "perimeter", "system", "user", "team", "role_assignment", "audit", "document", "control", "assessment"], ignoreOrder: true, ciso.SeedApplyReport);
+            ["feature_flag", "setting", "framework", "domain", "perimeter", "system", "user", "team", "role_assignment", "audit", "document", "control", "assessment"], ignoreOrder: true, ciso.SeedApplyReport);
         written.ShouldContain(("framework", "urn:example:risk:framework:example-baseline"), ciso.SeedApplyReport);
         written.ShouldContain(("audit", "EX-ESSENTIALS-2026"), ciso.SeedApplyReport);
         written.ShouldContain(("document", "identity-policy"), ciso.SeedApplyReport);
@@ -40,6 +40,10 @@ public sealed class ScopePlanFunctionalTests(CisoAssistantFixture ciso)
         written.ShouldContain(("team", "IT team"), ciso.SeedApplyReport);
         written.ShouldContain(("role_assignment", "BI-RL-APP|Example Pty Ltd|ceo@example.com"), ciso.SeedApplyReport);
         written.ShouldContain(("role_assignment", "BI-RL-ANA|Example Pty Ltd|it@example.com"), ciso.SeedApplyReport);
+        // s07-05: scope/settings.yaml. dora is on by default and enforce_mfa off; nis2 and compliance already hold the declared value.
+        written.ShouldContain(("feature_flag", "dora"), ciso.SeedApplyReport);
+        written.ShouldContain(("setting", "enforce_mfa"), ciso.SeedApplyReport);
+        written.ShouldNotContain(("feature_flag", "nis2"), ciso.SeedApplyReport);
         // CISO Assistant may load the mapping library itself when both its frameworks are loaded; either way it is loaded now.
         (await LoadedLibraryUrnsAsync(ct)).ShouldContain("urn:intuitem:risk:library:mapping-essential-eight-2023-and-asd-essentials-enterprise-it");
 
@@ -59,6 +63,65 @@ public sealed class ScopePlanFunctionalTests(CisoAssistantFixture ciso)
         var again = JsonNode.Parse(apply)!;
         (again["written"]!.GetValue<int>(), again["failed"]!.GetValue<int>()).ShouldBe((0, 0), apply);
         again["changes"]!.AsArray().ShouldBeEmpty(apply);
+    }
+
+    [Fact]
+    public async Task A_flag_turned_on_in_settings_yaml_is_on_after_apply_and_off_again_when_the_file_says_so()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var scope = CopyOfExampleScope();
+        var settings = Path.Combine(scope, "settings.yaml");
+        var original = await File.ReadAllTextAsync(settings, ct);
+
+        foreach (var on in new[] { true, false })
+        {
+            await File.WriteAllTextAsync(settings, original.Replace("feature_flags:\n", $"feature_flags:\n  ttps: {(on ? "true" : "false")}\n", StringComparison.Ordinal), ct);
+            var (applyExit, apply) = await RunAsync("apply", scope, ct);
+            applyExit.ShouldBe(ExitCodes.Ok, apply);
+            JsonNode.Parse(apply)!["failed"]!.GetValue<int>().ShouldBe(0, apply);
+            (await FlagAsync("ttps", ct)).ShouldBe(on);
+
+            var (planExit, plan) = await PlanAsync(scope, ct, "--format", "json");
+            planExit.ShouldBe(ExitCodes.Ok, plan);
+            JsonNode.Parse(plan)!["changes"]!.AsArray().ShouldBeEmpty(plan);
+        }
+    }
+
+    [Fact]
+    public async Task The_settings_snapshot_names_the_flags_and_general_settings_of_the_pinned_release()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var snapshot = EvidenceHound.Core.Scope.CisoAssistantSettings.Current;
+
+        var flags = (await GetAsync("settings/feature-flags/", ct)).AsObject().Where(p => p.Value is JsonValue v && v.GetValueKind() is System.Text.Json.JsonValueKind.True or System.Text.Json.JsonValueKind.False);
+        flags.Select(p => p.Key).ShouldBe(snapshot.FeatureFlags.Keys, ignoreOrder: true);
+        var general = (await GetAsync("settings/general/", ct))["value"]!.AsObject().Select(p => p.Key);
+        // The instance returns the settings it holds, which are some or all of the release's.
+        general.Except(snapshot.SecretGeneral).ShouldBeSubsetOf(snapshot.General);
+    }
+
+    /// <summary>The example scope in a temporary folder, beside its frameworks, so a test can change a file without touching the repo.</summary>
+    private static string CopyOfExampleScope()
+    {
+        var source = Directory.GetParent(CisoAssistantFixture.ExampleScope)!.FullName;
+        var target = Path.Combine(Path.GetTempPath(), "hound-settings-" + Guid.NewGuid().ToString("N"));
+        foreach (var file in Directory.GetFiles(source, "*", SearchOption.AllDirectories))
+        {
+            var copy = Path.Combine(target, Path.GetRelativePath(source, file));
+            Directory.CreateDirectory(Path.GetDirectoryName(copy)!);
+            File.Copy(file, copy);
+        }
+
+        return Path.Combine(target, Path.GetFileName(CisoAssistantFixture.ExampleScope));
+    }
+
+    private async Task<bool> FlagAsync(string name, CancellationToken ct) => (await GetAsync("settings/feature-flags/", ct))[name]!.GetValue<bool>();
+
+    private async Task<JsonNode> GetAsync(string path, CancellationToken ct)
+    {
+        using var http = new HttpClient();
+        http.DefaultRequestHeaders.Authorization = new("Token", ciso.Token);
+        return JsonNode.Parse(await http.GetStringAsync(new Uri(ciso.ApiUrl, path), ct))!;
     }
 
     private async Task<List<string>> LoadedLibraryUrnsAsync(CancellationToken ct)
