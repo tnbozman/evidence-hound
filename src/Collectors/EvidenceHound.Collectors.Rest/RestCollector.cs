@@ -2,6 +2,7 @@ using System.Reflection;
 using EvidenceHound.Collectors.Rest.Engine;
 using EvidenceHound.Collectors.Rest.Profiles;
 using EvidenceHound.Core.Checks;
+using EvidenceHound.Core.Packaging;
 using EvidenceHound.Core.Results;
 
 namespace EvidenceHound.Collectors.Rest;
@@ -62,16 +63,18 @@ public sealed class RestCollector : ICollector, IInstanceValidator
         ArgumentNullException.ThrowIfNull(context);
         cancellationToken.ThrowIfCancellationRequested();
         var loaded = Load(context.Settings);
-        if (loaded is not Result<LoadedProfile>.Ok { Value.Profile: var profile })
+        if (loaded is not Result<LoadedProfile>.Ok { Value: var file })
         {
             return Result.Fail<CollectionResult>(((Result<LoadedProfile>.Fail)loaded).Errors);
         }
 
-        return Problems(profile, context.Settings, [.. context.Secrets.Keys]) switch
+        var profile = file.Profile;
+        var result = Problems(profile, context.Settings, [.. context.Secrets.Keys]) switch
         {
             [] => await CollectValidAsync(profile, context, cancellationToken).ConfigureAwait(false),
             var problems => UnableToAssess(profile, problems, context),
         };
+        return result.Map(r => r with { Profiles = [new ManifestProfile(profile.Name, profile.Version, profile.Source, file.Sha256)] });
     }
 
     /// <summary>
