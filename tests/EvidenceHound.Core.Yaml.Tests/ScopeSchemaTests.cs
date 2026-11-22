@@ -26,6 +26,8 @@ public class ScopeSchemaTests
         Errors(ScopeFixture.Setup).ShouldBeEmpty();
         Errors(ScopeFixture.Controls).ShouldBeEmpty();
         Errors(ScopeFixture.Audit).ShouldBeEmpty();
+        Errors(AccessScopeTests.Access).ShouldBeEmpty();
+        Errors("custom_roles: [Evidence reviewer]\n" + AccessScopeTests.Access).ShouldBeEmpty();
     }
 
     [Theory]
@@ -35,6 +37,10 @@ public class ScopeSchemaTests
     [InlineData("domains:\n  - name: D\n    perimeter: {name: P}\n    perimeters: [{name: Q}]\n")]
     [InlineData("domains:\n  - name: D\n    systems: [{name: S, type: secondary}]\n")]
     [InlineData("controls:\n  - {ref_id: AC-1, name: N, colour: blue}\n")]
+    [InlineData("users:\n  - {email: it@example.com, password: not-a-real-secret}\n")]
+    [InlineData("users:\n  - {email: it@example.com, service_account: robot}\n")]
+    [InlineData("roles:\n  - {role: approver, users: [it@example.com]}\n")]
+    [InlineData("teams:\n  - {name: IT team, colour: blue}\n")]
     public void Invalid_scope_files_fail_the_schema(string yaml)
     {
         Errors(yaml).ShouldNotBeEmpty();

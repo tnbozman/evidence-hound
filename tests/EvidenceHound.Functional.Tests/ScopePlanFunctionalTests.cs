@@ -27,13 +27,19 @@ public sealed class ScopePlanFunctionalTests(CisoAssistantFixture ciso)
             .Select(c => (Kind: c!["kind"]!.GetValue<string>(), Key: c["key"]!.GetValue<string>()))
             .ToArray();
         written.Select(c => c.Kind).Distinct().ShouldBe(
-            ["framework", "domain", "perimeter", "system", "audit", "document", "control", "assessment"], ignoreOrder: true, ciso.SeedApplyReport);
+            ["framework", "domain", "perimeter", "system", "user", "team", "role_assignment", "audit", "document", "control", "assessment"], ignoreOrder: true, ciso.SeedApplyReport);
         written.ShouldContain(("framework", "urn:example:risk:framework:example-baseline"), ciso.SeedApplyReport);
         written.ShouldContain(("audit", "EX-ESSENTIALS-2026"), ciso.SeedApplyReport);
         written.ShouldContain(("document", "identity-policy"), ciso.SeedApplyReport);
         written.ShouldContain(("control", "AC-AUTO-EVIDENCE"), ciso.SeedApplyReport);
         written.ShouldContain(("assessment", "EX-ESSENTIALS-2026/IT.GOV-01.1"), ciso.SeedApplyReport);
         written.ShouldContain(("assessment", "EX-E8-2026/ISM-1486"), ciso.SeedApplyReport);
+        // s07-04: scope/access.yaml. The seed made it@ and ceo@ without names; auditor@ is new and gets CISO Assistant's invitation.
+        written.ShouldContain(("user", "auditor@example.com"), ciso.SeedApplyReport);
+        written.ShouldContain(("user", "ceo@example.com"), ciso.SeedApplyReport);
+        written.ShouldContain(("team", "IT team"), ciso.SeedApplyReport);
+        written.ShouldContain(("role_assignment", "BI-RL-APP|Example Pty Ltd|ceo@example.com"), ciso.SeedApplyReport);
+        written.ShouldContain(("role_assignment", "BI-RL-ANA|Example Pty Ltd|it@example.com"), ciso.SeedApplyReport);
         // CISO Assistant may load the mapping library itself when both its frameworks are loaded; either way it is loaded now.
         (await LoadedLibraryUrnsAsync(ct)).ShouldContain("urn:intuitem:risk:library:mapping-essential-eight-2023-and-asd-essentials-enterprise-it");
 
