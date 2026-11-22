@@ -10,7 +10,7 @@ CA_COMPOSE := dev/ciso-assistant/compose.yml
 CA_ENV := HOUND_CA_SECRET_KEY="$$(scripts/ca-secret-key.sh)"
 SHELL_SCRIPTS := $(wildcard scripts/*.sh scripts/lib/*.sh deploy/compose/*.sh .devcontainer/*.sh dev/ciso-assistant/seed/*.sh) .githooks/pre-commit
 
-.PHONY: help restore build test test-functional test-template test-scripts coverage image test-image test-compose compose-smoke lint lint-dotnet lint-shell format run hooks ca-up ca-up-kafka ca-down
+.PHONY: help restore build test test-functional test-template test-scripts coverage image test-image test-compose compose-smoke lint lint-dotnet lint-shell format run hooks ca-up ca-up-kafka ca-down trial trial-clean
 
 help: ## List targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-16s %s\n", $$1, $$2}'
@@ -77,3 +77,9 @@ ca-up-kafka: ca-up ## Also start Redpanda and the CISO Assistant dispatcher (com
 
 ca-down: ## Stop the local CISO Assistant (add ARGS=-v to delete its data)
 	$(CA_ENV) docker compose -f $(CA_COMPOSE) --profile kafka down $(ARGS)
+
+trial: ## Interactive local trial: hound in a container next to your CISO Assistant (docs/tutorials/local-trial.md)
+	scripts/trial.sh
+
+trial-clean: ## Remove the local trial's workspace (.dev/trial); CISO Assistant keeps running
+	rm -rf .dev/trial
