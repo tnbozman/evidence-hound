@@ -184,6 +184,14 @@ public static partial class ConfigLoader
         return problems.Length > 0 ? Result.Fail<IReadOnlyList<CollectorInstance>>(problems) : parsed;
     }
 
+    /// <summary>Collector types hound no longer has, with what to write instead.</summary>
+    private static readonly Dictionary<string, string> RetiredTypes = new(StringComparer.Ordinal)
+    {
+        ["sophos"] = "use `type: rest` with the setting `profile: sophos-central` (and `profiles_path` if the profiles folder is not the default). "
+            + "client_id, supported_firewall_firmware, super_admin_max and the client_secret secret keep their names; tenant_id is not used, "
+            + "as the profile needs a tenant credential. See docs/collectors/sophos.md.",
+    };
+
     private static Result<CollectorInstance> ParseCollector(YamlNode item, Locator at, IReadOnlyDictionary<string, CollectorDescription> knownTypes)
     {
         if (item is not YamlMappingNode map)
@@ -196,7 +204,9 @@ public static partial class ConfigLoader
             : Result.Fail<string>(at.Problem(node.Start, "config.collector_name_invalid", "'name' must be lowercase letters, digits and hyphens, starting with a letter or digit.")));
         var type = Scalar(map, "type", at).Bind(node => knownTypes.ContainsKey(node.Value!)
             ? Result.Ok(node.Value!)
-            : Result.Fail<string>(at.Problem(node.Start, "config.collector_type_unknown", $"unknown collector type '{node.Value}'; known types: {string.Join(", ", knownTypes.Keys.Order(StringComparer.Ordinal))}.")));
+            : RetiredTypes.TryGetValue(node.Value!, out var replacement)
+                ? Result.Fail<string>(at.Problem(node.Start, "config.collector_type_retired", $"collector type '{node.Value}' was replaced: {replacement}"))
+                : Result.Fail<string>(at.Problem(node.Start, "config.collector_type_unknown", $"unknown collector type '{node.Value}'; known types: {string.Join(", ", knownTypes.Keys.Order(StringComparer.Ordinal))}.")));
         var schedule = Scalar(map, "schedule", at).Bind(node => IsCron(node.Value!)
             ? Result.Ok(node.Value!)
             : Result.Fail<string>(at.Problem(node.Start, "config.schedule_invalid", "'schedule' must be a five-field cron expression, for example \"0 2 * * *\".")));

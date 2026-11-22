@@ -16,6 +16,12 @@ public sealed record CollectorDescription(
     /// with these settings can emit.
     /// </summary>
     public Func<CollectorSettings, IReadOnlyList<string>>? ChecksFrom { get; init; }
+
+    /// <summary>
+    /// For a collector whose further settings and secrets depend on a setting (such as the rest collector's profile): this description
+    /// with the settings and secrets an instance with these settings reads. <c>hound add collector</c> asks for them after the others.
+    /// </summary>
+    public Func<CollectorSettings, CollectorDescription>? SettingsFrom { get; init; }
 }
 
 /// <summary>

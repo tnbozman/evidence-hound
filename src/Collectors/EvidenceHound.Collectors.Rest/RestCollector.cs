@@ -56,6 +56,15 @@ public sealed class RestCollector : ICollector, IInstanceValidator
         [])
     {
         ChecksFrom = settings => Load(settings).Match(loaded => (IReadOnlyList<string>)[.. loaded.Profile.Checks.Select(c => c.Id)], _ => []),
+        SettingsFrom = settings => Load(settings).Match(loaded => WithProfile(Describe(), loaded.Profile), _ => Describe()),
+    };
+
+    /// <summary>The description with the profile's parameters as settings and its secrets: required when the profile needs one and gives no default.</summary>
+    private static CollectorDescription WithProfile(CollectorDescription described, Profile profile) => described with
+    {
+        Settings = [.. described.Settings, .. profile.Parameters.Select(p => new SettingDescription(p.Name, p.Description, p.Required && p.Default is null))],
+        Secrets = [.. profile.Secrets.Select(s => new SettingDescription(s.Name, s.Description, s.Required))],
+        SettingsFrom = null,
     };
 
     public IReadOnlyList<Problem> ValidateInstance(CollectorSettings settings, IReadOnlyCollection<string> secrets) =>
