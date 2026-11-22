@@ -110,7 +110,7 @@ $ echo $?
 - Result (2026-11-22): `hound run --config hound.yaml --only rest-example --dry-run` against the local stand-in for the recorded example API. Evidence: `devices.json`, `users.json`, `roles.json` and `dataset.user_roles.json` (2 rows, 0 unmatched, sources `users.json` and `roles.json` with SHA-256 values equal to the run manifest's). Status record: 4 checks passed, 0 failed. With `/v1/orgs/org-0001/roles` answering 500: `roles.json` and the dataset file are not saved, the two device checks still pass and the two checks over `user_roles` are unable to assess (status record: 2 passed, 2 other), and the run still succeeds. Observations (counts, offending rows capped at 20, the evidence file cited, and the failed query named) are covered by `RestCollectorTests` and `CheckEvaluatorTests`, because `hound run` does not print them (see discovered work). Unit suite green, lint clean.
 
 ### s09-12 Code checks, profiles folder and profile tests
-- [ ] Done
+- [x] Done
 
 **Story:** As a profile author, I want to test a profile against recorded responses before it is trusted, and to use a built-in code check when the operators are not enough.
 
@@ -130,6 +130,7 @@ $ echo $?
 
 **Functional check**
 - Copy `profiles/example.yaml` into a scratch profiles folder, run `hound profile test example`, change an expected result, and see the test fail naming the check.
+- Result (2026-11-22): copied `profiles/example.yaml` and `profiles/example.tests/` into a scratch folder. `hound profile test example --profiles <scratch>` printed `example/all-pass: passed (4 checks)` and `example/roles-unreadable: passed (4 checks)`, exit 0. After changing `example.identity.owner_count: pass` to `fail` in `all-pass.yaml`: `example/all-pass: FAILED` and `example.identity.owner_count: expected fail, got pass. 1 of 2 active users hold the Owner role; at most 2 allowed. Evidence: dataset.user_roles.json.`, exit 1. `make test-profiles` (new, also in CI) passes. Unit suite green, lint clean. Decisions made here: profile tests are folders of case files (`<profile>.tests/<case>.yaml` with `recordings/`); `require_profile_tests` is a per-instance rest setting rather than a deployment setting; `hound profile diff` takes `--library <evidence-hound checkout>` (or `HOUND_LIBRARY_PATH`) and resolves `source` inside it; the code-check library starts with `sophos.super_admin_count` (moved from the Sophos collector for s09-13).
 
 ### s09-13 Sophos as a profile
 - [ ] Done
