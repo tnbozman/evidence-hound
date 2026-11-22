@@ -6,7 +6,7 @@ using WireMock.Server;
 namespace EvidenceHound.Collectors.Rest.Tests;
 
 /// <summary>
-/// The fictional Example Asset API replayed from <c>tests/fixtures/rest/example</c>: a token endpoint, whoami, devices (two pages by
+/// The fictional Example Asset API replayed from <c>profiles/example.tests/recordings</c>: a token endpoint, whoami, devices (two pages by
 /// next link), users (two pages by offset) and roles. <c>{{api}}</c> in a file stands for the server's address.
 /// </summary>
 public sealed class RecordedExample : IDisposable
@@ -37,7 +37,7 @@ public sealed class RecordedExample : IDisposable
     /// <summary>Clients that do not follow redirects, as the rest collector's named client is registered.</summary>
     public static IHttpClientFactory HttpClients { get; } = new NoRedirectClients();
 
-    public static string Folder => Path.Combine(AppContext.BaseDirectory, "rest", "example");
+    public static string Folder => Path.Combine(AppContext.BaseDirectory, "profiles", "example.tests", "recordings");
 
     public static RecordedExample Start() => new();
 
