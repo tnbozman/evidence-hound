@@ -73,12 +73,12 @@ public sealed class ScopePlanCommandTests : IDisposable
         List("users",
             new JsonObject { ["id"] = "u-it", ["email"] = "it@example.com", ["is_active"] = true, ["has_mfa_enabled"] = false, ["user_groups"] = new JsonArray() },
             new JsonObject { ["id"] = "u-run", ["email"] = "hound-runner@example.com", ["is_active"] = true, ["has_mfa_enabled"] = false, ["user_groups"] = new JsonArray(new JsonObject { ["id"] = "g-adm", ["str"] = "BI-UG-ADM" }) });
-        List("roles", new JsonObject { ["id"] = "r-adm", ["name"] = "BI-RL-ADM" });
+        List("roles", new JsonObject { ["id"] = "r-adm", ["name"] = "Administrator", ["builtin"] = true });
         List("role-assignments", new JsonObject
         {
             ["id"] = "ra-adm",
             ["name"] = "BI-RA-ADM",
-            ["role"] = new JsonObject { ["id"] = "r-adm", ["str"] = "BI-RL-ADM" },
+            ["role"] = new JsonObject { ["id"] = "r-adm", ["str"] = "Administrator" },
             ["user"] = null,
             ["user_group"] = new JsonObject { ["id"] = "g-adm", ["str"] = "BI-UG-ADM" },
             ["perimeter_folders"] = new JsonArray(new JsonObject { ["id"] = "f-global", ["str"] = "Global" }),

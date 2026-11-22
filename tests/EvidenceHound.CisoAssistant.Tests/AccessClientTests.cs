@@ -19,7 +19,8 @@ public sealed class AccessClientTests : IDisposable
         List("users",
             User("u-it", "it@example.com", "Alex", "Example", active: true, $"Runs IT.\n[hound scope {State}]", mfa: true),
             User("u-admin", "admin@example.com", "", "", active: true, null, mfa: false));
-        List("roles", Role("r-app", "BI-RL-APP"), Role("r-adm", "BI-RL-ADM"), Role("r-ana", "BI-RL-ANA"));
+        // As CISO Assistant v4.3.4 lists them: a built-in role's name is its display name (BI-RL-AUD is "Reader"), never its code.
+        List("roles", Role("r-app", "Approver"), Role("r-adm", "Administrator"), Role("r-ana", "Analyst"), Role("r-aud", "Reader"), Role("r-custom", "Evidence reviewer", builtin: false));
         var team = new JsonObject
         {
             ["id"] = "t-it",
@@ -44,7 +45,7 @@ public sealed class AccessClientTests : IDisposable
                 ["id"] = "ra-app",
                 ["name"] = "BI-RL-APP on Example Pty Ltd for it@example.com",
                 ["description"] = $"[hound scope {State}]",
-                ["role"] = Relation("r-app", "BI-RL-APP"),
+                ["role"] = Relation("r-app", "Approver"),
                 ["user"] = Relation("u-it", "it@example.com"),
                 ["user_group"] = null,
                 ["perimeter_folders"] = new JsonArray(Relation("f-ex", "Example Pty Ltd")),
@@ -56,7 +57,7 @@ public sealed class AccessClientTests : IDisposable
             {
                 ["id"] = "ra-builtin",
                 ["name"] = "BI-RA-ADM",
-                ["role"] = Relation("r-adm", "BI-RL-ADM"),
+                ["role"] = Relation("r-adm", "Administrator"),
                 ["user"] = null,
                 ["user_group"] = Relation("g-adm", "BI-UG-ADM"),
                 ["perimeter_folders"] = new JsonArray(Relation("f-global", "Global")),
@@ -114,6 +115,21 @@ public sealed class AccessClientTests : IDisposable
             ["is_recursive"] = true,
         }));
         _ca.Server.LogEntries.ShouldAllBe(e => e.RequestMessage!.Body == null || !e.RequestMessage.Body.Contains("password", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task A_custom_role_is_found_by_its_name_and_a_built_in_one_by_its_code()
+    {
+        var custom = Declared(ScopeKind.RoleAssignment, "Evidence reviewer|Global|it@example.com", ("role", "Evidence reviewer"), ("domain", "Global"), ("user", "it@example.com"));
+        var reader = Declared(ScopeKind.RoleAssignment, "BI-RL-AUD|Global|it@example.com", ("role", "BI-RL-AUD"), ("domain", "Global"), ("user", "it@example.com"));
+
+        (await Write(custom, ScopeAction.Create)).Value();
+        var customRole = Posted("role-assignments");
+        _ca.Server.ResetLogEntries();
+        (await Write(reader, ScopeAction.Create)).Value();
+
+        customRole.ShouldContain("\"role\":\"r-custom\"");
+        Posted("role-assignments").ShouldContain("\"role\":\"r-aud\"");
     }
 
     [Fact]
@@ -233,7 +249,7 @@ public sealed class AccessClientTests : IDisposable
         ["user_groups"] = id == "u-admin" ? new JsonArray(new JsonObject { ["id"] = "g-adm", ["builtin"] = true, ["str"] = "BI-UG-ADM" }) : new JsonArray(),
     };
 
-    private static JsonObject Role(string id, string name) => new() { ["id"] = id, ["name"] = name, ["builtin"] = true };
+    private static JsonObject Role(string id, string name, bool builtin = true) => new() { ["id"] = id, ["name"] = name, ["builtin"] = builtin };
 
     private void Detail(string resource, JsonObject item) =>
         _ca.Server.Given(Request.Create().WithPath($"/api/{resource}/{item["id"]}/object/").UsingGet())
