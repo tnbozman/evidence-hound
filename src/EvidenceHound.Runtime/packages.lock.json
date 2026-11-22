@@ -200,6 +200,12 @@
           "YamlDotNet": "[18.1.0, )"
         }
       },
+      "evidencehound.collectors.sophos": {
+        "type": "Project",
+        "dependencies": {
+          "EvidenceHound.Collectors.Abstractions": "[0.1.0, )"
+        }
+      },
       "evidencehound.core": {
         "type": "Project"
       },
