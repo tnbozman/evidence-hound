@@ -200,7 +200,7 @@ A system is registered only once its supplier is approved, so the supplier regis
 - With a fixed clock past a review date, `scope apply` opens the next fictional supplier assessment in the local CISO Assistant with its questionnaire.
 - A fictional system whose supplier has no concluded assessment is refused by `scope plan`; concluding the assessment in CISO Assistant lets it through.
 
-### Onboarding assistant (s09-21 to s09-25)
+### Onboarding assistant (s09-21 to s09-26)
 
 These tasks come after s09-14, because they draft REST profiles, and after s09-20, because onboarding starts with the supplier. They build `hound onboard` from [`docs/design/onboarding-assistant.md`](../design/onboarding-assistant.md): a guided session in which a language model proposes how a system fits a framework and drafts its profile, and a person accepts or edits every decision. Nothing is applied to CISO Assistant by the session; the output is files for a pull request in the organisation's config repo. Tests use a fake model with recorded replies; no test or CI job calls a live model.
 
@@ -228,6 +228,35 @@ These tasks come after s09-14, because they draft REST profiles, and after s09-2
 
 **Functional check**
 - With a fake model, `hound onboard --show-requests` on the example system prints requests containing no recorded host names, IDs or secrets.
+
+### s09-26 Onboarding skills
+- [ ] Done
+
+Built straight after s09-21, before s09-22, because every later onboarding step reads its guidance from skills.
+
+**Story:** As a GRC team member, I want the assistant's guidance in text files I can read and adjust without a build, with good-practice defaults and a way to add our own, so that onboarding improves as we learn.
+
+**Acceptance criteria**
+- A skill is a Markdown file with YAML frontmatter: `name`, `description`, `version`, `applies_to` (one or more of `supplier`, `system`, `applicability`, `profile`, `mapping`), optional `frameworks` and optional `overrides`. Parsed and validated once into an immutable record.
+- Default skills in `skills/`, built into `hound`: supplier assessment and tiering, supplier assurance documents, applicability and not-applicable justification, Essential Eight ML2 mapping, profile authoring, reading an API specification.
+- Organisation skills load from `skills_path` (default `/config/skills`, read-only). They add to the defaults; a skill with the name of a default is an error unless it declares `overrides:` with that name.
+- `hound skill list` (source, version, SHA-256, overrides), `hound skill new <name>`, `hound skill add <file>` (validate, then copy into the organisation folder) and `hound skill validate` (frontmatter, step names, size budget, and a warning for anything matching the deny terms or identity patterns).
+- Selection (pure): for a step and framework, every matching skill, defaults first, within a size budget; over budget is a problem naming the skills, not a silent cut.
+- Skills are passed to the model as instructions; vendor documents and specifications are passed separately as material to read. The outbound guard scans skills like any other content.
+- The onboarding record lists every skill used with its source, version and SHA-256.
+- Skills cannot change the outbound guard, response shapes, the approver rule, the supplier gate, schema validation or profile tests; a test shows a skill telling the model to skip approval or send raw data has no effect on what is sent or saved.
+
+**Tests first**
+- `SkillParserTests.Reads_frontmatter_and_body`
+- `SkillValidationTests.Unknown_step_and_missing_fields_are_reported`
+- `SkillCatalogueTests.Same_name_without_overrides_is_an_error`
+- `SkillCatalogueTests.Override_replaces_default_and_is_listed`
+- `SkillSelectionTests.Selects_by_step_and_framework_within_budget`
+- `SkillSafetyTests.Skill_cannot_weaken_guard_or_approver_rule`
+- `OnboardRecordTests.Lists_skills_with_version_and_hash`
+
+**Functional check**
+- `hound skill new example-check`, edit it, `hound skill add` it, and `hound skill list` shows it beside the defaults; an onboarding run with a fake model records it.
 
 ### s09-22 Understand the system and decide applicability
 - [ ] Done
@@ -302,7 +331,7 @@ These tasks come after s09-14, because they draft REST profiles, and after s09-2
 **Acceptance criteria**
 - The person runs `hound onboard` in the dev container with their own model key and read-only firewall credentials, registers and approves the supplier (the vendor or the reseller their contract is with) first, against the Essential Eight ML2 framework, and commits the output to their private config repo. Nothing from the run is committed here.
 - What the run showed (steps that were slow or confusing, wrong proposals, missing operators) is recorded as discovered work, without organisation data.
-- `docs/onboarding.md`: how to onboard a system, what is sent to the model and how to check it, how to use another provider or `--no-model`, and how auditors read the onboarding record. A tutorial section onboards the fictional example API.
+- `docs/onboarding.md`: how to onboard a system, what is sent to the model and how to check it, how to use another provider or `--no-model`, how to write, add and override skills, and how auditors read the onboarding record. A tutorial section onboards the fictional example API.
 
 **Tests first**
 - Docs check that every `hound onboard` option appears in `docs/onboarding.md`.

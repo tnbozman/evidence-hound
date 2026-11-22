@@ -1,6 +1,6 @@
 # Design: an assistant for onboarding a system
 
-Status: Proposed (Nov 22). Builds on the agreed [REST collector design](rest-collector.md). The build is tasks s09-19 and s09-20 (suppliers, moved from s10) and s09-21 to s09-25 in [the s09 sprint](../sprints/s09-e8-gap-collectors.md).
+Status: Proposed (Nov 22). Builds on the agreed [REST collector design](rest-collector.md). The build is tasks s09-19 and s09-20 (suppliers, moved from s10) and s09-21 to s09-26 in [the s09 sprint](../sprints/s09-e8-gap-collectors.md).
 
 ## The problem
 
@@ -120,6 +120,32 @@ Guard rails:
 - **Everything sent is kept.** Each request and reply is saved locally under the onboarding record, so the person can see exactly what left. `--show-requests` prints each one before it is sent.
 - **The key is a secret like any other.** `llm_api_key` comes from the secret provider (environment or secret file), never from a config file or CISO Assistant.
 
+## Skills: the assistant's guidance as text
+
+How the assistant judges a supplier, words a not-applicable justification or writes a profile is good practice that will change as the team learns. It belongs in text files anyone on the GRC team can read and adjust without a build, not in prompts compiled into `hound`.
+
+A **skill** is a Markdown file with YAML frontmatter (the same shape as Agent Skills' `SKILL.md`):
+
+```markdown
+---
+name: not-applicable-justification
+description: How to propose and word a not-applicable decision an auditor will accept.
+version: 3
+applies_to: [applicability]          # onboarding steps: supplier, system, applicability, profile, mapping
+frameworks: [essential-eight-2023]   # optional; empty means every framework
+---
+
+A requirement is not applicable only when the system cannot be in its scope at all ...
+```
+
+- **Default skills** ship in this repo's `skills/` folder and are built into `hound`, so every organisation starts from the same good practice: supplier assessment and tiering, which supplier documents count as assurance (and which do not), applicability and not-applicable justifications, Essential Eight ML2 mapping, profile authoring (datasets, `when_empty`, identities, operators) and reading an API specification. NIST SP 800-171 mapping is added with that framework.
+- **Organisation skills** live in a `skills/` folder in the private config repo, mounted read-only like profiles (setting `skills_path`). They add to the defaults. A skill replaces a default only if it says so (`overrides: <name>`), so nothing is replaced by accident.
+- **The CLI:** `hound skill list` shows every active skill with its source (default or organisation), version and SHA-256, and any override. `hound skill new <name>` writes a skeleton, `hound skill add <file>` validates a skill and copies it into the organisation folder, and `hound skill validate` checks frontmatter, step names and size. Changes reach the team through a pull request in the config repo, like profiles.
+- **How they are used:** at each step, the session gives the model every skill whose `applies_to` names that step and whose `frameworks` match, within a size budget. Vendor documents and API specifications are passed separately and marked as material to read, not instructions to follow.
+- **Recorded:** the onboarding record lists every skill used, with its source, version and SHA-256, so an auditor can see which guidance shaped each proposal.
+
+**Skills guide; code enforces.** A skill is only text given to the model. It cannot change what is sent to the model (the outbound guard and response shapes), remove the need for a named approver on not-applicable, bypass the supplier gate, skip schema validation or profile tests, or reach the evidence runner. Those rules stay in code. Organisation skills are sent to the model provider like everything else, so the outbound guard scans them too, and `hound skill validate` warns about anything that looks like organisation data.
+
 ## Model and provider
 
 - A small port in the core, `IDraftingModel`: send a request with instructions, inputs and the JSON schema the reply must match; get a validated reply or a problem. The onboarding logic depends only on this.
@@ -139,6 +165,7 @@ Guard rails:
 | Swappable provider | No lock-in; a local model is possible | One adapter to maintain per provider |
 | Supplier approved before system | No system enters the audit on an unvetted supplier; supplier assurance is gathered while the system is fresh | Onboarding can wait on the GRC team's supplier review; the gate needs supplier assessments concluded in CISO Assistant |
 | Supplier summary as a draft, vendor documents as evidence | Auditors see the vendor's own words, not a model's paraphrase | The GRC team still reads the documents to confirm the summary |
+| Guidance in skills, rules in code | Good practice can be adjusted and shared without a release; the team can read what the assistant was told | Skills need the same review as other config; a poor organisation skill gives poorer proposals, though never weaker safety rules |
 | Onboarding record kept as evidence | Auditors see how applicability was decided | Another document to keep current when a system changes |
 
 ## Edge cases
@@ -165,3 +192,4 @@ Guard rails:
 6. **Supplier first, with a gate in `scope plan`:** a system is registered only when every supplier it names (the vendor and, if set, the reseller) has a concluded supplier assessment, a current review and an active contract. A lapse is reported, not unregistered. (Recommended.)
 7. **s10-01 and s10-02 move into s09** (as s09-19 and s09-20, before onboarding); s10-03 docs and s10-04 evidence plan, including the recurring supplier review task, stay in s10. (Recommended.)
 8. **No model in evidence collection** (agreed Nov 22): onboarding code in its own project that the runner cannot reach, no model key in a runner's configuration, and the supplier summary is a reviewed draft while the cited vendor documents are the evidence.
+9. **Skills for the assistant's guidance:** default skills built into `hound`, organisation skills from a mounted folder added with `hound skill add`, overriding a default only when they say so, recorded by version and hash in each onboarding record; the safety rules stay in code.
