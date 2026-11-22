@@ -9,6 +9,9 @@ public sealed record ScopeStateQuery(string RootFolder, IReadOnlyList<string> Fr
     /// <summary>Whether to read users, teams and role assignments: only when the scope declares access.</summary>
     public bool Access { get; init; }
 
+    /// <summary>Whether to read feature flags and general settings: when the scope declares settings, or to list the unmanaged ones.</summary>
+    public bool Settings { get; init; }
+
     /// <summary>The query for a scope: its root folder, its frameworks and other libraries, and the rows its <paramref name="declared"/> objects write.</summary>
     public static ScopeStateQuery For(ScopeDocument scope, IReadOnlyList<ScopeObject> declared)
     {

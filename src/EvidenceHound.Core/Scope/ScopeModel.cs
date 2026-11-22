@@ -19,6 +19,9 @@ public sealed record ScopeDocument(ScopeSetup Setup, IReadOnlyList<ScopeControl>
 {
     /// <summary><c>scope/access.yaml</c>: users, teams and role assignments; empty when the repo has no such file.</summary>
     public ScopeAccess Access { get; init; } = ScopeAccess.None;
+
+    /// <summary><c>scope/settings.yaml</c>: feature flags and general settings; empty when the repo has no such file.</summary>
+    public ScopeSettings Settings { get; init; } = ScopeSettings.None;
 }
 
 /// <summary><c>scope/setup.yaml</c>: the root folder, the frameworks to load and the domains.</summary>

@@ -3,6 +3,8 @@ namespace EvidenceHound.Core.Scope;
 /// <summary>What the scope manages in CISO Assistant, in dependency order: a plan creates them in this order and deletes them in reverse.</summary>
 public enum ScopeKind
 {
+    FeatureFlag,
+    Setting,
     Framework,
     Domain,
     Perimeter,

@@ -97,6 +97,29 @@ public sealed class ScopePlanCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Plan_with_settings_yaml_changes_only_named_settings_and_lists_the_others_when_asked()
+    {
+        await WriteScopeAsync();
+        await File.WriteAllTextAsync(Path.Combine(ScopeDir, "settings.yaml"), "feature_flags:\n  tprm: false\ngeneral:\n  enforce_mfa: true\n", _ct);
+        EmptyInstance();
+        _ca.Given(Request.Create().WithPath("/api/settings/feature-flags/").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject { ["name"] = "feature-flags", ["tprm"] = true, ["bia"] = false }.ToJsonString()));
+        _ca.Given(Request.Create().WithPath("/api/settings/general/").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject { ["name"] = "general", ["value"] = new JsonObject { ["enforce_mfa"] = false, ["currency"] = "€" } }.ToJsonString()));
+
+        var exitCode = await Plan("--show-unmanaged");
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var markdown = _output.ToString();
+        markdown.ShouldContain("| Update | feature_flag | tprm | value: true → false |");
+        markdown.ShouldContain("| Update | setting | enforce_mfa | value: false → true |");
+        markdown.ShouldContain("### Unmanaged settings");
+        markdown.ShouldContain("| feature_flag | bia | false |");
+        markdown.ShouldContain("| setting | currency | \"€\" |");
+        markdown.ShouldNotContain("| feature_flag | tprm | true |");
+    }
+
+    [Fact]
     public async Task Plan_as_json_lists_changes_field_by_field_and_drift()
     {
         await WriteScopeAsync();
