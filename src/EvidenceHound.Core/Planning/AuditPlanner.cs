@@ -32,13 +32,29 @@ public static class AuditPlanner
             .. controls,
         ]);
 
-    /// <summary>Every update for a run. Not yet marked: the signature only, so the tests that need it compile.</summary>
+    /// <summary>
+    /// Every update, as <see cref="PlanUpdates(IReadOnlyList{TargetResults}, IReadOnlyList{Evidence}, IReadOnlyList{ControlStatus})"/>, with
+    /// each observation ending in the marker of <paramref name="runId"/> and the row's state, as <see cref="PlanChanges"/> writes it. Rows a
+    /// run marked are the runs' own, so <c>scope apply</c> keeps them and <c>scope export</c> leaves them out.
+    /// </summary>
     public static Result<IReadOnlyList<AuditUpdate>> PlanUpdates(
         IReadOnlyList<TargetResults> targets,
         IReadOnlyList<Evidence> evidence,
         IReadOnlyList<ControlStatus> controlStatuses,
-        string runId) =>
-        PlanUpdates(targets, evidence, controlStatuses);
+        string runId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(runId);
+        return Validate(targets, evidence, controlStatuses).Map(controls =>
+        {
+            var hashes = Hashes(evidence);
+            return (IReadOnlyList<AuditUpdate>)
+            [
+                .. Uploads(evidence, _ => true),
+                .. targets.SelectMany(t => t.Results.Select(r => Update(t.Target, r, Marked(r, hashes, runId), new Dictionary<string, string>()))),
+                .. controls,
+            ];
+        });
+    }
 
     /// <summary>
     /// Like <see cref="PlanUpdates(IReadOnlyList{TargetResults}, IReadOnlyList{Evidence}, IReadOnlyList{ControlStatus})"/>, but leaves out
@@ -60,7 +76,7 @@ public static class AuditPlanner
 
         return Validate(targets, evidence, controlStatuses).Map(controls =>
         {
-            var hashes = evidence.DistinctBy(e => e.Id).ToDictionary(e => e.Id, e => e.Sha256, StringComparer.Ordinal);
+            var hashes = Hashes(evidence);
             var known = current.Evidence
                 .Where(e => hashes.TryGetValue(e.RefId, out var sha) && e.LatestSha256 == sha)
                 .DistinctBy(e => e.RefId)
@@ -129,6 +145,15 @@ public static class AuditPlanner
             KnownEvidenceIds = knownEvidenceIds,
         };
 
+    private static Dictionary<string, string> Hashes(IReadOnlyList<Evidence> evidence) =>
+        evidence.DistinctBy(e => e.Id).ToDictionary(e => e.Id, e => e.Sha256, StringComparer.Ordinal);
+
+    private static string Fingerprint(RequirementResult result, Dictionary<string, string> hashes) =>
+        RowState.Fingerprint(result.Result, result.CheckOutcomes, result.EvidenceRefs.Select(id => $"{id}={hashes[id]}"));
+
+    private static string Marked(RequirementResult result, Dictionary<string, string> hashes, string runId) =>
+        RowState.Mark(result.Observation, runId, Fingerprint(result, hashes));
+
     private static RowsPlan PlanRows(
         AuditTarget target,
         CurrentAudit? audit,
@@ -138,9 +163,9 @@ public static class AuditPlanner
         HashSet<string> documents,
         string runId)
     {
-        var fingerprint = RowState.Fingerprint(result.Result, result.CheckOutcomes, result.EvidenceRefs.Select(id => $"{id}={hashes[id]}"));
+        var fingerprint = Fingerprint(result, hashes);
         var knownIds = result.EvidenceRefs.Where(known.ContainsKey).Distinct().ToDictionary(id => id, id => known[id], StringComparer.Ordinal);
-        var update = Update(target, result, RowState.Mark(result.Observation, runId, fingerprint), knownIds);
+        var update = Update(target, result, Marked(result, hashes, runId), knownIds);
         if (audit is { Closed: true })
         {
             return new RowsPlan(target.ComplianceAssessmentRefId, null, Changed: 0, Unchanged: 0, Drift:

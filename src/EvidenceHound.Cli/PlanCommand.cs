@@ -92,10 +92,13 @@ internal static class PlanCommand
 
     /// <summary>
     /// Loads the config, its targets' mappings and the check results, and plans the updates of every target audit; a target naming an
-    /// audit series is the period open on <paramref name="today"/>.
+    /// audit series is the period open on <paramref name="today"/>. With <paramref name="runId"/>, each observation carries that run's marker.
     /// </summary>
-    internal static async Task<Result<IReadOnlyList<AuditUpdate>>> PlanAsync(FileInfo configFile, FileInfo checksFile, CollectorRegistry registry, DateOnly today, CancellationToken cancellationToken) =>
-        (await InputsAsync(configFile, checksFile, registry, today, cancellationToken)).Bind(i => AuditPlanner.PlanUpdates(i.Targets, i.Run.Evidence, i.Run.ControlStatuses));
+    internal static async Task<Result<IReadOnlyList<AuditUpdate>>> PlanAsync(
+        FileInfo configFile, FileInfo checksFile, CollectorRegistry registry, DateOnly today, CancellationToken cancellationToken, string? runId = null) =>
+        (await InputsAsync(configFile, checksFile, registry, today, cancellationToken)).Bind(i => runId is null
+            ? AuditPlanner.PlanUpdates(i.Targets, i.Run.Evidence, i.Run.ControlStatuses)
+            : AuditPlanner.PlanUpdates(i.Targets, i.Run.Evidence, i.Run.ControlStatuses, runId));
 
     /// <summary>Each target audit with its mapped results, and the run the results came from.</summary>
     private static async Task<Result<(IReadOnlyList<TargetResults> Targets, RunResults Run)>> InputsAsync(
