@@ -394,12 +394,15 @@ internal static class ScopeCommands
         var audits = Directory.Exists(auditsDir) ? Directory.GetFiles(auditsDir, "*.yaml").Order(StringComparer.Ordinal).ToArray() : [];
         var accessPath = Path.Combine(dir.ToString(), "access.yaml");
         var settingsPath = Path.Combine(dir.ToString(), "settings.yaml");
+        var thirdPartiesDir = Path.Combine(dir.ToString(), "third-parties");
+        var thirdParties = Directory.Exists(thirdPartiesDir) ? Directory.GetFiles(thirdPartiesDir, "*.yaml").Order(StringComparer.Ordinal).ToArray() : [];
         var parsed = ScopeLoader.Parse(
             await ReadAsync(setupPath, cancellationToken),
             File.Exists(controlsPath) ? await ReadAsync(controlsPath, cancellationToken) : null,
             [.. await Task.WhenAll(audits.Select(a => ReadAsync(a, cancellationToken)))],
             File.Exists(accessPath) ? await ReadAsync(accessPath, cancellationToken) : null,
-            File.Exists(settingsPath) ? await ReadAsync(settingsPath, cancellationToken) : null);
+            File.Exists(settingsPath) ? await ReadAsync(settingsPath, cancellationToken) : null,
+            [.. await Task.WhenAll(thirdParties.Select(t => ReadAsync(t, cancellationToken)))]);
 
         var snapshots = await SnapshotsAsync(parsed.Scope.Setup.Frameworks, Path.GetDirectoryName(Path.GetFullPath(setupPath))!, cancellationToken);
         var targets = configFile is null ? Result.Ok<IReadOnlyList<ScopeTarget>>([]) : await TargetsAsync(configFile, registry, cancellationToken);
@@ -412,13 +415,18 @@ internal static class ScopeCommands
             .. files.Problems,
             .. targets.Match(_ => [], ps => ps.Select(p => new ScopeProblem(p.Code, new SourceLine(configFile!.ToString(), 0), p.Message, "Fix the deployment config first."))),
             .. ScopeValidator.Validate(scope, snapshots.Loaded, targets.Match(t => t, _ => [])),
+            .. SupplierValidator.Validate(scope, today),
         ];
         return new(
             problems,
-            string.Create(CultureInfo.InvariantCulture, $"scope valid: {scope.Setup.Domains.Count} domain(s), {scope.Controls.Count} control(s), {scope.Audits.Count} audit(s)"),
+            string.Create(CultureInfo.InvariantCulture, $"scope valid: {scope.Setup.Domains.Count} domain(s), {scope.Controls.Count} control(s), {scope.Audits.Count} audit(s){ThirdPartyCount(scope)}"),
             scope,
             new ScopeInputs(snapshots.Loaded, configFile is null ? null : targets.Match(t => t, _ => []), files.Found) { Today = today });
     }
+
+    /// <summary>", N third party(ies)" when the scope declares any, so a scope without them reads as before.</summary>
+    private static string ThirdPartyCount(ScopeDocument scope) =>
+        scope.ThirdParties.Count == 0 ? "" : string.Create(CultureInfo.InvariantCulture, $", {scope.ThirdParties.Count} third party(ies)");
 
     /// <summary>
     /// The files to upload, with their SHA-256: each document's, by path or glob relative to the compliance repo (the folder that holds the

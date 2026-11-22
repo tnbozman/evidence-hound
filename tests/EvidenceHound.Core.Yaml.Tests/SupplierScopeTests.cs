@@ -67,8 +67,8 @@ public class SupplierScopeTests
     [Theory]
     [InlineData("country: AU", "country: XX", "supplier.country_invalid", 5)]
     [InlineData("country: AU", "country: AUS", "supplier.country_invalid", 5)]
-    [InlineData("currency: AUD", "currency: ABC", "supplier.currency_invalid", 6)]
-    [InlineData("    currency: AUD\n", "    currency: XYZ\n", "supplier.currency_invalid", 34)]
+    [InlineData("currency: AUD\ndomain", "currency: ABC\ndomain", "supplier.currency_invalid", 6)]
+    [InlineData("    currency: AUD\n", "    currency: XYZ\n", "supplier.currency_invalid", 29)]
     public void Invalid_country_or_currency_is_reported(string from, string to, string code, int line)
     {
         var problem = Problems(Supplier.Replace(from, to, StringComparison.Ordinal)).ShouldHaveSingleItem();
@@ -92,7 +92,7 @@ public class SupplierScopeTests
         var lapsed = Supplier.Replace("end: \"2026-12-31\"", "end: \"2026-10-31\"", StringComparison.Ordinal);
 
         var problem = Problems(lapsed).ShouldHaveSingleItem();
-        (problem.Code, problem.At.Line).ShouldBe(("supplier.contract_lapsed", 28));
+        (problem.Code, problem.At.Line).ShouldBe(("supplier.contract_lapsed", 27));
         problem.Message.ShouldContain("CTR-EXCLOUD-2026");
         problem.Message.ShouldContain("2026-10-31");
         Problems(lapsed.Replace("status: active", "status: expired", StringComparison.Ordinal)).ShouldBeEmpty();
@@ -111,7 +111,7 @@ public class SupplierScopeTests
     {
         var problem = Problems(Supplier.Replace("[SOL-EXCLOUD-HOST, SOL-EXCLOUD-BACKUP]", "[SOL-EXCLOUD-HOST, SOL-OTHER]", StringComparison.Ordinal)).ShouldHaveSingleItem();
 
-        (problem.Code, problem.At.Line).ShouldBe(("supplier.solution_unknown", 35));
+        (problem.Code, problem.At.Line).ShouldBe(("supplier.solution_unknown", 30));
         problem.Message.ShouldContain("SOL-OTHER");
     }
 
@@ -123,6 +123,23 @@ public class SupplierScopeTests
             .Replace("domain: Example Pty Ltd", "domain: Nowhere\nparent: SUP-NOWHERE", StringComparison.Ordinal);
 
         Problems(broken).Select(p => p.Code).Order(StringComparer.Ordinal).ShouldBe(["scope.reference_unknown", "scope.reference_unknown", "scope.value_invalid"]);
+    }
+
+    [Theory]
+    [InlineData("tprm", "SUP-EXCLOUD")]
+    [InlineData("contracts", "CTR-EXCLOUD-2026")]
+    public void Turning_off_the_flag_that_shows_them_is_reported(string flag, string named)
+    {
+        var parsed = ScopeLoader.Parse(
+            new ScopeSource("scope/setup.yaml", ScopeFixture.Setup),
+            null,
+            [],
+            settings: new ScopeSource("scope/settings.yaml", $"feature_flags:\n  {flag}: false\n"),
+            thirdParties: [new ScopeSource(SupplierPath, Supplier)]);
+
+        var problem = ScopeValidator.Validate(parsed.Scope, ScopeFixture.Snapshots, []).ShouldHaveSingleItem();
+        problem.Code.ShouldBe("settings.feature_disabled_in_use");
+        problem.Message.ShouldContain(named);
     }
 
     [Fact]

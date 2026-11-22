@@ -14,6 +14,8 @@ compliance-repo/
       ex-e8-2026.yaml   one file per audit (compliance assessment)
     access.yaml         users with their roles, and teams (optional)
     settings.yaml       feature flags and general settings (optional)
+    third-parties/
+      example-cloud.yaml  one file per supplier or other third party (optional)
   mappings/             which checks satisfy which requirements (docs/mapping-files.md)
   frameworks/           framework snapshots and custom library files
   documents/            the files that documents name, relative to the compliance repo (the scope folder's parent)
@@ -71,6 +73,53 @@ general:
 Names are checked offline against the settings snapshot of the CISO Assistant release the stack pins ([`ciso-assistant-settings.json`](../src/EvidenceHound.Core/Scope/ciso-assistant-settings.json), with each flag's default); an unknown name is an error (`settings.flag_unknown`, `settings.setting_unknown`) whose hint lists the valid ones. Two flags exist in the release but its API only offers them when a backend setting the stack leaves off is on: `chat_mode` (`ENABLE_CHAT`) and `infra_config_management` (`ENABLE_INFRA_CONFIG_MANAGEMENT`). Naming either is an error (`settings.flag_gated`). A secret setting such as `openai_api_key` is an error (`scope.secret_in_file`): set it in CISO Assistant itself. Turning off a module the scope still uses is an error too: `compliance: false` would hide the audits the scope declares (`settings.feature_disabled_in_use`). Upgrading CISO Assistant means refreshing the snapshot, and the functional tests compare it with the pinned release.
 
 `scope plan` lists each named setting whose value differs (`| Update | feature_flag | tprm | value: true → false |`). `scope plan --show-unmanaged` adds an **Unmanaged settings** section: every flag and general setting the file does not name, with its current value, to help decide what to manage. Settings carry no marker and are never deleted, so `--prune` leaves them alone.
+
+## third-parties/&lt;entity&gt;.yaml
+
+The supplier register, one file per supplier or other third party, so a new supplier or a renewed contract is a reviewed pull request. Each file is a CISO Assistant entity with the solutions it provides to the organisation, the contracts covering them and, optionally, its representatives. The folder is optional; without it `hound` neither reads nor changes third parties.
+
+```yaml
+ref_id: SUP-EXCLOUD
+name: Example Cloud Pty Ltd
+description: Hosts the customer portal.
+mission: Managed cloud hosting.
+country: AU                  # ISO 3166-1 alpha-2
+currency: AUD                # ISO 4217
+domain: Example Pty Ltd      # left out for the root folder
+dependency: 3                # 0-4: how much we depend on it
+penetration: 2               # 0-4: how far it reaches into our systems
+maturity: 3                  # 1-4: its security maturity
+trust: 3                     # 1-4: how far we trust it
+identifiers:
+  LEI: EXAMPLE0000000000000
+solutions:
+  - ref_id: SOL-EXCLOUD-HOST
+    name: Managed hosting
+    criticality: 3           # 1-4
+contracts:
+  - ref_id: CTR-EXCLOUD-2026
+    name: Hosting agreement 2026
+    status: active           # draft, active, expired or terminated
+    start: "2026-01-01"
+    end: "2026-12-31"
+    annual_expense: 12000
+    currency: AUD
+    solutions: [SOL-EXCLOUD-HOST]
+representatives:
+  - email: account.manager@example.com
+    first_name: Sam
+    last_name: Example
+    role: Account manager
+```
+
+- The entity: `ref_id` and `name`, and optionally `description`, `mission`, `country`, `currency`, `parent` (another third party's `ref_id`, for a subsidiary), `domain`, the four levels CISO Assistant uses as defaults for its stakeholder assessments (`dependency`, `penetration`, `maturity`, `trust`), and `identifiers` (legal identifiers by kind, such as LEI, VAT or ABN). CISO Assistant keeps identifiers on the entity, not on its contracts.
+- `solutions`: what the entity provides, each with `ref_id`, `name`, and optionally `description` and `criticality`.
+- `contracts`: each with `ref_id`, `name`, `status`, and optionally `description`, `start` and `end` (yyyy-MM-dd), `annual_expense`, `currency` and `solutions` (the entity's own, by `ref_id`). A contract sits in the entity's domain.
+- `representatives`: people at the entity, by `email`, with optional `first_name`, `last_name`, `role` and `phone`. They are personal data, so keep them in CISO Assistant instead unless the compliance repo is private and access-controlled. `hound` never gives a representative a login.
+
+Validation reports a country or currency code CISO Assistant does not accept (`supplier.country_invalid`, `supplier.currency_invalid`; the lists come from the pinned release), a level outside its range (`supplier.level_invalid`), a contract that ends before it starts (`supplier.contract_dates_invalid`), a contract covering a solution the entity does not provide (`supplier.solution_unknown`), a repeated `ref_id` or email, an unknown `parent` or `domain`, and an `active` contract whose end date has passed (`supplier.contract_lapsed`): renew it and record the new end date, or set it to `expired` or `terminated`. Turning off the `tprm` or `contracts` feature flag in settings.yaml while third parties or contracts are declared is an error. CISO Assistant ships with `contracts` off, so set `contracts: true` in settings.yaml to see contracts in its interface.
+
+Objects are matched by `ref_id` (representatives by email), and the organisation's own entity, which CISO Assistant makes itself, is never touched. `scope plan` shows a renewed contract's new end date as a one-field update.
 
 ## audits/&lt;audit&gt;.yaml
 

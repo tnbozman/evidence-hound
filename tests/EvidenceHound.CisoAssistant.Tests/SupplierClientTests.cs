@@ -22,6 +22,7 @@ public sealed class SupplierClientTests : IDisposable
         Respond("GET", "/api/folders/", List(
             new JsonObject { ["id"] = "f-global", ["name"] = "Global", ["parent_folder"] = null },
             new JsonObject { ["id"] = "f-example", ["name"] = "Example Pty Ltd", ["parent_folder"] = "f-global", ["content_type"] = "DO" }));
+        Respond("GET", "/api/folders/f-example/object/", new JsonObject { ["id"] = "f-example", ["name"] = "Example Pty Ltd", ["parent_folder"] = "f-global", ["description"] = "" });
         Respond("GET", "/api/entities/", List(
             new JsonObject { ["id"] = "e-main", ["name"] = "Example Pty Ltd", ["builtin"] = true, ["folder"] = new JsonObject { ["id"] = "f-global", ["str"] = "Global" } },
             new JsonObject

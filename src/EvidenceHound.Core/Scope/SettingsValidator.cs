@@ -6,10 +6,12 @@ namespace EvidenceHound.Core.Scope;
 /// </summary>
 internal static class SettingsValidator
 {
-    /// <summary>What each flag hides, as the names of what the scope declares under it; flags not listed hide nothing the scope writes yet (tprm joins with the third-party files in s10).</summary>
+    /// <summary>What each flag hides, as the names of what the scope declares under it; flags not listed hide nothing the scope writes yet.</summary>
     private static readonly Dictionary<string, (string What, Func<ScopeDocument, IEnumerable<string>> Declared)> Hides = new(StringComparer.Ordinal)
     {
         ["compliance"] = ("the audits", scope => scope.Audits.Select(a => a.RefId)),
+        ["tprm"] = ("the third parties", scope => scope.ThirdParties.Select(e => e.RefId)),
+        ["contracts"] = ("the contracts", scope => scope.ThirdParties.SelectMany(e => e.Contracts).Select(c => c.RefId)),
     };
 
     public static IEnumerable<ScopeProblem> Validate(ScopeDocument scope, CisoAssistantSettings known)

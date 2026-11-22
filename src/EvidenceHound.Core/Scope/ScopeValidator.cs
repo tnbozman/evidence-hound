@@ -36,6 +36,7 @@ public static class ScopeValidator
             .. targets.SelectMany(t => TargetProblems(t, index)),
             .. AccessValidator.Validate(scope),
             .. SettingsValidator.Validate(scope, CisoAssistantSettings.Current),
+            .. SupplierValidator.References(scope),
         ];
     }
 

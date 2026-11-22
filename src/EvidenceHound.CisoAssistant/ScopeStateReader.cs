@@ -134,6 +134,9 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
         var hashes = await HashesAsync(reading, evidences);
         var access = query.Access ? await AccessAsync(reading, folders, userList, inScope) : [];
         var settings = query.Settings ? await SettingsAsync(reading) : [];
+        var thirdParties = query.ThirdParties
+            ? new ThirdPartyLists(await reading.ListAsync("entities/"), await reading.ListAsync("solutions/"), await reading.ListAsync("contracts/"), await reading.ListAsync("representatives/"))
+            : null;
         var auditedFrameworks = audits.Select(a => Lookup(a["framework"], frameworks)).OfType<string>().Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
         if (allRows)
         {
@@ -189,6 +192,7 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
                 null)),
             .. access,
             .. settings,
+            .. thirdParties is null ? [] : ThirdParties(thirdParties, names),
         ];
         return Result.Ok(new HeldState(objects, frameworkList, libraries.ToDictionary(Id, l => (Text(l["urn"]), Text(l["version"])), StringComparer.Ordinal), auditedFrameworks));
     }
@@ -324,6 +328,40 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
 
     private static bool Matches(JsonNode? requirement, RequirementKey key) =>
         Text(requirement?[key.Kind == RequirementKeyKind.Urn ? "urn" : "ref_id"]) == key.Value;
+
+    /// <summary>
+    /// Entities (but the organisation's own), solutions, contracts and representatives, keyed and linked by <c>ref_id</c> (representatives by
+    /// email), as <see cref="ScopeDesired"/> declares them.
+    /// </summary>
+    private static IEnumerable<ActualObject> ThirdParties(ThirdPartyLists lists, Lookups names)
+    {
+        var entities = lists.Entities.Where(e => !(e["builtin"] is JsonValue b && b.TryGetValue<bool>(out var builtin) && builtin)).ToArray();
+        var entityRefs = entities.ToDictionary(Id, e => Text(e["ref_id"]) ?? Id(e), StringComparer.Ordinal);
+        var solutionRefs = lists.Solutions.ToDictionary(Id, s => Text(s["ref_id"]) ?? Id(s), StringComparer.Ordinal);
+        return
+        [
+            .. entities.Select(e => Marked(ScopeKind.Entity, Text(e["ref_id"]), e,
+                ("name", Text(e["name"])), ("mission", Text(e["mission"])), ("country", Text(e["country"])), ("currency", Text(e["currency"])),
+                ("parent", Lookup(e["parent_entity"], entityRefs)), ("domain", names.Domain(e)), ("dependency", Text(e["default_dependency"])),
+                ("penetration", Text(e["default_penetration"])), ("maturity", Text(e["default_maturity"])), ("trust", Text(e["default_trust"])),
+                ("identifiers", Identifiers(e["legal_identifiers"])))),
+            .. lists.Solutions.Where(s => RelationId(s["provider_entity"]) is { } id && entityRefs.ContainsKey(id)).Select(s => Marked(ScopeKind.Solution, Text(s["ref_id"]), s,
+                ("name", Text(s["name"])), ("entity", Lookup(s["provider_entity"], entityRefs)), ("criticality", Text(s["criticality"])))),
+            .. lists.Contracts.Select(c => Marked(ScopeKind.Contract, Text(c["ref_id"]), c,
+                ("name", Text(c["name"])), ("entity", Lookup(c["provider_entity"], entityRefs)), ("domain", names.Domain(c)), ("status", Choice(Text(c["status"]))),
+                ("start_date", Text(c["start_date"])), ("end_date", Text(c["end_date"])), ("annual_expense", ScopeDesired.Amount(Text(c["annual_expense"]))),
+                ("currency", Text(c["currency"])), ("solutions", Joined(c["solutions"], solutionRefs)))),
+            .. lists.Representatives.Select(r => Marked(ScopeKind.Representative, Text(r["email"])?.ToLowerInvariant(), r,
+                ("entity", Lookup(r["entity"], entityRefs)), ("first_name", Text(r["first_name"])), ("last_name", Text(r["last_name"])), ("role", Text(r["role"])),
+                ("phone", Text(r["phone"])))),
+        ];
+    }
+
+    /// <summary>Legal identifiers as <see cref="ScopeDesired.Identifiers"/> writes them: a JSON object with sorted keys, or null when empty.</summary>
+    private static string? Identifiers(JsonNode? identifiers) =>
+        ScopeDesired.Identifiers((identifiers as JsonObject ?? []).Where(i => Text(i.Value) is not null).ToDictionary(i => i.Key, i => Text(i.Value)!, StringComparer.Ordinal));
+
+    private sealed record ThirdPartyLists(List<JsonNode> Entities, List<JsonNode> Solutions, List<JsonNode> Contracts, List<JsonNode> Representatives);
 
     /// <summary>An object with its description's marker: the text is a field, the marker is the state <c>hound</c> last wrote.</summary>
     private static ActualObject Marked(ScopeKind kind, string? key, JsonNode held, params (string Name, string? Value)[] fields)
