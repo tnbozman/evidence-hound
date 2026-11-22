@@ -199,6 +199,30 @@ public class SupplierScopeTests
         }, ignoreOrder: true);
     }
 
+    internal static readonly string OrganisationSetup = ScopeFixture.Setup.Replace(
+        "  root_folder: Global\n",
+        "  root_folder: Global\n  entity:\n    name: Example Pty Ltd\n    description: The organisation.\n    country: AU\n    currency: AUD\n    identifiers:\n      ABN: EXAMPLE-ABN\n",
+        StringComparison.Ordinal);
+
+    [Fact]
+    public void The_organisations_own_entity_is_declared_in_setup_and_only_ever_updated()
+    {
+        var parsed = ScopeLoader.Parse(new ScopeSource("scope/setup.yaml", OrganisationSetup), null, []);
+
+        parsed.Problems.ShouldBeEmpty();
+        var main = ScopeDesired.From(parsed.Scope).Single(o => o.Kind == ScopeKind.MainEntity);
+        main.Key.ShouldBe("organisation");
+        main.Fields.ShouldBe(new Dictionary<string, string>
+        {
+            ["name"] = "Example Pty Ltd", ["description"] = "The organisation.", ["country"] = "AU", ["currency"] = "AUD", ["identifiers"] = "{\"ABN\":\"EXAMPLE-ABN\"}",
+        }, ignoreOrder: true);
+        SupplierValidator.Validate(parsed.Scope with { Setup = parsed.Scope.Setup with { Organisation = parsed.Scope.Setup.Organisation! with { Country = "XX" } } }, Today)
+            .ShouldHaveSingleItem().Code.ShouldBe("supplier.country_invalid");
+        var plan = ScopePlanner.Plan([main], [], prune: true);
+        plan.Changes.ShouldHaveSingleItem().Action.ShouldBe(ScopeAction.Create);
+        ScopePlanner.Plan([], [new ActualObject(main, null)], prune: true).Changes.ShouldBeEmpty();
+    }
+
     private static ScopeParse Parse(params string[] suppliers) =>
         ScopeLoader.Parse(
             new ScopeSource("scope/setup.yaml", ScopeFixture.Setup),

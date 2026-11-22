@@ -67,6 +67,8 @@ public sealed class SupplierClientTests : IDisposable
         {
             Respond("POST", $"/api/{resource}/", new JsonObject { ["id"] = "new" });
         }
+
+        Respond("PATCH", "/api/entities/e-main/", new JsonObject { ["id"] = "e-main" });
     }
 
     public void Dispose() => _ca.Dispose();
@@ -140,6 +142,20 @@ public sealed class SupplierClientTests : IDisposable
         }, ignoreOrder: true);
         held[(ScopeKind.Representative, "account.manager@example.com")]["entity"].ShouldBe("SUP-EXCLOUD");
         without.ShouldNotContain(a => a.Held.Kind == ScopeKind.Entity);
+    }
+
+    [Fact]
+    public async Task The_main_entity_is_read_as_the_organisation_and_patched_in_place_even_when_the_plan_says_create()
+    {
+        var query = new ScopeStateQuery("Global", [], new Dictionary<string, IReadOnlyList<RequirementKey>>()) { Organisation = true };
+        var main = (await _ca.Scope.ReadAsync(query, _ct)).Value().Where(a => a.Held.Kind == ScopeKind.MainEntity).ShouldHaveSingleItem();
+        (main.Held.Key, main.Held.Fields["name"]).ShouldBe(("organisation", "Example Pty Ltd"));
+
+        (await Create(ScopeKind.MainEntity, "organisation", ("name", "Example Pty Ltd"), ("description", "The organisation."), ("country", "AU"))).Value();
+
+        var body = JsonNode.Parse(_ca.Server.LogEntries.Single(e => e.RequestMessage!.Method == "PATCH" && e.RequestMessage.Path == "/api/entities/e-main/").RequestMessage!.Body!)!.AsObject();
+        (body["name"]!.GetValue<string>(), body["description"]!.GetValue<string>(), body["country"]!.GetValue<string>()).ShouldBe(("Example Pty Ltd", "The organisation.", "AU"));
+        _ca.Server.LogEntries.ShouldNotContain(e => e.RequestMessage!.Method == "POST");
     }
 
     private Task<Core.Results.Result<Core.Results.Unit>> Create(ScopeKind kind, string key, params (string Name, string Value)[] fields)
