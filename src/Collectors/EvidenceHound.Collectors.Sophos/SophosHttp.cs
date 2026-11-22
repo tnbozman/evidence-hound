@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using EvidenceHound.Core.Results;
@@ -31,6 +32,15 @@ internal static class SophosHttp
         {
             return Result.Fail<SophosResponse>(new Problem("sophos.unreachable", $"Could not reach Sophos for {what} at {request.RequestUri?.Host}: {exception.Message}"));
         }
+    }
+
+    /// <summary>A GET for JSON with the bearer token.</summary>
+    public static HttpRequestMessage Get(Uri url, string token)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        return request;
     }
 
     /// <summary>A successful answer's JSON object, or a problem saying what Sophos answered instead.</summary>

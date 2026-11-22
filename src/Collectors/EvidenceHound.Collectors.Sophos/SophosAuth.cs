@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using System.Text.Json.Nodes;
 using EvidenceHound.Core.Results;
 
@@ -54,7 +53,7 @@ internal static class SophosAuth
 
     private static async Task<Result<Identity>> WhoamiAsync(HttpClient http, SophosConnection connection, string token, CancellationToken cancellationToken)
     {
-        using var request = Get(new Uri(connection.ApiUrl, "whoami/v1"), token);
+        using var request = SophosHttp.Get(new Uri(connection.ApiUrl, "whoami/v1"), token);
         return (await SophosHttp.SendAsync(http, request, "whoami", cancellationToken))
             .Bind(response => SophosHttp.Body(response, "whoami"))
             .Bind(Identity.Parse);
@@ -75,7 +74,7 @@ internal static class SophosAuth
                 "sophos.tenant_id_required", $"The API credential is a {identity.Type} credential. Set tenant_id to the ID of the tenant to read."));
         }
 
-        using var request = Get(new Uri(connection.ApiUrl, $"{identity.Type}/v1/tenants/{Uri.EscapeDataString(tenantId)}"), token);
+        using var request = SophosHttp.Get(new Uri(connection.ApiUrl, $"{identity.Type}/v1/tenants/{Uri.EscapeDataString(tenantId)}"), token);
         request.Headers.Add(identity.Type == "partner" ? "X-Partner-ID" : "X-Organization-ID", identity.Id);
         return (await SophosHttp.SendAsync(http, request, $"tenant {tenantId}", cancellationToken))
             .Bind(response => SophosHttp.Body(response, $"tenant {tenantId}"))
@@ -89,14 +88,6 @@ internal static class SophosAuth
             "sophos.data_region_untrusted", $"Sophos Central named {region.Host} as the data region, which is not a Sophos Central host; the token was not sent there.")),
         _ => Result.Ok(new SophosSession(token, tenantId, region)),
     };
-
-    private static HttpRequestMessage Get(Uri url, string token)
-    {
-        var request = new HttpRequestMessage(HttpMethod.Get, url);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        return request;
-    }
 
     /// <summary>An address from Sophos, always ending in a slash so relative paths resolve beneath it.</summary>
     private static Uri? Address(JsonNode? node) =>

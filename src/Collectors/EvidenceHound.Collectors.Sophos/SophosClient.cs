@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Net.Http.Headers;
 using System.Text.Json.Nodes;
 using EvidenceHound.Core.Results;
 
@@ -24,10 +23,8 @@ internal sealed class SophosClient(HttpClient http, SophosSession session)
                 return Result.Fail<SophosCollection>(new Problem("sophos.too_many_pages", $"Sophos Central gave more than {MaxPages} pages of {source.Name}."));
             }
 
-            using var request = new HttpRequestMessage(HttpMethod.Get, new Uri(session.DataRegion, $"{source.Path}?{next}"));
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", session.Token);
+            using var request = SophosHttp.Get(new Uri(session.DataRegion, $"{source.Path}?{next}"), session.Token);
             request.Headers.Add("X-Tenant-ID", session.TenantId);
-            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             var page = (await SophosHttp.SendAsync(http, request, source.Name, cancellationToken)).Bind(response => SophosHttp.Body(response, source.Name));
             if (page is Result<JsonObject>.Fail failed)
             {
