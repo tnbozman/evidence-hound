@@ -30,7 +30,8 @@ public static class ProfileParser
     private static readonly string[] CheckKeys = ["id", "title", "over", "where", "each", "require", "when_empty", "describe", "code", "with"];
     private static readonly string[] TestModifiers = ["field", "missing", "negate"];
 
-    private static readonly Dictionary<string, ParameterType> ParameterTypes = new(StringComparer.Ordinal)
+    /// <summary>The YAML name of each value.</summary>
+    public static IReadOnlyDictionary<string, ParameterType> ParameterTypes { get; } = new Dictionary<string, ParameterType>(StringComparer.Ordinal)
     {
         ["string"] = ParameterType.Text,
         ["int"] = ParameterType.WholeNumber,
@@ -40,6 +41,12 @@ public static class ProfileParser
         ["duration"] = ParameterType.Duration,
         ["url"] = ParameterType.Url,
     };
+
+    /// <summary>The auth types a connection may use.</summary>
+    public static IReadOnlyList<string> AuthTypes { get; } = ["none", "oauth2_client_credentials", "api_key", "bearer", "basic", "mutual_tls"];
+
+    /// <summary>The paging styles a query may use.</summary>
+    public static IReadOnlyList<string> PagingStyles { get; } = ["next_link", "page_number", "cursor", "offset", "link_header"];
 
     /// <summary>The YAML name of each operator.</summary>
     public static IReadOnlyDictionary<string, TestOperator> Operators { get; } = new Dictionary<string, TestOperator>(StringComparer.Ordinal)
@@ -58,14 +65,16 @@ public static class ProfileParser
         ["at_most"] = TestOperator.AtMost,
     };
 
-    private static readonly Dictionary<string, EmptyResult> EmptyResults = new(StringComparer.Ordinal)
+    /// <summary>The YAML name of each value.</summary>
+    public static IReadOnlyDictionary<string, EmptyResult> EmptyResults { get; } = new Dictionary<string, EmptyResult>(StringComparer.Ordinal)
     {
         ["not_applicable"] = EmptyResult.NotApplicable,
         ["fail"] = EmptyResult.Fail,
         ["unable_to_assess"] = EmptyResult.UnableToAssess,
     };
 
-    private static readonly Dictionary<string, MissingRule> MissingRules = new(StringComparer.Ordinal)
+    /// <summary>The YAML name of each value.</summary>
+    public static IReadOnlyDictionary<string, MissingRule> MissingRules { get; } = new Dictionary<string, MissingRule>(StringComparer.Ordinal)
     {
         ["unable_to_assess"] = MissingRule.UnableToAssess,
         ["pass"] = MissingRule.Pass,
@@ -203,7 +212,7 @@ public static class ProfileParser
                 "bearer" => (["token"], () => new BearerAuth(RequiredText(map, "token"))),
                 "basic" => (["username", "password"], () => new BasicAuth(RequiredText(map, "username"), RequiredText(map, "password"))),
                 "mutual_tls" => (["certificate"], () => new MutualTlsAuth(RequiredText(map, "certificate"))),
-                _ => (Array.Empty<string>(), () => Problem<Auth>(map, "profile.auth_unknown", $"unknown auth type '{type}'; use none, oauth2_client_credentials, api_key, bearer, basic or mutual_tls.", new NoAuth())),
+                _ => (Array.Empty<string>(), () => Problem<Auth>(map, "profile.auth_unknown", $"unknown auth type '{type}'; use {string.Join(", ", AuthTypes)}.", new NoAuth())),
             };
             Keys(map, ["type", .. spec.Keys], "auth");
             if (OptionalText(map, "in") is { } location && location is not ("header" or "query"))
@@ -270,7 +279,7 @@ public static class ProfileParser
                 "cursor" => (["cursor", "param"], () => new CursorPaging(RequiredText(map, "cursor"), RequiredText(map, "param"))),
                 "offset" => (["offset_param", "limit_param", "limit", "total"], () => new OffsetPaging(OptionalText(map, "offset_param") ?? "offset", OptionalText(map, "limit_param") ?? "limit", Whole(map, "limit", 100), OptionalText(map, "total"))),
                 "link_header" => ([], () => new LinkHeaderPaging()),
-                _ => (Array.Empty<string>(), () => Problem<Paging?>(map, "profile.paging_unknown", $"unknown paging style '{style}'; use next_link, page_number, cursor, offset or link_header.", null)),
+                _ => (Array.Empty<string>(), () => Problem<Paging?>(map, "profile.paging_unknown", $"unknown paging style '{style}'; use {string.Join(", ", PagingStyles)}.", null)),
             };
             Keys(map, ["style", .. spec.Keys], "paging");
             return spec.Build();
