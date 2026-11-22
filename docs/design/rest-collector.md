@@ -40,7 +40,7 @@ Move auth, paging, rate limiting, evidence saving and redaction into a reusable 
 
 ### B. Declarative REST collector with a code escape hatch (recommended)
 
-One built-in collector type, `rest`, driven by a profile. The profile declares the connection, the queries and the checks. Checks use a small, fixed set of operators over JSON paths. Anything the operators cannot express is a **code check**: a named, pure C# function registered by a plugin, with the same inputs as a declarative check.
+One built-in collector type, `rest`, driven by a profile. The profile declares the connection, the queries and the checks. Checks use a small, fixed set of operators over JSON paths. Anything the operators cannot express is a **code check**: a named, pure C# function built into `hound`, with the same inputs as a declarative check.
 
 - Gains: most systems need no code; checks are readable by the GRC team and auditors; one tested engine for auth, paging, retries and redaction; fewer API calls; one consistent snapshot; profiles are testable against saved responses.
 - Costs: we design and maintain a small language; some logic still needs code; a wrong path has to be caught (see "Making failure visible").
@@ -88,7 +88,7 @@ This splits the hard parts. Collecting is about APIs (auth, paging, retries). Ex
 
 ### Profile and instance
 
-- A **profile** holds what is true for every customer of a product: endpoints, paging, which properties identify people, the checks. Profiles ship in `profiles/` (for example `profiles/sophos-central.yaml`) and can also be loaded from the plugins folder, so a new system does not need a new release.
+- A **profile** holds what is true for every customer of a product: endpoints, paging, which properties identify people, the checks. Built-in profiles ship in `profiles/` (for example `profiles/sophos-central.yaml`); an organisation can add its own from a profiles folder, so a new system does not need a new release. See "Where profiles live".
 - A **collector instance** in the deployment config names the profile and gives the per-organisation parts: settings, secrets, thresholds.
 
 ```yaml
@@ -255,7 +255,54 @@ The first operator set, deliberately small: `equals`, `not_equals`, `in`, `match
 
 ### Code checks
 
-A code check is a pure function registered by a plugin under a name: it receives the snapshots it names, its parameters and the clock, and returns a `Finding`. That is exactly the signature `SophosChecks` already has, so today's checks can move over unchanged and be replaced by declarative ones one at a time. Microsoft 365 conditional access coverage is expected to stay as code.
+A code check is a pure function built into `hound` under a name (a small library in the repo, reviewed and tested like any other code, not loaded at runtime): it receives the snapshots it names, its parameters and the clock, and returns a `Finding`. That is exactly the signature `SophosChecks` already has, so today's checks can move over unchanged and be replaced by declarative ones one at a time. Microsoft 365 conditional access coverage is expected to stay as code.
+
+### Where profiles live
+
+| Kind | Where | How it gets to `hound` | Who changes it |
+| --- | --- | --- | --- |
+| Built-in profile | `profiles/` in this repo | Embedded in the `hound` image, versioned with each release | Pull request here, with recorded fictional responses and profile tests in CI |
+| Organisation profile | A `profiles/` folder in the organisation's private config repo, next to its deployment config | Mounted read-only into the container (setting `profiles_path`, default `/config/profiles`) | Pull request in that private repo, same `hound profile validate` and `hound profile test` |
+| Code check | `src/` in this repo | Compiled into `hound` | Pull request here, test-first |
+
+Rules:
+
+- **No silent overrides.** An organisation profile with the same name as a built-in one is an error. To change a built-in profile, copy it under a new name, or contribute the change back.
+- **Validated before use.** Every profile, built-in or not, passes the same schema and reference checks before any request is made. A profile that fails validation stops only its own collector instances, as unable to assess, not the whole run.
+- **No code in profiles.** A profile can only name built-in operators and built-in code checks. It cannot load a DLL, run a script or call a shell, so a profile cannot do more than make the read requests it declares.
+- **Secrets stay on declared hosts.** A profile's `allowed_hosts` bounds where its tokens and secrets can go; redirects to other hosts are refused.
+- **Compatible versions.** A profile declares the `hound` features it needs (`requires: { hound: ">=1.2" }`), so an older image refuses it clearly instead of half-running it.
+- **Traceable.** Each run's manifest records every profile's name, version and SHA-256, so evidence shows which rules judged it. A changed profile is visible in the next run's manifest.
+- **Tests encouraged, optionally required.** `hound` warns when an organisation profile has no tests; the deployment setting `require_profile_tests: true` makes that an error.
+
+This replaces the earlier plan to load collector DLLs from a known folder at runtime. The folder still exists, but it holds YAML, not code. Runtime code plugins are not needed for release 1, and they are only worth revisiting if a system needs a protocol the REST engine cannot speak (see "Edge cases").
+
+Alternatives considered:
+
+- **Built-in profiles only:** safest, but every new system or tweak waits for a release. Rejected for the organisation's own systems; still the home for anything generic.
+- **Profiles fetched from a URL or registry:** convenient, but a supply chain risk for a tool that holds API credentials. Rejected.
+- **Profiles stored in CISO Assistant:** keeps everything in the system of record, but CISO Assistant has no place for them and it would mix GRC records with collector code. Rejected.
+
+## Edge cases
+
+| Case | How it is handled |
+| --- | --- |
+| Evidence across several endpoints of one API | Datasets join the responses (see "Three phases"). |
+| Evidence across two collectors | Mapping requires both checks; a cross-collector join waits for a real case. |
+| A query needs IDs from another | Dependency graph and `for_each`, capped by `max_calls`. |
+| Sign-in reveals where to read (Sophos `whoami`) | `bootstrap` variables. |
+| Paging styles | Next link, page number and total, cursor, offset and limit, `Link` header; page cap. |
+| Rate limits, 429, 503 | Per-profile rate, `Retry-After`, bounded retries; then unable to assess. |
+| Reports that run as a job (start, poll, download) | `async` query: a start request, a status URL polled with a timeout, then the result download. |
+| CSV or XML responses | Converted at the edge to the same tree as JSON; checks do not change. |
+| POST queries (search APIs, GraphQL, hunting queries) | `post:` with a body; paging works the same. |
+| Licence missing for one endpoint | `optional_on: [403, 404]` on the query; dependent checks become not applicable with the reason, as M365 does today. |
+| Very large lists | Item and byte caps, `keep:` to hold only needed fields. |
+| Wrong path or renamed field | Missing field is unable to assess; profile tests against recordings catch it before use. |
+| Empty lists | `when_empty` is required on every check. |
+| Logic beyond "test a field of each row" | Built-in code check, named in the profile. |
+| Non-REST systems (SNMP, SSH, LDAP, file shares) | Out of scope. The manual collector covers them; a code collector only if one becomes important. |
+| Push-only systems (webhooks, syslog) | Out of scope for a scheduled collector; use the system's export or the manual collector. |
 
 ## Making failure visible
 
@@ -295,7 +342,7 @@ The biggest risk of configuration is that a wrong path quietly returns nothing a
 | One query, many checks | Fewer calls, fewer rate limit problems, one consistent snapshot | Memory for big lists; budgets and `keep:` needed |
 | Collect, extract, assess as separate phases | Evidence across several APIs without code; each phase tested alone; auditors see the dataset a control was judged on | A third concept (datasets) to learn; one more evidence file per dataset |
 | Fixed operators | Easy to read, easy to validate | Hard logic needs code checks |
-| Code-check hatch | Nothing is out of reach | Two ways to write a check; some systems still need a plugin |
+| Code-check hatch | Nothing is out of reach | Two ways to write a check; a new code check needs a release |
 | Unable to assess by default | Broken queries never show as control failures on the board report | More results show "not assessed" until profiles are right, which is the honest answer |
 | Profiles loaded at runtime | Systems added without a new image | A profile is now security-relevant config; host allowlist and review needed |
 
@@ -312,7 +359,7 @@ The biggest risk of configuration is that a wrong path quietly returns nothing a
 2. **XML converted to the JSON tree** rather than a second path language (XPath). (Recommended.)
 3. **Evidence keeps the full response minus identities and secrets**, rather than only the fields checks use. Fuller evidence for auditors, at the cost of size; `keep:` is there for very large lists. (Recommended.)
 4. **Missing fields mean unable to assess** unless the profile says otherwise. (Recommended.)
-5. **Profiles ship in the repo and can be added from the plugins folder.** (Recommended.)
+5. **Built-in profiles ship in the repo; organisation profiles load from a mounted profiles folder; no runtime code plugins.** (Recommended.)
 6. **Collect, extract, assess as three phases**, with joins in named datasets rather than in checks, and joins across separate collector instances left until a real case needs one. (Recommended.)
 
 ## Draft s09 tasks (once agreed)
@@ -322,6 +369,6 @@ Added to s09 rather than a new sprint, ahead of s09-01 so new Microsoft 365 work
 - **s09-09 Profile model and validation.** Profile and instance schema, parameters, secrets, `allowed_hosts`, `hound profile validate`. Pure; no HTTP yet.
 - **s09-10 Query engine.** Auth types, paging styles, rate limits and retries, a dependency graph for bootstrap variables and fan-out, XML conversion, budgets, snapshot evidence with identity hashing and the secret scan. Contract tests with WireMock.
 - **s09-11 Datasets and declarative checks.** Extraction (`from`, `join`, `where`, `fields`, `flatten`) with lineage and unmatched-row counts; failure propagation from queries to datasets to checks; check operators, `where`, `require`, `when_empty`, missing-field rules, observations; "unable to assess" wording in user-facing text. Property tests over the evaluator.
-- **s09-12 Code checks and profile tests.** Code-check registry for plugins; `hound profile test` with recordings and expected results; CI runs every profile's tests.
+- **s09-12 Code checks and profile tests.** Built-in code-check library with names profiles can use; organisation profiles folder with validation, `requires` and manifest hashes; `hound profile test` with recordings and expected results; CI runs every profile's tests.
 - **s09-13 Sophos as a profile.** Parity test against the coded collector, then switch `sophos` to the profile and remove the coded checks that moved.
 - **s09-14 Documentation.** `docs/collectors/rest.md` (reference) and a tutorial: write a profile for a fictional API, test-first.
