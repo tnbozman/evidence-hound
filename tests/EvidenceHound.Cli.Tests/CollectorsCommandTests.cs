@@ -33,7 +33,7 @@ public sealed class CollectorsCommandTests : IDisposable
               secrets: none
             rest 1.0.0
               checks: set per instance by its settings
-              settings: profile (required), profiles_path (optional), include_identities (optional)
+              settings: profile (required), profiles_path (optional), include_identities (optional), require_profile_tests (optional)
               secrets: none
             sophos 2.1.0
               checks: network.firewall.firmware_supported, network.management.super_admin_count

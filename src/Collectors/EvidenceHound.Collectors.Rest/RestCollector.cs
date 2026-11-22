@@ -4,6 +4,7 @@ using EvidenceHound.Collectors.Rest.Profiles;
 using EvidenceHound.Core.Checks;
 using EvidenceHound.Core.Packaging;
 using EvidenceHound.Core.Results;
+using Microsoft.Extensions.Logging;
 
 namespace EvidenceHound.Collectors.Rest;
 
@@ -13,6 +14,7 @@ public static class RestSettings
     public const string Profile = "profile";
     public const string ProfilesPath = "profiles_path";
     public const string IncludeIdentities = "include_identities";
+    public const string RequireProfileTests = "require_profile_tests";
 }
 
 /// <summary>
@@ -49,6 +51,7 @@ public sealed class RestCollector : ICollector, IInstanceValidator
             new(RestSettings.Profile, "Name of the profile in the profiles folder, for example sophos-central.", Required: true),
             new(RestSettings.ProfilesPath, $"The profiles folder, mounted read-only. Default: {ProfileFolder.DefaultPath}.", Required: false, IsPath: true),
             new(RestSettings.IncludeIdentities, "true keeps names, addresses and other identities in evidence. Default: false (hashed).", Required: false),
+            new(RestSettings.RequireProfileTests, "true makes a profile without tests (<profile>.tests/) unable to assess. Default: false (a warning).", Required: false),
         ],
         [])
     {
@@ -57,6 +60,16 @@ public sealed class RestCollector : ICollector, IInstanceValidator
 
     public IReadOnlyList<Problem> ValidateInstance(CollectorSettings settings, IReadOnlyCollection<string> secrets) =>
         Load(settings).Match(loaded => Problems(loaded.Profile, settings, secrets), problems => problems);
+
+    /// <summary>The problem when the instance requires profile tests and its profile has none; null otherwise.</summary>
+    private static Problem? TestsProblem(Profile profile, CollectorSettings settings) =>
+        IsTrue(settings, RestSettings.RequireProfileTests) && !ProfileTestRunner.HasTests(ProfilesPath(settings), profile.Name)
+            ? ProfileTestRunner.Missing(profile.Name)
+            : null;
+
+    private static bool IsTrue(CollectorSettings settings, string key) => bool.TryParse(settings.Find(key), out var value) && value;
+
+    private static string ProfilesPath(CollectorSettings settings) => settings.GetOrDefault(RestSettings.ProfilesPath, ProfileFolder.DefaultPath);
 
     public async Task<Result<CollectionResult>> CollectAsync(CollectorContext context, CancellationToken cancellationToken)
     {
@@ -69,6 +82,13 @@ public sealed class RestCollector : ICollector, IInstanceValidator
         }
 
         var profile = file.Profile;
+        if (!ProfileTestRunner.HasTests(ProfilesPath(context.Settings), profile.Name) && !IsTrue(context.Settings, RestSettings.RequireProfileTests))
+        {
+            context.Logger.LogWarning(
+                "{Collector}: profile '{Profile}' has no tests in {Folder}; add recordings and expected results and run hound profile test {Profile}.",
+                context.Name, profile.Name, ProfileTestRunner.TestsFolder(ProfilesPath(context.Settings), profile.Name), profile.Name);
+        }
+
         var result = Problems(profile, context.Settings, [.. context.Secrets.Keys]) switch
         {
             [] => await CollectValidAsync(profile, context, cancellationToken).ConfigureAwait(false),
@@ -143,11 +163,11 @@ public sealed class RestCollector : ICollector, IInstanceValidator
 
     private static Result<LoadedProfile> Load(CollectorSettings settings) =>
         settings.Find(RestSettings.Profile) is { Length: > 0 } name
-            ? ProfileFolder.Load(settings.GetOrDefault(RestSettings.ProfilesPath, ProfileFolder.DefaultPath), name)
+            ? ProfileFolder.Load(ProfilesPath(settings), name)
             : Result.Fail<LoadedProfile>(new Problem("rest.setting_missing", $"Setting '{RestSettings.Profile}' is required."));
 
     private static IReadOnlyList<Problem> Problems(Profile profile, CollectorSettings settings, IReadOnlyCollection<string> secrets) =>
-        [.. ProfileValidator.Validate(profile, Validation), .. ProfileValidator.ValidateInstance(profile, Values(settings, profile), secrets)];
+        [.. ProfileValidator.Validate(profile, Validation), .. ProfileValidator.ValidateInstance(profile, Values(settings, profile), secrets), .. TestsProblem(profile, settings) is { } missing ? [missing] : Array.Empty<Problem>()];
 
     /// <summary>The instance's settings as a dictionary: the reserved ones and every profile parameter it sets.</summary>
     private static Dictionary<string, string> Values(CollectorSettings settings, Profile profile) =>

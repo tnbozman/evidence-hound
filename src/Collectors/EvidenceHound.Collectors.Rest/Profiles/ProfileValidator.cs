@@ -16,7 +16,7 @@ public sealed record ValidationContext(string HoundVersion, IReadOnlyCollection<
 public static class ProfileValidator
 {
     /// <summary>Instance settings the rest collector reads itself, not the profile.</summary>
-    public static IReadOnlyList<string> ReservedSettings { get; } = ["profile", "profiles_path", "include_identities"];
+    public static IReadOnlyList<string> ReservedSettings { get; } = ["profile", "profiles_path", "include_identities", "require_profile_tests"];
 
     public static IReadOnlyList<Problem> Validate(Profile profile, ValidationContext context)
     {
