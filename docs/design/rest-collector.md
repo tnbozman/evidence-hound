@@ -58,6 +58,34 @@ Like B, but each check is an expression in an existing language: JMESPath, JSONa
 
 ## How B works
 
+### Three phases: collect, extract, assess
+
+Evidence for one control often spans two or more API calls: an admin's role comes from one endpoint, their MFA state from another, and the firmware they run from a third. So a run is three phases, each finished before the next starts:
+
+```
+ 1. Collect                       2. Extract                          3. Assess
+ every query, once                named evidence datasets             every check
+ ------------------------         -----------------------------       ---------------------------
+ token, whoami  (bootstrap)       admin_accounts =                    super_admin_count
+ admins, roles, firewalls  --->     admins + roles (join on roleId)   ---> firmware_supported
+ firmware_upgrades (per fw)       firewall_firmware =                 firmware_current
+                                    firewalls + firmware_upgrades
+ raw responses saved              datasets saved, with lineage        results cite datasets
+```
+
+1. **Collect.** Run every query the profile needs, including dependent ones, as a graph: a query that needs an ID from another (`whoami` before anything, one call per firewall after `firewalls`) waits for it; independent ones can run in parallel within the rate limit. Each response is saved as raw evidence. No check runs until collection ends, so every check sees the same snapshot.
+2. **Extract.** Build named **evidence datasets** from one or more responses: pick the fields that matter, join responses on a key, filter to what is in scope. A dataset is the evidence a control is judged on, for example "admin accounts with their roles and MFA state". Each dataset is saved as its own evidence file, listing the raw files (and their hashes) it came from, so an auditor can trace a result back to the API responses.
+3. **Assess.** Each check reads one dataset and tests its fields against the requirement. Checks never call an API or join anything themselves.
+
+This splits the hard parts. Collecting is about APIs (auth, paging, retries). Extracting is about data (which fields, which joins). Assessing is about the control (what good looks like). Each can be tested on its own: extraction against recorded responses, checks against a small hand-written dataset.
+
+**When one of several queries fails**, only what depends on it is affected. A failed query makes every dataset built from it, and every check reading those datasets, **unable to assess**, naming the failed query. Checks that do not depend on it still run and report normally. A dataset is never built from a partial set of its inputs.
+
+**Evidence from two different systems** (for example, a user list from an HR system checked against identity provider accounts):
+
+- Within one product family, one profile can declare more than one connection, and datasets can join across them.
+- Across separate collector instances, the first answer is the mapping file: the requirement needs both systems' checks to pass. A true join across instances (one dataset built from two collectors' responses) is a later step; it needs the runner to share snapshots between collectors, and we should wait for a real case before building it.
+
 ### Profile and instance
 
 - A **profile** holds what is true for every customer of a product: endpoints, paging, which properties identify people, the checks. Profiles ship in `profiles/` (for example `profiles/sophos-central.yaml`) and can also be loaded from the plugins folder, so a new system does not need a new release.
@@ -138,47 +166,96 @@ The engine supports, at first:
 
 Each query is read **once per run, before any check runs**, and saved as one evidence file. Checks only ever see the saved snapshot, so every result can be reproduced from the evidence.
 
+A dependent query names what it needs, and the engine orders the calls:
+
+```yaml
+  firmware_upgrades:
+    # Illustrative: s08-13 confirms the real endpoint and whether release dates are exposed.
+    for_each: firewalls               # one call per firewall, after firewalls is read
+    max_calls: 200
+    post: ${data_region}/firewall/v1/firewalls/actions/firmware-upgrade-check
+    body: { firewalls: ["${item.id}"] }
+    items: $.firewalls
+```
+
+### Datasets
+
+```yaml
+datasets:
+  admin_accounts:
+    from: admins
+    join:
+      - with: roles
+        on: { left: $.roleAssignments[*].roleId, right: $.id }
+        as: roles                     # each admin gains a list of its roles
+    fields:
+      id: $.id
+      role_names: $.roles[*].name
+      # identities stay hashed, as in the raw evidence
+  firewall_firmware:
+    from: firewalls
+    join:
+      - with: firmware_upgrades
+        on: { left: $.id, right: $.id }
+        as: upgrades
+        optional: true                # no row means no upgrade is available
+    fields:
+      id: $.id
+      version: $.firmwareVersion
+      upgrade_released: $.upgrades[0].releasedAt
+```
+
+The first extraction operations, kept small on purpose: `from` (one query), `join` (on a key, one-to-many allowed, `optional` for a left join), `where` (filter), `fields` (pick and rename), and `flatten` (one row per element of a nested list). A join whose key matches nothing on a required side is reported, not silently dropped: the dataset records how many rows did not match, and a check can treat unmatched rows as unable to assess.
+
+A one-to-one check needs no dataset: a check can read a query directly, and the engine treats it as a dataset of that query's items.
+
 ### Checks
 
 ```yaml
 checks:
   - id: network.firewall.firmware_supported
-    over: firewalls
+    over: firewall_firmware
     when_empty: not_applicable
     each:
-      field: $.firmwareVersion
+      field: $.version
       version_in: ${supported_firewall_firmware}
     require: all
     describe: "{passed} of {total} firewalls run supported firmware. Supported: ${supported_firewall_firmware}."
 
   - id: network.management.super_admin_count
-    over: admins
-    where:
-      field: $.roleAssignments[*].roleId
-      any_in: { from: roles, where: { field: $.name, matches: "(?i)^super ?-?admin$" }, select: $.id }
+    over: admin_accounts
+    where: { field: $.role_names, any_matches: "(?i)^super ?-?admin$" }
     require: { count_at_most: ${super_admin_max} }
     describe: "{matched} of {total} Sophos Central admins hold Super Admin; at most ${super_admin_max} allowed."
 
   - id: network.firewall.firmware_current
-    code: firmware_upgrade_age          # a registered C# function, for logic the operators cannot express
-    over: [firewalls, firmware_upgrades]
-    params: { max_days: 14 }
+    over: firewall_firmware
+    each:
+      field: $.upgrade_released
+      missing: pass                   # no upgrade available is up to date
+      older_than: P14D
+      negate: true
+    require: all
+    when_empty: not_applicable
+    describe: "{failed} of {total} firewalls have had a firmware upgrade available for more than 14 days."
 ```
+
+With the join done in extraction, "updated within 14 days of release" no longer needs code. Code checks stay for logic that is not "test a field of each row", such as conditional access policy coverage.
 
 A declarative check has four parts:
 
-1. **`over`**: which query's items it reads. Many checks can name the same query.
+1. **`over`**: which dataset (or query) it reads. Many checks can name the same dataset.
 2. **`where`** (optional): which items are in scope, for example only enabled users, or only admins with a given role.
 3. **`each`**: the test applied to a field of each item in scope.
 4. **`require`**: how item results become the check result: `all`, `any`, `none`, `count_at_most`, `count_at_least`, or `ratio_at_least` with an optional partial band (for example pass at 95 %, partial from 80 %).
 
-The first operator set, deliberately small: `equals`, `not_equals`, `in`, `matches` (regex), `exists`, `version_in`, `version_at_least`, `within` and `older_than` (a duration against the run's clock), `at_least` and `at_most` for numbers, and `any_in` against values selected from another query. That last one is the only join, and it covers the common "admins whose role is X" case without a general join language.
+The first operator set, deliberately small: `equals`, `not_equals`, `in`, `matches` (regex), `exists`, `version_in`, `version_at_least`, `within` and `older_than` (a duration against the run's clock), `at_least` and `at_most` for numbers, and `any_matches` for lists. Each test can say what a missing field means (`missing:`) and can be negated. Joins are not a check operator: they belong to datasets.
 
 `describe` is the observation written to CISO Assistant, with counts filled in. Offending items are listed in the observation (capped, as today) and in full in the evidence.
 
 ### Code checks
 
-A code check is a pure function registered by a plugin under a name: it receives the snapshots it names, its parameters and the clock, and returns a `Finding`. That is exactly the signature `SophosChecks` already has, so today's checks can move over unchanged and be replaced by declarative ones one at a time. Firmware "updated within 14 days of release" (s08-13) and Microsoft 365 conditional access coverage are expected to stay as code.
+A code check is a pure function registered by a plugin under a name: it receives the snapshots it names, its parameters and the clock, and returns a `Finding`. That is exactly the signature `SophosChecks` already has, so today's checks can move over unchanged and be replaced by declarative ones one at a time. Microsoft 365 conditional access coverage is expected to stay as code.
 
 ## Making failure visible
 
@@ -190,7 +267,7 @@ The biggest risk of configuration is that a wrong path quietly returns nothing a
 | --- | --- |
 | pass | Items in scope meet the requirement. |
 | fail | Items in scope were read and some do not meet it. |
-| unable to assess | The query failed, paging stopped early, a page cap was hit, a required field was missing on any item in scope, or a value had the wrong type. The observation says which. |
+| unable to assess | A query the check depends on (directly or through a dataset) failed, paging stopped early, a page cap was hit, a required field was missing on any item in scope, or a value had the wrong type. The observation says which. |
 | not applicable | The list was read successfully and was empty, and the check says `when_empty: not_applicable`. |
 | partial | Only for `ratio_at_least` with a partial band. |
 
@@ -216,6 +293,7 @@ The biggest risk of configuration is that a wrong path quietly returns nothing a
 | --- | --- | --- |
 | Profiles instead of code | New systems and checks without a release; readable by the GRC team | A small language to design, document and keep stable |
 | One query, many checks | Fewer calls, fewer rate limit problems, one consistent snapshot | Memory for big lists; budgets and `keep:` needed |
+| Collect, extract, assess as separate phases | Evidence across several APIs without code; each phase tested alone; auditors see the dataset a control was judged on | A third concept (datasets) to learn; one more evidence file per dataset |
 | Fixed operators | Easy to read, easy to validate | Hard logic needs code checks |
 | Code-check hatch | Nothing is out of reach | Two ways to write a check; some systems still need a plugin |
 | Unable to assess by default | Broken queries never show as control failures on the board report | More results show "not assessed" until profiles are right, which is the honest answer |
@@ -235,14 +313,15 @@ The biggest risk of configuration is that a wrong path quietly returns nothing a
 3. **Evidence keeps the full response minus identities and secrets**, rather than only the fields checks use. Fuller evidence for auditors, at the cost of size; `keep:` is there for very large lists. (Recommended.)
 4. **Missing fields mean unable to assess** unless the profile says otherwise. (Recommended.)
 5. **Profiles ship in the repo and can be added from the plugins folder.** (Recommended.)
+6. **Collect, extract, assess as three phases**, with joins in named datasets rather than in checks, and joins across separate collector instances left until a real case needs one. (Recommended.)
 
 ## Draft s09 tasks (once agreed)
 
 Added to s09 rather than a new sprint, ahead of s09-01 so new Microsoft 365 work can choose a profile check:
 
 - **s09-09 Profile model and validation.** Profile and instance schema, parameters, secrets, `allowed_hosts`, `hound profile validate`. Pure; no HTTP yet.
-- **s09-10 Query engine.** Auth types, paging styles, rate limits and retries, bootstrap variables, fan-out, XML conversion, budgets, snapshot evidence with identity hashing and the secret scan. Contract tests with WireMock.
-- **s09-11 Declarative checks.** Operators, `where`, `require`, `when_empty`, missing-field rules, observations; "unable to assess" wording in user-facing text. Property tests over the evaluator.
+- **s09-10 Query engine.** Auth types, paging styles, rate limits and retries, a dependency graph for bootstrap variables and fan-out, XML conversion, budgets, snapshot evidence with identity hashing and the secret scan. Contract tests with WireMock.
+- **s09-11 Datasets and declarative checks.** Extraction (`from`, `join`, `where`, `fields`, `flatten`) with lineage and unmatched-row counts; failure propagation from queries to datasets to checks; check operators, `where`, `require`, `when_empty`, missing-field rules, observations; "unable to assess" wording in user-facing text. Property tests over the evaluator.
 - **s09-12 Code checks and profile tests.** Code-check registry for plugins; `hound profile test` with recordings and expected results; CI runs every profile's tests.
 - **s09-13 Sophos as a profile.** Parity test against the coded collector, then switch `sophos` to the profile and remove the coded checks that moved.
 - **s09-14 Documentation.** `docs/collectors/rest.md` (reference) and a tutorial: write a profile for a fictional API, test-first.
