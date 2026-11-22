@@ -277,9 +277,17 @@ public static partial class ConfigLoader
             _ => Result.Fail<SecretReference>(at.Problem(
                 node.Start, "config.secret_inline", $"'{key}' must be a secret reference (env:NAME or file:/path), never the secret itself.")));
 
-    /// <summary>A setting is a secret when its name says so, when it holds a private key, or when it holds a long unbroken run of letters and digits.</summary>
+    /// <summary>
+    /// A setting is a secret when its name says so, when it holds a private key, or when it holds a long unbroken run of letters and
+    /// digits. A setting named as an address or path (<c>token_url</c>, <c>secrets_path</c>) is judged by its name only when its value
+    /// is not an address or an absolute path.
+    /// </summary>
     private static bool LooksLikeSecret(string key, string value) =>
-        SecretName().IsMatch(key) || value.Contains("PRIVATE KEY", StringComparison.Ordinal) || TokenLike().Matches(value).Any(m => m.Value.Any(char.IsLetter) && m.Value.Any(char.IsDigit));
+        (SecretName().IsMatch(key) && !IsAddress(key, value)) || value.Contains("PRIVATE KEY", StringComparison.Ordinal) || TokenLike().Matches(value).Any(m => m.Value.Any(char.IsLetter) && m.Value.Any(char.IsDigit));
+
+    private static bool IsAddress(string key, string value) =>
+        (key.EndsWith("_url", StringComparison.OrdinalIgnoreCase) && Uri.TryCreate(value, UriKind.Absolute, out var url) && url.Scheme is "https" or "http")
+        || (key.EndsWith("_path", StringComparison.OrdinalIgnoreCase) && value.StartsWith('/'));
 
     private static bool IsCron(string value)
     {

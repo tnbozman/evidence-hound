@@ -63,7 +63,7 @@ A secret in the config is always a reference, resolved when the tool runs:
 
 `hound config validate --check-secrets <file>` also resolves every reference and reports each one that is missing, naming the reference but never a value. Resolved secrets are held in a type whose text form is `***`.
 
-A value that looks like a secret fails validation: `ciso_assistant.token` or a `secrets` entry that is not a reference, a setting whose name contains `password`, `secret`, `token`, `api_key`, `private_key` or `credential`, a setting holding a private key, and a setting holding a run of 32 or more letters and digits.
+A value that looks like a secret fails validation: `ciso_assistant.token` or a `secrets` entry that is not a reference, a setting whose name contains `password`, `secret`, `token`, `api_key`, `private_key` or `credential` (except a setting ending in `_url` that holds a web address, such as a profile's `token_url`, or one ending in `_path` that holds an absolute path), a setting holding a private key, and a setting holding a run of 32 or more letters and digits.
 
 ## Collector types
 
