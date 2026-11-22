@@ -9,6 +9,8 @@ Until backups, restore testing and the hardening guide arrive (sprint s12), **sn
 | [`compose.yml`](compose.yml) | The stack. Settings come from `.env`, secrets from files. |
 | [`.env.example`](.env.example) | Every setting, documented. Copy to `.env` (git-ignored) or keep it in your private repo as `deploy/deploy.env`. |
 | [`Caddyfile`](Caddyfile) | HTTPS on `CA_HOSTNAME`, `/api/*` to the backend, everything else to the frontend. |
+| [`ca-env.sh`](ca-env.sh) | Mounted into the backend and worker: exports the database password and secret key from the secrets files, then runs the command. |
+| [`manage.sh`](manage.sh) | Runs a CISO Assistant management command in the backend through `ca-env.sh`, such as `./manage.sh createsuperuser`. |
 | [`runner-token.sh`](runner-token.sh) | Creates the runner's service account and writes its token to the `hound_ca_token` secrets file. |
 | [`smoke-test.sh`](smoke-test.sh) | CI's smoke test: brings the stack up, runs the runner once with the fake collector, tears down. |
 
@@ -33,7 +35,7 @@ Secrets are Docker secrets files in `HOUND_SECRETS_DIR` (default `/etc/evidence-
 | `hound_ca_token` | runner (`HOUND_CA_TOKEN_FILE`), dispatcher | `runner-token.sh`, after the stack is up |
 | `m365_client_certificate` | runner (the Microsoft 365 collector's `file:` secret) | [Microsoft 365 collector guide](../../docs/collectors/m365.md); an empty file until then |
 
-CISO Assistant reads its database password and secret key from variables, so its containers read the files at start and export them only inside the container. The runner understands Docker's `_FILE` convention for any variable: `HOUND_CA_TOKEN_FILE=/run/secrets/hound_ca_token` sets `HOUND_CA_TOKEN` from the file.
+CISO Assistant reads its database password and secret key from variables, so [`ca-env.sh`](ca-env.sh) reads the files and exports them only inside its containers, at start and for each `./manage.sh` command. The runner understands Docker's `_FILE` convention for any variable: `HOUND_CA_TOKEN_FILE=/run/secrets/hound_ca_token` sets `HOUND_CA_TOKEN` from the file.
 
 The secrets folder should be owned by root with mode `0700`; the files inside are `0444` so the containers' non-root users can read their bind-mounted copies.
 
@@ -54,7 +56,7 @@ docker compose up -d --wait postgres backend worker frontend caddy
 
 The first start migrates the database and loads CISO Assistant's libraries, which takes a few minutes. Then:
 
-1. Create the first administrator: `docker compose exec backend python manage.py createsuperuser`.
+1. Create the first administrator: `./manage.sh createsuperuser` ([`manage.sh`](manage.sh) runs any CISO Assistant management command with the stack's secrets).
 2. Sign in at `https://<CA_HOSTNAME>`. Caddy's internal certificate is not trusted by browsers until you install its root: `docker compose exec caddy cat /data/caddy/pki/authorities/local/root.crt > caddy-root.crt` and add it to your devices' trust stores, or use your own certificate (see the comments in the [`Caddyfile`](Caddyfile)).
 3. Issue the runner's token: `sudo ./runner-token.sh hound-runner@example.com /etc/evidence-hound/secrets`.
 4. Apply your scope and run the collectors once:

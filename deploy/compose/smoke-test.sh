@@ -72,7 +72,7 @@ say "issuing the runner's token"
 [[ -s "$work/secrets/hound_ca_token" ]]
 
 say "creating the example staff users the example scope names (the dev seed; its own token is discarded)"
-compose exec -T backend python manage.py shell <"$root/dev/ciso-assistant/seed/seed.py" | grep -v '^HOUND_CA_TOKEN='
+"$dir/manage.sh" shell <"$root/dev/ciso-assistant/seed/seed.py" | grep -v '^HOUND_CA_TOKEN='
 
 say "applying the example scope through the runner image"
 compose run --rm --no-deps runner scope apply /config/scope --config /config/hound.yaml >"$work/scope-apply.json" \

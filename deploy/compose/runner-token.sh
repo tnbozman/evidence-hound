@@ -13,8 +13,7 @@ secrets_dir="${2:?usage: runner-token.sh <service-account-email> <secrets-dir> [
 days="${3:-365}"
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-output="$(docker compose exec -T -e HOUND_SERVICE_EMAIL="$email" -e HOUND_TOKEN_DAYS="$days" backend \
-  python manage.py shell <"$here/runner-token.py")"
+output="$("$here/manage.sh" -e HOUND_SERVICE_EMAIL="$email" -e HOUND_TOKEN_DAYS="$days" shell <"$here/runner-token.py")"
 grep -v '^HOUND_CA_TOKEN=' <<<"$output" || true
 token="$(grep '^HOUND_CA_TOKEN=' <<<"$output" | tail -n 1 | cut -d= -f2-)"
 [[ -n "$token" ]] || { echo "runner-token: CISO Assistant issued no token" >&2; exit 1; }

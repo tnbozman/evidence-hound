@@ -46,17 +46,14 @@ services:
       postgres:
         condition: service_healthy
     environment: *ca-env
-    # CISO Assistant reads its database password and Django secret key from variables, so they are read from
-    # the secrets files at start and exported only inside the container.
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - >-
-        export POSTGRES_PASSWORD="$$(cat /run/secrets/postgres_password)"
-        DJANGO_SECRET_KEY="$$(cat /run/secrets/django_secret_key)"
-        && exec uv run bash startup.sh
+    # CISO Assistant reads its database password and Django secret key from variables, so ca-env.sh exports them from
+    # the secrets files inside the container. Management commands go through it too: ./manage.sh <command>.
+    entrypoint: ["/bin/sh", "/hound/ca-env.sh"]
+    command: ["uv", "run", "bash", "startup.sh"]
     secrets: [postgres_password, django_secret_key]
     volumes:
       - ca-data:/code/db
+      - ./ca-env.sh:/hound/ca-env.sh:ro
     networks: [web, data, collect]
     security_opt: ["no-new-privileges:true"]
     healthcheck:
@@ -73,15 +70,12 @@ services:
       backend:
         condition: service_healthy
     environment: *ca-env
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - >-
-        export POSTGRES_PASSWORD="$$(cat /run/secrets/postgres_password)"
-        DJANGO_SECRET_KEY="$$(cat /run/secrets/django_secret_key)"
-        && exec uv run python manage.py run_huey -w 2 --scheduler-interval 60
+    entrypoint: ["/bin/sh", "/hound/ca-env.sh"]
+    command: ["uv", "run", "python", "manage.py", "run_huey", "-w", "2", "--scheduler-interval", "60"]
     secrets: [postgres_password, django_secret_key]
     volumes:
       - ca-data:/code/db
+      - ./ca-env.sh:/hound/ca-env.sh:ro
     networks: [web, data]
     security_opt: ["no-new-privileges:true"]
 
