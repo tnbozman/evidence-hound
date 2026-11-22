@@ -6,7 +6,7 @@ Was s07 before the release 1 reorder. It moved after the thin deployment so that
 
 **Goal:** two more reference collectors, one SaaS (Sophos Central) and one on-premises (Veeam Backup & Replication), proving the SDK fits both shapes.
 
-Also in this sprint, ready for the first real configuration: scope plans show their compliance impact (s08-06), and plans get Terraform-style exit codes and saved plan files (s08-07).
+Also in this sprint, ready for the first real configuration: scope plans show their compliance impact (s08-06), and plans get Terraform-style exit codes and saved plan files (s08-07). The sprint ends with a hands-on trial on a real Sophos Central tenant (s08-08), done together with a person, to prove Evidence Hound works end to end outside recordings.
 
 Projects: `src/Collectors/EvidenceHound.Collectors.Sophos`, `src/Collectors/EvidenceHound.Collectors.Veeam`. Recorded, fictional responses only.
 
@@ -139,6 +139,39 @@ Projects: `src/Collectors/EvidenceHound.Collectors.Sophos`, `src/Collectors/Evid
 
 **Functional check**
 - Against the local CISO Assistant: `hound scope plan examples/compliance-repo/scope --config examples/compliance-repo/hound.yaml --out plan.json --detailed-exitcode` exits 2, then `hound scope apply plan.json` writes the plan. Repeat it after editing one object in the UI between plan and apply, and record the `scope.plan_stale` refusal.
+
+### s08-08 Hands-on trial: real Sophos Central tenant
+- [ ] Done
+
+Do this task last in the sprint: it needs s08-01, s08-02, s08-05, s08-06 and s08-07 merged into the sprint branch, and the thin deployment from s07.
+
+**Story:** As the maintainer, I want to run Evidence Hound for real against a home Sophos Central tenant with an XGS firewall, from configuration to results in CISO Assistant, so that I know the product works end to end and not only against recordings.
+
+**Who does what.** Steps marked **(person)** need the person's hands: their tenant, their credentials and their host. Claude prepares commands, reads output the person pastes back, fixes defects on the sprint branch, and writes the evidence. Credentials, tenant IDs, host names, IP addresses, serial numbers and screenshots with any of those never go in this repo, in chat or in commit text.
+
+**Steps**
+1. **(person)** In Sophos Central, create a read-only API credential for the collector (service principal with the least role that reads endpoints and firewalls), following `docs/collectors/sophos.md`. Note any place the guide was wrong or unclear.
+2. **(person)** On the host from the s07 thin deployment, store the client ID and secret as Docker secrets files, never in git.
+3. Claude drafts, and **(person)** adds to their private compliance repo: a `sophos` collector in `hound.yaml` with `file:` secret references, the supported firmware list and the stale-agent threshold, and its mapping to the Essential Eight audit.
+4. **(person)** Run `hound config validate --check-secrets` and `hound run --only <collector> --dry-run` on the host, and paste the output (with identifiers removed).
+5. **(person)** Run `hound scope validate`, then `hound scope plan --out plan.json --detailed-exitcode`. Together, read the plan's change table and its **Changes to compliance** section (s08-06), and check that it shows no unexpected `⚠` regression.
+6. **(person)** Run `hound scope apply plan.json`, then a real `hound run --only <collector>` (or let the s07 schedule run it), then `hound status`.
+7. **(person)** In CISO Assistant, check that the Sophos evidence is attached, the mapped requirements show the results the checks gave, and a second `hound scope plan` plans to nothing (so `scope apply` does not reset what the run published).
+8. Claude records any defect as a failing test and a fix on the sprint branch, or as discovered work if it is out of scope, and the person re-runs the failing step.
+
+**Acceptance criteria**
+- One real collection run against the tenant succeeds: endpoints and the firewall are read, and all four Sophos checks give an outcome (`Pass`, `Fail` or `NotApplicable`, not an error).
+- The results appear on the mapped Essential Eight requirements in CISO Assistant, with the evidence attached.
+- The saved plan applied without `scope.plan_stale`, and its compliance section matched what CISO Assistant showed afterwards.
+- A second scope plan after the run is empty.
+- Every defect found has a regression test from a new recording made with fictional data, or a discovered-work entry.
+- `docs/collectors/sophos.md` is corrected wherever the person found it wrong or unclear.
+
+**Tests first**
+- None up front: this task is a manual trial. Each defect it finds starts with a failing test before its fix.
+
+**Functional check**
+- The trial itself. Record in `docs/evidence/s08/s08-08.md` only: the date, the CISO Assistant and `hound` versions, the shape of the setup ("a home Sophos Central tenant with an XGS firewall", the number of endpoints and firewalls), each step's outcome, each check's outcome, the compliance counts before and after, and the defects found with links to their fixes. No names, tenant IDs, host names, IP addresses, serial numbers, credentials or screenshots.
 
 ## Discovered work
 
