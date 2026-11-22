@@ -1,0 +1,6 @@
+{
+  "users": [
+    { "id": "usr-0003", "name": "Jo Example", "email": "jo@example.com", "status": "suspended", "mfa": { "enabled": false }, "roleIds": ["role-member"] }
+  ],
+  "total": 3
+}
