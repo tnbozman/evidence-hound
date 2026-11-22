@@ -17,6 +17,30 @@ public static class CheckEvaluator
     /// <summary>How many offending rows an observation names.</summary>
     public const int ListedRows = 20;
 
+    /// <summary>
+    /// Evaluates a check over the sources it names: a declarative check reads its one source; a code check gets every source in the
+    /// order of its <c>over</c>. <paramref name="fileOf"/> names each source's evidence file, cited in the observation.
+    /// </summary>
+    public static Finding Evaluate(
+        Check check, IReadOnlyDictionary<string, RowSource> sources, Renderer renderer, DateTimeOffset now, Func<string, string?>? fileOf = null)
+    {
+        ArgumentNullException.ThrowIfNull(check);
+        ArgumentNullException.ThrowIfNull(sources);
+        fileOf ??= _ => null;
+        var inputs = check.Over.Select(name => sources.GetValueOrDefault(name) ?? new RowSource.Failed(name, "It was not read.")).ToArray();
+        if (check.Code is null)
+        {
+            return Evaluate(check, inputs[0], renderer, now, fileOf(inputs[0].Name));
+        }
+
+        var files = inputs.Select(i => fileOf(i.Name)).OfType<string>().ToArray();
+        return inputs.FirstOrDefault(i => i is not RowSource.Rows { Unmatched: 0 }) is { } blocked
+            ? Evaluate(check with { Code = null }, blocked, renderer, now, fileOf(blocked.Name))
+            : CodeChecks.All.TryGetValue(check.Code, out var code)
+                ? Cite(code(new CodeCheckInput([.. inputs.Cast<RowSource.Rows>().Select(r => r.Items)], With(check, renderer), now)), files)
+                : Unable($"code check '{check.Code}' is not built into this version of hound.");
+    }
+
     public static Finding Evaluate(Check check, RowSource source, Renderer renderer, DateTimeOffset now, string? evidenceFile = null)
     {
         ArgumentNullException.ThrowIfNull(check);
@@ -27,7 +51,6 @@ public static class CheckEvaluator
             RowSource.Failed failed => Unable($"'{failed.Name}' could not be read. {failed.Reason}"),
             RowSource.Unavailable unavailable => new(CheckOutcome.NotApplicable, $"Not applicable: '{unavailable.Name}' is not available. {unavailable.Reason}"),
             RowSource.Rows { Unmatched: > 0 } rows => Unable(Cite($"{Rows(rows.Unmatched)} of '{rows.Name}' matched nothing in a required join.", evidenceFile)),
-            RowSource.Rows when check.Code is { } code => Unable($"code check '{code}' is not built into this version of hound."),
             RowSource.Rows rows => Assess(check, rows, renderer, now, evidenceFile),
             _ => Unable($"'{source.Name}' gave nothing to assess."),
         };
@@ -141,6 +164,12 @@ public static class CheckEvaluator
     private static string Number(int value) => value.ToString(CultureInfo.InvariantCulture);
 
     private static string Cite(string observation, string? evidenceFile) => evidenceFile is null ? observation : $"{observation} Evidence: {evidenceFile}.";
+
+    private static Finding Cite(Finding finding, string[] files) =>
+        files.Length == 0 ? finding : finding with { Observation = $"{finding.Observation} Evidence: {string.Join(", ", files)}." };
+
+    private static Dictionary<string, string> With(Check check, Renderer renderer) =>
+        check.With.ToDictionary(p => p.Key, p => renderer.Render(p.Value, mode: RenderMode.Evidence).Match(v => v, _ => p.Value), StringComparer.Ordinal);
 
     private static Finding Unable(string reason) => new(CheckOutcome.Error, $"Unable to assess: {reason}");
 

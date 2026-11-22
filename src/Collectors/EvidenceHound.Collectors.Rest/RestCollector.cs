@@ -40,7 +40,7 @@ public sealed class RestCollector : ICollector, IInstanceValidator
         typeof(RestCollector).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion.Split('+')[0] ?? "0.0.0";
 
     /// <summary>What profiles are validated against.</summary>
-    public static ValidationContext Validation { get; } = new(HoundVersion, []);
+    public static ValidationContext Validation { get; } = new(HoundVersion, CodeChecks.Names);
 
     public CollectorDescription Describe() => new(
         [],
@@ -125,11 +125,9 @@ public sealed class RestCollector : ICollector, IInstanceValidator
     private static Result<CheckResult> Assess(
         Check check, Dictionary<string, RowSource> sources, Dictionary<string, CollectedEvidence> files, Renderer renderer, DateTimeOffset now, string source)
     {
-        var over = check.Over[0];
-        var input = sources.GetValueOrDefault(over) ?? new RowSource.Failed(over, "It was not read.");
-        var file = files.GetValueOrDefault(over)?.FileName;
-        var finding = CheckEvaluator.Evaluate(check, input, renderer, now, file);
-        return CheckId.Create(check.Id).Bind(id => CheckResult.Create(id, finding.Outcome, Truncate(finding.Observation), file is null ? [] : [file], now, source));
+        var finding = CheckEvaluator.Evaluate(check, sources, renderer, now, name => files.GetValueOrDefault(name)?.FileName);
+        var cited = check.Over.Select(name => files.GetValueOrDefault(name)?.FileName).OfType<string>().ToArray();
+        return CheckId.Create(check.Id).Bind(id => CheckResult.Create(id, finding.Outcome, Truncate(finding.Observation), cited, now, source));
     }
 
     private static InstanceValues InstanceValuesOf(Profile profile, CollectorContext context) => new(
