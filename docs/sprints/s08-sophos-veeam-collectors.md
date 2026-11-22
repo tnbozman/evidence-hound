@@ -11,7 +11,7 @@ Also in this sprint, ready for the first real configuration: scope plans show th
 Projects: `src/Collectors/EvidenceHound.Collectors.Sophos`, `src/Collectors/EvidenceHound.Collectors.Veeam`. Recorded, fictional responses only.
 
 ### s08-01 Sophos Central access
-- [ ] Done
+- [x] Done
 
 **Story:** As the collector, I want Sophos Central authentication and tenant discovery, so that endpoint and firewall data can be read.
 
@@ -27,6 +27,7 @@ Projects: `src/Collectors/EvidenceHound.Collectors.Sophos`, `src/Collectors/Evid
 
 **Functional check**
 - Run against recordings: endpoints and firewalls listed into evidence.
+- Result (2026-11-22): `dotnet test --project tests/EvidenceHound.Collectors.Sophos.Tests` passed 21 tests against the recorded fictional tenant: the data region came from whoami, 5 endpoints were read over 2 pages and 1 firewall on 1 page. The evidence files themselves come with the collector in s08-02. Evidence: [`docs/evidence/s08/s08-01.md`](../evidence/s08/s08-01.md).
 
 ### s08-02 Sophos checks
 - [ ] Done
