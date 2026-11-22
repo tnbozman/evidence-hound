@@ -65,7 +65,7 @@ Projects: `src/Collectors/EvidenceHound.Collectors.Sophos`. Recorded, fictional 
 - Result (2026-11-22): the docs are plain Markdown with no build step, so the check is that they render and link cleanly: every relative link and heading anchor in the 99 Markdown files under `docs/`, `examples/` and `README.md` resolves (a script over the tree found none broken). `DocsTests` (Sophos) checks that `docs/collectors/sophos.md` names every check ID, and `E8MappingTests.Every_reference_check_is_mapped` covers the Sophos checks. Both are in the unit suite (954 passed).
 
 ### s08-06 Compliance impact in scope plans
-- [ ] Done
+- [x] Done
 
 **Story:** As the reviewer of a compliance pull request, I want `hound scope plan` to say which framework requirements change result and why, not only which objects and fields change, so that I approve the compliance effect of a change, the way a Terraform user reads "Changes to Outputs" below the resource diff.
 
@@ -88,9 +88,10 @@ Projects: `src/Collectors/EvidenceHound.Collectors.Sophos`. Recorded, fictional 
 **Functional check**
 - Against the local CISO Assistant with the example compliance repo: change one hand-written assessment to `compliant` and set one `unlisted` row back, run `hound scope plan examples/compliance-repo/scope --config examples/compliance-repo/hound.yaml`, and record the section showing one gain and one `⚠` regression with the right ML counts.
 - `docs/scope.md` Plan section shows an example of the new section.
+- Result (2026-11-22): in CI against a fresh CISO Assistant seeded with the example repo (`scripts/check-scope-plans.sh`, [trial job](https://github.com/tnbozman/evidence-hound/actions/runs/44998421402/job/137134420701)), ISM-1486 set back to non-compliant and ISM-1485 added as compliant gave "**EX-E8-2026**: 2 result changes, 1 regression ⚠", ML1 1 → 1 of 48 and ML2 1 → 1 of 107, with the regression first. Evidence: [`docs/evidence/s08/s08-06.md`](../evidence/s08/s08-06.md).
 
 ### s08-07 Terraform-style exit codes and saved plans
-- [ ] Done
+- [x] Done
 
 **Story:** As an operator used to Terraform, I want `hound scope plan` to report "changes pending" in its exit code and to save a plan that `hound scope apply` then applies exactly, so that pipelines can gate on a plan and what is applied is what was reviewed.
 
@@ -109,6 +110,7 @@ Projects: `src/Collectors/EvidenceHound.Collectors.Sophos`. Recorded, fictional 
 
 **Functional check**
 - Against the local CISO Assistant: `hound scope plan examples/compliance-repo/scope --config examples/compliance-repo/hound.yaml --out plan.json --detailed-exitcode` exits 2, then `hound scope apply plan.json` writes the plan. Repeat it after editing one object in the UI between plan and apply, and record the `scope.plan_stale` refusal.
+- Result (2026-11-22): in CI against a fresh CISO Assistant seeded with the example repo (`scripts/check-scope-plans.sh`, [trial job](https://github.com/tnbozman/evidence-hound/actions/runs/44998421402/job/137134420701)): `--detailed-exitcode --out` exited 2 (6 updates, 2 drifted); after an edit to the ISM-1486 row through the API, `scope apply plan.json` exited 3 with `scope.plan_stale` naming `assessment/EX-E8-2026/ISM-1486` and wrote nothing; a fresh saved plan applied with 6 written, 0 failed. Evidence: [`docs/evidence/s08/s08-07.md`](../evidence/s08/s08-07.md).
 
 ### s08-08 Hands-on trial: real Sophos Central tenant
 - [ ] Done
@@ -144,7 +146,7 @@ Do this task last in the sprint: it needs s08-01, s08-02, s08-05, s08-06, s08-07
 - The trial itself. Record in `docs/evidence/s08/s08-08.md` only: the date, the CISO Assistant and `hound` versions, the shape of the setup ("a home Sophos Central tenant with an XGS firewall", the number of endpoints and firewalls), each step's outcome, each check's outcome, the compliance counts before and after, and the defects found with links to their fixes. No names, tenant IDs, host names, IP addresses, serial numbers, credentials or screenshots.
 
 ### s08-09 Guided setup in hound, and the local trial
-- [ ] Done
+- [x] Done
 
 Added 2026-11-22 at the person's request, as the route for the s08-08 trial. Changed the same day, by the person's choice: the guided steps live in `hound` itself (wizards that scaffold a new organisation and add systems and collectors), and `make trial` only does the checks a container cannot do before it hands over to them. Build it before s08-08, so the person can start testing early.
 
@@ -170,6 +172,7 @@ Added 2026-11-22 at the person's request, as the route for the s08-08 trial. Cha
 
 **Functional check**
 - In this repo's CI with a fresh local CISO Assistant: `HOUND_TRIAL_YES=1 make trial` runs preflight, `hound init`, applies the scope, adds a manual source, publishes its evidence and stops at the Sophos step; a second run skips the finished steps and plans no changes. Record the transcript (no tokens) in `docs/evidence/s08/s08-09.md`.
+- Result (2026-11-22): in CI ([trial job](https://github.com/tnbozman/evidence-hound/actions/runs/44998421402/job/137134420701)) the first run went from preflight through `hound init`, the scope, the manual source and its published evidence, and stopped before Sophos; the second skipped every finished step and planned "0 to create, 0 to update, 0 to delete", the 8 drifted objects being the dev seed's own. Two defects found on the way were fixed test-first. Evidence: [`docs/evidence/s08/s08-09.md`](../evidence/s08/s08-09.md).
 - **(person)** Runs `make trial` in their dev container up to the Sophos step; that run is the start of s08-08.
 
 ### s08-10 Microsoft 365 in the local trial
