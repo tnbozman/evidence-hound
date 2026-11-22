@@ -87,3 +87,27 @@ setup() {
   [ "$(jq -r '.services.runner.command[0]' <<<"$json")" = "serve" ]
   [ "$(jq -r '.services.runner.restart' <<<"$json")" = "unless-stopped" ]
 }
+
+@test "ca-env.sh exports the database password and secret key from the secrets files, then runs its command" {
+  secrets="$(mktemp -d)"
+  printf 'db-example\n' >"$secrets/postgres_password"
+  printf 'key-example\n' >"$secrets/django_secret_key"
+  run env HOUND_SECRETS_PATH="$secrets" sh "$dir/ca-env.sh" sh -c 'echo "$POSTGRES_PASSWORD $DJANGO_SECRET_KEY"'
+  rm -rf "$secrets"
+  [ "$status" -eq 0 ]
+  [ "$output" = "db-example key-example" ]
+}
+
+@test "CISO Assistant's backend and worker start through ca-env.sh, which is mounted read-only" {
+  for service in backend worker; do
+    entrypoint="$(config | jq -r ".services.$service.entrypoint | join(\" \")")"
+    [ "$entrypoint" = "/bin/sh /hound/ca-env.sh" ]
+    mount="$(config | jq -r ".services.$service.volumes[] | select(.target == \"/hound/ca-env.sh\") | .read_only")"
+    [ "$mount" = "true" ]
+  done
+}
+
+@test "no script or guide runs manage.py in the backend without the secrets (use manage.sh)" {
+  run grep -rnE 'exec[^|]* backend python manage\.py' "$dir" "$root/docs" --include='*.sh' --include='*.md' --include='*.yml'
+  [ "$status" -eq 1 ]
+}
