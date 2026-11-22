@@ -1,13 +1,14 @@
 using System.Globalization;
 using EvidenceHound.Core.Results;
 
-namespace EvidenceHound.Collectors.M365;
+namespace EvidenceHound.Collectors;
 
 /// <summary>
 /// Reads typed settings and keeps every problem it finds, so a config with several mistakes reports them all at once. A value
-/// that cannot be read comes back as its fallback; check <see cref="Problems"/> before using the values.
+/// that cannot be read comes back as its fallback; check <see cref="Problems"/> before using the values. Problem codes start with
+/// <paramref name="prefix"/>, the collector's type: <c>&lt;prefix&gt;.setting_missing</c> and <c>&lt;prefix&gt;.setting_invalid</c>.
 /// </summary>
-internal sealed class SettingsReader(CollectorSettings settings)
+public sealed class SettingsReader(CollectorSettings settings, string prefix)
 {
     private readonly List<Problem> _problems = [];
 
@@ -23,7 +24,7 @@ internal sealed class SettingsReader(CollectorSettings settings)
             return value;
         }
 
-        _problems.Add(new Problem("m365.setting_missing", $"Setting '{name}' is required."));
+        _problems.Add(new Problem($"{prefix}.setting_missing", $"Setting '{name}' is required."));
         return string.Empty;
     }
 
@@ -71,7 +72,7 @@ internal sealed class SettingsReader(CollectorSettings settings)
 
     private T Invalid<T>(string name, string why, T fallback)
     {
-        _problems.Add(new Problem("m365.setting_invalid", $"Setting '{name}': {why}."));
+        _problems.Add(new Problem($"{prefix}.setting_invalid", $"Setting '{name}': {why}."));
         return fallback;
     }
 }

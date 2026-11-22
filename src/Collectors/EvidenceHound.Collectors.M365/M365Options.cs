@@ -42,7 +42,7 @@ internal sealed partial record M365Options(
     public static Result<M365Options> FromSettings(CollectorSettings settings)
     {
         ArgumentNullException.ThrowIfNull(settings);
-        var read = new SettingsReader(settings);
+        var read = new SettingsReader(settings, M365Collector.TypeName);
         var adminMin = read.Count(M365Settings.GlobalAdminMin, 2);
         var adminMax = read.Count(M365Settings.GlobalAdminMax, 4);
         read.Require(adminMin <= adminMax, M365Settings.GlobalAdminMin, $"{adminMin} is more than {M365Settings.GlobalAdminMax} ({adminMax})");
