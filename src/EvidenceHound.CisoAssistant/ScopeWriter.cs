@@ -49,7 +49,9 @@ internal sealed partial class ScopeWriter(HttpClient http, ICisoAssistantClient 
             return await DeleteAsync("folders", existing, write, cancellationToken);
         }
 
-        var body = new JsonObject { ["name"] = declared.Key, ["description"] = Described(declared, write.Change) };
+        // A folder made through the API has no IAM groups unless asked; roles are given through them (s07-04). Turning it on for an
+        // existing domain makes them.
+        var body = new JsonObject { ["name"] = declared.Key, ["description"] = Described(declared, write.Change), ["create_iam_groups"] = true };
         if (write.Change.Action == ScopeAction.Create)
         {
             body["parent_folder"] = folders.RootId;
