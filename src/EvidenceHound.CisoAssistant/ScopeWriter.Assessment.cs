@@ -100,7 +100,8 @@ internal sealed partial class ScopeWriter
                     body["baseline"] = IdByField(audits, "ref_id").GetValueOrDefault(baseline);
                 }
 
-                Drop(body, "eta", "due_date", "status", "baseline");
+                Drop(body, write.Change, "eta", "due_date");
+                Drop(body, "status", "baseline");
                 return write.Change.Action == ScopeAction.Create
                     ? await SendAsync(HttpMethod.Post, "compliance-assessments/", body, $"to create audit {declared.Key}", cancellationToken)
                     : await UpdateAsync("compliance-assessments", existing, body, write, cancellationToken);
@@ -197,7 +198,7 @@ internal sealed partial class ScopeWriter
                     body["reference_control"] = referenceId is [var id] ? id : null;
                 }
 
-                Drop(body, "priority", "category", "eta", "status", "reference_control");
+                Drop(body, write.Change, "priority", "category", "eta", "status", "reference_control");
                 return create
                     ? await SendAsync(HttpMethod.Post, "applied-controls/", body, $"to create applied control {declared.Key}", cancellationToken)
                     : await UpdateAsync("applied-controls", existing, body, write, cancellationToken);
