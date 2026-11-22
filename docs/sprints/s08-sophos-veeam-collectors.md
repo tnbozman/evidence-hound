@@ -191,7 +191,7 @@ Added 2026-11-22 at the person's request, as the route for the s08-08 trial. Bui
 - Nothing the trial writes outside `.dev/trial/` and the runner image, and `make trial-clean` removes the workspace (the person's CISO Assistant is left running).
 
 **Tests first**
-- `tests/trial/trial.bats`: port check reports a bound port and who holds it; CISO Assistant detection prefers a running instance over starting one; the network choice for the bundled and the `make ca-up` cases; the rendered trial `hound.yaml` validates against `schemas/config.schema.json` and has no `m365` collector; the Sophos block uses `file:` references only; secrets are never in a `docker run` command line.
+- `scripts/tests/trial.bats`: port check reports a bound port and who holds it; CISO Assistant detection prefers a running instance over starting one; the network choice for the bundled and the `make ca-up` cases; the rendered trial `hound.yaml` has no `m365` collector, and `TrialConfigTests` checks it with `hound config validate`; the Sophos block uses `file:` references only; secrets are never in a `docker run` command line.
 - `make lint-shell` covers both scripts.
 
 **Functional check**
