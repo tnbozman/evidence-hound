@@ -148,11 +148,63 @@ These tasks come first in this sprint, before s09-01, so the Microsoft 365 appli
 **Functional check**
 - Following the tutorial verbatim produces a passing profile.
 
-### Onboarding assistant (s09-19 to s09-23)
+### Suppliers before systems (s09-19, s09-20, moved from s10)
 
-These tasks come after s09-14, because they draft REST profiles. They build `hound onboard` from [`docs/design/onboarding-assistant.md`](../design/onboarding-assistant.md): a guided session in which a language model proposes how a system fits a framework and drafts its profile, and a person accepts or edits every decision. Nothing is applied to CISO Assistant by the session; the output is files for a pull request in the organisation's config repo. Tests use a fake model with recorded replies; no test or CI job calls a live model.
+A system is registered only once its supplier is approved, so the supplier register comes before onboarding. s10-01 and s10-02 moved here unchanged except for the supplier approval gate; s10-03 (documentation and example repo) and s10-04 (evidence plan tasks, including the recurring supplier review task) stay in s10.
 
-### s09-19 Model port, Anthropic adapter and outbound guard
+### s09-19 Suppliers, solutions and contracts (was s10-01)
+- [ ] Done
+
+**Story:** As a supplier owner, I want our suppliers, what they provide and our contracts with them declared in the repo, so that the supplier register is reviewed and complete.
+
+**Acceptance criteria**
+- `scope/third-parties/<entity>.yaml` declares one entity: `ref_id`, name, description, mission, country (ISO 3166-1 alpha-2), currency (ISO 4217), parent entity, domain, and its dependency (0–4), penetration (0–4), maturity (1–4) and trust (1–4).
+- It also declares the entity's solutions (`ref_id`, name, description, criticality 1–4) and contracts (`ref_id`, name, status `draft`, `active`, `expired` or `terminated`, start and end dates, annual expense, currency, the solutions covered, and identifiers such as LEI or VAT).
+- Representatives are optional. They are personal data, so the guide recommends keeping them in CISO Assistant unless the repo is private and access-controlled; when declared, they are matched by email and never given a login by `hound`.
+- If s06-05 confirmed the API can update the main entity, `organisation` in `scope/setup.yaml` manages it here (the s06 discovered-work item).
+- Validation: country and currency codes; contract end after start; an `active` contract past its end date is reported (`supplier.contract_lapsed`); solutions named by a contract belong to the same entity.
+
+**Tests first**
+- `SupplierScopeTests.Invalid_country_or_currency_is_reported`
+- `SupplierScopeTests.Active_contract_past_end_date_is_reported`
+- `SupplierScopeTests.Contract_solution_must_belong_to_entity`
+- Contract: `SupplierClientTests.Creates_entity_solution_and_contract`
+
+**Functional check**
+- Apply two fictional suppliers to the local CISO Assistant; re-applying writes nothing; a changed contract end date is a one-field update.
+
+### s09-20 Supplier assessments, tiers and approval (was s10-02)
+- [ ] Done
+
+**Story:** As a supplier owner, I want each supplier's assessment set up from the repo on a review cycle, so that reviews start on time and nobody sets them up by hand.
+
+**Acceptance criteria**
+- An entity file may declare assessments: name, solutions, perimeter, due date, criticality, the questionnaire framework (a library URN), and `review_every` (such as `12 months`). Applying creates the entity assessment and its linked questionnaire audit.
+- When a review is due, `hound` opens the next one: a new revision if the API supports it (s06-05), otherwise a new assessment named with its period, using the same periods logic as audits (s06-10).
+- Answers, tiering form results and campaigns are never written by `hound`.
+- `forced_tier` (one of the criticality scale's keys, such as `critical`) with a required `reason` may be declared; `scope plan` reports when CISO Assistant's current tier differs from it.
+- Approval: a supplier is approved when its latest entity assessment is concluded as acceptable in CISO Assistant (its `conclusion` field; confirm the field and its values against the pinned release's schema in the first test) and is within its review cycle, and it has an `active` contract. Approval is read from CISO Assistant, never written by `hound`.
+- Supplier gate: a system in `scope/` names its `solution`, and optionally `supplied_through` (the reseller or provider the contract is with). `scope plan` refuses to register the system, or add it to an audit, until every named supplier is approved (`system.supplier_not_approved`, naming the supplier and what is missing). A supplier whose approval later lapses (review overdue, conclusion changed, contract ended) does not unregister the system; `scope plan` reports `supplier.approval_lapsed` and the system is listed for the committee.
+- The recurring review task for `review_every` comes with s10-04 (evidence plan tasks), which stays in s10.
+
+**Tests first**
+- `SupplierAssessmentTests.Due_review_opens_the_next_one`
+- `SupplierAssessmentTests.Answers_are_never_in_the_plan`
+- `SupplierScopeTests.Forced_tier_requires_reason`
+- `ScopePlanTests.Tier_differing_from_forced_tier_is_reported`
+- `SupplierGateTests.System_with_unapproved_supplier_is_not_registered`
+- `SupplierGateTests.Reseller_named_by_supplied_through_must_also_be_approved`
+- `SupplierGateTests.Lapsed_approval_is_reported_not_unregistered`
+
+**Functional check**
+- With a fixed clock past a review date, `scope apply` opens the next fictional supplier assessment in the local CISO Assistant with its questionnaire.
+- A fictional system whose supplier has no concluded assessment is refused by `scope plan`; concluding the assessment in CISO Assistant lets it through.
+
+### Onboarding assistant (s09-21 to s09-25)
+
+These tasks come after s09-14, because they draft REST profiles, and after s09-20, because onboarding starts with the supplier. They build `hound onboard` from [`docs/design/onboarding-assistant.md`](../design/onboarding-assistant.md): a guided session in which a language model proposes how a system fits a framework and drafts its profile, and a person accepts or edits every decision. Nothing is applied to CISO Assistant by the session; the output is files for a pull request in the organisation's config repo. Tests use a fake model with recorded replies; no test or CI job calls a live model.
+
+### s09-21 Model port, Anthropic adapter and outbound guard
 - [ ] Done
 
 **Story:** As an operator, I want `hound` to use a language model I choose, with my key kept as a secret and nothing sensitive sent, so that I can use the assistant without leaking organisation data.
@@ -174,19 +226,23 @@ These tasks come after s09-14, because they draft REST profiles. They build `hou
 **Functional check**
 - With a fake model, `hound onboard --show-requests` on the example system prints requests containing no recorded host names, IDs or secrets.
 
-### s09-20 Understand the system and decide applicability
+### s09-22 Understand the system and decide applicability
 - [ ] Done
 
 **Story:** As a GRC team member, I want `hound` to read a system's API documentation and the target framework and propose, for each requirement, whether it is an API check, manual, not applicable or for another system, so that I decide applicability quickly and with reasons.
 
 **Acceptance criteria**
 - `hound onboard <system> --framework <framework file>` asks for the system name, owner and product, and starts from a copy of a library profile when one names the product.
+- Supplier first: the session asks who provides the system and who the contract is with. For a supplier not yet in the repo it drafts the entity, solution and contract files (s09-19) and a supplier assessment (s09-20), with proposed dependency, penetration, maturity, trust and criticality and the reasons for each, and a supplier summary drawn from the vendor's public documents (certifications, where data is held, support lifecycle), each with its source. The person accepts or edits each. Questionnaire answers are never drafted into CISO Assistant.
+- If a named supplier is not yet approved, the session saves, writes the supplier files and stops before applicability; it resumes from there once the supplier is approved.
 - Reads an OpenAPI document, other API specifications or saved documentation from local files or allowed URLs, and shows the model's summary of readable endpoints, sign-in and paging.
 - Reads every in-scope requirement from the framework file and shows one proposal per requirement (API check, manual, not applicable, not this system) with its reasoning; the person accepts, edits or rejects each, and can save and resume.
 - Not applicable cannot be accepted without a justification and an approver name.
 - `--no-model` runs the same steps with empty proposals.
 
 **Tests first**
+- `OnboardSupplierTests.Unapproved_supplier_stops_before_applicability_and_resumes_after`
+- `OnboardSupplierTests.Supplier_proposals_carry_reasons_and_sources`
 - `ApplicabilityTests.Not_applicable_without_justification_or_approver_is_refused`
 - `ApplicabilityTests.Every_in_scope_requirement_gets_one_decision`
 - `OnboardSessionTests.Resume_keeps_accepted_decisions`
@@ -195,7 +251,7 @@ These tasks come after s09-14, because they draft REST profiles. They build `hou
 **Functional check**
 - Onboard the fictional example API against the example framework with a fake model; the decision list covers every requirement and resumes after a stop.
 
-### s09-21 Draft, sample and test the profile
+### s09-23 Draft, sample and test the profile
 - [ ] Done
 
 **Story:** As a GRC team member, I want the profile for the accepted API checks drafted, proven against the real system and tested, so that I only review a profile that already works.
@@ -214,7 +270,7 @@ These tasks come after s09-14, because they draft REST profiles. They build `hou
 **Functional check**
 - Against the recorded example API, a fake model's first draft with a wrong path is fixed in the second round, and `hound profile test` passes.
 
-### s09-22 Write the onboarding output
+### s09-24 Write the onboarding output
 - [ ] Done
 
 **Story:** As a GRC team member, I want the session to write the profile, mappings, applicability and a record of how it was decided into my config repo, so that I can review it in a pull request and show auditors how applicability was decided.
@@ -234,13 +290,13 @@ These tasks come after s09-14, because they draft REST profiles. They build `hou
 **Functional check**
 - After onboarding the example system, `hound scope plan` shows the not-applicable rows with their justifications and `hound plan --dry-run` shows the new checks.
 
-### s09-23 Onboard the Sophos firewall, and documentation
+### s09-25 Onboard the Sophos firewall, and documentation
 - [ ] Done
 
 **Story:** As the person running this project, I want to onboard my own Sophos firewall with `hound onboard`, so that the assistant is proven on a real system and real requirements.
 
 **Acceptance criteria**
-- The person runs `hound onboard` in the dev container with their own model key and read-only firewall credentials, against the Essential Eight ML2 framework, and commits the output to their private config repo. Nothing from the run is committed here.
+- The person runs `hound onboard` in the dev container with their own model key and read-only firewall credentials, registers and approves the supplier (the vendor or the reseller their contract is with) first, against the Essential Eight ML2 framework, and commits the output to their private config repo. Nothing from the run is committed here.
 - What the run showed (steps that were slow or confusing, wrong proposals, missing operators) is recorded as discovered work, without organisation data.
 - `docs/onboarding.md`: how to onboard a system, what is sent to the model and how to check it, how to use another provider or `--no-model`, and how auditors read the onboarding record. A tutorial section onboards the fictional example API.
 

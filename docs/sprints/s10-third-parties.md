@@ -16,47 +16,12 @@ What is configuration here, and what is not:
 | Evidence plan: evidence items, recurring task templates (assignees, schedule, runbook), owner contacts | Task occurrences and their status, uploaded evidence revisions, reviews, requirement results set by the Cyber GRC team |
 
 ### s10-01 Suppliers, solutions and contracts
-- [ ] Done
 
-**Story:** As a supplier owner, I want our suppliers, what they provide and our contracts with them declared in the repo, so that the supplier register is reviewed and complete.
-
-**Acceptance criteria**
-- `scope/third-parties/<entity>.yaml` declares one entity: `ref_id`, name, description, mission, country (ISO 3166-1 alpha-2), currency (ISO 4217), parent entity, domain, and its dependency (0–4), penetration (0–4), maturity (1–4) and trust (1–4).
-- It also declares the entity's solutions (`ref_id`, name, description, criticality 1–4) and contracts (`ref_id`, name, status `draft`, `active`, `expired` or `terminated`, start and end dates, annual expense, currency, the solutions covered, and identifiers such as LEI or VAT).
-- Representatives are optional. They are personal data, so the guide recommends keeping them in CISO Assistant unless the repo is private and access-controlled; when declared, they are matched by email and never given a login by `hound`.
-- If s06-05 confirmed the API can update the main entity, `organisation` in `scope/setup.yaml` manages it here (the s06 discovered-work item).
-- Validation: country and currency codes; contract end after start; an `active` contract past its end date is reported (`supplier.contract_lapsed`); solutions named by a contract belong to the same entity.
-
-**Tests first**
-- `SupplierScopeTests.Invalid_country_or_currency_is_reported`
-- `SupplierScopeTests.Active_contract_past_end_date_is_reported`
-- `SupplierScopeTests.Contract_solution_must_belong_to_entity`
-- Contract: `SupplierClientTests.Creates_entity_solution_and_contract`
-
-**Functional check**
-- Apply two fictional suppliers to the local CISO Assistant; re-applying writes nothing; a changed contract end date is a one-field update.
+Moved to s09 as s09-19 on 2026-11-22, so suppliers are registered and approved before systems are onboarded.
 
 ### s10-02 Supplier assessments and tiers
-- [ ] Done
 
-**Story:** As a supplier owner, I want each supplier's assessment set up from the repo on a review cycle, so that reviews start on time and nobody sets them up by hand.
-
-**Acceptance criteria**
-- An entity file may declare assessments: name, solutions, perimeter, due date, criticality, the questionnaire framework (a library URN), and `review_every` (such as `12 months`). Applying creates the entity assessment and its linked questionnaire audit.
-- When a review is due, `hound` opens the next one: a new revision if the API supports it (s06-05), otherwise a new assessment named with its period, using the same periods logic as audits (s06-10).
-- Answers, tiering form results and campaigns are never written by `hound`.
-- `forced_tier` (one of the criticality scale's keys, such as `critical`) with a required `reason` may be declared; `scope plan` reports when CISO Assistant's current tier differs from it.
-- `review_every` also creates a recurring task template for the supplier owner and the Cyber GRC team (the same mechanism as s10-04), so supplier reviews get CISO Assistant's reminders and appear in the same overdue reporting.
-
-**Tests first**
-- `SupplierAssessmentTests.Due_review_opens_the_next_one`
-- `SupplierAssessmentTests.Answers_are_never_in_the_plan`
-- `SupplierScopeTests.Forced_tier_requires_reason`
-- `SupplierAssessmentTests.Review_cycle_creates_recurring_task_for_owner`
-- `ScopePlanTests.Tier_differing_from_forced_tier_is_reported`
-
-**Functional check**
-- With a fixed clock past a review date, `scope apply` opens the next fictional supplier assessment in the local CISO Assistant with its questionnaire.
+Moved to s09 as s09-20 on 2026-11-22, with a supplier approval gate added. The recurring supplier review task stays here, in s10-04.
 
 ### s10-03 Documentation and example repo
 - [ ] Done
@@ -91,6 +56,7 @@ How it works, using CISO Assistant's own features only (checked against the v4.3
 - Validation: a `manual` or `hybrid` row needs an owner, an interval and a runbook file that exists; an `automated` or `hybrid` row names a configured collector instance; owner and GRC teams exist in `access.yaml`; an owner contact has no role assignments.
 - `scope plan` shows task template changes and drift like other objects. Occurrence status, evidence revisions, reviews and requirement results are never in the plan or written by `hound`.
 - Manual rows stay `manual_only` in the mapping files, so runs never overwrite a result set by the GRC team.
+- Supplier reviews (moved from s10-02): an entity assessment's `review_every` (s09-20) also creates a recurring task template for the supplier owner and the GRC team, so supplier reviews get CISO Assistant's reminders and appear in the same overdue reporting.
 - `docs/manual-evidence.md`: the plan file, a runbook template (what to export, from where, how to send it to the GRC team), turning mail on (`EMAIL_*` in the deployment, `notifications_enable_mailing` in `settings.yaml`) and the overdue email off (`disabled_email_templates`), the GRC team's steps in CISO Assistant, and the limits below.
 - The example compliance repo gains a fictional evidence plan with two manual rows, an owner contact and a runbook, all of which validate.
 
