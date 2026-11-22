@@ -73,9 +73,9 @@ public sealed class SophosProfileParityTests : IDisposable
     };
 
     /// <summary>A real-looking data region, so both collectors trust it; <see cref="RegionClients"/> sends it to the recording.</summary>
-    private const string RegionHost = "https://api-eu01.central.sophos.com";
+    private static readonly string RegionHost = "https://api-eu01.central.sophos.com";
 
-    private const string SuperAdminRole = "00000000-0000-4000-8000-00000000a501";
+    private static readonly string SuperAdminRole = "00000000-0000-4000-8000-00000000a501";
 
     private static JsonArray Each(JsonArray items, Action<JsonObject> change)
     {
