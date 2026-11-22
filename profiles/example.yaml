@@ -84,7 +84,7 @@ datasets:
     from: users
     join:
       - with: roles
-        on: { left: $.roleIds[*], right: $.id }
+        on: { left: "$.roleIds[*]", right: $.id }
         as: roles
         optional: true
     where: { field: $.status, equals: active }

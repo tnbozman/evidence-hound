@@ -108,7 +108,7 @@ public sealed class ProfileValidationTests
 
     [Fact]
     public void Bad_path_syntax_is_reported() =>
-        Codes(Profiles.Minimal().Replace("each: { field: $.enabled", "each: { field: enabled[", StringComparison.Ordinal)).ShouldBe(["profile.path_invalid"]);
+        Codes(Profiles.Minimal().Replace("each: { field: $.enabled", "each: { field: \"enabled[\"", StringComparison.Ordinal)).ShouldBe(["profile.path_invalid"]);
 
     [Fact]
     public void Unknown_code_check_is_reported() =>

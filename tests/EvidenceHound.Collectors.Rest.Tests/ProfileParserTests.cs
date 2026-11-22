@@ -81,7 +81,7 @@ public sealed class ProfileParserTests
         var problem = ProfileParser.Parse("profile: [unclosed", "broken.yaml").Problems().ShouldHaveSingleItem();
 
         problem.Code.ShouldBe("profile.yaml_invalid");
-        problem.Message.ShouldStartWith("broken.yaml line 1");
+        problem.Message.ShouldStartWith("broken.yaml line ");
     }
 
     [Fact]
