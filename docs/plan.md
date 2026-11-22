@@ -18,8 +18,8 @@ A small defence-industry business has to reach and then sustain cyber compliance
 
 | Release | Contents |
 | --- | --- |
-| 1 | Core, publisher, runner, collector SDK and test kit, manual-upload collector, Microsoft 365, Sophos Central and Veeam collectors, CISO Assistant as configuration, a thin reference Docker deployment with scheduled runs (early, so evidence builds history), CISO Assistant users and settings as configuration, a tutorial for the private compliance repo, Essential Eight gap collectors (application control, vulnerability scan import, manual-upload templates), third parties as configuration, AI governance on the Australian AI6 guidance, the completed Essential Eight mapping, adoption guides, committee (operational) and board (governance) reporting, backups and hardening |
-| 2 | ASD Essentials mapping, risk, threats and BIA as configuration, CISO Assistant governance collector and metrics, NIST SP 800-171 mapping, SSP and POA&M drafts, optional collector console |
+| 1 | Core, publisher, runner, collector SDK and test kit, manual-upload collector, Microsoft 365, Sophos Central and Veeam collectors, CISO Assistant as configuration, a thin reference Docker deployment with scheduled runs (early, so evidence builds history), CISO Assistant users and settings as configuration, a tutorial for the private compliance repo, Essential Eight gap collectors (application control, vulnerability scan import, manual-upload templates), third parties as configuration, an Essential Eight system security plan drafted from CISO Assistant records, AI governance on the Australian AI6 guidance, the completed Essential Eight mapping, adoption guides, committee (operational) and board (governance) reporting, backups and hardening |
+| 2 | ASD Essentials mapping, risk, threats and BIA as configuration, CISO Assistant governance collector and metrics, CMMC Level 2 (NIST SP 800-171) mapping and its SSP and POA&M layout, optional collector console |
 
 Sprints are in [`docs/sprints/`](sprints/README.md).
 
