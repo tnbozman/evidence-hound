@@ -182,6 +182,7 @@ public static class HoundCli
             ManualCommand.Build(terminal, loggers, registry, new SystemClock()),
             MappingCommands.Build(output, loggers),
             ScopeCommands.Build(output, loggers, configuration, registry),
+            SkillCommands.Build(output, loggers, configuration),
             PlanCommand.Build(output, loggers, configuration, registry),
             ProfileCommands.Build(output, loggers, configuration),
             PublishCommand.Build(output, loggers, configuration, registry),

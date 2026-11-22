@@ -55,3 +55,39 @@ Every request passes one gate before it leaves:
   `--show-requests` prints each request before it is sent.
 - **Replies are checked.** Each reply must meet the step's JSON schema (`llm.invalid_reply`); a model that declines is `llm.refused`, and a
   provider that cannot be reached is `llm.unreachable`.
+
+## Skills: the assistant's guidance
+
+A skill is a Markdown file with frontmatter that tells the model how to approach a step. Skills only guide: the outbound guard, response
+shapes, the named approver for not applicable, the supplier gate, schema checks and profile tests stay in code, and no skill can change them.
+
+```markdown
+---
+name: our-applicability
+description: How we justify not applicable.
+version: 1.0.0
+applies_to: [applicability]          # supplier, system, applicability, profile, mapping
+frameworks: [essential-eight-2023]    # optional: only for these frameworks
+overrides: applicability              # optional: replace this default on purpose
+---
+Guidance for the model, in plain Markdown.
+```
+
+- **Defaults** are built into `hound`, from this repository's [`skills/`](../skills/) folder: supplier assessment and tiering, supplier
+  assurance documents, applicability and not-applicable justification, Essential Eight ML2 mapping, profile authoring, and reading an API
+  specification.
+- **Organisation skills** live in the config repo's `skills/` folder (`skills_path`, mounted read-only like profiles). They add to the
+  defaults; one with a default's name is an error unless it says `overrides:`.
+- **Choosing:** at each step the model gets every skill whose `applies_to` names the step and whose `frameworks` match, defaults first, within
+  a size budget. Over the budget is an error naming the skills, never a silent cut. Specifications and responses are passed separately, as
+  material to read.
+- **Recorded:** each session's `skills.json` lists every skill used with its source, version and SHA-256.
+
+| Command | Does |
+| --- | --- |
+| `hound skill list` | Every active skill: source, version, SHA-256, steps and override. |
+| `hound skill new <name>` | Writes a skeleton to fill in. |
+| `hound skill add <file>` | Validates the skill against the defaults and the folder, then copies it in. |
+| `hound skill validate [--deny-terms <file>]` | Checks every skill and warns about anything that looks like organisation data, since skills are sent to the model provider. |
+
+Each takes `--skills <folder>` (default `HOUND_SKILLS_PATH`, else `./skills`).

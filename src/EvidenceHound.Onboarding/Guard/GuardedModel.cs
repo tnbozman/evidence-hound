@@ -72,6 +72,22 @@ public sealed class SessionRecord(string folder)
         };
     }
 
+    /// <summary>Lists the skills the session used, with source, version and SHA-256, in <c>skills.json</c>, so an auditor can see what guided it.</summary>
+    public async Task SaveSkillsAsync(IEnumerable<Skills.Skill> skills, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(skills);
+        Directory.CreateDirectory(folder);
+        var list = new JsonArray([.. skills.Select(s => new JsonObject
+        {
+            ["name"] = s.Name,
+            ["source"] = s.Source == Skills.SkillSource.Default ? "default" : "organisation",
+            ["version"] = s.Version,
+            ["sha256"] = s.Sha256,
+            ["overrides"] = s.Overrides,
+        })]);
+        await File.WriteAllTextAsync(Path.Combine(folder, "skills.json"), list.ToJsonString(Indented), cancellationToken);
+    }
+
     public async Task SaveAsync(int number, string step, string kind, JsonObject content, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(content);

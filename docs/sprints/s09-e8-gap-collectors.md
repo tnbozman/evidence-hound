@@ -304,7 +304,7 @@ error: /tmp/fc21/hound.yaml line 2: 'llm' is not allowed here: the runner never 
 `--check` against a stand-in provider (`OnboardConfigCommandTests`) makes one request and prints `anthropic claude-opus-5-5: the key works.` without the key. Both adapters pass the shared contract suite on recorded replies. OpenAI's top model was confirmed as `gpt-6.2-astra` from its published model list.
 
 ### s09-26 Onboarding skills
-- [ ] Done
+- [x] Done
 
 Built straight after s09-21, before s09-22, because every later onboarding step reads its guidance from skills.
 
@@ -331,6 +331,26 @@ Built straight after s09-21, before s09-22, because every later onboarding step 
 
 **Functional check**
 - `hound skill new example-check`, edit it, `hound skill add` it, and `hound skill list` shows it beside the defaults; an onboarding run with a fake model records it.
+
+**Functional check, run 2026-11-22** (the onboarding run that records skills comes with s09-22's command; `SessionRecord.SaveSkillsAsync` writes the list and is tested by `OnboardRecordTests`):
+
+```console
+$ hound skill new example-check --skills /tmp/fc21/sk/drafts
+Wrote /tmp/fc21/sk/drafts/example-check.md. Edit it, then 'hound skill add /tmp/fc21/sk/drafts/example-check.md'.
+$ hound skill add /tmp/fc21/sk/drafts/example-check.md --skills /tmp/fc21/sk/skills
+Added example-check 0.1.0 to /tmp/fc21/sk/skills.
+$ hound skill list --skills /tmp/fc21/sk/skills
+| Skill | Source | Version | SHA-256 | Steps | Overrides |
+| applicability | default | 1.0.0 | f0511f73c6a7 | applicability, system |  |
+| essential-eight-ml2-mapping | default | 1.0.0 | c8cb33f4728a | applicability, mapping |  |
+| profile-authoring | default | 1.0.0 | 495eea9ed2c2 | profile |  |
+| reading-an-api-specification | default | 1.0.0 | d5df70328689 | system, applicability, profile |  |
+| supplier-assessment | default | 1.0.0 | cc5960da8145 | supplier |  |
+| supplier-assurance-documents | default | 1.0.0 | c033e2ac0c0d | supplier |  |
+| example-check | organisation | 0.1.0 | e2cb76e71ca5 | applicability |  |
+$ hound skill validate --skills /tmp/fc21/sk/skills
+7 skills valid (1 from /tmp/fc21/sk/skills), 0 warnings.
+```
 
 ### s09-28 Onboard the corporate environment: the capability map (added 2026-11-22)
 - [ ] Done
@@ -705,12 +725,15 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 - It flags anything risky or inconsistent for the reviewer: requirements newly marked not applicable, removed checks or controls, deletions in the plan, a system without an owner, a supplier not yet approved, a mapping that no longer matches a profile's checks.
 - Review only: it never edits config, never applies, and never runs in collection. It uses the onboarding model connection (`onboarding.yaml`, s09-21) through the same gate: the outbound guard, the deny terms, the session record and `--show-requests`.
 - The deterministic plan output stays the source of truth: the summary says so, quotes the plan's counts, and a reply that names an object the plan does not contain is reported as `llm.invalid_reply`.
+- It uses the right skill for what it explains, from the same skills system as onboarding (s09-26): a new `explain` step, with skills chosen by what the diff or plan touches (third parties: supplier assessment and assurance; not-applicable rows: applicability; profiles: profile authoring; mappings and audits: the framework's mapping skill such as Essential Eight ML2). Organisation skills are included, `--skill <name>` adds or narrows the choice, and the summary lists every skill used with its source, version and SHA-256. Default explain-oriented skills ("reviewing a config change") are added where the existing ones do not cover the review.
 
 **Tests first**
 - `ExplainTests.Summary_counts_match_the_plan`
 - `ExplainTests.Object_not_in_the_plan_is_an_invalid_reply`
 - `ExplainTests.Secrets_and_identifiers_are_never_sent`
 - `ExplainCommandTests.Reads_a_diff_or_a_saved_plan`
+- `ExplainSkillTests.Skills_follow_what_the_change_touches`
+- `ExplainSkillTests.Skill_option_overrides_the_choice_and_is_recorded`
 
 **Functional check**
 - With a fake model, `hound explain` on a scope plan of the example repo prints a summary whose counts match the plan, and `--show-requests` shows no secret or identifier.
