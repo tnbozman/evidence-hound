@@ -144,7 +144,7 @@ Projects: `src/Collectors/EvidenceHound.Collectors.Sophos`, `src/Collectors/Evid
 ### s08-08 Hands-on trial: real Sophos Central tenant
 - [ ] Done
 
-Do this task last in the sprint: it needs s08-01, s08-02, s08-05, s08-06 and s08-07 merged into the sprint branch, and the thin deployment from s07.
+Do this task last in the sprint: it needs s08-01, s08-02, s08-05, s08-06, s08-07 and s08-09 merged into the sprint branch. It runs through the interactive local trial (s08-09) in the person's dev container, against the CISO Assistant running there; the s07 thin deployment host is an alternative, not a prerequisite. "The host" in the steps below is whichever the person uses.
 
 **Story:** As the maintainer, I want to run Evidence Hound for real against a home Sophos Central tenant with an XGS firewall, from configuration to results in CISO Assistant, so that I know the product works end to end and not only against recordings.
 
@@ -173,6 +173,29 @@ Do this task last in the sprint: it needs s08-01, s08-02, s08-05, s08-06 and s08
 
 **Functional check**
 - The trial itself. Record in `docs/evidence/s08/s08-08.md` only: the date, the CISO Assistant and `hound` versions, the shape of the setup ("a home Sophos Central tenant with an XGS firewall", the number of endpoints and firewalls), each step's outcome, each check's outcome, the compliance counts before and after, and the defects found with links to their fixes. No names, tenant IDs, host names, IP addresses, serial numbers, credentials or screenshots.
+
+### s08-09 Interactive local trial
+- [ ] Done
+
+Added 2026-11-22 at the person's request, as the route for the s08-08 trial. Build it before s08-08 and before the Veeam tasks, so the person can start testing early.
+
+**Story:** As a maintainer testing Evidence Hound from my dev container, with CISO Assistant already running, I want an interactive tutorial that checks my setup, runs Evidence Hound in a container next to CISO Assistant, and walks me from the example organisation to manual evidence and controls and then to my own Sophos Central tenant, so that I can try the whole product without a server and without breaking what is already running.
+
+**Acceptance criteria**
+- `make trial` (script `scripts/trial.sh`, pure helpers in `scripts/lib/trial.sh`) runs step by step: it shows each command before it runs it, asks before anything that changes state, can be stopped and re-run, and skips steps already done.
+- **Preflight, before anything starts:** Docker answers; a CISO Assistant that is already running is found and reused (the dev container's own `backend:8000`, or a `make ca-up` stack on the visible Docker daemon), never started twice; if none is running, ports 8000 and 8443 are checked and the trial stops with what holds them if either is bound, otherwise it offers `make ca-up`.
+- **Evidence Hound in a container on CISO Assistant's network:** the runner image is built from the working tree (`make image`) and every `hound` command runs as `docker run --rm` on CISO Assistant's Docker network (or the dev container's network namespace when CISO Assistant is a dev container service on the outer daemon), with the API at `http://backend:8000/api/`, the token from `.dev/ca.env` passed as a secrets file, never on the command line.
+- **Trial workspace** in `.dev/trial/` (git-ignored): a copy of the example compliance repo with a `hound.yaml` for the trial (manual collectors only, no Microsoft 365), evidence and drop folders, and a `secrets/` folder with mode 700.
+- **Guided steps:** (1) apply the example organisation (`scope validate`, `scope plan`, `scope apply`); (2) manual evidence: drop an example export with an attestation into a manual collector's folder, `hound run --only <it>`, then `hound status`, and point at the evidence, the requirement result and the health control in the CISO Assistant UI; (3) add Sophos: read the client ID and secret without echo into `.dev/trial/secrets/` (mode 600), add a `sophos` collector with `file:` references, then `config validate --check-secrets`, `run --only sophos --dry-run`, a real run and `status`.
+- Nothing the trial writes outside `.dev/trial/` and the runner image, and `make trial-clean` removes the workspace (the person's CISO Assistant is left running).
+
+**Tests first**
+- `tests/trial/trial.bats`: port check reports a bound port and who holds it; CISO Assistant detection prefers a running instance over starting one; the network choice for the bundled and the `make ca-up` cases; the rendered trial `hound.yaml` validates against `schemas/config.schema.json` and has no `m365` collector; the Sophos block uses `file:` references only; secrets are never in a `docker run` command line.
+- `make lint-shell` covers both scripts.
+
+**Functional check**
+- In this repo's CI-like container with a local CISO Assistant: `make trial` with answers piped in runs preflight, applies the example scope, publishes the manual evidence, and stops at the Sophos step when no credential is given. Record the transcript (no tokens) in `docs/evidence/s08/s08-09.md`.
+- **(person)** Runs `make trial` in their dev container up to the Sophos step; that run is the start of s08-08.
 
 ## Discovered work
 
