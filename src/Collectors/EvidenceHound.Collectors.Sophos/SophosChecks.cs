@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text.RegularExpressions;
 using EvidenceHound.Core.Checks;
 
@@ -10,80 +9,15 @@ internal sealed record Finding(string CheckId, CheckOutcome Outcome, string Obse
 /// <summary>One check the collector reports: its ID and the pure function that evaluates it.</summary>
 internal sealed record SophosCheck(string Id, Func<SophosData, SophosOptions, DateTimeOffset, Finding> Evaluate);
 
-/// <summary>Endpoint protection and firewall checks over a Sophos Central tenant.</summary>
+/// <summary>Checks over the network devices a Sophos Central tenant manages.</summary>
 internal static partial class SophosChecks
 {
-    private static readonly string NoEndpoints = "No endpoints were found in Sophos Central.";
-
-    private static readonly string[] EndpointSources = [SophosSources.Endpoints.Name];
-
     private static readonly string[] FirewallSources = [SophosSources.Firewalls.Name];
 
     public static IReadOnlyList<SophosCheck> All { get; } =
     [
-        new("endpoint.protection.healthy_ratio", HealthyRatio),
-        new("endpoint.protection.tamper_protection_enabled", TamperProtection),
-        new("endpoint.protection.stale_agents", StaleAgents),
         new("network.firewall.firmware_supported", FirmwareSupported),
     ];
-
-    public static Finding HealthyRatio(SophosData data, SophosOptions options, DateTimeOffset now)
-    {
-        ArgumentNullException.ThrowIfNull(data);
-        ArgumentNullException.ThrowIfNull(options);
-        const string id = "endpoint.protection.healthy_ratio";
-        var endpoints = data.Endpoints;
-        if (endpoints.Count == 0)
-        {
-            return new(id, CheckOutcome.Fail, NoEndpoints, EndpointSources);
-        }
-
-        var good = endpoints.Count(e => e.Health == "good");
-        var percent = 100.0 * good / endpoints.Count;
-        var outcome = percent >= options.HealthyPassPercent ? CheckOutcome.Pass
-            : percent >= options.HealthyPartialPercent ? CheckOutcome.Partial
-            : CheckOutcome.Fail;
-        var others = string.Join(", ", endpoints.Where(e => e.Health != "good").GroupBy(e => e.Health, StringComparer.Ordinal)
-            .OrderByDescending(g => g.Count()).ThenBy(g => g.Key, StringComparer.Ordinal).Select(g => $"{g.Key} ({g.Count()})"));
-        var observation = string.Create(
-            CultureInfo.InvariantCulture,
-            $"{good} of {endpoints.Count} endpoints ({percent:0.#} %) are in good health{(others.Length == 0 ? string.Empty : $"; the others are {others}")}. Pass at {options.HealthyPassPercent:0.#} %, partial at {options.HealthyPartialPercent:0.#} %.");
-        return new(id, outcome, observation, EndpointSources);
-    }
-
-    public static Finding TamperProtection(SophosData data, SophosOptions options, DateTimeOffset now)
-    {
-        ArgumentNullException.ThrowIfNull(data);
-        const string id = "endpoint.protection.tamper_protection_enabled";
-        var endpoints = data.Endpoints;
-        if (endpoints.Count == 0)
-        {
-            return new(id, CheckOutcome.Fail, NoEndpoints, EndpointSources);
-        }
-
-        var off = endpoints.Count(e => e.TamperProtection != true);
-        return off == 0
-            ? new(id, CheckOutcome.Pass, $"Tamper protection is on for all {endpoints.Count} endpoints.", EndpointSources)
-            : new(id, CheckOutcome.Fail, $"Tamper protection is off or not reported for {off} of {endpoints.Count} endpoints.", EndpointSources);
-    }
-
-    public static Finding StaleAgents(SophosData data, SophosOptions options, DateTimeOffset now)
-    {
-        ArgumentNullException.ThrowIfNull(data);
-        ArgumentNullException.ThrowIfNull(options);
-        const string id = "endpoint.protection.stale_agents";
-        var endpoints = data.Endpoints;
-        if (endpoints.Count == 0)
-        {
-            return new(id, CheckOutcome.Fail, NoEndpoints, EndpointSources);
-        }
-
-        var cutoff = now.AddDays(-options.StaleAgentDays);
-        var stale = endpoints.Count(e => e.LastSeen is not { } seen || seen < cutoff);
-        return stale == 0
-            ? new(id, CheckOutcome.Pass, $"All {endpoints.Count} endpoints were seen by Sophos Central in the last {options.StaleAgentDays} days.", EndpointSources)
-            : new(id, CheckOutcome.Fail, $"{stale} of {endpoints.Count} endpoints have not been seen by Sophos Central for more than {options.StaleAgentDays} days.", EndpointSources);
-    }
 
     public static Finding FirmwareSupported(SophosData data, SophosOptions options, DateTimeOffset now)
     {

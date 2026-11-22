@@ -4,6 +4,9 @@ namespace EvidenceHound.Collectors.Sophos.Tests;
 
 public sealed class SophosPagingTests : IDisposable
 {
+    /// <summary>A list paged by key, as the endpoints list was before the collector read network devices only.</summary>
+    private static readonly SophosSource Keyed = new("endpoints", "endpoint/v1/endpoints", SophosPaging.Keyed);
+
     private readonly RecordedSophos _sophos = RecordedSophos.Start();
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
@@ -11,7 +14,7 @@ public sealed class SophosPagingTests : IDisposable
     [Fact]
     public async Task Reads_all_pages()
     {
-        var endpoints = (await Client().GetAllAsync(SophosSources.Endpoints, Token)).Value();
+        var endpoints = (await Client().GetAllAsync(Keyed, Token)).Value();
 
         endpoints.Pages.ShouldBe(2);
         endpoints.Items.Count.ShouldBe(5);
@@ -38,7 +41,7 @@ public sealed class SophosPagingTests : IDisposable
     [Fact]
     public async Task Sends_the_token_and_tenant_on_every_request()
     {
-        await Client().GetAllAsync(SophosSources.Endpoints, Token);
+        await Client().GetAllAsync(Keyed, Token);
 
         _sophos.Region.LogEntries.ShouldAllBe(e =>
             e.RequestMessage!.Headers!["X-Tenant-ID"].Single() == RecordedSophos.TenantId
@@ -50,7 +53,7 @@ public sealed class SophosPagingTests : IDisposable
     {
         _sophos.FailRegion("/endpoint/v1/endpoints", 403, "forbidden", "Forbidden");
 
-        var problem = (await Client().GetAllAsync(SophosSources.Endpoints, Token)).Problems().ShouldHaveSingleItem();
+        var problem = (await Client().GetAllAsync(Keyed, Token)).Problems().ShouldHaveSingleItem();
 
         problem.Code.ShouldBe("sophos.forbidden");
         problem.Message.ShouldContain("Service Principal Read-Only");
@@ -70,7 +73,7 @@ public sealed class SophosPagingTests : IDisposable
         _sophos.Region.Given(WireMock.RequestBuilders.Request.Create().WithPath("/endpoint/v1/endpoints").UsingGet()).AtPriority(0)
             .RespondWith(WireMock.ResponseBuilders.Response.Create().WithStatusCode(200).WithBody("<html>not json</html>"));
 
-        (await Client().GetAllAsync(SophosSources.Endpoints, Token)).Problems().ShouldHaveSingleItem().Code.ShouldBe("sophos.invalid_response");
+        (await Client().GetAllAsync(Keyed, Token)).Problems().ShouldHaveSingleItem().Code.ShouldBe("sophos.invalid_response");
     }
 
     public void Dispose() => _sophos.Dispose();

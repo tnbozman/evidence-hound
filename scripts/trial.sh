@@ -228,7 +228,7 @@ sophos() {
       hound yes add collector sophos --config hound.yaml --schedule "0 4 * * *" --secrets-dir /trial/secrets
       ;;
   esac
-  run_collector sophos "the requirements the Sophos checks map to" "reads endpoints and firewalls"
+  run_collector sophos "ISM-1501, which the firewall firmware check feeds" "reads the firewalls"
 }
 
 # run_collector NAME WHAT READS checks the secrets, dry-runs the collector, then publishes it after asking

@@ -85,7 +85,7 @@ It plans and applies the scope again, so the system and the control reach CISO A
 
 `hound add collector sophos --config hound.yaml --secrets-dir /trial/secrets` asks for what the Sophos collector needs:
 
-1. The credential's client ID, and the firewall firmware versions still in support (see Sophos's firmware lifecycle), such as `21.5, 22.0`. Other settings, such as `stale_agent_days` or a partner credential's `tenant_id`, are optional; add them with `--set key=value`.
+1. The credential's client ID, and the firewall firmware versions still in support (see Sophos's firmware lifecycle), such as `21.5, 22.0`. Other settings, such as a partner credential's `tenant_id`, are optional; add them with `--set key=value`.
 2. The client secret, which is not shown as you type. It is saved to `.dev/trial/secrets/sophos_client_secret` (mode 600), never in git, and the config references it as `file:/trial/secrets/sophos_client_secret`.
 
 The trial then runs:
@@ -97,7 +97,7 @@ hound run --config hound.yaml --only sophos
 hound status --config hound.yaml
 ```
 
-The dry run signs in, reads endpoints and firewalls, stores the evidence locally and plans the updates, and sends nothing. The real run publishes the four Sophos checks to the requirements they map to in the Essential Eight audit.
+The dry run signs in, reads the firewalls, stores the evidence locally and plans the updates, and sends nothing. The real run publishes the firewall firmware check to the requirement it maps to in the Essential Eight audit (ISM-1501, together with the Microsoft 365 collector's operating system check).
 
 If you share output for help, remove identifiers first: tenant IDs, host names, IP addresses and serial numbers.
 

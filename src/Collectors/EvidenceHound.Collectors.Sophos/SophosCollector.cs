@@ -5,8 +5,9 @@ using EvidenceHound.Core.Secrets;
 namespace EvidenceHound.Collectors.Sophos;
 
 /// <summary>
-/// The built-in <c>sophos</c> collector. It signs in to Sophos Central with a read-only API credential, reads the tenant's
-/// endpoints and firewalls, saves each list as minimised JSON evidence, and evaluates endpoint protection and firewall checks.
+/// The built-in <c>sophos</c> collector. It signs in to Sophos Central with a read-only API credential, reads the network devices
+/// the tenant manages (firewalls), saves each list as minimised JSON evidence, and evaluates their checks. Endpoint protection is
+/// not read: endpoint evidence comes from the endpoint's own antivirus.
 /// </summary>
 public sealed class SophosCollector : ICollector
 {
@@ -14,7 +15,7 @@ public sealed class SophosCollector : ICollector
 
     public string Type => TypeName;
 
-    public string Version => "1.0.0";
+    public string Version => "2.0.0";
 
     public CollectorDescription Describe() => new(
         [.. SophosChecks.All.Select(c => c.Id)],
@@ -23,10 +24,7 @@ public sealed class SophosCollector : ICollector
             new(SophosSettings.TenantId, "ID of the tenant to read. Required for a partner or organization credential; a tenant credential reads its own tenant.", Required: false),
             new(SophosSettings.IdUrl, "Sophos ID address that issues tokens. Default: https://id.sophos.com/.", Required: false),
             new(SophosSettings.ApiUrl, "Sophos Central global API address. Default: https://api.central.sophos.com/.", Required: false),
-            new(SophosSettings.IncludeIdentities, "true keeps host names, people, addresses and serial numbers in evidence. Default: false (hashed).", Required: false),
-            new(SophosSettings.HealthyPassPercent, "Percentage of endpoints in good health needed to pass. Default: 95.", Required: false),
-            new(SophosSettings.HealthyPartialPercent, "Percentage of endpoints in good health needed for partial. Default: 80.", Required: false),
-            new(SophosSettings.StaleAgentDays, "Days an endpoint may go unseen by Sophos Central before it counts as stale. Default: 14.", Required: false),
+            new(SophosSettings.IncludeIdentities, "true keeps host names, addresses and serial numbers in evidence. Default: false (hashed).", Required: false),
             new(SophosSettings.SupportedFirewallFirmware, "Comma-separated firewall firmware versions still in support, for example 20.0, 21.0.", Required: true),
         ],
         [
@@ -68,7 +66,7 @@ public sealed class SophosCollector : ICollector
     private static Result<CollectionResult> Evaluate(IReadOnlyList<SophosCollection> lists, SophosOptions options, CollectorContext context)
     {
         var byName = lists.ToDictionary(l => l.Source.Name, StringComparer.Ordinal);
-        var data = SophosData.Parse(byName[SophosSources.Endpoints.Name].Items, byName[SophosSources.Firewalls.Name].Items);
+        var data = SophosData.Parse(byName[SophosSources.Firewalls.Name].Items);
         var files = lists.Select(l => SophosEvidence.File(l, options.IncludeIdentities)).ToArray();
         var now = context.Clock.UtcNow;
         var checks = SophosChecks.All
