@@ -89,7 +89,7 @@ Risks, exceptions and risk acceptances in the reports are read from CISO Assista
     4. Exceptions and risk acceptances: new, expiring within 60 days, and expired.
     5. Remediation (POA&M-style) progress: open items, completed this month, overdue, by owner and due date.
     6. Incidents: incidents opened and closed in CISO Assistant this month, with status.
-    7. Manual evidence and third parties: manual evidence and supplier reviews due or overdue, by owner, from CISO Assistant's task analytics (s10-04); owners overdue for a second month are listed first.
+    7. Manual evidence and third parties: manual evidence and supplier reviews due or overdue, by owner, from CISO Assistant's task analytics (s10-04); owners overdue for a second month are listed first. Each overdue occurrence is carried into section 8 as an open action with its owner until it is completed, because the committee is the only escalation after the reminder emails (s10-04).
     8. Actions: proposed actions with owner and due date, for the committee to confirm.
 - Every figure links back to its CISO Assistant object.
 - A committee pack guide (`docs/govern/security-committee.md`): terms of reference template, agenda, attendees by role, how decisions and actions are recorded back into CISO Assistant (applied controls, exceptions, tasks).

@@ -80,6 +80,7 @@ What is configuration here, and what is not:
 How it works, using CISO Assistant's own features only (checked against the v4.3.4 source):
 - A recurring task template (`/api/task-templates/`, keyed by `ref_id`) holds the assignees, the schedule, the runbook as its Markdown description, and the linked evidence, applied control and requirement assessments. CISO Assistant creates an occurrence per due date.
 - CISO Assistant emails assignees 30, 7 and 1 days before each due date (with the description and a link) and daily while an occurrence is overdue. A team assignee is emailed at its team email as well as its leader, deputies and members.
+- Escalation is the monthly committee, not email (person's decision, Nov 2026): the first email carries the instructions, the later ones are the warning, and once overdue the owner gets no more email. The example `settings.yaml` turns the daily overdue email off with the general setting `disabled_email_templates: [task_node_overdue]`; overdue occurrences become open actions in the committee report (s11-05).
 - Only the Cyber GRC team uses CISO Assistant. A system owner is an **owner contact**: a team with a team email and no members, so it receives the reminders but has no login. The owner sends evidence to the GRC team as the runbook says; GRC uploads it against the occurrence, marks it complete, reviews it and sets the requirement result.
 - `/api/task-templates/analytics/` counts tasks by assignee and by domain, with overdue and due-soon buckets; the s11 reports read it.
 
@@ -90,12 +91,13 @@ How it works, using CISO Assistant's own features only (checked against the v4.3
 - Validation: a `manual` or `hybrid` row needs an owner, an interval and a runbook file that exists; an `automated` or `hybrid` row names a configured collector instance; owner and GRC teams exist in `access.yaml`; an owner contact has no role assignments.
 - `scope plan` shows task template changes and drift like other objects. Occurrence status, evidence revisions, reviews and requirement results are never in the plan or written by `hound`.
 - Manual rows stay `manual_only` in the mapping files, so runs never overwrite a result set by the GRC team.
-- `docs/manual-evidence.md`: the plan file, a runbook template (what to export, from where, how to send it to the GRC team), turning mail on (`EMAIL_*` in the deployment, `notifications_enable_mailing` in `settings.yaml`), the GRC team's steps in CISO Assistant, and the limits below.
+- `docs/manual-evidence.md`: the plan file, a runbook template (what to export, from where, how to send it to the GRC team), turning mail on (`EMAIL_*` in the deployment, `notifications_enable_mailing` in `settings.yaml`) and the overdue email off (`disabled_email_templates`), the GRC team's steps in CISO Assistant, and the limits below.
 - The example compliance repo gains a fictional evidence plan with two manual rows, an owner contact and a runbook, all of which validate.
 
 **Limits, accepted rather than built**
-- No timed escalation: the committee's overdue list (s11-05) is the escalation. A manager can be made a co-assignee from the first notice.
-- Reminder days (30, 7, 1) are fixed by CISO Assistant.
+- No timed escalation: the committee's overdue list (s11-05) is the escalation.
+- Reminder days (30, 7, 1) are fixed by CISO Assistant, so an owner gets the instructions plus two warnings before the due date rather than exactly one. Turning off `task_node_due_soon` would remove all three, so it stays on.
+- Disabling an email template applies to every task in the instance, including the GRC team's own.
 - Occurrences have no completion date; the s11 period snapshots record who was overdue at each month end.
 - The email's link opens a CISO Assistant sign-in that owners cannot use; the runbook text in the email is what they act on.
 
@@ -109,7 +111,7 @@ How it works, using CISO Assistant's own features only (checked against the v4.3
 - `ExampleRepoTests.Example_compliance_repo_validates` covers the new files.
 
 **Functional check**
-- Apply the fictional plan to the local CISO Assistant: both task templates appear with their next due date and both assignees; re-applying writes nothing. With mail pointed at a local SMTP catcher and a due date within 7 days, the owner contact's team email receives the reminder with the runbook text.
+- Apply the fictional plan to the local CISO Assistant: both task templates appear with their next due date and both assignees; re-applying writes nothing. With mail pointed at a local SMTP catcher and a due date within 7 days, the owner contact's team email receives the reminder with the runbook text; with a past due date and `task_node_overdue` disabled, no email is sent.
 
 ## Discovered work
 
