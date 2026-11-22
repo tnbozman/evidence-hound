@@ -39,7 +39,8 @@ public sealed class SupplierClientTests : IDisposable
                 ["default_penetration"] = 2,
                 ["default_maturity"] = 3,
                 ["default_trust"] = 3,
-                ["legal_identifiers"] = new JsonObject { ["LEI"] = "EXAMPLE0000000000000" },
+                // v4.3.4's read serializer gives legal identifiers as display text, one "name: value" per line; the write takes an object.
+                ["legal_identifiers"] = "LEI: EXAMPLE0000000000000\nVAT: EX-0001",
                 ["parent_entity"] = null,
                 ["builtin"] = false,
             }));
@@ -126,7 +127,7 @@ public sealed class SupplierClientTests : IDisposable
             ["penetration"] = "2",
             ["maturity"] = "3",
             ["trust"] = "3",
-            ["identifiers"] = "{\"LEI\":\"EXAMPLE0000000000000\"}",
+            ["identifiers"] = "{\"LEI\":\"EXAMPLE0000000000000\",\"VAT\":\"EX-0001\"}",
         }, ignoreOrder: true);
         held[(ScopeKind.Contract, "CTR-EXCLOUD-2026")].ShouldBe(new Dictionary<string, string>
         {
