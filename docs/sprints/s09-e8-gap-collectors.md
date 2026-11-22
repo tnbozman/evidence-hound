@@ -204,18 +204,21 @@ A system is registered only once its supplier is approved, so the supplier regis
 
 These tasks come after s09-14, because they draft REST profiles, and after s09-20, because onboarding starts with the supplier. They build `hound onboard` from [`docs/design/onboarding-assistant.md`](../design/onboarding-assistant.md): a guided session in which a language model proposes how a system fits a framework and drafts its profile, and a person accepts or edits every decision. Nothing is applied to CISO Assistant by the session; the output is files for a pull request in the organisation's config repo. Tests use a fake model with recorded replies; no test or CI job calls a live model.
 
-### s09-21 Model port, Anthropic adapter and outbound guard
+### s09-21 Model port, Anthropic and OpenAI adapters, onboarding config and outbound guard
 - [ ] Done
 
 **Story:** As an operator, I want `hound` to use a language model I choose, with my key kept as a secret and nothing sensitive sent, so that I can use the assistant without leaking organisation data.
 
 **Acceptance criteria**
 - Core port `IDraftingModel`: instructions, inputs and a JSON schema in; a reply validated against the schema, or a problem (`llm.refused`, `llm.invalid_reply`, `llm.budget_reached`, `llm.unreachable`), out.
-- Anthropic adapter using the official .NET SDK: adaptive thinking, structured outputs, streaming for long replies. Settings `llm.provider` (default `anthropic`), `llm.model` (default `claude-opus-5-5`), `llm.effort`, `llm.max_tokens_per_session`; secret `llm_api_key` from the secret provider.
-- Outbound guard (pure): every request is scanned for secret values in use, `llm.deny_terms`, and IP, MAC and email patterns; a hit returns `llm.blocked_content` naming what matched and nothing is sent.
+- Two adapters, each on its provider's official .NET SDK: Anthropic (structured outputs, adaptive thinking, streaming for long replies) and OpenAI (structured outputs with a JSON schema). Both pass one shared adapter contract suite.
+- `onboarding.yaml`, separate from the deployment config: `llm.provider` (`anthropic` or `openai`, required), `llm.model` (empty means the provider's default), `llm.api_key` (a secret reference, `env:` or `file:`; a literal key fails validation), `llm.effort`, `llm.max_tokens_per_session`, `llm.deny_terms_file`, `skills_path`, `profiles_path`.
+- Default models per provider in `onboarding/models.yaml`, shipped with `hound` and editable without a build: each provider's current top model (`claude-opus-5-5` for Anthropic; OpenAI's confirmed from its model list when this task is built).
+- `hound onboard config`: asks for provider and model, reads the key without echo, saves it to `~/.config/hound/secrets/llm_api_key` with owner-only permissions, and writes `onboarding.yaml` with a `file:` reference. `--check` resolves the key and makes one minimal request to confirm it works, never printing the key.
+- Outbound guard (pure): every request is scanned for secret values in use, the deny terms, and IP, MAC and email patterns; a hit returns `llm.blocked_content` naming what matched and nothing is sent.
 - Response shapes (pure): a response reduced to field names, types and counts, keeping values only for settings-like fields (few distinct values, no identity pattern) and never for profile `identities`.
 - Every request and reply is saved locally with the session; `--show-requests` prints each before it is sent.
-- No model in evidence collection: the onboarding code and model adapters live in `EvidenceHound.Onboarding`, used only by `hound onboard`. An architecture test fails if the core, runtime, collectors or `hound run` reference it or any model SDK. `hound run` and the scheduler refuse a configuration that declares `llm_api_key` or an `llm` setting (`config.llm_in_runner`).
+- No model in evidence collection: the onboarding code and model adapters live in `EvidenceHound.Onboarding`, used only by `hound onboard`. An architecture test fails if the core, runtime, collectors or `hound run` reference it or any model SDK. `hound run` and the scheduler refuse a deployment config that declares an `llm` section or references the onboarding key (`config.llm_in_runner`).
 
 **Tests first**
 - `ArchitectureTests.Runner_and_collectors_do_not_reference_onboarding_or_model_sdks`
@@ -223,8 +226,10 @@ These tasks come after s09-14, because they draft REST profiles, and after s09-2
 - `OutboundGuardTests.Secret_value_in_request_blocks_it`
 - `OutboundGuardTests.Deny_term_and_email_are_reported`
 - `ResponseShapeTests.Keeps_enumerations_drops_identities_and_free_text`
-- `AnthropicDraftingModelTests.Sends_schema_and_model_from_settings` (WireMock)
-- `AnthropicDraftingModelTests.Refusal_and_invalid_reply_are_problems`
+- `DraftingModelContractTests<T>` run for both adapters against recorded exchanges (WireMock): sends the schema and configured model, maps refusals and invalid replies to problems
+- `OnboardingConfigTests.Literal_api_key_is_refused`
+- `OnboardingConfigTests.Empty_model_uses_provider_default`
+- `OnboardConfigCommandTests.Writes_reference_and_owner_only_key_file`
 
 **Functional check**
 - With a fake model, `hound onboard --show-requests` on the example system prints requests containing no recorded host names, IDs or secrets.

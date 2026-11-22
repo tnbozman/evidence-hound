@@ -1,6 +1,6 @@
 # Design: an assistant for onboarding a system
 
-Status: Proposed (Nov 22). Builds on the agreed [REST collector design](rest-collector.md). The build is tasks s09-19 and s09-20 (suppliers, moved from s10) and s09-21 to s09-26 in [the s09 sprint](../sprints/s09-e8-gap-collectors.md).
+Status: Agreed (Nov 22). Builds on the agreed [REST collector design](rest-collector.md). The build is tasks s09-19 and s09-20 (suppliers, moved from s10) and s09-21 to s09-26 in [the s09 sprint](../sprints/s09-e8-gap-collectors.md).
 
 ## The problem
 
@@ -30,7 +30,7 @@ Not goals: an agent that runs unattended, changes CISO Assistant directly, or de
 The model helps a person onboard systems and suppliers. It never takes part in collecting, extracting or assessing evidence, so every result in CISO Assistant comes from deterministic code and configuration a person reviewed.
 
 - **Separate project.** The onboarding code and the model adapters live in `EvidenceHound.Onboarding`, used only by the `hound onboard` command. The core, the runtime, the collectors and `hound run` do not reference it or any model SDK. An architecture test fails the build if they do.
-- **No key where evidence is collected.** `llm_api_key` belongs to the person running onboarding, typically in their dev container. A scheduled runner's configuration may not declare it or any `llm` setting; `hound run` and the scheduler refuse to start with `config.llm_in_runner` if it does.
+- **No key where evidence is collected.** The model key belongs to the person running onboarding and is referenced only from `onboarding.yaml`, a separate file from the deployment config. A scheduled runner's configuration may not declare an `llm` section or that key; `hound run` and the scheduler refuse to start with `config.llm_in_runner` if it does.
 - **Evidence is never model output.** Nothing a model wrote is uploaded as evidence or used as a check result. Drafts become configuration only after a person accepts them and they are committed through a pull request; from then on they are ordinary profile, mapping and scope files.
 
 ## How it works: `hound onboard`
@@ -118,7 +118,7 @@ Guard rails:
 - **Shapes, not data.** Responses are reduced to their structure before the model sees them. Values are kept only for fields whose distinct values are few and match no identity pattern, and identity fields named in the profile are always dropped.
 - **A final check before every request.** The outgoing request is scanned for every secret value in use, the organisation's deny-list terms (setting `llm.deny_terms`, the same idea as the repo's `ORG_DENYLIST`), and patterns for addresses and email. A hit stops the request and tells the person what matched.
 - **Everything sent is kept.** Each request and reply is saved locally under the onboarding record, so the person can see exactly what left. `--show-requests` prints each one before it is sent.
-- **The key is a secret like any other.** `llm_api_key` comes from the secret provider (environment or secret file), never from a config file or CISO Assistant.
+- **The key is a secret like any other.** `onboarding.yaml` holds a reference (`env:` or `file:`), never the key, and the key never reaches CISO Assistant.
 
 ## Skills: the assistant's guidance as text
 
@@ -146,13 +146,37 @@ A requirement is not applicable only when the system cannot be in its scope at a
 
 **Skills guide; code enforces.** A skill is only text given to the model. It cannot change what is sent to the model (the outbound guard and response shapes), remove the need for a named approver on not-applicable, bypass the supplier gate, skip schema validation or profile tests, or reach the evidence runner. Those rules stay in code. Organisation skills are sent to the model provider like everything else, so the outbound guard scans them too, and `hound skill validate` warns about anything that looks like organisation data.
 
-## Model and provider
+## Model, provider and the onboarding config
 
-- A small port in the core, `IDraftingModel`: send a request with instructions, inputs and the JSON schema the reply must match; get a validated reply or a problem. The onboarding logic depends only on this.
-- The first adapter uses the Anthropic API through the official .NET SDK. The default model is `claude-opus-5-5`, with adaptive thinking and structured outputs. Model, effort and a token budget per session are settings (`llm.provider`, `llm.model`, `llm.effort`, `llm.max_tokens_per_session`).
-- Other providers (a cloud-hosted equivalent, or a local model for organisations that cannot send anything out) are further adapters behind the same port.
-- A refusal, an invalid reply or a budget reached is a problem returned to the session, which tells the person and keeps whatever was already accepted.
-- Tests use a fake model with recorded replies. No test or CI job calls a live model.
+The person chooses the provider. Anthropic and OpenAI are both supported from the start, behind one port.
+
+- A small port, `IDraftingModel`: send instructions, inputs and the JSON schema the reply must match; get a validated reply or a problem. The onboarding logic depends only on this.
+- Two adapters, each using its provider's official .NET SDK: **Anthropic** (structured outputs, adaptive thinking) and **OpenAI** (structured outputs with a JSON schema). Both pass the same contract tests, so a session behaves the same whichever is chosen.
+- **Default model per provider:** each provider's current top model. The defaults live in a small text file shipped with `hound` (`onboarding/models.yaml`), so they can be updated without a code change; at the time of writing Anthropic's is `claude-opus-5-5`, and OpenAI's is confirmed when s09-21 is built. `model` in the config overrides the default.
+- A refusal, an invalid reply or a spent budget is a problem returned to the session, which tells the person and keeps whatever was already accepted.
+- Tests use a fake model with recorded replies; the adapters are tested against recorded HTTP exchanges. No test or CI job calls a live model.
+
+### The onboarding config file
+
+Onboarding has its own config file, separate from the deployment config the runner uses, so a model key can never end up where evidence is collected (see "Rule: no model in evidence collection"). `hound onboard` reads `onboarding.yaml` from the config repo, or the file given with `--config`:
+
+```yaml
+# onboarding.yaml (fictional example)
+llm:
+  provider: openai                 # anthropic or openai
+  model: ""                        # empty: the provider's current top model
+  api_key: file:~/.config/hound/secrets/llm_api_key   # a reference, never the key itself
+  effort: high
+  max_tokens_per_session: 2000000
+  deny_terms_file: ./deny-terms.txt
+skills_path: ./skills
+profiles_path: ./profiles
+```
+
+- **The key is stored once, outside git.** `api_key` is a secret reference, like every other secret in `hound` (`env:NAME` or `file:path`, including a Docker secret). A key written straight into the file fails validation, as it does in the deployment config.
+- **`hound onboard config`** sets this up in one step: it asks for the provider and model, reads the key without echoing it, saves it to `~/.config/hound/secrets/llm_api_key` readable only by the person, and writes `onboarding.yaml` with the reference. Switching provider later is the same command, or a one-line edit.
+- `hound onboard config --check` resolves the key and makes one tiny request to confirm the provider accepts it, without printing the key.
+- The deployment config may not contain an `llm` section or a reference to the onboarding key; `hound run` and the scheduler refuse it with `config.llm_in_runner`.
 
 ## Trade-offs
 
@@ -182,14 +206,14 @@ A requirement is not applicable only when the system cannot be in its scope at a
 | Supplier approved, then lapses | Reported for the committee, system stays registered; see "Supplier approval gate". |
 | The model is wrong about applicability | The person rejects it; the record keeps both the proposal and the decision. |
 
-## Decisions for you
+## Decisions (agreed Nov 22)
 
-1. **A guided terminal session (`hound onboard`)**, writing files into the config repo for a pull request, rather than writing to CISO Assistant directly. (Recommended.)
-2. **Shapes, not data:** the model never sees raw responses, only structure and settings-like values. (Recommended.)
-3. **Not-applicable needs a named approver**, and lands as a scope-file assessment with the justification as its observation. (Recommended.)
-4. **Anthropic first, behind a provider port**, default model `claude-opus-5-5`, with the model and provider as settings. (Recommended.)
-5. **Your Sophos firewall is the first real onboarding** (s09-25), run by you in the dev container with your own key, starting with registering and approving its supplier. (Recommended.)
-6. **Supplier first, with a gate in `scope plan`:** a system is registered only when every supplier it names (the vendor and, if set, the reseller) has a concluded supplier assessment, a current review and an active contract. A lapse is reported, not unregistered. (Recommended.)
-7. **s10-01 and s10-02 move into s09** (as s09-19 and s09-20, before onboarding); s10-03 docs and s10-04 evidence plan, including the recurring supplier review task, stay in s10. (Recommended.)
-8. **No model in evidence collection** (agreed Nov 22): onboarding code in its own project that the runner cannot reach, no model key in a runner's configuration, and the supplier summary is a reviewed draft while the cited vendor documents are the evidence.
+1. **A guided terminal session (`hound onboard`)**, writing files into the config repo for a pull request, rather than writing to CISO Assistant directly.
+2. **Shapes, not data:** the model never sees raw responses, only structure and settings-like values.
+3. **Not-applicable needs a named approver**, and lands as a scope-file assessment with the justification as its observation.
+4. **Anthropic and OpenAI both supported, you choose**: provider and model in a separate `onboarding.yaml`, each provider's current top model by default, the key stored once outside git and referenced, set up by `hound onboard config`.
+5. **Your Sophos firewall is the first real onboarding** (s09-25), run by you in the dev container with your own key, starting with registering and approving its supplier.
+6. **Supplier first, with a gate in `scope plan`:** a system is registered only when every supplier it names (the vendor and, if set, the reseller) has a concluded supplier assessment, a current review and an active contract. A lapse is reported, not unregistered.
+7. **s10-01 and s10-02 move into s09** (as s09-19 and s09-20, before onboarding); s10-03 docs and s10-04 evidence plan, including the recurring supplier review task, stay in s10.
+8. **No model in evidence collection**: onboarding code in its own project that the runner cannot reach, no model key in a runner's configuration, and the supplier summary is a reviewed draft while the cited vendor documents are the evidence.
 9. **Skills for the assistant's guidance:** default skills built into `hound`, organisation skills from a mounted folder added with `hound skill add`, overriding a default only when they say so, recorded by version and hash in each onboarding record; the safety rules stay in code.
