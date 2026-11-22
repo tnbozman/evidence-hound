@@ -181,6 +181,30 @@ The plan validates the scope first and stops, reading nothing, when there are pr
 - **Delete**, only with `--prune`: objects `hound` manages that the scope no longer declares. Objects made by hand are never deleted.
 - **Drift**: objects changed in CISO Assistant since `hound` last wrote them (they are written back), objects under the root folder that the scope does not declare, an audit that is locked in CISO Assistant (it and its rows are never changed), and a framework whose loaded library is older than the snapshot's (it is reported, not upgraded).
 
+### Changes to compliance
+
+Below the change table, the plan shows what the change does to each audit's results, the way Terraform shows changes to outputs below the resource diff, so a reviewer approves the compliance effect and not only the objects. For each audit with a row whose result changes, it reads every row of the audit (GET only) and, from the framework snapshot, gives:
+
+- one line per selected implementation group (for the Essential Eight, each maturity level): requirements compliant before and after, out of the group's total;
+- each row whose result changes: the requirement and its title, its strategy or domain, the old and new result, and why (a hand-written assessment in the audit file, or the `unlisted` rule);
+- results that go backwards (from compliant or partially compliant to anything lower, or to not assessed) first, marked ⚠, and counted on the audit's line.
+
+```markdown
+### Changes to compliance
+
+**EX-E8-2026**: 2 result changes, 1 regression ⚠.
+
+- Maturity Level One: 30 → 30 compliant of 48
+- Maturity Level Two: 41 → 41 compliant of 107
+
+|  | Requirement | Title | Strategy | Result | Why |
+| --- | --- | --- | --- | --- | --- |
+| ⚠ | ISM-1515 | Restoration of systems, applications and data from backups is tested… | RB | compliant → not_assessed | the unlisted rule |
+|  | ISM-1486 | Web browsers do not process Java from the internet. | UAH | not_assessed → compliant | hand-written in the audit file |
+```
+
+Rows that collector runs own are never changed by the scope, so they are left out; `hound plan` shows their effect. A plan with no result changes has no such section. JSON plans have the same as `compliance[]`, each `{audit, groups[{group, name, before, after, total}], rows[{requirement, title, parent, old, new, why, regresses}]}`, and `scope apply` puts it in its report, so the record of each apply carries the effect it had.
+
 Changes come in dependency order: frameworks, domains, perimeters, systems, audits, documents, controls, then assessments. Deletes come last, in reverse.
 
 How objects are matched: a framework by URN, a domain and a system by name, a perimeter by domain and name, an audit and a control by `ref_id`, a document by its id (the evidence's `ref_id`), and a hand-written assessment by audit and requirement. Only objects in the root folder and the domains directly under it are read.

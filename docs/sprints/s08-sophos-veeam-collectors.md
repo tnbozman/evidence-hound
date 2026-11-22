@@ -70,10 +70,10 @@ Projects: `src/Collectors/EvidenceHound.Collectors.Sophos`. Recorded, fictional 
 
 **Acceptance criteria**
 - The plan has a **Changes to compliance** section after the change table and before Drift, for each audit whose open period has rows that change result. It is built from the framework snapshot (each requirement's title, its parent as the strategy or domain, its implementation groups) and the rows of the open period, so `hound` reads every row of each open audit, not only rows the scope declares (GET only).
-- Per audit, one line per selected implementation group (for the Essential Eight, each maturity level): requirements compliant before and after, out of the in-group total, such as `ML2: 41 → 42 compliant of 96`.
+- Per audit, one line per selected implementation group (for the Essential Eight, each maturity level): requirements compliant before and after, out of the in-group total, such as `Maturity Level Two: 41 → 42 compliant of 107`.
 - Then each row whose result changes: requirement ref and title, strategy, old → new result, and why: a hand-written assessment in the audit file, the `unlisted` rule, or a control or document linked to the row.
 - A result that goes backwards (from compliant or partially compliant to anything lower, or to not assessed) is listed first and marked `⚠`, and the summary line says how many there are. This makes visible, for example, `scope apply` resetting a result that `hound publish` wrote (s06 discovered work).
-- JSON plans add `compliance[]`, each `{audit, groups[{group, before, after, total}], rows[{requirement, title, parent, old, new, why, regresses}]}`. `scope apply` puts the same `compliance` in its report, so the record of each apply carries the effect it had.
+- JSON plans add `compliance[]`, each `{audit, groups[{group, name, before, after, total}], rows[{requirement, title, parent, old, new, why, regresses}]}`. `scope apply` puts the same `compliance` in its report, so the record of each apply carries the effect it had.
 - Rows that collector runs own are not changed by the scope plan and are left out of this section; their impact stays with `hound plan`.
 - A plan with no result changes prints no section, so an unchanged scope still plans to nothing.
 
@@ -173,6 +173,7 @@ Added 2026-11-22 at the person's request, as the route for the s08-08 trial. Cha
 
 ## Discovered work
 
+- s08-06: the framework snapshot holds only assessable nodes, so the compliance section shows a requirement's strategy as its parent URN's last part (`RB`, `UAH`), not the strategy's name. Adding parent names to `hound framework snapshot` would show "Regular backups".
 - The recorded tenant helpers order page files by name, so `users.2.json` sorts before `users.json` and is served as the first page. `RecordedSophos` orders by page number; `RecordedTenant` (M365) still has the old order. Its tests pass because they only count pages and items, but a page-order assertion would fail. Fix when M365 is next touched.
 - The cloud build session cannot pull CISO Assistant's images (the `ghcr.io` blob host is blocked there), so functional tests against CISO Assistant run in CI only.
 
