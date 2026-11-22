@@ -5,37 +5,46 @@ using EvidenceHound.Core.Scope;
 namespace EvidenceHound.CisoAssistant;
 
 /// <summary>
-/// Users, teams and role assignments. A user is created without a password (they set their own from CISO Assistant's invitation) and is never
-/// deleted, only deactivated; their marker goes at the end of <c>observation</c>, since users have no description.
+/// Users with their roles, and teams. A user is created without a password (they set their own from CISO Assistant's invitation) and is never
+/// deleted, only deactivated; their marker goes at the end of <c>observation</c>, since users have no description. CISO Assistant lets no
+/// one create role assignments through the API, so a role on a domain is membership of that domain's built-in group for it (or of a group
+/// you made, for a custom role), and a user's <c>user_groups</c> is set to exactly the groups of the roles the scope gives them.
 /// </summary>
 internal sealed partial class ScopeWriter
 {
-    private async Task<Result<Unit>> UserAsync(ScopeWrite write, CancellationToken cancellationToken)
+    private async Task<Result<Unit>> UserAsync(ScopeWrite write, Folders folders, CancellationToken cancellationToken)
     {
         if (write.Change.Action == ScopeAction.Delete || write.Declared is not { } declared)
         {
             return Result.Fail<Unit>(new Problem("scope.user_not_deleted", $"hound never deletes user {write.Change.Key}; it deactivates them."));
         }
 
-        var listed = await http.ListAllAsync("users/", cancellationToken);
-        return await listed.BindAsync(async users =>
+        var listed = await ListAsync(["users/", "user-groups/"], cancellationToken);
+        return await listed.BindAsync(async lists =>
         {
+            var (users, groups) = (lists[0], lists[1]);
             var existing = users.FirstOrDefault(u => string.Equals(Text(u["email"]), declared.Key, StringComparison.OrdinalIgnoreCase));
             var (observation, _) = ScopeMarker.Read(existing is null ? null : Text(existing["observation"]));
-            var body = new JsonObject
+            var groupIds = groups.Select(g => (Role: RoleCodes.GroupRole(g, folders.Names), Id: Id(g))).Where(g => g.Role is not null)
+                .GroupBy(g => g.Role!, StringComparer.Ordinal).ToDictionary(g => g.Key, g => g.First().Id, StringComparer.Ordinal);
+            return await Resolve(Split(Field(declared, "roles")), groupIds, "user group for role").BindAsync(async memberships =>
             {
-                ["first_name"] = Field(declared, "first_name") ?? "",
-                ["last_name"] = Field(declared, "last_name") ?? "",
-                ["is_active"] = Field(declared, "active") != "false",
-                ["observation"] = ScopeMarker.Mark(observation, write.Change.State ?? ScopeMarker.State(declared.Kind, declared.Fields)),
-            };
-            if (write.Change.Action == ScopeAction.Create)
-            {
-                body["email"] = declared.Key;
-                return await SendAsync(HttpMethod.Post, "users/", body, $"to create user {declared.Key}", cancellationToken);
-            }
+                var body = new JsonObject
+                {
+                    ["first_name"] = Field(declared, "first_name") ?? "",
+                    ["last_name"] = Field(declared, "last_name") ?? "",
+                    ["is_active"] = Field(declared, "active") != "false",
+                    ["observation"] = ScopeMarker.Mark(observation, write.Change.State ?? ScopeMarker.State(declared.Kind, declared.Fields)),
+                    ["user_groups"] = memberships,
+                };
+                if (write.Change.Action == ScopeAction.Create)
+                {
+                    body["email"] = declared.Key;
+                    return await SendAsync(HttpMethod.Post, "users/", body, $"to create user {declared.Key}", cancellationToken);
+                }
 
-            return await UpdateAsync("users", existing is null ? null : Id(existing), body, write, cancellationToken);
+                return await UpdateAsync("users", existing is null ? null : Id(existing), body, write, cancellationToken);
+            });
         });
     }
 
@@ -70,48 +79,6 @@ internal sealed partial class ScopeWriter
                 return write.Change.Action == ScopeAction.Create
                     ? await SendAsync(HttpMethod.Post, "teams/", body, $"to create team {declared.Key}", cancellationToken)
                     : await UpdateAsync("teams", existing is null ? null : Id(existing), body, write, cancellationToken);
-            });
-        });
-    }
-
-    private async Task<Result<Unit>> RoleAssignmentAsync(ScopeWrite write, Folders folders, CancellationToken cancellationToken)
-    {
-        var listed = await ListAsync(["role-assignments/", "roles/", "users/"], cancellationToken);
-        return await listed.BindAsync(async lists =>
-        {
-            var (assignments, roles, users) = (lists[0], lists[1], lists[2]);
-            var parts = write.Change.Key.Split('|', 3);
-            var (roleCode, domain, email) = parts.Length == 3 ? (parts[0], parts[1], parts[2]) : (write.Change.Key, "", "");
-            var roleIds = roles.Where(r => RoleCodes.Of(r) is not null).GroupBy(r => RoleCodes.Of(r)!).ToDictionary(g => g.Key, g => Id(g.First()), StringComparer.Ordinal);
-            var userIds = UserIds(users);
-            var folderId = folders.Of(domain);
-            var existing = assignments.FirstOrDefault(a =>
-                RelationId(a["role"]) == roleIds.GetValueOrDefault(roleCode)
-                && RelationId(a["user"]) == userIds.GetValueOrDefault(email)
-                && (a["perimeter_folders"] as JsonArray ?? []).Select(RelationId).Contains(folderId));
-            if (write.Change.Action == ScopeAction.Delete || write.Declared is not { } declared)
-            {
-                return await DeleteAsync("role-assignments", existing is null ? null : Id(existing), write, cancellationToken);
-            }
-
-            var folder = folderId is null ? Result.Fail<string>(ApiProblems.NotFound("domain", $"'{domain}'")) : Result.Ok(folderId);
-            var role = Resolve([roleCode], roleIds, "role");
-            var user = Resolve([email], userIds, "user");
-            return await Result.Combine([folder.Map(f => (JsonNode)f), role.Map(r => (JsonNode)r), user.Map(u => (JsonNode)u)]).BindAsync(async resolved =>
-            {
-                var body = new JsonObject
-                {
-                    ["name"] = $"{roleCode} on {domain} for {email}",
-                    ["description"] = Described(declared, write.Change),
-                    ["role"] = resolved[1].AsArray()[0]!.DeepClone(),
-                    ["user"] = resolved[2].AsArray()[0]!.DeepClone(),
-                    ["perimeter_folders"] = new JsonArray(resolved[0].DeepClone()),
-                    ["folder"] = resolved[0].DeepClone(),
-                    ["is_recursive"] = true,
-                };
-                return write.Change.Action == ScopeAction.Create
-                    ? await SendAsync(HttpMethod.Post, "role-assignments/", body, $"to assign {roleCode} on {domain} to {email}", cancellationToken)
-                    : await UpdateAsync("role-assignments", existing is null ? null : Id(existing), body, write, cancellationToken);
             });
         });
     }

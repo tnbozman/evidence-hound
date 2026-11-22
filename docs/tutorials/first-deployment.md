@@ -83,7 +83,7 @@ Secrets live on the VM as Docker secrets files in `/etc/evidence-hound/secrets` 
    sudo ./runner-token.sh hound-runner@example.com /etc/evidence-hound/secrets
    ```
 
-   Add the account to `scope/access.yaml` with `service_account: publish` and the analyst role on the domains it publishes to. `runner-token.sh` starts it in the administrators group so the first apply below can run; once the CI workflow applies with its own account, take the runner out of that group in CISO Assistant, and `scope plan`'s access review stops flagging it.
+   `runner-token.sh` puts the account in the administrators group, so the first apply below can run with its token. Once the CI workflow applies with its own account, declare the runner in `scope/access.yaml` with `service_account: publish` and the analyst role on the domains it publishes to. The next apply narrows its groups to that, and `scope plan`'s access review stops flagging it.
 
 ## 4. Register the Microsoft 365 app
 
@@ -119,7 +119,7 @@ docker compose run --rm runner scope plan /config/scope --config /config/hound.y
 docker compose run --rm runner scope apply /config/scope --config /config/hound.yaml
 ```
 
-The plan lists every user, team, role assignment, flag and setting it will create or change. New users get CISO Assistant's invitation and set their own password; `hound` never handles one. The plan's access review lists anyone who has not turned on MFA yet.
+The plan lists every user (with the roles they will hold), team, flag and setting it will create or change. New users get CISO Assistant's invitation and set their own password; `hound` never handles one. The plan's access review lists anyone who has not turned on MFA yet.
 
 **Second: the Essential Eight audit.** Put `scope/audits/ex-e8-2026.yaml` back (renamed for your audit), check the mapping, and repeat validate, plan and apply:
 

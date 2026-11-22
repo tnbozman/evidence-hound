@@ -186,37 +186,31 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
     }
 
     /// <summary>
-    /// Users (marked in their observation), the teams in the scope's folders, and role assignments made directly to a user. Built-in assignments
-    /// and those to user groups are CISO Assistant's own, so they are not read as objects; <see cref="ReadAccessAsync"/> reports them.
+    /// Users (marked in their observation), each with the roles their user groups give as <c>roles</c>, and the teams in the scope's folders.
+    /// Role assignments made straight to a user cannot be made through the API, so they are not read as roles here; the access review
+    /// (<see cref="ReadAccessAsync"/>) reports every role a user holds, however it was given.
     /// </summary>
     private static async Task<List<ActualObject>> AccessAsync(Reading reading, List<JsonNode> folders, List<JsonNode> users, HashSet<string> inScope)
     {
         var teams = await reading.ObjectsInAsync("teams", inScope);
-        var roles = await reading.ListAsync("roles/");
-        var assignments = await reading.ListAsync("role-assignments/");
+        var groups = await reading.ListAsync("user-groups/");
         var folderNames = Names(folders, "name");
         var emails = users.ToDictionary(Id, u => (Text(u["email"]) ?? Id(u)).ToLowerInvariant(), StringComparer.Ordinal);
-        var roleNames = RoleCodes.ById(roles, Id);
+        var groupRoles = groups.Select(g => (Id: Id(g), Role: RoleCodes.GroupRole(g, folderNames))).Where(g => g.Role is not null).ToDictionary(g => g.Id, g => g.Role!, StringComparer.Ordinal);
         return
         [
             .. users.Select(u =>
             {
                 var (_, state) = ScopeMarker.Read(Text(u["observation"]));
                 var active = u["is_active"] is JsonValue value && value.TryGetValue<bool>(out var isActive) && !isActive ? "false" : "true";
+                var roles = (u["user_groups"] as JsonArray ?? []).Select(RelationId).OfType<string>().Select(groupRoles.GetValueOrDefault).OfType<string>();
                 return new ActualObject(
-                    new ScopeObject(ScopeKind.User, emails[Id(u)], Fields(("first_name", Text(u["first_name"])), ("last_name", Text(u["last_name"])), ("active", active))),
+                    new ScopeObject(ScopeKind.User, emails[Id(u)], Fields(
+                        ("first_name", Text(u["first_name"])), ("last_name", Text(u["last_name"])), ("active", active), ("roles", ScopeDesired.Roles(roles)))),
                     state);
             }),
             .. teams.Select(t => Marked(ScopeKind.Team, Text(t["name"]), t,
                 ("domain", Lookup(t["folder"], folderNames)), ("leader", Lookup(t["leader"], emails)), ("members", Joined(t["members"], emails)))),
-            .. assignments.Where(a => !IsBuiltin(a) && RelationId(a["user"]) is not null).Select(a =>
-            {
-                var role = Lookup(a["role"], roleNames);
-                var domain = (a["perimeter_folders"] as JsonArray ?? []).Select(f => Lookup(f, folderNames)).FirstOrDefault() ?? Lookup(a["folder"], folderNames);
-                var email = Lookup(a["user"], emails);
-                var assignment = new AccessAssignment(role ?? "", domain ?? "", email ?? "");
-                return Marked(ScopeKind.RoleAssignment, ScopeDesired.RoleAssignmentKey(assignment), a, ("role", role), ("domain", domain), ("user", email));
-            }),
         ];
     }
 
@@ -233,8 +227,6 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
             .. general.Select(g => Setting(ScopeKind.Setting, g.Key, CisoAssistantSettings.Json(g.Value))),
         ];
     }
-
-    private static bool IsBuiltin(JsonNode held) => held["builtin"] is JsonValue value && value.TryGetValue<bool>(out var builtin) && builtin;
 
     private static Dictionary<string, string> Names(List<JsonNode> objects, string field) =>
         objects.ToDictionary(Id, o => Text(o[field]) ?? Id(o), StringComparer.Ordinal);

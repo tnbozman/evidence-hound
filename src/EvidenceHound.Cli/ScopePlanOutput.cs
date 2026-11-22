@@ -185,7 +185,6 @@ internal static class ScopePlanOutput
 
     private static string Kind(ScopeKind kind) => kind switch
     {
-        ScopeKind.RoleAssignment => "role_assignment",
         ScopeKind.FeatureFlag => "feature_flag",
         _ => kind.ToString().ToLowerInvariant(),
     };

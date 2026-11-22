@@ -54,23 +54,33 @@ public static class ScopeDesired
         ];
     }
 
-    /// <summary>Users by email, teams by name, and one role assignment per role, domain and user, keyed <c>BI-RL-APP|domain|email</c>.</summary>
-    private static IEnumerable<ScopeObject> Access(ScopeAccess access, string rootFolder) =>
-    [
-        .. access.Users.Select(u => new ScopeObject(ScopeKind.User, u.Email, Fields(
-            ("first_name", u.FirstName), ("last_name", u.LastName), ("active", u.Active ? "true" : "false")))),
-        .. access.Teams.Select(t => new ScopeObject(ScopeKind.Team, t.Name, Fields(
-            ("description", t.Description), ("domain", t.Domain?.Value ?? rootFolder), ("leader", t.Leader?.Value), ("members", Joined(t.Members.Select(m => m.Value)))))),
-        .. AccessRoles.Assignments(access).Select(a => new ScopeObject(ScopeKind.RoleAssignment, RoleAssignmentKey(a), Fields(
-            ("role", a.RoleCode), ("domain", a.Domain), ("user", a.Email)))),
-    ];
+    /// <summary>
+    /// Users by email, each with the roles they hold (directly and through teams) as <c>roles</c>, such as
+    /// <c>BI-RL-ADM on Global, BI-RL-APP on Example Pty Ltd</c>; and teams by name. CISO Assistant gives a role on a domain through
+    /// membership of that domain's group for it, which is part of the user, so a user's roles are one field of the user.
+    /// </summary>
+    private static IEnumerable<ScopeObject> Access(ScopeAccess access, string rootFolder)
+    {
+        var roles = AccessRoles.Assignments(access).ToLookup(a => a.Email, StringComparer.Ordinal);
+        return
+        [
+            .. access.Users.Select(u => new ScopeObject(ScopeKind.User, u.Email, Fields(
+                ("first_name", u.FirstName), ("last_name", u.LastName), ("active", u.Active ? "true" : "false"),
+                ("roles", Roles(roles[u.Email].Select(Role)))))),
+            .. access.Teams.Select(t => new ScopeObject(ScopeKind.Team, t.Name, Fields(
+                ("description", t.Description), ("domain", t.Domain?.Value ?? rootFolder), ("leader", t.Leader?.Value), ("members", Joined(t.Members.Select(m => m.Value)))))),
+        ];
+    }
 
-    /// <summary>A role assignment's key: its role code, domain and user's email.</summary>
-    public static string RoleAssignmentKey(AccessAssignment assignment)
+    /// <summary>One role a user holds, as the <c>roles</c> field lists it: <c>BI-RL-APP on Example Pty Ltd</c>.</summary>
+    public static string Role(AccessAssignment assignment)
     {
         ArgumentNullException.ThrowIfNull(assignment);
-        return $"{assignment.RoleCode}|{assignment.Domain}|{assignment.Email}";
+        return $"{assignment.RoleCode} on {assignment.Domain}";
     }
+
+    /// <summary>A user's <c>roles</c> field: each role once, in order, so the same roles always have the same text.</summary>
+    public static string? Roles(IEnumerable<string> roles) => Joined(roles.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal));
 
     /// <summary>A framework, with its version and library URN from its snapshot, and its custom library file to upload.</summary>
     private static ScopeObject Framework(ScopeFramework framework, ScopeInputs inputs)

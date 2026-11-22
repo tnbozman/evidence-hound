@@ -11,7 +11,6 @@ public enum ScopeKind
     System,
     User,
     Team,
-    RoleAssignment,
     Audit,
     Document,
     Control,

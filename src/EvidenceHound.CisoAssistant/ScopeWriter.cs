@@ -34,9 +34,8 @@ internal sealed partial class ScopeWriter(HttpClient http, ICisoAssistantClient 
         ScopeKind.Document => DocumentAsync(write, folders, cancellationToken),
         ScopeKind.Control => ControlAsync(write, folders, cancellationToken),
         ScopeKind.Assessment => RowAsync(write, cancellationToken),
-        ScopeKind.User => UserAsync(write, cancellationToken),
+        ScopeKind.User => UserAsync(write, folders, cancellationToken),
         ScopeKind.Team => TeamAsync(write, folders, cancellationToken),
-        ScopeKind.RoleAssignment => RoleAssignmentAsync(write, folders, cancellationToken),
         ScopeKind.FeatureFlag => FeatureFlagAsync(write, cancellationToken),
         ScopeKind.Setting => GeneralSettingAsync(write, cancellationToken),
         var kind => Task.FromResult(Result.Fail<Unit>(new Problem("scope.kind_not_applied", $"This version of hound does not write {kind.ToString().ToLowerInvariant()}s yet."))),
@@ -201,6 +200,9 @@ internal sealed partial class ScopeWriter(HttpClient http, ICisoAssistantClient 
     private sealed class Folders(string rootId, List<JsonNode> all)
     {
         public string RootId { get; } = rootId;
+
+        /// <summary>Every folder's name by its ID.</summary>
+        public IReadOnlyDictionary<string, string> Names { get; } = all.ToDictionary(Id, f => Text(f["name"]) ?? Id(f), StringComparer.Ordinal);
 
         public string? Domain(string name) =>
             all.Where(f => Text(f["name"]) == name && RelationId(f["parent_folder"]) == RootId).Select(Id).FirstOrDefault();
