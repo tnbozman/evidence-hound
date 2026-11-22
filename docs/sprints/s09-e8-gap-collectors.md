@@ -51,7 +51,7 @@ $ echo $?
 `hound plan` and `hound config validate` log each problem of a rest instance's profile as a warning naming the instance, and carry on (`ProfileCommandTests.Plan_warns_about_an_invalid_rest_profile_and_carries_on`); at run time that instance's checks are unable to assess (`RestCollectorTests.Invalid_profile_reports_its_checks_unable_to_assess`).
 
 ### s09-10 Query engine
-- [ ] Done
+- [x] Done
 
 **Story:** As an operator, I want every endpoint read once per run, with sign-in, paging and rate limits handled for me, so that a new system needs a profile, not code.
 
@@ -79,6 +79,7 @@ $ echo $?
 
 **Functional check**
 - `hound run --only rest-example --dry-run` against the recorded example API lists every query with its page and item counts and its evidence file.
+- Result (2026-11-22): `hound run --config hound.yaml --only rest-example --dry-run` with an instance of `profiles/example.yaml` pointed at a local stand-in serving `tests/fixtures/rest/example`. Succeeded with no problems and nothing sent: token, then `whoami` (bootstrap, no file), then `devices.json` (2 pages by cursor, 3 items, identities hashed), `users.json` (2 pages by offset, 3 items, identities hashed) and `roles.json` (1 page, 2 items). No host name or client secret in any evidence file. The run first failed config validation because `token_url` was read as an inline secret by its name; fixed in this task (address and path settings are judged by value). Unit suite green, lint clean.
 
 ### s09-11 Datasets and declarative checks
 - [ ] Done
@@ -582,5 +583,7 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 ## Discovered work
 
 - Open items from s08's discovered work (trial token refresh, the seed's compliance owner, HTTP logging at `info`, wizard prompts, trial re-runs, evidence on applied controls, the "unlisted rule" wording, `HOUND_CA_URL` in the dev container) are listed in [s08](s08-sophos-veeam-collectors.md#discovered-work); pick them up here or in s12.
+
+- The config check's long-run rule (32+ letters, digits, `/`, `_`) also matches a deep folder path that contains digits, for example a `profiles_path` under a generated temp folder. Short mounted paths such as `/config/profiles` are fine. Consider excluding `/` from the run for `_path` settings (found in s09-10).
 
 ## Sprint review
