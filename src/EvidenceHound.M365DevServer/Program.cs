@@ -1,8 +1,9 @@
 using EvidenceHound.M365DevServer;
 
-if (DevServerOptions.Parse(args) is not DevServerOptions options)
+var parsed = DevServerOptions.Parse(args);
+if (parsed is not DevServerOptions options)
 {
-    await Console.Error.WriteLineAsync(DevServerOptions.Parse(args).ToString());
+    await Console.Error.WriteLineAsync(parsed.ToString());
     return 2;
 }
 
