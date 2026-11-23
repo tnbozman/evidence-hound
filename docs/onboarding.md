@@ -206,6 +206,35 @@ $ hound onboard EXAMPLE-ASSETS pending --json --repo .
 - **`--json`** is also on `hound scope validate`, `hound scope plan` and `hound explain` (what code reads from a change: counts, objects,
   flags and topics; no model is asked).
 
+### Every kind of onboarding, the same way
+
+The agent drafts each kind through a command that asks nothing; `hound` checks it; a person approves with `hound approve`.
+
+| What | Command | Where the draft waits |
+| --- | --- | --- |
+| The organisation | `hound init <folder> --org ... --code ... --url ... --time-zone ... --level ... --due ... --owner ... --assistant ... --json` | The new repo itself, for review |
+| The environment | `hound onboard environment pending --json`, then `hound onboard environment decide <mitigation> --provided-by system\|manual\|gap --reason ... [--system ...]` | `scope/capabilities.yaml`, with no approver |
+| A third party | `hound supplier draft --kind vendor\|reseller\|msp [--for <vendor>] ... [--document <path>]...` | `scope/third-parties/<ref>.yaml`, with a draft contract |
+| A system | `hound onboard <system> pending` and `decide` | `onboarding/<SYSTEM>/session.json` |
+| An audit | `hound audit draft --ref ... --name ... --framework ... --group ... --domain ... --perimeter ... --system ... --due ...` | `onboarding/drafts/audits/<ref>.yaml` |
+| An audit workbook | `hound scope import <workbook> --audit <ref> [--sheet ...] [--column <name>=<heading>]...` | Approved rows go to the audit; the rest wait in `onboarding/drafts/imports/<audit>.json` |
+
+- **The environment.** `pending` lists the mitigations not yet decided, the drafts waiting and the systems in scope. `decide` records one
+  mitigation; deciding it again replaces the draft, and a decision a person approved is refused. Once the decisions are approved,
+  `hound onboard environment --no-model` writes the rows each system's audit leaves open for another system.
+- **A reseller or managed service provider** is a third party of its own. Draft the vendor first, then the reseller or provider with
+  `--kind` and `--for <vendor ref_id>`; its description names the vendor it stands for. `--document` names a document kept in the repo
+  that the draft rests on, and the file records it with its SHA-256. A system bought through one names it as `supplied_through`.
+- **An audit** is checked against the scope as it is drafted: its framework, domain, perimeter and systems must be in `scope/setup.yaml`.
+  It stays out of the scope, and out of every plan, until `hound approve` moves it into `scope/audits/`.
+- **An audit workbook** (`.xlsx` or `.csv`) is read where it is; it is never copied into the repo. `hound` finds the columns by their
+  headings (requirement, result, observation, evidence, approved by, approved on) or by `--column`. A row the workbook says someone
+  approved is written to the audit's `assessments` with the workbook's own words, ending "Imported from `<workbook>`, row `<n>`, approved
+  by `<who>` on `<date>`", so the provenance shows in `hound scope plan` and in CISO Assistant. A row with no approver is a draft: `hound
+  approve` asks about it, and records the person who approves it, today. Rows not assessed are left out; rows whose requirement is not in
+  the audit's framework are listed as unmatched and never guessed. Importing again adds nothing twice. Try it with
+  [`examples/workbooks/example-audit-workbook.csv`](../examples/workbooks/README.md).
+
 ### Approve, in a terminal
 
 ```console
@@ -222,6 +251,9 @@ $ hound approve --repo .
 5. **Each system an agent drafted**, with its decisions. Approving writes the system's audit, its entry in `scope/setup.yaml` and the
    onboarding record, as the interactive command does. A system waits while its supplier is not approved, a not-applicable decision is
    declined, or requirements are still undecided.
+6. **Audits an agent drafted** with `hound audit draft`. Approving moves the audit into `scope/audits/`, with your name and the date in
+   its first line.
+7. **Imported workbook rows with no approver.** Approving writes the row to its audit, with you as its approver.
 
 Answer `y`, `n` (leave it as a draft) or `s` (stop; nothing more is asked). Your name, asked once, and today's date are recorded on
 everything you approve: `approved_by` and `approved_on` on the capability and the contract, `by` and `on` on the review's conclusion,
