@@ -79,14 +79,51 @@ trial_workdir() {
   fi
 }
 
-# trial_agent_brief AUDIT -> what to ask the coding agent in the trial repo
-trial_agent_brief() {
-  cat <<TEXT
-Onboard the Sophos perimeter firewall with hound for the $1 audit: draft Sophos and the managed service provider
-as third parties, then the firewall as a system, its audit decisions and its manual evidence. Use the API
-specification and vendor documents in ../specs and ../inbox. Run the review before proposing apply.
-I approve in my own terminal with hound approve and hound manual approve.
+# trial_brief STAGE SERIES SYSTEM -> what to ask the coding agent for one stage, with the skills it uses; fails for an unknown stage
+trial_brief() {
+  local series="$2" system="$3"
+  case "$1" in
+    third-parties) cat <<TEXT
+Draft the third parties for the Sophos perimeter firewall ($system): Sophos, who makes it, and the
+managed service provider that runs it for us (Example Managed Services Pty Ltd, an msp for Sophos). Use the skills onboard-a-third-party
+and assess-a-supplier, with hound supplier draft. Read the vendor documents in ../inbox. Give each level its reason.
+I approve them and conclude their reviews myself, with hound approve.
 TEXT
+      ;;
+    system) cat <<TEXT
+Start onboarding the Sophos perimeter firewall as system $system with the skill onboard-a-system-with-hound:
+hound onboard $system pending --json --repo . with its owner, product, solution and maturity level groups,
+and the API specification in ../specs. Ask me for what you cannot read from the documents.
+TEXT
+      ;;
+    audit) cat <<TEXT
+Decide every requirement for $system with hound onboard $system decide, using read-an-api-specification for the
+API checks, until pending lists nothing. Then run the review (review-before-apply) and tell me what it flagged.
+Its audit will be $series-$system. I approve the decisions myself with hound approve.
+TEXT
+      ;;
+    controls) cat <<TEXT
+Declare the applied controls the $system audit relies on for its manual requirements, each with
+hound add control --scope scope --yes --ref-id AC-... --name ... --owner ... --systems $system --audit $series-$system --requirements ...
+Then run hound scope validate scope --config hound.yaml --json and fix what it reports.
+TEXT
+      ;;
+    *) return 1 ;;
+  esac
+}
+
+# trial_stage_ready STAGE REPO SYSTEM -> 0 once the stage's draft is in the repo: two third parties, the system's session, its
+# audit (written when the person approves), a control besides hound init's health control
+trial_stage_ready() {
+  local repo="$2" slug
+  slug="$(printf '%s' "$3" | tr '[:upper:]' '[:lower:]')"
+  case "$1" in
+    third-parties) (($(find "$repo/scope/third-parties" -maxdepth 1 -name '*.yaml' 2>/dev/null | wc -l) >= 2)) ;;
+    system) [[ -s "$repo/onboarding/$3/session.json" ]] ;;
+    audit) compgen -G "$repo/scope/audits/$slug-*.yaml" >/dev/null ;;
+    controls) (($(grep -c '^  - ref_id: AC-' "$repo/scope/controls.yaml" 2>/dev/null || true) >= 2)) ;;
+    *) return 1 ;;
+  esac
 }
 
 # trial_collector_step UNATTENDED(1|0) CONFIG NAME -> unattended | added already | add
