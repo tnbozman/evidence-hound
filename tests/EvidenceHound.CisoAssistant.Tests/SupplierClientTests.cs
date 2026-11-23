@@ -14,7 +14,7 @@ public sealed class SupplierClientTests : IDisposable
 
     public SupplierClientTests()
     {
-        foreach (var resource in new[] { "users", "actors", "frameworks", "loaded-libraries", "perimeters", "assets", "compliance-assessments", "evidences", "applied-controls" })
+        foreach (var resource in new[] { "users", "actors", "frameworks", "loaded-libraries", "assets", "compliance-assessments", "evidences", "applied-controls" })
         {
             Respond("GET", $"/api/{resource}/", List());
         }
@@ -22,6 +22,8 @@ public sealed class SupplierClientTests : IDisposable
         Respond("GET", "/api/folders/", List(
             new JsonObject { ["id"] = "f-global", ["name"] = "Global", ["parent_folder"] = null },
             new JsonObject { ["id"] = "f-example", ["name"] = "Example Pty Ltd", ["parent_folder"] = "f-global", ["content_type"] = "DO" }));
+        Respond("GET", "/api/perimeters/", List(new JsonObject { ["id"] = "p-sup", ["name"] = "Suppliers", ["folder"] = new JsonObject { ["id"] = "f-example", ["str"] = "Example Pty Ltd" } }));
+        Respond("GET", "/api/perimeters/p-sup/object/", new JsonObject { ["id"] = "p-sup", ["name"] = "Suppliers", ["folder"] = "f-example", ["description"] = "" });
         Respond("GET", "/api/folders/f-example/object/", new JsonObject { ["id"] = "f-example", ["name"] = "Example Pty Ltd", ["parent_folder"] = "f-global", ["description"] = "" });
         Respond("GET", "/api/entities/", List(
             new JsonObject { ["id"] = "e-main", ["name"] = "Example Pty Ltd", ["builtin"] = true, ["folder"] = new JsonObject { ["id"] = "f-global", ["str"] = "Global" } },
@@ -43,6 +45,26 @@ public sealed class SupplierClientTests : IDisposable
                 ["legal_identifiers"] = "LEI: EXAMPLE0000000000000\nVAT: EX-0001",
                 ["parent_entity"] = null,
                 ["builtin"] = false,
+                ["tier"] = new JsonObject { ["id"] = "t-2", ["str"] = "Important" },
+            }));
+        Respond("GET", "/api/tiers/", List(
+            new JsonObject { ["id"] = "t-1", ["key"] = "critical", ["name"] = "Critical" },
+            new JsonObject { ["id"] = "t-2", ["key"] = "important", ["name"] = "Important" }));
+        Respond("GET", "/api/entity-assessments/", List(
+            new JsonObject
+            {
+                ["id"] = "ea-1",
+                ["ref_id"] = "EA-EXCLOUD-2026-06",
+                ["name"] = "Example Cloud review 2026",
+                ["description"] = "[hound scope 0123456789abcdef]",
+                ["entity"] = new JsonObject { ["id"] = "e-1", ["str"] = "Example Cloud Pty Ltd" },
+                ["solutions"] = new JsonArray(new JsonObject { ["id"] = "s-1", ["str"] = "Managed hosting" }),
+                ["folder"] = new JsonObject { ["id"] = "f-example", ["str"] = "Example Pty Ltd" },
+                ["perimeter"] = new JsonObject { ["id"] = "p-sup", ["str"] = "Suppliers" },
+                ["due_date"] = "2026-06-30",
+                ["criticality"] = 0,
+                ["conclusion"] = "ok",
+                ["expiry_date"] = "2027-06-30",
             }));
         Respond("GET", "/api/solutions/", List(
             new JsonObject { ["id"] = "s-1", ["ref_id"] = "SOL-EXCLOUD-HOST", ["name"] = "Managed hosting", ["provider_entity"] = new JsonObject { ["id"] = "e-1", ["str"] = "Example Cloud Pty Ltd" }, ["criticality"] = 3 },
@@ -64,7 +86,7 @@ public sealed class SupplierClientTests : IDisposable
             }));
         Respond("GET", "/api/representatives/", List(
             new JsonObject { ["id"] = "r-1", ["email"] = "account.manager@example.com", ["first_name"] = "Sam", ["last_name"] = "Example", ["role"] = "Account manager", ["entity"] = new JsonObject { ["id"] = "e-1", ["str"] = "Example Cloud Pty Ltd" } }));
-        foreach (var resource in new[] { "entities", "solutions", "contracts", "representatives" })
+        foreach (var resource in new[] { "entities", "solutions", "contracts", "representatives", "entity-assessments" })
         {
             Respond("POST", $"/api/{resource}/", new JsonObject { ["id"] = "new" });
         }
@@ -143,6 +165,59 @@ public sealed class SupplierClientTests : IDisposable
         }, ignoreOrder: true);
         held[(ScopeKind.Representative, "account.manager@example.com")]["entity"].ShouldBe("SUP-EXCLOUD");
         without.ShouldNotContain(a => a.Held.Kind == ScopeKind.Entity);
+    }
+
+    [Fact]
+    public async Task Reads_supplier_assessments_with_their_conclusion_and_each_suppliers_tier_as_observed()
+    {
+        var query = new ScopeStateQuery("Global", [], new Dictionary<string, IReadOnlyList<RequirementKey>>()) { ThirdParties = true };
+
+        var held = (await _ca.Scope.ReadAsync(query, _ct)).Value();
+
+        var review = held.Where(a => a.Held.Kind == ScopeKind.EntityAssessment).ShouldHaveSingleItem();
+        review.Held.Key.ShouldBe("EA-EXCLOUD-2026-06");
+        review.Held.Fields.ShouldBe(new Dictionary<string, string>
+        {
+            ["name"] = "Example Cloud review 2026",
+            ["entity"] = "SUP-EXCLOUD",
+            ["solutions"] = "SOL-EXCLOUD-HOST",
+            ["domain"] = "Example Pty Ltd",
+            ["perimeter"] = "Suppliers",
+            ["due_date"] = "2026-06-30",
+        }, ignoreOrder: true);
+        review.Observed.ShouldBe(new Dictionary<string, string> { ["conclusion"] = "ok", ["expiry_date"] = "2027-06-30" }, ignoreOrder: true);
+        held.Single(a => a.Held.Kind == ScopeKind.Entity && a.Held.Key == "SUP-EXCLOUD").Observed["tier"].ShouldBe("important");
+    }
+
+    [Fact]
+    public async Task Creates_a_supplier_assessment_with_its_questionnaire_audit_and_never_sends_a_conclusion()
+    {
+        _ca.Server.Given(Request.Create().WithPath("/api/frameworks/").UsingGet()).AtPriority(0)
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(List(new JsonObject { ["id"] = "fw-q", ["urn"] = "urn:example:risk:framework:example-questionnaire" }).ToJsonString()));
+        var declared = new ScopeObject(ScopeKind.EntityAssessment, "EA-EXCLOUD-2027-06", new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["name"] = "Example Cloud review 2027",
+            ["entity"] = "SUP-EXCLOUD",
+            ["solutions"] = "SOL-EXCLOUD-HOST",
+            ["domain"] = "Example Pty Ltd",
+            ["perimeter"] = "Suppliers",
+            ["due_date"] = "2027-06-30",
+            ["criticality"] = "3",
+        })
+        {
+            Initial = new Dictionary<string, string>(StringComparer.Ordinal) { ["questionnaire"] = "urn:example:risk:framework:example-questionnaire", ["groups"] = "core" },
+        };
+
+        (await _ca.Writer.WriteAsync(new ScopeWrite(new ScopeChange(ScopeKind.EntityAssessment, declared.Key, ScopeAction.Create, [], null), declared, "Global"), _ct)).Value();
+
+        var body = Body("/api/entity-assessments/");
+        (body["ref_id"]!.GetValue<string>(), body["entity"]!.GetValue<string>(), body["folder"]!.GetValue<string>(), body["perimeter"]!.GetValue<string>()).ShouldBe(("EA-EXCLOUD-2027-06", "e-1", "f-example", "p-sup"));
+        (body["due_date"]!.GetValue<string>(), body["criticality"]!.GetValue<int>()).ShouldBe(("2027-06-30", 3));
+        body["solutions"]!.AsArray().Select(s => s!.GetValue<string>()).ShouldBe(["s-1"]);
+        (body["create_audit"]!.GetValue<bool>(), body["framework"]!.GetValue<string>()).ShouldBe((true, "fw-q"));
+        body["selected_implementation_groups"]!.AsArray().Select(g => g!.GetValue<string>()).ShouldBe(["core"]);
+        body.ContainsKey("conclusion").ShouldBeFalse();
+        body.ContainsKey("expiry_date").ShouldBeFalse();
     }
 
     [Fact]
