@@ -570,6 +570,32 @@ The first run found that a single-system audit needs `unlisted:` and that a requ
 
 **As built so far (2026-11-23).** The docs part is done: `OnboardingDocsTests` checks that every option of `hound onboard`, `onboard config`, `onboard environment` and `onboard profile` is in `docs/onboarding.md`, that its relative links resolve, and that it has a tutorial on the example API. The tutorial ("Tutorial: onboard the example API") was followed as written against a copy of `examples/compliance-repo` with `--no-model` and `--group 1`: the supplier stop, then 48 decisions (1 API check, 47 manual), the audit, `scope/setup.yaml` and the record written, `hound scope validate scope` valid, and `hound profile test example` passing both cases. Still open: the person's own Sophos firewall run, and the discovered work it shows.
 
+### s09-43 Representative Microsoft 365 dev server (added 2026-11-23)
+- [ ] Done
+
+Added at the maintainer's request (2026-11-23): s09-01 to s09-04 and the Microsoft 365 checks should not wait on a test tenant (s09-18).
+
+**Story:** As the maintainer without a test tenant, I want a fictional Example Pty Ltd tenant that answers Microsoft Graph offline with realistic, internally consistent data, so that Microsoft 365 controls and their automated evidence can be built and tested against representative configurations.
+
+**Acceptance criteria**
+- One fictional tenant described once (users, groups, licences, devices, Conditional Access, role assignments, Intune policies), from which every Graph collection the m365 collector reads is generated with the same IDs everywhere, so joins between collections hold. Two variants: `compliant` and `gaps`, the second a short list of named deviations, each expected to fail a named check.
+- Intune and Conditional Access settings for `compliant` come from the ASD Blueprint for Secure Cloud's published configurations (`static/content/files`: the Intune policy exports and Microsoft365DSC configurations), pinned to a commit and kept with their attribution (CC BY 4.0, Commonwealth of Australia); a third-party file under another licence is used only under its own terms, or not at all.
+- Response shapes, paging (`@odata.nextLink`) and errors (403 for a missing licence or permission, 429 with `Retry-After`) follow Microsoft's Graph documentation and the public Dev Proxy Graph mocks (MIT), credited.
+- Served by the existing test server in unit tests, and on a local port in the dev container (`make m365-dev`), so `hound collect --dry-run` with the instance's `graph_url` pointed at it runs end to end. No sign-in leaves the machine.
+- `docs/tutorials/m365-dev-server.md`: what the tenant holds, the two variants, how to add a setting or a deviation, and what it cannot show (throttling patterns, licence quirks and results of a real tenant), which s09-18 and s09-27 still check.
+
+**Tests first**
+- `M365DevTenantTests.Every_collection_the_collector_reads_is_served`
+- `M365DevTenantTests.Ids_are_the_same_across_collections`
+- `M365DevTenantTests.Compliant_tenant_passes_every_check`
+- `M365DevTenantTests.Each_deviation_fails_its_named_check`
+- `M365DevTenantTests.Blueprint_settings_keep_their_source_and_attribution`
+
+**Functional check**
+- `make m365-dev`, then `hound collect --dry-run` for `example-m365` against each variant: every check as the variant expects.
+
+**Order:** before s09-01, which adds its application control collections to this tenant. s09-27 then checks the tenant against a real recording instead of being its only source.
+
 ### s09-01 Application control policies from Intune
 - [ ] Done
 
