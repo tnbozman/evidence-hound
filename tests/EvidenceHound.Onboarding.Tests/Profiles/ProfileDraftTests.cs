@@ -52,4 +52,18 @@ public sealed class ProfileDraftTests
         request.Inputs.Select(i => i.Name).ShouldContain("previous draft");
         request.Inputs.Single(i => i.Name == "problems").Content.ShouldBe("profile.query_unknown: check uses query 'devcies'");
     }
+
+    [Fact]
+    public void Only_shapes_of_the_sample_answers_are_sent()
+    {
+        var devices = JsonNode.Parse("""{"items": [{"owner": "sha256:0a1b2c3d4e5f6a7b", "serial": "EX-SERIAL-0001", "os": {"version": "15.1"}, "lastSeen": "2026-11-21T22:00:00Z"}]}""");
+
+        var input = ProfileDraft.ShapeInputs([("GET /v1/orgs/org-0001/devices", devices)], ["owner", "serial"]).ShouldHaveSingleItem();
+
+        input.Name.ShouldBe("shape GET /v1/orgs/org-0001/devices");
+        input.Content.ShouldNotContain("sha256:");
+        input.Content.ShouldNotContain("EX-SERIAL-0001");
+        input.Content.ShouldNotContain("2026-11-21T22:00:00Z");
+        input.Content.ShouldContain("version");
+    }
 }
