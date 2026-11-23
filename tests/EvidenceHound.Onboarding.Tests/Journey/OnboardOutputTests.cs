@@ -53,6 +53,23 @@ public sealed class OnboardOutputTests
     }
 
     [Fact]
+    public void System_audit_is_a_series_of_the_organisation_audit()
+    {
+        // s09-48: <ORG>-<FRAMEWORK>-<SYSTEM> on the organisation series' cycle, so a period reads EX-E8-Q2-2027FY-EXAMPLE-ASSETS.
+        var place = Place with { Series = new OrganisationSeries("EX-E8", "quarter", "2026-10-01"), SystemRefId = "SYS-EXAMPLE-ASSETS" };
+
+        var yaml = OnboardOutput.Audit(Decided(), "urn:example:framework", "example-framework", place, Today);
+
+        var parsed = ScopeLoader.Parse(new ScopeSource("setup.yaml", "organisation:\n  root_folder: Global\n"), null, [new ScopeSource("audit.yaml", yaml)]);
+        parsed.Problems.ShouldBeEmpty();
+        var audit = parsed.Scope.Audits.ShouldHaveSingleItem();
+        audit.RefId.ShouldBe("EX-E8-EXAMPLE-ASSETS");
+        audit.Cycle.ShouldNotBeNull();
+        (audit.Cycle.Period, audit.Cycle.Starts).ShouldBe(("quarter", "2026-10-01"));
+        EvidenceHound.Core.Scope.AuditPeriods.On(audit.RefId, audit.Cycle, Today).RefId.ShouldBe("EX-E8-Q2-2027FY-EXAMPLE-ASSETS");
+    }
+
+    [Fact]
     public void Mapping_additions_do_not_change_existing_rows()
     {
         const string mapping = """

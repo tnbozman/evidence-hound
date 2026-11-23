@@ -96,6 +96,7 @@ public sealed class OnboardSystemCommandTests : IDisposable
         var record = Directory.GetFiles(Path.Combine(Repo, "onboarding"), "example-assets-*.md").ShouldHaveSingleItem();
         (await File.ReadAllTextAsync(record, _ct)).ShouldContain("| EX-2 | (none) | not_applicable | No privileged users. | Alex Example | Only the supplier administers it. Approved by Sam Example. |");
         output.ShouldContain("Wrote scope/audits/example-assets-example-framework.yaml");
+        output.ShouldContain("No audit series in scope/audits");
         output.ShouldContain("No mappings/example-framework.yaml to add manual rows to");
         output.ShouldContain("hound scope validate");
 
@@ -103,6 +104,29 @@ public sealed class OnboardSystemCommandTests : IDisposable
         (exit, output, _) = await RunAsync("");
         exit.ShouldBe(ExitCodes.Ok);
         output.ShouldContain("already written");
+    }
+
+    [Fact]
+    public async Task System_audit_joins_the_organisation_series()
+    {
+        // s09-48: with the organisation's audit a series (EX-E8, by quarter), the system's audit is EX-E8-<system ref ID without SYS->.
+        var orgAudit = Path.Combine(Repo, "scope", "audits", "ex-e8-2026.yaml");
+        var text = await File.ReadAllTextAsync(orgAudit, _ct);
+        await File.WriteAllTextAsync(
+            orgAudit, text.Replace("ref_id: EX-E8-2026", "ref_id: EX-E8", StringComparison.Ordinal).Replace("unlisted:", "cycle: {period: quarter, starts: \"2026-07-01\"}\nunlisted:", StringComparison.Ordinal), _ct);
+        await RunAsync(SupplierAnswers);
+        var supplierFile = Path.Combine(Repo, "scope", "third-parties", "sup-example.yaml");
+        await File.WriteAllTextAsync(supplierFile, (await File.ReadAllTextAsync(supplierFile, _ct)).Replace("status: draft", "status: active", StringComparison.Ordinal), _ct);
+
+        var (exit, output, error) = await RunAsync("m\nAsk the owner for the patch report.\nn\nNo privileged users.\nOnly the supplier administers it.\nSam Example\nc\nGET /v1/devices shows backups.\n");
+
+        exit.ShouldBe(ExitCodes.Ok, error);
+        var audit = await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "audits", "example-assets-example-framework.yaml"), _ct);
+        audit.ShouldContain("ref_id: \"EX-E8-EXAMPLE-ASSETS\"");
+        audit.ShouldContain("cycle: {period: quarter, starts: \"2026-07-01\"}");
+        output.ShouldContain("EX-E8-EXAMPLE-ASSETS, a series of EX-E8");
+        var setup = ScopeLoader.Parse(new ScopeSource("setup.yaml", await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "setup.yaml"), _ct)), null, []);
+        setup.Scope.Setup.Domains.SelectMany(d => d.Systems).Single(x => x.Name == System).RefId.ShouldBe("SYS-EXAMPLE-ASSETS");
     }
 
     [Fact]
