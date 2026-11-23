@@ -1315,6 +1315,59 @@ At the maintainer's request (2026-11-23): every audit reads `<ORG>-<FRAMEWORK>-<
 - Result (2026-11-23): in a scratch copy of `examples/compliance-repo` with `ex-e8-2026.yaml` made the series `EX-E8` (quarterly from 2026-07-01), `hound onboard OFFICE-FIREWALL --repo <copy> --group 1 --group 2` with the tutorial's recorded answers (`examples/onboarding-tutorial/answers/office-firewall.*.txt`, the tutorial's `sup-sophos.yaml` standing in for the person's review) said "The system's audit is EX-E8-OFFICE-FIREWALL, a series of EX-E8 by quarter." and wrote `ref_id: "EX-E8-OFFICE-FIREWALL"` with `cycle: {period: quarter, starts: "2026-07-01"}`, and `ref_id: SYS-OFFICE-FIREWALL` on the system. `scope validate` passed. `scope plan` first stopped at the supplier gate (no concluded review, as it should); with a conclusion written in the copy as `hound approve` writes it, the plan against the dev container's CISO Assistant (`HOUND_TODAY=2026-11-23`) listed `EX-E8-Q1-2027FY`, `EX-E8-Q2-2027FY`, `EX-E8-Q1-2027FY-OFFICE-FIREWALL` and `EX-E8-Q2-2027FY-OFFICE-FIREWALL`, and under Audit periods the Q1 pair closing and the Q2 pair opening, each from its own Q1. Unit suite 1317 passed; lint and script tests clean.
 - As built: `AuditPlace` gains `Series` (`OrganisationSeries`: ref ID, period, start) and `SystemRefId`; `OnboardOutput.SeriesRefId` drops `SYS-`; `OnboardSystemCommand.OrganisationSeriesAsync` takes the scope's one two-part series, or the one `hound.yaml` targets. A system that onboarding declares now carries `ref_id` (`RefIds.Suggest`, as `hound add system` defaults it), so `examples/onboarding-tutorial/scope/setup.yaml` gains `SYS-GRC-PLATFORM` and `SYS-OFFICE-FIREWALL`. The skill `onboard-a-system-with-hound` and `docs/onboarding.md` describe the name.
 
+### s09-49 Hosting controls proven by Terraform tests with mock providers, read from the IaC pipeline (added 2026-11-23)
+- [ ] Done
+
+At the maintainer's request (2026-11-23), instead of an AWS variant on LocalStack: the goal is to detail the GRC platform's hosting
+controls and collect evidence for them, not to prove the VPN connects. LocalStack emulates AWS only, its free Hobby plan is for
+non-commercial use, needs an account, and mocks EC2 and VPN resources as records only; `terraform test` with `mock_provider`
+(Terraform 1.7 and later) runs the real OCI code with no cloud account, Docker or licence, so the Oracle tutorial stays as it is.
+
+**Story:** As a GRC team member, I want the GRC platform's hosting controls (no public address, HTTPS only from the office, no SSH
+from the internet, encrypted storage, backups private, in another region and locked by a retention rule) written as Terraform tests
+that the IaC pipeline runs on every change, and `hound` to read their report, so that each control has dated evidence naming the
+commit it was proven on, without `hound` running Terraform or holding cloud credentials.
+
+**Acceptance criteria**
+- `examples/onboarding-tutorial/infra/oci/` holds the tutorial's infrastructure as Terraform (VCN, private subnet, security list,
+  VM with no public IP, DRG, CPE and IPSec connection with a static route to the office only, Bastion, NAT and service gateways,
+  the backup bucket in another region with a retention rule and the volume backup policy), fictional values and documentation
+  ranges only.
+- `infra/oci/tests/controls.tftest.hcl` uses `mock_provider "oci"` and has one `run` block per control, named after it
+  (for example `vm_has_no_public_ip`), each asserting on the planned configuration with a message that names the control. A
+  negative test per control (an `expect_failures` run over a variable or check) shows the assertion can fail.
+- An example pipeline (`infra/oci/.github/workflows/controls.yml`) runs `terraform test -junit-xml=controls.xml` and uploads it
+  as the `control-tests` artefact. No cloud credentials are used by that job.
+- A library profile `terraform-tests` reads the newest completed run of a named workflow, its artefact and the JUnit member
+  (`format: zip`, XML), with check `infrastructure.tests.pass` through a code check `terraform.tests_pass`: every test passed
+  passes; a failed or errored test fails, naming it and its message; no run, a failed run, a stale report (`max_age`) or no
+  report is unable to assess; `with.test` narrows the check to one named test, and a named test absent from the report is
+  unable to assess. Each finding names the repository, commit and run, read from the run, as `terraform.no_drift` does.
+- The tutorial's config repo copies the profile as `profiles/grc-infra-controls.yaml` with one check per control test, and a
+  mapping `mappings/grc-platform-essential-eight-2023.yaml` maps the backup rows whose evidence was "captured quarterly"
+  (ISM-1811, ISM-1814, ISM-1707, ISM-1812, ISM-1705) to their control test and to `infrastructure.drift.none` together
+  (`all_pass`): the code proves the control and the drift check proves the live cloud still matches the code. The audit's
+  observations for those rows say so. Network controls with no Essential Eight requirement are evidence kept with each run, as
+  drift is, and the tutorial says which later framework rows they serve.
+- The tutorial (s09-32) gains a "Prove the hosting controls" step and the controls table names each test. A guide,
+  `docs/collectors/terraform-tests.md`, explains the pattern for any provider, and what a mock does not prove.
+- CI runs `terraform test` on the example (no credentials).
+
+**Tests first**
+- `TerraformTestsProfileTests.All_tests_passing_passes`
+- `TerraformTestsProfileTests.A_failed_test_fails_naming_it_and_its_message`
+- `TerraformTestsProfileTests.Missing_failed_or_stale_report_is_unable_to_assess`
+- `TerraformTestsProfileTests.A_named_test_is_checked_alone_and_absent_is_unable_to_assess`
+- `TerraformTestsProfileTests.Library_profile_replays_each_case`
+- `ExampleRepoTests.Grc_infra_control_checks_name_tests_that_exist`
+- `ExampleRepoTests.Grc_platform_backup_rows_need_the_control_test_and_no_drift`
+- `terraform test` in `examples/onboarding-tutorial/infra/oci` (the control tests themselves, written before the resources)
+
+**Functional check**
+- `terraform test -junit-xml=controls.xml` in `infra/oci` passes; breaking one control in a scratch copy fails its test. That
+  report, zipped as the pipeline uploads it, replayed by `hound profile test grc-infra-controls`, gives pass for each control,
+  and fail naming the broken one.
+
 ## Discovered work
 
 - s09-47: move the fictional example repo's audits to series (`EX-E8`, `EX-ESSENTIALS`, `EX-BASELINE` with cycles), with its config targets, the example run and the tests that use `EX-E8-2026` as a fixture.
