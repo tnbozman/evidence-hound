@@ -71,6 +71,14 @@ public sealed class OnboardFunctionalTests(CisoAssistantFixture ciso) : IDisposa
         planExit.ShouldBe(ExitCodes.Ok, plan);
         plan.ShouldContain("EXAMPLE-ASSETS-ESSENTIAL-EIGHT-2023");
 
+        // s09-30: the plan explained for review quotes the plan's own counts.
+        var saved = Path.Combine(_repo, "plan.md");
+        await File.WriteAllTextAsync(saved, plan, ct);
+        var (explainExit, explained) = await StepAsync("3b-explain", ["explain", saved, "--repo", _repo, "--no-model"], "", ct);
+        explainExit.ShouldBe(ExitCodes.Ok, explained);
+        var counts = System.Text.RegularExpressions.Regex.Match(plan, @"\d+ to create, \d+ to update, \d+ to delete").Value;
+        explained.ShouldContain($"The plan is the source of truth: {counts}");
+
         var (applyExit, applied) = await StepAsync("4-apply", ["scope", "apply", scope, "--config", config], "", ct);
         applyExit.ShouldBe(ExitCodes.Ok, applied);
         JsonNode.Parse(applied)!["failed"]!.GetValue<int>().ShouldBe(0, applied);

@@ -479,7 +479,7 @@ Requests saved: `001-supplier`, `002`-`004-applicability` (107 requirements in b
 - Against the recorded example API, a fake model's first draft with a wrong path is fixed in the second round, and `hound profile test` passes.
 
 ### s09-24 Write the onboarding output
-- [ ] Done
+- [x] Done
 
 **Story:** As a GRC team member, I want the session to write the profile, mappings, applicability and a record of how it was decided into my config repo, so that I can review it in a pull request and show auditors how applicability was decided.
 
@@ -790,6 +790,17 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 - With a fake model, `hound explain` on a scope plan of the example repo prints a summary whose counts match the plan, and `--show-requests` shows no secret or identifier.
 
 **Order:** after the first usable onboarding path (s09-21, s09-26, s09-22, s09-24).
+
+**As built (2026-11-23)**
+- `hound explain [<plan-or-diff> | <before> <after>] [--repo] [--framework] [--skill]... [--no-model] [--show-requests] [--config]`, reading a file, two versions of one file, or standard input (`git diff | hound explain`). It reads `hound scope plan` output (Markdown or JSON), `hound plan` output (JSON) and unified diffs.
+- `ChangeReader` reads counts, objects, topics and flags in code: not applicable rows, deletions, removed check or requirement lines in mappings and profiles, and supplier contracts that are not active. `Explanation` sends them through the onboarding gate (`onboarding/explain/requests/`), with object IDs, email, IP and MAC addresses, deny terms and secret values replaced first (`OutboundGuard.Redact`), and refuses a reply that names an object the plan or diff does not contain.
+- A new `explain` skill step and default skill `reviewing-a-config-change`; `ExplainSkills.Choose` adds the supplier, applicability, profile or mapping skills by what the change touches, and `--skill` chooses instead. The summary lists each skill with source, version and SHA-256.
+- Not yet flagged: a system without an owner, and a mapping that no longer matches a profile's checks. Both need more than the diff (the scope's systems, and the profiles' check IDs); left open on this task.
+
+**Functional check (2026-11-23)**
+- `hound explain plan.md --repo <copy of the example repo> --show-requests` with a fake Anthropic server: prints "The plan is the source of truth: 1 to create, 0 to update, 0 to delete, 0 drifted.", the not applicable flag, the fake summary and four skills; the requests shown and saved (`001-explain.request.json`) hold no email address from the plan's access review.
+- `hound explain before.yaml scope/audits/example-assets-essential-eight-2023.yaml`: "1 file changed, 227 lines added, 1 line removed" and "Marks 2 requirement(s) not applicable".
+- `OnboardFunctionalTests` now explains the real scope plan from the local CISO Assistant with `--no-model` and checks the counts match.
 
 ### s09-31 Draft organisation skills from onboarding (added 2026-11-22)
 - [ ] Done
