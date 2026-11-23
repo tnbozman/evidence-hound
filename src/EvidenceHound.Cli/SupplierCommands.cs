@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Security.Cryptography;
 using System.Text.Json.Nodes;
 using EvidenceHound.Core.Results;
+using EvidenceHound.Core.Scope;
 using EvidenceHound.Onboarding.Output;
 using EvidenceHound.Onboarding.Suppliers;
 using Microsoft.Extensions.Configuration;
@@ -16,6 +17,8 @@ namespace EvidenceHound.Cli;
 /// </summary>
 internal static class SupplierCommands
 {
+    private static readonly string RefIdInvalid = "supplier.ref_id_invalid";
+
     public static Command Build(Terminal terminal, ILoggerFactory loggers, IConfiguration configuration)
     {
         var logger = loggers.CreateLogger("hound.supplier");
@@ -49,9 +52,21 @@ internal static class SupplierCommands
         draft.SetAction(async (parseResult, cancellationToken) =>
         {
             var root = parseResult.GetValue(repo)?.FullName ?? Directory.GetCurrentDirectory();
+            var refs = Result.Combine(
+            [
+                RefIdPrompt.Given(RefIdKind.Supplier, parseResult.GetRequiredValue(entityRef), RefIdInvalid),
+                RefIdPrompt.Given(RefIdKind.Solution, parseResult.GetRequiredValue(solutionRef), RefIdInvalid),
+                RefIdPrompt.Given(RefIdKind.Contract, parseResult.GetRequiredValue(contractRef), RefIdInvalid),
+            ]);
+            if (refs is Result<IReadOnlyList<string>>.Fail refused)
+            {
+                return Log.Problems(logger, refused.Errors);
+            }
+
+            var completed = refs.Match(r => r, _ => []);
             var choice = new SupplierChoice(
-                parseResult.GetRequiredValue(entityRef), parseResult.GetRequiredValue(entityName), parseResult.GetRequiredValue(solutionRef),
-                parseResult.GetRequiredValue(solutionName), parseResult.GetRequiredValue(contractRef), parseResult.GetRequiredValue(contractName));
+                completed[0], parseResult.GetRequiredValue(entityName), completed[1],
+                parseResult.GetRequiredValue(solutionName), completed[2], parseResult.GetRequiredValue(contractName));
             var role = parseResult.GetValue(kind) ?? "vendor";
             var written = await Levels(parseResult.GetValue(levels) ?? [])
                 .BindAsync(async read => (await NotesAsync(root, role, parseResult.GetValue(standsFor), parseResult.GetValue(documents) ?? [], cancellationToken)).Bind(notes => Result.Ok((read, notes))))
