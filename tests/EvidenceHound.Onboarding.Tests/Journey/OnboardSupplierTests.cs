@@ -49,12 +49,36 @@ public sealed class OnboardSupplierTests
         SupplierProposal.Read(madeUp, sources).Problems().ShouldHaveSingleItem().Message.ShouldContain("https://www.example.org/elsewhere");
 
         var outOfRange = Reply();
-        outOfRange["levels"]![2]!["value"] = 0;
-        SupplierProposal.Read(outOfRange, sources).Problems().ShouldHaveSingleItem().Message.ShouldContain("maturity");
+        outOfRange["levels"]![2]!["value"] = 5;
+        SupplierProposal.Read(outOfRange, sources).Problems().ShouldHaveSingleItem().Message.ShouldContain("maturity is 5, outside 1 to 4");
 
         var missing = Reply();
         ((JsonArray)missing["levels"]!).RemoveAt(4);
         SupplierProposal.Read(missing, sources).Problems().ShouldHaveSingleItem().Message.ShouldContain("criticality");
+    }
+
+    [Fact]
+    public void Maturity_and_trust_without_evidence_are_not_yet_assessed_and_left_out_of_the_file()
+    {
+        string[] sources = ["answers", "https://www.example.com/trust"];
+        var reply = Reply();
+        reply["levels"]![2]!["value"] = 0;
+        reply["levels"]![2]!["reason"] = "No assurance documents were given.";
+        reply["levels"]![3]!["value"] = 0;
+
+        var proposal = SupplierProposal.Read(reply, sources).Value();
+
+        proposal.Levels.Single(l => l.Name == "maturity").Value.ShouldBe(SupplierProposal.NotYetAssessed);
+        SupplierProposal.Instructions.ShouldContain("0 when not yet assessed");
+        var yaml = SupplierFile.Write(Choice, proposal.Levels, "EXAMPLE-ASSETS", new DateOnly(2026, 11, 23));
+        yaml.ShouldContain("# maturity: not yet assessed (1 to 4): No assurance documents were given. (answers)\n");
+        yaml.ShouldNotContain("maturity: 0");
+        yaml.ShouldNotContain("trust: 0");
+        var parsed = ScopeLoader.Parse(
+            new ScopeSource("setup.yaml", "organisation:\n  root_folder: Global\n"), null, [], thirdParties: [new ScopeSource("example-assets.yaml", yaml)]);
+        parsed.Problems.ShouldBeEmpty();
+        var entity = parsed.Scope.ThirdParties.ShouldHaveSingleItem();
+        (entity.Maturity, entity.Trust).ShouldBe((null, null));
     }
 
     [Fact]
