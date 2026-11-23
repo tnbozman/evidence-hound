@@ -871,6 +871,33 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 
 **Order:** after the hands-on Sophos path (s09-25).
 
+### s09-33 Infrastructure drift from the IaC pipeline's plan artefact, without a Terraform dependency (added 2026-11-23)
+- [ ] Done
+
+**Story:** As a GRC team member, I want `hound` to tell me whether the cloud hosting our GRC platform still matches its reviewed infrastructure code, without `hound` running Terraform or holding cloud credentials or state, so that drift is evidence like any other check.
+
+**Acceptance criteria**
+- The organisation's IaC pipeline runs `terraform plan -refresh-only -json` (or `-detailed-exitcode` plus the JSON plan) and publishes the plan JSON as a build artefact. `hound` never runs Terraform, never reads state, and never holds cloud credentials.
+- A `terraform-drift` REST profile fetches the artefact over HTTP using the engine's existing job pattern (`async`: start, poll the status until done, then fetch the result). Profiles cover GitHub Actions first (workflow runs and artifacts); GitLab and Azure DevOps follow by profile only, with no code per vendor.
+- Two modes: read the newest existing artefact of a named workflow (the default, read only), or trigger the workflow first (`workflow_dispatch`), poll the run to completion, then download its artefact.
+- The trigger is the only write any profile makes, so it needs an opt-in flag in the profile and in the collector's settings (off by default), and the docs give the narrowest token: run that one workflow and read its artefacts, nothing else. Hosts are declared as for any profile (`profile.host_not_allowed` otherwise).
+- If the engine cannot yet read a downloaded zip (GitHub wraps artefacts in one) or a file body, that is added as a small engine extension (`format: zip` naming the member, size caps as today), not a new collector.
+- Checks: no drift (no `resource_drift` entries and no changed resources) passes; drift fails and names each changed resource address and action; a missing, failed or stale artefact (older than a `max_age` setting) is unable to assess, saying which.
+- The OCI tutorial (s09-32) uses it for Example Pty Ltd's GRC platform, with a fictional workflow and a recorded artefact; no real tenancy, repository or token.
+
+**Tests first**
+- `TerraformDriftProfileTests.No_drift_passes`
+- `TerraformDriftProfileTests.Drift_fails_naming_each_changed_resource`
+- `TerraformDriftProfileTests.Missing_failed_or_stale_artefact_is_unable_to_assess`
+- `RestEngineTests.Zip_member_is_read_with_the_size_caps`
+- `RestEngineTests.Trigger_is_refused_unless_both_profile_and_settings_opt_in`
+- `RestEngineTests.Trigger_polls_the_run_then_reads_its_artefact`
+
+**Functional check**
+- Against a recorded GitHub Actions API (WireMock, fictional repository), `hound run --dry-run` with the `terraform-drift` profile reports pass for a plan with no drift and fail naming `oci_core_instance.grc` for one with drift; with triggering off, no POST is sent.
+
+**Order:** after the hands-on Sophos path (s09-25), with s09-32.
+
 ## Discovered work
 
 - Open items from s08's discovered work (trial token refresh, the seed's compliance owner, HTTP logging at `info`, wizard prompts, trial re-runs, evidence on applied controls, the "unlisted rule" wording, `HOUND_CA_URL` in the dev container) are listed in [s08](s08-sophos-veeam-collectors.md#discovered-work); pick them up here or in s12.
