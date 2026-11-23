@@ -1229,7 +1229,7 @@ Found while resetting the trial for s09-34 to s09-42. The compliance owner defau
 - As built: `DefaultOwner` in `InitCommand` and the table in `docs/guided-setup.md`. The trial's own `hound add` steps still name `it@example.com` as the system and control owner, which is right for those.
 
 ### s09-44 The trial hands the Sophos perimeter firewall to the agent (added 2026-11-23)
-- [ ] Done
+- [x] Done
 
 At the maintainer's request (2026-11-23): the trial focuses on the Sophos perimeter firewall, and s09-39 has the agent onboard it. Step 5 added an example backup service, a backup control and a restore-test manual source, which the agent path does not use.
 
@@ -1248,6 +1248,9 @@ At the maintainer's request (2026-11-23): the trial focuses on the Sophos perime
 
 **Functional check**
 - `HOUND_TRIAL_YES=1 make trial` against the dev container's CISO Assistant: step 5 writes the agent files and the wrapper and prints the hand-over; `.dev/trial/bin/hound scope validate scope --config hound.yaml` run from `.dev/trial/repo` passes.
+- Result (2026-11-23), in a scratch trial workspace (`HOUND_TRIAL_DIR`, `ca-mode` bundled, the trial token) so the maintainer's freshly reset CISO Assistant was not written to: with `bin/hound` on `PATH`, `hound init . --yes` and `hound agent setup --assistant both` from `repo/` wrote the repo and the agent files (`CLAUDE.md`, `.claude/`, `.github/`); `hound scope validate scope --config hound.yaml` answered "scope valid: 1 domain(s), 1 control(s), 1 audit(s)" from `repo/` and from `repo/scope` (`.` with `../hound.yaml`); `hound scope plan` read the bundled CISO Assistant with the trial token (every request HTTP 200); from `/tmp` the wrapper refused with exit 2. The full unattended trial runs in CI (`trial` job). `bats scripts/tests`: 52 ok; ShellCheck clean.
+- As built: `trial_hound_argv_in`, `trial_workdir` and `trial_agent_brief` in `scripts/lib/trial.sh` (`trial_hound_argv` calls `trial_hound_argv_in /trial/repo`); `scripts/trial-hound.sh`, linked as `.dev/trial/bin/hound`, gives the container a terminal when it has one, so `hound approve` works through it. Step 5 is `agent` in `scripts/trial.sh`; the workspace gains `specs/` and `bin/`.
+- Deviation: the agent can only reach files under `.dev/trial`, so the hand-over asks for the specification in `specs/` and the vendor documents in `inbox/`; an absolute path outside the workspace in a `hound` argument does not resolve in the container.
 
 ## Discovered work
 
