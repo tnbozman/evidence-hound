@@ -850,6 +850,8 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 **Functional check**
 - Following the tutorial with a fake model on a copy of the example repo reproduces the committed files, and `hound scope plan` against the local CISO Assistant shows them as new.
 
+- **Cloud: Oracle Cloud Infrastructure (OCI)**, at the person's suggestion, so the tutorial can be run for real; kept generic enough that another cloud needs only small changes (a short "on another cloud" note). On OCI: a VM in a private subnet with no public IP, OCI Site-to-Site VPN (IPSec) to the XGS, admin access through OCI Bastion or over the VPN only, and Oracle as a supplier in the walk-through. If the Always Free Ampere A1 (arm64) shape is used, confirm the CISO Assistant images and the `hound` runner image run on linux/arm64 (make the runner image multi-arch if needed); otherwise name the x86 shape and its cost. No real tenancy, OCIDs, regions tied to the person, or addresses in the public repo: documentation IP ranges and placeholders only.
+
 **Order:** after the hands-on Sophos path (s09-25).
 
 ## Discovered work
