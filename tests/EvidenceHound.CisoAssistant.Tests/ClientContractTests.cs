@@ -191,7 +191,7 @@ public sealed class ClientContractTests : IDisposable
         Respond("/api/compliance-assessments/", 200, Page(new JsonObject { ["id"] = "ca-1" }));
         Respond("/api/compliance-assessments/ca-1/object/", 200, new JsonObject { ["id"] = "ca-1", ["status"] = status, ["is_locked"] = locked }.ToJsonString());
 
-        var result = await _ca.Client.FindAuditAsync("EX-E8-BACKUP-2026Q3", _ct);
+        var result = await _ca.Client.FindAuditAsync("EX-E8-Q1-2027FY-BACKUP", _ct);
 
         result.Match(audit => audit.Closed, _ => !closed).ShouldBe(closed);
     }
