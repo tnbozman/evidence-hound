@@ -1155,6 +1155,8 @@ Design decision 10, and the reworded rule: no model in collection, and no eviden
 
 ## Discovered work
 
+- **Before the sprint PR is marked ready:** turn the `functional` CI job back on for pull requests (`.github/workflows/ci.yml`). It was switched to run only on `main` and by hand on 2026-11-23 to keep pushes fast; until then functional tests run in the dev container with `make test-functional`, and each task's functional check records that run.
+
 - s09-37: the interactive `hound onboard <system>` still takes a not-applicable approver's name from piped input, so an agent could answer its prompts. Make its not-applicable approval go through `hound approve` too, or refuse it without a terminal (fits s09-41).
 
 - s09-37: `hound approve` asks about every open supplier review each time it runs, including reviews not yet due and ones already concluded in CISO Assistant before conclusions moved to config. Consider asking only for reviews that are due or that the person names, and importing existing conclusions with `hound scope export`.
