@@ -38,6 +38,7 @@ public sealed class AddSystemCommandTests : IDisposable
         setup.Length.ShouldBeGreaterThan(before.Length);
         (await File.ReadAllTextAsync(AuditFile, TestContext.Current.CancellationToken)).ShouldContain("systems: [Example 365, Example laptops, Example backup service, Example firewall]");
         _error.ToString().ShouldContain("System name");
+        _error.ToString().ShouldContain("Owner's email, as a CISO Assistant user");
         (await Run("", "scope", "validate", Scope, "--config", Path.Combine(Repo, "hound.yaml"))).ShouldBe(ExitCodes.Ok, _error.ToString() + _output);
     }
 

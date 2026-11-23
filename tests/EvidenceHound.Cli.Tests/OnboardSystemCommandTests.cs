@@ -27,7 +27,7 @@ public sealed class OnboardSystemCommandTests : IDisposable
         }
         """;
 
-    internal const string SupplierAnswers = "Alex Example\nAlex Example\nExample Asset API\nSUP-EXAMPLE\nExample Assets Ltd\nSOL-EXAMPLE-ASSETS\nAsset inventory\nCTR-EXAMPLE-ASSETS\nAsset inventory subscription\nHosts the asset inventory.\n\n";
+    internal const string SupplierAnswers = "Alex Example\nalex@example.com\nExample Asset API\nSUP-EXAMPLE\nExample Assets Ltd\nSOL-EXAMPLE-ASSETS\nAsset inventory\nCTR-EXAMPLE-ASSETS\nAsset inventory subscription\nHosts the asset inventory.\n\n";
 
     private readonly string _root = Directory.CreateTempSubdirectory("hound-onboard-system-").FullName;
     private readonly CancellationToken _ct = TestContext.Current.CancellationToken;
@@ -102,6 +102,19 @@ public sealed class OnboardSystemCommandTests : IDisposable
         (exit, output, _) = await RunAsync("");
         exit.ShouldBe(ExitCodes.Ok);
         output.ShouldContain("already written");
+    }
+
+    [Fact]
+    public async Task System_owner_is_asked_as_a_ciso_assistant_users_email_and_a_name_is_asked_again()
+    {
+        var answers = SupplierAnswers.Replace("Alex Example\nalex@example.com\n", "Alex Example\nAlex Example\nalex@example.com\n", StringComparison.Ordinal);
+
+        var (exit, output, error) = await RunAsync(answers);
+
+        exit.ShouldBe(ExitCodes.Ok, error);
+        output.ShouldContain("System owner's email, as a CISO Assistant user");
+        output.ShouldContain("'Alex Example' is not an email");
+        Session()["owner"]!.GetValue<string>().ShouldBe("alex@example.com");
     }
 
     [Fact]

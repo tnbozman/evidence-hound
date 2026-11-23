@@ -40,6 +40,7 @@ public sealed class InitCommandTests : IDisposable
         (await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "controls.yaml"), TestContext.Current.CancellationToken)).ShouldContain("owner: grc@example.com");
         (await File.ReadAllTextAsync(Path.Combine(Repo, "hound.yaml"), TestContext.Current.CancellationToken)).ShouldContain("compliance_assessment: EX2-E8-2027");
         _error.ToString().ShouldContain("Organisation name [Example Pty Ltd]");
+        _error.ToString().ShouldContain("Compliance owner's email, as a CISO Assistant user");
         await ShouldValidateAsync();
     }
 

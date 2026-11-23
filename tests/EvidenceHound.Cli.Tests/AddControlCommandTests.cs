@@ -21,6 +21,7 @@ public sealed class AddControlCommandTests : IDisposable
             "AC-FIREWALL\nFirewall rules reviewed quarterly\nit@example.com\n\nExample 365\nISM-1173, ISM-1504\n", "add", "control", "--scope", Scope, "--audit", "EX-E8-2026");
 
         exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        _error.ToString().ShouldContain("Owner's email, as a CISO Assistant user");
         (await File.ReadAllTextAsync(Path.Combine(Scope, "controls.yaml"), TestContext.Current.CancellationToken)).ShouldContain("""
               - ref_id: AC-FIREWALL
                 name: Firewall rules reviewed quarterly
