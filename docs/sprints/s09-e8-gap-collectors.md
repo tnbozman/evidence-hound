@@ -1618,6 +1618,29 @@ At the maintainer's request (2026-11-23): "we are self-hosting CISO Assistant an
 - Not yet: plan and apply against CISO Assistant, publishing, and Terraform's real report, which need Docker and Terraform. Ticking waits on the maintainer running `HOUND_TRIAL_YES=1 make trial` twice and `make trial` in the dev container.
 - As built: `scripts/lib/trial.sh` gains `trial_scene`, `trial_systems`, `trial_system_product`, `trial_system_solution`, `trial_add_target` (a single `target:` becomes `targets:`; a target is added once, inside the block), `trial_iac_dev_sets`, `trial_controls_report_args`; `trial_brief` and `trial_stage_ready` take the system (four third parties; a control naming the system). `scripts/trial.sh`: the scene after the workspace; stage 5 the four third parties; `onboard_system` runs stages 6 to 8 for `GRC-PLATFORM` and 9 to 11 for `OFFICE-FIREWALL`; `wire_audit` copies the tutorial's system mapping and adds its target; step 12 runs `terraform test` when Terraform is there, starts `make iac-dev` with that report, adds `grc-infra-controls` and `grc-infra-drift`, and offers a `drift` run; step 13 Sophos Central for `OFFICE-FIREWALL`; step 14 Microsoft 365. `examples/trial/third-parties`: Oracle, Sophos, CISO Assistant and Evidence Hound; the managed service provider is removed. `docs/tutorials/local-trial.md` follows the new order.
 
+### s09-58 Fictional scan exports for the trial (`make scan-dev`)
+- [ ] Done
+
+Added at the maintainer's request (2026-11-23): s09-03 and s09-04 need a testbed, as the Microsoft 365 and Sophos dev servers are for theirs.
+
+**Story:** As a developer or someone trying Evidence Hound, I want fictional vulnerability scan exports dated from today, so that the scan checks can be tried in the trial and changed without a scanner.
+
+**Acceptance criteria**
+- `make scan-dev` (project `EvidenceHound.ScanDev`, `scan-dev`) writes one export per scope for an invented Example Pty Ltd estate, dated from `--today` (default today, UTC): Nessus for internet-facing services, other applications and operating systems, and a Microsoft Defender vulnerability management CSV for the laptops' common applications. Writing again replaces that scope's exports.
+- `--variant compliant|gaps` and `--deviation <name>`: the compliant estate passes all eleven `vuln.*` checks; each deviation fails only the checks it names; gaps applies them all.
+- It prints the four `vuln-scan` sources' settings, and `make trial` adds them, writes the compliant exports, runs and publishes, then offers to write a deviation and collect again.
+- `docs/tutorials/scan-dev.md` lists every deviation.
+
+**Tests first**
+- `ScanDevEstateTests.Compliant_estate_passes_all_eleven_checks`
+- `ScanDevEstateTests.Each_deviation_fails_only_its_named_checks`
+- `ScanDevEstateTests.Writing_again_replaces_the_exports_so_the_latest_estate_is_current`
+- `ScanDevEstateTests.Tutorial_lists_every_deviation`
+- A bats test for the trial step's helper.
+
+**Functional check**
+- `make scan-dev ARGS="--variant gaps --out <dir>"`, then `hound run --no-publish` for the four sources: each fails what the tutorial table says. CI's trial job publishes the compliant estate to the local CISO Assistant.
+
 ## Discovered work
 
 - s09-04 follow-up (2026-11-23): once s09-15 merges, add `vuln.internet_facing.patched_in_window` to ISM-1694 beside `network.firewall.firmware_current`, in both E8 mappings. Map `vuln.other_apps.unsupported_removed` (ISM-0304) when an ML3 mapping is written. Consider a `min_severity` setting if owners want low findings out of the windows.
