@@ -1020,4 +1020,10 @@ Added at the person's request after the s09-22 Sophos onboarding trial, where th
 
 - Supplier documents in PDF (such as a vendor's ISO/IEC 27001 certificate) are kept with their hash but not given to the model: hound reads only HTML, text and Markdown, so the supplier step cannot use the strongest assurance a vendor publishes. Since 2026-11-23 the person is told; next, extract PDF text (a maintained PDF library, checked as any new dependency) or send the PDF to the provider as a document block, within the same outbound guard and token budget (found in s09-22, Sophos trial).
 
+- `hound onboard` summarises an OpenAPI spec without its response fields when they are behind `$ref` components (the Sophos Firewall API v1.5.0 spec: `GET /firewalls: List of firewalls` and nothing more), so the model proposed ISM-1501 as manual, saying no endpoint shows a firmware version, although `firmwareVersion` is in the response and the sophos collector checks it. Resolve `$ref` response schemas and list each read endpoint's top-level fields in the summary (found in s09-22, Sophos trial).
+
+- `hound onboard environment` writes not-applicable rows into an audit for requirements the audit's own mapping computes (`scope.result_conflict` on validate), records "provided by another system" as not applicable even when that system has no audit (so the gap shows as closed), and overwrote collector evidence (ISM-1672). Record such rows as open, covered by the named system, until its audit exists; skip rows the mapping computes and say which (found in s09-28, Sophos trial).
+
+- `hound explain` reads a printed plan but not the saved plan file `scope plan --out` writes, and with no file and no piped input it waits silently on the terminal. Read saved plans, and refuse with a hint when standard input is a terminal (found in s09-30, Sophos trial).
+
 ## Sprint review
