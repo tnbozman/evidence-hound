@@ -72,4 +72,12 @@ public class CapabilityMapTests
             gap => gap.Requirements.ShouldBe(["PA-1"]));
         rows.Audits.SelectMany(a => a.Rows).ShouldNotContain(r => r.Requirement == "PA-1");
     }
+
+    [Fact]
+    public void Gaps_come_from_the_framework_the_map_names_and_none_without_a_map()
+    {
+        CapabilityMap.Gaps(ScopeOf(Standard()), Snapshots).ShouldHaveSingleItem().Mitigation.ShouldBe("pa");
+        CapabilityMap.Gaps(ScopeOf(Standard()), new Dictionary<string, Frameworks.FrameworkSnapshot>(StringComparer.Ordinal)).ShouldBeEmpty();
+        CapabilityMap.Gaps(ScopeOf(Standard()) with { Capabilities = null }, Snapshots).ShouldBeEmpty();
+    }
 }
