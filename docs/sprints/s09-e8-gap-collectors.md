@@ -754,7 +754,7 @@ Added at the maintainer's request (2026-11-23): s09-01 to s09-04 and the Microso
 - Write a skeleton for one template, fill it in, upload a fictional export with it, and see the attested result in the example audit.
 
 ### s09-06 Documentation
-- [ ] Done
+- [x] Done
 
 **Acceptance criteria**
 - `docs/collectors/m365.md` gains the application control checks, the `ThreatHunting.Read.All` permission with its justification, licence notes and limits.
@@ -769,6 +769,10 @@ Added at the maintainer's request (2026-11-23): s09-01 to s09-04 and the Microso
 - Following `docs/collectors/vuln-scan.md` verbatim, import a fictional export and see its checks.
 
 Moved from s08 on 2026-11-22 at the person's request (s08 focuses on Sophos). Was s08-03 and s08-04.
+
+**As built (2026-11-23).** `docs/collectors/m365.md` already carried the application control checks, `ThreatHunting.Read.All` with its reason, the licences and the limits (s09-01, s09-02). `docs/collectors/vuln-scan.md` gains "Scheduling exports from common scanners" (the scan, export and collector schedules, keeping older exports, scanner credentials staying with the export job, and Nessus, Tenable Vulnerability Management, Tenable Security Center, Defender Vulnerability Management and any CSV scanner), and names both checks ISM-1694 now needs. Tests: `VulnScan.Tests.DocsTests` (every check ID, setting, evidence file and problem code; the scheduling section; the ISM-1694 row) and `Cli.Tests.DocsLinkTests` (every relative link in `docs/` and the README points at a file that exists; there was no link check before). There is no markdown linter in the repo, so the link test stands in for "docs lint".
+
+**Functional check (2026-11-23).** Following the guide in a scratch folder: `hound init <repo> --evidence-root <evidence> --yes`, `hound add collector vuln-scan --name internet-facing-scans --set drop_folder=../scans/internet-facing --set format=nessus --set scope=internet_facing --set owner="Sam Example" --yes`, the fictional `internet-facing-2026-11-16.nessus` copied into the drop folder, `hound config validate` valid, then `hound run --only internet-facing-scans --no-publish`: succeeded with the three `internet_facing` checks, all failing as the guide says they should for a week-old export with an overdue exploited finding and an unsupported VPN appliance.
 
 ### s09-07 Veeam access
 - Dropped (2026-11-23): the maintainer does not want Veeam collection. Kept here as a record; not built. Backup evidence stays manual (s09-05 templates).
@@ -1502,7 +1506,8 @@ Added at the maintainer's request (2026-11-23; built as s09-52, renumbered on me
 **Functional check**
 - `make sophos-dev`, then `hound run --only sophos --dry-run` against it; `HOUND_TRIAL_YES=1 make trial` in the dev container goes through step 9 with no credential.
 - Result (2026-11-23, cloud session, no Docker): `make sophos-dev ARGS="--variant gaps --port 5372"` printed the tenant and the collector settings. With a config holding only that `sophos` collector (placeholder secret in a file), `hound config validate --check-secrets` answered "valid", `hound collect` wrote `firewalls.json`, `admins.json` (5 admins over 3 pages) and `roles.json`, and `hound run --only sophos --dry-run` ended `succeeded` with no problems. `SophosDevTenantTests` (7) run the rest collector with the library profile against the compliant tenant (both checks pass), each deviation alone (each fails only its named check) and the gaps tenant (both fail); the token address answers with or without a credential. `SophosDevServerOptionsTests` (7) pass; `bats scripts/tests` and shellcheck are clean; whole unit suite green apart from the Docker-only functional tests.
-- Not yet: `HOUND_TRIAL_YES=1 make trial` needs Docker and a CISO Assistant, which the cloud session does not have. Ticking waits on the maintainer running it (and `make trial` by hand) in the dev container.
+- In CI (2026-11-23): the `trial` job runs `HOUND_TRIAL_YES=1 make trial` with the Sophos Central dev server and passed in runs 45177384299, 45199442036 and 45255592675 (the last two with the scan stage too).
+- Still for the maintainer: `HOUND_TRIAL_YES=1 make trial` needs Docker and a CISO Assistant, which the cloud session does not have. Ticking waits on the maintainer running it (and `make trial` by hand) in the dev container.
 - As built: `src/EvidenceHound.SophosDevServer` (`sophos-dev`, not in the runner image): `SophosDevTenant` (firewalls, admins, predefined roles, `Compliant`, `Deviations`, `For`, `Settings(url)`), `SophosAnswers` (pure: `whoami`, the token answer, the three lists), `DevSophosServer` (WireMock, pages of 2 by `page`, every interface when a port is given, `--public-url` named in `whoami`), `DevServerOptions`. Trial: `trial_network_args` adds `--add-host host.docker.internal:host-gateway` on a `make ca-up` network; `trial_dev_url`, `trial_sophos_dev_sets` and `trial_uses_dev_server` in `scripts/lib/trial.sh`; step 9 starts the server in the background (stopped when the trial ends), adds the collector with `--yes`, and offers a second run with `unsupported-firmware`. Docs: `docs/tutorials/sophos-dev-server.md` and section 9 of `docs/tutorials/local-trial.md`.
 - The token address answers one fixed response and checks nothing, as the profile's recorded tests do. It is not sign-in logic, but say so if the maintainer would rather the profile skip auth for a dev server instead.
 ### s09-55 Hosting controls proven by Terraform tests with mock providers, read from the IaC pipeline (added 2026-11-23)

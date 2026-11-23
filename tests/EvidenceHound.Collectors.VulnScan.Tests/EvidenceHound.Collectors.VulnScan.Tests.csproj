@@ -4,5 +4,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\fixtures\vuln-scan\*" Link="vuln-scan\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\docs\collectors\vuln-scan.md" Link="docs\vuln-scan.md" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
