@@ -129,3 +129,35 @@ setup() {
   run grep -nE 'Example backup service|AC-BACKUP|example-backup-restore-test' "$BATS_TEST_DIRNAME/../trial.sh"
   [ "$status" -eq 1 ]
 }
+
+@test "the dev server collector is added with its settings and no sign-in" {
+  # s09-53: the settings the dev server prints, as make m365-dev shows them.
+  log="$BATS_TEST_TMPDIR/m365-dev.log"
+  cat >"$log" <<'LOG'
+Example Pty Ltd Microsoft 365 dev tenant (compliant; deviations: none)
+Microsoft Graph answers at http://localhost:5365/ (try http://localhost:5365/v1.0/users)
+Collector settings for this tenant:
+  tenant_id: "00000000-0000-4000-8000-00000000e044"
+  client_id: "00000000-0000-4000-8000-00000000c044"
+  break_glass_accounts: "00000000-0000-4000-8001-000000000003, 00000000-0000-4000-8001-000000000004"
+  supported_windows_builds: "10.0.22631, 10.0.26100"
+  graph_url: http://localhost:5365/
+Settings from the ASD Blueprint for Secure Cloud, © Commonwealth of Australia 2023, CC BY 4.0. Ctrl+C stops the server.
+LOG
+  run trial_m365_dev_args "$log"
+  [ "$status" -eq 0 ]
+  args="$(printf '%s|' "${lines[@]}")"
+  [[ "$args" == *"--set|tenant_id=00000000-0000-4000-8000-00000000e044|"* ]]
+  [[ "$args" == *"--set|break_glass_accounts=00000000-0000-4000-8001-000000000003, 00000000-0000-4000-8001-000000000004|"* ]]
+  [[ "$args" == *"--set|supported_windows_builds=10.0.22631, 10.0.26100|"* ]]
+  [[ "$args" == *"--set|graph_url=http://localhost:5365/|"* ]]
+  [[ "$args" == *"--set|sign_in=none|" ]]
+  run trial_m365_dev_args "$BATS_TEST_TMPDIR/missing.log"
+  [ "$status" -ne 0 ]
+}
+
+@test "the dev server step runs hound on the host network, where localhost is the dev container" {
+  [ "$(trial_host_mode bundled)" = "bundled" ]
+  [ "$(trial_host_mode local)" = "local" ]
+  [ "$(trial_host_mode "network hound-ciso-assistant_default")" = "local" ]
+}
