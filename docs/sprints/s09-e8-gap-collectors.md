@@ -896,6 +896,12 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 
 - **Cloud: Oracle Cloud Infrastructure (OCI)**, at the person's suggestion, so the tutorial can be run for real; kept generic enough that another cloud needs only small changes (a short "on another cloud" note). On OCI: a VM in a private subnet with no public IP, OCI Site-to-Site VPN (IPSec) to the XGS, admin access through OCI Bastion or over the VPN only, and Oracle as a supplier in the walk-through. Use an x86 (AMD) shape, as the person prefers, sized for CISO Assistant's Compose stack; the tutorial names the shape and its approximate monthly cost, checked against Oracle's price list when written. No Arm image work. No real tenancy, OCIDs, regions tied to the person, or addresses in the public repo: documentation IP ranges and placeholders only.
 
+**As built so far (2026-11-23).** Tutorial `docs/examples/onboarding-tutorial.md`: the deployment (mermaid diagram, which traffic goes where, each part and what covers it), building it on OCI (`VM.Standard.E5.Flex`, 2 OCPUs, 16 GB, 100 GB balanced boot volume: about USD 71 per month from Oracle's price list on 2026-11-23; private subnet with no public IP, Site-to-Site VPN to the XGS, Bastion, NAT and service gateways, backups to Object Storage, Terraform in its own repository) and "On another cloud"; then suppliers first (`SUP-CISO-ASSISTANT` and `SUP-EVIDENCE-HOUND` by hand, no contract value; `SUP-ORACLE` and `SUP-SOPHOS` drafted by `hound onboard`, then reviewed), `GRC-PLATFORM` (37 manual, 61 not applicable, 9 provided by Example 365 or the Example laptops), `OFFICE-FIREWALL` (ISM-1501 and ISM-1883 as API checks through `sophos-central`, 40 manual, 61 not applicable, 4 another system), drift through `terraform-drift`, then validate, plan and apply. Addresses are documentation ranges only.
+
+**Deviation:** the files the tutorial writes are in `examples/onboarding-tutorial/` (same paths as a config repo, with `answers/` to replay each run), not inside `examples/compliance-repo`. The template is what a new repo copies and what the functional tests and `make ca-up` apply in one go; systems behind the supplier gate are refused until their suppliers' reviews are concluded, so in the template they would block every first apply. `ExampleRepoTests.The_template_holds_none_of_the_tutorials_systems` keeps it that way.
+
+Functional check, run 2026-11-23 with `--no-model` (the answers files stand in for the fake model): following the tutorial on a fresh copy of the template reproduces `scope/setup.yaml`, both audits and both onboarding records exactly (apart from the schema comment line), `hound config validate` and `hound scope validate scope --config hound.yaml` pass (4 third parties, 5 audits), and `hound profile test` passes for `sophos-central` and `terraform-drift`. `TutorialTests.Onboarding_tutorial_answers_reproduce_the_committed_files` repeats this in the unit suite. The plan against CISO Assistant is `OnboardingTutorialFunctionalTests` (suppliers applied, reviews concluded ok, then the plan creates both systems and audits), run in CI.
+
 **Order:** after the hands-on Sophos path (s09-25).
 
 ### s09-33 Infrastructure drift from the IaC pipeline's plan artefact, without a Terraform dependency (added 2026-11-23)
@@ -938,7 +944,7 @@ $ hound run --config trigger.yaml --no-publish   # terraform-drift-trigger, no a
 grc-infra-drift  ...  succeeded  0  0  -         # unable to assess; the fake API received no request at all
 ```
 
-Still open: the OCI tutorial's use of it (s09-32), and GitLab or Azure DevOps profiles if wanted.
+The OCI tutorial (s09-32) uses it for the GRC platform (`example-grc-infra-drift`), with separate repositories recommended and a monorepo noted. Still open: GitLab or Azure DevOps profiles if wanted.
 
 **Order:** after the hands-on Sophos path (s09-25), with s09-32.
 
@@ -1033,5 +1039,9 @@ Added at the person's request after the s09-22 Sophos onboarding trial, where th
 - `hound onboard profile` drafted a Sophos firewall profile that did not validate after 3 rounds: it used its own template syntax (`{{ parameters.x }}` rather than `${x}`) and put `field` and `missing` on the check rather than in `each`; the validation problems fed back did not get it there. Give the drafting step the profile format reference (or the closest shipped profile as an example) and the exact problem lines (found in s09-25).
 
 - A requirement a collector marks compliant keeps status `to_do` in CISO Assistant (ISM-1501 on the Sophos firewall audit). Set the status to done with the result, as hand-written rows are (found in s09-25).
+
+- `hound onboard` does not keep `--group` between runs: the second run (after the supplier stop) without the same `--group` options decides every requirement of the framework (152 for the Essential Eight, not 107). Save the groups with the session at the start, or refuse a run whose groups differ (found in s09-32).
+
+- `hound onboard` writes an apostrophe in an observation as `\u0027` (JSON escaping inside a YAML string), and names the audit by the system ID and framework slug ("GRC-PLATFORM essential-eight-2023"). Write plain YAML strings and a readable name (found in s09-32).
 
 ## Sprint review
