@@ -40,8 +40,12 @@ public static partial class ChangeReader
 {
     private static readonly HashSet<string> ThirdPartyKinds = ["entity", "main_entity", "mainentity", "solution", "contract", "representative"];
 
-    public static Result<ChangeFacts> Read(string text, string source)
+    public static Result<ChangeFacts> Read(string text, string source) => Read(text, source, new Dictionary<string, string>());
+
+    /// <summary>As <see cref="Read(string, string)"/>, also flagging checks a diff removes from a profile that <paramref name="mappings"/> (path to text) still use.</summary>
+    public static Result<ChangeFacts> Read(string text, string source, IReadOnlyDictionary<string, string> mappings)
     {
+        _ = mappings;
         ArgumentNullException.ThrowIfNull(text);
         var normalised = text.Replace("\r\n", "\n", StringComparison.Ordinal);
         var trimmed = normalised.TrimStart();

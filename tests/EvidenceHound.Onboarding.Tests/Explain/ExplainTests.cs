@@ -96,6 +96,56 @@ public sealed class ExplainTests
         sent.ShouldContain("2 to create");
     }
 
+    [Fact]
+    public void System_without_an_owner_is_flagged()
+    {
+        const string plan = """
+            ## Scope plan
+
+            2 to create, 1 to update, 0 to delete. No drift.
+
+            | Change | Kind | Object | Fields |
+            | --- | --- | --- | --- |
+            | Create | system | SYS-NEW | name: New system<br>owner: <br>type: primary |
+            | Create | system | SYS-OWNED | name: Owned<br>owner: it@example.com |
+            | Update | system | SYS-OLD | owner: it@example.com → (none) |
+            """;
+
+        var flags = ChangeReader.Read(plan, "plan.md").Value().Flags;
+
+        flags.ShouldContain("System SYS-NEW has no owner.");
+        flags.ShouldContain("System SYS-OLD has no owner.");
+        flags.ShouldNotContain(f => f.Contains("SYS-OWNED", StringComparison.Ordinal));
+
+        const string json = """{"changes":[{"kind":"system","key":"SYS-NEW","action":"create","fields":[{"field":"owner","old":null,"new":null}]}],"drift":[]}""";
+        ChangeReader.Read(json, "plan.json").Value().Flags.ShouldContain("System SYS-NEW has no owner.");
+    }
+
+    [Fact]
+    public void Check_removed_from_a_profile_but_still_mapped_is_flagged()
+    {
+        const string diff = """
+            --- a/profiles/example.yaml
+            +++ b/profiles/example.yaml
+            @@ -1,4 +1,2 @@
+             checks:
+            -  - id: devices.supported_os
+            -    rule: all_pass
+               - id: devices.encrypted
+            """;
+        var mappings = new Dictionary<string, string>
+        {
+            ["mappings/example.yaml"] = "requirements:\n  - ref: EX-4\n    checks: [devices.supported_os]\n",
+            ["mappings/other.yaml"] = "requirements:\n  - ref: EX-5\n    checks: [devices.encrypted]\n",
+        };
+
+        var facts = ChangeReader.Read(diff, "diff", mappings).Value();
+
+        facts.Flags.ShouldContain("Removes check devices.supported_os from profiles/example.yaml, but mappings/example.yaml still uses it.");
+        facts.Flags.ShouldNotContain(f => f.Contains("other.yaml", StringComparison.Ordinal));
+        ChangeReader.Read(diff, "diff").Value().Flags.ShouldNotContain(f => f.Contains("still uses", StringComparison.Ordinal));
+    }
+
     internal static JsonObject Reply(string summary, params (string Object, string Note)[] notes) => new()
     {
         ["summary"] = summary,
