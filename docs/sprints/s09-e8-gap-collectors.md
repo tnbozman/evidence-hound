@@ -939,4 +939,8 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 
 - `hound run --dry-run` reports only counts of passed, failed and other checks; it does not print each check's outcome and observation. An operator trying a new profile needs them; `hound profile test` (s09-12) or a `--show-checks` option would help (found in s09-11).
 
+- Fixed 2026-11-23 (s09-21 defect, commits 842f9d0 and 7714c09): `hound onboard config --check` failed against the real Anthropic API with HTTP 400, because a request with no inputs sent an empty user message (`messages.0: user messages must have non-empty content`); the recorded-reply tests accepted it. A request with no inputs now sends a fixed line, covered by a contract test for both adapters. Functional check: `make run ARGS="onboard config --check"` with a real key: `anthropic claude-opus-5-5: the key works.`
+
+- A 4xx other than 401 or 403 from the model provider still says "Check the key with 'hound onboard config --check'", which sent the person looking at the key when the request itself was wrong. Name the provider's error type (such as `invalid_request_error`, which never echoes the request) and suggest the key only for 401 and 403 (found in s09-21).
+
 ## Sprint review
