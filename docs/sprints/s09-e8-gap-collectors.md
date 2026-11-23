@@ -937,6 +937,33 @@ Added at the person's request after the s09-22 onboarding trial, where a contrac
 **Functional check**
 - `hound onboard SOPHOS-FIREWALL ... --no-model` in the trial repo: the supplier, solution and contract prompts show `SUP-`, `SOL-` and `CTR-`; typing "renewal" for the contract gives `CTR-RENEWAL`; a hand-edited `ref_id: Renewal` in `scope/third-parties/` fails `hound scope validate` with `scope.ref_id_convention`.
 
+### s09-35 Guidance in the terminal for hound onboard (added 2026-11-23)
+- [ ] Done
+
+Added at the person's request after the s09-22 Sophos onboarding trial, where the prompts gave too little to go on: a bare "type 0 to 4" for each supplier level, no example answers, a session written into the wrong folder, and the model's open questions shown as results rather than asked. The terminal is the place for it for now; a help page can follow.
+
+**Story:** As a GRC lead onboarding a system for the first time, I want each prompt to tell me what it means and show an example, so that I can answer well without leaving the terminal or reading the code.
+
+**Acceptance criteria**
+- **Scales explained before each level.** Before a supplier level is confirmed, the terminal prints its scale, one line per value, then the proposal and its reason. The scale text lives in one table in the onboarding project (dependency and penetration 0 to 4, maturity, trust and criticality 1 to 4, and "not yet assessed"), checked first against what CISO Assistant shows for third parties and EBIOS RM's stakeholder criteria; `docs/onboarding.md` prints the same table.
+- **An example and a reason for every opening question.** Each prompt (name, owner, product, supplier, solution, contract, what it provides, documents) shows a one-line hint and an example, such as `What does Sophos provide (the service, and what depends on it), e.g. "Perimeter firewall; all office internet traffic passes through it"`.
+- **Before the session starts,** hound says what is about to happen (supplier, then applicability, then files written) and stops with a clear message when `--repo` holds no `scope/setup.yaml` (it is not a compliance repo) or when no `--spec` is given (the model cannot propose API checks; continue only on yes).
+- **The model's open questions are asked.** When a proposal's reason asks for information ("Confirm whether there is a failover unit"), hound asks it as a question and, if answered, runs the step again with the answer added; empty skips.
+- **Plain `--help`.** `hound onboard --help` lists the steps and points to `docs/onboarding.md`.
+
+**Tests first**
+- `SupplierScalesTests.Every_level_has_a_line_per_value`
+- `OnboardSystemCommandTests.Scale_is_shown_before_each_level`
+- `OnboardSystemCommandTests.Every_opening_question_has_an_example`
+- `OnboardSystemCommandTests.Repo_without_setup_is_refused_before_writing`
+- `OnboardSystemCommandTests.Without_a_spec_it_asks_before_starting`
+- `OnboardSystemCommandTests.An_open_question_from_the_model_is_asked_and_the_step_rerun`
+
+**Functional check**
+- `hound onboard SOPHOS-FIREWALL ... --spec ../specs/sophos-firewall-v1.yaml` in the trial repo: each prompt shows its hint and example, each level its scale; run from the source checkout, it refuses before writing anything.
+
+**Order:** with s09-34; both before the next hands-on onboarding.
+
 ## Discovered work
 
 - s09-28: the capability map's signals do not yet include devices onboarded to Defender for Endpoint (`security/machines` needs a Defender API permission, not Graph). Add when s09-02 reads Defender.
