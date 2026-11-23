@@ -4,11 +4,11 @@ using static EvidenceHound.Core.Tests.Scope.CapabilityFixture;
 
 namespace EvidenceHound.Core.Tests.Scope;
 
-/// <summary>s09-28: no blob. The map's decisions land as not-applicable rows in each system's own audit, naming the system that provides them.</summary>
+/// <summary>s09-28, s09-36: no blob. The map's decisions land as open rows in each system's own audit, naming the system that meets them.</summary>
 public class CapabilityScopeTests
 {
     [Fact]
-    public void Check_for_an_unused_capability_is_not_applicable_with_the_reason()
+    public void Requirement_another_system_meets_stays_open_naming_that_system()
     {
         var rows = CapabilityMap.Rows(ScopeOf(Standard()), Snapshot);
 

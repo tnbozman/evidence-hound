@@ -27,8 +27,9 @@ public static partial class OnboardOutput
     public static string AuditRefId(string system, string frameworkName) => $"{system}-{frameworkName}".ToUpperInvariant();
 
     /// <summary>
-    /// <c>scope/audits/&lt;system&gt;-&lt;framework&gt;.yaml</c>: one audit for the system. Not applicable and other-system rows are done with
-    /// result <c>not_applicable</c>, their justification, approver or providing system in the observation; manual rows are to do. Rows
+    /// <c>scope/audits/&lt;system&gt;-&lt;framework&gt;.yaml</c>: one audit for the system. Not applicable rows are done with result
+    /// <c>not_applicable</c>, their justification and approver in the observation; rows another system meets stay open with <c>provided_by</c>
+    /// naming it; manual rows are to do. Rows
     /// checked through the API are left to the collector.
     /// </summary>
     public static string Audit(OnboardSession session, string frameworkUrn, string frameworkName, AuditPlace place, DateOnly today)

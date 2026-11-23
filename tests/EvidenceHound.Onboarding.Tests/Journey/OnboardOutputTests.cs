@@ -14,7 +14,7 @@ public sealed class OnboardOutputTests
     private static readonly AuditPlace Place = new("Example Pty Ltd", "Corporate IT");
 
     [Fact]
-    public void Not_applicable_becomes_scope_assessment_with_justification()
+    public void Decisions_become_scope_assessments_and_another_systems_row_stays_open()
     {
         var yaml = OnboardOutput.Audit(Decided(), "urn:example:framework", "example-framework", Place, Today);
 
