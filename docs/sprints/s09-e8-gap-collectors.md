@@ -1388,7 +1388,7 @@ At the maintainer's request (2026-11-23): the trial should follow the onboarding
 - Deviations: the environment (which system provides each mitigation) is not a stage, as the maintainer's order leaves it out; the system and its audit are written together when the person approves the session, as `hound approve` does, so stage 6 starts the session and stage 7 applies both. Manual evidence is not a stage yet (Discovered work).
 
 ### s09-52 The Microsoft 365 collector reads the dev server without signing in, on loopback only (added 2026-11-23)
-- [ ] Done
+- [x] Done
 
 At the maintainer's request (2026-11-23), so the trial's Microsoft 365 step can run against the s09-44 dev server: the collector always signs in at Microsoft (Azure.Identity), and the dev server answers Graph only.
 
@@ -1406,6 +1406,8 @@ At the maintainer's request (2026-11-23), so the trial's Microsoft 365 step can 
 
 **Functional check**
 - `make m365-dev` in one terminal; a config with the server's printed settings, `graph_url: http://localhost:5365/` and `sign_in: none`; `hound run --only m365 --no-publish` reports 11 checks passed.
+- Result (2026-11-23): `make m365-dev` (compliant) printed the tenant's settings; in a scratch `hound init` repo, `hound add collector m365 --yes` with those settings, `graph_url=http://localhost:5365/` and `sign_in=none` (no certificate or secret), then `HOUND_TODAY=2026-11-23 hound run --config hound.yaml --only m365 --no-publish`: m365 succeeded, `hound status` "11 passed, 0 failed". With `graph_url` changed to `https://graph.microsoft.com/`, the run failed before any request with `m365.sign_in_not_loopback`. Unit suite 1341 passed; lint clean.
+- As built: `M365Settings.SignIn` and `M365Options.SignIn` (`app` or `none`, loopback rule in `FromSettings`); `GraphSignIn.For` chooses the app registration's credential or a placeholder token, for both `M365Collector` and `EnvironmentLookup`. The collector description lists `sign_in`, so `hound collectors` and `hound add collector` show it (`CollectorsCommandTests` lists it too).
 
 ### s09-53 The trial's Microsoft 365 step runs against the dev server (added 2026-11-23)
 - [ ] Done
@@ -1424,6 +1426,8 @@ At the maintainer's request (2026-11-23), so the trial's Microsoft 365 step can 
 - `HOUND_TRIAL_YES=1 make trial` against the dev container's CISO Assistant: step 10 publishes 11 Microsoft 365 checks to `EX-E8-Q2-2027FY`.
 
 ## Discovered work
+
+- s09-52: `hound config validate` passed a config with `sign_in: none` and the real Graph address; the refusal comes at `hound run`. Have `config validate` run each collector's option checks.
 
 - s09-51: a manual evidence source needs its check mapped to a requirement, and the requirement taken out of `manual_only`; no command does it, so an agent edits the mapping by hand and the trial has no manual evidence stage. Add `hound mapping add-check --mapping <file> --requirement <ref> --check <id>` (asks nothing, `--json`), then a manual evidence stage in the trial (drop a scan report, `hound manual propose` by the agent, `hound manual approve` by the person).
 
