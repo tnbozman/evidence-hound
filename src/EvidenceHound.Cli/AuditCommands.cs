@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using EvidenceHound.Core.Results;
+using EvidenceHound.Core.Scope;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -71,6 +72,11 @@ internal static class AuditCommands
         if (parsed.Scope.Audits.Any(a => string.Equals(a.RefId, asked.RefId, StringComparison.OrdinalIgnoreCase)) || File.Exists(Path.Combine(repo, relative)))
         {
             problems.Add(new Problem("audit.exists", $"{asked.RefId} already exists, in scope/audits/ or as a draft. Choose another ref_id, or edit that file."));
+        }
+
+        if (!RefIds.Follows(RefIdKind.Audit, asked.RefId))
+        {
+            problems.Add(new Problem("audit.ref_id_invalid", $"'{asked.RefId}' is not an audit's ref ID. {RefIds.Rule(RefIdKind.Audit)}"));
         }
 
         if (!setup.Frameworks.Any(f => f.Urn == asked.Framework))
