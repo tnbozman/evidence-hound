@@ -1,6 +1,6 @@
 # s10 Third parties as configuration
 
-Status: Planned
+Status: In progress
 
 **Goal:** suppliers, their solutions and contracts, and supplier assessments live in the private configuration repo and are applied to CISO Assistant by `hound`, replacing the third-party spreadsheet. The evidence plan (which controls are evidenced automatically or manually, by whom and how often) is applied the same way, as recurring CISO Assistant tasks, so manual evidence and supplier reviews are chased by CISO Assistant's own reminders.
 
@@ -85,6 +85,35 @@ How it works, using CISO Assistant's own features only (checked against the v4.3
 
 **Functional check**
 - Apply the fictional plan to the local CISO Assistant: both task templates appear with their next due date and both assignees; re-applying writes nothing. With mail pointed at a local SMTP catcher and a due date within 7 days, the owner contact's team email receives the reminder with the runbook text; with a past due date and `task_node_overdue` disabled, no email is sent.
+
+### s10-05 Rehearse the lifecycle as a small defence supplier (added 2026-11-23)
+- [ ] Done
+
+Added at the maintainer's request (2026-11-23): "trial, onboard and maintain evidence" with small defence-industry teams in mind, because heavy AI support across the cyber GRC and AI GRC lifecycle is the point. That is why configuration is text and the inputs are agent-readable: OpenAPI specifications, vendor documents, digital trust centres, skills and agent files.
+
+**Personas** (fictional, Example Pty Ltd style):
+- A five-person machine shop that holds CUI for a prime and is working towards CMMC Level 2, with no security staff and an MSP quote it cannot afford.
+- A small Australian defence supplier at Essential Eight maturity level 2 that must move to the ASD Essential Series.
+
+**What a rehearsal judges**, from the pain points small contractors raised at a US House small-business hearing on CMMC (2026-11-18): how tightly the scope can be drawn around CUI rather than every system; how much of the work an agent carries from the team's own documents rather than paid consultants; whether evidence already verified for one framework (ISO 27001, the Essential Eight) is reused for another; and whether one evidence set answers a prime's repeat questionnaires and screenshot requests after certification.
+
+**Acceptance criteria**
+- Each task in this sprint records, beside its functional check, a rehearsal in which an agent given only what a person's agent would have (the compliance repo, its skills, vendor documents, specifications and the dev servers) carries the persona through the trial, onboarding and at least one evidence upkeep cycle (a later run, a lapsed manual source, a supplier review coming due). A person's steps (`hound approve`, `hound manual approve`) are never run by the agent; the trial's committed approved copies stand in for them.
+- Every gap a persona would hit is fixed in the task or listed under Discovered work with the persona and the pain point it touches.
+- The sprint review says, for each persona, which stages an agent can carry today and what still needs a consultant or the person.
+
+**Functional check**
+- The rehearsal notes themselves, under each task, and the CI trial job green.
+
+### Carried from s09 (2026-11-23)
+
+Built and tested in CI; each waits on a run in the maintainer's own environment, not on code. Details stay under the task in `s09-e8-gap-collectors.md`.
+- [ ] s09-01 Application control policies from Intune: a real Graph export for the App Control for Business setting IDs.
+- [ ] s09-15 Firewall firmware update timeliness: whether the read-only role may call the firmware upgrade check, and a dry run on the maintainer's tenant.
+- [ ] s09-17 The Sophos trial on a real tenant.
+- [ ] s09-29 Microsoft 365 checks follow the capability map: a run against the maintainer's tenant.
+- [ ] s09-38 to s09-42 Agent-driven onboarding and manual evidence: the maintainer's own run with their agent, including s09-39, their XGS firewall.
+- [ ] s09-54 and s09-57 `make trial` on the maintainer's machine.
 
 ## Discovered work
 
