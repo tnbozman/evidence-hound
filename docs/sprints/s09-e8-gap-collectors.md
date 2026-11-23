@@ -883,12 +883,14 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 - The trigger is the only write any profile makes, so it needs an opt-in flag in the profile and in the collector's settings (off by default), and the docs give the narrowest token: run that one workflow and read its artefacts, nothing else. Hosts are declared as for any profile (`profile.host_not_allowed` otherwise).
 - If the engine cannot yet read a downloaded zip (GitHub wraps artefacts in one) or a file body, that is added as a small engine extension (`format: zip` naming the member, size caps as today), not a new collector.
 - Checks: no drift (no `resource_drift` entries and no changed resources) passes; drift fails and names each changed resource address and action; a missing, failed or stale artefact (older than a `max_age` setting) is unable to assess, saying which.
-- The OCI tutorial (s09-32) uses it for Example Pty Ltd's GRC platform, with a fictional workflow and a recorded artefact; no real tenancy, repository or token.
+- Each piece of drift evidence records its provenance: the IaC repository, the commit SHA the plan was made from, and the pipeline run ID (read from the run, not trusted from the artefact's name), so it is clear which version was assessed when the Terraform lives in its own repository.
+- The OCI tutorial (s09-32) uses it for Example Pty Ltd's GRC platform, with a fictional workflow and a recorded artefact; no real tenancy, repository or token. It presents separate repositories as the recommended setup (the IaC repository with its pipeline, and the GRC config repository `hound` reads), and notes that a monorepo works too: the workflow and artefact are named the same way.
 
 **Tests first**
 - `TerraformDriftProfileTests.No_drift_passes`
 - `TerraformDriftProfileTests.Drift_fails_naming_each_changed_resource`
 - `TerraformDriftProfileTests.Missing_failed_or_stale_artefact_is_unable_to_assess`
+- `TerraformDriftProfileTests.Evidence_records_repository_commit_and_run`
 - `RestEngineTests.Zip_member_is_read_with_the_size_caps`
 - `RestEngineTests.Trigger_is_refused_unless_both_profile_and_settings_opt_in`
 - `RestEngineTests.Trigger_polls_the_run_then_reads_its_artefact`
