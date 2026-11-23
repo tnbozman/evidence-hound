@@ -58,4 +58,13 @@ public class OnboardingConfigTests
         OnboardingConfigLoader.Parse("llm:\n  provider: other\n  api_key: env:K\ncolour: blue\n", "onboarding.yaml", Defaults).Problems()
             .Select(p => p.Code).ShouldBe(["onboarding.key_unknown", "onboarding.provider_unknown"], ignoreOrder: true);
     }
+
+    [Fact]
+    public void Max_rounds_defaults_to_three_and_must_be_a_whole_number_above_zero()
+    {
+        OnboardingConfigLoader.Parse("llm:\n  provider: anthropic\n  api_key: env:K\n", "onboarding.yaml", Defaults).Value().MaxRounds.ShouldBe(3);
+        OnboardingConfigLoader.Parse("llm:\n  provider: anthropic\n  api_key: env:K\n  max_rounds: 5\n", "onboarding.yaml", Defaults).Value().MaxRounds.ShouldBe(5);
+        OnboardingConfigLoader.Parse("llm:\n  provider: anthropic\n  api_key: env:K\n  max_rounds: 0\n", "onboarding.yaml", Defaults).Problems()
+            .ShouldHaveSingleItem().Code.ShouldBe("onboarding.rounds_invalid");
+    }
 }
