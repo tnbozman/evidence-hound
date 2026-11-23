@@ -1,6 +1,6 @@
 # Local trial: Evidence Hound next to your CISO Assistant
 
-This tutorial is interactive: `make trial` runs it step by step from the dev container. It takes Evidence Hound from nothing to results in CISO Assistant in the order you onboard for real: the organisation with `hound init` ([guided setup](../guided-setup.md)) (the fictional Example Pty Ltd, if you press Enter through the questions), its third parties, the Sophos perimeter firewall as a system, the system's audit, the controls it relies on, and its evidence collectors: your own Sophos Central tenant and, optionally, a Microsoft 365 test tenant. From the third parties on, your coding agent drafts each stage with hound's skills and you approve it. You need no server. Allow an hour, most of it the first image build.
+This tutorial is interactive: `make trial` runs it step by step from the dev container. It takes Evidence Hound from nothing to results in CISO Assistant in the order you onboard for real: the organisation with `hound init` ([guided setup](../guided-setup.md)) (the fictional Example Pty Ltd, if you press Enter through the questions), its third parties, the Sophos perimeter firewall as a system, the system's audit, the controls it relies on, and its evidence collectors: your own Sophos Central tenant and Microsoft 365, from a fictional tenant on this machine or your own test tenant. From the third parties on, your coding agent drafts each stage with hound's skills and you approve it. You need no server. Allow an hour, most of it the first image build.
 
 ```bash
 make trial
@@ -13,7 +13,7 @@ Each step shows the `hound` command before it runs and asks before anything that
 - The dev container, with Docker answering inside it.
 - A CISO Assistant. The dev container starts its own, at `http://backend:8000` in the dev container and `https://localhost:8443` in your browser. A stack from `make ca-up` works too. If none is running, the trial offers to start one.
 - For the Sophos step: a Sophos Central API credential with the **Service Principal Read-Only** role, created as [the Sophos guide](../collectors/sophos.md) describes.
-- For the optional Microsoft 365 step: a test tenant ([section 10](#10-evidence-collectors-a-microsoft-365-test-tenant-optional)).
+- For the Microsoft 365 step: nothing, with the dev server; or a test tenant of your own ([section 10](#10-evidence-collectors-microsoft-365)).
 
 ## 1. Preflight
 
@@ -109,7 +109,19 @@ The dry run signs in, reads the firewalls, stores the evidence locally and plans
 
 If you share output for help, remove identifiers first: tenant IDs, host names, IP addresses and serial numbers.
 
-## 10. Evidence collectors: a Microsoft 365 test tenant (optional)
+## 10. Evidence collectors: Microsoft 365
+
+The trial offers the [Microsoft 365 dev server](m365-dev-server.md) first: a fictional Example Pty Ltd tenant that answers Microsoft Graph on this machine, with no tenant, no sign-in and nothing leaving the machine. Choose the compliant tenant, which passes every check, or the gaps tenant, where each named check fails. The trial:
+
+1. Starts it (`make m365-dev ARGS="--variant compliant"`), with its output in `.dev/trial/m365-dev.log`, and waits until it answers on `http://localhost:5365/`.
+2. Adds the m365 collector with the settings the server prints, `graph_url: http://localhost:5365/` and `sign_in: none`, so it asks for no certificate or secret. `sign_in: none` is refused for any address not on this machine ([settings](../collectors/m365.md)).
+3. Validates, dry-runs and, after asking, publishes, with hound's container on the host network so it reaches the server; then shows `hound status` and stops the server.
+
+The checks publish to the open period of the organisation's audit, `EX-E8-Q2-2027FY` on 23 November 2026. A later `make trial` starts the server again and runs the same collector.
+
+### Your own test tenant
+
+Answer `n` to the dev server to use a tenant of your own instead.
 
 Use a test tenant, never a work one: the collector only reads, but a trial is the place to make mistakes. Two ways to get one:
 
@@ -124,4 +136,4 @@ If you share output for help, remove identifiers first: tenant and client IDs, d
 
 ## Unattended
 
-`HOUND_TRIAL_YES=1 make trial` answers yes to every question and gives the wizards their answers as options (`--yes`). Stages 5 to 8 replay fictional answers through the same commands an agent uses: the third parties with `hound supplier draft`, the system with `hound onboard SOPHOS-NETWORK pending`, its decisions from the onboarding tutorial's answers typed into `hound onboard`, and a control with `hound add control`. Because `hound approve` refuses without a person at a terminal, approved copies of the two supplier files stand in for it ([`examples/trial/`](../../examples/trial/README.md)). It stops before the Sophos and Microsoft 365 steps, which need your credentials. CI uses it to check the trial against a fresh CISO Assistant, twice: the second run applies nothing new.
+`HOUND_TRIAL_YES=1 make trial` answers yes to every question and gives the wizards their answers as options (`--yes`). Stages 5 to 8 replay fictional answers through the same commands an agent uses: the third parties with `hound supplier draft`, the system with `hound onboard SOPHOS-NETWORK pending`, its decisions from the onboarding tutorial's answers typed into `hound onboard`, and a control with `hound add control`. Because `hound approve` refuses without a person at a terminal, approved copies of the two supplier files stand in for it ([`examples/trial/`](../../examples/trial/README.md)). It stops before the Sophos step, which needs your credential, and runs the Microsoft 365 step against the dev server's compliant tenant. CI uses it to check the trial against a fresh CISO Assistant, twice: the second run applies nothing new.

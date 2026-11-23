@@ -138,3 +138,29 @@ trial_collector_step() {
     echo "add"
   fi
 }
+
+# trial_m365_dev_args LOG -> hound add collector options, one word per line, from the settings the Microsoft 365 dev server printed
+# to LOG (make m365-dev), with sign_in=none: the dev server answers Graph but not sign-in (docs/tutorials/m365-dev-server.md).
+trial_m365_dev_args() {
+  [[ -s "$1" ]] || return 1
+  local key value found=0
+  while IFS= read -r line; do
+    [[ "$line" =~ ^\ \ ([a-z_]+):\ (.*)$ ]] || continue
+    key="${BASH_REMATCH[1]}"
+    value="${BASH_REMATCH[2]%\"}"
+    value="${value#\"}"
+    printf -- '--set\n%s=%s\n' "$key" "$value"
+    found=1
+  done <"$1"
+  ((found)) || return 1
+  printf -- '--set\nsign_in=none\n'
+}
+
+# trial_host_mode MODE -> the CISO Assistant mode for a hound container on the host network, as the Microsoft 365 step needs it to
+# reach the dev server on localhost: a make ca-up stack is then reached on its published port, the others as they are
+trial_host_mode() {
+  case "$1" in
+    "network "*) echo local ;;
+    *) echo "$1" ;;
+  esac
+}

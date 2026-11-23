@@ -47,7 +47,8 @@ hound() {
   local tty="$1"
   shift
   local mode argv
-  mode="$(cat "$state/ca-mode")"
+  # host_mode, when set, overrides how hound's container reaches CISO Assistant (the Microsoft 365 dev server step).
+  mode="${host_mode:-$(cat "$state/ca-mode")}"
   mapfile -t argv < <(trial_hound_argv "$image" "$(trial_network_args "$mode")" "$ws" "$(id -u):$(id -g)" "$(trial_ca_url "$mode")" "$tty" "$@")
   show "hound$(printf ' %s' "${@@Q}" | sed "s/ '\([^' ]*\)'/ \1/g")"
   "${argv[@]}"
@@ -277,7 +278,7 @@ sophos() {
         --set profile=sophos-central --set profiles_path=/trial/profiles
       ;;
   esac
-  run_collector sophos "ISM-1501, which the firewall firmware check feeds" "reads the firewalls"
+  run_collector sophos "ISM-1501, which the firewall firmware check feeds" "signs in and reads the firewalls"
   say "ISM-1501 also needs the Microsoft 365 collector's operating system check, so it stays not assessed until step 10 runs too."
   say "Sophos Central is read for network devices only: endpoint protection evidence comes from the endpoints' own antivirus."
 }
@@ -285,7 +286,7 @@ sophos() {
 # run_collector NAME WHAT READS checks the secrets, dry-runs the collector, then publishes it after asking
 run_collector() {
   hound no config validate hound.yaml --check-secrets
-  say "A dry run signs in, $3, stores the evidence locally and plans the updates, sending nothing."
+  say "A dry run $3, stores the evidence locally and plans the updates, sending nothing."
   hound no run --config hound.yaml --only "$1" --dry-run
   if ask "Publish the $1 results to CISO Assistant?"; then
     hound no run --config hound.yaml --only "$1"
@@ -297,13 +298,22 @@ run_collector() {
 }
 
 m365() {
-  step "10. Evidence collectors: a Microsoft 365 test tenant (optional)"
+  step "10. Evidence collectors: Microsoft 365"
   local pem="$ws/inbox/hound-m365.pem" crt="$ws/inbox/hound-m365.crt"
-  case "$(trial_collector_step "$yes" "$ws/repo/hound.yaml" m365)" in
-    unattended) say "Unattended run: stopping before Microsoft 365, which needs your tenant."; return ;;
+  if grep -q 'sign_in: none' "$ws/repo/hound.yaml" 2>/dev/null; then
+    say "The m365 collector in repo/hound.yaml reads the Microsoft 365 dev server."
+    m365_dev
+    return
+  fi
+  case "$(trial_collector_step 0 "$ws/repo/hound.yaml" m365)" in
     "added already") say "An m365 collector is already in repo/hound.yaml." ;;
     add)
-      if ! ask "Try Microsoft 365 now? Use a test tenant, never a work one (docs/tutorials/local-trial.md, section 10)."; then return 0; fi
+      say "The Microsoft 365 dev server is a fictional Example Pty Ltd tenant on this machine: no tenant, no sign-in, nothing leaves it."
+      if [[ "$yes" == 1 ]] || ask "Use the dev server? Answer n to use your own test tenant instead."; then
+        m365_dev
+        return
+      fi
+      if ! ask "Try your own test tenant now? Never a work one (docs/tutorials/local-trial.md, section 10)."; then return 0; fi
       say "In the tenant's Entra admin center, register an app with the six read-only Graph application permissions in"
       say "docs/collectors/m365.md and grant admin consent. The collector signs in with a certificate."
       if [[ ! -f "$pem" ]] && command -v openssl >/dev/null && ask "Make a test certificate in ${ws#"$root"/}/inbox now?"; then
@@ -322,7 +332,43 @@ m365() {
       say "The certificate is now in ${ws#"$root"/}/secrets/m365_client_certificate (mode 600); the copy in inbox is removed."
       ;;
   esac
-  run_collector m365 "the identity, device and Office requirements the Microsoft 365 checks map to" "reads users, Conditional Access, roles and Intune"
+  run_collector m365 "the identity, device and Office requirements the Microsoft 365 checks map to" "signs in and reads users, Conditional Access, roles and Intune"
+}
+
+# m365_dev starts the Microsoft 365 dev server, adds the m365 collector for its tenant if it is not there yet, runs it, and stops the server
+m365_dev() {
+  local variant=compliant log="$ws/m365-dev.log" server="" tries
+  if [[ "$yes" != 1 ]] && ! grep -q 'sign_in: none' "$ws/repo/hound.yaml"; then
+    ask "The compliant tenant, which passes every check? Answer n for the gaps tenant, where each named check fails." || variant=gaps
+  fi
+  if answers_ok http://localhost:5365/v1.0/users; then
+    [[ -s "$log" ]] || die "Something already answers on port 5365. Stop it (or your make m365-dev) and run make trial again."
+    say "The dev server already answers on http://localhost:5365/."
+  else
+    show "make m365-dev ARGS=\"--variant $variant\""
+    setsid dotnet run --project "$root/src/EvidenceHound.M365DevServer" -- --variant "$variant" >"$log" 2>&1 &
+    server=$!
+    # Stopped on any exit, so a failed step does not leave it running. Expanded now: server is local to this function.
+    # shellcheck disable=SC2064
+    trap "kill -- -$server 2>/dev/null || true" EXIT
+    for ((tries = 0; tries < 90; tries++)); do answers_ok http://localhost:5365/v1.0/users && break; sleep 2; done
+    answers_ok http://localhost:5365/v1.0/users || { kill -- "-$server" 2>/dev/null; die "The dev server did not start; see ${log#"$root"/}."; }
+    say "The dev server answers on http://localhost:5365/ ($variant tenant)."
+  fi
+  if ! grep -q '^  - name: m365$' "$ws/repo/hound.yaml"; then
+    local args=()
+    mapfile -t args < <(trial_m365_dev_args "$log")
+    ((${#args[@]} > 0)) || die "The dev server printed no collector settings; see ${log#"$root"/}."
+    say "Adding the m365 collector with the tenant's settings, graph_url on localhost and sign_in: none (no certificate or secret)."
+    hound no add collector m365 --config hound.yaml --schedule "30 4 * * *" --yes "${args[@]}"
+  fi
+  host_mode="$(trial_host_mode "$(cat "$state/ca-mode")")" \
+    run_collector m365 "the identity, device and Office requirements the Microsoft 365 checks map to" "reads the fictional tenant's users, Conditional Access, roles and Intune"
+  if [[ -n "$server" ]]; then
+    kill -- "-$server" 2>/dev/null || true
+    trap - EXIT
+    say "Stopped the dev server. make m365-dev starts it again (ARGS=\"--variant gaps\" for the gaps tenant)."
+  fi
 }
 
 preflight
