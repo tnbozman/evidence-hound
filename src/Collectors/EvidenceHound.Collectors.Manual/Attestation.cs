@@ -16,6 +16,12 @@ public sealed record Attestation(string Who, DateTimeOffset Date, IReadOnlyDicti
 {
     public const string Suffix = ".attest.yaml";
 
+    /// <summary>Who proposed the outcomes the person attested, such as <c>agent</c>; null when the person entered them unaided.</summary>
+    public string? ProposedBy { get; init; }
+
+    /// <summary>The SHA-256 of the file as it was when attested; null in a sidecar written before proposals.</summary>
+    public string? FileSha256 { get; init; }
+
     private static readonly string Invalid = "manual.attestation_invalid";
 
     private static readonly Dictionary<string, CheckOutcome> OutcomesByName = new(StringComparer.OrdinalIgnoreCase)
