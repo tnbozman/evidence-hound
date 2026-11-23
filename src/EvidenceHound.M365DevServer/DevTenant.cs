@@ -42,6 +42,15 @@ public sealed record AccessPolicy(
 /// </summary>
 public sealed record AppLockerProfile(IReadOnlyList<string> Groups, IReadOnlyDictionary<string, string> Collections);
 
+/// <summary>Application control events Defender for Endpoint received from one device in the window, by action type.</summary>
+public sealed record ControlEvents(string DeviceId, string ActionType, int Events);
+
+/// <summary>
+/// What Defender for Endpoint holds: how many Windows devices are onboarded, the application control events received, and the
+/// files blocked most often (name, invented hash, publisher, blocks).
+/// </summary>
+public sealed record Defender(int OnboardedWindows, IReadOnlyList<ControlEvents> Events, IReadOnlyList<(string FileName, string Sha256, string Publisher, int Blocks)> BlockedFiles);
+
 /// <summary>A named way the <c>gaps</c> tenant differs from the compliant one, and the outcome each check it breaks is expected to have.</summary>
 public sealed record Deviation(string Name, string Description, IReadOnlyDictionary<string, CheckOutcome> Fails, Func<DevTenant, DevTenant> Apply);
 
@@ -58,7 +67,8 @@ public sealed record DevTenant(
     IReadOnlyList<AccessPolicy> AccessPolicies,
     bool OfficeHardeningAssigned,
     IReadOnlyDictionary<string, string> AsrRules,
-    AppLockerProfile AppLocker)
+    AppLockerProfile AppLocker,
+    Defender Defender)
 {
     public static readonly string GlobalAdministrator = "62e90394-69f5-4237-9190-012177145e10";
     public static readonly string ExchangeAdministrator = "29232cdf-9323-42fd-ade2-1d097af3e4de";
@@ -128,7 +138,18 @@ public sealed record DevTenant(
         ],
         OfficeHardeningAssigned: true,
         Blueprint.AsrRules,
-        new([], new Dictionary<string, string>(StringComparer.Ordinal) { ["EXE"] = "Enabled", ["DLL"] = "Enabled", ["Script"] = "Enabled", ["MSI"] = "Enabled" }));
+        new([], new Dictionary<string, string>(StringComparer.Ordinal) { ["EXE"] = "Enabled", ["DLL"] = "Enabled", ["Script"] = "Enabled", ["MSI"] = "Enabled" }),
+        new(
+            8,
+            [
+                new(MdeId(3), "AppLockerBlockExecutable", 2),
+                new(MdeId(5), "AppLockerBlockScript", 1),
+                new(MdeId(5), "AppLockerAuditExecutable", 4),
+            ],
+            [
+                ("example-portable-tool.exe", new string('0', 58) + "ex0001", "", 2),
+                ("unsigned-installer.ps1", new string('0', 58) + "ex0002", "", 1),
+            ]));
 
     /// <summary>The deviations the <c>gaps</c> tenant carries, each failing the checks it names and no other.</summary>
     public static IReadOnlyList<Deviation> Deviations { get; } =
@@ -188,6 +209,11 @@ public sealed record DevTenant(
             "The AppLocker DLL rule collection is in audit mode, so software libraries are not controlled.",
             Expect(("endpoint.application_control.file_types_covered", CheckOutcome.Fail)),
             t => t with { AppLocker = t.AppLocker with { Collections = new Dictionary<string, string>(t.AppLocker.Collections, StringComparer.Ordinal) { ["DLL"] = "AuditOnly" } } }),
+        new(
+            "defender-missing-on-two-laptops",
+            "Two of the eight Windows laptops are not onboarded to Defender for Endpoint (75 %), so their application control events are not centrally logged.",
+            Expect(("endpoint.application_control.events_centrally_logged", CheckOutcome.Partial)),
+            t => t with { Defender = t.Defender with { OnboardedWindows = 6 } }),
     ];
 
     public static DevTenant For(DevVariant variant) =>
@@ -217,6 +243,9 @@ public sealed record DevTenant(
 
     private DevTenant EditDevice(string id, Func<Device, Device> edit) =>
         this with { Devices = [.. Devices.Select(d => d.Id == id ? edit(d) : d)] };
+
+    /// <summary>An invented 40-character Defender for Endpoint device ID.</summary>
+    private static string MdeId(int n) => string.Create(CultureInfo.InvariantCulture, $"{n:x40}");
 
     private static Device Laptop(int n, string user, string version) =>
         new(Id(4, n), string.Create(CultureInfo.InvariantCulture, $"EX-LT-{n:0000}"), "Windows", version, "compliant", $"{user}@example.com");

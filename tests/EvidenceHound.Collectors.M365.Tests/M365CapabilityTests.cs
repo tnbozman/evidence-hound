@@ -45,7 +45,7 @@ public sealed class M365CapabilityTests : IDisposable
     {
         var checks = (await CollectAsync(CollectorCapabilities.All)).Value().Checks;
 
-        checks.Count.ShouldBe(13);
+        checks.Count.ShouldBe(14);
         checks.ShouldAllBe(c => c.Outcome == CheckOutcome.Pass);
     }
 

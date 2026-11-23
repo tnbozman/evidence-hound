@@ -113,6 +113,12 @@ requirements:
     checks:
       - endpoint.application_control.enforced
       - endpoint.application_control.file_types_covered
+  # Application control. Microsoft Defender for Endpoint reports allowed and blocked application control events to
+  # advanced hunting, and enough devices are onboarded for that to be central.
+  - ref: ISM-1660
+    rule: all_pass
+    checks:
+      - endpoint.application_control.events_centrally_logged
   # Application control. Manual source: the application control ruleset review.
   - ref: ISM-1582
     rule: all_pass
@@ -213,8 +219,6 @@ manual_only:
   - ref: ISM-1871  # Application control
     source: Application control policy export and ruleset review record, attested by the endpoint owner.
   - ref: ISM-1544  # Application control
-    source: Application control policy export and ruleset review record, attested by the endpoint owner.
-  - ref: ISM-1660  # Application control
     source: Application control policy export and ruleset review record, attested by the endpoint owner.
   - ref: ISM-1671  # Restrict Microsoft Office macros
     source: Microsoft Office macro settings export (Group Policy or Intune), attested by the endpoint owner.

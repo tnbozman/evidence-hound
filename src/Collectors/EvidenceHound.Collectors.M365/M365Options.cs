@@ -20,6 +20,8 @@ public static class M365Settings
     public const string CompliantPartialPercent = "compliant_partial_percent";
     public const string SupportedWindowsBuilds = "supported_windows_builds";
     public const string ApplicationControlGroups = "application_control_groups";
+    public const string ApplicationControlWindowDays = "application_control_window_days";
+    public const string DefenderOnboardedPercent = "defender_onboarded_percent";
     public const string ClientCertificate = "client_certificate";
     public const string ClientSecret = "client_secret";
     public const string System = "system";
@@ -46,6 +48,12 @@ internal sealed partial record M365Options(
     /// <summary>The group IDs an enforced application control policy must be assigned to, when none is assigned to all devices.</summary>
     public IReadOnlyList<string> ApplicationControlGroups { get; init; } = [];
 
+    /// <summary>The days of application control events read through advanced hunting, 1 to 30.</summary>
+    public int ApplicationControlWindowDays { get; init; } = 30;
+
+    /// <summary>The share of Intune-managed Windows devices onboarded to Defender for Endpoint needed for the events check to pass.</summary>
+    public double DefenderOnboardedPercent { get; init; } = 95;
+
     public static readonly Uri DefaultGraphUrl = new("https://graph.microsoft.com/");
 
     public static Result<M365Options> FromSettings(CollectorSettings settings)
@@ -65,6 +73,9 @@ internal sealed partial record M365Options(
         var signIn = settings.Find(M365Settings.SignIn) ?? "app";
         read.Require(signIn is "app" or "none", M365Settings.SignIn, $"'{signIn}' is not app or none");
         var graphUrl = read.Url(M365Settings.GraphUrl, DefaultGraphUrl);
+        var windowDays = read.Count(M365Settings.ApplicationControlWindowDays, 30);
+        read.Require(windowDays is >= 1 and <= 30, M365Settings.ApplicationControlWindowDays, $"{windowDays} is not 1 to 30 (advanced hunting keeps 30 days)");
+        var onboarded = read.Percent(M365Settings.DefenderOnboardedPercent, 95);
         if (signIn == "none" && !IsLoopback(graphUrl))
         {
             return Result.Fail<M365Options>(new Problem(
@@ -85,7 +96,7 @@ internal sealed partial record M365Options(
             compliantPass,
             compliantPartial,
             [.. builds.Select(b => string.Join('.', b.Split('.').Take(3)))])
-        { SignIn = signIn, ApplicationControlGroups = read.List(M365Settings.ApplicationControlGroups) });
+        { SignIn = signIn, ApplicationControlGroups = read.List(M365Settings.ApplicationControlGroups), ApplicationControlWindowDays = windowDays, DefenderOnboardedPercent = onboarded });
     }
 
     private static bool IsLoopback(Uri url) =>

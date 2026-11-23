@@ -31,6 +31,7 @@ internal static class M365Checks
         new("endpoint.asr.office_rules_enabled", [OfficeMacros, UserApplicationHardening], OfficeChecks.AsrOfficeRulesEnabled),
         new("endpoint.application_control.enforced", [ApplicationControl], AppControlChecks.Enforced),
         new("endpoint.application_control.file_types_covered", [ApplicationControl], AppControlChecks.FileTypesCovered),
+        new("endpoint.application_control.events_centrally_logged", [ApplicationControl], AppControlChecks.EventsCentrallyLogged),
     ];
 
     /// <summary>The capabilities the checks judge, in order.</summary>

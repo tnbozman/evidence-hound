@@ -641,7 +641,7 @@ Added at the maintainer's request (2026-11-23): s09-01 to s09-04 and the Microso
 - End to end with the built `hound` and `sign_in: none`: `m365-dev --variant gaps --port 5367`, then `hound run --config hound.yaml --only m365-example --no-publish` succeeded with 0 passed, 9 failed and 4 other (partial), as the deviations name (`endpoint.application_control.enforced` partial, `endpoint.application_control.file_types_covered` fail). The compliant tenant gave 13 passed. The trial's Microsoft 365 step runs the same collector against the dev server, so the two checks reach the trial's Essential Eight audit through ISM-0843 and ISM-1657 with no trial change.
 
 ### s09-02 Application control events from Defender for Endpoint
-- [ ] Done
+- [x] Done
 
 **Story:** As a compliance owner, I want proof that allowed and blocked application control events reach a central log, so that the logging requirement is evidenced and blocked files are visible to the committee.
 
@@ -662,6 +662,16 @@ Added at the maintainer's request (2026-11-23): s09-01 to s09-04 and the Microso
 
 **Notes**
 - Confirm which licences include advanced hunting through Graph, and record it in `docs/collectors/m365.md`.
+
+**As built (2026-11-23)**
+- Three advanced hunting queries, not two: application control events by device and action type, the 20 most-blocked files (file name, SHA-256, publisher, block and device counts) and Windows onboarding status. Each is a `POST` whose KQL starts with `// evidence-hound: <name>`, so the tenant's audit log and the dev server can tell them apart. Evidence: `hunting-app-control-events.json`, `hunting-app-control-blocked-files.json`, `hunting-defender-onboarding.json`; no user or device names are queried.
+- `GraphRequest` gained a body and an items property (`results`); a source marked `MayBeRefused` that Graph refuses (licence or permission) no longer fails the run: `TenantData.Unavailable` keeps the problem and only this check reports it (`not_applicable` for the licence, `error` for the permission). Settings `application_control_window_days` (1 to 30, default 30) and `defender_onboarded_percent` (default 95).
+- Mapped to ISM-1660 (allowed and blocked application control events are centrally logged), removed from `manual_only`. Events sent only to a SIEM or Windows Event Forwarding are not seen, so the manual event log template from s09-05 remains the route for those.
+- M365 dev server: all eight laptops onboarded, three event rows and two blocked files; new deviation `defender-missing-on-two-laptops` (6 of 8, partial).
+- Still open: the licence list in `docs/collectors/m365.md` (Defender for Endpoint Plan 2, Microsoft 365 E5, Defender for Business) and the `ActionType` prefixes come from Microsoft's documentation, not a real tenant; confirm with a recording (s09-27).
+
+**Functional result (2026-11-23)**
+- Built `hound`, `sign_in: none`, `graph_url: http://localhost:5367/`: `m365-dev --variant gaps --port 5367`, then `HOUND_TODAY=2026-11-23 hound run --config hound.yaml --only m365-example --no-publish` succeeded with 0 passed, 9 failed and 5 other (one more partial than s09-01: the events check); `hunting-defender-onboarding.json` held `{"OnboardingStatus": "Onboarded", "Devices": 6}` and the run wrote the three hunting files. The compliant tenant gave 14 passed. `M365DevTenantTests` hold each deviation to its named outcome over HTTP. Unit suite 1397 passed; the 27 failures are the Docker-only functional tests. Lint clean.
 
 ### s09-03 Vulnerability scan import
 - [ ] Done

@@ -1,3 +1,4 @@
+using System.Globalization;
 using EvidenceHound.Core.Checks;
 
 namespace EvidenceHound.Collectors.M365;
@@ -57,6 +58,46 @@ internal static class AppControlChecks
         return missing.Length == 0
             ? new(id, CheckOutcome.Pass, $"Application control is enforced for every group in {M365Settings.ApplicationControlGroups} ({string.Join(", ", required)}) ({Labels(covering)}).", Sources)
             : new(id, CheckOutcome.Partial, $"Application control is enforced for {required.Count - missing.Length} of {required.Count} groups in {M365Settings.ApplicationControlGroups} ({Labels(covering.Length > 0 ? covering : enforcing)}), not for {string.Join(", ", missing)}." + GroupPolicy, Sources);
+    }
+
+    /// <summary>
+    /// Allowed and blocked application control events reach Defender for Endpoint, the central log: events were received in the
+    /// window, and enough Intune-managed Windows devices are onboarded to send them.
+    /// </summary>
+    public static Finding EventsCentrallyLogged(TenantData tenant, M365Options options)
+    {
+        ArgumentNullException.ThrowIfNull(tenant);
+        ArgumentNullException.ThrowIfNull(options);
+        const string id = "endpoint.application_control.events_centrally_logged";
+        string[] sources = [GraphSources.AppControlEvents, GraphSources.BlockedFiles, GraphSources.DefenderOnboarding, GraphSources.ManagedDevices];
+        if (sources.Select(s => tenant.Unavailable.GetValueOrDefault(s)).OfType<Core.Results.Problem>().ToArray() is { Length: > 0 } refused)
+        {
+            return refused.FirstOrDefault(p => p.Code == GraphClient.NotLicensed) is { } licence
+                ? new(id, CheckOutcome.NotApplicable, $"Not applicable: the tenant has no licence that includes advanced hunting ({licence.Message}). Use the manual application control event log template instead.", [])
+                : new(id, CheckOutcome.Error, $"Unable to assess: {refused[0].Message}", []);
+        }
+
+        var days = options.ApplicationControlWindowDays;
+        var events = tenant.AppControlEvents.Sum(e => e.Events);
+        if (events == 0)
+        {
+            return new(id, CheckOutcome.Fail, string.Create(CultureInfo.InvariantCulture, $"Defender for Endpoint received no application control events in the last {days} days, so allowed and blocked executions are not reaching the central log."), sources);
+        }
+
+        var windows = tenant.Devices.Count(d => d.IsWindows);
+        var onboarded = tenant.DefenderOnboarding.GetValueOrDefault("Onboarded");
+        var percent = windows == 0 ? 0 : Math.Min(100.0, 100.0 * onboarded / windows);
+        var devices = tenant.AppControlEvents.Select(e => e.DeviceId).Distinct(StringComparer.Ordinal).Count();
+        var received = string.Create(
+            CultureInfo.InvariantCulture,
+            $"{events} application control events from {devices} devices in the last {days} days ({tenant.AppControlEvents.Where(e => e.Blocked).Sum(e => e.Events)} blocked, {tenant.AppControlEvents.Where(e => e.Audited).Sum(e => e.Events)} audited)");
+        var top = tenant.BlockedFiles.OrderByDescending(f => f.Blocks).FirstOrDefault() is { } file
+            ? string.Create(CultureInfo.InvariantCulture, $" Most blocked: {file.FileName} ({file.Blocks}).")
+            : string.Empty;
+        var share = string.Create(CultureInfo.InvariantCulture, $"{onboarded} of {windows} Intune-managed Windows devices ({percent:0.#} %)");
+        return percent >= options.DefenderOnboardedPercent
+            ? new(id, CheckOutcome.Pass, $"Defender for Endpoint received {received}, and {share} are onboarded.{top}", sources)
+            : new(id, CheckOutcome.Partial, string.Create(CultureInfo.InvariantCulture, $"Only {share} are onboarded to Defender for Endpoint, below {options.DefenderOnboardedPercent:0.#} %; it received {received}.{top}"), sources);
     }
 
     public static Finding FileTypesCovered(TenantData tenant, M365Options options)

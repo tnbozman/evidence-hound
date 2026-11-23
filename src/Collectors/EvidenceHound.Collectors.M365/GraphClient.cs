@@ -19,6 +19,9 @@ internal sealed class GraphClient(HttpClient http, TokenCredential credential, U
     /// <summary>The problem code for a feature the tenant is not licensed for, such as Privileged Identity Management.</summary>
     public const string NotLicensed = "m365.graph_not_licensed";
 
+    /// <summary>The problem code for a permission the app registration lacks.</summary>
+    public const string Forbidden = "m365.graph_forbidden";
+
     private static readonly TimeSpan DefaultWait = TimeSpan.FromSeconds(10);
 
     private static readonly TimeSpan LongestWait = TimeSpan.FromMinutes(5);
@@ -41,7 +44,7 @@ internal sealed class GraphClient(HttpClient http, TokenCredential credential, U
 
             var body = ((Result<JsonObject>.Ok)page).Value;
             pages++;
-            foreach (var item in body["value"] as JsonArray ?? [])
+            foreach (var item in body[request.ItemsProperty] as JsonArray ?? [])
             {
                 items.Add(item?.DeepClone());
             }
@@ -68,7 +71,12 @@ internal sealed class GraphClient(HttpClient http, TokenCredential credential, U
                 return Result.Fail<JsonObject>(refused.Errors);
             }
 
-            using var message = new HttpRequestMessage(HttpMethod.Get, url);
+            using var message = new HttpRequestMessage(request.Body is null ? HttpMethod.Get : HttpMethod.Post, url);
+            if (request.Body is { } payload)
+            {
+                message.Content = new StringContent(payload.ToJsonString(), System.Text.Encoding.UTF8, "application/json");
+            }
+
             message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", ((Result<string>.Ok)token).Value);
             message.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             using var response = await http.SendAsync(message, cancellationToken);
@@ -151,7 +159,7 @@ internal sealed class GraphClient(HttpClient http, TokenCredential credential, U
             _ when MentionsLicence(code, text) => new Problem(NotLicensed, $"The tenant is not licensed for {request.Path} ({detail})."),
             HttpStatusCode.Unauthorized => new Problem("m365.graph_unauthorized", $"Microsoft Graph refused the token for {request.Path} ({detail}). Check the tenant and client IDs and the credential."),
             HttpStatusCode.Forbidden => new Problem(
-                "m365.graph_forbidden", $"Microsoft Graph refused {request.Path} ({detail}). The app registration needs the application permission {request.Permission} with admin consent."),
+                Forbidden, $"Microsoft Graph refused {request.Path} ({detail}). The app registration needs the application permission {request.Permission} with admin consent."),
             _ => new Problem("m365.graph_failed", $"Microsoft Graph answered {request.Path} with {detail}."),
         };
         return Result.Fail<JsonObject>(problem);

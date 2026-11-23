@@ -31,6 +31,8 @@ public sealed class M365Collector(IGraphCredentialFactory credentials, IGraphWai
             new(M365Settings.CompliantPassPercent, "Percentage of compliant Intune-managed Windows devices needed to pass. Default: 95.", Required: false),
             new(M365Settings.CompliantPartialPercent, "Percentage of compliant Intune-managed Windows devices needed for partial. Default: 80.", Required: false),
             new(M365Settings.ApplicationControlGroups, "Comma-separated group IDs an enforced application control policy must be assigned to, when none is assigned to all devices.", Required: false),
+            new(M365Settings.ApplicationControlWindowDays, "Days of application control events read from Defender for Endpoint advanced hunting, 1 to 30. Default: 30.", Required: false),
+            new(M365Settings.DefenderOnboardedPercent, "Percentage of Intune-managed Windows devices onboarded to Defender for Endpoint needed to pass the events check. Default: 95.", Required: false),
             new(M365Settings.System, "The system in scope/setup.yaml this instance collects from, so scope/capabilities.yaml can say which capabilities it answers. Default: only capabilities routed to this instance by name count as its own.", Required: false),
             new(M365Settings.SupportedWindowsBuilds, "Comma-separated Windows builds still in support, for example 10.0.22631, 10.0.26100.", Required: true),
         ],
@@ -50,30 +52,35 @@ public sealed class M365Collector(IGraphCredentialFactory credentials, IGraphWai
             {
                 using var http = context.HttpClients.CreateClient(TypeName);
                 var client = new GraphClient(http, pair.credential, pair.options.GraphUrl, wait);
-                return (await ReadAsync(client, cancellationToken)).Bind(collections => Evaluate(collections, pair.options, context));
+                return (await ReadAsync(client, GraphSources.For(pair.options), cancellationToken)).Bind(read => Evaluate(read, pair.options, context));
             });
     }
 
     /// <summary>Reads every collection. One the tenant is not licensed for is left out when the source allows it, so its checks can say so.</summary>
-    private static async Task<Result<IReadOnlyList<(GraphSource Source, GraphCollection? Collection)>>> ReadAsync(GraphClient client, CancellationToken cancellationToken)
+    private static async Task<Result<IReadOnlyList<(GraphSource Source, GraphCollection? Collection, Problem? Refusal)>>> ReadAsync(
+        GraphClient client, IReadOnlyList<GraphSource> sources, CancellationToken cancellationToken)
     {
-        var read = new List<Result<(GraphSource, GraphCollection?)>>();
-        foreach (var source in GraphSources.All)
+        var read = new List<Result<(GraphSource, GraphCollection?, Problem?)>>();
+        foreach (var source in sources)
         {
             var collection = await client.GetAllAsync(source.Request, cancellationToken);
             read.Add(collection.Match(
-                found => Result.Ok<(GraphSource, GraphCollection?)>((source, found)),
-                problems => source.NeedsLicence && problems.All(p => p.Code == GraphClient.NotLicensed)
-                    ? Result.Ok<(GraphSource, GraphCollection?)>((source, null))
-                    : Result.Fail<(GraphSource, GraphCollection?)>(problems)));
+                found => Result.Ok<(GraphSource, GraphCollection?, Problem?)>((source, found, null)),
+                problems => (source.NeedsLicence && problems.All(p => p.Code == GraphClient.NotLicensed))
+                    || (source.MayBeRefused && problems.All(p => p.Code is GraphClient.NotLicensed or GraphClient.Forbidden))
+                    ? Result.Ok<(GraphSource, GraphCollection?, Problem?)>((source, null, problems[0]))
+                    : Result.Fail<(GraphSource, GraphCollection?, Problem?)>(problems)));
         }
 
         return Result.Combine(read);
     }
 
-    private static Result<CollectionResult> Evaluate(IReadOnlyList<(GraphSource Source, GraphCollection? Collection)> collections, M365Options options, CollectorContext context)
+    private static Result<CollectionResult> Evaluate(IReadOnlyList<(GraphSource Source, GraphCollection? Collection, Problem? Refusal)> collections, M365Options options, CollectorContext context)
     {
-        var tenant = TenantData.Parse(collections.ToDictionary(c => c.Source.Name, c => c.Collection?.Items, StringComparer.Ordinal));
+        var tenant = TenantData.Parse(collections.ToDictionary(c => c.Source.Name, c => c.Collection?.Items, StringComparer.Ordinal)) with
+        {
+            Unavailable = collections.Where(c => c.Refusal is not null).ToDictionary(c => c.Source.Name, c => c.Refusal!, StringComparer.Ordinal),
+        };
         var files = collections
             .Where(c => c.Collection is not null)
             .Select(c => GraphEvidence.File(c.Source.EvidenceFile, c.Collection!, options.IncludeIdentities))

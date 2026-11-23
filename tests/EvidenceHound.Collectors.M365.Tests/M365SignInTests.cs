@@ -21,7 +21,7 @@ public sealed class M365SignInTests
 
         var result = await CollectAsync(credentials, server.HttpClients, ("graph_url", server.Url.ToString()), ("sign_in", "none"));
 
-        result.Value().Checks.Count.ShouldBe(13);
+        result.Value().Checks.Count.ShouldBe(14);
         credentials.Asked.ShouldBeFalse();
         server.Requests.ShouldAllBe(r => r.Status == 200);
     }
