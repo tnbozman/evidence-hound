@@ -1622,7 +1622,7 @@ At the maintainer's request (2026-11-23): "we are self-hosting CISO Assistant an
 - As built: `scripts/lib/trial.sh` gains `trial_scene`, `trial_systems`, `trial_system_product`, `trial_system_solution`, `trial_add_target` (a single `target:` becomes `targets:`; a target is added once, inside the block), `trial_iac_dev_sets`, `trial_controls_report_args`; `trial_brief` and `trial_stage_ready` take the system (four third parties; a control naming the system). `scripts/trial.sh`: the scene after the workspace; stage 5 the four third parties; `onboard_system` runs stages 6 to 8 for `GRC-PLATFORM` and 9 to 11 for `OFFICE-FIREWALL`; `wire_audit` copies the tutorial's system mapping and adds its target; step 12 runs `terraform test` when Terraform is there, starts `make iac-dev` with that report, adds `grc-infra-controls` and `grc-infra-drift`, and offers a `drift` run; step 13 Sophos Central for `OFFICE-FIREWALL`; step 14 Microsoft 365. `examples/trial/third-parties`: Oracle, Sophos, CISO Assistant and Evidence Hound; the managed service provider is removed. `docs/tutorials/local-trial.md` follows the new order.
 
 ### s09-58 Fictional scan exports for the trial (`make scan-dev`)
-- [ ] Done (ticked once CI's trial job publishes the scans)
+- [x] Done
 
 Added at the maintainer's request (2026-11-23): s09-03 and s09-04 need a testbed, as the Microsoft 365 and Sophos dev servers are for theirs.
 
@@ -1651,6 +1651,7 @@ Added at the maintainer's request (2026-11-23): s09-03 and s09-04 need a testbed
 
 **Functional result (2026-11-23)**
 - In a scratch repo: `scan-dev --variant compliant --out ../scans`, the four sources added with `hound add collector vuln-scan --yes` from the printed settings through the trial helpers, `hound config validate` valid, `hound run --only <each> --no-publish`: 3, 3, 2 and 3 passed, none failed. Then `--variant gaps` and the same runs: internet-facing 0 passed 3 failed, laptops 2 and 1, other apps 2 and 0, operating systems 1 and 2, as the tutorial table says; each folder held only the new export. `ScanDevEstateTests` (8) pass; `bats scripts/tests` all ok; ShellCheck clean. Publishing to CISO Assistant runs in CI's trial job (dispatched on this branch).
+- CI run 45199442036 (2026-11-23, head 667708c, dispatched): the `trial` job ran step 15 against CISO Assistant and published all four scan sources, after two fixes the first trial run (45194527491) found: CISO Assistant refuses a `.nessus` attachment, so the collector stores and cites `<name>.nessus.xml` (s09-03, s09-04); and the example workbook's unapproved row moved from ISM-1698, which the scan checks now compute, to ISM-1507 (`WorkbookImportFunctionalTests`). The functional suite passed in the same run.
 
 ## Discovered work
 
