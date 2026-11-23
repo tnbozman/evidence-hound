@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json.Nodes;
+using EvidenceHound.Core.Checks;
 using EvidenceHound.Core;
 using EvidenceHound.Core.Results;
 using EvidenceHound.Core.Secrets;
@@ -21,8 +22,13 @@ public sealed class VulnScanCollectorTests : IDisposable
 
         var result = (await CollectAsync(Settings())).Value();
 
-        result.Checks.ShouldBeEmpty();
-        result.Files.Select(f => f.FileName).ShouldBe([Fixtures.Nessus, VulnScanCollector.ScanFile, VulnScanCollector.HistoryFile]);
+        result.Checks.Select(c => (c.CheckId.Value, c.Outcome)).ShouldBe([
+            ("vuln.internet_facing.scanned_in_interval", CheckOutcome.Fail),
+            ("vuln.internet_facing.patched_in_window", CheckOutcome.Fail),
+            ("vuln.internet_facing.unsupported_removed", CheckOutcome.Fail),
+        ]);
+        result.Checks.ShouldAllBe(c => c.Source == "vuln-example" && c.CollectedAt == Now);
+        result.Files.Select(f => f.FileName).ShouldBe([Fixtures.Nessus, VulnScanCollector.ScanFile, VulnScanCollector.HistoryFile, PatchChecks.AssessmentFile]);
         var scan = Json(result, VulnScanCollector.ScanFile);
         scan["scope"]!.GetValue<string>().ShouldBe("internet_facing");
         scan["owner"]!.GetValue<string>().ShouldBe("Sam Example");
@@ -35,6 +41,39 @@ public sealed class VulnScanCollectorTests : IDisposable
         first["exploit_available"]!.GetValue<bool>().ShouldBeTrue();
         first["patch_published"]!.GetValue<string>().ShouldBe("2026-11-10T00:00:00+00:00");
         first["first_seen"].ShouldBeNull();
+        var assessment = Json(result, PatchChecks.AssessmentFile);
+        assessment["overdue"]!.AsArray().Select(o => o!["finding_id"]!.GetValue<string>()).ShouldBe(["900101", "900103"]);
+        assessment["overdue"]![0]!["counted_from"]!.GetValue<string>().ShouldBe("patch_published");
+        assessment["overdue"]![0]!["window_hours"]!.GetValue<int>().ShouldBe(48);
+        assessment["unsupported"]!.AsArray().Select(o => o!["host"]!.GetValue<string>()).ShouldBe(["vpn.example.com"]);
+    }
+
+    [Fact]
+    public async Task Windows_and_interval_can_be_set()
+    {
+        Drop(Fixtures.Nessus, Fixtures.Bytes(Fixtures.Nessus), Now.AddDays(-7));
+        var settings = Settings();
+        settings[VulnScanSettings.ScanIntervalDays] = "7";
+        settings[VulnScanSettings.PatchWindowDays] = "30";
+        settings[VulnScanSettings.ExploitedPatchWindowHours] = "720";
+
+        var result = (await CollectAsync(settings)).Value();
+
+        result.Checks.Select(c => c.Outcome).ShouldBe([CheckOutcome.Pass, CheckOutcome.Fail, CheckOutcome.Fail]);
+        Json(result, PatchChecks.AssessmentFile)["overdue"]!.AsArray().Select(o => o!["finding_id"]!.GetValue<string>()).ShouldBe(["900103"]);
+    }
+
+    [Fact]
+    public async Task Policy_settings_must_be_whole_numbers_above_zero()
+    {
+        var settings = Settings();
+        settings[VulnScanSettings.ScanIntervalDays] = "0";
+        settings[VulnScanSettings.ExploitedPatchWindowHours] = "two days";
+
+        (await CollectAsync(settings)).Problems().Select(p => p.Message).ShouldBe([
+            "Setting 'scan_interval_days' must be a whole number greater than zero, not '0'.",
+            "Setting 'exploited_patch_window_hours' must be a whole number greater than zero, not 'two days'.",
+        ]);
     }
 
     [Fact]
@@ -72,6 +111,7 @@ public sealed class VulnScanCollectorTests : IDisposable
         var result = (await CollectAsync(Settings())).Value();
 
         result.Files.Select(f => f.FileName).ShouldBe([VulnScanCollector.HistoryFile]);
+        result.Checks.Select(c => c.Outcome).ShouldBe([CheckOutcome.Fail, CheckOutcome.Error, CheckOutcome.Error]);
         Json(result, VulnScanCollector.HistoryFile)["exports"]!.AsArray().ShouldBeEmpty();
     }
 
@@ -129,12 +169,21 @@ public sealed class VulnScanCollectorTests : IDisposable
     }
 
     [Fact]
+    public void Describes_all_twelve_checks_and_an_instance_emits_its_scope_s_three()
+    {
+        var description = new VulnScanCollector().Describe();
+
+        description.Checks.Count.ShouldBe(12);
+        description.ChecksFrom!(new CollectorSettings(Settings())).ShouldBe(PatchChecks.Ids("internet_facing"));
+    }
+
+    [Fact]
     public void Describes_every_setting_and_the_column_map()
     {
         var names = new VulnScanCollector().Describe().Settings.Select(s => s.Name).ToArray();
 
         names.ShouldBe([
-            "drop_folder", "format", "scope", "owner",
+            "drop_folder", "format", "scope", "owner", "scan_interval_days", "patch_window_days", "exploited_patch_window_hours",
             "column_host", "column_finding_id", "column_severity", "column_name", "column_cve", "column_first_seen",
             "column_patch_published", "column_exploit_available", "column_unsupported", "column_scan_date",
         ]);
