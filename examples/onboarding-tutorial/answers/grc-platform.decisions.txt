@@ -331,17 +331,17 @@ m
 Nightly database dumps and weekly OCI block volume backups, kept 35 days, per the backup procedure.
 m
 The database dump and the volume backup are taken in the same nightly window, so they restore to a common point.
-m
-Backups go to an OCI Object Storage bucket with retention rules, in another region; the bucket settings are captured quarterly.
+c
+The backup bucket is private, encrypted, in another region and locked by a retention rule, proven by the control tests and the drift check on every change (grc-infra-controls and terraform-drift profiles).
 m
 A restore to a scratch VM is tested each quarter; the test record is the evidence.
-m
-Only the backup group can read the bucket; its policy is captured quarterly.
-m
-Only the backup administrators group can read the bucket; its policy is captured quarterly.
-m
-Retention rules stop anyone deleting or changing a backup before it expires; the rule is captured quarterly.
-m
-Retention rules stop anyone deleting or changing a backup before it expires; the rule is captured quarterly.
+c
+Only the backup administrators read the bucket, proven by the control tests and the drift check on every change (grc-infra-controls and terraform-drift profiles).
+c
+Only the backup administrators read the bucket, proven by the control tests and the drift check on every change (grc-infra-controls and terraform-drift profiles).
+c
+A retention rule stops anyone deleting or changing a backup for 35 days, proven by the control tests and the drift check on every change (grc-infra-controls and terraform-drift profiles).
+c
+A retention rule stops anyone deleting or changing a backup for 35 days, proven by the control tests and the drift check on every change (grc-infra-controls and terraform-drift profiles).
 
 

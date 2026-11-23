@@ -77,11 +77,11 @@ public sealed class TerraformTestsProfileTests
     [Fact]
     public void A_named_test_is_checked_alone_and_absent_is_unable_to_assess()
     {
-        var report = new JsonNode[] { Passed("vm_has_no_public_ip"), Failed("https_only_from_the_office", "failure", "only 443") };
+        static JsonNode[] Report() => [Passed("vm_has_no_public_ip"), Failed("https_only_from_the_office", "failure", "only 443")];
 
-        var alone = Check(Run(), report, test: "vm_has_no_public_ip");
-        var failing = Check(Run(), report, test: "https_only_from_the_office");
-        var absent = Check(Run(), report, test: "backups_retention_locked");
+        var alone = Check(Run(), Report(), test: "vm_has_no_public_ip");
+        var failing = Check(Run(), Report(), test: "https_only_from_the_office");
+        var absent = Check(Run(), Report(), test: "backups_retention_locked");
 
         alone.Outcome.ShouldBe(CheckOutcome.Pass);
         alone.Observation.ShouldStartWith("vm_has_no_public_ip passed");

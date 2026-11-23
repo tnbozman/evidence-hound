@@ -424,27 +424,7 @@ assessments:
     status: to_do
     result: not_assessed
     observation: "Manual evidence: The database dump and the volume backup are taken in the same nightly window, so they restore to a common point. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
-  - ref: ISM-1811
-    status: to_do
-    result: not_assessed
-    observation: "Manual evidence: Backups go to an OCI Object Storage bucket with retention rules, in another region; the bucket settings are captured quarterly. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
   - ref: ISM-1515
     status: to_do
     result: not_assessed
     observation: "Manual evidence: A restore to a scratch VM is tested each quarter; the test record is the evidence. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
-  - ref: ISM-1812
-    status: to_do
-    result: not_assessed
-    observation: "Manual evidence: Only the backup group can read the bucket; its policy is captured quarterly. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
-  - ref: ISM-1705
-    status: to_do
-    result: not_assessed
-    observation: "Manual evidence: Only the backup administrators group can read the bucket; its policy is captured quarterly. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
-  - ref: ISM-1814
-    status: to_do
-    result: not_assessed
-    observation: "Manual evidence: Retention rules stop anyone deleting or changing a backup before it expires; the rule is captured quarterly. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
-  - ref: ISM-1707
-    status: to_do
-    result: not_assessed
-    observation: "Manual evidence: Retention rules stop anyone deleting or changing a backup before it expires; the rule is captured quarterly. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."

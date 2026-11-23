@@ -65,8 +65,8 @@ collectors:
       client_secret: file:/run/secrets/sophos_client_secret
 
   # The GRC platform's cloud (GRC-PLATFORM) against its reviewed infrastructure code, from the IaC pipeline's nightly plan:
-  # docs/collectors/terraform-drift.md. Read only; hound never runs Terraform. The Essential Eight has no requirement for
-  # drift, so no mapping row uses it: it is evidence of change control, kept with each run and shown by hound status.
+  # docs/collectors/terraform-drift.md. Read only; hound never runs Terraform. The GRC platform's backup rows need it with their
+  # control tests (mappings/grc-platform-essential-eight-2023.yaml): the code says the control, drift says the cloud matches.
   - name: example-grc-infra-drift
     type: rest
     schedule: "0 23 * * *"                # after the IaC pipeline's 22:00 plan
@@ -77,6 +77,19 @@ collectors:
     secrets:
       token: file:/run/secrets/iac_actions_token
 
+  # The GRC platform's hosting controls, proven by terraform test with mock providers in the same IaC repository on every change
+  # (infra/oci/tests/controls.tftest.hcl): docs/collectors/terraform-tests.md. Read only, with the same Actions-read token. One check
+  # per control, from the tutorial's copy of the terraform-tests profile (profiles/grc-infra-controls.yaml).
+  - name: example-grc-infra-controls
+    type: rest
+    schedule: "30 23 * * *"
+    settings:
+      profile: grc-infra-controls
+      repository: example/grc-infra
+      workflow: controls.yml
+    secrets:
+      token: file:/run/secrets/iac_actions_token
+
 targets:
   - mapping: mappings/essential-eight-2023.yaml
     compliance_assessment: EX-E8-2026
@@ -84,3 +97,6 @@ targets:
   # The office firewall's own audit, written by hound onboard (docs/examples/onboarding-tutorial.md).
   - mapping: mappings/office-firewall-essential-eight-2023.yaml
     compliance_assessment: OFFICE-FIREWALL-ESSENTIAL-EIGHT-2023
+  # The GRC platform's own audit: its backup rows, from the control tests and the drift check together.
+  - mapping: mappings/grc-platform-essential-eight-2023.yaml
+    compliance_assessment: GRC-PLATFORM-ESSENTIAL-EIGHT-2023

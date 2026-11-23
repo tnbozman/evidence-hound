@@ -20,6 +20,7 @@ public static class CodeChecks
     {
         ["sophos.super_admin_count"] = SuperAdminCount,
         ["terraform.no_drift"] = TerraformNoDrift,
+        ["terraform.tests_pass"] = TerraformTestsPass,
     };
 
     public static IReadOnlyList<string> Names { get; } = [.. All.Keys.Order(StringComparer.Ordinal)];
@@ -71,15 +72,13 @@ public static class CodeChecks
             return new(CheckOutcome.Error, "Unable to assess: the pipeline has no completed run, so there is no plan to read.");
         }
 
-        var from = string.Create(
-            CultureInfo.InvariantCulture,
-            $"Plan from {input.With.GetValueOrDefault("repository") ?? "the IaC repository"} at commit {Text(run["head_sha"]) ?? "unknown"}, run {Scalar(run["id"]) ?? "unknown"}.");
+        var from = Provenance("Plan from", input.With, run);
         if (Text(run["conclusion"]) is var conclusion && conclusion != "success")
         {
             return new(CheckOutcome.Error, $"Unable to assess: the newest run ended {conclusion ?? "without a conclusion"}, so its plan is not trusted. {from}");
         }
 
-        if (!DateTimeOffset.TryParse(Text(run["updated_at"]), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var updated) || input.Now - updated > maxAge)
+        if (Stale(run, input.Now, maxAge))
         {
             return new(CheckOutcome.Error, $"Unable to assess: the newest plan is older than {input.With["max_age"]}; run the pipeline again. {from}");
         }
@@ -98,11 +97,89 @@ public static class CodeChecks
             : new(CheckOutcome.Fail, string.Create(CultureInfo.InvariantCulture, $"{changed.Length} {(changed.Length == 1 ? "resource differs" : "resources differ")} from the infrastructure code: {string.Join("; ", changed)}. {from}"));
     }
 
+    /// <summary>
+    /// The infrastructure's own tests passed: the JUnit report of <c>terraform test -junit-xml</c> (or any JUnit report) an IaC pipeline
+    /// published. Reads <c>over: [run, tests]</c>, the pipeline run and the report's test cases as the engine reads XML (<c>@name</c>,
+    /// and a <c>failure</c>, <c>error</c> or <c>skipped</c> element when one did not pass), with
+    /// <c>with: { max_age: &lt;ISO 8601 duration&gt;, repository: &lt;owner/name&gt;, test: &lt;name, optional&gt; }</c>. With <c>test</c>, only that
+    /// test is judged. A failed or errored test fails, naming it and its message. No run, a run that was neither a success nor a
+    /// failure (a failing test fails the run, which is a result), a report older than <c>max_age</c>, no report, a missing named test
+    /// or only skipped tests cannot be assessed. The finding names the repository, commit and run, read from the run.
+    /// </summary>
+    public static Finding TerraformTestsPass(CodeCheckInput input)
+    {
+        ArgumentNullException.ThrowIfNull(input);
+        if (input.Over is not [var runs, var cases] || !Profiles.Durations.TryParse(input.With.GetValueOrDefault("max_age") ?? "", out var maxAge))
+        {
+            return new(CheckOutcome.Error, "Unable to assess: terraform.tests_pass reads over: [run, tests] with: { max_age: <duration such as P2D>, repository: <owner/name>, test: <optional name> }.");
+        }
+
+        if (runs.FirstOrDefault() is not JsonObject run)
+        {
+            return new(CheckOutcome.Error, "Unable to assess: the pipeline has no completed run, so there is no test report to read.");
+        }
+
+        var from = Provenance("Tests from", input.With, run);
+        if (Text(run["conclusion"]) is var conclusion && conclusion is not ("success" or "failure"))
+        {
+            return new(CheckOutcome.Error, $"Unable to assess: the newest run ended {conclusion ?? "without a conclusion"}, so its report is not trusted. {from}");
+        }
+
+        if (Stale(run, input.Now, maxAge))
+        {
+            return new(CheckOutcome.Error, $"Unable to assess: the newest test report is older than {input.With["max_age"]}; run the pipeline again. {from}");
+        }
+
+        var results = cases.OfType<JsonObject>().Select(TestResult.Of).ToArray();
+        if (results.Length == 0)
+        {
+            return new(CheckOutcome.Error, $"Unable to assess: the run published no test report. {from}");
+        }
+
+        if (input.With.GetValueOrDefault("test") is { Length: > 0 } name)
+        {
+            return results.FirstOrDefault(r => r.Name == name) is { } one
+                ? new(one.Outcome, $"{one.Describe()}. {from}")
+                : new(CheckOutcome.Error, $"Unable to assess: the test report has no test named {name}. {from}");
+        }
+
+        var passed = results.Count(r => r.Outcome == CheckOutcome.Pass);
+        var notPassed = results.Where(r => r.Outcome != CheckOutcome.Pass).Select(r => r.Describe()).ToArray();
+        var summary = string.Create(CultureInfo.InvariantCulture, $"{passed} of {results.Length} infrastructure tests passed");
+        var detail = notPassed.Length == 0 ? "" : $": {string.Join("; ", notPassed)}";
+        var outcome = results.Any(r => r.Outcome == CheckOutcome.Fail) ? CheckOutcome.Fail : passed == results.Length ? CheckOutcome.Pass : CheckOutcome.Error;
+        return new(outcome, $"{(outcome == CheckOutcome.Error ? "Unable to assess: " : "")}{summary}{detail}. {from}");
+    }
+
+    /// <summary>One JUnit test case: passed, failed (a failure or an error element) or skipped, which cannot be assessed.</summary>
+    private sealed record TestResult(string Name, CheckOutcome Outcome, string Detail)
+    {
+        public static TestResult Of(JsonObject test)
+        {
+            var name = Text(test["@name"]) ?? "unnamed";
+            return test["failure"] is { } failure ? new(name, CheckOutcome.Fail, $"failed: {Message(failure)}")
+                : test["error"] is { } error ? new(name, CheckOutcome.Fail, $"ended in error: {Message(error)}")
+                : test["skipped"] is { } skipped ? new(name, CheckOutcome.Error, $"was skipped: {Message(skipped)}")
+                : new(name, CheckOutcome.Pass, "passed");
+        }
+
+        public string Describe() => $"{Name} {Detail}";
+
+        private static string Message(JsonNode node) => (Text(node["@message"]) ?? Text(node) ?? "no message").Trim();
+    }
+
     /// <summary>Resource changes whose actions are more than no-op or read.</summary>
     private static IEnumerable<(string Address, string[] Actions)> Changes(JsonNode? list) =>
         (list as JsonArray ?? []).OfType<JsonObject>()
             .Select(c => (Address: Text(c["address"]) ?? "unknown", Actions: (c["change"]?["actions"] as JsonArray ?? []).Select(Text).OfType<string>().ToArray()))
             .Where(c => c.Actions.Any(a => a is not ("no-op" or "read")));
+
+    /// <summary>Which repository, commit and pipeline run a finding was made from, read from the run, never from the artefact's name.</summary>
+    private static string Provenance(string what, IReadOnlyDictionary<string, string> with, JsonObject run) =>
+        string.Create(CultureInfo.InvariantCulture, $"{what} {with.GetValueOrDefault("repository") ?? "the IaC repository"} at commit {Text(run["head_sha"]) ?? "unknown"}, run {Scalar(run["id"]) ?? "unknown"}.");
+
+    private static bool Stale(JsonObject run, DateTimeOffset now, TimeSpan maxAge) =>
+        !DateTimeOffset.TryParse(Text(run["updated_at"]), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var updated) || now - updated > maxAge;
 
     private static string? Scalar(JsonNode? node) => node is JsonValue value ? value.ToString() : null;
 

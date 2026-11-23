@@ -89,7 +89,7 @@ run "no_ssh_from_the_internet" {
 run "vpn_routes_only_the_office" {
   command = plan
   assert {
-    condition     = oci_core_ipsec.office.static_routes == toset([var.office_cidr])
+    condition     = toset(oci_core_ipsec.office.static_routes) == toset([var.office_cidr])
     error_message = "vpn_routes_only_the_office: the Site-to-Site VPN carries the office network only."
   }
   assert {
@@ -154,13 +154,14 @@ run "only_backup_admins_reach_backups" {
   assert {
     condition = alltrue([
       for statement in oci_identity_policy.backups.statements :
-      startswith(statement, "Allow group ${var.backup_admins_group} to ")
+      startswith(statement, "Allow group ${var.backup_admins_group} to read ") ||
+      (startswith(statement, "Allow dynamic-group grc-platform-vm to ") && strcontains(statement, "request.permission = 'OBJECT_CREATE'"))
     ])
-    error_message = "only_backup_admins_reach_backups: the backup bucket's policy grants access to the backup administrators group only."
+    error_message = "only_backup_admins_reach_backups: only the backup administrators read the backups, and the VM may only add new ones."
   }
   assert {
-    condition     = alltrue([for statement in oci_identity_policy.backups.statements : !strcontains(statement, "manage objects")])
-    error_message = "only_backup_admins_reach_backups: nobody, backup administrators included, may delete or overwrite backups (no manage objects)."
+    condition     = alltrue([for statement in oci_identity_policy.backups.statements : !strcontains(statement, "manage objects") || strcontains(statement, "request.permission = 'OBJECT_CREATE'")])
+    error_message = "only_backup_admins_reach_backups: nobody, backup administrators included, may delete or overwrite backups."
   }
 }
 
