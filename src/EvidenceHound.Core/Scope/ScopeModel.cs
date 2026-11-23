@@ -28,6 +28,9 @@ public sealed record ScopeDocument(ScopeSetup Setup, IReadOnlyList<ScopeControl>
 
     /// <summary><c>scope/capabilities.yaml</c>: which system provides each mitigation; null when the repo has no such file.</summary>
     public ScopeCapabilityMap? Capabilities { get; init; }
+
+    /// <summary><c>scope/evidence-plan.yaml</c>: how each control's evidence arrives, from whom and how often; null when the repo has no such file.</summary>
+    public ScopeEvidencePlan? EvidencePlan { get; init; }
 }
 
 /// <summary><c>scope/setup.yaml</c>: the root folder, the frameworks to load and the domains.</summary>

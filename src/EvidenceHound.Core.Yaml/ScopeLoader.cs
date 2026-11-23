@@ -51,7 +51,7 @@ public static partial class ScopeLoader
     private static readonly string[] ControlStatuses = ["to_do", "in_progress", "on_hold", "active", "degraded", "deprecated", "--"];
     private static readonly string[] AccessKeys = ["custom_roles", "users", "teams", "roles"];
     private static readonly string[] UserKeys = ["email", "first_name", "last_name", "active", "service_account"];
-    private static readonly string[] TeamKeys = ["name", "description", "domain", "leader", "members"];
+    private static readonly string[] TeamKeys = ["name", "description", "domain", "leader", "members", "email"];
     private static readonly string[] RoleKeys = ["role", "domain", "users", "teams"];
     private static readonly string[] Booleans = ["true", "false"];
     private static readonly string[] ServiceAccounts = ["true", "publish", "apply"];
@@ -62,7 +62,7 @@ public static partial class ScopeLoader
 
     public static ScopeParse Parse(
         ScopeSource setup, ScopeSource? controls, IReadOnlyList<ScopeSource> audits, ScopeSource? access = null, ScopeSource? settings = null, IReadOnlyList<ScopeSource>? thirdParties = null,
-        ScopeSource? capabilities = null)
+        ScopeSource? capabilities = null, ScopeSource? evidencePlan = null)
     {
         ArgumentNullException.ThrowIfNull(setup);
         ArgumentNullException.ThrowIfNull(audits);
@@ -81,12 +81,14 @@ public static partial class ScopeLoader
         var parsedThirdParties = thirdPartyFiles.Select(file => file.Root() is { } root ? ReadEntity(root, file) : null).OfType<ScopeEntity>().ToArray();
         var capabilitiesFile = capabilities is null ? null : new FileReader(capabilities);
         var parsedCapabilities = capabilitiesFile?.Root() is { } capabilitiesRoot ? ReadCapabilities(capabilitiesRoot, capabilitiesFile) : null;
+        var planFile = evidencePlan is null ? null : new FileReader(evidencePlan);
+        var parsedPlan = planFile?.Root() is { } planRoot ? ReadEvidencePlan(planRoot, planFile) : null;
 
         return new ScopeParse(
-            new ScopeDocument(parsedSetup, parsedControls, parsedAudits) { Access = parsedAccess, Settings = parsedSettings, ThirdParties = parsedThirdParties, Capabilities = parsedCapabilities },
+            new ScopeDocument(parsedSetup, parsedControls, parsedAudits) { Access = parsedAccess, Settings = parsedSettings, ThirdParties = parsedThirdParties, Capabilities = parsedCapabilities, EvidencePlan = parsedPlan },
             [
                 .. setupFile.Problems, .. controlsFile?.Problems ?? [], .. auditFiles.SelectMany(f => f.Problems), .. accessFile?.Problems ?? [],
-                .. settingsFile?.Problems ?? [], .. thirdPartyFiles.SelectMany(f => f.Problems), .. capabilitiesFile?.Problems ?? [],
+                .. settingsFile?.Problems ?? [], .. thirdPartyFiles.SelectMany(f => f.Problems), .. capabilitiesFile?.Problems ?? [], .. planFile?.Problems ?? [],
             ]);
     }
 
@@ -188,7 +190,10 @@ public static partial class ScopeLoader
         var name = file.Required(item, "name");
         return name is null
             ? null
-            : new ScopeTeam(name, file.Text(item, "description"), file.Ref(item, "domain"), file.Email(item, "leader"), file.Emails(item, "members"), file.At(item));
+            : new ScopeTeam(name, file.Text(item, "description"), file.Ref(item, "domain"), file.Email(item, "leader"), file.Emails(item, "members"), file.At(item))
+            {
+                Email = file.Email(item, "email")?.Value,
+            };
     }
 
     private static ScopeRoleGrant? ReadRoleGrant(YamlMappingNode item, FileReader file)

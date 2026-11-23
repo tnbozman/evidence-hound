@@ -15,8 +15,18 @@ public sealed record ScopeAccess(IReadOnlyList<ScopeUser> Users, IReadOnlyList<S
 /// <summary>A user. <see cref="ServiceAccount"/> names what a non-person account is for, such as <c>publish</c>.</summary>
 public sealed record ScopeUser(string Email, string? FirstName, string? LastName, bool Active, string? ServiceAccount, SourceLine At);
 
-/// <summary>A team on a domain: its leader and members, by email.</summary>
-public sealed record ScopeTeam(string Name, string? Description, ScopeRef? Domain, ScopeRef? Leader, IReadOnlyList<ScopeRef> Members, SourceLine At);
+/// <summary>
+/// A team on a domain: its leader and members, by email. A team with an <see cref="Email"/> and no people is an owner contact: CISO
+/// Assistant emails it task reminders, and it has no login.
+/// </summary>
+public sealed record ScopeTeam(string Name, string? Description, ScopeRef? Domain, ScopeRef? Leader, IReadOnlyList<ScopeRef> Members, SourceLine At)
+{
+    /// <summary>CISO Assistant's team email, which receives the team's task reminders.</summary>
+    public string? Email { get; init; }
+
+    /// <summary>A team with an email and no leader or members: someone CISO Assistant reminds, who never signs in.</summary>
+    public bool IsOwnerContact => Email is not null && Leader is null && Members.Count == 0;
+}
 
 /// <summary>A role on a domain, given to users and to every member (and the leader) of teams.</summary>
 public sealed record ScopeRoleGrant(ScopeRef Role, ScopeRef Domain, IReadOnlyList<ScopeRef> Users, IReadOnlyList<ScopeRef> Teams, SourceLine At);

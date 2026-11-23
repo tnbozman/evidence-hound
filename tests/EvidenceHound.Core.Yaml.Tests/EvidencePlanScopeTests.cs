@@ -80,7 +80,7 @@ public class EvidencePlanScopeTests
     [Fact]
     public void Automated_row_names_configured_collector()
     {
-        Problems(Plan.Replace("    collector: example-m365\n", "", StringComparison.Ordinal)).Select(p => p.Code).ShouldBe(["evidence_plan.collector_missing"]);
+        Problems(Plan.Replace("\n    collector: example-m365", "", StringComparison.Ordinal)).Select(p => p.Code).ShouldBe(["evidence_plan.collector_missing"]);
 
         var parsed = Parse(Plan);
         EvidencePlanValidator.Collectors(parsed.Scope, ["example-m365"]).ShouldBeEmpty();
@@ -116,7 +116,7 @@ public class EvidencePlanScopeTests
     private static ScopeParse Parse(string plan, string access = Access) => ScopeLoader.Parse(
         new ScopeSource("scope/setup.yaml", ScopeFixture.Setup),
         new ScopeSource("scope/controls.yaml", ScopeFixture.Controls),
-        [],
+        [new ScopeSource(ScopeFixture.AuditPath, ScopeFixture.Audit)],
         new ScopeSource("scope/access.yaml", access),
         evidencePlan: new ScopeSource(PlanPath, plan));
 
