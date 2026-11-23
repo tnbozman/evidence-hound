@@ -11,7 +11,7 @@ public sealed partial class AgentSetupTests : IDisposable
     internal static readonly string[] Skills =
     [
         "onboard-a-system-with-hound", "assess-a-supplier", "read-an-api-specification", "import-an-audit-workbook", "write-a-profile", "review-before-apply",
-        "onboard-the-organisation", "onboard-the-environment", "onboard-a-third-party", "onboard-an-audit",
+        "onboard-the-organisation", "onboard-the-environment", "onboard-a-third-party", "onboard-an-audit", "process-manual-evidence",
     ];
 
     internal static readonly string[] Rules =
@@ -64,7 +64,7 @@ public sealed partial class AgentSetupTests : IDisposable
         var onboarding = await ReadAsync(".github", "agents", "hound-onboarding.agent.md");
         onboarding.ShouldStartWith("---\nname: hound-onboarding\ndescription: ");
         onboarding.ShouldContain("\ntools: [\"read\", \"search\", \"edit\", \"execute\"]\n");
-        onboarding.ShouldContain("\nskills: [\"onboard-the-organisation\", \"onboard-the-environment\", \"onboard-a-third-party\", \"assess-a-supplier\", \"onboard-a-system-with-hound\", \"read-an-api-specification\", \"onboard-an-audit\", \"import-an-audit-workbook\", \"write-a-profile\"]\n");
+        onboarding.ShouldContain("\nskills: [\"onboard-the-organisation\", \"onboard-the-environment\", \"onboard-a-third-party\", \"assess-a-supplier\", \"onboard-a-system-with-hound\", \"read-an-api-specification\", \"onboard-an-audit\", \"import-an-audit-workbook\", \"write-a-profile\", \"process-manual-evidence\"]\n");
 
         // The review agent reads and runs hound; it cannot edit a file.
         var review = await ReadAsync(".github", "agents", "hound-review.agent.md");

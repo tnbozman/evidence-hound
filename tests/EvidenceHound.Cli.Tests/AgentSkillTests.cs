@@ -38,5 +38,23 @@ public sealed class AgentSkillTests : IDisposable
         }
     }
 
+    [Fact]
+    public async Task Manual_evidence_skill_proposes_from_the_file_and_never_attests()
+    {
+        // s09-42: the agent proposes only from what the file shows, quotes what supports it, says what is missing, and never attests.
+        var ct = TestContext.Current.CancellationToken;
+        var (exit, _, error) = await OnboardAgentCommandTests.RunAsync(["agent", "setup", "--repo", _root, "--assistant", "claude"], "", terminal: false, Path.Combine(_root, "home"), ct);
+        exit.ShouldBe(ExitCodes.Ok, error);
+
+        var text = await File.ReadAllTextAsync(Path.Combine(_root, ".claude", "skills", "process-manual-evidence", "SKILL.md"), ct);
+        string[] says = ["hound manual propose", "--supports", "only from what the file shows", "Quote", "what is missing", "Never attest", "hound manual approve"];
+        foreach (var phrase in says)
+        {
+            text.ShouldContain(phrase, Case.Sensitive);
+        }
+
+        (await File.ReadAllTextAsync(Path.Combine(_root, "CLAUDE.md"), ct)).ShouldContain("`hound manual approve`");
+    }
+
     public void Dispose() => Directory.Delete(_root, recursive: true);
 }
