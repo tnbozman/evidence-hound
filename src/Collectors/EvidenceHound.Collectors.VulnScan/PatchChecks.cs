@@ -60,7 +60,7 @@ public static class PatchChecks
         }
 
         var assessment = Assessment(source, folder);
-        string[] scanned = [scan.FileName, VulnScanCollector.ScanFile];
+        string[] scanned = [VulnScanCollector.ExportName(source, scan.FileName), VulnScanCollector.ScanFile];
         string[] judged = folder.History.Count > 0 ? [.. scanned, PatchChecks.AssessmentFile, VulnScanCollector.HistoryFile] : [.. scanned, PatchChecks.AssessmentFile];
         return Results(ids, now, name, Interval(source, scan, now, scanned), Patched(source.Policy, assessment, judged), Unsupported(assessment, [.. scanned, AssessmentFile]));
     }

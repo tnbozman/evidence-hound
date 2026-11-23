@@ -78,8 +78,12 @@ public sealed class VulnScanCollector : ICollector
     /// the scan record keeps its original name.
     /// </summary>
     private static CollectedEvidence Export(VulnScanSource source, string fileName, ReadOnlyMemory<byte> content) => source.Format == ScanFormat.Nessus
-        ? CollectedEvidence.FromBytes(fileName.EndsWith(".xml", StringComparison.OrdinalIgnoreCase) ? fileName : fileName + ".xml", "application/xml", content)
+        ? CollectedEvidence.FromBytes(ExportName(source, fileName), "application/xml", content)
         : CollectedEvidence.FromBytes(fileName, "text/csv", content);
+
+    /// <summary>The name an export is stored and cited under: a Nessus export gains <c>.xml</c>, a CSV export keeps its name.</summary>
+    internal static string ExportName(VulnScanSource source, string fileName) =>
+        source.Format != ScanFormat.Nessus || fileName.EndsWith(".xml", StringComparison.OrdinalIgnoreCase) ? fileName : fileName + ".xml";
 
     private static Result<ScanRun> Parse(VulnScanSource source, ExportFile file) => source.Format == ScanFormat.Nessus
         ? NessusParser.Parse(file.FileName, file.Content)
