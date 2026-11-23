@@ -1714,6 +1714,7 @@ Added at the maintainer's request (2026-11-23): "run a trial yourself and an onb
 **Functional check (2026-11-23)**
 - A rehearsal workspace like the trial's (built CLI, `hound init repo --yes`, `hound agent setup --assistant claude`, Sophos dev server on 5370, no CISO Assistant), with an agent given only the repo and the trial's requests for the third parties and OFFICE-FIREWALL. It drafted the four suppliers (`hound supplier draft`, scope valid), started the session (107 pending for groups 1 and 2), and after the trial's approved supplier copies stood in for `hound approve`, decided all 107 (3 API checks from the sophos-central profile, 64 manual, 36 not applicable, 4 other system) in about a minute; scope still valid. `hound approve` was not run: it needs a person at a terminal. The stages after approval (controls, collectors, publishing) are the unattended trial's, run in CI with CISO Assistant.
 - The inbox and specs were empty, which the agent hit first: fixed here. The rest is under Discovered work.
+- CI run 45279834828 (head 7503960, dispatched): every job green, the trial job (unattended, seeding the new inbox and specs) and the functional suite included.
 
 ## Discovered work
 
