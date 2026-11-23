@@ -320,6 +320,26 @@ public class ScopePlanTests
     }
 
     [Fact]
+    public void Supplier_levels_the_scope_leaves_to_decide_are_left_as_ciso_assistant_holds_them()
+    {
+        // A drafted supplier declares only the levels someone decided. CISO Assistant fills the others in with its defaults, and those are
+        // not changes to plan: the plan after an apply is empty. A level the scope declares is still compared.
+        var supplier = Declared(ScopeKind.Entity, "SUP-HOST", ("name", "Example Hosting"), ("dependency", "2"));
+        var solution = Declared(ScopeKind.Solution, "SOL-HOST", ("name", "Hosting"), ("entity", "SUP-HOST"));
+        var heldSupplier = Applied(supplier) with
+        {
+            Held = supplier with { Fields = new Dictionary<string, string>(supplier.Fields) { ["penetration"] = "0", ["maturity"] = "1", ["trust"] = "1" } },
+        };
+        var heldSolution = Applied(solution) with { Held = solution with { Fields = new Dictionary<string, string>(solution.Fields) { ["criticality"] = "0" } } };
+
+        ScopePlanner.Plan([supplier, solution], [heldSupplier, heldSolution], prune: false).Changes.ShouldBeEmpty();
+
+        var decided = supplier with { Fields = new Dictionary<string, string>(supplier.Fields) { ["trust"] = "3" } };
+        var change = ScopePlanner.Plan([decided, solution], [heldSupplier, heldSolution], prune: false).Changes.ShouldHaveSingleItem();
+        change.Fields.ShouldHaveSingleItem().ShouldBe(new FieldChange("trust", "1", "3"));
+    }
+
+    [Fact]
     public void Tier_differing_from_forced_tier_is_reported()
     {
         var at = new SourceLine("scope/third-parties/sup-host.yaml", 1);
