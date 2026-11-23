@@ -61,7 +61,8 @@ public static partial class ScopeLoader
     private static readonly string[] SecretKeys = ["password", "password_hash", "api_token", "token", "secret", "totp_secret"];
 
     public static ScopeParse Parse(
-        ScopeSource setup, ScopeSource? controls, IReadOnlyList<ScopeSource> audits, ScopeSource? access = null, ScopeSource? settings = null, IReadOnlyList<ScopeSource>? thirdParties = null)
+        ScopeSource setup, ScopeSource? controls, IReadOnlyList<ScopeSource> audits, ScopeSource? access = null, ScopeSource? settings = null, IReadOnlyList<ScopeSource>? thirdParties = null,
+        ScopeSource? capabilities = null)
     {
         ArgumentNullException.ThrowIfNull(setup);
         ArgumentNullException.ThrowIfNull(audits);

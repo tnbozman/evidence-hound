@@ -25,6 +25,9 @@ public sealed record ScopeDocument(ScopeSetup Setup, IReadOnlyList<ScopeControl>
 
     /// <summary><c>scope/third-parties/*.yaml</c>: suppliers and other third parties, one entity per file.</summary>
     public IReadOnlyList<ScopeEntity> ThirdParties { get; init; } = [];
+
+    /// <summary><c>scope/capabilities.yaml</c>: which system provides each mitigation; null when the repo has no such file.</summary>
+    public ScopeCapabilityMap? Capabilities { get; init; }
 }
 
 /// <summary><c>scope/setup.yaml</c>: the root folder, the frameworks to load and the domains.</summary>
