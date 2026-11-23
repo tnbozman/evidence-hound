@@ -16,6 +16,7 @@ compliance-repo/
     settings.yaml       feature flags and general settings (optional)
     third-parties/
       example-cloud.yaml  one file per supplier or other third party (optional)
+    capabilities.yaml   which system provides each mitigation (optional)
   mappings/             which checks satisfy which requirements (docs/mapping-files.md)
   frameworks/           framework snapshots and custom library files
   documents/            the files that documents name, relative to the compliance repo (the scope folder's parent)
@@ -154,6 +155,34 @@ A supplier is **approved** when, in CISO Assistant, its latest concluded assessm
 - A system not yet registered whose supplier (its `solution`'s entity, or `supplied_through`) is not approved is refused with `system.supplier_not_approved` and the reason, such as "no concluded assessment", and nothing is applied. Apply the supplier and its review first, conclude the review in CISO Assistant, then add the system.
 - A registered system whose supplier is no longer approved stays registered; the plan lists it under **Suppliers** as `supplier.approval_lapsed`, for the security committee.
 - A tier that differs from `forced_tier` is listed under **Suppliers** as `supplier.tier_differs`. The JSON plan has both as `suppliers`.
+
+## capabilities.yaml
+
+Which system provides each mitigation of one framework, decided with [`hound onboard environment`](onboarding.md#onboard-the-environment-first-which-system-provides-each-mitigation). Optional.
+
+```yaml
+framework: urn:intuitem:risk:framework:essential-eight-2023
+mitigations:
+  - mitigation: ac              # the last part of the mitigation's node URN
+    provided_by: system         # system, manual or gap
+    systems: [Example app control]
+    supplier: SUP-EXAPPCTL      # optional, a third party's ref_id
+    owner: it@example.com       # optional
+    evidence: profile           # optional: collector, profile or manual
+    route: example-app-control  # optional: the collector or profile
+    approved_by: GRC lead       # required: the role that approved it
+    approved_on: "2026-11-23"
+    reason: Application control is enforced by the third-party product, not Intune.
+    signals:
+      - "Microsoft Graph: licence SPE_E3 (Microsoft 365 E3) is subscribed"
+```
+
+The map only decides which system answers each requirement. Results stay in each system's own audit; in every other system's audit of the
+same framework, the mitigation's requirements are `not_applicable`, naming the providing system and its audit. Validation reports a framework
+`setup.yaml` does not load (`capability.framework_unknown`), a mitigation decided twice (`scope.duplicate`), not in the framework
+(`capability.mitigation_unknown`) or not decided at all (`capability.decision_missing`), a missing approver (`capability.approver_missing`),
+a system decision with no systems (`capability.systems_missing`) and an unknown supplier. A system named but not declared yet is not an
+error: it is waiting to be onboarded.
 
 ## audits/&lt;audit&gt;.yaml
 

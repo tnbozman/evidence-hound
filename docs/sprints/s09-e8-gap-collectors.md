@@ -402,6 +402,14 @@ $ hound skill validate --skills /tmp/fc21/sk/skills
 **Functional check**
 - With a fake model and recorded Graph answers, `hound onboard environment` for Example Pty Ltd records application control as provided by a third-party product, and a following `hound plan --dry-run` shows the application control rows of the Microsoft 365 audit as not applicable, provided by that product, while the third-party product's own audit holds the application control requirements.
 
+**As built so far**
+- `scope/capabilities.yaml` (loader, schema, `hound scope validate`), `CapabilityMap` (Core, pure): mitigations are the framework's requirement groups by parent node; every mitigation decided once with an approver; per-system not-applicable rows "Provided by <system> (audit <ref>)", skipping hand-written rows and groups the audit leaves out; gaps listed apart. A system named before it is onboarded is pending, not an error, so the map can be written first.
+- `CapabilitySignals` (Onboarding, pure): Microsoft licences and Intune configuration kinds suggest the Microsoft 365 system; systems tagged `capabilities: ac, rb` are suggested first. `CapabilityAnswers` turns a proposal and the person's answer into a decision; a proposal never decides.
+- `hound onboard environment --signals <recorded Graph answers> --no-model` decides each mitigation, writes `scope/capabilities.yaml` after each, appends the rows to each audit with the YAML editor (comments kept), and lists systems to onboard with their supplier and the gaps. Default skill `environment-capabilities`.
+- Still to do here: live read-only Microsoft Graph lookups (from the M365 collector's settings) instead of a recorded file, and model proposals with the skill. Without `--no-model` the command currently runs on signals only.
+
+**Functional check (so far):** on a copy of the example repo with recorded answers (`SPE_E3`), `hound onboard environment --no-model` wrote `scope/capabilities.yaml` and 14 application control rows in `ex-e8-2026.yaml` as "Provided by Example app control (no audit yet; …)", listed the app control product to onboard and patch applications as a gap; `hound scope validate` passed.
+
 ### s09-29 Microsoft 365 checks follow the capability map (added 2026-11-22)
 - [ ] Done
 

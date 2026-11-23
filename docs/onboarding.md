@@ -74,6 +74,32 @@ carry on where it stopped; the model is never asked again for what it already an
 
 `--no-model` runs the same steps with empty proposals, for teams without a key. `--show-requests` prints each request before it is sent.
 
+## Onboard the environment first: which system provides each mitigation
+
+Before onboarding systems one by one, decide once, for each mitigation of the framework, which product actually provides it. Then `hound`
+judges a requirement only on the audit of the system that provides it, and never fails an audit because it looked at the wrong system.
+
+```sh
+hound onboard environment --repo . --framework frameworks/essential-eight-2023.json --signals signals.json --no-model
+```
+
+- **Signals suggest, you decide.** `--signals` is a JSON file of read-only Microsoft Graph answers (`source`, `licences` as SKU part
+  numbers, `configuration_types` as Intune configuration types). A licence such as Entra ID P2 suggests the Microsoft 365 system
+  (`--microsoft-system`, by default the first system whose name has "365") for MFA; a system in `scope/setup.yaml` tagged
+  `capabilities: ac, rb` is suggested for those mitigations first. Each suggestion shows the signal and its source, and is recorded with
+  the decision, never as the decision.
+- **One decision per mitigation.** For each, type `a` to accept the suggestion, `s` to name the systems, `m` for manual evidence, `g` for a
+  gap, or `q` to save and stop. It asks once for your name and the role that approves the decisions. A product not onboarded yet can be
+  named; you are asked for its supplier.
+- **What it writes, for review:** `scope/capabilities.yaml` (see [scope.md](scope.md#capabilitiesyaml)), and in each system's own audit,
+  every requirement another system provides as `not_applicable`, "Provided by <system> (audit <ref>)". Nothing is merged into a combined
+  audit, rows you wrote by hand are never changed, and running it again adds nothing.
+- **What comes next:** each named system not onboarded yet is listed with `hound onboard "<system>"`, whose supplier goes through the
+  supplier gate first; each gap is listed as requirements no system's audit answers.
+
+The default skill `environment-capabilities` describes how to tell which product is authoritative. In this version proposals come from the
+signals only; model proposals and live Graph lookups follow.
+
 ## Explain a change for review
 
 `hound explain` writes a plain-English review summary of a plan or a config change, so you approve only what you understand. It reads
