@@ -39,9 +39,11 @@ public sealed class ThirdPartiesGuideTests
     }
 
     [Fact]
-    public void The_example_repo_has_two_suppliers_and_a_review_and_contracts_turned_on()
+    public void The_guide_points_at_example_suppliers_with_reviews_and_the_template_turns_contracts_on()
     {
-        var folder = Path.Combine(ExampleRepoTests.Repo, "scope", "third-parties");
+        // The template stays free of suppliers (s09-32): the onboarding tutorial's files, which validate on a copy of it, are the example.
+        Guide.ShouldContain("examples/onboarding-tutorial/scope/third-parties/");
+        var folder = Path.Combine(ExampleRepoTests.Tutorial, "scope", "third-parties");
         var files = Directory.GetFiles(folder, "*.yaml");
 
         files.Length.ShouldBeGreaterThanOrEqualTo(2);

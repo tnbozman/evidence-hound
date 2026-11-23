@@ -96,7 +96,7 @@ Names are checked offline against the settings snapshot of the CISO Assistant re
 
 ## third-parties/&lt;entity&gt;.yaml
 
-The supplier register, one file per supplier or other third party, so a new supplier or a renewed contract is a reviewed pull request. Each file is a CISO Assistant entity with the solutions it provides to the organisation, the contracts covering them and, optionally, its representatives. The folder is optional; without it `hound` neither reads nor changes third parties.
+The supplier register, one file per supplier or other third party, so a new supplier or a renewed contract is a reviewed pull request. How to move a supplier spreadsheet here with your agent, and keep it current: [third-parties.md](third-parties.md). Each file is a CISO Assistant entity with the solutions it provides to the organisation, the contracts covering them and, optionally, its representatives. The folder is optional; without it `hound` neither reads nor changes third parties.
 
 ```yaml
 ref_id: SUP-EXCLOUD
