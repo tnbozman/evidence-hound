@@ -18,6 +18,9 @@ public sealed record CollectorContext(
 {
     /// <summary>What the capability map routes to other products; none without a map.</summary>
     public CollectorCapabilities Capabilities { get; init; } = CollectorCapabilities.All;
+
+    /// <summary>The instance's earlier evidence files; none outside an evidence store.</summary>
+    public IEvidenceHistory History { get; init; } = NoEvidenceHistory.Instance;
 }
 
 /// <summary>A collector instance's plain settings, by config key.</summary>

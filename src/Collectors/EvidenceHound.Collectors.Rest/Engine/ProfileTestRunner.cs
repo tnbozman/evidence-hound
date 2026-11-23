@@ -81,6 +81,7 @@ public static class ProfileTestRunner
         var problems = testCase.Expect.Keys.Where(id => !ids.Contains(id))
             .Select(id => $"expect names '{id}', which is not a check of profile '{profile.Name}'.")
             .Concat(testCase.Responses.Where(r => r.File is { } f && !Path.Exists(Path.Combine(folder, f))).Select(r => $"the recording '{r.File}' does not exist."))
+            .Concat(testCase.History.Where(h => !Path.Exists(Path.Combine(folder, h.File))).Select(h => $"the history file '{h.File}' does not exist."))
             .ToArray();
         return problems.Length == 0
             ? Result.Ok(testCase)
@@ -96,7 +97,10 @@ public static class ProfileTestRunner
             [RestSettings.ProfilesPath] = profilesFolder,
         };
         var secrets = testCase.Secrets.ToDictionary(p => p.Key, p => new Secret(p.Value), StringComparer.Ordinal);
-        var context = new CollectorContext($"{profile.Name}-test", new CollectorSettings(settings), secrets, new FixedClock(testCase.Now), NullLogger.Instance, new ReplayClients(handler));
+        var context = new CollectorContext($"{profile.Name}-test", new CollectorSettings(settings), secrets, new FixedClock(testCase.Now), NullLogger.Instance, new ReplayClients(handler))
+        {
+            History = new RecordedHistory(testCase.History, folder),
+        };
         var result = await new RestCollector(NoDelay.Instance).CollectAsync(context, cancellationToken).ConfigureAwait(false);
         var checks = result.Match(r => r.Checks, _ => []);
         var failure = result.Match(_ => "", problems => string.Join("; ", problems.Select(p => $"{p.Code}: {p.Message}")));
@@ -105,6 +109,21 @@ public static class ProfileTestRunner
                 : new CheckComparison(e.Key, e.Value, "missing", failure))
             .ToArray();
         return new CaseReport(testCase.Name, testCase.Description, comparisons, [.. handler.Unrecorded]);
+    }
+
+    /// <summary>The case's recorded earlier evidence, oldest first.</summary>
+    private sealed class RecordedHistory(IReadOnlyList<RecordedEvidence> history, string folder) : IEvidenceHistory
+    {
+        public async Task<IReadOnlyList<EarlierFile>> EarlierAsync(string fileName, CancellationToken cancellationToken)
+        {
+            var earlier = new List<EarlierFile>();
+            foreach (var entry in history.Where(h => h.Evidence == fileName).OrderBy(h => h.At))
+            {
+                earlier.Add(new EarlierFile(entry.At, await File.ReadAllBytesAsync(Path.Combine(folder, entry.File), cancellationToken).ConfigureAwait(false)));
+            }
+
+            return earlier;
+        }
     }
 
     private sealed class FixedClock(DateTimeOffset now) : IClock

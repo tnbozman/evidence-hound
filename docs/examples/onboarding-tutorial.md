@@ -12,7 +12,9 @@ You start from a copy of the template compliance repo, `examples/compliance-repo
 The template itself stays without them, so a new repo still starts empty.
 
 It assumes you have read [Onboarding](../onboarding.md) and, for installing the stack, the
-[first deployment tutorial](../tutorials/first-deployment.md).
+[first deployment tutorial](../tutorials/first-deployment.md). To try the whole deployment on your machine first, with fictional tenants
+for Sophos Central, Microsoft 365 and the IaC pipeline and no account or key, run [`make trial`](../tutorials/local-trial.md): it walks
+the same third parties, systems, audits, controls and collectors.
 
 ## The deployment
 
@@ -72,7 +74,7 @@ Inside the VM, the reference Compose stack runs Caddy, CISO Assistant's frontend
 | The runner's schedule | `hound serve` runs each collector in `hound.yaml` on its cron schedule, in `scheduler.time_zone` | The collector health control `AC-AUTO-EVIDENCE` |
 | The network path | Private subnet with no public IP, HTTPS only from the office, SSH only from the Bastion, the VPN carrying the office network only | The control tests `vm_has_no_public_ip`, `https_only_from_the_office`, `office_range_is_not_the_internet`, `no_ssh_from_the_internet`, `vpn_routes_only_the_office` and `vm_metadata_v2_only` (step 6): evidence kept with each run; the Essential Eight has no row for them |
 | The cloud configuration | Terraform in its own repository, with control tests on every change and a nightly refresh-only plan | The `grc-infra-controls` and `terraform-drift` profiles (steps 5 and 6) |
-| The office firewall | Firmware in support, few Super Admins in Sophos Central | OFFICE-FIREWALL's audit: ISM-1501 and ISM-1883 from the `sophos-central` profile |
+| The office firewall | Firmware in support and upgraded within two weeks, few Super Admins in Sophos Central | OFFICE-FIREWALL's audit: ISM-1501, ISM-1694 and ISM-1883 from the `sophos-central` profile |
 
 ## 1. Build the platform on OCI
 
@@ -157,9 +159,17 @@ cp examples/onboarding-tutorial/scope/third-parties/sup-ciso-assistant.yaml exam
    Oracle is a new supplier, so `hound` drafts `scope/third-parties/sup-oracle.yaml` with a draft contract and a review, `EA-SUP-ORACLE`,
    and stops.
 
-2. **Review the supplier.** Decide its four levels and the solution's criticality, each with its reason, and make the contract
-   active once the review is concluded. Compare yours with
-   [`scope/third-parties/sup-oracle.yaml`](../../examples/onboarding-tutorial/scope/third-parties/sup-oracle.yaml).
+2. **Review the supplier.** Decide its four levels and the solution's criticality in the file, each with its reason. Compare yours with
+   [`scope/third-parties/sup-oracle.yaml`](../../examples/onboarding-tutorial/scope/third-parties/sup-oracle.yaml). Then approve it
+   yourself, in a terminal:
+
+   ```sh
+   hound approve --repo /tmp/grc-repo
+   ```
+
+   It shows the supplier and makes the contract `active` when you approve it, then concludes the review `EA-SUP-ORACLE` (`ok`,
+   `warning` or `blocker`), recorded under `conclusions:` in the file. It refuses to run without a person at a terminal, so an agent
+   cannot approve for you.
 
 3. **Decide applicability.** Run the same command again, with the same groups. For each requirement type `m` (manual evidence), `n` (not
    applicable, with a justification and who approved it), `o` (another system meets it, naming that system) or `c` (an API check), each
@@ -197,9 +207,10 @@ cp examples/onboarding-tutorial/scope/third-parties/sup-ciso-assistant.yaml exam
    hound onboard OFFICE-FIREWALL --repo /tmp/grc-repo --group 1 --group 2
    ```
 
-2. **Decide applicability.** Two requirements become API checks, which the `sophos-central` profile answers: ISM-1501 (the firmware is
-   still supported) and ISM-1883 (few Sophos Central admins hold Super Admin). The firewall is an internet-facing network device, so the
-   daily scan and the two-week firmware window apply, and ISM-1695 (non-internet-facing devices) does not. Applications, application
+2. **Decide applicability.** Three requirements become API checks, which the `sophos-central` profile answers: ISM-1501 (the firmware is
+   still supported), ISM-1694 (no firmware upgrade offered for more than two weeks) and ISM-1883 (few Sophos Central admins hold Super
+   Admin). The firewall is an internet-facing network device, so the daily scan and the two-week firmware window apply, and ISM-1695
+   (non-internet-facing devices) does not. Applications, application
    control, Office macros and user application hardening do not apply to an appliance.
 
    ```sh
@@ -282,9 +293,11 @@ proves the live tenancy still matches the code. A mock alone proves only the cod
    cd /tmp/grc-repo && hound config validate hound.yaml && hound scope validate scope --config hound.yaml
    ```
 
-3. **Suppliers, then systems.** A plan that registers a system whose supplier is not approved is refused
-   (`system.supplier_not_approved`) and nothing is applied. So merge and apply the four supplier files first, in a pull request of their
-   own, conclude `EA-SUP-ORACLE` and `EA-SUP-SOPHOS` as ok in CISO Assistant, and then plan and apply the rest:
+3. **Suppliers, then systems.** A plan that registers a system whose supplier's review is not concluded ok is refused
+   (`system.supplier_not_approved`) and nothing is applied. `hound approve` recorded `EA-SUP-ORACLE` and `EA-SUP-SOPHOS` as concluded
+   in the supplier files (steps 3 and 4), and the plan counts those conclusions, so one plan applies the suppliers, their conclusions,
+   the systems and their audits. The two open-source projects' reviews are concluded the same way: run `hound approve` once more if it
+   still lists them. Then:
 
    ```sh
    cd /tmp/grc-repo && hound scope plan scope --config hound.yaml
@@ -312,7 +325,7 @@ manual rows wait for their evidence.
 | [`scope/audits/office-firewall-essential-eight-2023.yaml`](../../examples/onboarding-tutorial/scope/audits/office-firewall-essential-eight-2023.yaml) | Onboarding |
 | [`onboarding/`](../../examples/onboarding-tutorial/onboarding/) | Onboarding: one record per system, every decision and who accepted it |
 | [`hound.yaml`](../../examples/onboarding-tutorial/hound.yaml) | By hand: the three collector instances and the two systems' targets |
-| [`mappings/office-firewall-essential-eight-2023.yaml`](../../examples/onboarding-tutorial/mappings/office-firewall-essential-eight-2023.yaml) | By hand: the firewall's two API checks |
+| [`mappings/office-firewall-essential-eight-2023.yaml`](../../examples/onboarding-tutorial/mappings/office-firewall-essential-eight-2023.yaml) | By hand: the firewall's three API checks |
 | [`mappings/grc-platform-essential-eight-2023.yaml`](../../examples/onboarding-tutorial/mappings/grc-platform-essential-eight-2023.yaml) | By hand: the platform's five backup rows, each from its control tests and the drift check |
 | [`profiles/grc-infra-controls.yaml`](../../examples/onboarding-tutorial/profiles/grc-infra-controls.yaml) | By hand: a copy of `terraform-tests` with one check per control |
 | [`deploy/compose.override.yml`](../../examples/onboarding-tutorial/deploy/compose.override.yml) | By hand: the two collectors' secrets |

@@ -9,6 +9,11 @@ requirements:
     rule: all_pass
     checks:
       - network.firewall.firmware_supported
+  # Patch operating systems. No firmware upgrade offered to the firewall for more than 14 days; counted from hound's earlier runs.
+  - ref: ISM-1694
+    rule: all_pass
+    checks:
+      - network.firewall.firmware_current
   # Restrict administrative privileges. Few Sophos Central admins hold Super Admin.
   - ref: ISM-1883
     rule: all_pass

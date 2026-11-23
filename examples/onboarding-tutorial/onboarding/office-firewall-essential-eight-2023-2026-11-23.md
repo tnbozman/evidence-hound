@@ -8,7 +8,7 @@ Supplier: Sophos (SUP-SOPHOS), solution Sophos XGS firewall and Sophos Central, 
 
 ## Decisions
 
-107 requirements: 2 API check(s), 40 manual, 61 not applicable, 4 for another system.
+107 requirements: 3 API check(s), 39 manual, 61 not applicable, 4 for another system.
 
 | Requirement | Proposed | Decided | Reasoning | Accepted by | Justification, approver or system |
 | --- | --- | --- | --- | --- | --- |
@@ -28,7 +28,7 @@ Supplier: Sophos (SUP-SOPHOS), solution Sophos XGS firewall and Sophos Central, 
 | ISM-1701 | (none) | manual | An external vulnerability scan of the internet-facing interface of the firewall runs daily; reports kept. | Sam Example |  |
 | ISM-1702 | (none) | not_applicable | It is internet-facing. | Sam Example | The firewall is an internet-facing network device, so the daily scan (ISM-1701) applies instead. Approved by Alex Example. |
 | ISM-1877 | (none) | manual | Firmware hotfixes for exploited vulnerabilities are applied within 48 hours; the firmware history in Sophos Central is the record. | Sam Example |  |
-| ISM-1694 | (none) | manual | Firmware updates are applied within two weeks of release; the firmware history in Sophos Central is the record. | Sam Example |  |
+| ISM-1694 | (none) | api_check | The firmware upgrade check of Sophos Central lists the upgrades offered to each firewall; hound counts how long each has been offered, at most 14 days (sophos-central profile). | Sam Example |  |
 | ISM-1695 | (none) | not_applicable | It is internet-facing. | Sam Example | ISM-1695 covers workstations, non-internet-facing servers and non-internet-facing network devices; the firewall is internet-facing, so ISM-1694 applies. Approved by Alex Example. |
 | ISM-1501 | (none) | api_check | The firewalls endpoint of Sophos Central returns the firmware version of each firewall, checked against the supported releases (sophos-central profile). | Sam Example |  |
 | ISM-1504 | (none) | not_applicable | Not an online service. | Sam Example | The firewall is a network device, not an online service. Sophos Central, which manages it, is covered by the Sophos supplier review. Approved by Alex Example. |

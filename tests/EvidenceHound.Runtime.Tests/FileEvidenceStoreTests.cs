@@ -94,5 +94,16 @@ public sealed class FileEvidenceStoreTests : IDisposable
         Directory.Exists(Path.Combine(_root, "..", "escape")).ShouldBeFalse();
     }
 
+    [Fact]
+    public async Task Reads_one_file_of_a_stored_run()
+    {
+        var store = new FileEvidenceStore(_root);
+        var run = (await store.WriteRunAsync(Manifest(At), Files, TestContext.Current.CancellationToken)).Value();
+
+        (await store.ReadFileAsync(run, "backups.json", TestContext.Current.CancellationToken)).ShouldBe(Files[1].Content.ToArray());
+        (await store.ReadFileAsync(run, "missing.json", TestContext.Current.CancellationToken)).ShouldBeNull();
+        (await store.ReadFileAsync(run, "../backups.json", TestContext.Current.CancellationToken)).ShouldBeNull();
+    }
+
     public void Dispose() => Directory.Delete(_root, recursive: true);
 }

@@ -66,6 +66,7 @@ The ID above is made up. Keep your real client ID in your private deployment con
 | `profiles_path` | no | The profiles folder, when it is not the default. |
 | `client_id` | yes | Client ID of the API credential. |
 | `supported_firewall_firmware` | yes | Comma-separated firewall firmware versions still in support, such as `21.5, 22.0`. A firewall passes when its version is one of them or within one: `21.5.1` is within `21.5`, and `21.0.1` is within `21` but not within `21.5`. Check the Sophos Firewall OS lifecycle when Sophos announces an end of support, and update the list. |
+| `firmware_update_days` | no | Most days a firewall may have a firmware upgrade offered before `network.firewall.firmware_current` fails. Default `14`, the two weeks ISM-1694 allows. |
 | `super_admin_max` | no | Most Sophos Central admins allowed to hold the Super Admin role. Default `2`: one for daily work is too few to recover from a lost account, and more than two is rarely needed. |
 | `include_identities` | no | `true` keeps host names, firewall names, serial numbers, IP addresses and admins' names and email addresses in evidence. Default `false`: they are hashed. |
 | `id_url` | no | Sophos ID address that issues tokens. Default `https://id.sophos.com/`. Change it only for tests. |
@@ -92,6 +93,7 @@ The dry run signs in, reads the firewalls, admins and roles, stores the evidence
 | Check | Pass | Otherwise |
 | --- | --- | --- |
 | `network.firewall.firmware_supported` | Every firewall managed in Sophos Central runs firmware in `supported_firewall_firmware`. | `fail`, listing the firewalls (by ID) whose version is unsupported or missing. No firewalls is `not applicable`. |
+| `network.firewall.firmware_current` | No firewall has had a firmware upgrade offered for more than `firmware_update_days` days (the `sophos.firmware_upgrade_age` code check over the firmware upgrade check, `firewall/v1/firewalls/actions/firmware-upgrade-check`, one call per firewall). | `fail` with the counts and the longest age. `unable to assess` when the upgrade check is refused or does not answer for a firewall. No firewalls is `not applicable`. |
 | `network.management.super_admin_count` | At most `super_admin_max` Sophos Central admins hold the predefined Super Admin role (the `sophos.super_admin_count` code check). | `fail` with the count. `unable to assess` when Sophos Central lists no predefined role named Super Admin, so nothing could be counted. |
 
 The checks see only firewalls managed or reporting in Sophos Central. A firewall outside Sophos Central is not seen at all, so pair these checks with an asset inventory.
@@ -99,6 +101,8 @@ The checks see only firewalls managed or reporting in Sophos Central. A firewall
 ### What the API does not show
 
 - **Admins' MFA.** The Common API's admin list (`common/v1/admins`) has each admin's profile and role assignments, but nothing about multi-factor authentication. Sophos Central itself requires every admin to sign in with MFA and walks them through setting it up the first time ([Sophos Central help: Multi-factor authentication](https://doc.sophos.com/central/Customer/help/en-us/ManageYourProducts/GlobalSettings/MultiFactorAuthentication/)), so there is no setting to read. ISM-1173 for Sophos Central admins rests on that, not on a check: keep a copy of the help page, or a screenshot of the sign-in prompt with no names in it, as manual evidence in CISO Assistant.
+- **When firmware was released.** The firmware upgrade check lists the upgrades offered to each firewall with their size, fixed bugs and news, but no release date. hound counts an offer's age from its own earlier runs: the check is given the upgrade check's answers from every earlier run the evidence store still keeps (`history: firmware_upgrades` in the profile) and counts from the first run of the unbroken series that saw an offer. Counting starts with the first run, so for the first `firmware_update_days` days after you start collecting the check cannot fail, and retention (`evidence.retention_days`) must be longer than `firmware_update_days`. The 48-hour window for exploited vulnerabilities (ISM-1877) is not judged: Sophos does not say which upgrades fix an exploited vulnerability.
+- **Whether the read-only role may call the upgrade check.** It is a POST that changes nothing. If your credential's role is refused, the check is unable to assess; the other checks are not affected.
 - **What a custom role can do.** The check counts the predefined Super Admin role only. A custom role with Super Admin's permissions is not counted, so review custom roles when you review admins.
 
 ### Essential Eight
@@ -108,6 +112,7 @@ In [`mappings/essential-eight-2023.yaml`](../../mappings/essential-eight-2023.ya
 | Requirement | Checks | Why |
 | --- | --- | --- |
 | ISM-1501 *Operating systems that are no longer supported by vendors are replaced* (Patch operating systems) | `network.firewall.firmware_supported`, with the Microsoft 365 collector's `endpoint.os.supported_versions` | A firewall's firmware is the operating system of an internet-facing network device. Every check must pass. |
+| ISM-1694 *Patches, updates or other vendor mitigations for vulnerabilities in operating systems of internet-facing servers and internet-facing network devices are applied within two weeks of release* (Patch operating systems) | `network.firewall.firmware_current` | For the firewalls Sophos Central manages. Internet-facing servers, and fixes for exploited vulnerabilities within 48 hours, need the scanner and patch records as well. |
 | ISM-1883 *Privileged user accounts explicitly authorised to access online services are strictly limited to only what is required* (Restrict administrative privileges) | `network.management.super_admin_count`, with the Microsoft 365 collector's `identity.privileged.global_admin_count` and `identity.privileged.pim_eligible_not_permanent` | Sophos Central is an online service, and its Super Admins can change every network device it manages. Every check must pass. |
 
 A requirement is `not_assessed` when any of its checks has no result. If you do not run the Microsoft 365 collector, remove its checks from ISM-1501 and ISM-1883 in your own copy of the mapping, and say in each comment what covers the rest.
@@ -117,6 +122,8 @@ A requirement is `not_assessed` when any of its checks has no result. If you do 
 | File | Holds |
 | --- | --- |
 | `firewalls.json` | Every firewall (`firewall/v1/firewalls`, all pages): ID, model, firmware version, management and reporting status. |
+| `firmware_upgrades.json` | The firmware upgrade check for each firewall (`firewall/v1/firewalls/actions/firmware-upgrade-check`): its firmware and the upgrades offered. |
+| `firmware_upgrades.history.json` | The same answers from every earlier run the evidence store keeps, with when each was collected: what the firmware age was counted from. |
 | `admins.json` | Every Sophos Central admin (`common/v1/admins`, all pages): ID, role assignments, when they were added and changed. |
 | `roles.json` | Every role (`common/v1/roles`, all pages): ID, name, type (`predefined` or `custom`) and description. Role names identify no one, so they are never hashed. |
 

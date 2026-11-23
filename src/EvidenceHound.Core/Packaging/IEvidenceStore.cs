@@ -14,5 +14,8 @@ public interface IEvidenceStore
     /// <summary>The collector's runs, oldest first.</summary>
     Task<IReadOnlyList<StoredRun>> ListRunsAsync(string collector, CancellationToken cancellationToken);
 
+    /// <summary>One file of a stored run, or null when the run has no file of that plain name.</summary>
+    Task<byte[]?> ReadFileAsync(StoredRun run, string fileName, CancellationToken cancellationToken);
+
     Task DeleteRunAsync(StoredRun run, CancellationToken cancellationToken);
 }

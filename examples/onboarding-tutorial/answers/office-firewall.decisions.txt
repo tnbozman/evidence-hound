@@ -50,8 +50,8 @@ The firewall is an internet-facing network device, so the daily scan (ISM-1701) 
 Alex Example
 m
 Firmware hotfixes for exploited vulnerabilities are applied within 48 hours; the firmware history in Sophos Central is the record.
-m
-Firmware updates are applied within two weeks of release; the firmware history in Sophos Central is the record.
+c
+The firmware upgrade check of Sophos Central lists the upgrades offered to each firewall; hound counts how long each has been offered, at most 14 days (sophos-central profile).
 n
 It is internet-facing.
 ISM-1695 covers workstations, non-internet-facing servers and non-internet-facing network devices; the firewall is internet-facing, so ISM-1694 applies.
