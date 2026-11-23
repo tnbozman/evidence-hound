@@ -672,7 +672,7 @@ Added at the maintainer's request (2026-11-23): s09-01 to s09-04 and the Microso
 - Built `hound`, `sign_in: none`, `graph_url: http://localhost:5367/`: `m365-dev --variant gaps --port 5367`, then `HOUND_TODAY=2026-11-23 hound run --config hound.yaml --only m365-example --no-publish` succeeded with 0 passed, 9 failed and 5 other (one more partial than s09-01: the events check); `hunting-defender-onboarding.json` held `{"OnboardingStatus": "Onboarded", "Devices": 6}` and the run wrote the three hunting files. The compliant tenant gave 14 passed. `M365DevTenantTests` hold each deviation to its named outcome over HTTP. Unit suite 1397 passed; the 27 failures are the Docker-only functional tests. Lint clean.
 
 ### s09-03 Vulnerability scan import
-- [ ] Done
+- [x] Done
 
 **Story:** As an operator, I want scanner exports dropped in a folder and read as structured findings, so that any scanner the organisation already uses can feed patching evidence.
 
@@ -691,6 +691,17 @@ Added at the maintainer's request (2026-11-23): s09-01 to s09-04 and the Microso
 
 **Functional check**
 - Drop a fictional `.nessus` export with `hound manual upload --source vuln-example`; `hound run --only vuln-example --dry-run` lists the parsed scan.
+
+**As built (2026-11-23)**
+- New project `EvidenceHound.Collectors.VulnScan`, registered as built-in type `vuln-scan`. Pure `NessusParser` and `CsvScanParser` both give a `ScanRun` (file, scan date, hosts, findings) of `ScanFinding` records (host, finding ID, name, severity, CVEs, first seen, patch published, exploit available, unsupported). `ScanFolder` reads each distinct content once (newest name wins), takes the export whose scan ran last (the date inside the export, not the file's) as current, and fails the whole folder on one bad export.
+- The column map is one setting per field (`column_host`, `column_finding_id`, `column_severity` required for csv; `column_name`, `column_cve`, `column_first_seen`, `column_patch_published`, `column_exploit_available`, `column_unsupported`, `column_scan_date` optional), so `hound add collector` can ask for each. `column_name` was added for the finding's title.
+- Evidence: the current export unchanged, `scan.json` (the parsed scan) and `scan-history.json` (every export read: file, SHA-256, scan date, counts). Older exports stay in the drop folder.
+- Nessus: severity 0 items are left out; unsupported is `unsupported_by_vendor` or "Unsupported"/"SEoL" in the plugin name; scan date from `HOST_END_TIMESTAMP`, else `HOST_END`; DTDs are refused. A `.nessus` file has no first-seen date, so s09-04 counts from patch publication, else from the earliest export in the history that shows the finding.
+- `hound manual upload --source` accepts a vuln-scan source: same-content refusal as for manual sources, only the format's files, no attestation prompt. The CSV row reader moved from the rest engine to `EvidenceHound.Collectors.CsvRows` so both use it.
+- No checks yet (`ChecksFrom` gives none); s09-04 adds them per scope.
+
+**Functional result (2026-11-23)**
+- Scratch config with `vuln-example` (`format: nessus`, `scope: internet_facing`): `hound config validate` valid; `hound manual upload --source vuln-example internet-facing-2026-11-16.nessus` copied it (no attestation prompt), a second upload said "already uploaded … nothing copied", and the Defender CSV was refused ("does not match this source's patterns: *.nessus"). `HOUND_TODAY=2026-11-23 hound run --config hound.yaml --only vuln-example --no-publish` succeeded and stored the export, `scan.json` (scan date 2026-11-16T10:25:00+00:00, 3 hosts, 3 findings: web-01 900101 high with exploit, web-01 900102 medium, vpn 900103 critical unsupported) and `scan-history.json`. With a truncated `broken.nessus` added, the run exited 1 with `vuln_scan.export_invalid`: "broken.nessus line 3: not well-formed XML (…)". Unit suite 1430 passed; the 27 failures are the Docker-only functional tests. Lint clean.
 
 ### s09-04 Patching checks from scans
 - [ ] Done
