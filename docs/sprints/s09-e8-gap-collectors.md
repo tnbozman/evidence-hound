@@ -1654,6 +1654,7 @@ Added at the maintainer's request (2026-11-23): s09-03 and s09-04 need a testbed
 
 ## Discovered work
 
+- s09-58: the trial's first CI run (45194527491) found that CISO Assistant refuses a `.nessus` attachment (it allows jpg, jpeg, png, doc, docx, odt, ppt, pptx, txt, xls, xlsx, ods, csv, md, pdf, json, yaml, yml, toml, xml, msg, eml, zip, 7z, tar, gz, log, svg, mp4, mov, gif, webp). Fixed in vuln-scan by storing `<name>.nessus.xml`. Other collectors can still hand it a file it refuses: the manual collector's `patterns` (for example `*.html`) are not checked. Have `hound config validate` warn on a pattern whose extension CISO Assistant refuses, or store such files zipped.
 - s09-04 follow-up (2026-11-23): once s09-15 merges, add `vuln.internet_facing.patched_in_window` to ISM-1694 beside `network.firewall.firmware_current`, in both E8 mappings. Map `vuln.other_apps.unsupported_removed` (ISM-0304) when an ML3 mapping is written. Consider a `min_severity` setting if owners want low findings out of the windows.
 
 - s09-01 follow-ups (2026-11-23): read AppLocker values Graph returns encrypted through `getOmaSettingPlainTextValue`; read App Control for Business set through the ApplicationControl CSP in custom profiles (a binary policy); cover compiled HTML, HTML applications and control panel applets (ISM-1657); suggest `ac` for the Intune and Microsoft 365 E3/E5 licences in `CapabilitySignals`.
