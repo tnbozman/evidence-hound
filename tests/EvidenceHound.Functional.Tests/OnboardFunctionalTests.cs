@@ -62,7 +62,8 @@ public sealed class OnboardFunctionalTests(CisoAssistantFixture ciso) : IDisposa
         // onboarding declares can be registered.
         var (supplierExit, supplier) = await StepAsync("0-apply-supplier", ["scope", "apply", scope, "--config", config], "", ct);
         supplierExit.ShouldBe(ExitCodes.Ok, supplier);
-        var review = (await SendAsync(HttpMethod.Get, "entity-assessments/?ref_id=EA-FT-ASSETS", null, ct))["results"]!.AsArray().ShouldHaveSingleItem()!;
+        // CISO Assistant does not filter entity assessments by ref_id, and other tests keep their own reviews in the shared instance.
+        var review = (await SendAsync(HttpMethod.Get, "entity-assessments/", null, ct))["results"]!.AsArray().Single(a => a!["ref_id"]?.GetValue<string>() == "EA-FT-ASSETS")!;
         await SendAsync(HttpMethod.Patch, $"entity-assessments/{review["id"]!.GetValue<string>()}/", new JsonObject { ["conclusion"] = "ok" }, ct);
 
         // Who and what (the owner as a CISO Assistant user's email), the supplier (already approved), then: the first of the 107 ML2 requirements not applicable, the other 106 manual,

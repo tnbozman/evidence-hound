@@ -115,7 +115,7 @@ representatives:
 ```
 
 - The entity: `ref_id` and `name`, and optionally `description`, `mission`, `country`, `currency`, `parent` (another third party's `ref_id`, for a subsidiary), `domain`, the four levels CISO Assistant uses as defaults for its stakeholder assessments (`dependency`, `penetration`, `maturity`, `trust`), and `identifiers` (legal identifiers by kind, such as LEI, VAT or ABN). CISO Assistant keeps identifiers on the entity, not on its contracts.
-- `solutions`: what the entity provides, each with `ref_id`, `name`, and optionally `description` and `criticality`.
+- `solutions`: what the entity provides, each with `ref_id`, `name`, and optionally `description` and `criticality`. A level or criticality the file leaves out is left as CISO Assistant holds it (its default on a new supplier), so a drafted supplier with levels still to decide plans no change after it is applied.
 - `contracts`: each with `ref_id`, `name`, `status`, and optionally `description`, `start` and `end` (yyyy-MM-dd), `annual_expense`, `currency` and `solutions` (the entity's own, by `ref_id`). A contract sits in the entity's domain.
 - `representatives`: people at the entity, by `email`, with optional `first_name`, `last_name`, `role` and `phone`. They are personal data, so keep them in CISO Assistant instead unless the compliance repo is private and access-controlled. `hound` never gives a representative a login.
 

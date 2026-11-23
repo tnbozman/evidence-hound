@@ -91,7 +91,8 @@ public sealed class AgentOnboardingFunctionalTests(CisoAssistantFixture ciso) : 
         JsonNode.Parse(applied)!["failed"]!.GetValue<int>().ShouldBe(0, applied);
 
         // CISO Assistant holds the conclusion the person recorded in the supplier's file, and nothing is left to change.
-        var review = (await GetAsync("entity-assessments/?ref_id=EA-SUP-AG-ASSETS-2026-12", ct))["results"]!.AsArray().ShouldHaveSingleItem()!;
+        // CISO Assistant does not filter entity assessments by ref_id, and other tests keep their own reviews in the shared instance.
+        var review = (await GetAsync("entity-assessments/", ct))["results"]!.AsArray().Single(a => a!["ref_id"]?.GetValue<string>() == "EA-SUP-AG-ASSETS-2026-12")!;
         review["conclusion"]!.GetValue<string>().ShouldBe("ok", StringCompareShould.IgnoreCase);
         var (_, again) = await StepAsync("9-plan-after-apply", ["scope", "plan", scope, "--config", config], "", terminal: false, ct);
         again.ShouldContain("0 to create, 0 to update, 0 to delete.");
