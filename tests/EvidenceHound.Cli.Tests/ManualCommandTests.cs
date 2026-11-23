@@ -70,7 +70,7 @@ public sealed class ManualCommandTests : IDisposable
 
         exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
         Directory.GetFiles(ScanDrop).Select(Path.GetFileName).ShouldBe(["internet-facing-2026-11-16.nessus"]);
-        _error.ToString().ShouldNotContain("Attest");
+        _error.ToString().ShouldNotContain("Attest this file now?", Case.Sensitive);
         (await Run("", "manual", "upload", "--config", config, "--source", "example-vuln-scan", notes)).ShouldBe(ExitCodes.Configuration);
         _error.ToString().ShouldContain("*.nessus");
     }

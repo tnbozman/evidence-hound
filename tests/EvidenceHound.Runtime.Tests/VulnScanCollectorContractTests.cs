@@ -10,7 +10,7 @@ public sealed class VulnScanCollectorContractTests : CollectorContractTests<Vuln
 
     public VulnScanCollectorContractTests() => File.WriteAllText(Path.Combine(_drop, "internet-facing.nessus"), """
         <NessusClientData_v2><Report name="Example"><ReportHost name="203.0.113.10">
-        <HostProperties><tag name="HOST_END">Wed Dec 30 10:00:00 2025</tag><tag name="host-fqdn">web-01.example.com</tag></HostProperties>
+        <HostProperties><tag name="HOST_END">Tue Dec 30 10:00:00 2025</tag><tag name="host-fqdn">web-01.example.com</tag></HostProperties>
         <ReportItem port="443" severity="3" pluginID="900101" pluginName="Example Web Server Multiple Vulnerabilities"><exploit_available>true</exploit_available></ReportItem>
         </ReportHost></Report></NessusClientData_v2>
         """);

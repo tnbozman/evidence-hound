@@ -28,7 +28,7 @@ public class ScanFolderTests
     [Fact]
     public void The_same_content_dropped_twice_is_read_once_under_its_newest_name()
     {
-        ExportFile[] files = [Export("scan.csv", "same", 1), Export("scan-copy.csv", "same", 5)];
+        ExportFile[] files = [Export("scan.csv", "same", 1, scanDay: 1), Export("scan-copy.csv", "same", 5, scanDay: 1)];
 
         var folder = ScanFolder.Read(files, Parse).Value();
 
