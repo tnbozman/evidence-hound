@@ -1177,6 +1177,23 @@ Design decision 10, and the reworded rule: no model in collection, and no eviden
 - As built: `Proposal` (`<file>.proposal.yaml`: `proposed_by`, `proposed`, `file_sha256`, `outcomes`, `observation`, `supports`, and `rejected_by`, `rejected`, `rejection_reason` once rejected) beside `Attestation`, which gains `proposed_by` and `file_sha256`; `ManualSource.Accepts` leaves proposals out, so a run neither stores nor publishes one; `ManualAssessment` writes "Proposed by agent, attested <outcome> by <person> on <date>: <file> (sha256 <12>)." and reports `partial` when the file's hash no longer matches its attestation. `hound manual propose` and `hound manual approve` are in `ManualProposalCommands`. Skill `process-manual-evidence` in `agent/skills/`, listed on the onboarding agent; the shared rules now name `hound manual approve` and `.attest.yaml`.
 - Deviations: `--check <check id>=<result>` gives one check a different result from `--result` (a source can have several checks). `hound manual approve` takes `--config`, as `hound manual upload` does, and has a stop answer (`s`). A proposal is refused when the file is already attested, and is skipped in the walk when the file changed after it was proposed. Extra tests: `AgentSkillTests.Manual_evidence_skill_proposes_from_the_file_and_never_attests`.
 
+### s09-43 hound init's compliance owner defaults to the accountable executive (added 2026-11-23)
+- [ ] Done
+
+Found while resetting the trial for s09-34 to s09-42. The compliance owner default was `it@example.com`, the fictional IT person who owns systems. Compliance is owned by the accountable executive, `ceo@example.com` in the fictional organisation (the dev seed creates both users).
+
+**Story:** As a GRC lead trying hound, I want `hound init`'s compliance owner to default to the accountable executive, so that pressing Enter gives the health control the right owner and not the IT person.
+
+**Acceptance criteria**
+- `hound init` asks "Compliance owner's email, as a CISO Assistant user [ceo@example.com]"; `--yes` without `--owner` writes `owner: ceo@example.com` on the health control.
+- `--owner` and the `--help` text say the same default; `docs/guided-setup.md` lists it.
+
+**Tests first**
+- `InitCommandTests.Compliance_owner_defaults_to_the_accountable_executive`
+
+**Functional check**
+- `make run ARGS="init <temp folder> --yes"`, then `scope/controls.yaml` shows `owner: ceo@example.com` and `hound scope validate` passes.
+
 ## Discovered work
 
 - s09-42: an agent finds files waiting for a proposal by listing the drop folder. Add `hound manual pending --json` (files with neither an attestation nor a proposal, per source, with what each check asks for).
