@@ -27,6 +27,24 @@ compliance-repo/
 
 The local CISO Assistant (`make ca-up`, the dev container and the functional tests) is seeded by applying this example scope, so every pull request exercises `hound scope apply`.
 
+## Ref ID conventions
+
+Every ref ID reads the same way whoever wrote it: its kind's prefix, then upper case letters, digits and hyphens. `hound` keeps one table of these conventions, used by every prompt and by `hound scope validate`.
+
+| Kind | Prefix | Example |
+| --- | --- | --- |
+| third party | `SUP-` | `SUP-EXAMPLE` |
+| solution | `SOL-` | `SOL-EXAMPLE-HOSTING` |
+| contract | `CTR-` | `CTR-EXAMPLE-2026` |
+| system | `SYS-` | `SYS-FIREWALL` |
+| control | `AC-` | `AC-BACKUP` |
+| perimeter | `PER-` | `PER-CORP` |
+| supplier assessment | `EA-` | `EA-SUP-EXAMPLE` |
+
+An audit has no prefix. Its ref ID reads `<CODE>-<FRAMEWORK>-<YEAR>` in the same characters, such as `EX-E8-2026`, as `hound init` writes it.
+
+A prompt for a ref ID (`hound add system`, `hound add control`, `hound onboard <system>`) prints the prefix as part of the prompt, such as `Supplier ref_id: SUP-`, and takes only the rest. The answer is upper-cased, and an answer with a space or any other character is asked again with the rule. An option such as `--ref-id` is taken in full when it has its prefix and is given the prefix when it has not. `hound scope validate` reports any other ref ID as `scope.ref_id_convention`, naming the kind, the prefix and the ref ID to rename it to.
+
 ## setup.yaml
 
 | Key | Meaning |
@@ -282,6 +300,7 @@ Every problem is reported at once with its file, line, code and a hint, and the 
 | `scope.key_unknown`, `scope.key_duplicate`, `scope.key_missing`, `scope.value_invalid` | A key is not known, appears twice, is missing, or has a value of the wrong shape. |
 | `scope.file_missing` | The scope folder has no setup.yaml. |
 | `scope.duplicate` | Two domains, systems, perimeters of one domain, controls, audits, or documents of one audit share a name. |
+| `scope.ref_id_convention` | A ref ID without its kind's prefix, or with characters other than upper case letters, digits and hyphens. See [Ref ID conventions](#ref-id-conventions). |
 | `scope.reference_unknown` | A domain, perimeter, system, framework, document or control is used but not declared. |
 | `scope.framework_snapshot_missing`, `scope.framework_file_missing`, `scope.framework_snapshot_mismatch` | A framework cannot be checked offline: no snapshot, a missing file, or a snapshot of another framework. |
 | `scope.group_unknown` | An audit selects a group its framework does not define. |
