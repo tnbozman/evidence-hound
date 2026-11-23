@@ -36,5 +36,14 @@ public class ResponseShapeTests
         text.ShouldNotContain("comms room");
     }
 
+    [Fact]
+    public void Dates_and_times_are_data_not_settings()
+    {
+        var shape = ResponseShape.Of(JsonNode.Parse("""{"lastSeen": "2026-11-21T22:00:00Z", "created": "2026-11-20"}"""), []);
+
+        shape["lastSeen"]!.AsObject().ShouldNotContainKey("values");
+        shape["created"]!.AsObject().ShouldNotContainKey("values");
+    }
+
     private static string[] Values(JsonNode? field) => [.. field!["values"]!.AsArray().Select(v => v!.GetValue<string>())];
 }

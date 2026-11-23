@@ -75,7 +75,10 @@ public static partial class ResponseShape
         && !OutboundGuard.Identities(text).Any()
         && !Identifier().IsMatch(text);
 
-    /// <summary>Email addresses (fictional ones too), GUIDs, long runs of digits and long hex strings: people, serial numbers, IDs and tokens.</summary>
-    [GeneratedRegex(@"[^\s@]+@[^\s@]+|[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-|\d{6,}|[0-9A-Fa-f]{16,}", RegexOptions.CultureInvariant)]
+    /// <summary>
+    /// Email addresses (fictional ones too), GUIDs, long runs of digits, long hex strings and dates: people, serial numbers, IDs, tokens and
+    /// when things happened, which are data, not settings.
+    /// </summary>
+    [GeneratedRegex(@"[^\s@]+@[^\s@]+|[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-|\d{6,}|[0-9A-Fa-f]{16,}|\d{4}-\d{2}-\d{2}", RegexOptions.CultureInvariant)]
     private static partial Regex Identifier();
 }

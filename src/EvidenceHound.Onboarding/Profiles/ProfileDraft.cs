@@ -52,6 +52,13 @@ public static class ProfileDraft
             ? Result.Ok(yaml)
             : Result.Fail<string>(LlmProblems.InvalidReply("profile_yaml must hold the profile as YAML text"));
 
+    /// <summary>One input per sample answer, holding only its shape (field names, types and counts); identity fields never carry values.</summary>
+    public static IReadOnlyList<DraftInput> ShapeInputs(IEnumerable<(string Name, JsonNode? Body)> answers, IReadOnlyList<string> identities)
+    {
+        ArgumentNullException.ThrowIfNull(answers);
+        return [.. answers.Where(a => a.Body is not null).Select(a => new DraftInput($"shape {a.Name}", Guard.ResponseShape.Of(a.Body, identities).ToJsonString()))];
+    }
+
     public static DraftRequest Request(IReadOnlyList<Skill> skills, ProfileContext context, string? previous, IReadOnlyList<Problem> problems)
     {
         ArgumentNullException.ThrowIfNull(context);
