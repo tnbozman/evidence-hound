@@ -1,0 +1,10 @@
+# Multi-factor authentication configuration: paste this under 'collectors:' in hound.yaml, then set the owner and the drop folder.
+# The runbook is README.md beside this file; point an evidence plan row at your copy of it.
+- name: mfa-configuration
+  type: manual
+  schedule: "0 6 * * *"
+  settings:
+    drop_folder: /var/lib/evidence-hound/manual/mfa-configuration
+    checks: identity.mfa.third_party_services, identity.mfa.organisation_services, identity.mfa.customers, identity.mfa.systems, identity.mfa.two_factors, identity.mfa.phishing_resistant
+    due_days: 183
+    owner: Example identity owner

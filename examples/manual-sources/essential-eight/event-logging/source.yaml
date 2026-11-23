@@ -1,0 +1,10 @@
+# Event logging and analysis: paste this under 'collectors:' in hound.yaml, then set the owner and the drop folder.
+# The runbook is README.md beside this file; point an evidence plan row at your copy of it.
+- name: event-logging
+  type: manual
+  schedule: "0 6 * * *"
+  settings:
+    drop_folder: /var/lib/evidence-hound/manual/event-logging
+    checks: logging.event_logs.protected, logging.internet_facing.analysed, logging.events.triaged, logging.mfa_events.centrally_logged, logging.privileged_access.centrally_logged, logging.privileged_accounts.changes_logged, logging.powershell.centrally_logged, logging.command_line.centrally_logged
+    due_days: 92
+    owner: Example security owner

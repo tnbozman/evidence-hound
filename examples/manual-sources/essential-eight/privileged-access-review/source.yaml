@@ -1,0 +1,10 @@
+# Privileged access review: paste this under 'collectors:' in hound.yaml, then set the owner and the drop folder.
+# The runbook is README.md beside this file; point an evidence plan row at your copy of it.
+- name: privileged-access-review
+  type: manual
+  schedule: "0 6 * * *"
+  settings:
+    drop_folder: /var/lib/evidence-hound/manual/privileged-access-review
+    checks: privileged.requests.validated, privileged.access.revalidated_yearly, privileged.access.disabled_when_unused, privileged.accounts.no_internet, privileged.environments.separate, privileged.admin.jump_servers, privileged.credentials.unique
+    due_days: 92
+    owner: Example system owner

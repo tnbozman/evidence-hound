@@ -7,8 +7,9 @@
 # - Results from collector checks are only as wide as what the collector sees: the Microsoft 365 checks cover Microsoft 365
 #   and Intune-managed Windows devices, and the Sophos checks the firewalls Sophos Central manages, not other systems in scope.
 #   Each requirement's comment says what stands behind it.
-# - `manual_only` lists every other ML1 and ML2 requirement with a suggested manual source. It shrinks as collectors land
-#   (s08, s09) and is completed in s11. See docs/mapping-files.md.
+# - Every other ML1 and ML2 requirement is mapped to a manual source from examples/manual-sources/essential-eight/: a person
+#   attests it with `hound manual approve` and the next run publishes it (s10-04). `manual_only` would list a requirement no
+#   manual source covers; none is left. See docs/mapping-files.md.
 framework_urn: urn:intuitem:risk:framework:essential-eight-2023
 description: Essential Eight (November 2023) ML1 and ML2, from the Microsoft 365 and Sophos Central (network devices) collectors and manual sources.
 requirements:
@@ -185,119 +186,284 @@ requirements:
     rule: all_pass
     checks:
       - appcontrol.rulesets_validated
-manual_only:
-  - ref: ISM-1807  # Patch applications, Patch operating systems
+  # Patch applications, Patch operating systems. Manual source: asset-discovery (examples/manual-sources/essential-eight/asset-discovery).
+  - ref: ISM-1807
     rows: all
-    source: Asset discovery tool configuration and run history.
-  - ref: ISM-1808  # Patch applications, Patch operating systems
+    rule: all_pass
+    checks:
+      - vuln.asset_discovery.fortnightly
+  # Patch applications, Patch operating systems. Manual source: asset-discovery (examples/manual-sources/essential-eight/asset-discovery).
+  - ref: ISM-1808
     rows: all
-    source: Vulnerability scanner configuration showing database update frequency.
-  - ref: ISM-1679  # Multi-factor authentication
-    source: Identity provider MFA configuration export and policy review, attested by the identity owner.
-  - ref: ISM-1680  # Multi-factor authentication
-    source: Identity provider MFA configuration export and policy review, attested by the identity owner.
-  - ref: ISM-1892  # Multi-factor authentication
-    source: Identity provider MFA configuration export and policy review, attested by the identity owner.
-  - ref: ISM-1893  # Multi-factor authentication
-    source: Identity provider MFA configuration export and policy review, attested by the identity owner.
-  - ref: ISM-1681  # Multi-factor authentication
-    source: Identity provider MFA configuration export and policy review, attested by the identity owner.
-  - ref: ISM-0974  # Multi-factor authentication
-    source: Identity provider MFA configuration export and policy review, attested by the identity owner.
-  - ref: ISM-1401  # Multi-factor authentication
-    source: Identity provider MFA configuration export and policy review, attested by the identity owner.
-  - ref: ISM-1872  # Multi-factor authentication
-    source: Identity provider MFA configuration export and policy review, attested by the identity owner.
-  - ref: ISM-1873  # Multi-factor authentication
-    source: Identity provider MFA configuration export and policy review, attested by the identity owner.
-  - ref: ISM-1682  # Multi-factor authentication
-    source: Identity provider MFA configuration export and policy review, attested by the identity owner.
-  - ref: ISM-1683  # Multi-factor authentication
-    source: Identity provider MFA configuration export and policy review, attested by the identity owner.
-  - ref: ISM-1815  # Multi-factor authentication, Restrict administrative privileges, Application control, User application hardening
+    rule: all_pass
+    checks:
+      - vuln.scanner.database_current
+  # Multi-factor authentication. Manual source: mfa-configuration (examples/manual-sources/essential-eight/mfa-configuration).
+  - ref: ISM-1679
+    rule: all_pass
+    checks:
+      - identity.mfa.third_party_services
+  # Multi-factor authentication. Manual source: mfa-configuration (examples/manual-sources/essential-eight/mfa-configuration).
+  - ref: ISM-1680
+    rule: all_pass
+    checks:
+      - identity.mfa.third_party_services
+  # Multi-factor authentication. Manual source: mfa-configuration (examples/manual-sources/essential-eight/mfa-configuration).
+  - ref: ISM-1893
+    rule: all_pass
+    checks:
+      - identity.mfa.third_party_services
+  # Multi-factor authentication. Manual source: mfa-configuration (examples/manual-sources/essential-eight/mfa-configuration).
+  - ref: ISM-1892
+    rule: all_pass
+    checks:
+      - identity.mfa.organisation_services
+  # Multi-factor authentication. Manual source: mfa-configuration (examples/manual-sources/essential-eight/mfa-configuration).
+  - ref: ISM-1681
+    rule: all_pass
+    checks:
+      - identity.mfa.customers
+  # Multi-factor authentication. Manual source: mfa-configuration (examples/manual-sources/essential-eight/mfa-configuration).
+  - ref: ISM-0974
+    rule: all_pass
+    checks:
+      - identity.mfa.systems
+  # Multi-factor authentication. Manual source: mfa-configuration (examples/manual-sources/essential-eight/mfa-configuration).
+  - ref: ISM-1401
+    rule: all_pass
+    checks:
+      - identity.mfa.two_factors
+  # Multi-factor authentication. Manual source: mfa-configuration (examples/manual-sources/essential-eight/mfa-configuration).
+  - ref: ISM-1872
+    rule: all_pass
+    checks:
+      - identity.mfa.phishing_resistant
+  # Multi-factor authentication. Manual source: mfa-configuration (examples/manual-sources/essential-eight/mfa-configuration).
+  - ref: ISM-1873
+    rule: all_pass
+    checks:
+      - identity.mfa.phishing_resistant
+  # Multi-factor authentication. Manual source: mfa-configuration (examples/manual-sources/essential-eight/mfa-configuration).
+  - ref: ISM-1682
+    rule: all_pass
+    checks:
+      - identity.mfa.phishing_resistant
+  # Multi-factor authentication, Restrict administrative privileges, Application control, User application hardening. Manual source: event-logging (examples/manual-sources/essential-eight/event-logging).
+  - ref: ISM-1815
     rows: all
-    source: Central logging (SIEM) configuration showing log protection, attested by the security owner.
-  - ref: ISM-1906  # Multi-factor authentication, Restrict administrative privileges, Application control, User application hardening
+    rule: all_pass
+    checks:
+      - logging.event_logs.protected
+  # Multi-factor authentication, Restrict administrative privileges, Application control, User application hardening. Manual source: event-logging (examples/manual-sources/essential-eight/event-logging).
+  - ref: ISM-1906
     rows: all
-    source: Event log review records for internet-facing servers.
-  - ref: ISM-1228  # Multi-factor authentication, Restrict administrative privileges, Application control, User application hardening
+    rule: all_pass
+    checks:
+      - logging.internet_facing.analysed
+  # Multi-factor authentication, Restrict administrative privileges, Application control, User application hardening. Manual source: event-logging (examples/manual-sources/essential-eight/event-logging).
+  - ref: ISM-1228
     rows: all
-    source: Security event triage records from the central logging service.
-  - ref: ISM-1507  # Restrict administrative privileges
-    source: Privileged access register, access request approvals and review records, attested by the system owner.
-  - ref: ISM-1647  # Restrict administrative privileges
-    source: Privileged access register, access request approvals and review records, attested by the system owner.
-  - ref: ISM-1648  # Restrict administrative privileges
-    source: Privileged access register, access request approvals and review records, attested by the system owner.
-  - ref: ISM-1175  # Restrict administrative privileges
-    source: Privileged access register, access request approvals and review records, attested by the system owner.
-  - ref: ISM-1380  # Restrict administrative privileges
-    source: Privileged access register, access request approvals and review records, attested by the system owner.
-  - ref: ISM-1687  # Restrict administrative privileges
-    source: Privileged access register, access request approvals and review records, attested by the system owner.
-  - ref: ISM-1688  # Restrict administrative privileges
-    source: Privileged access register, access request approvals and review records, attested by the system owner.
-  - ref: ISM-1689  # Restrict administrative privileges
-    source: Privileged access register, access request approvals and review records, attested by the system owner.
-  - ref: ISM-1387  # Restrict administrative privileges
-    source: Privileged access register, access request approvals and review records, attested by the system owner.
-  - ref: ISM-1685  # Restrict administrative privileges
-    source: Privileged access register, access request approvals and review records, attested by the system owner.
-  - ref: ISM-1509  # Restrict administrative privileges
-    source: Privileged access register, access request approvals and review records, attested by the system owner.
-  - ref: ISM-1650  # Restrict administrative privileges
-    source: Privileged access register, access request approvals and review records, attested by the system owner.
-  - ref: ISM-1490  # Application control
-    source: Application control policy export and ruleset review record, attested by the endpoint owner.
-  - ref: ISM-1870  # Application control
-    source: Application control policy export and ruleset review record, attested by the endpoint owner.
-  - ref: ISM-1871  # Application control
-    source: Application control policy export and ruleset review record, attested by the endpoint owner.
-  - ref: ISM-1544  # Application control
-    source: Application control policy export and ruleset review record, attested by the endpoint owner.
-  - ref: ISM-1671  # Restrict Microsoft Office macros
-    source: Microsoft Office macro settings export (Group Policy or Intune), attested by the endpoint owner.
-  - ref: ISM-1672  # Restrict Microsoft Office macros
-    source: Antivirus and AMSI policy export (such as Microsoft Defender's Office macro scanning settings), attested by the endpoint owner.
-  - ref: ISM-1489  # Restrict Microsoft Office macros
-    source: Microsoft Office macro settings export (Group Policy or Intune), attested by the endpoint owner.
-  - ref: ISM-1654  # User application hardening
-    source: Browser, Office and PDF reader hardening settings export, attested by the endpoint owner.
-  - ref: ISM-1486  # User application hardening
-    source: Browser, Office and PDF reader hardening settings export, attested by the endpoint owner.
-  - ref: ISM-1485  # User application hardening
-    source: Browser, Office and PDF reader hardening settings export, attested by the endpoint owner.
-  - ref: ISM-1412  # User application hardening
-    source: Browser, Office and PDF reader hardening settings export, attested by the endpoint owner.
-  - ref: ISM-1585  # User application hardening
-    source: Browser, Office and PDF reader hardening settings export, attested by the endpoint owner.
-  - ref: ISM-1542  # User application hardening
-    source: Browser, Office and PDF reader hardening settings export, attested by the endpoint owner.
-  - ref: ISM-1859  # User application hardening
-    source: Browser, Office and PDF reader hardening settings export, attested by the endpoint owner.
-  - ref: ISM-1823  # User application hardening
-    source: Browser, Office and PDF reader hardening settings export, attested by the endpoint owner.
-  - ref: ISM-1670  # User application hardening
-    source: Browser, Office and PDF reader hardening settings export, attested by the endpoint owner.
-  - ref: ISM-1860  # User application hardening
-    source: Browser, Office and PDF reader hardening settings export, attested by the endpoint owner.
-  - ref: ISM-1824  # User application hardening
-    source: Browser, Office and PDF reader hardening settings export, attested by the endpoint owner.
-  - ref: ISM-1623  # User application hardening
-    source: Browser, Office and PDF reader hardening settings export, attested by the endpoint owner.
-  - ref: ISM-1889  # User application hardening
-    source: Browser, Office and PDF reader hardening settings export, attested by the endpoint owner.
-  - ref: ISM-1511  # Regular backups
-    source: Backup job reports, retention and immutability settings, and backup access review, attested by the backup owner.
-  - ref: ISM-1810  # Regular backups
-    source: Backup job reports, retention and immutability settings, and backup access review, attested by the backup owner.
-  - ref: ISM-1811  # Regular backups
-    source: Backup job reports, retention and immutability settings, and backup access review, attested by the backup owner.
-  - ref: ISM-1812  # Regular backups
-    source: Backup job reports, retention and immutability settings, and backup access review, attested by the backup owner.
-  - ref: ISM-1705  # Regular backups
-    source: Backup job reports, retention and immutability settings, and backup access review, attested by the backup owner.
-  - ref: ISM-1814  # Regular backups
-    source: Backup job reports, retention and immutability settings, and backup access review, attested by the backup owner.
-  - ref: ISM-1707  # Regular backups
-    source: Backup job reports, retention and immutability settings, and backup access review, attested by the backup owner.
+    rule: all_pass
+    checks:
+      - logging.events.triaged
+  # Multi-factor authentication, Restrict administrative privileges, Application control, User application hardening. Manual source: event-logging (examples/manual-sources/essential-eight/event-logging).
+  - ref: ISM-1683
+    rule: all_pass
+    checks:
+      - logging.mfa_events.centrally_logged
+  # Multi-factor authentication, Restrict administrative privileges, Application control, User application hardening. Manual source: event-logging (examples/manual-sources/essential-eight/event-logging).
+  - ref: ISM-1509
+    rule: all_pass
+    checks:
+      - logging.privileged_access.centrally_logged
+  # Multi-factor authentication, Restrict administrative privileges, Application control, User application hardening. Manual source: event-logging (examples/manual-sources/essential-eight/event-logging).
+  - ref: ISM-1650
+    rule: all_pass
+    checks:
+      - logging.privileged_accounts.changes_logged
+  # Multi-factor authentication, Restrict administrative privileges, Application control, User application hardening. Manual source: event-logging (examples/manual-sources/essential-eight/event-logging).
+  - ref: ISM-1623
+    rule: all_pass
+    checks:
+      - logging.powershell.centrally_logged
+  # Multi-factor authentication, Restrict administrative privileges, Application control, User application hardening. Manual source: event-logging (examples/manual-sources/essential-eight/event-logging).
+  - ref: ISM-1889
+    rule: all_pass
+    checks:
+      - logging.command_line.centrally_logged
+  # Restrict administrative privileges. Manual source: privileged-access-review (examples/manual-sources/essential-eight/privileged-access-review).
+  - ref: ISM-1507
+    rule: all_pass
+    checks:
+      - privileged.requests.validated
+  # Restrict administrative privileges. Manual source: privileged-access-review (examples/manual-sources/essential-eight/privileged-access-review).
+  - ref: ISM-1647
+    rule: all_pass
+    checks:
+      - privileged.access.revalidated_yearly
+  # Restrict administrative privileges. Manual source: privileged-access-review (examples/manual-sources/essential-eight/privileged-access-review).
+  - ref: ISM-1648
+    rule: all_pass
+    checks:
+      - privileged.access.disabled_when_unused
+  # Restrict administrative privileges. Manual source: privileged-access-review (examples/manual-sources/essential-eight/privileged-access-review).
+  - ref: ISM-1175
+    rule: all_pass
+    checks:
+      - privileged.accounts.no_internet
+  # Restrict administrative privileges. Manual source: privileged-access-review (examples/manual-sources/essential-eight/privileged-access-review).
+  - ref: ISM-1380
+    rule: all_pass
+    checks:
+      - privileged.environments.separate
+  # Restrict administrative privileges. Manual source: privileged-access-review (examples/manual-sources/essential-eight/privileged-access-review).
+  - ref: ISM-1687
+    rule: all_pass
+    checks:
+      - privileged.environments.separate
+  # Restrict administrative privileges. Manual source: privileged-access-review (examples/manual-sources/essential-eight/privileged-access-review).
+  - ref: ISM-1688
+    rule: all_pass
+    checks:
+      - privileged.environments.separate
+  # Restrict administrative privileges. Manual source: privileged-access-review (examples/manual-sources/essential-eight/privileged-access-review).
+  - ref: ISM-1689
+    rule: all_pass
+    checks:
+      - privileged.environments.separate
+  # Restrict administrative privileges. Manual source: privileged-access-review (examples/manual-sources/essential-eight/privileged-access-review).
+  - ref: ISM-1387
+    rule: all_pass
+    checks:
+      - privileged.admin.jump_servers
+  # Restrict administrative privileges. Manual source: privileged-access-review (examples/manual-sources/essential-eight/privileged-access-review).
+  - ref: ISM-1685
+    rule: all_pass
+    checks:
+      - privileged.credentials.unique
+  # Application control. Manual source: application-control-review (examples/manual-sources/essential-eight/application-control-review).
+  - ref: ISM-1490
+    rule: all_pass
+    checks:
+      - appcontrol.internet_facing_servers
+  # Application control. Manual source: application-control-review (examples/manual-sources/essential-eight/application-control-review).
+  - ref: ISM-1870
+    rule: all_pass
+    checks:
+      - appcontrol.user_profiles_and_temp
+  # Application control. Manual source: application-control-review (examples/manual-sources/essential-eight/application-control-review).
+  - ref: ISM-1871
+    rule: all_pass
+    checks:
+      - appcontrol.all_other_locations
+  # Application control. Manual source: application-control-review (examples/manual-sources/essential-eight/application-control-review).
+  - ref: ISM-1544
+    rule: all_pass
+    checks:
+      - appcontrol.microsoft_blocklist
+  # Restrict Microsoft Office macros. Manual source: office-macro-settings (examples/manual-sources/essential-eight/office-macro-settings).
+  - ref: ISM-1671
+    rule: all_pass
+    checks:
+      - office.macros.disabled_without_need
+  # Restrict Microsoft Office macros. Manual source: office-macro-settings (examples/manual-sources/essential-eight/office-macro-settings).
+  - ref: ISM-1672
+    rule: all_pass
+    checks:
+      - office.macros.antivirus_scanning
+  # Restrict Microsoft Office macros. Manual source: office-macro-settings (examples/manual-sources/essential-eight/office-macro-settings).
+  - ref: ISM-1489
+    rule: all_pass
+    checks:
+      - office.macros.settings_locked
+  # User application hardening. Manual source: user-application-hardening (examples/manual-sources/essential-eight/user-application-hardening).
+  - ref: ISM-1654
+    rule: all_pass
+    checks:
+      - browser.ie11_disabled
+  # User application hardening. Manual source: user-application-hardening (examples/manual-sources/essential-eight/user-application-hardening).
+  - ref: ISM-1486
+    rule: all_pass
+    checks:
+      - browser.java_blocked
+  # User application hardening. Manual source: user-application-hardening (examples/manual-sources/essential-eight/user-application-hardening).
+  - ref: ISM-1485
+    rule: all_pass
+    checks:
+      - browser.ads_blocked
+  # User application hardening. Manual source: user-application-hardening (examples/manual-sources/essential-eight/user-application-hardening).
+  - ref: ISM-1412
+    rule: all_pass
+    checks:
+      - browser.hardened
+  # User application hardening. Manual source: user-application-hardening (examples/manual-sources/essential-eight/user-application-hardening).
+  - ref: ISM-1585
+    rule: all_pass
+    checks:
+      - browser.settings_locked
+  # User application hardening. Manual source: user-application-hardening (examples/manual-sources/essential-eight/user-application-hardening).
+  - ref: ISM-1542
+    rule: all_pass
+    checks:
+      - office.ole_blocked
+  # User application hardening. Manual source: user-application-hardening (examples/manual-sources/essential-eight/user-application-hardening).
+  - ref: ISM-1859
+    rule: all_pass
+    checks:
+      - office.hardened
+  # User application hardening. Manual source: user-application-hardening (examples/manual-sources/essential-eight/user-application-hardening).
+  - ref: ISM-1823
+    rule: all_pass
+    checks:
+      - office.settings_locked
+  # User application hardening. Manual source: user-application-hardening (examples/manual-sources/essential-eight/user-application-hardening).
+  - ref: ISM-1670
+    rule: all_pass
+    checks:
+      - pdf.child_processes_blocked
+  # User application hardening. Manual source: user-application-hardening (examples/manual-sources/essential-eight/user-application-hardening).
+  - ref: ISM-1860
+    rule: all_pass
+    checks:
+      - pdf.hardened
+  # User application hardening. Manual source: user-application-hardening (examples/manual-sources/essential-eight/user-application-hardening).
+  - ref: ISM-1824
+    rule: all_pass
+    checks:
+      - pdf.settings_locked
+  # Regular backups. Manual source: backups (examples/manual-sources/essential-eight/backups).
+  - ref: ISM-1511
+    rule: all_pass
+    checks:
+      - backup.performed_and_retained
+  # Regular backups. Manual source: backups (examples/manual-sources/essential-eight/backups).
+  - ref: ISM-1810
+    rule: all_pass
+    checks:
+      - backup.synchronised
+  # Regular backups. Manual source: backups (examples/manual-sources/essential-eight/backups).
+  - ref: ISM-1811
+    rule: all_pass
+    checks:
+      - backup.retained_securely
+  # Regular backups. Manual source: backups (examples/manual-sources/essential-eight/backups).
+  - ref: ISM-1812
+    rule: all_pass
+    checks:
+      - backup.unprivileged_cannot_read_others
+  # Regular backups. Manual source: backups (examples/manual-sources/essential-eight/backups).
+  - ref: ISM-1705
+    rule: all_pass
+    checks:
+      - backup.privileged_cannot_read
+  # Regular backups. Manual source: backups (examples/manual-sources/essential-eight/backups).
+  - ref: ISM-1814
+    rule: all_pass
+    checks:
+      - backup.unprivileged_cannot_change
+  # Regular backups. Manual source: backups (examples/manual-sources/essential-eight/backups).
+  - ref: ISM-1707
+    rule: all_pass
+    checks:
+      - backup.privileged_cannot_change
+manual_only: []

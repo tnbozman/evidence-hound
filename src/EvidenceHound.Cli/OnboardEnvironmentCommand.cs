@@ -258,7 +258,7 @@ internal static class OnboardEnvironmentCommand
         return await loaded.Match(
             async config => (await PlanCommand.LoadMappingsAsync(config.Targets, cancellationToken)).Map(mappings => (IReadOnlyList<ScopeTarget>)
             [
-                .. mappings.Select(t => new ScopeTarget(t.Target.ComplianceAssessmentRefId, [.. t.Mapping.Requirements.Select(r => r.Key)], [], new SourceLine(configFile, 0))),
+                .. mappings.Select(t => new ScopeTarget(t.Target.ComplianceAssessmentRefId, ReportedChecks.Computed(t.Mapping, config, access.CollectorTypes), [], new SourceLine(configFile, 0))),
             ]),
             problems => Task.FromResult(Result.Fail<IReadOnlyList<ScopeTarget>>(problems)));
     }

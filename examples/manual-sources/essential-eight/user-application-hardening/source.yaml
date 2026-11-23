@@ -1,0 +1,10 @@
+# User application hardening: paste this under 'collectors:' in hound.yaml, then set the owner and the drop folder.
+# The runbook is README.md beside this file; point an evidence plan row at your copy of it.
+- name: user-application-hardening
+  type: manual
+  schedule: "0 6 * * *"
+  settings:
+    drop_folder: /var/lib/evidence-hound/manual/user-application-hardening
+    checks: browser.ie11_disabled, browser.java_blocked, browser.ads_blocked, browser.hardened, browser.settings_locked, office.ole_blocked, office.hardened, office.settings_locked, pdf.child_processes_blocked, pdf.hardened, pdf.settings_locked
+    due_days: 183
+    owner: Example endpoint owner

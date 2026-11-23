@@ -604,7 +604,7 @@ internal static class ScopeCommands
             [
                 .. loaded.Select(t => new ScopeTarget(
                     t.Target.ComplianceAssessmentRefId,
-                    [.. t.Mapping.Requirements.Select(r => r.Key)],
+                    ReportedChecks.Computed(t.Mapping, c, registry.Descriptions),
                     [.. t.Target.Controls.Values.Append(t.Target.HealthControlRefId).OfType<string>().Distinct(StringComparer.Ordinal)],
                     new SourceLine(configFile.ToString(), 0))),
             ],
