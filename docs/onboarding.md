@@ -159,6 +159,64 @@ versions of one file (`hound explain before.yaml after.yaml`).
   record in `onboarding/explain/requests/`. Object IDs, email, IP and MAC addresses and secret values are replaced before anything is sent.
 - **Review only.** It never edits config or applies a plan, and collection never uses it. `--no-model` prints only what code found.
 
+## Tutorial: onboard the example API
+
+This walk-through onboards the fictional Example Asset API into a copy of the template config repo, without a model (`--no-model`), so it
+needs no key and sends nothing anywhere. It takes about ten minutes. Run it from the root of this repository.
+
+1. **A config repo to work in.**
+
+   ```sh
+   cp -R examples/compliance-repo /tmp/tutorial-repo
+   ```
+
+2. **Start onboarding.** Group 1 keeps the list short (48 requirements); for Essential Eight ML2 you would give `--group 1 --group 2`.
+
+   ```sh
+   hound onboard EXAMPLE-ASSETS --repo /tmp/tutorial-repo --group 1 \
+     --spec examples/apis/example-asset-api.openapi.yaml --no-model
+   ```
+
+   Answer the questions: your name, the system owner's email (`owner@example.com`), the product (`Example Asset Service`), the supplier
+   (`SUP-EXAMPLE`, `Example Vendor Pty Ltd`), the solution (`SOL-EXAMPLE-ASSETS`, `Example Asset Service`), the contract
+   (`CTR-EXAMPLE-ASSETS`, `Example asset service subscription`) and what the supplier provides. Press Enter when asked for a vendor
+   document. The supplier is new, so `hound` drafts `scope/third-parties/sup-example.yaml` and stops:
+
+   ```console
+   SUP-EXAMPLE is not approved yet. Review scope/third-parties/sup-example.yaml; once the supplier is approved, make contract CTR-EXAMPLE-ASSETS active and run 'hound onboard EXAMPLE-ASSETS' again to decide applicability.
+   ```
+
+3. **Approve the supplier.** Open the drafted file, fill in the levels it leaves to decide, and set the contract to `status: active`. In a
+   real repo you would now apply the supplier and conclude its review `EA-SUP-EXAMPLE` as ok in CISO Assistant (see
+   [Supplier approval](scope.md#supplier-approval)); the tutorial skips that, because onboarding itself checks only the contract.
+
+4. **Decide applicability.** Run the same command again. It shows what the API offers, then each requirement with "No proposal", since no
+   model is asked. Type `c` for ISM-1807 (the API lists devices and their last check-in) with a reason, and `m` with a reason for the rest.
+   Type `s` at any point to stop; the next run carries on from there. At the end, accept the default domain and perimeter:
+
+   ```console
+   All 48 requirements decided: 1 API check(s), 47 manual, 0 not applicable, 0 for another system. The session is in onboarding/EXAMPLE-ASSETS/session.json.
+   Wrote scope/audits/example-assets-essential-eight-2023.yaml, scope/setup.yaml, onboarding/example-assets-essential-eight-2023-<date>.md. ...
+   ```
+
+5. **Review what it wrote.** Read the audit, the system's new `solution:` line in `scope/setup.yaml` and the onboarding record, as a
+   reviewer would in a pull request, then check the scope files offline:
+
+   ```sh
+   cd /tmp/tutorial-repo && hound scope validate scope
+   ```
+
+6. **The profile.** With a model, `hound onboard profile EXAMPLE-ASSETS` drafts it (see [Draft, sample and test the
+   profile](#draft-sample-and-test-the-profile)). Without one, copy the library's example profile and its tests, and run them offline:
+
+   ```sh
+   mkdir -p profiles && cp -R <evidence-hound>/profiles/example.yaml <evidence-hound>/profiles/example.tests profiles/
+   hound profile test example --profiles profiles
+   ```
+
+To try the model steps, run `hound onboard config` with your own key and repeat from step 2 without `--no-model`, adding
+`--show-requests` to see each request before it is sent.
+
 ## onboarding.yaml
 
 Separate from `hound.yaml`; only `hound onboard` reads it.

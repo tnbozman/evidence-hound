@@ -560,6 +560,8 @@ The first run found that a single-system audit needs `unlisted:` and that a requ
 **Functional check**
 - The person's onboarding run produces a profile that passes `hound profile test`, and the firewall's checks appear in a `hound plan --dry-run`.
 
+**As built so far (2026-11-23).** The docs part is done: `OnboardingDocsTests` checks that every option of `hound onboard`, `onboard config`, `onboard environment` and `onboard profile` is in `docs/onboarding.md`, that its relative links resolve, and that it has a tutorial on the example API. The tutorial ("Tutorial: onboard the example API") was followed as written against a copy of `examples/compliance-repo` with `--no-model` and `--group 1`: the supplier stop, then 48 decisions (1 API check, 47 manual), the audit, `scope/setup.yaml` and the record written, `hound scope validate scope` valid, and `hound profile test example` passing both cases. Still open: the person's own Sophos firewall run, and the discovered work it shows.
+
 ### s09-01 Application control policies from Intune
 - [ ] Done
 
