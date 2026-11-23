@@ -34,14 +34,14 @@ public class EvidencePlanScopeTests
     public const string Plan = """
         grc_team: GRC team
         evidence:
-          - ref_id: EVP-ADMIN-REVIEW
+          - ref_id: EV-ADMIN-REVIEW
             control: AC-MFA
             requirements: [EX-1.2]
             method: manual
             owner: Example 365 owners
             every: 3 months
             runbook: manual-sources/admin-review.md
-          - ref_id: EVP-MFA
+          - ref_id: EV-MFA
             control: AC-MFA
             requirements: [EX-1.1]
             method: automated
@@ -57,7 +57,7 @@ public class EvidencePlanScopeTests
         var plan = parsed.Scope.EvidencePlan.ShouldNotBeNull();
         var manual = plan.Rows[0];
         (manual.RefId, manual.Control.Value, manual.Method, manual.Owner?.Value, manual.GrcTeam?.Value, manual.EveryMonths, manual.Runbook)
-            .ShouldBe(("EVP-ADMIN-REVIEW", "AC-MFA", EvidenceMethod.Manual, "Example 365 owners", "GRC team", 3, "manual-sources/admin-review.md"));
+            .ShouldBe(("EV-ADMIN-REVIEW", "AC-MFA", EvidenceMethod.Manual, "Example 365 owners", "GRC team", 3, "manual-sources/admin-review.md"));
         manual.Requirements.Select(r => r.Key.ToString()).ShouldBe(["EX-1.2"]);
         (plan.Rows[1].Method, plan.Rows[1].Collector?.Value).ShouldBe((EvidenceMethod.Automated, "example-m365"));
         parsed.Scope.Access.Teams[1].Email.ShouldBe("owners-365@example.com");
@@ -111,6 +111,15 @@ public class EvidencePlanScopeTests
 
         Problems(plan).Select(p => p.Code).ShouldBe(
             ["scope.value_invalid", "evidence_plan.team_unknown", "evidence_plan.team_unknown", "evidence_plan.control_unknown"], ignoreOrder: true);
+    }
+
+    [Fact]
+    public void Row_ref_ids_follow_the_evidence_convention()
+    {
+        var problem = Problems(Plan.Replace("ref_id: EV-MFA", "ref_id: mfa-evidence", StringComparison.Ordinal)).ShouldHaveSingleItem();
+
+        (problem.Code, problem.At.Line).ShouldBe(("scope.ref_id_convention", 10));
+        problem.Hint.ShouldContain("EV-MFA-EVIDENCE");
     }
 
     private static ScopeParse Parse(string plan, string access = Access) => ScopeLoader.Parse(

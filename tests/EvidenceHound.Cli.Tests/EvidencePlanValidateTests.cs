@@ -19,13 +19,13 @@ public sealed class EvidencePlanValidateTests : IDisposable
         await File.WriteAllTextAsync(Path.Combine(_root, "scope", "evidence-plan.yaml"), """
             grc_team: IT team
             evidence:
-              - ref_id: EVP-BACKUP-RESTORE
+              - ref_id: EV-BACKUP-RESTORE
                 control: AC-BACKUP
                 method: manual
                 owner: IT team
                 every: 6 months
                 runbook: manual-sources/missing-runbook.md
-              - ref_id: EVP-MFA
+              - ref_id: EV-MFA
                 control: AC-MFA
                 method: automated
                 collector: example-sophos
