@@ -54,8 +54,40 @@ public static class ScopeDesired
             .. setup.Organisation is { } organisation ? [Organisation(organisation)] : Array.Empty<ScopeObject>(),
             .. scope.ThirdParties.SelectMany(ThirdParty),
             .. Reviews(scope, inputs.Today),
+            .. EvidencePlan(scope, inputs),
         ];
     }
+
+    /// <summary>
+    /// Each evidence plan row as an evidence item, labelled with its method and collector, and each row a person provides as a recurring
+    /// task template that reminds the owner and the GRC team with the runbook. The first due date is written once, when the task is created.
+    /// </summary>
+    private static IEnumerable<ScopeObject> EvidencePlan(ScopeDocument scope, ScopeInputs inputs)
+    {
+        var controls = scope.Controls.ToDictionary(c => c.RefId, StringComparer.Ordinal);
+        foreach (var row in scope.EvidencePlan?.Rows ?? [])
+        {
+            var control = controls.GetValueOrDefault(row.Control.Value);
+            var domain = control?.Domain?.Value ?? scope.Setup.RootFolder;
+            yield return new ScopeObject(ScopeKind.Evidence, row.RefId, Fields(
+                ("name", Name(row, control)), ("domain", domain), ("owner", row.Owner?.Value), ("controls", row.Control.Value),
+                ("labels", Joined(new[] { $"method:{row.Method.ToString().ToLowerInvariant()}", row.Collector is { } c ? $"collector:{c.Value}" : null }
+                    .OfType<string>().Order(StringComparer.Ordinal)))));
+            if (row.NeedsPerson && row.EveryMonths is { } months)
+            {
+                yield return new ScopeObject(ScopeKind.TaskTemplate, row.RefId, Fields(
+                    ("name", Name(row, control)), ("description", row.Runbook is { } runbook ? inputs.Runbooks.GetValueOrDefault(runbook) : null), ("domain", domain),
+                    ("assignees", Joined(new[] { row.Owner?.Value, row.GrcTeam?.Value }.OfType<string>().Distinct(StringComparer.Ordinal))),
+                    ("schedule", $"every {months} months"), ("evidence", row.RefId), ("controls", row.Control.Value),
+                    ("requirements", Joined(row.Requirements.Select(r => r.Key.Value))), ("enabled", "true")))
+                {
+                    Initial = Fields(("first_due", inputs.Today?.AddMonths(months).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture))),
+                };
+            }
+        }
+    }
+
+    private static string Name(ScopeEvidenceRow row, ScopeControl? control) => control is null ? row.RefId : $"{row.RefId}: {control.Name}";
 
     /// <summary>Every supplier review the scope declares on <paramref name="today"/>, each with its conclusion when the scope records one.</summary>
     public static IReadOnlyList<ScopeObject> Reviews(ScopeDocument scope, DateOnly? today)
@@ -158,7 +190,7 @@ public static class ScopeDesired
                 ("first_name", u.FirstName), ("last_name", u.LastName), ("active", u.Active ? "true" : "false"),
                 ("roles", Roles(roles[u.Email].Select(Role)))))),
             .. access.Teams.Select(t => new ScopeObject(ScopeKind.Team, t.Name, Fields(
-                ("description", t.Description), ("domain", t.Domain?.Value ?? rootFolder), ("leader", t.Leader?.Value), ("members", Joined(t.Members.Select(m => m.Value)))))),
+                ("description", t.Description), ("domain", t.Domain?.Value ?? rootFolder), ("leader", t.Leader?.Value), ("members", Joined(t.Members.Select(m => m.Value))), ("email", t.Email)))),
         ];
     }
 
@@ -319,4 +351,7 @@ public sealed record ScopeInputs(
 
     /// <summary>The day the plan is made, which decides the open period of each audit with a cycle; null opens none.</summary>
     public DateOnly? Today { get; init; }
+
+    /// <summary>Each evidence plan runbook's Markdown, by its path as the plan names it.</summary>
+    public IReadOnlyDictionary<string, string> Runbooks { get; init; } = new Dictionary<string, string>(StringComparer.Ordinal);
 }

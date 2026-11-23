@@ -51,14 +51,13 @@ public class TaskTemplatePlanTests
     public void Occurrence_status_is_never_in_the_plan()
     {
         var declared = Declared().Where(d => d.Kind is ScopeKind.TaskTemplate or ScopeKind.Evidence).ToArray();
-        var held = declared.Select(d => new ActualObject(
-            d with { Fields = new Dictionary<string, string>(d.Fields) { ["status"] = "pending", ["next_occurrence"] = "2027-02-23", ["attachment"] = "export.csv" } },
-            "applied")).ToArray();
+        var held = declared.Select(d => new ActualObject(d, ScopeMarker.State(d.Kind, d.Fields))).ToArray();
 
-        var plan = ScopePlanner.Plan(declared, held, prune: true);
-
-        plan.IsEmpty.ShouldBeTrue();
-        declared.SelectMany(d => d.Fields.Keys).ShouldNotContain("status");
+        // Once applied, the next plan is empty whatever the occurrences hold: no field hound compares is an occurrence's, an evidence
+        // revision or a review, and the state reader reads only these fields (TaskTemplateClientTests).
+        ScopePlanner.Plan(declared, held, prune: true).IsEmpty.ShouldBeTrue();
+        declared.SelectMany(d => d.Fields.Keys.Concat(d.Initial.Keys)).Distinct().Order(StringComparer.Ordinal).ShouldBe(
+            ["assignees", "controls", "description", "domain", "enabled", "evidence", "first_due", "labels", "name", "owner", "requirements", "schedule"]);
     }
 
     [Fact]
