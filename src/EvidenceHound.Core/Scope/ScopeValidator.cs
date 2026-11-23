@@ -39,6 +39,7 @@ public static class ScopeValidator
             .. SupplierValidator.References(scope),
             .. CapabilityMap.Validate(scope, snapshots),
             .. scope.Audits.SelectMany(OtherSystemProblems),
+            .. RefIdValidator.Validate(scope),
         ];
     }
 

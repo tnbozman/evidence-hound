@@ -150,11 +150,11 @@ internal static class OnboardSystemCommand
             await prompt.AskAsync("Your name, recorded as who accepted each decision", cancellationToken),
             await prompt.AskEmailAsync("System owner's email, as a CISO Assistant user (hound matches the owner by email)", cancellationToken),
             await prompt.AskAsync("Product, as the vendor names it", cancellationToken),
-            await prompt.AskAsync("Supplier ref_id, such as SUP-EXAMPLE", cancellationToken),
+            await prompt.AskRefIdAsync(RefIdKind.Supplier, "Supplier ref_id", cancellationToken),
             await prompt.AskAsync("Supplier name", cancellationToken),
-            await prompt.AskAsync("Solution ref_id (what the supplier provides), such as SOL-EXAMPLE", cancellationToken),
+            await prompt.AskRefIdAsync(RefIdKind.Solution, "Solution ref_id (what the supplier provides)", cancellationToken),
             await prompt.AskAsync("Solution name", cancellationToken),
-            await prompt.AskAsync("Contract ref_id, such as CTR-EXAMPLE", cancellationToken),
+            await prompt.AskRefIdAsync(RefIdKind.Contract, "Contract ref_id", cancellationToken),
             await prompt.AskAsync("Contract name", cancellationToken),
         ];
         if (answers.Any(a => string.IsNullOrWhiteSpace(a)))
@@ -573,6 +573,10 @@ internal static class OnboardSystemCommand
             await terminal.Error.FlushAsync(cancellationToken);
             return await terminal.Input.ReadLineAsync(cancellationToken) is { } line ? Answers.Clean(line) : null;
         }
+
+        /// <summary>A ref ID, with its kind's prefix shown in the prompt and only the rest typed; asked again until it fits. Null once the input has ended.</summary>
+        public Task<string?> AskRefIdAsync(RefIdKind kind, string question, CancellationToken cancellationToken) =>
+            RefIdPrompt.AskAsync(terminal, kind, question, "", cancellationToken);
 
         public async Task<string> AskWithDefaultAsync(string question, string @default, CancellationToken cancellationToken)
         {

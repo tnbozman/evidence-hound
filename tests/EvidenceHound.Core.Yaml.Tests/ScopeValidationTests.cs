@@ -240,7 +240,7 @@ public class ScopeValidationTests
 
         var problem = ScopeFixture.Problems(setup: setup).ShouldHaveSingleItem();
 
-        (problem.Code, problem.At).ShouldBe(("scope.ref_id_convention", new SourceLine("scope/setup.yaml", 23)));
+        (problem.Code, problem.At).ShouldBe(("scope.ref_id_convention", new SourceLine("scope/setup.yaml", 11)));
         problem.Message.ShouldContain("perimeter");
         problem.Message.ShouldContain("'Base'");
         problem.Message.ShouldContain("PER-");

@@ -65,16 +65,17 @@ internal static class AddCommands
             var domains = current.Scope.Setup.Domains;
             var domainName = await AskDomainAsync(wizard, domains, parseResult.GetValue(domain), cancellationToken);
             var systemName = await wizard.AskAsync("System name", parseResult.GetValue(name), "", cancellationToken);
+            var systemRef = await wizard.AskRefIdAsync(RefIdKind.System, "System ref_id", parseResult.GetValue(refId), Wizard.Slug(systemName), cancellationToken);
             var system = YamlMap.Of(
                 ("name", new YamlText(systemName)),
-                ("ref_id", new YamlText(await wizard.AskAsync("Ref ID", parseResult.GetValue(refId), systemName.Length > 0 ? $"SYS-{Wizard.Slug(systemName)}" : "", cancellationToken))),
+                ("ref_id", new YamlText(systemRef.Match(r => r, _ => ""))),
                 ("type", new YamlText(await wizard.AskAsync("Type (primary or supporting)", parseResult.GetValue(type), "supporting", cancellationToken))),
                 ("owner", new YamlText(await wizard.AskAsync("Owner's email, as a CISO Assistant user", parseResult.GetValue(owner), "", cancellationToken))),
                 ("description", new YamlText(await wizard.AskAsync("Description", parseResult.GetValue(description), "", cancellationToken))),
                 ("parents", new YamlFlowList(Wizard.List(await wizard.AskAsync("Systems it supports, comma-separated", parseResult.GetValue(parents), "", cancellationToken)))));
             system = new YamlMap([.. Ordered(system, "name", "ref_id", "type", "description", "owner", "parents")]);
 
-            var problems = new List<Problem>();
+            var problems = new List<Problem>(systemRef.Match(_ => [], p => p));
             if (systemName.Length == 0)
             {
                 problems.Add(new Problem("add.answer_invalid", "The system name is empty."));
@@ -132,7 +133,8 @@ internal static class AddCommands
 
             var wizard = new Wizard(terminal, parseResult.GetValue(yes));
             var domains = current.Scope.Setup.Domains;
-            var controlRef = await wizard.AskAsync("Control ref ID, such as AC-BACKUP", parseResult.GetValue(refId), "", cancellationToken);
+            var askedRef = await wizard.AskRefIdAsync(RefIdKind.Control, "Control ref_id", parseResult.GetValue(refId), "", cancellationToken);
+            var controlRef = askedRef.Match(r => r, _ => "");
             var controlName = await wizard.AskAsync("Control name", parseResult.GetValue(name), "", cancellationToken);
             var domainName = await AskDomainAsync(wizard, domains, parseResult.GetValue(domain), cancellationToken);
             var control = YamlMap.Of(
@@ -146,8 +148,8 @@ internal static class AddCommands
             var auditRef = parseResult.GetValue(audit);
             var linked = auditRef is null ? [] : Wizard.List(await wizard.AskAsync($"Requirements of {auditRef} it supports, comma-separated", parseResult.GetValue(requirements), "", cancellationToken));
 
-            var problems = new List<Problem>();
-            if (controlRef.Length == 0 || controlName.Length == 0)
+            var problems = new List<Problem>(askedRef.Match(_ => [], p => p));
+            if (controlName.Length == 0)
             {
                 problems.Add(new Problem("add.answer_invalid", "The control needs a ref ID and a name."));
             }

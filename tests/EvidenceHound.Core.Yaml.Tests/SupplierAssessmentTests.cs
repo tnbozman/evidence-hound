@@ -11,7 +11,7 @@ public class SupplierAssessmentTests
           tier: critical
           reason: Hosts the customer portal.
         assessments:
-          - ref_id: ENA-EXCLOUD
+          - ref_id: EA-EXCLOUD
             name: Example Cloud review
             solutions: [SOL-EXCLOUD-HOST]
             perimeter: Example baseline
@@ -29,17 +29,17 @@ public class SupplierAssessmentTests
     {
         var entity = Parse(Assessed).Scope.ThirdParties.ShouldHaveSingleItem();
         var assessment = entity.Assessments.ShouldHaveSingleItem();
-        (assessment.RefId, assessment.ReviewMonths, assessment.DueDate).ShouldBe(("ENA-EXCLOUD", 12, "2026-03-31"));
+        (assessment.RefId, assessment.ReviewMonths, assessment.DueDate).ShouldBe(("EA-EXCLOUD", 12, "2026-03-31"));
         (entity.ForcedTier, entity.ForcedTierReason).ShouldBe(("critical", "Hosts the customer portal."));
         Problems(Assessed).ShouldBeEmpty();
 
         // Before the first review is due there is one assessment; once it falls due, the next is opened, a review cycle later.
-        Reviews(new DateOnly(2026, 2, 1)).ShouldBe([("ENA-EXCLOUD-2026-03", "2026-03-31")]);
-        Reviews(Today).ShouldBe([("ENA-EXCLOUD-2026-03", "2026-03-31"), ("ENA-EXCLOUD-2027-03", "2027-03-31")]);
+        Reviews(new DateOnly(2026, 2, 1)).ShouldBe([("EA-EXCLOUD-2026-03", "2026-03-31")]);
+        Reviews(Today).ShouldBe([("EA-EXCLOUD-2026-03", "2026-03-31"), ("EA-EXCLOUD-2027-03", "2027-03-31")]);
 
         // Without a cycle, the assessment is declared once under its own ref_id.
         var once = Assessed.Replace("\n    review_every: 12 months", "", StringComparison.Ordinal);
-        Desired(once, Today).Single(o => o.Kind == ScopeKind.EntityAssessment).Key.ShouldBe("ENA-EXCLOUD");
+        Desired(once, Today).Single(o => o.Kind == ScopeKind.EntityAssessment).Key.ShouldBe("EA-EXCLOUD");
     }
 
     [Fact]
@@ -67,16 +67,16 @@ public class SupplierAssessmentTests
     [Fact]
     public void Conclusion_in_the_file_is_declared_on_its_review_with_who_and_when()
     {
-        const string conclusions = "\n    conclusions:\n      - review: ENA-EXCLOUD-2026-03\n        result: ok\n        by: Sam Example\n        on: \"2026-04-02\"\n";
+        const string conclusions = "\n    conclusions:\n      - review: EA-EXCLOUD-2026-03\n        result: ok\n        by: Sam Example\n        on: \"2026-04-02\"\n";
         var concluded = Assessed + conclusions;
 
         Problems(concluded).ShouldBeEmpty();
         var conclusion = Parse(concluded).Scope.ThirdParties.Single().Assessments.Single().Conclusions.ShouldHaveSingleItem();
-        (conclusion.Review, conclusion.Result, conclusion.By, conclusion.On).ShouldBe(("ENA-EXCLOUD-2026-03", "ok", "Sam Example", "2026-04-02"));
+        (conclusion.Review, conclusion.Result, conclusion.By, conclusion.On).ShouldBe(("EA-EXCLOUD-2026-03", "ok", "Sam Example", "2026-04-02"));
 
         // The review it names carries the conclusion to CISO Assistant; the next review stays open.
         var reviews = Desired(concluded, Today).Where(o => o.Kind == ScopeKind.EntityAssessment).ToArray();
-        reviews.Select(r => (r.Key, r.Fields.GetValueOrDefault("conclusion"))).ShouldBe([("ENA-EXCLOUD-2026-03", "ok"), ("ENA-EXCLOUD-2027-03", null)]);
+        reviews.Select(r => (r.Key, r.Fields.GetValueOrDefault("conclusion"))).ShouldBe([("EA-EXCLOUD-2026-03", "ok"), ("EA-EXCLOUD-2027-03", null)]);
 
         // Who and when are required, the result is ok, warning or blocker, and the review is one of this assessment's.
         var broken = concluded
@@ -84,12 +84,12 @@ public class SupplierAssessmentTests
             .Replace("        by: Sam Example\n", "", StringComparison.Ordinal)
             .Replace("on: \"2026-04-02\"", "on: last week", StringComparison.Ordinal);
         Problems(broken).Select(p => p.Code).Order(StringComparer.Ordinal).ShouldBe(["scope.key_missing", "scope.value_invalid", "scope.value_invalid"]);
-        var other = Problems(concluded.Replace("review: ENA-EXCLOUD-2026-03", "review: ENA-OTHER-2026-03", StringComparison.Ordinal)).ShouldHaveSingleItem();
+        var other = Problems(concluded.Replace("review: EA-EXCLOUD-2026-03", "review: EA-OTHER-2026-03", StringComparison.Ordinal)).ShouldHaveSingleItem();
         other.Code.ShouldBe("supplier.conclusion_review_unknown");
-        other.Message.ShouldContain("ENA-OTHER-2026-03");
+        other.Message.ShouldContain("EA-OTHER-2026-03");
 
         // Without a cycle the one review is the assessment itself.
-        var once = concluded.Replace("\n    review_every: 12 months", "", StringComparison.Ordinal).Replace("review: ENA-EXCLOUD-2026-03", "review: ENA-EXCLOUD", StringComparison.Ordinal);
+        var once = concluded.Replace("\n    review_every: 12 months", "", StringComparison.Ordinal).Replace("review: EA-EXCLOUD-2026-03", "review: EA-EXCLOUD", StringComparison.Ordinal);
         Problems(once).ShouldBeEmpty();
         Desired(once, Today).Single(o => o.Kind == ScopeKind.EntityAssessment).Fields["conclusion"].ShouldBe("ok");
     }

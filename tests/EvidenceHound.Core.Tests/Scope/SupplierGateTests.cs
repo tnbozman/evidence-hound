@@ -24,13 +24,13 @@ public class SupplierGateTests
         problem.Message.ShouldContain("no concluded assessment");
 
         // Concluded with a blocker, or ok but without an active contract: still refused, saying what is missing.
-        SupplierReview.Check(scope, [Contract("CTR-HOST", "SUP-HOST", "active"), Assessment("ENA-HOST", "SUP-HOST", "2026-06-30", "blocker", null)], Today)
+        SupplierReview.Check(scope, [Contract("CTR-HOST", "SUP-HOST", "active"), Assessment("EA-HOST", "SUP-HOST", "2026-06-30", "blocker", null)], Today)
             .Refused.ShouldHaveSingleItem().Message.ShouldContain("concluded blocker");
-        SupplierReview.Check(scope, [Contract("CTR-HOST", "SUP-HOST", "draft"), Assessment("ENA-HOST", "SUP-HOST", "2026-06-30", "ok", null)], Today)
+        SupplierReview.Check(scope, [Contract("CTR-HOST", "SUP-HOST", "draft"), Assessment("EA-HOST", "SUP-HOST", "2026-06-30", "ok", null)], Today)
             .Refused.ShouldHaveSingleItem().Message.ShouldContain("no active contract");
 
         // Concluded ok, in date, with an active contract: approved.
-        var approved = SupplierReview.Check(scope, [Contract("CTR-HOST", "SUP-HOST", "active"), Assessment("ENA-HOST", "SUP-HOST", "2026-06-30", "ok", "2027-06-30")], Today);
+        var approved = SupplierReview.Check(scope, [Contract("CTR-HOST", "SUP-HOST", "active"), Assessment("EA-HOST", "SUP-HOST", "2026-06-30", "ok", "2027-06-30")], Today);
         approved.Refused.ShouldBeEmpty();
         approved.Notes.ShouldBeEmpty();
     }
@@ -39,13 +39,13 @@ public class SupplierGateTests
     public void Reseller_named_by_supplied_through_must_also_be_approved()
     {
         var scope = Scope(System("Example portal", "SOL-HOST", "SUP-RESELLER"));
-        ActualObject[] supplierOnly = [Contract("CTR-HOST", "SUP-HOST", "active"), Assessment("ENA-HOST", "SUP-HOST", "2026-06-30", "ok", null)];
+        ActualObject[] supplierOnly = [Contract("CTR-HOST", "SUP-HOST", "active"), Assessment("EA-HOST", "SUP-HOST", "2026-06-30", "ok", null)];
 
         var problem = SupplierReview.Check(scope, supplierOnly, Today).Refused.ShouldHaveSingleItem();
         problem.Message.ShouldContain("SUP-RESELLER");
         problem.Message.ShouldNotContain("SUP-HOST is");
 
-        SupplierReview.Check(scope, [.. supplierOnly, Contract("CTR-RESELLER", "SUP-RESELLER", "active"), Assessment("ENA-RESELLER", "SUP-RESELLER", "2026-06-30", "ok", null)], Today)
+        SupplierReview.Check(scope, [.. supplierOnly, Contract("CTR-RESELLER", "SUP-RESELLER", "active"), Assessment("EA-RESELLER", "SUP-RESELLER", "2026-06-30", "ok", null)], Today)
             .Refused.ShouldBeEmpty();
     }
 
@@ -56,7 +56,7 @@ public class SupplierGateTests
         var registered = new ActualObject(new ScopeObject(ScopeKind.System, "Example portal", new Dictionary<string, string>()), "abc");
 
         // The conclusion expired: the registered system stays, and is listed for the committee.
-        var expired = SupplierReview.Check(scope, [registered, Contract("CTR-HOST", "SUP-HOST", "active"), Assessment("ENA-HOST", "SUP-HOST", "2025-06-30", "ok", "2026-06-30")], Today);
+        var expired = SupplierReview.Check(scope, [registered, Contract("CTR-HOST", "SUP-HOST", "active"), Assessment("EA-HOST", "SUP-HOST", "2025-06-30", "ok", "2026-06-30")], Today);
         expired.Refused.ShouldBeEmpty();
         var note = expired.Notes.ShouldHaveSingleItem();
         (note.Code, note.Supplier, note.System).ShouldBe(("supplier.approval_lapsed", "SUP-HOST", "Example portal"));
@@ -65,14 +65,14 @@ public class SupplierGateTests
         // The next review fell due and is not concluded.
         var overdue = SupplierReview.Check(
             scope,
-            [registered, Contract("CTR-HOST", "SUP-HOST", "active"), Assessment("ENA-HOST-2025-10", "SUP-HOST", "2025-10-31", "ok", null), Assessment("ENA-HOST-2026-10", "SUP-HOST", "2026-10-31", null, null)],
+            [registered, Contract("CTR-HOST", "SUP-HOST", "active"), Assessment("EA-HOST-2025-10", "SUP-HOST", "2025-10-31", "ok", null), Assessment("EA-HOST-2026-10", "SUP-HOST", "2026-10-31", null, null)],
             Today);
-        overdue.Notes.ShouldHaveSingleItem().Detail.ShouldContain("ENA-HOST-2026-10 was due on 2026-10-31");
+        overdue.Notes.ShouldHaveSingleItem().Detail.ShouldContain("EA-HOST-2026-10 was due on 2026-10-31");
 
         // An open review that is not yet due keeps the previous approval.
         SupplierReview.Check(
             scope,
-            [registered, Contract("CTR-HOST", "SUP-HOST", "active"), Assessment("ENA-HOST-2025-12", "SUP-HOST", "2025-12-31", "ok", null), Assessment("ENA-HOST-2026-12", "SUP-HOST", "2026-12-31", null, null)],
+            [registered, Contract("CTR-HOST", "SUP-HOST", "active"), Assessment("EA-HOST-2025-12", "SUP-HOST", "2025-12-31", "ok", null), Assessment("EA-HOST-2026-12", "SUP-HOST", "2026-12-31", null, null)],
             Today).Notes.ShouldBeEmpty();
     }
 
@@ -87,11 +87,11 @@ public class SupplierGateTests
             Contracts = [new ScopeContract("CTR-HOST", "Hosting agreement", contract, At)],
             Assessments =
             [
-                new ScopeEntityAssessment("ENA-HOST", "Example Hosting review", new ScopeRef("Suppliers", At), At)
+                new ScopeEntityAssessment("EA-HOST", "Example Hosting review", new ScopeRef("Suppliers", At), At)
                 {
                     DueDate = "2026-12-22",
                     ReviewMonths = 12,
-                    Conclusions = result is null ? [] : [new ScopeConclusion("ENA-HOST-2026-12", result, "Sam Example", "2026-11-22", At)],
+                    Conclusions = result is null ? [] : [new ScopeConclusion("EA-HOST-2026-12", result, "Sam Example", "2026-11-22", At)],
                 },
             ],
         };
@@ -106,10 +106,10 @@ public class SupplierGateTests
         // A draft contract, no conclusion, or a blocker in config still refuses the system.
         SupplierReview.Check(Declared("draft", "ok"), [], Today).Refused.ShouldHaveSingleItem().Message.ShouldContain("no active contract");
         SupplierReview.Check(Declared("active", null), [], Today).Refused.ShouldHaveSingleItem().Message.ShouldContain("no concluded assessment");
-        SupplierReview.Check(Declared("active", "blocker"), [], Today).Refused.ShouldHaveSingleItem().Message.ShouldContain("ENA-HOST-2026-12 concluded blocker");
+        SupplierReview.Check(Declared("active", "blocker"), [], Today).Refused.ShouldHaveSingleItem().Message.ShouldContain("EA-HOST-2026-12 concluded blocker");
 
         // The conclusion in config wins over what CISO Assistant holds for the same review.
-        SupplierReview.Check(Declared("active", "blocker"), [Contract("CTR-HOST", "SUP-HOST", "active"), Assessment("ENA-HOST-2026-12", "SUP-HOST", "2026-12-22", "ok", null)], Today)
+        SupplierReview.Check(Declared("active", "blocker"), [Contract("CTR-HOST", "SUP-HOST", "active"), Assessment("EA-HOST-2026-12", "SUP-HOST", "2026-12-22", "ok", null)], Today)
             .Refused.ShouldHaveSingleItem().Message.ShouldContain("concluded blocker");
         SupplierReview.Check(Declared("active", "blocker"), [], Today).Refused.Single().Hint.ShouldContain("hound approve");
     }
