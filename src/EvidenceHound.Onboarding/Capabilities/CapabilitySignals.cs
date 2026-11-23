@@ -6,11 +6,18 @@ namespace EvidenceHound.Onboarding.Capabilities;
 /// <summary>What read-only lookups found in the environment: subscribed licences and the kinds of Intune configuration present, and where from.</summary>
 public sealed record EnvironmentFacts(string Source, IReadOnlyList<string> Licences, IReadOnlyList<string> ConfigurationTypes)
 {
+    /// <summary>The m365 collector the facts were read through, when read live; a capability accepted from them is routed to it.</summary>
+    public string? Collector { get; init; }
+
     public static EnvironmentFacts None { get; } = new("", [], []);
 }
 
 /// <summary>A pre-filled answer for one mitigation: what the signals suggest, if anything, and each signal with its source. Never a decision.</summary>
-public sealed record CapabilityProposal(string Mitigation, CapabilityProvision? Suggested, IReadOnlyList<string> Systems, IReadOnlyList<string> Signals);
+public sealed record CapabilityProposal(string Mitigation, CapabilityProvision? Suggested, IReadOnlyList<string> Systems, IReadOnlyList<string> Signals)
+{
+    /// <summary>The collector the suggestion's evidence would come through: the m365 collector, for a Microsoft suggestion read live.</summary>
+    public string? Route { get; init; }
+}
 
 /// <summary>The person's answer to a proposal.</summary>
 public sealed record CapabilityAnswer(string Kind, IReadOnlyList<string> Systems)
@@ -65,7 +72,10 @@ public static class CapabilitySignals
                 .ToArray();
             string[] signals = [.. tagged.Select(s => $"scope/setup.yaml: {s.Name} is tagged capabilities: {s.Tags["capabilities"]}"), .. microsoft];
             string[] suggested = tagged.Length > 0 ? [.. tagged.Select(s => s.Name)] : microsoft.Length > 0 && microsoftSystem is not null ? [microsoftSystem] : [];
-            return new CapabilityProposal(m.Code, suggested.Length > 0 ? CapabilityProvision.System : null, suggested, signals);
+            return new CapabilityProposal(m.Code, suggested.Length > 0 ? CapabilityProvision.System : null, suggested, signals)
+            {
+                Route = tagged.Length == 0 && microsoft.Length > 0 && microsoftSystem is not null ? facts.Collector : null,
+            };
         })];
     }
 }
@@ -107,6 +117,8 @@ public static class CapabilityAnswers
             ApprovedOn = today.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
             Reason = d.Reason,
             Signals = proposal.Signals,
+            Evidence = answer.Kind == "accept" && proposal.Route is not null ? "collector" : null,
+            Route = answer.Kind == "accept" ? proposal.Route : null,
         });
     }
 }

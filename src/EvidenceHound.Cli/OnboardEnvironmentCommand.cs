@@ -282,7 +282,7 @@ internal static class OnboardEnvironmentCommand
         var secrets = ConfigCommands.Secrets(access.Configuration);
         var read = await Result.Combine(instance.Secrets.Select(pair => secrets.Resolve(pair.Value).Map(secret => KeyValuePair.Create(pair.Key, secret))))
             .BindAsync(resolved => access.Lookup.ReadAsync(new CollectorSettings(instance.Settings), resolved.ToDictionary(), access.HttpClients, cancellationToken));
-        return read.Map(found => new EnvironmentFacts($"Microsoft Graph ({collector})", found.Licences, found.ConfigurationTypes));
+        return read.Map(found => new EnvironmentFacts($"Microsoft Graph ({collector})", found.Licences, found.ConfigurationTypes) { Collector = collector });
     }
 
     private static Result<EnvironmentFacts> ReadFacts(string json, string name)

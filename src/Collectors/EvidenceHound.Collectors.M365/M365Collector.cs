@@ -30,6 +30,7 @@ public sealed class M365Collector(IGraphCredentialFactory credentials, IGraphWai
             new(M365Settings.GlobalAdminMax, "Most Global Administrators expected, break-glass accounts included. Default: 4.", Required: false),
             new(M365Settings.CompliantPassPercent, "Percentage of compliant Intune-managed Windows devices needed to pass. Default: 95.", Required: false),
             new(M365Settings.CompliantPartialPercent, "Percentage of compliant Intune-managed Windows devices needed for partial. Default: 80.", Required: false),
+            new(M365Settings.System, "The system in scope/setup.yaml this instance collects from, so scope/capabilities.yaml can say which capabilities it answers. Default: only capabilities routed to this instance by name count as its own.", Required: false),
             new(M365Settings.SupportedWindowsBuilds, "Comma-separated Windows builds still in support, for example 10.0.22631, 10.0.26100.", Required: true),
         ],
         [
@@ -84,7 +85,7 @@ public sealed class M365Collector(IGraphCredentialFactory credentials, IGraphWai
             .ToArray();
         var now = context.Clock.UtcNow;
         var checks = M365Checks.All
-            .Select(check => check.Evaluate(tenant, options))
+            .Select(check => M365Checks.Evaluate(check, tenant, options, context.Capabilities.ProvidedElsewhere))
             .Select(finding => CheckId.Create(finding.CheckId)
                 .Bind(id => CheckResult.Create(id, finding.Outcome, finding.Observation, finding.Sources.Select(s => s + ".json"), now, context.Name)));
         return Result.Combine(checks).Map(results => new CollectionResult(results, files, []));

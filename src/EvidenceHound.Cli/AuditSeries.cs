@@ -65,6 +65,7 @@ internal static class AuditSeries
         {
             PeriodEnds = [.. cycles.SelectMany(c => AuditPeriods.Until(c.Key, c.Value, today)).Where(p => p.End < today).Select(p => p.End).Distinct().Order()],
             PeriodRetentionYears = config.Evidence.PeriodRetentionYears,
+            Scope = config.Scope is { } scope && File.Exists(Path.Combine(scope, "capabilities.yaml")) ? (await OnboardEnvironmentCommand.ParseAsync(scope, cancellationToken)).Scope : null,
         };
     }
 

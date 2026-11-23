@@ -14,7 +14,11 @@ public sealed record CollectorContext(
     IReadOnlyDictionary<string, Secret> Secrets,
     IClock Clock,
     ILogger Logger,
-    IHttpClientFactory HttpClients);
+    IHttpClientFactory HttpClients)
+{
+    /// <summary>What the capability map routes to other products; none without a map.</summary>
+    public CollectorCapabilities Capabilities { get; init; } = CollectorCapabilities.All;
+}
 
 /// <summary>A collector instance's plain settings, by config key.</summary>
 public sealed class CollectorSettings(IReadOnlyDictionary<string, string> values)

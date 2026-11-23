@@ -4,6 +4,7 @@ using EvidenceHound.Core.Checks;
 using EvidenceHound.Core.Packaging;
 using EvidenceHound.Core.Planning;
 using EvidenceHound.Core.Results;
+using EvidenceHound.Core.Scope;
 using EvidenceHound.Core.Secrets;
 using EvidenceHound.Runtime.Configuration;
 using Microsoft.Extensions.Logging;
@@ -29,6 +30,9 @@ public sealed class CollectStep(ISecretProvider secrets, IEvidenceStore store, I
     public IReadOnlyList<DateOnly> PeriodEnds { get; init; } = [];
 
     public int PeriodRetentionYears { get; init; } = 7;
+
+    /// <summary>The scope, read for its capability map: each collector is told which capabilities another product provides. Null: none.</summary>
+    public ScopeDocument? Scope { get; init; }
 
     public Task<Result<CollectedRun>> RunAsync(CollectorInstance instance, ICollector collector, CancellationToken cancellationToken)
     {
@@ -64,7 +68,10 @@ public sealed class CollectStep(ISecretProvider secrets, IEvidenceStore store, I
         resolved,
         clock,
         services.Loggers.CreateLogger($"hound.collector.{instance.Type}"),
-        services.HttpClients);
+        services.HttpClients)
+    {
+        Capabilities = new CollectorCapabilities(CapabilityRouting.For(Scope, instance.Name, instance.Settings.GetValueOrDefault("system"))),
+    };
 
     private static async Task<CollectorOutput> ReadAsync(CollectionResult result, CancellationToken cancellationToken)
     {

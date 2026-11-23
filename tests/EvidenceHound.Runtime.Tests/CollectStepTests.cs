@@ -64,7 +64,7 @@ public sealed class CollectStepTests : IDisposable
         await Step().RunAsync(Instance(), collector, TestContext.Current.CancellationToken);
         collector.Calls.Single().Capabilities.ProvidedElsewhere.ShouldBeEmpty();
 
-        var step = new CollectStep(Secrets.From([]), new FileEvidenceStore(_root), _clock, null, TestCollectorServices.None) { Scope = scope };
+        var step = new CollectStep(Secrets.From(new Dictionary<string, string>()), new FileEvidenceStore(_root), _clock, null, TestCollectorServices.None) { Scope = scope };
         await step.RunAsync(Instance(), collector, TestContext.Current.CancellationToken);
         collector.Calls[1].Capabilities.ProvidedElsewhere.ShouldBe(new Dictionary<string, string> { ["ac"] = "Example app control (no audit yet)" });
     }

@@ -20,6 +20,7 @@ public static class M365Settings
     public const string SupportedWindowsBuilds = "supported_windows_builds";
     public const string ClientCertificate = "client_certificate";
     public const string ClientSecret = "client_secret";
+    public const string System = "system";
 }
 
 /// <summary>A Microsoft 365 collector instance's settings, validated once.</summary>
