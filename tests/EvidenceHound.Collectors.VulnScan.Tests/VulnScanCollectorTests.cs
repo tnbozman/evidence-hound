@@ -22,7 +22,7 @@ public sealed class VulnScanCollectorTests : IDisposable
         var result = (await CollectAsync(Settings())).Value();
 
         result.Checks.ShouldBeEmpty();
-        result.Files.Select(f => f.FileName).ShouldBe([Fixtures.Nessus, VulnScanCollector.ScanFile, VulnScanCollector.HistoryFile]);
+        result.Files.Select(f => f.FileName).ShouldBe([Fixtures.Nessus + ".xml", VulnScanCollector.ScanFile, VulnScanCollector.HistoryFile]);
         var scan = Json(result, VulnScanCollector.ScanFile);
         scan["scope"]!.GetValue<string>().ShouldBe("internet_facing");
         scan["owner"]!.GetValue<string>().ShouldBe("Sam Example");
@@ -35,6 +35,19 @@ public sealed class VulnScanCollectorTests : IDisposable
         first["exploit_available"]!.GetValue<bool>().ShouldBeTrue();
         first["patch_published"]!.GetValue<string>().ShouldBe("2026-11-10T00:00:00+00:00");
         first["first_seen"].ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task Nessus_export_is_stored_as_xml_because_ciso_assistant_refuses_the_nessus_extension()
+    {
+        Drop(Fixtures.Nessus, Fixtures.Bytes(Fixtures.Nessus), Now.AddDays(-7));
+
+        var result = (await CollectAsync(Settings())).Value();
+
+        var export = result.Files[0];
+        export.FileName.ShouldBe("internet-facing-2026-11-16.nessus.xml");
+        export.MediaType.ShouldBe("application/xml");
+        Json(result, VulnScanCollector.ScanFile)["file"]!.GetValue<string>().ShouldBe(Fixtures.Nessus);
     }
 
     [Fact]
