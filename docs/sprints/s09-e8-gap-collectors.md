@@ -1694,6 +1694,27 @@ Added while the maintainer is away (2026-11-23): before they onboard their own f
 - `skills/profile-authoring.md` 1.1.0.
 - `docs/collectors/rest.md` gave the `profiles_path` default as `/etc/evidence-hound/profiles`; the code's default is `/config/profiles` (`ProfileFolder.DefaultPath`), and the guide now says so.
 
+### s09-60 Rehearsal of the trial's agent stages before the maintainer tries them (added 2026-11-23)
+- [x] Done
+
+Added at the maintainer's request (2026-11-23): "run a trial yourself and an onboard to find any errors before I try".
+
+**Story:** As the person about to run the trial with my own agent, I want the agent's requests to be answerable from what the trial gives it, so that the onboarding does not stall on empty folders or misleading help.
+
+**Acceptance criteria**
+- The trial's workspace step puts fictional notes on each of its four suppliers in `inbox/` and a fictional description of the Sophos Central API calls the dev server answers in `specs/`, as the agent's requests say; a file already there is kept.
+- `hound onboard --help` says the supplier gate holds at a terminal, while an agent's `pending` and `decide` go on and `hound approve` takes the supplier first.
+- The onboard-a-system-with-hound skill names the environment stage (and asks the person when there is none), the public profile library, how a library path such as `${data_region}/...` is written as a source, and an audit name example without a SYS- prefix.
+
+**Tests first**
+- `trial.bats`: "the agent finds the vendor notes and the API specification the stage requests name"
+- `OnboardSystemCommandTests.The_steps_say_where_the_supplier_gate_holds_for_a_person_and_for_an_agent`
+- `AgentSetupTests.The_onboarding_skill_names_the_environment_stage_the_profile_library_and_how_a_source_is_written`
+
+**Functional check (2026-11-23)**
+- A rehearsal workspace like the trial's (built CLI, `hound init repo --yes`, `hound agent setup --assistant claude`, Sophos dev server on 5370, no CISO Assistant), with an agent given only the repo and the trial's requests for the third parties and OFFICE-FIREWALL. It drafted the four suppliers (`hound supplier draft`, scope valid), started the session (107 pending for groups 1 and 2), and after the trial's approved supplier copies stood in for `hound approve`, decided all 107 (3 API checks from the sophos-central profile, 64 manual, 36 not applicable, 4 other system) in about a minute; scope still valid. `hound approve` was not run: it needs a person at a terminal. The stages after approval (controls, collectors, publishing) are the unattended trial's, run in CI with CISO Assistant.
+- The inbox and specs were empty, which the agent hit first: fixed here. The rest is under Discovered work.
+
 ## Discovered work
 
 - s09-58: the trial's first CI run (45194527491) found that CISO Assistant refuses a `.nessus` attachment (it allows jpg, jpeg, png, doc, docx, odt, ppt, pptx, txt, xls, xlsx, ods, csv, md, pdf, json, yaml, yml, toml, xml, msg, eml, zip, 7z, tar, gz, log, svg, mp4, mov, gif, webp). Fixed in vuln-scan by storing `<name>.nessus.xml`. Other collectors can still hand it a file it refuses: the manual collector's `patterns` (for example `*.html`) are not checked. Have `hound config validate` warn on a pattern whose extension CISO Assistant refuses, or store such files zipped.
@@ -1807,5 +1828,16 @@ Added while the maintainer is away (2026-11-23): before they onboard their own f
   - `pending` drafts decisions before the supplier is approved while its help says onboarding "stops here"; only the approve step waits. Reword the help.
   - `--owner` is required but the usage line does not show it; the usage `hound onboard [<system>] profile <system>` names the system twice.
   - `hound add collector rest` asks for no profile settings when the profile is missing from `profiles_path`; it should say the profile was not found.
+
+- From the s09-60 rehearsal (2026-11-23), not fixed there:
+  - The framework snapshot keeps only an 80-character title, so the full requirement text is nowhere in a compliance repo and an agent decides from memory. Snapshot the full text (needs the CISO Assistant library file).
+  - `decide --other-system` accepts a system that is in neither the scope nor the capability map, with no warning.
+  - `decide --source` is not checked when no `--spec` was given, and a POST is accepted although read-an-api-specification asks for operations that only read (the sophos-central firmware upgrade check is a POST that changes nothing; say so in the skill or allow it explicitly).
+  - Requirements shared by several mitigations (ISM-1815, 1906, 1228, 0123, 0140, 1819) are decided once per mitigation, by URN; deciding by ref ID is refused. Offer one decision for all of them.
+  - `session.json` keeps `proposals` with `kind: null` beside the real `decisions`, which reads as undecided to a reviewer.
+  - review-before-apply has no step for onboarding drafts, and `hound explain` refuses `session.json`. Give the review a summary of a session's decisions (counts by kind, not-applicable justifications).
+  - `hound supplier draft --json` prints plain text on an error; an open-source project needs a contract ref for its licence; `--kind vendor` for a community project is a guess. The two supplier skills give different command options, assess-a-supplier calls a section "the supplier-assurance-documents skill", and neither prints the level scales.
+  - `pending` names the library skill `reading-an-api-specification` while the repo's skill is `read-an-api-specification`; with no `--spec` it gives `"api": ""` without the warning the terminal path prints.
+  - Environment `pending` counts every group while a system's session counts only its groups.
 
 ## Sprint review
