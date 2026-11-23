@@ -142,6 +142,64 @@ hound onboard environment --repo . --graph example-m365 --no-model      # read t
 The default skill `environment-capabilities` describes how to tell which product is authoritative; organisation skills that apply to the
 `environment` step extend it.
 
+## Drive it with an agent: pending, decide, supplier draft, approve
+
+A coding agent (Claude Code, GitHub Copilot) can draft a whole onboarding without answering a prompt. Every command below takes options
+instead of questions and answers in JSON with `--json`; without `--json` the same facts print as text for a person. `hound` checks each
+step exactly as the interactive flow does. What an agent records is a **draft**: nothing is written to the scope's audits, and nothing is
+approved, until a person runs `hound approve`.
+
+```console
+$ hound supplier draft --repo . --system EXAMPLE-ASSETS --ref SUP-EXAMPLE --name "Example Assets Ltd" \
+    --solution-ref SOL-EXAMPLE-ASSETS --solution-name "Asset inventory" \
+    --contract-ref CTR-EXAMPLE-ASSETS --contract-name "Asset inventory subscription" \
+    --level "dependency=2:Holds the asset inventory only." --level "maturity=3:Holds an ISO 27001 certificate." --json
+$ hound onboard EXAMPLE-ASSETS pending --json --repo . --group 1 --spec ../specs/example-asset-api.openapi.yaml \
+    --owner it@example.com --product "Example Asset API" --solution SOL-EXAMPLE-ASSETS
+$ hound onboard EXAMPLE-ASSETS decide urn:intuitem:risk:req_node:essential-eight-2023:pa:ism-1807 --repo . --json \
+    --kind api_check --reasoning "GET /v1/devices lists every device, discovered daily." --source "GET /v1/devices"
+$ hound onboard EXAMPLE-ASSETS pending --json --repo .
+```
+
+- **`hound supplier draft`** writes `scope/third-parties/<ref>.yaml` with a draft contract and an open review. Each `--level` is
+  `<name>=<value>:<reason>` (dependency and penetration 0 to 4; maturity, trust and criticality 1 to 4); a level outside its scale or
+  without a reason is refused. It never overwrites a file.
+- **`hound onboard <system> pending`** starts the session when given `--owner`, `--product` and `--solution` (a solution a third-party
+  file declares), then lists the requirements not yet decided with their text, the API summary from `--spec`, and the skills that apply
+  (the defaults, plus the repo's own under `skills/`). Later calls need only the system and `--repo`.
+- **`hound onboard <system> decide <requirement>`** records one decision: `--kind api_check|manual|not_applicable|other_system`,
+  `--reasoning`, any `--source` it rests on, `--other-system <name>` for another system, `--justification <text>` for not applicable.
+  Name the requirement as `pending` lists it under `requirement` (its `ref_id` when that is unique in the framework, else its URN).
+  It is marked `drafted_by: agent` in the session, with no one as its accepter or approver. Deciding a requirement again replaces the
+  draft; a decision a person made is never replaced.
+- **`--json`** is also on `hound scope validate`, `hound scope plan` and `hound explain` (what code reads from a change: counts, objects,
+  flags and topics; no model is asked).
+
+### Approve, in a terminal
+
+```console
+$ hound approve --repo .
+```
+
+`hound approve` walks you through everything drafted in the repo that needs a person, one item at a time, in this order:
+
+1. **Environment capabilities** in `scope/capabilities.yaml` with no `approved_by`.
+2. **Suppliers** whose contract is a draft. Approving makes the contract `active`.
+3. **Supplier reviews** that are open, for suppliers with an active contract: conclude each as `ok`, `warning` or `blocker`, once the
+   review is done.
+4. **Not-applicable decisions** an agent drafted, each with its reasoning and justification.
+5. **Each system an agent drafted**, with its decisions. Approving writes the system's audit, its entry in `scope/setup.yaml` and the
+   onboarding record, as the interactive command does. A system waits while its supplier is not approved, a not-applicable decision is
+   declined, or requirements are still undecided.
+
+Answer `y`, `n` (leave it as a draft) or `s` (stop; nothing more is asked). Your name, asked once, and today's date are recorded on
+everything you approve: `approved_by` and `approved_on` on the capability and the contract, `by` and `on` on the review's conclusion,
+and the approver in the session and the onboarding record.
+
+**It needs a person at a terminal.** When its input or output is redirected, as when an agent runs it or answers are piped in,
+`hound approve` refuses and changes nothing. Nothing is approved in CISO Assistant: review the changed files in a pull request, then
+`hound scope plan` and `hound scope apply` write the approved state, including each review's conclusion.
+
 ## Explain a change for review
 
 `hound explain` writes a plain-English review summary of a plan or a config change, so you approve only what you understand. It reads

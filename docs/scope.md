@@ -142,17 +142,27 @@ assessments:
     review_every: 12 months    # optional: "N months" or "N years"
 ```
 
-- `assessments` are CISO Assistant's entity assessments: `hound` sets up the review (its name, solutions, perimeter, due date and criticality) and, when it creates one with a `questionnaire`, CISO Assistant creates the questionnaire's audit with it. Answers, the **conclusion**, the expiry date and the tier stay CISO Assistant's: the GRC team works the review there, and `hound` only reads them.
+- `assessments` are CISO Assistant's entity assessments: `hound` sets up the review (its name, solutions, perimeter, due date and criticality) and, when it creates one with a `questionnaire`, CISO Assistant creates the questionnaire's audit with it. Answers, the expiry date and the tier stay CISO Assistant's. The **conclusion** is approved in this repo: `hound approve` records it under the assessment's `conclusions`, and `hound scope apply` writes it to CISO Assistant. A review with no conclusion in the file is left as CISO Assistant holds it, so one concluded there still counts.
+- `conclusions` lists the reviews a person concluded: `review` (the review's key, as below), `result` (`ok`, `warning` or `blocker`), `by` and `on` (who concluded it and the day). Write them with `hound approve`, in a terminal, not by hand:
+
+  ```yaml
+      conclusions:
+        - review: ENA-EXCLOUD-2026-03
+          result: ok
+          by: Sam Example
+          on: "2026-04-02"
+  ```
+- A contract can carry `approved_by` and `approved_on`: who approved the supplier by making the contract `active` with `hound approve`, and when. They are this repo's record and are not sent to CISO Assistant.
 - With `review_every`, each review is keyed `<ref_id>-<yyyy-MM>` by its due date, and once today reaches a review's due date the plan opens the next one, a cycle later. Without it, the review is the one object `<ref_id>`.
 - `forced_tier` needs a `reason`. `hound` never writes the tier; the plan lists a tier in CISO Assistant that differs from the forced one.
 
-Validation reports an assessment naming a solution the entity does not provide (`supplier.solution_unknown`), an unknown perimeter, domain or questionnaire, a criticality outside 1 to 4, `review_every` without a `due_date` (`supplier.review_without_due_date`) and a forced tier without a reason (`supplier.forced_tier_reason_missing`).
+Validation reports an assessment naming a solution the entity does not provide (`supplier.solution_unknown`), an unknown perimeter, domain or questionnaire, a criticality outside 1 to 4, `review_every` without a `due_date` (`supplier.review_without_due_date`), a conclusion naming a review that is not one of the assessment's (`supplier.conclusion_review_unknown`) and a forced tier without a reason (`supplier.forced_tier_reason_missing`).
 
 ### Supplier approval
 
-A supplier is **approved** when, in CISO Assistant, its latest concluded assessment is concluded `ok`, that conclusion has not expired, no later review is past its due date without a conclusion, and it has an `active` contract. `scope plan` and `scope apply` read this before planning:
+A supplier is **approved** when its latest concluded assessment is concluded `ok`, that conclusion has not expired, no later review is past its due date without a conclusion, and it has an `active` contract. A person approves in this repo with `hound approve` (in a terminal; an agent or a pipe is refused), which makes the contract `active` and records the review's conclusion in the supplier's file. What the file records counts before it is applied, and wins over what CISO Assistant holds for the same review, so one `hound scope apply` can write the supplier, its conclusion and the system together. `scope plan` and `scope apply` check this before planning:
 
-- A system not yet registered whose supplier (its `solution`'s entity, or `supplied_through`) is not approved is refused with `system.supplier_not_approved` and the reason, such as "no concluded assessment", and nothing is applied. Apply the supplier and its review first, conclude the review in CISO Assistant, then add the system.
+- A system not yet registered whose supplier (its `solution`'s entity, or `supplied_through`) is not approved is refused with `system.supplier_not_approved` and the reason, such as "no concluded assessment", and nothing is applied. Approve the supplier and conclude its review as `ok` with `hound approve`, then plan again.
 - A registered system whose supplier is no longer approved stays registered; the plan lists it under **Suppliers** as `supplier.approval_lapsed`, for the security committee.
 - A tier that differs from `forced_tier` is listed under **Suppliers** as `supplier.tier_differs`. The JSON plan has both as `suppliers`.
 

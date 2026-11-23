@@ -1023,7 +1023,7 @@ From the s09-25 Sophos run and the [agent-driven onboarding design](../design/ag
 - As built: assessments take `provided_by: [<system>]` (model, loader, `schemas/scope.schema.json`); both writers (a system's audit and the environment capability map) write such rows open; `OpenDependencies.Of` gives the plan's section and JSON `dependencies`, with the result as the scope declares it, "from collectors" when that audit's mapping computes it, or "no audit yet". Tests: `OnboardOutputTests.Decisions_become_scope_assessments_and_another_systems_row_stays_open`, `CapabilityScopeTests.Requirement_another_system_meets_stays_open_naming_that_system` (both renamed from the names earlier tasks list), `ScopeValidationTests.Not_applicable_naming_another_system_is_reported`, `ScopeValidationTests.Open_row_met_by_another_system_is_valid`, `OpenDependencyTests` (3), `OpenDependencyPlanTests` (3), `ScopeSchemaTests` now also over the onboarding tutorial's files. Skipping rows the mapping computes was already built in s09-28 (`OnboardEnvironmentTests.Requirements_the_mapping_computes_are_left_to_it_so_the_scope_validates_with_the_deployment`). The onboarding tutorial's two audit files were regenerated from its recorded answers.
 
 ### s09-37 The agent interface (added 2026-11-23)
-- [ ] Done
+- [x] Done
 
 Design decisions 2 and 3.
 
@@ -1045,6 +1045,10 @@ Design decisions 2 and 3.
 
 **Functional check**
 - The example API onboarded with `pending` and `decide` only, then `hound approve` on a terminal; the example supplier's review concluded in config and applied; `hound scope validate` is valid and nothing was done in CISO Assistant's UI.
+- Result (2026-11-23), in a copy of `examples/compliance-repo` with the built CLI and `HOUND_TODAY=2026-11-23`: `hound supplier draft ... --json` wrote `scope/third-parties/sup-example.yaml` (`"approved": false`); `hound onboard EXAMPLE-ASSETS pending --json --group 1 --spec examples/apis/example-asset-api.openapi.yaml --owner it@example.com --product "Example Asset API" --solution SOL-EXAMPLE-ASSETS` listed 48 requirements with the API summary and three skills (`applicability`, `essential-eight-ml2-mapping`, `reading-an-api-specification`); 48 `decide` calls drafted one not applicable, one API check and 46 manual. `printf '...' | hound approve` exited 2 with "hound approve needs a person at a terminal" and changed nothing. On a terminal, `hound approve` asked for the supplier, its review `EA-SUP-EXAMPLE-2026-12` (concluded `ok`), the not-applicable decision and the system, printed "Approved 4 of 4." and wrote the audit, `scope/setup.yaml` and the onboarding record; the supplier's file then held `status: active`, `approved_by`, `approved_on` and the conclusion with `by` and `on`. `hound scope validate scope --config hound.yaml` printed "scope valid: 1 domain(s), 3 control(s), 4 audit(s), 1 third party(ies)".
+- Against CISO Assistant: `AgentOnboardingFunctionalTests` runs the same steps, then one `hound scope apply` writes the supplier, the review with its conclusion and the system, reads the conclusion back from CISO Assistant as `ok`, and plans nothing more. It runs in CI (the `functional` job); outputs land in `test-results/agent-onboarding/`.
+- As built: `hound onboard <system> pending|decide` (`OnboardAgentCommand`) work on the same `session.json` as the interactive command; a decision carries `drafted_by`, `sources` and `approved_on`, and is a draft while no person has accepted it. The interactive `hound onboard` writes nothing from a session with drafts and points to `hound approve`. `hound supplier draft` takes each level as `--level <name>=<value>:<reason>`. `hound approve` (`ApproveCommand`) refuses unless the process's input and output are both a terminal, and walks capabilities, suppliers (draft contract to `active`, with `approved_by` and `approved_on`), open reviews, not-applicable drafts, then each drafted system. A review's conclusion is `conclusions:` under the assessment (`review`, `result`, `by`, `on`; in the loader, validator and `schemas/scope.schema.json`); the plan compares a review's `conclusion` only when the scope declares it, and the writer sends it only then. The supplier gate counts an active contract and a conclusion recorded in the scope before they are applied, and a conclusion in the scope wins over CISO Assistant's for the same review. `--json` on `scope validate` and `scope plan` is `--format json`; `explain --json` gives what code reads (counts, objects, flags, topics) and asks no model.
+- Deviations: `decide` takes `--justification` for not applicable (the interactive flow asks for it; the approver is still only a person, in `hound approve`). `pending` also starts the session, from `--owner`, `--product` and `--solution`, since nothing else could without prompts. Who concluded a review and when stay in the supplier's file; only the conclusion is sent to CISO Assistant.
 
 ### s09-38 hound agent setup: skills and agent files for Claude Code and Copilot (added 2026-11-23)
 - [ ] Done
@@ -1149,6 +1153,14 @@ Design decision 10, and the reworded rule: no model in collection, and no eviden
 - In the trial repo: a restore-test record dropped in, a proposal recorded by the agent, attested with `hound manual approve`, and `hound run --only example-backup-restore-test` publishing it with the attestation line.
 
 ## Discovered work
+
+- s09-37: the interactive `hound onboard <system>` still takes a not-applicable approver's name from piped input, so an agent could answer its prompts. Make its not-applicable approval go through `hound approve` too, or refuse it without a terminal (fits s09-41).
+
+- s09-37: `hound approve` asks about every open supplier review each time it runs, including reviews not yet due and ones already concluded in CISO Assistant before conclusions moved to config. Consider asking only for reviews that are due or that the person names, and importing existing conclusions with `hound scope export`.
+
+- s09-37: the onboarding tutorial (`docs/examples/onboarding-tutorial.md`) and the files `hound onboard` drafts for a person still describe concluding the supplier review in CISO Assistant. That route still works; move the tutorial to `hound approve` with s09-39.
+
+- s09-37: `hound onboard environment` has no `pending` and `decide` yet (planned in s09-41); `hound approve` already approves capabilities that have no `approved_by`.
 
 - s09-28: the capability map's signals do not yet include devices onboarded to Defender for Endpoint (`security/machines` needs a Defender API permission, not Graph). Add when s09-02 reads Defender.
 
