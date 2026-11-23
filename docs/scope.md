@@ -40,6 +40,7 @@ Every ref ID reads the same way whoever wrote it: its kind's prefix, then upper 
 | control | `AC-` | `AC-BACKUP` |
 | perimeter | `PER-` | `PER-CORP` |
 | supplier assessment | `EA-` | `EA-SUP-EXAMPLE` |
+| evidence plan row | `EV-` | `EV-BACKUP-RESTORE` |
 
 An audit has no prefix. An audit that runs in periods, as `hound init` writes it, is a series `<CODE>-<FRAMEWORK>`, such as `EX-E8`, or `<CODE>-<FRAMEWORK>-<SYSTEM>` for one system; each period reads `<CODE>-<FRAMEWORK>-<INTERVAL>-<YEAR>FY[-<SYSTEM>]`, such as `EX-E8-Q2-2027FY` ([Audit periods](#audit-periods)). An audit without a cycle reads `<CODE>-<FRAMEWORK>-<YEAR>`, such as `EX-E8-2026`.
 

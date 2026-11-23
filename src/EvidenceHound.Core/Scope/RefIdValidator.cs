@@ -16,6 +16,7 @@ public static class RefIdValidator
             .. scope.ThirdParties.SelectMany(e => e.Solutions).Select(s => (RefIdKind.Solution, (string?)s.RefId, s.At)),
             .. scope.ThirdParties.SelectMany(e => e.Contracts).Select(c => (RefIdKind.Contract, (string?)c.RefId, c.At)),
             .. scope.ThirdParties.SelectMany(e => e.Assessments).Select(a => (RefIdKind.EntityAssessment, (string?)a.RefId, a.At)),
+            .. (scope.EvidencePlan?.Rows ?? []).Select(r => (RefIdKind.Evidence, (string?)r.RefId, r.At)),
         ];
         return declared
             .Where(d => d.RefId is { Length: > 0 } refId && !RefIds.Follows(d.Kind, refId))
