@@ -9,6 +9,7 @@
     <Project Path="src/EvidenceHound.Core.Yaml/EvidenceHound.Core.Yaml.csproj" />
     <Project Path="src/EvidenceHound.Onboarding/EvidenceHound.Onboarding.csproj" />
     <Project Path="src/EvidenceHound.Runtime/EvidenceHound.Runtime.csproj" />
+    <Project Path="src/EvidenceHound.SophosDevServer/EvidenceHound.SophosDevServer.csproj" />
     <Project Path="src/EvidenceHound.Transport.Kafka/EvidenceHound.Transport.Kafka.csproj" />
   </Folder>
   <Folder Name="/src/Collectors/">
@@ -27,5 +28,6 @@
     <Project Path="tests/EvidenceHound.Functional.Tests/EvidenceHound.Functional.Tests.csproj" />
     <Project Path="tests/EvidenceHound.Onboarding.Tests/EvidenceHound.Onboarding.Tests.csproj" />
     <Project Path="tests/EvidenceHound.Runtime.Tests/EvidenceHound.Runtime.Tests.csproj" />
+    <Project Path="tests/EvidenceHound.SophosDevServer.Tests/EvidenceHound.SophosDevServer.Tests.csproj" />
   </Folder>
 </Solution>

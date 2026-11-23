@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>sophos-dev</AssemblyName>
+    <RootNamespace>EvidenceHound.SophosDevServer</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <Description>A fictional Example Pty Ltd Sophos Central tenant that answers the sophos-central profile offline, for the trial and for developing profiles.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="WireMock.Net" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\EvidenceHound.Core\EvidenceHound.Core.csproj" />
+  </ItemGroup>
+</Project>
