@@ -34,9 +34,32 @@ trial_port_holder() {
 # attach to, so hound shares the dev container's network namespace instead, where `backend` resolves.
 trial_network_args() {
   case "$1" in
-    "network "*) echo "--network ${1#network }" ;;
+    "network "*) echo "--network ${1#network } --add-host host.docker.internal:host-gateway" ;;
     *) echo "--network host" ;;
   esac
+}
+
+# trial_dev_url MODE PORT -> a dev server's address, listening in the dev container on PORT, as hound's container sees it
+# With the host network hound shares the dev container's namespace; on a make ca-up network it reaches the dev container,
+# which is its Docker host, as host.docker.internal.
+trial_dev_url() {
+  case "$1" in
+    "network "*) echo "http://host.docker.internal:$2/" ;;
+    *) echo "http://localhost:$2/" ;;
+  esac
+}
+
+# trial_sophos_dev_sets URL -> the hound add collector rest settings, one word per line, for the Sophos Central dev server at URL
+# The client ID is the dev tenant's (SophosDevTenant.ClientId); the server checks no credential, so nothing asks for one.
+trial_sophos_dev_sets() {
+  printf '%s\n' --set profile=sophos-central --set profiles_path=/trial/profiles \
+    --set client_id=00000000-0000-4000-8000-0000050d0001 --set "id_url=$1" --set "api_url=$1" \
+    --set "supported_firewall_firmware=21.0, 21.5"
+}
+
+# trial_uses_dev_server CONFIG PORT -> success when the config's collectors read a dev server on PORT
+trial_uses_dev_server() {
+  grep -qE "(localhost|host\.docker\.internal):$2/" "$1"
 }
 
 # trial_ca_url MODE -> the CISO Assistant API address as hound's container sees it

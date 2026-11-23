@@ -1,6 +1,6 @@
 # Local trial: Evidence Hound next to your CISO Assistant
 
-This tutorial is interactive: `make trial` runs it step by step from the dev container. It takes Evidence Hound from nothing to results in CISO Assistant in the order you onboard for real: the organisation with `hound init` ([guided setup](../guided-setup.md)) (the fictional Example Pty Ltd, if you press Enter through the questions), its third parties, the Sophos perimeter firewall as a system, the system's audit, the controls it relies on, and its evidence collectors: your own Sophos Central tenant and Microsoft 365, from a fictional tenant on this machine or your own test tenant. From the third parties on, your coding agent drafts each stage with hound's skills and you approve it. You need no server. Allow an hour, most of it the first image build.
+This tutorial is interactive: `make trial` runs it step by step from the dev container. It takes Evidence Hound from nothing to results in CISO Assistant in the order you onboard for real: the organisation with `hound init` ([guided setup](../guided-setup.md)) (the fictional Example Pty Ltd, if you press Enter through the questions), its third parties, the Sophos perimeter firewall as a system, the system's audit, the controls it relies on, and its evidence collectors: Sophos Central, by default a fictional tenant served on your machine by [the Sophos Central dev server](sophos-dev-server.md) so you need no account or API key, and Microsoft 365, by default [its dev server](m365-dev-server.md) too. Either can be your own tenant instead. From the third parties on, your coding agent drafts each stage with hound's skills and you approve it. You need no server. Allow an hour, most of it the first image build.
 
 ```bash
 make trial
@@ -12,7 +12,7 @@ Each step shows the `hound` command before it runs and asks before anything that
 
 - The dev container, with Docker answering inside it.
 - A CISO Assistant. The dev container starts its own, at `http://backend:8000` in the dev container and `https://localhost:8443` in your browser. A stack from `make ca-up` works too. If none is running, the trial offers to start one.
-- For the Sophos step: a Sophos Central API credential with the **Service Principal Read-Only** role, created as [the Sophos guide](../collectors/sophos.md) describes.
+- For the Sophos step: nothing, with the dev server. To use your own Sophos Central tenant instead, an API credential with the **Service Principal Read-Only** role, created as [the Sophos guide](../collectors/sophos.md) describes.
 - For the Microsoft 365 step: nothing, with the dev server; or a test tenant of your own ([section 10](#10-evidence-collectors-microsoft-365)).
 
 ## 1. Preflight
@@ -89,14 +89,35 @@ Each of these stages works the same way. The trial says what the stage is and pr
 
 A finished stage is skipped on the next run; remove its file in `.dev/trial/state/` to do it again.
 
-## 9. Evidence collectors: your Sophos Central tenant
+## 9. Evidence collectors: Sophos Central, a fictional tenant on this machine or your own
 
-The trial copies the `sophos-central` library profile and its tests into `.dev/trial/profiles`, then `hound add collector rest --name sophos --config hound.yaml --schedule "0 4 * * *" --secrets-dir /trial/secrets --set profile=sophos-central --set profiles_path=/trial/profiles` asks for what the profile needs:
+The trial copies the `sophos-central` library profile and its tests into `.dev/trial/profiles`, then asks which tenant to read. Press Enter for the dev server; an unattended run takes it too.
+
+### The dev server (default)
+
+The trial starts [the Sophos Central dev server](sophos-dev-server.md) in the background (`make sophos-dev` on port 5370, log in `.dev/trial/sophos-dev.log`, stopped when the trial ends). It serves the fictional Example Pty Ltd tenant: two XGS firewalls on supported firmware and five admins, two of them Super Admins. Nothing leaves the machine and no question asks for a credential:
+
+```bash
+hound add collector rest --name sophos --config hound.yaml --schedule "0 4 * * *" --secrets-dir /trial/secrets \
+  --set profile=sophos-central --set profiles_path=/trial/profiles \
+  --set client_id=00000000-0000-4000-8000-0000050d0001 \
+  --set id_url=http://localhost:5370/ --set api_url=http://localhost:5370/ \
+  --set "supported_firewall_firmware=21.0, 21.5" \
+  --secret-file client_secret=/trial/inbox/sophos-dev-secret --yes
+```
+
+The secret is a placeholder the trial writes; the dev server checks no credential. On a `make ca-up` network the address is `http://host.docker.internal:5370/` instead, because hound runs in its own container there.
+
+### Your own tenant
+
+Answer `n` and `hound add collector rest --name sophos --config hound.yaml --schedule "0 4 * * *" --secrets-dir /trial/secrets --set profile=sophos-central --set profiles_path=/trial/profiles` asks for what the profile needs:
 
 1. The credential's client ID, and the firewall firmware versions still in support (see Sophos's firmware lifecycle), such as `21.5, 22.0`. Other settings, such as `super_admin_max`, keep their defaults; add them with `--set key=value`. The credential must be the tenant's own: partner and organisation credentials are not supported.
 2. The client secret, which is not shown as you type. It is saved to `.dev/trial/secrets/sophos_client_secret` (mode 600), never in git, and the config references it as `file:/trial/secrets/sophos_client_secret`.
 
-The trial then runs:
+### Then, either way
+
+The trial runs:
 
 ```bash
 hound config validate hound.yaml --check-secrets
@@ -106,6 +127,8 @@ hound status --config hound.yaml
 ```
 
 The dry run signs in, reads the firewalls, stores the evidence locally and plans the updates, and sends nothing. The real run publishes the firewall firmware check to the requirement it maps to in the Essential Eight audit (ISM-1501, together with the Microsoft 365 collector's operating system check). Until that check has a result too, ISM-1501 stays `not_assessed`: step 10 adds it. Sophos Central is read for network devices only; evidence about endpoint protection comes from the endpoints' own antivirus, not from Sophos.
+
+With the dev server, the trial then offers to restart it with the `unsupported-firmware` deviation (the branch firewall on SFOS 20.0.3) and run again: the firmware check now fails, and you can watch the result change in CISO Assistant. This is continual evidence collection in miniature: the schedule runs the same collector every day and CISO Assistant keeps each result.
 
 If you share output for help, remove identifiers first: tenant IDs, host names, IP addresses and serial numbers.
 
@@ -136,4 +159,4 @@ If you share output for help, remove identifiers first: tenant and client IDs, d
 
 ## Unattended
 
-`HOUND_TRIAL_YES=1 make trial` answers yes to every question and gives the wizards their answers as options (`--yes`). Stages 5 to 8 replay fictional answers through the same commands an agent uses: the third parties with `hound supplier draft`, the system with `hound onboard SOPHOS-NETWORK pending`, its decisions from the onboarding tutorial's answers typed into `hound onboard`, and a control with `hound add control`. Because `hound approve` refuses without a person at a terminal, approved copies of the two supplier files stand in for it ([`examples/trial/`](../../examples/trial/README.md)). It stops before the Sophos step, which needs your credential, and runs the Microsoft 365 step against the dev server's compliant tenant. CI uses it to check the trial against a fresh CISO Assistant, twice: the second run applies nothing new.
+`HOUND_TRIAL_YES=1 make trial` answers yes to every question and gives the wizards their answers as options (`--yes`). Stages 5 to 8 replay fictional answers through the same commands an agent uses: the third parties with `hound supplier draft`, the system with `hound onboard SOPHOS-NETWORK pending`, its decisions from the onboarding tutorial's answers typed into `hound onboard`, and a control with `hound add control`. Because `hound approve` refuses without a person at a terminal, approved copies of the two supplier files stand in for it ([`examples/trial/`](../../examples/trial/README.md)). Step 9 uses the Sophos Central dev server, publishes, and collects again with the `unsupported-firmware` deviation; step 10 runs against the Microsoft 365 dev server's compliant tenant. No step needs a credential. CI uses it to check the trial against a fresh CISO Assistant, twice: the second run applies nothing new.

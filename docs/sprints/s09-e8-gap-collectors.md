@@ -1428,10 +1428,40 @@ At the maintainer's request (2026-11-23), so the trial's Microsoft 365 step can 
 - As built: `trial_m365_dev_args` (the server's printed settings as `--set` options, plus `sign_in=none`) and `trial_host_mode` in `scripts/lib/trial.sh`; `m365_dev` in `scripts/trial.sh` starts the server in its own process group with an exit trap, and runs the collector with `host_mode` set, so hound's container is on the host network (a `make ca-up` stack is then reached on its published port).
 - Found on the way: the first run failed with "needs the secret client_certificate" because the trial image was older than s09-52 (see the s09-43 note on stale images); rebuilt. It also left the dev server running when the step failed, hence the exit trap.
 
+### s09-54 Sophos Central dev server, and a trial with no API keys (added 2026-11-23)
+- [ ] Done
+
+Added at the maintainer's request (2026-11-23; built as s09-52, renumbered on merge because the sprint branch had taken s09-52 and s09-53): an example of IT to audit, so the trial for Example Pty Ltd tests the configuration and continual evidence collection self-contained, with no API keys. Follows the Microsoft 365 dev server (s09-44). The XGS firewall's own API waits on its specification (s09-15/16), so it is not mocked here.
+
+**Story:** As someone trying Evidence Hound, I want `make trial` to collect from a fictional Sophos Central tenant on my machine, so that I can see configuration, collection, publishing and a changed result in CISO Assistant without a vendor account or a credential.
+
+**Acceptance criteria**
+- A fictional Example Pty Ltd Sophos Central tenant described once (firewalls, admins, roles), from which every answer the `sophos-central` profile reads is generated with the same IDs everywhere: `whoami`, firewalls, admins and roles, paged by page number as Sophos Central pages them. Variants `compliant` (every check passes) and `gaps` (named deviations, each failing a named check).
+- No sign-in logic: the token address answers one fixed response, as the profile's own recorded tests do, and checks no credential.
+- `make sophos-dev` serves it on a local port (`--variant`, `--deviation`, `--port`, and `--public-url` for the address the runner container reaches it at).
+- `make trial`, step 9, uses the dev server by default: it starts it, adds the `sophos` rest collector with the dev server's addresses and a placeholder secret (no question asks for a credential), runs it dry, publishes, then offers to switch on a deviation and run again so the result in CISO Assistant changes. A person's own Sophos Central tenant stays an option. An unattended run (`HOUND_TRIAL_YES=1`) goes through step 9 too.
+- `docs/tutorials/sophos-dev-server.md` and the trial guide say what the tenant holds, the variants, and what it cannot show.
+
+**Tests first**
+- `SophosDevTenantTests.Every_query_the_profile_reads_is_served`
+- `SophosDevTenantTests.Ids_are_the_same_across_answers`
+- `SophosDevTenantTests.Compliant_tenant_passes_every_check`
+- `SophosDevTenantTests.Each_deviation_fails_its_named_check`
+- `SophosDevTenantTests.The_token_address_checks_no_credential`
+- `trial.bats`: the dev server's address for each CISO Assistant case, and the collector settings the trial writes for it.
+
+**Functional check**
+- `make sophos-dev`, then `hound run --only sophos --dry-run` against it; `HOUND_TRIAL_YES=1 make trial` in the dev container goes through step 9 with no credential.
+- Result (2026-11-23, cloud session, no Docker): `make sophos-dev ARGS="--variant gaps --port 5372"` printed the tenant and the collector settings. With a config holding only that `sophos` collector (placeholder secret in a file), `hound config validate --check-secrets` answered "valid", `hound collect` wrote `firewalls.json`, `admins.json` (5 admins over 3 pages) and `roles.json`, and `hound run --only sophos --dry-run` ended `succeeded` with no problems. `SophosDevTenantTests` (7) run the rest collector with the library profile against the compliant tenant (both checks pass), each deviation alone (each fails only its named check) and the gaps tenant (both fail); the token address answers with or without a credential. `SophosDevServerOptionsTests` (7) pass; `bats scripts/tests` and shellcheck are clean; whole unit suite green apart from the Docker-only functional tests.
+- Not yet: `HOUND_TRIAL_YES=1 make trial` needs Docker and a CISO Assistant, which the cloud session does not have. Ticking waits on the maintainer running it (and `make trial` by hand) in the dev container.
+- As built: `src/EvidenceHound.SophosDevServer` (`sophos-dev`, not in the runner image): `SophosDevTenant` (firewalls, admins, predefined roles, `Compliant`, `Deviations`, `For`, `Settings(url)`), `SophosAnswers` (pure: `whoami`, the token answer, the three lists), `DevSophosServer` (WireMock, pages of 2 by `page`, every interface when a port is given, `--public-url` named in `whoami`), `DevServerOptions`. Trial: `trial_network_args` adds `--add-host host.docker.internal:host-gateway` on a `make ca-up` network; `trial_dev_url`, `trial_sophos_dev_sets` and `trial_uses_dev_server` in `scripts/lib/trial.sh`; step 9 starts the server in the background (stopped when the trial ends), adds the collector with `--yes`, and offers a second run with `unsupported-firmware`. Docs: `docs/tutorials/sophos-dev-server.md` and section 9 of `docs/tutorials/local-trial.md`.
+- The token address answers one fixed response and checks nothing, as the profile's recorded tests do. It is not sign-in logic, but say so if the maintainer would rather the profile skip auth for a dev server instead.
+
 ## Discovered work
 
 - s09-52: `hound config validate` passed a config with `sign_in: none` and the real Graph address; the refusal comes at `hound run`. Have `config validate` run each collector's option checks.
-
+- s09-54: the Microsoft 365 (s09-44) and Sophos Central dev servers each have their own small serving code (paging, request log). Once both are merged, move it into one shared helper.
+- s09-54: scheduled collection after the trial needs the Sophos Central dev server running; the trial stops it when it ends. Consider a compose service for it beside the runner, if the trial grows a scheduler step.
 - s09-51: a manual evidence source needs its check mapped to a requirement, and the requirement taken out of `manual_only`; no command does it, so an agent edits the mapping by hand and the trial has no manual evidence stage. Add `hound mapping add-check --mapping <file> --requirement <ref> --check <id>` (asks nothing, `--json`), then a manual evidence stage in the trial (drop a scan report, `hound manual propose` by the agent, `hound manual approve` by the person).
 
 - s09-47: move the fictional example repo's audits to series (`EX-E8`, `EX-ESSENTIALS`, `EX-BASELINE` with cycles), with its config targets, the example run and the tests that use `EX-E8-2026` as a fixture.

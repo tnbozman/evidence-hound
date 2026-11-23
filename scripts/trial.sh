@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 # Interactive local trial: from the dev container, with CISO Assistant already running, run Evidence Hound in a
 # container next to it. The guided steps: a new organisation (hound init), a hand-over to your coding agent, which
-# onboards the Sophos perimeter firewall (hound agent setup), then the Sophos Central collector and Microsoft 365.
+# onboards the Sophos perimeter firewall (hound agent setup), then the Sophos Central collector against a fictional tenant on this
+# machine (no credential; your own tenant is an option), and Microsoft 365.
 # Guide: docs/tutorials/local-trial.md
 #
 # Usage: make trial (or scripts/trial.sh). Safe to stop and run again: finished steps are skipped.
 # Environment:
 #   HOUND_TRIAL_DIR        the trial workspace (default .dev/trial, git-ignored)
 #   HOUND_TRIAL_IMAGE      the runner image to build and use (default evidence-hound-runner:trial)
-#   HOUND_TRIAL_YES=1      answer yes to every question (for unattended checks); stops before Sophos and M365
+#   HOUND_TRIAL_YES=1      answer yes to every question (for unattended checks): Sophos Central and Microsoft 365 use their dev servers
+#   HOUND_TRIAL_SOPHOS_PORT  the Sophos Central dev server's port (default 5370)
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -19,6 +21,8 @@ ws="${HOUND_TRIAL_DIR:-$root/.dev/trial}"
 image="${HOUND_TRIAL_IMAGE:-evidence-hound-runner:trial}"
 yes="${HOUND_TRIAL_YES:-0}"
 state="$ws/state"
+sophos_port="${HOUND_TRIAL_SOPHOS_PORT:-5370}"
+sophos_dev_pid=""
 
 if [[ -t 1 ]]; then bold=$'\033[1m'; dim=$'\033[2m'; plain=$'\033[0m'; else bold=""; dim=""; plain=""; fi
 
@@ -262,23 +266,80 @@ system_stage() { stage system 6 "The system: the Sophos perimeter firewall ($sys
 audit_stage() { stage audit 7 "The system's audit: one decision per requirement" yes replay_audit "Assets: $system. Compliance > Audits: $(audit_ref)-<period>-$system."; }
 controls_stage() { stage controls 8 "Controls the audit relies on" no replay_controls "Operations > Applied controls, linked to $(audit_ref)-<period>-$system."; }
 
+# sophos_dev [DEVIATION] (re)starts the Sophos Central dev server in the background, compliant or with one deviation
+sophos_dev() {
+  local url args=()
+  url="$(trial_dev_url "$(cat "$state/ca-mode")" "$sophos_port")"
+  stop_sophos_dev
+  args=(--port "$sophos_port" --public-url "$url")
+  [[ -n "${1:-}" ]] && args+=(--deviation "$1")
+  show "make sophos-dev ARGS=\"${args[*]}\""
+  dotnet run --project "$root/src/EvidenceHound.SophosDevServer" -- "${args[@]}" >"$ws/sophos-dev.log" 2>&1 &
+  sophos_dev_pid=$!
+  local tries=0
+  until answers_ok "http://localhost:$sophos_port/whoami/v1"; do
+    kill -0 "$sophos_dev_pid" 2>/dev/null || die "The Sophos Central dev server stopped; see ${ws#"$root"/}/sophos-dev.log."
+    ((tries++ < 180)) || die "The Sophos Central dev server did not answer within three minutes; see ${ws#"$root"/}/sophos-dev.log."
+    sleep 1
+  done
+  say "The Sophos Central dev server answers at $url (${1:-every control in place})."
+}
+
+stop_sophos_dev() {
+  [[ -n "$sophos_dev_pid" ]] || return 0
+  kill "$sophos_dev_pid" 2>/dev/null || true
+  wait "$sophos_dev_pid" 2>/dev/null || true
+  sophos_dev_pid=""
+}
+trap stop_sophos_dev EXIT
+
 sophos() {
-  step "9. Evidence collectors: your Sophos Central tenant"
+  step "9. Evidence collectors: Sophos Central, a fictional tenant on this machine or your own"
   mkdir -p "$ws/profiles"
   cp -R "$root/profiles/sophos-central.yaml" "$root/profiles/sophos-central.tests" "$ws/profiles/"
-  case "$(trial_collector_step "$yes" "$ws/repo/hound.yaml" sophos)" in
-    unattended) say "Unattended run: stopping before Sophos, which needs your credential."; return ;;
-    "added already") say "A collector named sophos is already in repo/hound.yaml." ;;
+  local dev=yes
+  case "$(trial_collector_step 0 "$ws/repo/hound.yaml" sophos)" in
+    "added already")
+      say "A collector named sophos is already in repo/hound.yaml."
+      trial_uses_dev_server "$ws/repo/hound.yaml" "$sophos_port" || dev=no
+      ;;
     add)
-      say "You need a Sophos Central API credential with the Service Principal Read-Only role (docs/collectors/sophos.md)."
-      say "Sophos Central is read by the rest collector with the sophos-central profile, copied into ${ws#"$root"/}/profiles with its tests."
-      say "hound asks for the profile's client ID and secret, and for the firewall firmware versions still in support (such as 21.5, 22.0)."
-      say "The secret is not shown as you type, and is saved under ${ws#"$root"/}/secrets (git-ignored, mode 600), never printed."
-      hound yes add collector rest --name sophos --config hound.yaml --schedule "0 4 * * *" --secrets-dir /trial/secrets \
-        --set profile=sophos-central --set profiles_path=/trial/profiles
+      say "The Sophos Central dev server is a fictional Example Pty Ltd tenant (docs/tutorials/sophos-dev-server.md): two firewalls"
+      say "and five admins, served on this machine. It needs no account and no credential, and nothing leaves the machine."
+      if [[ "$yes" != 1 ]] && ! ask "Use the dev server? Answer n to use your own Sophos Central tenant instead."; then dev=no; fi
+      if [[ "$dev" == yes ]]; then
+        sophos_dev
+        say "Sophos Central is read by the rest collector with the sophos-central profile, copied into ${ws#"$root"/}/profiles with its tests."
+        say "The dev server checks no secret, so the collector gets a placeholder one; no question asks for a credential."
+        mkdir -p "$ws/inbox"
+        printf '%s\n' sophos-dev-server-checks-no-secret >"$ws/inbox/sophos-dev-secret"
+        local sets
+        mapfile -t sets < <(trial_sophos_dev_sets "$(trial_dev_url "$(cat "$state/ca-mode")" "$sophos_port")")
+        hound no add collector rest --name sophos --config hound.yaml --schedule "0 4 * * *" --secrets-dir /trial/secrets \
+          --secret-file client_secret=/trial/inbox/sophos-dev-secret "${sets[@]}" --yes
+        rm -f "$ws/inbox/sophos-dev-secret"
+      else
+        say "You need a Sophos Central API credential with the Service Principal Read-Only role (docs/collectors/sophos.md)."
+        say "hound asks for the profile's client ID and secret, and for the firewall firmware versions still in support (such as 21.5, 22.0)."
+        say "The secret is not shown as you type, and is saved under ${ws#"$root"/}/secrets (git-ignored, mode 600), never printed."
+        hound yes add collector rest --name sophos --config hound.yaml --schedule "0 4 * * *" --secrets-dir /trial/secrets \
+          --set profile=sophos-central --set profiles_path=/trial/profiles
+      fi
       ;;
   esac
-  run_collector sophos "ISM-1501, which the firewall firmware check feeds" "signs in and reads the firewalls"
+  [[ "$dev" == yes && -z "$sophos_dev_pid" ]] && sophos_dev
+  run_collector sophos "ISM-1501, which the firewall firmware check feeds" "reads the firewalls"
+  if [[ "$dev" == yes ]]; then
+    say "Evidence is collected on a schedule, so a change in Sophos Central shows up at the next run. To see one:"
+    if ask "Take the branch firewall out of firmware support in the dev server and collect again?"; then
+      sophos_dev unsupported-firmware
+      hound no run --config hound.yaml --only sophos
+      hound no status --config hound.yaml
+      say "Look at the $(audit_ref) audit in CISO Assistant again: the firmware check now fails, naming the branch firewall."
+      say "Run make trial again to collect from the compliant tenant once more."
+    fi
+    stop_sophos_dev
+  fi
   say "ISM-1501 also needs the Microsoft 365 collector's operating system check, so it stays not assessed until step 10 runs too."
   say "Sophos Central is read for network devices only: endpoint protection evidence comes from the endpoints' own antivirus."
 }
