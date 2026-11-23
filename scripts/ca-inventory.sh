@@ -161,6 +161,20 @@ answer ref_ids "$(jq -n \
   --argjson revision_paths "$(paths_like 'entity-assessments/.*revis|entity-assessment-revisions|entity_assessment')" \
   '{business_impact_analysis: ($bia | map_values(index("ref_id") != null)), entity_assessment: ($ea | map_values(index("ref_id") != null)), metric_instance: ($mi | map_values(index("ref_id") != null)), entity_assessment_revision_paths: $revision_paths}')"
 
+# --- Q7 (s10-04): recurring task templates, team emails and evidence labels, for the evidence plan --------------------------
+task_probe="$(call POST "task-templates/" "$(jq -n --arg f "$folder_id" '{name: "hound probe task", ref_id: "TT-HOUND-PROBE", folder: $f,
+  description: "probe", is_recurrent: true, task_date: "2027-01-31", enabled: true,
+  schedule: {interval: 3, frequency: "MONTHLY", days_of_week: [], weeks_of_month: [], months_of_year: []}}')")"
+task_id="$(body_of "$task_probe" | jq -r '.id // empty')"
+task_read="$( [[ -n "$task_id" ]] && call GET "task-templates/$task_id/" || echo "000 {}")"
+answer task_templates "$(jq -n \
+  --argjson paths "$(paths_like '^/api/task-(templates|nodes)/')" \
+  --argjson tt "$(props TaskTemplate)" --argjson groups "$(props UserGroup)" --argjson ev "$(props Evidence)" \
+  --argjson enums "$(jq '[.components.schemas | to_entries[] | select(.key | test("Frequency|Schedule|Recurr|TaskNode.*Status|Status.*Enum")) | {(.key): (.value.enum // .value.properties // .value)}] | add // {}' "$schema")" \
+  --arg cs "$(status_of "$task_probe")" --arg cb "$(body_of "$task_probe" | head -c 1500)" --arg rb "$(body_of "$task_read" | head -c 2500)" \
+  '{paths: $paths, task_template_fields: $tt, user_group_fields: $groups, evidence_fields: $ev, enums: $enums, create_status: $cs, create_body: $cb, read_body: $rb}')"
+[[ -n "$task_id" ]] && call DELETE "task-templates/$task_id/" > /dev/null
+
 # --- Clean up ------------------------------------------------------------------------------------
 for id in "$baseline_id" "$fv_id" "$audit_id"; do
   [[ -n "$id" ]] && call DELETE "compliance-assessments/$id/" > /dev/null
