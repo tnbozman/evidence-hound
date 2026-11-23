@@ -71,7 +71,26 @@ public sealed class CollectStep(ISecretProvider secrets, IEvidenceStore store, I
         services.HttpClients)
     {
         Capabilities = new CollectorCapabilities(CapabilityRouting.For(Scope, instance.Name, instance.Settings.GetValueOrDefault("system"))),
+        History = new StoreHistory(store, instance.Name),
     };
+
+    /// <summary>The instance's earlier complete runs in the store, read only when a collector asks.</summary>
+    private sealed class StoreHistory(IEvidenceStore store, string collector) : IEvidenceHistory
+    {
+        public async Task<IReadOnlyList<EarlierFile>> EarlierAsync(string fileName, CancellationToken cancellationToken)
+        {
+            var earlier = new List<EarlierFile>();
+            foreach (var run in (await store.ListRunsAsync(collector, cancellationToken)).Where(r => r.Complete))
+            {
+                if (await store.ReadFileAsync(run, fileName, cancellationToken) is { } content)
+                {
+                    earlier.Add(new EarlierFile(run.StartedAt, content));
+                }
+            }
+
+            return earlier;
+        }
+    }
 
     private static async Task<CollectorOutput> ReadAsync(CollectionResult result, CancellationToken cancellationToken)
     {

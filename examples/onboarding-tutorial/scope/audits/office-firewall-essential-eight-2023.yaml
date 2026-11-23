@@ -75,10 +75,6 @@ assessments:
     status: to_do
     result: not_assessed
     observation: "Manual evidence: Firmware hotfixes for exploited vulnerabilities are applied within 48 hours; the firmware history in Sophos Central is the record. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
-  - ref: ISM-1694
-    status: to_do
-    result: not_assessed
-    observation: "Manual evidence: Firmware updates are applied within two weeks of release; the firmware history in Sophos Central is the record. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
   - ref: ISM-1695
     status: done
     result: not_applicable

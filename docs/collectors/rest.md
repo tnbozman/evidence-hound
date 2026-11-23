@@ -249,6 +249,7 @@ checks:
 | `when_empty` | What no rows in scope means: `not_applicable`, `fail` or `unable_to_assess`. Required: there is no default, because an empty list means different things for different checks. |
 | `describe` | The observation. `{passed}`, `{failed}`, `{total}` (rows read) and `{matched}` (rows in scope) are filled in, as are `${...}` placeholders. Failing rows are listed after it, by `id` or `name`, up to 20. |
 | `code`, `with` | A built-in code check instead of `each` and `require`, with its own settings. |
+| `history` | For a code check only: a query it is over whose items from the instance's earlier runs it is also given, oldest first, as the evidence store still keeps them. The run saves them as `<query>.history.json`, which the result cites, so it can be reproduced from this run's evidence. For things an API gives no date for, such as how long a firmware upgrade has been offered. |
 
 A **test** is a map with `field`, one operator, and optionally `missing` and `negate`:
 
@@ -278,7 +279,7 @@ A **test** is a map with `field`, one operator, and optionally `missing` and `ne
 | `count_at_least`, as `{ count_at_least: N }` | At least N rows are in scope. |
 | `{ ratio_at_least: 0.95, partial_at: 0.8 }` | At least 95% pass. From `partial_at` up to it, the result is `partial`; below it, `fail`. |
 
-Code checks are for what the operators cannot say. They are built into `hound`, named and tested; a profile names one with `code`. Today there is one, `sophos.super_admin_count`, over Sophos Central admins and roles with `with: { max: ... }`. There are no runtime code plugins.
+Code checks are for what the operators cannot say. They are built into `hound`, named and tested; a profile names one with `code`. Today they are `sophos.super_admin_count` (Sophos Central admins and roles, `with: { max: ... }`), `sophos.firmware_upgrade_age` (firewalls and the firmware upgrade check, `history` of the upgrade check, `with: { days: ... }`), `terraform.no_drift` and `terraform.tests_pass`. There are no runtime code plugins.
 
 ## Results
 

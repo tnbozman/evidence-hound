@@ -19,10 +19,11 @@ public static class CheckEvaluator
 
     /// <summary>
     /// Evaluates a check over the sources it names: a declarative check reads its one source; a code check gets every source in the
-    /// order of its <c>over</c>. <paramref name="fileOf"/> names each source's evidence file, cited in the observation.
+    /// order of its <c>over</c>, and <paramref name="earlier"/>, its history query's earlier rows. <paramref name="fileOf"/> names each
+    /// source's evidence file, cited in the observation.
     /// </summary>
     public static Finding Evaluate(
-        Check check, IReadOnlyDictionary<string, RowSource> sources, Renderer renderer, DateTimeOffset now, Func<string, string?>? fileOf = null)
+        Check check, IReadOnlyDictionary<string, RowSource> sources, Renderer renderer, DateTimeOffset now, Func<string, string?>? fileOf = null, IReadOnlyList<EarlierRows>? earlier = null)
     {
         ArgumentNullException.ThrowIfNull(check);
         ArgumentNullException.ThrowIfNull(sources);
@@ -37,7 +38,7 @@ public static class CheckEvaluator
         return inputs.FirstOrDefault(i => i is not RowSource.Rows { Unmatched: 0 }) is { } blocked
             ? Evaluate(check with { Code = null }, blocked, renderer, now, fileOf(blocked.Name))
             : CodeChecks.All.TryGetValue(check.Code, out var code)
-                ? Cite(code(new CodeCheckInput([.. inputs.Cast<RowSource.Rows>().Select(r => r.Items)], With(check, renderer), now)), files)
+                ? Cite(code(new CodeCheckInput([.. inputs.Cast<RowSource.Rows>().Select(r => r.Items)], With(check, renderer), now) { Earlier = earlier ?? [] }), files)
                 : Unable($"code check '{check.Code}' is not built into this version of hound.");
     }
 

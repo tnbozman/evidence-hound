@@ -149,16 +149,30 @@ public sealed partial class RestCollector : ICollector, IInstanceValidator
             }
         }
 
+        var history = new Dictionary<string, (IReadOnlyList<EarlierRows> Rows, CollectedEvidence? File)>(StringComparer.Ordinal);
+        foreach (var name in profile.Checks.Select(c => c.History).OfType<string>().Distinct(StringComparer.Ordinal).Where(queryFiles.ContainsKey))
+        {
+            var earlier = HistoryEvidence.Rows(await context.History.EarlierAsync(QueryEvidence.FileName(name), cancellationToken).ConfigureAwait(false));
+            history[name] = (earlier, HistoryEvidence.File(name, earlier, secrets).Match(f => (CollectedEvidence?)f, _ => null));
+        }
+
         var files = queryFiles.Concat(datasetFiles).ToDictionary(StringComparer.Ordinal);
-        return Result.Combine(profile.Checks.Select(check => Assess(check, sources, files, renderer, now, context.Name)))
-            .Map(checks => new CollectionResult(checks, [.. queryFiles.Values, .. datasetFiles.Values], []));
+        return Result.Combine(profile.Checks.Select(check => Assess(check, sources, files, history, renderer, now, context.Name)))
+            .Map(checks => new CollectionResult(checks, [.. queryFiles.Values, .. datasetFiles.Values, .. history.Values.Select(h => h.File).OfType<CollectedEvidence>()], []));
     }
 
     private static Result<CheckResult> Assess(
-        Check check, Dictionary<string, RowSource> sources, Dictionary<string, CollectedEvidence> files, Renderer renderer, DateTimeOffset now, string source)
+        Check check,
+        Dictionary<string, RowSource> sources,
+        Dictionary<string, CollectedEvidence> files,
+        Dictionary<string, (IReadOnlyList<EarlierRows> Rows, CollectedEvidence? File)> history,
+        Renderer renderer,
+        DateTimeOffset now,
+        string source)
     {
-        var finding = CheckEvaluator.Evaluate(check, sources, renderer, now, name => files.GetValueOrDefault(name)?.FileName);
-        var cited = check.Over.Select(name => files.GetValueOrDefault(name)?.FileName).OfType<string>().ToArray();
+        var earlier = check.History is { } name && history.TryGetValue(name, out var found) ? found : ([], null);
+        var finding = CheckEvaluator.Evaluate(check, sources, renderer, now, name => files.GetValueOrDefault(name)?.FileName, earlier.Rows);
+        var cited = check.Over.Select(name => files.GetValueOrDefault(name)?.FileName).Append(earlier.File?.FileName).OfType<string>().ToArray();
         return CheckId.Create(check.Id).Bind(id => CheckResult.Create(id, finding.Outcome, Truncate(finding.Observation), cited, now, source));
     }
 

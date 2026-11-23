@@ -270,6 +270,9 @@ public sealed record Check(string Id, IReadOnlyList<string> Over)
 
     /// <summary>The code check's own settings, as written.</summary>
     public IReadOnlyDictionary<string, string> With { get; init; } = new Dictionary<string, string>();
+
+    /// <summary>A query the code check is over whose earlier evidence, from the instance's earlier runs, it is also given.</summary>
+    public string? History { get; init; }
 }
 
 /// <summary>The test operators. Each compares one field of a row with the test's operands.</summary>
