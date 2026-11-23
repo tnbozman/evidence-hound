@@ -161,6 +161,8 @@ setup() {
   config="$BATS_TEST_TMPDIR/hound.yaml"
   printf 'collectors: []\ntarget:\n  mapping: mappings/essential-eight-2023.yaml\n  compliance_assessment: EX-E8\n  health_control: AC-AUTO-EVIDENCE\n' >"$config"
   trial_add_target "$config" mappings/grc-platform-essential-eight-2023.yaml EX-E8-GRC-PLATFORM
+  printf 'scheduler:\n  time_zone: UTC\n' >>"$config"
+  trial_add_target "$config" mappings/grc-platform-essential-eight-2023.yaml EX-E8-GRC-PLATFORM
   trial_add_target "$config" mappings/grc-platform-essential-eight-2023.yaml EX-E8-GRC-PLATFORM
   trial_add_target "$config" mappings/office-firewall-essential-eight-2023.yaml EX-E8-OFFICE-FIREWALL
   run cat "$config"
@@ -169,6 +171,9 @@ setup() {
   [ "$(grep -c 'compliance_assessment: EX-E8-GRC-PLATFORM$' "$config")" -eq 1 ]
   [ "$(grep -c 'compliance_assessment: EX-E8-OFFICE-FIREWALL$' "$config")" -eq 1 ]
   [[ "$output" == "collectors: []"* ]]
+  [ "$(grep -n 'EX-E8-OFFICE-FIREWALL' "$config" | cut -d: -f1)" -lt "$(sed -n '/^scheduler:/=' "$config")" ]
+  run grep -A2 '^scheduler:' "$config"
+  [[ "$output" == *"time_zone: UTC"* ]]
 }
 
 @test "the IaC collectors read the pipeline dev server with their profiles and a placeholder token" {

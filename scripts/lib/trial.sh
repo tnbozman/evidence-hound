@@ -102,21 +102,59 @@ trial_workdir() {
   fi
 }
 
-# trial_brief STAGE SERIES SYSTEM -> what to ask the coding agent for one stage, with the skills it uses; fails for an unknown stage
+# trial_scene -> the deployment the trial onboards: the onboarding tutorial's (docs/examples/onboarding-tutorial.md)
+trial_scene() {
+  cat <<'TEXT'
+Example Pty Ltd, a small defence supplier, runs its cyber GRC on CISO Assistant and Evidence Hound, self-hosted and private:
+  - GRC-PLATFORM: CISO Assistant and Evidence Hound in Docker Compose on one private Oracle Cloud (OCI) VM, with no public IP
+    address. Its network, backups and hosting controls are Terraform, tested on every change and checked nightly for drift.
+  - OFFICE-FIREWALL: the office's Sophos XGS 88W firewall, managed in Sophos Central. Staff reach the GRC platform only over
+    its site-to-site VPN to OCI.
+  - Microsoft 365: staff identities, sign-in with MFA, and the laptops in Intune.
+The GRC team audits each system to the Essential Eight, maturity level 2, in CISO Assistant: third parties first, then each
+system and its audit, the controls it relies on, and evidence that collectors gather on a schedule. Nothing here is real, and
+every collector reads a fictional tenant on this machine: no account, API key or cloud is needed.
+Diagram: docs/examples/onboarding-tutorial.md, The deployment.
+TEXT
+}
+
+# trial_systems -> the systems the trial onboards, in order
+trial_systems() { echo "GRC-PLATFORM OFFICE-FIREWALL"; }
+
+# trial_system_product SYSTEM -> what the system is, as hound onboard records it
+trial_system_product() {
+  case "$1" in
+    GRC-PLATFORM) echo "CISO Assistant and Evidence Hound on an OCI Compute VM" ;;
+    OFFICE-FIREWALL) echo "Sophos Firewall on an XGS 88W appliance, managed in Sophos Central" ;;
+    *) return 1 ;;
+  esac
+}
+
+# trial_system_solution SYSTEM -> the supplier's solution the system is
+trial_system_solution() {
+  case "$1" in
+    GRC-PLATFORM) echo SOL-OCI-HOSTING ;;
+    OFFICE-FIREWALL) echo SOL-SOPHOS-FIREWALL ;;
+    *) return 1 ;;
+  esac
+}
+
+# trial_brief STAGE SERIES [SYSTEM] -> what to ask the coding agent for at one stage, for a person to paste
 trial_brief() {
-  local series="$2" system="$3"
+  local series="$2" system="${3:-}"
   case "$1" in
     third-parties) cat <<TEXT
-Draft the third parties for the Sophos perimeter firewall ($system): Sophos, who makes it, and the
-managed service provider that runs it for us (Example Managed Services Pty Ltd, an msp for Sophos). Use the skills onboard-a-third-party
-and assess-a-supplier, with hound supplier draft. Read the vendor documents in ../inbox. Give each level its reason.
+Draft the third parties our two systems depend on, with the skills onboard-a-third-party and assess-a-supplier and
+hound supplier draft: Oracle (Oracle Cloud Infrastructure, solution SOL-OCI-HOSTING) for GRC-PLATFORM; Sophos (the XGS 88W and
+Sophos Central, solution SOL-SOPHOS-FIREWALL) for OFFICE-FIREWALL; and the open-source CISO Assistant and Evidence Hound projects
+for GRC-PLATFORM. Read the vendor documents in ../inbox. Give each level its reason.
 I approve them and conclude their reviews myself, with hound approve.
 TEXT
       ;;
     system) cat <<TEXT
-Start onboarding the Sophos perimeter firewall as system $system with the skill onboard-a-system-with-hound:
-hound onboard $system pending --json --repo . with its owner, product, solution and maturity level groups,
-and the API specification in ../specs. Ask me for what you cannot read from the documents.
+Start onboarding $system ($(trial_system_product "$system")) with the skill onboard-a-system-with-hound:
+hound onboard $system pending --json --repo . with its owner, product, solution $(trial_system_solution "$system") and the
+maturity level groups, and any API specification in ../specs. Ask me for what you cannot read from the documents.
 TEXT
       ;;
     audit) cat <<TEXT
@@ -135,18 +173,46 @@ TEXT
   esac
 }
 
-# trial_stage_ready STAGE REPO SYSTEM -> 0 once the stage's draft is in the repo: two third parties, the system's session, its
-# audit (written when the person approves), a control besides hound init's health control
+# trial_stage_ready STAGE REPO [SYSTEM] -> 0 once the agent's draft for the stage is in the repo
 trial_stage_ready() {
-  local repo="$2" slug
-  slug="$(printf '%s' "$3" | tr '[:upper:]' '[:lower:]')"
+  local repo="$2" system="${3:-}" slug
+  slug="$(printf '%s' "$system" | tr '[:upper:]' '[:lower:]')"
   case "$1" in
-    third-parties) (($(find "$repo/scope/third-parties" -maxdepth 1 -name '*.yaml' 2>/dev/null | wc -l) >= 2)) ;;
-    system) [[ -s "$repo/onboarding/$3/session.json" ]] ;;
+    third-parties) (($(find "$repo/scope/third-parties" -maxdepth 1 -name '*.yaml' 2>/dev/null | wc -l) >= 4)) ;;
+    system) [[ -s "$repo/onboarding/$system/session.json" ]] ;;
     audit) compgen -G "$repo/scope/audits/$slug-*.yaml" >/dev/null ;;
-    controls) (($(grep -c '^  - ref_id: AC-' "$repo/scope/controls.yaml" 2>/dev/null || true) >= 2)) ;;
+    controls) grep -Eq "^    systems: \[(.*, )?$system(, .*)?\]" "$repo/scope/controls.yaml" 2>/dev/null ;;
     *) return 1 ;;
   esac
+}
+
+# trial_add_target CONFIG MAPPING AUDIT adds a target to the deployment config, so collectors publish to a system's audit too:
+# a single `target:` becomes a `targets:` list first; a target already there for AUDIT is left as it is
+trial_add_target() {
+  local config="$1" mapping="$2" audit="$3"
+  grep -q "^    compliance_assessment: $audit\$" "$config" && return 0
+  awk -v mapping="$mapping" -v audit="$audit" '
+    function add() { print "  - mapping: " mapping; print "    compliance_assessment: " audit; added = 1 }
+    /^target:$/ { print "targets:"; inside = 1; first = 1; next }
+    /^targets:$/ { print; inside = 1; next }
+    inside && /^  / { if (first) { sub(/^  /, "  - "); first = 0 } else if ($0 !~ /^  - / && $0 !~ /^    /) { sub(/^  /, "    ") } print; next }
+    inside { add(); inside = 0 }
+    { print }
+    END { if (inside) add() }
+  ' "$config" >"$config.new" && mv "$config.new" "$config"
+}
+
+# trial_iac_dev_sets URL PROFILE -> hound add collector options for a rest collector reading the IaC pipeline dev server, one word per line
+trial_iac_dev_sets() {
+  local workflow=controls.yml
+  [[ "$2" == terraform-drift ]] && workflow=drift.yml
+  printf '%s\n' --set "profile=$2" --set profiles_path=/trial/profiles --set "api_url=$1" --set repository=example/grc-infra --set "workflow=$workflow"
+}
+
+# trial_controls_report_args DIR -> the IaC dev server's option for the report terraform test wrote to DIR/controls.xml, if it did
+trial_controls_report_args() {
+  [[ -s "$1/controls.xml" || -f "$1/controls.xml" ]] && echo "--controls-report $1/controls.xml"
+  return 0
 }
 
 # trial_collector_step UNATTENDED(1|0) CONFIG NAME -> unattended | added already | add

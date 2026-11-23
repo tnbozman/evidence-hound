@@ -3,7 +3,7 @@
 ref_id: "SUP-SOPHOS"
 name: "Sophos"
 domain: "Example Pty Ltd"
-# dependency: The perimeter firewall carries all office internet traffic. (agent)
+# dependency: The office firewall carries all office traffic and the site-to-site VPN to the GRC platform. (agent)
 dependency: 3
 # penetration: Sophos Central manages the firewall remotely. (agent)
 penetration: 2
@@ -13,7 +13,7 @@ maturity: 3
 trust: 3
 solutions:
   - ref_id: "SOL-SOPHOS-FIREWALL"
-    name: "Sophos XGS firewall and Sophos Central"
+    name: "Sophos XGS 88W firewall and Sophos Central"
     # criticality: to decide (1 to 4)
 contracts:
   - ref_id: "CTR-SOPHOS-2026"

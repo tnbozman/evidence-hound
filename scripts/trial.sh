@@ -1,16 +1,19 @@
 #!/usr/bin/env bash
 # Interactive local trial: from the dev container, with CISO Assistant already running, run Evidence Hound in a
-# container next to it. The guided steps: a new organisation (hound init), a hand-over to your coding agent, which
-# onboards the Sophos perimeter firewall (hound agent setup), then the Sophos Central collector against a fictional tenant on this
-# machine (no credential; your own tenant is an option), and Microsoft 365.
+# container next to it. It walks the onboarding tutorial's deployment: Example Pty Ltd self-hosts CISO Assistant and Evidence Hound
+# on a private Oracle Cloud VM (GRC-PLATFORM), and the office reaches it over a site-to-site VPN through a Sophos XGS 88W
+# (OFFICE-FIREWALL). Steps: a new organisation (hound init), a hand-over to your coding agent, which drafts the third parties, each
+# system, its Essential Eight ML2 audit and controls for you to approve, then the collectors, each against a fictional tenant on
+# this machine: the IaC pipeline (control tests and drift), Sophos Central and Microsoft 365. No account, key or cloud is needed.
 # Guide: docs/tutorials/local-trial.md
 #
 # Usage: make trial (or scripts/trial.sh). Safe to stop and run again: finished steps are skipped.
 # Environment:
 #   HOUND_TRIAL_DIR        the trial workspace (default .dev/trial, git-ignored)
 #   HOUND_TRIAL_IMAGE      the runner image to build and use (default evidence-hound-runner:trial)
-#   HOUND_TRIAL_YES=1      answer yes to every question (for unattended checks): Sophos Central and Microsoft 365 use their dev servers
+#   HOUND_TRIAL_YES=1      answer yes to every question (for unattended checks): every collector reads its dev server
 #   HOUND_TRIAL_SOPHOS_PORT  the Sophos Central dev server's port (default 5370)
+#   HOUND_TRIAL_IAC_PORT     the IaC pipeline dev server's port (default 5380)
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -23,6 +26,8 @@ yes="${HOUND_TRIAL_YES:-0}"
 state="$ws/state"
 sophos_port="${HOUND_TRIAL_SOPHOS_PORT:-5370}"
 sophos_dev_pid=""
+iac_port="${HOUND_TRIAL_IAC_PORT:-5380}"
+iac_dev_pid=""
 
 if [[ -t 1 ]]; then bold=$'\033[1m'; dim=$'\033[2m'; plain=$'\033[0m'; else bold=""; dim=""; plain=""; fi
 
@@ -132,10 +137,12 @@ workspace() {
   mkdir -p "$ws/repo" "$ws/evidence" "$ws/manual" "$ws/inbox" "$ws/specs"
   token
   say "hound writes the organisation's compliance repo into repo/, evidence into evidence/, and secrets into secrets/."
+  step "The scene"
+  trial_scene
 }
 
 # audit_ref -> the audit hound init wrote into the trial config
-audit_ref() { sed -n 's/^  compliance_assessment: *//p' "$ws/repo/hound.yaml" | tr -d '"'; }
+audit_ref() { sed -n 's/^ *compliance_assessment: *//p' "$ws/repo/hound.yaml" | head -n 1 | tr -d '"'; }
 
 organisation() {
   step "4. A new organisation: hound init, then apply its scope"
@@ -168,8 +175,8 @@ agent_setup() {
 From here your coding agent drafts each stage and you approve it. Start it in a second terminal and keep it open:
   cd ${ws#"$root"/}/repo && export PATH="\$PWD/../bin:\$PATH"
   claude        (or open the folder in VS Code and pick the hound-onboarding agent in Copilot)
-${ws#"$root"/}/bin/hound runs this image against this CISO Assistant. hound's container sees only ${ws#"$root"/}: put the
-firewall's API specification in ${ws#"$root"/}/specs and the vendor documents in ${ws#"$root"/}/inbox.
+${ws#"$root"/}/bin/hound runs this image against this CISO Assistant. hound's container sees only ${ws#"$root"/}: put any
+API specification in ${ws#"$root"/}/specs and the vendor documents in ${ws#"$root"/}/inbox.
 TEXT
 }
 
@@ -192,22 +199,22 @@ add() {
   if [[ "$yes" == 1 ]]; then hound no add "$@" --yes; else hound yes add "$@"; fi
 }
 
-# The system the trial onboards, and the stages an agent drafts. Each stage: what it is, the request for the agent, a wait until its
-# draft is in the repo, the person's approval where one is needed, then validate, plan and apply.
-system=SOPHOS-NETWORK
+# The stages an agent drafts. Each stage: what it is, the request for the agent, a wait until its draft is in the repo, the
+# person's approval where one is needed, then validate, plan and apply. A system's stages run once for each of trial_systems.
 
-# stage NAME NUMBER TITLE APPROVE(yes|no) REPLAY LOOK
+# stage NAME NUMBER TITLE APPROVE(yes|no) REPLAY LOOK [SYSTEM]
 stage() {
-  local name="$1" number="$2" title="$3" approve="$4" replay="$5" look="$6" series
+  local name="$1" number="$2" title="$3" approve="$4" replay="$5" look="$6" system="${7:-}" series key
+  key="$name${system:+-$system}"
   step "$number. $title"
   series="$(audit_ref)"
-  if done_already "$name"; then
-    say "Done already. Remove ${ws#"$root"/}/state/$name.done to do it again."
+  if done_already "$key"; then
+    say "Done already. Remove ${ws#"$root"/}/state/$key.done to do it again."
     return 0
   fi
   if [[ "$yes" == 1 ]]; then
     say "Unattended: replaying the fictional answers an agent and a person would give (examples/trial/README.md)."
-    "$replay"
+    "$replay" "$system"
   else
     say "Ask your agent, in its terminal:"
     say ""
@@ -224,47 +231,100 @@ stage() {
   fi
   if [[ "$name" == system ]]; then
     say "The session is in repo/onboarding/$system/session.json; nothing reaches CISO Assistant until its audit is approved."
-    mark_done "$name"
+    mark_done "$key"
     return 0
   fi
-  apply_scope "$name"
-  done_already "$name" && say "Look in CISO Assistant (https://localhost:8443): $look"
+  apply_scope "$key"
+  done_already "$key" && say "Look in CISO Assistant (https://localhost:8443): $look"
+}
+
+# draft_supplier SYSTEM REF NAME SOLUTION-REF SOLUTION-NAME CONTRACT-REF CONTRACT-NAME LEVEL... drafts one third party as an agent would
+draft_supplier() {
+  local system="$1" ref="$2" name="$3" sol="$4" sol_name="$5" ctr="$6" ctr_name="$7" levels=() level
+  shift 7
+  for level in "$@"; do levels+=(--level "$level"); done
+  hound no supplier draft --system "$system" --ref "$ref" --name "$name" --solution-ref "$sol" --solution-name "$sol_name" \
+    --contract-ref "$ctr" --contract-name "$ctr_name" "${levels[@]}" --kind vendor
 }
 
 replay_third_parties() {
-  hound no supplier draft --system "$system" --ref SUP-SOPHOS --name Sophos --solution-ref SOL-SOPHOS-FIREWALL \
-    --solution-name "Sophos XGS firewall and Sophos Central" --contract-ref CTR-SOPHOS-2026 --contract-name "Sophos XGS subscription 2026" \
-    --level "dependency=3:The perimeter firewall carries all office internet traffic." --level "penetration=2:Sophos Central manages the firewall remotely." \
-    --level "maturity=3:Publishes a security advisory programme." --level "trust=3:Long-standing vendor." --kind vendor
-  hound no supplier draft --system "$system" --ref SUP-EXAMPLE-MSP --name "Example Managed Services Pty Ltd" --solution-ref SOL-EXAMPLE-MSP-FIREWALL \
-    --solution-name "Managed firewall service" --contract-ref CTR-EXAMPLE-MSP-2026 --contract-name "Managed firewall service 2026" \
-    --level "dependency=3:Runs the firewall's changes and monitoring." --level "penetration=3:Holds admin access in Sophos Central." --kind msp --for SUP-SOPHOS
+  draft_supplier GRC-PLATFORM SUP-ORACLE "Oracle Cloud Infrastructure" SOL-OCI-HOSTING "OCI compute, networking and storage" \
+    CTR-OCI-2026 "OCI pay-as-you-go 2026" "dependency=3:The GRC platform runs only on it; moving it is a planned project." \
+    "penetration=2:It hosts the VM and its disks, but holds no account in our identity provider."
+  draft_supplier OFFICE-FIREWALL SUP-SOPHOS Sophos SOL-SOPHOS-FIREWALL "Sophos XGS 88W firewall and Sophos Central" \
+    CTR-SOPHOS-2026 "Sophos XGS subscription 2026" \
+    "dependency=3:The office firewall carries all office traffic and the site-to-site VPN to the GRC platform." \
+    "penetration=2:Sophos Central manages the firewall remotely."
+  draft_supplier GRC-PLATFORM SUP-CISO-ASSISTANT "CISO Assistant (open-source project)" SOL-CISO-ASSISTANT "CISO Assistant community edition" \
+    CTR-CISO-ASSISTANT-LICENCE "AGPL-3.0 licence" "dependency=3:It is our system of record for compliance." \
+    "penetration=1:It runs in our VM; the project has no access to it."
+  draft_supplier GRC-PLATFORM SUP-EVIDENCE-HOUND "Evidence Hound (open-source project)" SOL-EVIDENCE-HOUND "Evidence Hound runner" \
+    CTR-EVIDENCE-HOUND-LICENCE "Apache-2.0 licence" "dependency=2:It collects our evidence; CISO Assistant still works without it." \
+    "penetration=1:It runs in our VM with read-only credentials; the project has no access to it."
   say "Standing in for hound approve: the approved copies in examples/trial/third-parties."
   cp "$root/examples/trial/third-parties/"*.yaml "$ws/repo/scope/third-parties/"
 }
 
 replay_system() {
   # The maturity level's groups, as hound init wrote them on the organisation's audit: groups: ["1", "2"]
-  local groups=() group
+  local system="$1" groups=() group
   for group in $(sed -n 's/^groups: \[\(.*\)\]/\1/p' "$ws/repo/scope/audits/"*-e8.yaml | tr -d '",'); do groups+=(--group "$group"); done
   hound no onboard "$system" pending --json --repo . "${groups[@]}" --owner it@example.com \
-    --product "Sophos Firewall on an XGS appliance, managed in Sophos Central" --solution SOL-SOPHOS-FIREWALL >/dev/null
+    --product "$(trial_system_product "$system")" --solution "$(trial_system_solution "$system")" >/dev/null
 }
 
 replay_audit() {
   # Typed into hound onboard as a person would: the answers reach the container on its standard input.
-  hound no onboard "$system" --repo . <"$root/examples/onboarding-tutorial/answers/office-firewall.decisions.txt" >/dev/null
+  local slug
+  slug="$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')"
+  hound no onboard "$1" --repo . <"$root/examples/onboarding-tutorial/answers/$slug.decisions.txt" >/dev/null
 }
 
 replay_controls() {
-  hound no add control --scope scope --yes --ref-id AC-EXTERNAL-SCAN --name "Daily external vulnerability scan of the firewall" \
-    --owner it@example.com --systems "$system" --audit "$(audit_ref)-$system" --requirements ISM-1701
+  local audit
+  audit="$(audit_ref)-$1"
+  case "$1" in
+    GRC-PLATFORM)
+      hound no add control --scope scope --yes --ref-id AC-GRC-PATCHING --name "Unattended security updates on the GRC platform's VM" \
+        --owner it@example.com --systems GRC-PLATFORM --audit "$audit" --requirements ISM-1695
+      hound no add control --scope scope --yes --ref-id AC-GRC-RESTORE-TEST --name "Quarterly restore test of the GRC platform to a scratch VM" \
+        --owner it@example.com --systems GRC-PLATFORM --audit "$audit" --requirements ISM-1515
+      ;;
+    OFFICE-FIREWALL)
+      hound no add control --scope scope --yes --ref-id AC-EXTERNAL-SCAN --name "Daily external vulnerability scan of the office firewall" \
+        --owner it@example.com --systems OFFICE-FIREWALL --audit "$audit" --requirements ISM-1701
+      ;;
+  esac
 }
 
-third_parties() { stage third-parties 5 "Third parties: Sophos and the managed service provider" yes replay_third_parties "Third parties: SUP-SOPHOS and SUP-EXAMPLE-MSP, their solutions, contracts and reviews."; }
-system_stage() { stage system 6 "The system: the Sophos perimeter firewall ($system)" no replay_system ""; }
-audit_stage() { stage audit 7 "The system's audit: one decision per requirement" yes replay_audit "Assets: $system. Compliance > Audits: $(audit_ref)-<period>-$system."; }
-controls_stage() { stage controls 8 "Controls the audit relies on" no replay_controls "Operations > Applied controls, linked to $(audit_ref)-<period>-$system."; }
+third_parties() {
+  stage third-parties 5 "Third parties: Oracle, Sophos, and the CISO Assistant and Evidence Hound projects" yes replay_third_parties \
+    "Third parties: SUP-ORACLE, SUP-SOPHOS, SUP-CISO-ASSISTANT and SUP-EVIDENCE-HOUND, their solutions, contracts and reviews."
+}
+
+# onboard_system SYSTEM FIRST-NUMBER runs the system's three stages, numbered from FIRST-NUMBER
+onboard_system() {
+  local system="$1" n="$2"
+  stage system "$n" "$system: start onboarding it ($(trial_system_product "$system"))" no replay_system "" "$system"
+  stage audit "$((n + 1))" "$system: its Essential Eight ML2 audit, one decision per requirement" yes replay_audit \
+    "Assets: $system. Compliance > Audits: $(audit_ref)-<period>-$system." "$system"
+  stage controls "$((n + 2))" "$system: the controls its audit relies on" no replay_controls \
+    "Operations > Applied controls, linked to $(audit_ref)-<period>-$system." "$system"
+}
+
+# wire_audit SYSTEM adds the system's mapping (its API checks, as the onboarding tutorial has it) and a target for its audit series,
+# so collectors publish to the system's audit as well as the organisation's. No hound command writes these yet (s09, Discovered work).
+wire_audit() {
+  local slug mapping
+  slug="$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')"
+  mapping="mappings/$slug-essential-eight-2023.yaml"
+  if [[ ! -f "$ws/repo/$mapping" ]]; then
+    cp "$root/examples/onboarding-tutorial/$mapping" "$ws/repo/$mapping"
+    say "Copied the onboarding tutorial's $mapping: which of $1's requirements each of its checks answers."
+  fi
+  trial_add_target "$ws/repo/hound.yaml" "$mapping" "$(audit_ref)-$1"
+  say "repo/hound.yaml targets $(audit_ref)-$1 too, so the collector publishes to $1's own audit."
+}
 
 # sophos_dev [DEVIATION] (re)starts the Sophos Central dev server in the background, compliant or with one deviation
 sophos_dev() {
@@ -291,10 +351,97 @@ stop_sophos_dev() {
   wait "$sophos_dev_pid" 2>/dev/null || true
   sophos_dev_pid=""
 }
-trap stop_sophos_dev EXIT
+trap 'stop_sophos_dev; stop_iac_dev' EXIT
+
+# iac_dev [DEVIATION] (re)starts the IaC pipeline dev server in the background: the GRC platform's control tests (the report
+# terraform test wrote, when there is one) and its drift plan, as the IaC repository's GitHub Actions would serve them
+iac_dev() {
+  local url args=() report
+  url="$(trial_dev_url "$(cat "$state/ca-mode")" "$iac_port")"
+  stop_iac_dev
+  args=(--port "$iac_port" --public-url "$url")
+  report="$(trial_controls_report_args "$ws/iac")"
+  [[ -n "$report" ]] && args+=(--controls-report "${report#--controls-report }")
+  [[ -n "${1:-}" ]] && args+=(--deviation "$1")
+  show "make iac-dev ARGS=\"${args[*]}\""
+  dotnet run --project "$root/src/EvidenceHound.IacDevServer" -- "${args[@]}" >"$ws/iac-dev.log" 2>&1 &
+  iac_dev_pid=$!
+  local tries=0
+  until answers_ok "http://localhost:$iac_port/repos/example/grc-infra/actions/workflows/drift.yml/runs"; do
+    kill -0 "$iac_dev_pid" 2>/dev/null || die "The IaC pipeline dev server stopped; see ${ws#"$root"/}/iac-dev.log."
+    ((tries++ < 180)) || die "The IaC pipeline dev server did not answer within three minutes; see ${ws#"$root"/}/iac-dev.log."
+    sleep 1
+  done
+  say "The IaC pipeline dev server answers at $url (${1:-every control in place, no drift})."
+}
+
+stop_iac_dev() {
+  [[ -n "$iac_dev_pid" ]] || return 0
+  kill "$iac_dev_pid" 2>/dev/null || true
+  wait "$iac_dev_pid" 2>/dev/null || true
+  iac_dev_pid=""
+}
+
+# control_tests runs the onboarding tutorial's Terraform control tests (mock providers: no Oracle account, nothing created) into
+# iac/controls.xml, when Terraform is installed; the dev server then serves that real report
+control_tests() {
+  command -v terraform >/dev/null || { say "Terraform is not installed, so the dev server serves its own report of the same tests."; return 0; }
+  [[ -s "$ws/iac/controls.xml" ]] && { say "Using the control-test report in ${ws#"$root"/}/iac/controls.xml (remove it to test again)."; return 0; }
+  mkdir -p "$ws/iac"
+  rm -rf "$ws/iac/oci"
+  cp -R "$root/examples/onboarding-tutorial/infra/oci" "$ws/iac/oci"
+  say "The IaC pipeline runs the hosting controls as Terraform tests on every change. Running them here, as it would:"
+  show "terraform init -backend=false && terraform test -junit-xml=controls.xml   (in ${ws#"$root"/}/iac/oci)"
+  if (cd "$ws/iac/oci" && terraform init -backend=false -input=false >"$ws/iac/terraform.log" 2>&1 &&
+    terraform test -junit-xml="$ws/iac/controls.xml" >>"$ws/iac/terraform.log" 2>&1); then
+    say "terraform test passed; the dev server serves its report as the pipeline's control-tests artefact."
+  else
+    say "terraform test did not finish cleanly (see ${ws#"$root"/}/iac/terraform.log)."
+    [[ -s "$ws/iac/controls.xml" ]] || say "No report was written, so the dev server serves its own report of the same tests."
+  fi
+}
+
+grc_platform_evidence() {
+  step "12. GRC-PLATFORM's evidence: its hosting controls and drift, from the IaC pipeline"
+  mkdir -p "$ws/profiles"
+  cp -R "$root/examples/onboarding-tutorial/profiles/grc-infra-controls.yaml" "$root/examples/onboarding-tutorial/profiles/grc-infra-controls.tests" \
+    "$root/profiles/terraform-drift.yaml" "$root/profiles/terraform-drift.tests" "$ws/profiles/"
+  say "GRC-PLATFORM's network, backups and hosting controls are Terraform in the IaC repository (examples/onboarding-tutorial/infra/oci)."
+  say "Its pipeline proves each control with terraform test and checks nightly that the cloud still matches the code. hound only"
+  say "reads the pipeline's reports; it never runs Terraform against the cloud and holds no cloud credential."
+  control_tests
+  iac_dev
+  wire_audit GRC-PLATFORM
+  local name profile schedule sets
+  for name in grc-infra-controls grc-infra-drift; do
+    profile=grc-infra-controls schedule="30 23 * * *"
+    [[ "$name" == grc-infra-drift ]] && profile=terraform-drift schedule="0 23 * * *"
+    if ! grep -q "^  - name: $name\$" "$ws/repo/hound.yaml"; then
+      mkdir -p "$ws/inbox"
+      printf '%s\n' iac-dev-server-checks-no-token >"$ws/inbox/iac-dev-token"
+      mapfile -t sets < <(trial_iac_dev_sets "$(trial_dev_url "$(cat "$state/ca-mode")" "$iac_port")" "$profile")
+      hound no add collector rest --name "$name" --config hound.yaml --schedule "$schedule" --secrets-dir /trial/secrets \
+        --secret-file token=/trial/inbox/iac-dev-token "${sets[@]}" --yes
+      rm -f "$ws/inbox/iac-dev-token"
+    fi
+  done
+  run_collector grc-infra-controls "GRC-PLATFORM's backup rows (ISM-1811, ISM-1705, ISM-1812, ISM-1707, ISM-1814), with the drift check" \
+    "reads the newest control-tests report"
+  run_collector grc-infra-drift "the same rows: each needs its control test and no drift" "reads the newest drift plan"
+  say "Evidence is collected on a schedule, so a change shows up at the next run. To see one:"
+  if ask "Simulate someone changing the backup bucket in the OCI console (drift) and collect again?"; then
+    iac_dev drift
+    hound no run --config hound.yaml --only grc-infra-drift
+    hound no status --config hound.yaml
+    say "Look at the $(audit_ref)-GRC-PLATFORM audit again: the backup rows now fail, naming the drifted bucket."
+    say "Run make trial again to collect from the clean pipeline once more."
+  fi
+  stop_iac_dev
+  say "GRC-PLATFORM's other rows are manual: patching (AC-GRC-PATCHING) and restore tests (AC-GRC-RESTORE-TEST), submitted by it@example.com."
+}
 
 sophos() {
-  step "9. Evidence collectors: Sophos Central, a fictional tenant on this machine or your own"
+  step "13. OFFICE-FIREWALL's evidence: Sophos Central, a fictional tenant on this machine or your own"
   mkdir -p "$ws/profiles"
   cp -R "$root/profiles/sophos-central.yaml" "$root/profiles/sophos-central.tests" "$ws/profiles/"
   local dev=yes
@@ -328,6 +475,7 @@ sophos() {
       ;;
   esac
   [[ "$dev" == yes && -z "$sophos_dev_pid" ]] && sophos_dev
+  wire_audit OFFICE-FIREWALL
   run_collector sophos "ISM-1501, which the firewall firmware check feeds" "reads the firewalls"
   if [[ "$dev" == yes ]]; then
     say "Evidence is collected on a schedule, so a change in Sophos Central shows up at the next run. To see one:"
@@ -340,7 +488,7 @@ sophos() {
     fi
     stop_sophos_dev
   fi
-  say "ISM-1501 also needs the Microsoft 365 collector's operating system check, so it stays not assessed until step 10 runs too."
+  say "In the organisation's audit, ISM-1501 also needs the Microsoft 365 collector's operating system check: step 14."
   say "Sophos Central is read for network devices only: endpoint protection evidence comes from the endpoints' own antivirus."
 }
 
@@ -359,7 +507,7 @@ run_collector() {
 }
 
 m365() {
-  step "10. Evidence collectors: Microsoft 365"
+  step "14. Identity and laptops: Microsoft 365"
   local pem="$ws/inbox/hound-m365.pem" crt="$ws/inbox/hound-m365.crt"
   if grep -q 'sign_in: none' "$ws/repo/hound.yaml" 2>/dev/null; then
     say "The m365 collector in repo/hound.yaml reads the Microsoft 365 dev server."
@@ -437,9 +585,12 @@ build_image
 workspace
 organisation
 third_parties
-system_stage
-audit_stage
-controls_stage
+n=6
+for system in $(trial_systems); do
+  onboard_system "$system" "$n"
+  n=$((n + 3))
+done
+grc_platform_evidence
 sophos
 m365
 step "Done"
