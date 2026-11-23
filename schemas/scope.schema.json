@@ -1062,6 +1062,14 @@
                   "$ref": "#/$defs/text"
                 },
                 "description": "ref_ids of this third party's solutions the contract covers."
+              },
+              "approved_by": {
+                "$ref": "#/$defs/text",
+                "description": "Who approved the supplier by making this contract active with hound approve."
+              },
+              "approved_on": {
+                "$ref": "#/$defs/date",
+                "description": "The day it was approved, as yyyy-MM-dd."
               }
             }
           }
@@ -1165,10 +1173,45 @@
                 "type": "string",
                 "pattern": "^[1-9][0-9]* (month|months|year|years)$",
                 "description": "Open the next review once one falls due, such as 12 months."
+              },
+              "conclusions": {
+                "type": "array",
+                "description": "Reviews a person concluded with hound approve; hound scope apply writes each conclusion to CISO Assistant.",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "review",
+                    "result",
+                    "by",
+                    "on"
+                  ],
+                  "properties": {
+                    "review": {
+                      "$ref": "#/$defs/text",
+                      "description": "The review: <ref_id>-yyyy-MM by the month it is due, or the assessment's ref_id without a cycle."
+                    },
+                    "result": {
+                      "enum": [
+                        "ok",
+                        "warning",
+                        "blocker"
+                      ]
+                    },
+                    "by": {
+                      "$ref": "#/$defs/text",
+                      "description": "Who concluded it."
+                    },
+                    "on": {
+                      "$ref": "#/$defs/date",
+                      "description": "The day it was concluded, as yyyy-MM-dd."
+                    }
+                  }
+                }
               }
             }
           },
-          "description": "Assessments of this third party. Answers, the conclusion and the tier are CISO Assistant's; hound never writes them."
+          "description": "Assessments of this third party. Answers and the tier are CISO Assistant's; hound writes a review's conclusion only when one is recorded under conclusions."
         }
       }
     },

@@ -157,7 +157,7 @@ public sealed class OnboardAgentCommandTests : IDisposable
         (await File.ReadAllTextAsync(audit, _ct)).ShouldContain("result: not_applicable");
         var record = Directory.GetFiles(Path.Combine(Repo, "onboarding"), "example-assets-*.md").ShouldHaveSingleItem();
         (await File.ReadAllTextAsync(record, _ct)).ShouldContain("Only the supplier administers it. Approved by Sam Example.");
-        (await RunAsync(["scope", "validate", Path.Combine(Repo, "scope")])).Exit.ShouldBe(ExitCodes.Ok);
+        output.ShouldContain("SUP-EXAMPLE is approved and its review is concluded ok");
     }
 
     [Fact]

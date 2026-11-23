@@ -186,6 +186,13 @@ public sealed record SupplierProposal(IReadOnlyList<LevelProposal> Levels, IRead
         node is JsonValue value && value.GetValueKind() == JsonValueKind.Number && value.TryGetValue<int>(out var number) ? number : -1;
 }
 
+/// <summary>Who drafted a supplier file: a person answering <c>hound onboard</c>, or an agent through <c>hound supplier draft</c>.</summary>
+public enum SupplierDrafter
+{
+    Person,
+    Agent,
+}
+
 /// <summary>Writes the drafted supplier as <c>scope/third-parties/&lt;entity&gt;.yaml</c>: levels with their reasons as comments, and a draft contract.</summary>
 public static class SupplierFile
 {
@@ -195,13 +202,17 @@ public static class SupplierFile
         return $"{choice.EntityRef.ToLowerInvariant()}.yaml";
     }
 
-    public static string Write(SupplierChoice choice, IReadOnlyList<LevelProposal> levels, string system, DateOnly today, AuditPlace? place = null)
+    public static string Write(SupplierChoice choice, IReadOnlyList<LevelProposal> levels, string? system, DateOnly today, AuditPlace? place = null, SupplierDrafter drafter = SupplierDrafter.Person)
     {
         ArgumentNullException.ThrowIfNull(choice);
         ArgumentNullException.ThrowIfNull(levels);
         var text = new StringBuilder();
-        text.Append(CultureInfo.InvariantCulture, $"# Drafted by hound onboard for {system} on {today:yyyy-MM-dd}. Review each level and its reason.\n");
-        text.Append("# Once the supplier is approved, make the contract active and run hound onboard again.\n");
+        var agent = drafter == SupplierDrafter.Agent;
+        var forSystem = string.IsNullOrWhiteSpace(system) ? "" : $" for {system}";
+        text.Append(CultureInfo.InvariantCulture, $"# Drafted by {(agent ? "an agent with hound supplier draft" : "hound onboard")}{forSystem} on {today:yyyy-MM-dd}. Review each level and its reason.\n");
+        text.Append(agent
+            ? "# A person approves the supplier and concludes its review with hound approve, in a terminal.\n"
+            : "# Once the supplier is approved, make the contract active and run hound onboard again.\n");
         text.Append(CultureInfo.InvariantCulture, $"ref_id: {Quote(choice.EntityRef)}\nname: {Quote(choice.EntityName)}\n");
         if (place is not null)
         {
@@ -223,7 +234,9 @@ public static class SupplierFile
             return text.ToString();
         }
 
-        text.Append("# The supplier's review: the GRC team concludes it in CISO Assistant, and a system it supplies is registered only once it is concluded ok.\n");
+        text.Append(agent
+            ? "# The supplier's review: a person concludes it with hound approve, and a system it supplies is registered only once it is concluded ok.\n"
+            : "# The supplier's review: the GRC team concludes it in CISO Assistant, and a system it supplies is registered only once it is concluded ok.\n");
         text.Append(CultureInfo.InvariantCulture, $"assessments:\n  - ref_id: {Quote($"EA-{choice.EntityRef}")}\n    name: {Quote($"{choice.EntityName} review")}\n");
         text.Append(CultureInfo.InvariantCulture, $"    solutions: [{Quote(choice.SolutionRef)}]\n    perimeter: {Quote(place.Perimeter)}\n");
         text.Append(CultureInfo.InvariantCulture, $"    due_date: \"{today.AddMonths(1):yyyy-MM-dd}\"\n    review_every: 12 months\n");

@@ -40,6 +40,7 @@ internal static class OnboardSystemCommand
         var noModel = new Option<bool>("--no-model") { Description = "Run every step without a model: proposals are left empty for you to decide." };
         var show = new Option<bool>("--show-requests") { Description = "Show each request before it is sent to the model." };
         var config = new Option<FileInfo>("--config") { Description = $"The onboarding config. Default: {OnboardCommands.DefaultConfig} in the repo." };
+        OnboardAgentCommand.Attach(onboard, system, terminal, loggers);
         foreach (var symbol in new Symbol[] { system, repo, framework, groups, specs, noModel, show, config })
         {
             switch (symbol)
@@ -75,7 +76,7 @@ internal static class OnboardSystemCommand
         });
     }
 
-    private sealed record Settings(string System, string Repo, string Framework, IReadOnlyList<string> Groups, IReadOnlyList<string> Specs, bool NoModel, bool Show, string Config)
+    internal sealed record Settings(string System, string Repo, string Framework, IReadOnlyList<string> Groups, IReadOnlyList<string> Specs, bool NoModel, bool Show, string Config)
     {
         public string Folder => Path.Combine(Repo, "onboarding", System);
 
@@ -117,6 +118,14 @@ internal static class OnboardSystemCommand
             return ExitCodes.Ok;
         }
 
+        if (session.Drafts.Count > 0)
+        {
+            await terminal.Output.WriteLineAsync(
+                $"{settings.System} has {session.Drafts.Count} decision(s) drafted by an agent. A person approves them, and the system, with 'hound approve' in a terminal; nothing is written until then.".AsMemory(),
+                cancellationToken);
+            return ExitCodes.Ok;
+        }
+
         if (session.Supplier is null)
         {
             var started = await StartAsync(session, prompt, cancellationToken);
@@ -152,7 +161,7 @@ internal static class OnboardSystemCommand
         var decided = await ApplicabilityAsync(settings, session, model, prompt, terminal, cancellationToken);
         if (decided is Result<OnboardSession>.Ok { Value: { Stage: OnboardStage.Decided } done })
         {
-            decided = await WriteAsync(settings, done, prompt, terminal, cancellationToken);
+            decided = await WriteAsync(settings, done, prompt, terminal, DateOnly.FromDateTime(DateTime.Today), cancellationToken);
         }
 
         return decided.Match(_ => ExitCodes.Ok, problems => Log.Problems(logger, problems));
@@ -351,19 +360,12 @@ internal static class OnboardSystemCommand
     private static async Task<Result<OnboardSession>> ApplicabilityAsync(
         Settings settings, OnboardSession session, Assistant? assistant, Prompt prompt, Terminal terminal, CancellationToken cancellationToken)
     {
-        var summaries = new List<ApiSummary>();
-        foreach (var spec in settings.Specs.Count > 0 ? settings.Specs : session.Specs)
+        var summary = await ApiAsync(settings.Specs.Count > 0 ? settings.Specs : session.Specs, cancellationToken);
+        if (summary is not Result<string>.Ok { Value: var api })
         {
-            var read = SpecReader.Read(await File.ReadAllTextAsync(spec, cancellationToken), Path.GetFileName(spec));
-            if (read is Result<ApiSummary>.Fail { Errors: var specProblems })
-            {
-                return Result.Fail<OnboardSession>(specProblems);
-            }
-
-            summaries.Add(((Result<ApiSummary>.Ok)read).Value);
+            return Result.Fail<OnboardSession>(((Result<string>.Fail)summary).Errors);
         }
 
-        var api = string.Join("\n\n", summaries.Select(s => s.Text()));
         if (api.Length > 0)
         {
             await terminal.Error.WriteLineAsync($"What the API offers:\n{api}\n".AsMemory(), cancellationToken);
@@ -410,11 +412,34 @@ internal static class OnboardSystemCommand
         return Result.Ok(session);
     }
 
+    /// <summary>What the system's API offers, summarised from its specifications; empty when none are given.</summary>
+    internal static async Task<Result<string>> ApiAsync(IReadOnlyList<string> specs, CancellationToken cancellationToken)
+    {
+        var summaries = new List<ApiSummary>();
+        foreach (var spec in specs)
+        {
+            if (!File.Exists(spec))
+            {
+                return Result.Fail<string>(new Problem("onboard.spec_missing", $"{spec} does not exist."));
+            }
+
+            var read = SpecReader.Read(await File.ReadAllTextAsync(spec, cancellationToken), Path.GetFileName(spec));
+            if (read is Result<ApiSummary>.Fail { Errors: var problems })
+            {
+                return Result.Fail<string>(problems);
+            }
+
+            summaries.Add(((Result<ApiSummary>.Ok)read).Value);
+        }
+
+        return Result.Ok(string.Join("\n\n", summaries.Select(s => s.Text())));
+    }
+
     /// <summary>
     /// Writes the decided session into the working copy: the system's audit, manual rows added to the framework's mapping, and the
     /// onboarding record. Never calls CISO Assistant; the person reviews the files, then validates, plans and applies.
     /// </summary>
-    private static async Task<Result<OnboardSession>> WriteAsync(Settings settings, OnboardSession session, Prompt prompt, Terminal terminal, CancellationToken cancellationToken)
+    internal static async Task<Result<OnboardSession>> WriteAsync(Settings settings, OnboardSession session, Prompt prompt, Terminal terminal, DateOnly today, CancellationToken cancellationToken)
     {
         var framework = FrameworkSnapshotJson.Read(await File.ReadAllTextAsync(settings.Framework, cancellationToken), settings.Framework);
         if (framework is Result<FrameworkSnapshot>.Fail { Errors: var frameworkProblems })
@@ -433,7 +458,6 @@ internal static class OnboardSystemCommand
         var domain = await prompt.AskWithDefaultAsync("Domain for the system's audit", (domains is [var first, ..] ? first.Name : ""), cancellationToken);
         var perimeter = await prompt.AskWithDefaultAsync(
             "Perimeter", (domains.FirstOrDefault(d => d.Name == domain)?.Perimeters is [var firstPerimeter, ..] ? firstPerimeter.Name : ""), cancellationToken);
-        var today = DateOnly.FromDateTime(DateTime.Today);
         var snapshot = ((Result<FrameworkSnapshot>.Ok)framework).Value;
         var declared = await DeclareSystemAsync(setupPath, domains, domain, session, cancellationToken);
         if (declared is Result<bool>.Fail { Errors: var declareProblems })
@@ -467,11 +491,13 @@ internal static class OnboardSystemCommand
         written.Add(recordFile);
         session = session with { Written = written };
         await SaveAsync(settings, session, cancellationToken);
-        var review = session.Supplier is { } supplier
-            ? (await ThirdPartiesAsync(settings.Repo, cancellationToken)).FirstOrDefault(e => e.RefId == supplier.EntityRef)?.Assessments.Select(a => a.RefId).FirstOrDefault()
-            : null;
+        var entity = session.Supplier is { } supplier ? (await ThirdPartiesAsync(settings.Repo, cancellationToken)).FirstOrDefault(e => e.RefId == supplier.EntityRef) : null;
+        var review = entity?.Assessments.Select(a => a.RefId).FirstOrDefault();
+        var concluded = entity is not null && entity.Contracts.Any(c => c.Status == "active") && entity.Assessments.Any(a => a.Conclusions is [.., { Result: "ok" }]);
         var gate = session.Supplier is { } named
-            ? $"\n{settings.System} is registered only once {named.EntityRef} is approved in CISO Assistant: apply the supplier first, then {(review is null ? $"add a review to {named.EntityRef}'s file and conclude it" : $"conclude {review}")} as ok in CISO Assistant before 'hound scope plan'."
+            ? concluded
+                ? $"\n{named.EntityRef} is approved and its review is concluded ok in its file, so 'hound scope plan' registers {settings.System} with it."
+                : $"\n{settings.System} is registered only once {named.EntityRef} is approved: {(review is null ? $"add a review to {named.EntityRef}'s file and conclude it" : $"conclude {review}")} as ok with 'hound approve' before 'hound scope plan'."
             : "";
         await terminal.Output.WriteLineAsync(
             $"Wrote {string.Join(", ", written)}. {mappingNote}{gate}\nNext: review the changes in a pull request, then run 'hound scope validate scope', 'hound scope plan scope' and 'hound scope apply scope'.".AsMemory(),
@@ -479,9 +505,11 @@ internal static class OnboardSystemCommand
         return Result.Ok(session);
     }
 
-    private static async Task<IReadOnlyList<ScopeDomain>> DomainsAsync(Settings settings, CancellationToken cancellationToken)
+    private static Task<IReadOnlyList<ScopeDomain>> DomainsAsync(Settings settings, CancellationToken cancellationToken) => DomainsAsync(settings.Repo, cancellationToken);
+
+    internal static async Task<IReadOnlyList<ScopeDomain>> DomainsAsync(string repo, CancellationToken cancellationToken)
     {
-        var setupPath = Path.Combine(settings.Repo, "scope", "setup.yaml");
+        var setupPath = Path.Combine(repo, "scope", "setup.yaml");
         return File.Exists(setupPath)
             ? ScopeLoader.Parse(new ScopeSource(setupPath, await File.ReadAllTextAsync(setupPath, cancellationToken)), null, []).Scope.Setup.Domains
             : [];
@@ -641,7 +669,7 @@ internal static class OnboardSystemCommand
         return Applicability.Decide(proposal, kind, reasoning, reviewer, justification, approver, other).Match<Decision?>(d => d, _ => null);
     }
 
-    private static async Task<IReadOnlyList<Core.Scope.ScopeEntity>> ThirdPartiesAsync(string repo, CancellationToken cancellationToken)
+    internal static async Task<IReadOnlyList<Core.Scope.ScopeEntity>> ThirdPartiesAsync(string repo, CancellationToken cancellationToken)
     {
         var folder = Path.Combine(repo, "scope", "third-parties");
         var files = Directory.Exists(folder) ? Directory.GetFiles(folder, "*.yaml").Order(StringComparer.Ordinal).ToArray() : [];
@@ -649,7 +677,7 @@ internal static class OnboardSystemCommand
         return ScopeLoader.Parse(new ScopeSource("setup.yaml", "organisation:\n  root_folder: Global\n"), null, [], thirdParties: sources).Scope.ThirdParties;
     }
 
-    private static async Task SaveAsync(Settings settings, OnboardSession session, CancellationToken cancellationToken)
+    internal static async Task SaveAsync(Settings settings, OnboardSession session, CancellationToken cancellationToken)
     {
         Directory.CreateDirectory(settings.Folder);
         await File.WriteAllTextAsync(settings.SessionFile, OnboardSessionJson.Write(session), cancellationToken);

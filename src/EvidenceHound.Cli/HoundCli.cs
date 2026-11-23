@@ -33,6 +33,10 @@ public static class HoundCli
         CancellationToken cancellationToken = default) =>
         RunAsync(args, input, output, error, configureLogging, [], new Dictionary<string, string?>(), null, cancellationToken);
 
+    /// <summary>Runs from the process's own streams. A person is at a terminal only when neither the input nor the output is redirected.</summary>
+    internal static Task<int> RunFromConsoleAsync(string[] args) =>
+        RunAsync(args, Console.In, Console.Out, Console.Error, null, [], new Dictionary<string, string?>(), null, CancellationToken.None, !Console.IsInputRedirected && !Console.IsOutputRedirected);
+
     /// <summary>Runs with <paramref name="input"/> for prompts and extra configuration settings on top of the environment.</summary>
     internal static Task<int> RunAsync(
         string[] args,
@@ -197,6 +201,8 @@ public static class HoundCli
             MappingCommands.Build(output, loggers),
             ScopeCommands.Build(output, loggers, configuration, registry),
             SkillCommands.Build(terminal, loggers, configuration),
+            SupplierCommands.Build(terminal, loggers, configuration),
+            ApproveCommand.Build(terminal, loggers, configuration),
             PlanCommand.Build(output, loggers, configuration, registry),
             ProfileCommands.Build(output, loggers, configuration),
             PublishCommand.Build(output, loggers, configuration, registry),

@@ -83,7 +83,12 @@ internal static partial class YamlEdit
     public static Result<string> ReplaceScalar(string yaml, string path, string value)
     {
         ArgumentNullException.ThrowIfNull(value);
-        return Result.Fail<string>(new Problem("setup.not_a_value", $"'{path}' cannot be replaced yet."));
+        return Locate(yaml, path).Bind(found => found.Value switch
+        {
+            null => Result.Fail<string>(new Problem("setup.path_missing", $"the file has nothing at '{path}'.")),
+            YamlScalarNode scalar when scalar.Start.Line == scalar.End.Line => Result.Ok(found.Lines.Replace(scalar, Scalar(value))),
+            _ => Result.Fail<string>(new Problem("setup.not_a_value", $"'{path}' is not a single value on one line; change it by hand.")),
+        });
     }
 
     /// <summary>The item as block lines, its dash at <paramref name="indent"/>.</summary>
@@ -189,6 +194,16 @@ internal static partial class YamlEdit
         public string Insert(long after, IEnumerable<string> added)
         {
             _lines.InsertRange((int)after, added);
+            return string.Join('\n', _lines);
+        }
+
+        /// <summary>The file with <paramref name="scalar"/> replaced by <paramref name="written"/>, the rest of its line kept.</summary>
+        public string Replace(YamlScalarNode scalar, string written)
+        {
+            var (line, start) = ((int)scalar.Start.Line - 1, (int)scalar.Start.Column - 1);
+            var text = _lines[line];
+            var end = scalar.Style == ScalarStyle.Plain ? start + (scalar.Value ?? "").Length : (int)scalar.End.Column - 1;
+            _lines[line] = text[..start] + written + text[Math.Min(end, text.Length)..];
             return string.Join('\n', _lines);
         }
 

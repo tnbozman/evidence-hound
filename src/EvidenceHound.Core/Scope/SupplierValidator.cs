@@ -108,8 +108,19 @@ public static class SupplierValidator
             .. entity.Assessments.Where(a => a.Criticality is < 1 or > 4).Select(a => Level($"criticality of assessment {a.RefId}", a.Criticality!.Value, 1, 4, a.At)),
             .. entity.Assessments.Where(a => a.ReviewMonths is not null && a.DueDate is null).Select(a => new ScopeProblem(
                 "supplier.review_without_due_date", a.At, $"assessment '{a.RefId}' has review_every but no due_date.", "Add the first review's due_date.")),
+            .. entity.Assessments.SelectMany(a => a.Conclusions.Where(c => !IsReviewOf(a, c.Review)).Select(c => new ScopeProblem(
+                "supplier.conclusion_review_unknown", c.At,
+                $"the conclusion names review '{c.Review}', which is not a review of assessment '{a.RefId}'.",
+                a.ReviewMonths is null ? $"Name the review {a.RefId}." : $"Name a review as {a.RefId}-yyyy-MM, by the month it is due, or record it with 'hound approve'."))),
         ];
     }
+
+    /// <summary>Whether <paramref name="review"/> is a review of the assessment: its own <c>ref_id</c>, or <c>&lt;ref_id&gt;-yyyy-MM</c> on a cycle.</summary>
+    private static bool IsReviewOf(ScopeEntityAssessment assessment, string review) =>
+        assessment.ReviewMonths is null
+            ? review == assessment.RefId
+            : review.StartsWith($"{assessment.RefId}-", StringComparison.Ordinal)
+                && DateOnly.TryParseExact(review[(assessment.RefId.Length + 1)..], "yyyy-MM", CultureInfo.InvariantCulture, DateTimeStyles.None, out _);
 
     private static IEnumerable<ScopeProblem> ContractProblems(ScopeContract contract, HashSet<string> solutions, string entity, DateOnly today)
     {

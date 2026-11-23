@@ -23,9 +23,10 @@ internal static class ExplainCommand
         var noModel = new Option<bool>("--no-model") { Description = "Only the counts and flags read in code; no model summary." };
         var show = new Option<bool>("--show-requests") { Description = "Show each request before it is sent to the model." };
         var config = new Option<FileInfo>("--config") { Description = $"The onboarding config. Default: {OnboardCommands.DefaultConfig} in the repo." };
+        var json = new Option<bool>("--json") { Description = "What code reads from the change (counts, objects, flags and topics) as JSON, for an agent. Asks no model." };
         var command = new Command("explain", "Explain a plan or config change in plain English for review, and flag what needs a careful look. Never changes anything.")
         {
-            files, repo, framework, skills, noModel, show, config,
+            files, repo, framework, skills, noModel, show, config, json,
         };
         command.SetAction(async (parseResult, cancellationToken) =>
         {
@@ -42,6 +43,12 @@ internal static class ExplainCommand
             }
 
             var facts = ((Result<ChangeFacts>.Ok)read).Value;
+            if (parseResult.GetValue(json))
+            {
+                await terminal.Output.WriteLineAsync(Json(facts).ToJsonString(OnboardAgentCommand.Indented).AsMemory(), cancellationToken);
+                return ExitCodes.Ok;
+            }
+
             if (parseResult.GetValue(noModel))
             {
                 await terminal.Output.WriteAsync(Explanation.Render(facts, null, []).AsMemory(), cancellationToken);
@@ -71,6 +78,18 @@ internal static class ExplainCommand
         });
         return command;
     }
+
+    /// <summary>The facts code read from the change, for an agent's review: nothing here comes from a model.</summary>
+    private static System.Text.Json.Nodes.JsonObject Json(ChangeFacts facts) => new()
+    {
+        ["source"] = facts.Source,
+        ["kind"] = facts.Kind,
+        ["summary"] = facts.CountsText,
+        ["counts"] = new System.Text.Json.Nodes.JsonArray([.. facts.Counts.Select(c => new System.Text.Json.Nodes.JsonObject { ["label"] = c.Label, ["value"] = c.Value })]),
+        ["objects"] = new System.Text.Json.Nodes.JsonArray([.. facts.Objects.Select(o => System.Text.Json.Nodes.JsonValue.Create(o))]),
+        ["flags"] = new System.Text.Json.Nodes.JsonArray([.. facts.Flags.Select(f => System.Text.Json.Nodes.JsonValue.Create(f))]),
+        ["topics"] = new System.Text.Json.Nodes.JsonArray([.. facts.Topics.Select(t => System.Text.Json.Nodes.JsonValue.Create(System.Text.Json.JsonNamingPolicy.SnakeCaseLower.ConvertName(t.ToString())))]),
+    };
 
     private static async Task<Result<ChangeFacts>> ReadAsync(IReadOnlyList<FileInfo> files, string root, Terminal terminal, CancellationToken cancellationToken)
     {

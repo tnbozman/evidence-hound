@@ -14,12 +14,14 @@ public static partial class ScopeLoader
     ];
 
     private static readonly string[] ForcedTierKeys = ["tier", "reason"];
-    private static readonly string[] SupplierAssessmentKeys = ["ref_id", "name", "solutions", "domain", "perimeter", "due_date", "criticality", "questionnaire", "groups", "review_every"];
+    private static readonly string[] SupplierAssessmentKeys = ["ref_id", "name", "solutions", "domain", "perimeter", "due_date", "criticality", "questionnaire", "groups", "review_every", "conclusions"];
+    private static readonly string[] ConclusionKeys = ["review", "result", "by", "on"];
+    private static readonly string[] ConclusionResults = ["ok", "warning", "blocker"];
 
     private static readonly string[] OrganisationEntityKeys = ["name", "description", "mission", "country", "currency", "identifiers"];
 
     private static readonly string[] SolutionKeys = ["ref_id", "name", "description", "criticality"];
-    private static readonly string[] ContractKeys = ["ref_id", "name", "description", "status", "start", "end", "annual_expense", "currency", "solutions"];
+    private static readonly string[] ContractKeys = ["ref_id", "name", "description", "status", "start", "end", "annual_expense", "currency", "solutions", "approved_by", "approved_on"];
     private static readonly string[] ContractStatuses = ["draft", "active", "expired", "terminated"];
     private static readonly string[] RepresentativeKeys = ["email", "first_name", "last_name", "role", "phone"];
     private static readonly string[] Levels = ["dependency", "penetration", "maturity", "trust"];
@@ -114,6 +116,8 @@ public static partial class ScopeLoader
                 Currency = file.Text(item, "currency"),
                 CurrencyAt = FileReader.Child(item, "currency") is { } currency ? file.At(currency) : null,
                 Solutions = file.Refs(item, "solutions"),
+                ApprovedBy = file.Text(item, "approved_by"),
+                ApprovedOn = Date(item, "approved_on", file),
             };
     }
 
@@ -140,7 +144,19 @@ public static partial class ScopeLoader
                 Questionnaire = file.Ref(item, "questionnaire"),
                 Groups = [.. file.Refs(item, "groups").Select(g => g.Value)],
                 ReviewMonths = ReviewMonths(item, file),
+                Conclusions = [.. file.Items(item, "conclusions").Select(c => ReadConclusion(c, file)).OfType<ScopeConclusion>()],
             };
+    }
+
+    /// <summary>A review's conclusion: which review, <c>ok</c>, <c>warning</c> or <c>blocker</c>, and who concluded it on which day.</summary>
+    private static ScopeConclusion? ReadConclusion(YamlMappingNode item, FileReader file)
+    {
+        file.Keys(item, ConclusionKeys);
+        var review = file.Required(item, "review");
+        var result = file.OneOf(item, "result", ConclusionResults, required: true);
+        var by = file.Required(item, "by");
+        var on = file.Required(item, "on") is null ? null : Date(item, "on", file);
+        return review is null || result is null || by is null || on is null ? null : new ScopeConclusion(review, result, by, on, file.At(item));
     }
 
     /// <summary><c>review_every</c> as months: <c>N months</c> or <c>N years</c>; anything else is reported.</summary>

@@ -65,6 +65,10 @@ public sealed record OnboardSession(string System, OnboardStage Stage)
     [JsonIgnore]
     public IReadOnlyList<Proposal> Pending => [.. Proposals.Where(p => Decisions.All(d => d.Key != p.Key))];
 
+    /// <summary>Decisions an agent drafted that no person has accepted yet. While there are any, only <c>hound approve</c> writes the system's files.</summary>
+    [JsonIgnore]
+    public IReadOnlyList<Decision> Drafts => [.. Decisions.Where(d => d.AwaitsApproval)];
+
     /// <summary>The supplier gate's answer moves the session past the supplier, or holds it there.</summary>
     public OnboardSession Advance(SupplierStatus status) => Stage switch
     {

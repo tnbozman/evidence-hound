@@ -110,8 +110,12 @@ public static class ScopePlanner
     private static Dictionary<string, string> Comparable(ScopeKind kind, IReadOnlyDictionary<string, string> held, IReadOnlyDictionary<string, string> wanted) =>
         held.Where(h => kind == ScopeKind.Assessment || Optional(kind, h.Key) ? wanted.ContainsKey(h.Key) : h.Key != "ref_id" || wanted.ContainsKey(h.Key)).ToDictionary(StringComparer.Ordinal);
 
-    /// <summary>Fields compared only when the scope declares them: an audit's status and lock, which only a period audit declares.</summary>
-    private static bool Optional(ScopeKind kind, string field) => kind == ScopeKind.Audit && field is "status" or "locked";
+    /// <summary>
+    /// Fields compared only when the scope declares them: an audit's status and lock, which only a period audit declares, and a supplier
+    /// review's conclusion, which the scope declares once a person concludes it with <c>hound approve</c>.
+    /// </summary>
+    private static bool Optional(ScopeKind kind, string field) =>
+        (kind == ScopeKind.Audit && field is "status" or "locked") || (kind == ScopeKind.EntityAssessment && field == "conclusion");
 
     /// <summary>The declared object with the links CISO Assistant already holds added to its own.</summary>
     private static ScopeObject Linked(ScopeObject declared, IReadOnlyDictionary<string, string> held)

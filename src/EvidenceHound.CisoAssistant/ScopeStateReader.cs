@@ -357,7 +357,8 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
             }),
             .. lists.Assessments.Where(a => RelationId(a["entity"]) is { } id && entityRefs.ContainsKey(id)).Select(a => Marked(ScopeKind.EntityAssessment, Text(a["ref_id"]), a,
                 ("name", Text(a["name"])), ("entity", Lookup(a["entity"], entityRefs)), ("solutions", Joined(a["solutions"], solutionRefs)), ("domain", names.Domain(a)),
-                ("perimeter", Lookup(a["perimeter"], names.Perimeters)), ("due_date", Text(a["due_date"])), ("criticality", Text(a["criticality"]) is "0" ? null : Text(a["criticality"]))) with
+                ("perimeter", Lookup(a["perimeter"], names.Perimeters)), ("due_date", Text(a["due_date"])), ("criticality", Text(a["criticality"]) is "0" ? null : Text(a["criticality"])),
+                ("conclusion", Choice(Text(a["conclusion"])))) with
             {
                 Observed = Fields(("conclusion", Choice(Text(a["conclusion"]))), ("expiry_date", Text(a["expiry_date"]))),
             }),

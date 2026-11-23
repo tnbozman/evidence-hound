@@ -32,11 +32,12 @@ internal static class ScopeCommands
         var config = new Option<FileInfo?>("--config") { Description = "A deployment config whose targets must be audits and controls the scope declares." };
         var format = new Option<string>("--format") { Description = "text (the default) or json.", DefaultValueFactory = _ => "text" };
         format.AcceptOnlyFromAmong("text", "json");
-        var validate = new Command("validate", "Check the scope files offline and report every problem with its file, line and code.") { dir, config, format };
+        var validateJson = new Option<bool>("--json") { Description = "The same as --format json, for an agent." };
+        var validate = new Command("validate", "Check the scope files offline and report every problem with its file, line and code.") { dir, config, format, validateJson };
         validate.SetAction(async (parseResult, cancellationToken) =>
         {
             var checkedScope = await ValidateAsync(parseResult.GetRequiredValue(dir), parseResult.GetValue(config), registry, AuditSeries.Today(configuration), cancellationToken);
-            return await ReportAsync(checkedScope.Problems, checkedScope.Summary, parseResult.GetRequiredValue(format), output, logger);
+            return await ReportAsync(checkedScope.Problems, checkedScope.Summary, parseResult.GetValue(validateJson) ? "json" : parseResult.GetRequiredValue(format), output, logger);
         });
 
         var framework = new Option<FileInfo>("--framework") { Description = "The framework snapshot (from hound framework snapshot).", Required = true };
@@ -54,6 +55,7 @@ internal static class ScopeCommands
 
         var planFormat = new Option<string>("--format") { Description = "markdown (the default, for a pull request comment) or json.", DefaultValueFactory = _ => "markdown" };
         planFormat.AcceptOnlyFromAmong("markdown", "json");
+        var planJson = new Option<bool>("--json") { Description = "The same as --format json, for an agent." };
         var prune = new Option<bool>("--prune") { Description = "Also plan deleting the objects hound manages that the scope no longer declares." };
         var showUnmanaged = new Option<bool>("--show-unmanaged") { Description = "Also list the feature flags and general settings settings.yaml does not name, with their values." };
         var detailedExitCode = new Option<bool>(DetailedExitCodeFlag) { Description = "Exit 0 when there is nothing to change and no drift, 2 when there is, and 1 on any error." };
@@ -62,7 +64,7 @@ internal static class ScopeCommands
             "plan",
             $"Show what applying the scope would create, update or delete in CISO Assistant, and what drifted (reads it; needs {PublishCommand.UrlSetting} and {PublishCommand.TokenSetting}). Sends nothing.")
         {
-            dir, config, planFormat, prune, showUnmanaged, detailedExitCode, planOut,
+            dir, config, planFormat, planJson, prune, showUnmanaged, detailedExitCode, planOut,
         };
         plan.SetAction(async (parseResult, cancellationToken) =>
         {
@@ -74,7 +76,7 @@ internal static class ScopeCommands
                     connection => PlanAsync(
                         checkedScope,
                         connection,
-                        new PlanOptions(parseResult.GetValue(prune), parseResult.GetValue(showUnmanaged), parseResult.GetRequiredValue(planFormat))
+                        new PlanOptions(parseResult.GetValue(prune), parseResult.GetValue(showUnmanaged), parseResult.GetValue(planJson) ? "json" : parseResult.GetRequiredValue(planFormat))
                         {
                             DetailedExitCode = detailed,
                             Save = parseResult.GetValue(planOut) is { } file ? new PlanSave(file, parseResult.GetRequiredValue(dir), parseResult.GetValue(config)) : null,

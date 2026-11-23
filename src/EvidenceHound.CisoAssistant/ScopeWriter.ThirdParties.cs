@@ -180,7 +180,7 @@ internal sealed partial class ScopeWriter
 
     /// <summary>
     /// A supplier assessment, in its perimeter. When it is created with a questionnaire, CISO Assistant creates the questionnaire's audit with it
-    /// (in the supplier's own workspace). The conclusion, expiry date, answers and tier are never sent.
+    /// (in the supplier's own workspace). The conclusion is sent only when the scope declares it; the expiry date, answers and tier never are.
     /// </summary>
     private async Task<Result<Unit>> EntityAssessmentAsync(ScopeWrite write, Folders folders, CancellationToken cancellationToken)
     {
@@ -214,8 +214,10 @@ internal sealed partial class ScopeWriter
                     ["perimeter"] = resolved[3].DeepClone(),
                     ["due_date"] = Field(declared, "due_date"),
                     ["criticality"] = WholeNumber(declared, "criticality"),
+                    ["conclusion"] = Field(declared, "conclusion"),
                 };
                 Drop(body, write.Change, "due_date", "criticality");
+                Drop(body, "conclusion");
                 if (create && Text(resolved[4]) is { } framework)
                 {
                     body["create_audit"] = true;

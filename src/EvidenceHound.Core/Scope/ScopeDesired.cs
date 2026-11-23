@@ -53,8 +53,15 @@ public static class ScopeDesired
             .. Access(scope.Access, setup.RootFolder),
             .. setup.Organisation is { } organisation ? [Organisation(organisation)] : Array.Empty<ScopeObject>(),
             .. scope.ThirdParties.SelectMany(ThirdParty),
-            .. scope.ThirdParties.SelectMany(e => e.Assessments.SelectMany(a => Reviews(e, a, inputs.Today))),
+            .. Reviews(scope, inputs.Today),
         ];
+    }
+
+    /// <summary>Every supplier review the scope declares on <paramref name="today"/>, each with its conclusion when the scope records one.</summary>
+    public static IReadOnlyList<ScopeObject> Reviews(ScopeDocument scope, DateOnly? today)
+    {
+        ArgumentNullException.ThrowIfNull(scope);
+        return [.. scope.ThirdParties.SelectMany(e => e.Assessments.SelectMany(a => Reviews(e, a, today)))];
     }
 
     /// <summary>The key of the organisation's own entity, which CISO Assistant holds as its builtin main entity.</summary>
@@ -88,7 +95,8 @@ public static class ScopeDesired
     /// <summary>
     /// A supplier assessment as CISO Assistant holds it. With a review cycle, each review is its own assessment, <c>&lt;ref_id&gt;-yyyy-MM</c> by
     /// its due date: the first is due on <c>due_date</c>, and once a review falls due on <paramref name="today"/> the next is opened, a cycle
-    /// later. The questionnaire is set up only when an assessment is created; answers, the conclusion and the tier are never declared.
+    /// later. The questionnaire is set up only when an assessment is created; answers and the tier are never declared. A review carries a
+    /// conclusion only when a person recorded one for it in the file with <c>hound approve</c>.
     /// </summary>
     private static IEnumerable<ScopeObject> Reviews(ScopeEntity entity, ScopeEntityAssessment assessment, DateOnly? today)
     {
@@ -96,7 +104,7 @@ public static class ScopeDesired
         ScopeObject Review(string key, string name, string? due) => new(ScopeKind.EntityAssessment, key, Fields(
             ("name", name), ("entity", entity.RefId), ("solutions", Joined(assessment.Solutions.Select(s => s.Value))),
             ("domain", assessment.Domain?.Value ?? entity.Domain?.Value), ("perimeter", assessment.Perimeter.Value), ("due_date", due),
-            ("criticality", Whole(assessment.Criticality))))
+            ("criticality", Whole(assessment.Criticality)), ("conclusion", assessment.Conclusions.LastOrDefault(c => c.Review == key)?.Result)))
         {
             Initial = initial,
         };
