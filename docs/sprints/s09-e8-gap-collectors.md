@@ -1532,7 +1532,7 @@ commit it was proven on, without `hound` running Terraform or holding cloud cred
   one, since a toggle to turn a control off would be worse code. Breaking a control by hand is the functional check instead.
 
 ### s09-56 IaC pipeline dev server: the GitHub Actions answers the Terraform profiles read (added 2026-11-23)
-- [ ] Done
+- [x] Done
 
 At the maintainer's request (2026-11-23), so the trial's GRC platform collects its hosting evidence with no GitHub account or token. Follows the Sophos Central (s09-54) and Microsoft 365 (s09-44) dev servers: no sign-in logic.
 
