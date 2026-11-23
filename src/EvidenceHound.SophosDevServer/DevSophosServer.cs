@@ -12,7 +12,8 @@ public sealed record ServedRequest(string Path, int Status);
 
 /// <summary>
 /// Answers the Sophos Central API for a <see cref="SophosDevTenant"/>: the token address (always the same answer), <c>whoami</c>, and
-/// each list in pages of <see cref="PageSize"/> by page number with a page total, as Sophos Central pages them. Other paths get 404.
+/// each list in pages of <see cref="PageSize"/> by page number with a page total, as Sophos Central pages them, and the firmware
+/// upgrade check for each firewall the request body names. Other paths get 404.
 /// </summary>
 public sealed class DevSophosServer : IDisposable
 {
@@ -30,6 +31,11 @@ public sealed class DevSophosServer : IDisposable
         foreach (var (name, items) in SophosAnswers.Items(tenant))
         {
             Serve(SophosAnswers.Paths[name], items);
+        }
+
+        foreach (var firewall in tenant.Firewalls)
+        {
+            Answer(Request.Create().WithPath(SophosAnswers.UpgradeCheckPath).UsingPost().WithBody((string? body) => body?.Contains(firewall.Id, StringComparison.Ordinal) == true), SophosAnswers.UpgradeCheck(firewall));
         }
     }
 

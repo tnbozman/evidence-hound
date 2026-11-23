@@ -10,8 +10,12 @@ public enum DevVariant
     Gaps,
 }
 
-/// <summary>A firewall Sophos Central manages. <paramref name="Firmware"/> is as Sophos Central reports it, such as <c>SFOS 21.0.1 MR-1-Build237</c>.</summary>
-public sealed record Firewall(string Id, string Hostname, string Name, string SerialNumber, string Model, string Firmware);
+/// <summary>
+/// A firewall Sophos Central manages. <paramref name="Firmware"/> is as Sophos Central reports it, such as <c>SFOS 21.0.1 MR-1-Build237</c>.
+/// <paramref name="UpgradeTo"/> is the firmware upgrade Sophos Central offers it, if any, and <paramref name="OfferedDays"/> how many
+/// daily runs have seen that offer before today (the API itself gives no date).
+/// </summary>
+public sealed record Firewall(string Id, string Hostname, string Name, string SerialNumber, string Model, string Firmware, string? UpgradeTo = null, int OfferedDays = 0);
 
 /// <summary>A Sophos Central admin and the IDs of the roles assigned to them.</summary>
 public sealed record Admin(string Id, string FirstName, string LastName, string Email, IReadOnlyList<string> RoleIds);
@@ -72,6 +76,11 @@ public sealed record SophosDevTenant(string TenantId, IReadOnlyList<Firewall> Fi
             "Kim was made a Super Admin: three Super Admins where at most two are allowed.",
             Expect(("network.management.super_admin_count", CheckOutcome.Fail)),
             t => t with { Admins = [.. t.Admins.Select(a => a.Id == Id(0xad, 4) ? a with { RoleIds = [SuperAdmin.Id] } : a)] }),
+        new(
+            "firmware-upgrade-overdue",
+            "Sophos Central has offered the office firewall SFOS 21.5 for 20 days, more than the 14 allowed.",
+            Expect(("network.firewall.firmware_current", CheckOutcome.Fail)),
+            t => t with { Firewalls = [.. t.Firewalls.Select(f => f.Id == Id(0xf0, 1) ? f with { UpgradeTo = "21.5.0 GA-Build171", OfferedDays = 20 } : f)] }),
     ];
 
     public static SophosDevTenant For(DevVariant variant) =>
