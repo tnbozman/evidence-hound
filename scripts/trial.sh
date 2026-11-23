@@ -135,8 +135,10 @@ build_image() {
 workspace() {
   step "3. Trial workspace in ${ws#"$root"/}"
   mkdir -p "$ws/repo" "$ws/evidence" "$ws/manual" "$ws/inbox" "$ws/specs"
+  trial_seed_inputs "$root" "$ws"
   token
   say "hound writes the organisation's compliance repo into repo/, evidence into evidence/, and secrets into secrets/."
+  say "inbox/ holds fictional notes on each supplier and specs/ a description of the Sophos Central API, for your agent to read."
   step "The scene"
   trial_scene
 }

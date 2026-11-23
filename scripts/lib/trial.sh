@@ -281,3 +281,15 @@ trial_scan_source_args() {
   done <"$1"
   return 1
 }
+
+# trial_seed_inputs ROOT WS copies the committed fictional vendor notes into WS/inbox and the API specifications into WS/specs, which
+# the agent's requests name; a file already there (the person's or the agent's) is kept
+trial_seed_inputs() {
+  local root="$1" ws="$2" kind file
+  for kind in inbox specs; do
+    mkdir -p "$ws/$kind"
+    for file in "$root/examples/trial/$kind/"*; do
+      [[ -e "$ws/$kind/${file##*/}" ]] || cp "$file" "$ws/$kind/"
+    done
+  done
+}

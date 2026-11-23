@@ -55,8 +55,8 @@ In both cases the API is `http://backend:8000/api/`. The token is copied from `.
 | `iac/` | The GRC platform's Terraform, copied to run its control tests, and their report `controls.xml` (step 12) |
 | `manual/` | Drop folders for manual evidence sources |
 | `evidence/` | Evidence and run records |
-| `specs/` | API specifications, for the agent |
-| `inbox/` | Vendor documents for the agent, and the Microsoft 365 test certificate |
+| `specs/` | API specifications for the agent: the trial puts a fictional description of the Sophos Central API calls the dev server answers here |
+| `inbox/` | Vendor documents for the agent (the trial puts fictional notes on each of the four suppliers here), and the Microsoft 365 test certificate |
 | `bin/hound` | `hound` for your coding agent: the trial's image, against the trial's CISO Assistant |
 
 ## 4. A new organisation
@@ -79,7 +79,7 @@ cd .dev/trial/repo && export PATH="$PWD/../bin:$PATH"
 claude
 ```
 
-Or open `.dev/trial/repo` in VS Code and pick the `hound-onboarding` agent in Copilot. Put any API specification in `.dev/trial/specs` and the vendor documents in `.dev/trial/inbox`.
+Or open `.dev/trial/repo` in VS Code and pick the `hound-onboarding` agent in Copilot. The trial has already put fictional supplier notes in `.dev/trial/inbox` and a Sophos Central API description in `.dev/trial/specs`; add any other API specification or vendor document there.
 
 ## 5 to 11. Third parties, then each system, its audit and controls
 
