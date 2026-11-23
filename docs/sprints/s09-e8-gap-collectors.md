@@ -376,7 +376,7 @@ $ hound skill validate --skills /tmp/fc21/sk/skills
 ```
 
 ### s09-28 Onboard the corporate environment: the capability map (added 2026-11-22)
-- [ ] Done
+- [x] Done
 
 **Story:** As a GRC team member, I want to record, for each control, which product in our environment actually provides it, before any system is onboarded, so that `hound` only judges a control on the system that provides it and we never fail an audit because of bad data.
 
@@ -414,6 +414,8 @@ $ hound skill validate --skills /tmp/fc21/sk/skills
 - Functional test: `CapabilityMapFunctionalTests` (recorded signals, no model, then `hound scope plan` against the local CISO Assistant).
 
 **Functional check (so far):** on a copy of the example repo with recorded answers (`SPE_E3`), `hound onboard environment --no-model` wrote `scope/capabilities.yaml` and 14 application control rows in `ex-e8-2026.yaml` as "Provided by Example app control (no audit yet; …)", listed the app control product to onboard and patch applications as a gap; `hound scope validate` passed.
+
+**Functional check (CI run 311, 2026-11-23):** `CapabilityMapFunctionalTests` against the local CISO Assistant: on a copy of the example repo with recorded `SPE_E3` signals and no model, `hound onboard environment` recorded application control as provided by Example app control and patch applications as a gap; `hound scope plan scope --config hound.yaml` then exited 0 with the not-applicable rows "Provided by Example app control" and patch applications under "Capability gaps". The first CI run found that rows for requirements the audit's mapping computes conflicted with it (`scope.result_conflict`); those are now left to the mapping and listed, and `hound scope validate --config hound.yaml` passes after onboarding.
 
 ### s09-29 Microsoft 365 checks follow the capability map (added 2026-11-22)
 - [ ] Done
