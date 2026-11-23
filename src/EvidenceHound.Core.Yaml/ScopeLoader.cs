@@ -40,7 +40,7 @@ public static partial class ScopeLoader
     private static readonly string[] Accesses = ["edit", "read", "hidden"];
     private static readonly string[] DocumentKeys = ["id", "name", "files", "systems", "requirements"];
     private static readonly string[] AuditControlKeys = ["ref_id", "requirements"];
-    private static readonly string[] AssessmentKeys = ["ref", "urn", "status", "result", "observation"];
+    private static readonly string[] AssessmentKeys = ["ref", "urn", "status", "result", "observation", "provided_by"];
     private static readonly string[] Statuses = ["to_do", "in_progress", "in_review", "done"];
     private static readonly string[] CycleKeys = ["period", "starts", "close"];
     private static readonly string[] Closes = ["sign_off", "auto"];
@@ -390,7 +390,10 @@ public static partial class ScopeLoader
             : byRef is not null ? new RequirementRef(RequirementKey.Ref(byRef.Value), file.At(item)) : null;
         return requirement is null || status is null || result is null
             ? null
-            : new HandAssessment(requirement with { At = file.At(item) }, status, result.Value, file.Text(item, "observation") ?? "");
+            : new HandAssessment(requirement with { At = file.At(item) }, status, result.Value, file.Text(item, "observation") ?? "")
+            {
+                ProvidedBy = [.. file.Refs(item, "provided_by").Select(r => r.Value)],
+            };
     }
 
     private static AuditCycle? ReadCycle(YamlMappingNode map, FileReader file)

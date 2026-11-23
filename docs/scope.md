@@ -178,12 +178,15 @@ mitigations:
 ```
 
 The map only decides which system answers each requirement. Results stay in each system's own audit; in every other system's audit of the
-same framework, the mitigation's requirements are `not_applicable`, naming the providing system and its audit. Validation reports a framework
+same framework, the mitigation's requirements stay open (`not_assessed`) with `provided_by` naming the providing system, and the observation
+names its audit; each closes when that system's audit shows the requirement met. Validation reports a framework
 `setup.yaml` does not load (`capability.framework_unknown`), a mitigation decided twice (`scope.duplicate`), not in the framework
 (`capability.mitigation_unknown`) or not decided at all (`capability.decision_missing`), a missing approver (`capability.approver_missing`),
 a system decision with no systems (`capability.systems_missing`) and an unknown supplier. A system named but not declared yet is not an
 error: it is waiting to be onboarded. `hound scope plan` lists each gap under "Capability gaps" (JSON `gaps`): the mitigation and the
-requirements no system's audit answers.
+requirements no system's audit answers. It lists each requirement an audit leaves open for another system under "Open dependencies" (JSON
+`dependencies`): the audit, the requirement, the system that meets it, that system's audit if it has one, and the result there (as the scope
+declares it, "from collectors" when that audit's mapping computes it, or "no audit yet").
 
 ## audits/&lt;audit&gt;.yaml
 
@@ -197,7 +200,7 @@ requirements no system's audit answers.
 | `systems` | The systems in scope. |
 | `documents` | Static evidence such as policies and reports: `id`, `name`, `files` (paths or globs, relative to the compliance repo, the scope folder's parent), `systems` and `requirements` it supports. A document is linked to the rows it cites in its own audit, and in every other audit of the same framework that shares one of its systems. |
 | `controls` | The applied controls this audit relies on, by `ref_id`, each with the `requirements` it supports in this framework. |
-| `assessments` | Hand-written results for requirements no check covers: `ref` (or `urn`), `status` (`to_do`, `in_progress`, `in_review`, `done`), `result` and `observation`. |
+| `assessments` | Hand-written results for requirements no check covers: `ref` (or `urn`), `status` (`to_do`, `in_progress`, `in_review`, `done`), `result`, `observation`, and `provided_by` (the systems that meet it, when another system does: the row stays open, never `not_applicable`, and `hound scope plan` lists it under "Open dependencies" with that system's audit and its result there). |
 | `cycle`, `sign_offs` | Optional, for an audit that runs in periods: `cycle: {period: month|quarter|half_year|year, starts: YYYY-MM-DD, close: sign_off|auto}` and `sign_offs: [{period, by, date}]`. See [Audit periods](#audit-periods). |
 | `unlisted` | Required. What happens to in-group requirements the file does not list: `{result: not_assessed}`, or `{result: not_applicable, reason: …}` for an audit scoped to one system. Nothing is marked not applicable silently. It is applied only with `--config`, because the deployment's mappings say which rows a run computes, and those are left alone. |
 
@@ -275,6 +278,7 @@ Every problem is reported at once with its file, line, code and a hint, and the 
 | `scope.requirement_unknown` | A requirement is not in the framework. |
 | `scope.requirement_not_assessed` | A document, control or assessment cites a requirement outside the audit's groups. |
 | `scope.result_conflict` | A hand-written result for a requirement a target's mapping also computes, so a person and a collector would write the same row. |
+| `scope.other_system_as_not_applicable` | A requirement marked `not_applicable` because another system meets it (`provided_by`, or an observation starting "Provided by"): it would show as closed while nothing proves it met. Keep it open with `provided_by`. |
 | `scope.field_not_writable` | `field_visibility` leaves `result`, `observation` or `evidences` below `edit` for the auditor. |
 | `scope.unlisted_missing`, `scope.unlisted_reason_missing` | `unlisted` is missing, or marks requirements not applicable without a reason. |
 | `scope.cycle_start_invalid` | A cycle's `starts` is not the first day of a month. |

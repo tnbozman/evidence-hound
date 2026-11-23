@@ -10,8 +10,11 @@ public class ScopeSchemaTests
 {
     private static readonly JsonSchema Schema = JsonSchema.FromText(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "files", "schemas", "scope.schema.json")));
 
+    private static readonly string[] ExampleRepos = ["compliance-repo", "onboarding-tutorial"];
+
     public static TheoryData<string> ExampleFiles() =>
-        [.. Directory.GetFiles(Path.Combine(AppContext.BaseDirectory, "files", "compliance-repo", "scope"), "*.yaml", SearchOption.AllDirectories)
+        [.. ExampleRepos
+            .SelectMany(repo => Directory.GetFiles(Path.Combine(AppContext.BaseDirectory, "files", repo, "scope"), "*.yaml", SearchOption.AllDirectories))
             .Select(f => Path.GetRelativePath(AppContext.BaseDirectory, f))];
 
     [Theory]
@@ -33,6 +36,7 @@ public class ScopeSchemaTests
         Errors(SupplierScopeTests.Supplier).ShouldBeEmpty();
         Errors(SupplierScopeTests.OrganisationSetup).ShouldBeEmpty();
         Errors(CapabilityLoaderTests.Capabilities).ShouldBeEmpty();
+        Errors(OpenDependencyTests.WaitingAudit).ShouldBeEmpty();
     }
 
     [Fact]

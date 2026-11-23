@@ -91,6 +91,15 @@ internal static class ScopePlanOutput
             }
         }
 
+        if (notes.Dependencies.Count > 0)
+        {
+            markdown.Append("\n### Open dependencies\n\nRequirements left open because another system meets them: each closes when that system's audit shows it met.\n\n| Audit | Requirement | Met by | Its audit | Result there |\n| --- | --- | --- | --- | --- |\n");
+            foreach (var dependency in notes.Dependencies)
+            {
+                markdown.Append(CultureInfo.InvariantCulture, $"| {Cell(dependency.Audit)} | {Cell(dependency.Requirement)} | {Cell(dependency.System)} | {Cell(dependency.SystemAudit ?? "(none)")} | {Cell(dependency.ResultThere)} |\n");
+            }
+        }
+
         if (notes.Unmanaged.Count > 0)
         {
             markdown.Append("\n### Unmanaged settings\n\nCISO Assistant's own: settings.yaml does not name them, so applying leaves them as they are.\n\n| Kind | Name | Value |\n| --- | --- | --- |\n");
@@ -129,6 +138,14 @@ internal static class ScopePlanOutput
             {
                 ["mitigation"] = g.Mitigation,
                 ["requirements"] = new JsonArray([.. g.Requirements.Select(r => (JsonNode)JsonValue.Create(r))]),
+            })]),
+            ["dependencies"] = new JsonArray([.. notes.Dependencies.Select(d => (JsonNode)new JsonObject
+            {
+                ["audit"] = d.Audit,
+                ["requirement"] = d.Requirement,
+                ["system"] = d.System,
+                ["system_audit"] = d.SystemAudit,
+                ["result_there"] = d.ResultThere,
             })]),
             ["suppliers"] = new JsonArray([.. notes.Suppliers.Select(n => (JsonNode)new JsonObject { ["code"] = n.Code, ["supplier"] = n.Supplier, ["system"] = n.System, ["detail"] = n.Detail })]),
             ["changes"] = new JsonArray([.. plan.Changes.Select(c => (JsonNode)new JsonObject

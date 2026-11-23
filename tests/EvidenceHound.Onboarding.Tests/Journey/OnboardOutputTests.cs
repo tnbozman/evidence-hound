@@ -41,7 +41,7 @@ public sealed class OnboardOutputTests
         elsewhere.Result.ShouldBe(ComplianceResult.NotAssessed);
         elsewhere.Status.ShouldBe("to_do");
         elsewhere.ProvidedBy.ShouldBe(["Example backup service"]);
-        elsewhere.Observation.ShouldStartWith("Met by Example backup service; open until that system's audit shows it met: Backups are taken by the backup service.");
+        elsewhere.Observation.ShouldStartWith("Met by Example backup service; open until the audit of Example backup service shows it met: Backups are taken by the backup service.");
 
         var manual = parsed.Assessments.Single(a => a.Requirement.Key.Value == "EX-1");
         manual.Status.ShouldBe("to_do");

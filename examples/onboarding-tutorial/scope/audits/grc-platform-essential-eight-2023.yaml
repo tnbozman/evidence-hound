@@ -112,17 +112,20 @@ assessments:
     result: not_applicable
     observation: "Not applicable: The GRC platform is used only by the GRC team; no customer has an account. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
   - ref: ISM-1173
-    status: done
-    result: not_applicable
-    observation: "Provided by Example 365: Staff sign in to CISO Assistant through single sign-on with Example 365, which enforces MFA; OCI console and Bastion sign-in is federated to the same identity provider. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+    status: to_do
+    result: not_assessed
+    provided_by: ["Example 365"]
+    observation: "Met by Example 365; open until the audit of Example 365 shows it met: Staff sign in to CISO Assistant through single sign-on with Example 365, which enforces MFA; OCI console and Bastion sign-in is federated to the same identity provider. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
   - ref: ISM-0974
-    status: done
-    result: not_applicable
-    observation: "Provided by Example 365: Staff sign in to CISO Assistant through single sign-on with Example 365, which enforces MFA; OCI console and Bastion sign-in is federated to the same identity provider. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+    status: to_do
+    result: not_assessed
+    provided_by: ["Example 365"]
+    observation: "Met by Example 365; open until the audit of Example 365 shows it met: Staff sign in to CISO Assistant through single sign-on with Example 365, which enforces MFA; OCI console and Bastion sign-in is federated to the same identity provider. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
   - ref: ISM-1401
-    status: done
-    result: not_applicable
-    observation: "Provided by Example 365: Staff sign in to CISO Assistant through single sign-on with Example 365, which enforces MFA; OCI console and Bastion sign-in is federated to the same identity provider. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+    status: to_do
+    result: not_assessed
+    provided_by: ["Example 365"]
+    observation: "Met by Example 365; open until the audit of Example 365 shows it met: Staff sign in to CISO Assistant through single sign-on with Example 365, which enforces MFA; OCI console and Bastion sign-in is federated to the same identity provider. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
   - ref: ISM-1872
     status: done
     result: not_applicable
@@ -132,13 +135,15 @@ assessments:
     result: not_applicable
     observation: "Not applicable: The GRC platform is used only by the GRC team; no customer has an account. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
   - ref: ISM-1682
-    status: done
-    result: not_applicable
-    observation: "Provided by Example 365: Staff sign in to CISO Assistant through single sign-on with Example 365, which enforces MFA; OCI console and Bastion sign-in is federated to the same identity provider. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+    status: to_do
+    result: not_assessed
+    provided_by: ["Example 365"]
+    observation: "Met by Example 365; open until the audit of Example 365 shows it met: Staff sign in to CISO Assistant through single sign-on with Example 365, which enforces MFA; OCI console and Bastion sign-in is federated to the same identity provider. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
   - ref: ISM-1683
-    status: done
-    result: not_applicable
-    observation: "Provided by Example 365: Staff sign in to CISO Assistant through single sign-on with Example 365, which enforces MFA; OCI console and Bastion sign-in is federated to the same identity provider. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+    status: to_do
+    result: not_assessed
+    provided_by: ["Example 365"]
+    observation: "Met by Example 365; open until the audit of Example 365 shows it met: Staff sign in to CISO Assistant through single sign-on with Example 365, which enforces MFA; OCI console and Bastion sign-in is federated to the same identity provider. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
   - urn: urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1815
     status: to_do
     result: not_assessed
@@ -188,21 +193,25 @@ assessments:
     result: not_assessed
     observation: "Manual evidence: Only the admin account of the GRC lead may use the OCI console; the OCI IAM group membership is captured quarterly. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
   - ref: ISM-1380
-    status: done
-    result: not_applicable
-    observation: "Provided by Example laptops: Administrators work from their managed Example laptops, whose operating environments meet this. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+    status: to_do
+    result: not_assessed
+    provided_by: ["Example laptops"]
+    observation: "Met by Example laptops; open until the audit of Example laptops shows it met: Administrators work from their managed Example laptops, whose operating environments meet this. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
   - ref: ISM-1687
-    status: done
-    result: not_applicable
-    observation: "Provided by Example laptops: Administrators work from their managed Example laptops, whose operating environments meet this. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+    status: to_do
+    result: not_assessed
+    provided_by: ["Example laptops"]
+    observation: "Met by Example laptops; open until the audit of Example laptops shows it met: Administrators work from their managed Example laptops, whose operating environments meet this. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
   - ref: ISM-1688
-    status: done
-    result: not_applicable
-    observation: "Provided by Example laptops: Administrators work from their managed Example laptops, whose operating environments meet this. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+    status: to_do
+    result: not_assessed
+    provided_by: ["Example laptops"]
+    observation: "Met by Example laptops; open until the audit of Example laptops shows it met: Administrators work from their managed Example laptops, whose operating environments meet this. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
   - ref: ISM-1689
-    status: done
-    result: not_applicable
-    observation: "Provided by Example laptops: Administrators work from their managed Example laptops, whose operating environments meet this. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+    status: to_do
+    result: not_assessed
+    provided_by: ["Example laptops"]
+    observation: "Met by Example laptops; open until the audit of Example laptops shows it met: Administrators work from their managed Example laptops, whose operating environments meet this. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
   - ref: ISM-1387
     status: to_do
     result: not_assessed

@@ -8,7 +8,7 @@ public class OpenDependencyTests
 {
     private static readonly string Waiting = "    status: to_do\n    result: not_assessed\n    provided_by: [Example laptops]\n    observation: Met by Example laptops.";
 
-    private static readonly string Audit = ScopeFixture.Audit.Replace("    status: done\n    result: compliant\n    observation: Reviewed by hand.", Waiting, StringComparison.Ordinal);
+    internal static readonly string WaitingAudit = ScopeFixture.Audit.Replace("    status: done\n    result: compliant\n    observation: Reviewed by hand.", Waiting, StringComparison.Ordinal);
 
     private static readonly string LaptopsAudit = """
         ref_id: LAPTOPS-2026
@@ -27,7 +27,7 @@ public class OpenDependencyTests
     [Fact]
     public void Open_dependencies_are_listed()
     {
-        var scope = Parse(Audit).Scope;
+        var scope = Parse(WaitingAudit).Scope;
 
         var dependency = OpenDependencies.Of(scope, []).ShouldHaveSingleItem();
 
@@ -37,7 +37,7 @@ public class OpenDependencyTests
     [Fact]
     public void The_providing_systems_audit_and_its_result_are_named()
     {
-        var scope = Parse(Audit, LaptopsAudit).Scope;
+        var scope = Parse(WaitingAudit, LaptopsAudit).Scope;
 
         OpenDependencies.Of(scope, []).ShouldHaveSingleItem().ShouldBe(new OpenDependency("EXAMPLE-BASELINE-2026", "EX-1.2", "Example laptops", "LAPTOPS-2026", "compliant"));
     }
@@ -45,7 +45,7 @@ public class OpenDependencyTests
     [Fact]
     public void A_result_the_providing_audits_mapping_computes_is_named_as_such()
     {
-        var scope = Parse(Audit, LaptopsAudit.Replace("assessments:\n  - ref: EX-1.2\n    status: done\n    result: compliant\n    observation: Reviewed by hand.\n", "", StringComparison.Ordinal)).Scope;
+        var scope = Parse(WaitingAudit, LaptopsAudit.Replace("assessments:\n  - ref: EX-1.2\n    status: done\n    result: compliant\n    observation: Reviewed by hand.", "", StringComparison.Ordinal)).Scope;
         var target = new ScopeTarget("LAPTOPS-2026", [RequirementKey.Ref("EX-1.2")], [], new SourceLine("hound.yaml", 1));
 
         OpenDependencies.Of(scope, [target]).ShouldHaveSingleItem().ResultThere.ShouldBe("from collectors");

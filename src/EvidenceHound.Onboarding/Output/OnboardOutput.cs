@@ -61,10 +61,16 @@ public static partial class OnboardOutput
             var (status, result, observation) = decision.Kind switch
             {
                 DecisionKind.NotApplicable => ("done", "not_applicable", $"Not applicable: {decision.Justification} Approved by {decision.Approver}; accepted by {decision.AcceptedBy} {accepted}"),
-                DecisionKind.OtherSystem => ("done", "not_applicable", $"Provided by {decision.OtherSystem}: {decision.Reasoning} Accepted by {decision.AcceptedBy} {accepted}"),
+                DecisionKind.OtherSystem => ("to_do", "not_assessed", $"Met by {decision.OtherSystem}; open until the audit of {decision.OtherSystem} shows it met: {decision.Reasoning} Accepted by {decision.AcceptedBy} {accepted}"),
                 _ => ("to_do", "not_assessed", $"Manual evidence: {decision.Reasoning} Accepted by {decision.AcceptedBy} {accepted}"),
             };
-            text.Append(CultureInfo.InvariantCulture, $"  - {Key(decision)}\n    status: {status}\n    result: {result}\n    observation: {Quote(observation)}\n");
+            text.Append(CultureInfo.InvariantCulture, $"  - {Key(decision)}\n    status: {status}\n    result: {result}\n");
+            if (decision.Kind == DecisionKind.OtherSystem)
+            {
+                text.Append(CultureInfo.InvariantCulture, $"    provided_by: [{Quote(decision.OtherSystem ?? "")}]\n");
+            }
+
+            text.Append(CultureInfo.InvariantCulture, $"    observation: {Quote(observation)}\n");
         }
 
         return text.ToString();

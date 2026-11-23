@@ -585,6 +585,15 @@
             "not_applicable"
           ]
         },
+        "provided_by": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "description": "The systems that meet this requirement for the audit, when another system does. The row stays open (never not_applicable) until that system's audit shows the requirement met; hound scope plan lists it under Open dependencies."
+        },
         "observation": {
           "type": "string"
         }

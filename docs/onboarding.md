@@ -58,7 +58,8 @@ carry on where it stopped; the model is never asked again for what it already an
 5. **Written for review.** Once every requirement is decided, it asks for the domain and perimeter of the system's audit (the first ones in
    `scope/setup.yaml` by default) and writes, into the working copy only:
    - `scope/audits/<system>-<framework>.yaml`: the system's own audit. Not applicable rows are done with result `not_applicable` and the
-     justification and approver in the observation; rows another system meets say which system; manual rows are to do. Rows checked
+     justification and approver in the observation; rows another system meets stay open (`to_do`, `not_assessed`) with `provided_by` naming
+     that system, until its own audit shows the requirement met; manual rows are to do. Rows checked
      through the API are left to the collector (`unlisted: not_assessed` until its results are published). The audit lists the system.
    - `scope/setup.yaml`: the system is declared in the audit's domain with `solution:` set to the supplier's solution, or, if it is already
      declared, `solution:` is added to it (a different solution already there stops the write). That is what lets `hound scope plan` hold
@@ -125,7 +126,7 @@ hound onboard environment --repo . --graph example-m365 --no-model      # read t
   gap, or `q` to save and stop. It asks once for your name and the role that approves the decisions. A product not onboarded yet can be
   named; you are asked for its supplier.
 - **What it writes, for review:** `scope/capabilities.yaml` (see [scope.md](scope.md#capabilitiesyaml)), and in each system's own audit,
-  every requirement another system provides as `not_applicable`, "Provided by <system> (audit <ref>)". A requirement the audit's mapping already computes (a target in `hound.yaml`, `--deployment`) is left to the mapping and listed, since a hand-written row would conflict with it (`scope.result_conflict`); take it out of that mapping if the system should not be judged on it. Nothing is merged into a combined
+  every requirement another system provides as an open row (`not_assessed`, `provided_by: [<system>]`), "Met by <system> (audit <ref>) ...; open until that audit shows it met", never as not applicable, so no gap shows as closed. `hound scope plan` lists these rows under "Open dependencies". A requirement the audit's mapping already computes (a target in `hound.yaml`, `--deployment`) is left to the mapping and listed, since a hand-written row would conflict with it (`scope.result_conflict`); take it out of that mapping if the system should not be judged on it. Nothing is merged into a combined
   audit, rows you wrote by hand are never changed, and running it again adds nothing.
 - **What comes next:** each named system not onboarded yet is listed with `hound onboard "<system>"`, whose supplier goes through the
   supplier gate first; each gap is listed as requirements no system's audit answers.

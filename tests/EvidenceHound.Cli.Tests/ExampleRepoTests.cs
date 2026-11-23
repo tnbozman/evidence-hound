@@ -231,7 +231,9 @@ public sealed partial class ExampleRepoTests : IDisposable
             Row(platform, "ISM-1671").Result.ShouldBe(ComplianceResult.NotApplicable, "there are no Office macros on a Linux container host");
             Row(platform, "ISM-1511").Observation.ShouldStartWith("Manual evidence: ", customMessage: "backups are manual evidence");
             Row(platform, "ISM-1695").Observation.ShouldStartWith("Manual evidence: ", customMessage: "patching is manual evidence");
-            Row(platform, "ISM-1173").Observation.ShouldStartWith("Provided by Example 365", customMessage: "admin MFA is the identity provider's");
+            Row(platform, "ISM-1173").Observation.ShouldStartWith("Met by Example 365", customMessage: "admin MFA is the identity provider's");
+            Row(platform, "ISM-1173").Result.ShouldBe(ComplianceResult.NotAssessed, "met by another system stays open until that system's audit shows it met");
+            Row(platform, "ISM-1173").ProvidedBy.ShouldBe(["Example 365"]);
 
             var firewall = audits["OFFICE-FIREWALL-ESSENTIAL-EIGHT-2023"].Assessments.Select(r => r.Requirement.Key.Value).ToArray();
             firewall.ShouldNotContain("ISM-1501", "the firmware check comes from the sophos-central profile");

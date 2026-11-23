@@ -157,6 +157,7 @@ internal static class ScopeCommands
                         Compliance = compliance,
                         Suppliers = suppliers.Notes,
                         Gaps = CapabilityMap.Gaps(checkedScope.Scope, checkedScope.Inputs.Snapshots),
+                        Dependencies = OpenDependencies.Of(checkedScope.Scope, checkedScope.Inputs.Targets ?? []),
                     }));
                     return ExitCodes.Ok;
                 }
@@ -345,6 +346,7 @@ internal static class ScopeCommands
                 {
                     Suppliers = suppliers.Notes,
                     Gaps = CapabilityMap.Gaps(checkedScope.Scope, checkedScope.Inputs.Snapshots),
+                    Dependencies = OpenDependencies.Of(checkedScope.Scope, checkedScope.Inputs.Targets ?? []),
                     Unmanaged = options.ShowUnmanaged ? UnmanagedSettings(declared, read.Held) : [],
                     Compliance = ComplianceImpact.Of(plan, declared, read.Held, checkedScope.Inputs),
                 };

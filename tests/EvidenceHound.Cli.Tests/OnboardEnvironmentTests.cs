@@ -73,7 +73,7 @@ public sealed class OnboardEnvironmentTests : IDisposable
         // provided by the product, and the whole scope still validates.
         var audit = await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "audits", "ex-e8-2026.yaml"), _ct);
         audit.ShouldNotContain("result: not_applicable");
-        audit.ShouldContain("provided_by: [\"Example app control\"]");
+        audit.ShouldContain("provided_by: [Example app control]");
         audit.ShouldContain("Met by Example app control (no audit yet; onboard it with 'hound onboard Example app control')");
         output.ShouldContain("Wrote scope/capabilities.yaml");
         output.ShouldContain("Next: onboard Example app control (ac) with 'hound onboard \"Example app control\"'; its supplier SUP-EXAPPCTL goes through the supplier gate first.");

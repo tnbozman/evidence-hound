@@ -174,7 +174,8 @@ public static class CapabilityMap
                 }
 
                 var approved = decision.ApprovedOn is null ? $"approved by {decision.ApprovedBy}" : $"approved by {decision.ApprovedBy} on {decision.ApprovedOn}";
-                var observation = $"Provided by {string.Join(" and ", decision.Systems.Select(s => Provider(s.Value)))}, as recorded in {FileName} ({approved}).";
+                var observation = $"Met by {string.Join(" and ", decision.Systems.Select(s => Provider(s.Value)))}, as recorded in {FileName} ({approved}); open until that audit shows it met.";
+                IReadOnlyList<string> providers = [.. decision.Systems.Select(s => s.Value)];
                 var open = mitigation.Requirements
                     .Where(n => groups.Count == 0 || n.Groups.Any(groups.Contains))
                     .Where(n => !audit.Assessments.Any(a => a.Requirement.Key.Value == n.Urn || a.Requirement.Key.Value == n.RefId))
@@ -182,8 +183,8 @@ public static class CapabilityMap
                 leftToMapping.AddRange(open.Where(n => computed.Contains(n.Urn)).Select(n => n.RefId ?? n.Urn));
                 rows.AddRange(open.Where(n => !computed.Contains(n.Urn))
                     .Select(n => n.RefId is { } refId && refCounts.GetValueOrDefault(refId) == 1
-                        ? new CapabilityRow("ref", refId, observation)
-                        : new CapabilityRow("urn", n.Urn, observation)));
+                        ? new CapabilityRow("ref", refId, observation) { ProvidedBy = providers }
+                        : new CapabilityRow("urn", n.Urn, observation) { ProvidedBy = providers }));
             }
 
             if (rows.Count > 0 || leftToMapping.Count > 0)

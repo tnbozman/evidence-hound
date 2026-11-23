@@ -180,21 +180,25 @@ assessments:
     result: not_assessed
     observation: "Manual evidence: Firewall admin accounts are used only for administration; the admin list is captured quarterly. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
   - ref: ISM-1380
-    status: done
-    result: not_applicable
-    observation: "Provided by Example laptops: Administrators work from their managed Example laptops, whose operating environments meet this. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+    status: to_do
+    result: not_assessed
+    provided_by: ["Example laptops"]
+    observation: "Met by Example laptops; open until the audit of Example laptops shows it met: Administrators work from their managed Example laptops, whose operating environments meet this. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
   - ref: ISM-1687
-    status: done
-    result: not_applicable
-    observation: "Provided by Example laptops: Administrators work from their managed Example laptops, whose operating environments meet this. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+    status: to_do
+    result: not_assessed
+    provided_by: ["Example laptops"]
+    observation: "Met by Example laptops; open until the audit of Example laptops shows it met: Administrators work from their managed Example laptops, whose operating environments meet this. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
   - ref: ISM-1688
-    status: done
-    result: not_applicable
-    observation: "Provided by Example laptops: Administrators work from their managed Example laptops, whose operating environments meet this. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+    status: to_do
+    result: not_assessed
+    provided_by: ["Example laptops"]
+    observation: "Met by Example laptops; open until the audit of Example laptops shows it met: Administrators work from their managed Example laptops, whose operating environments meet this. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
   - ref: ISM-1689
-    status: done
-    result: not_applicable
-    observation: "Provided by Example laptops: Administrators work from their managed Example laptops, whose operating environments meet this. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+    status: to_do
+    result: not_assessed
+    provided_by: ["Example laptops"]
+    observation: "Met by Example laptops; open until the audit of Example laptops shows it met: Administrators work from their managed Example laptops, whose operating environments meet this. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
   - ref: ISM-1387
     status: to_do
     result: not_assessed

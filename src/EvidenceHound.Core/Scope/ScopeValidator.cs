@@ -38,8 +38,23 @@ public static class ScopeValidator
             .. SettingsValidator.Validate(scope, CisoAssistantSettings.Current),
             .. SupplierValidator.References(scope),
             .. CapabilityMap.Validate(scope, snapshots),
+            .. scope.Audits.SelectMany(OtherSystemProblems),
         ];
     }
+
+    /// <summary>
+    /// A requirement another system meets stays open until that system's audit shows it met: marked not applicable, the gap would show as closed.
+    /// Rows written before s09-36 name the system only in their observation ("Provided by ...").
+    /// </summary>
+    private static IEnumerable<ScopeProblem> OtherSystemProblems(ScopeAudit audit) =>
+        audit.Assessments
+            .Where(a => a.Result == ComplianceResult.NotApplicable
+                && (a.ProvidedBy.Count > 0 || a.Observation.StartsWith("Provided by ", StringComparison.Ordinal)))
+            .Select(a => new ScopeProblem(
+                "scope.other_system_as_not_applicable",
+                a.Requirement.At,
+                $"requirement '{a.Requirement.Key}' in audit '{audit.RefId}' is not applicable because another system meets it, which shows the requirement as closed when nothing yet proves it met.",
+                "Keep it open: set 'result: not_assessed' and 'status: to_do', and name the system with 'provided_by: [<system>]'. It closes when that system's audit shows the requirement met."));
 
     private static IEnumerable<ScopeProblem> Duplicates(ScopeDocument scope) =>
     [

@@ -168,7 +168,8 @@ internal static class OnboardEnvironmentCommand
             foreach (var row in audit.Rows)
             {
                 var appended = YamlEdit.AppendItem(text, "assessments", YamlMap.Of(
-                    (row.Key, new YamlText(row.Requirement)), ("status", new YamlText("done")), ("result", new YamlText("not_applicable")), ("observation", new YamlText(row.Observation))));
+                    (row.Key, new YamlText(row.Requirement)), ("status", new YamlText("to_do")), ("result", new YamlText("not_assessed")),
+                    ("provided_by", new YamlFlowList(row.ProvidedBy)), ("observation", new YamlText(row.Observation))));
                 if (appended is Result<string>.Fail { Errors: var editProblems })
                 {
                     return Result.Fail<Unit>([.. editProblems.Select(p => new Problem(p.Code, $"{audit.File}: {p.Message}"))]);
