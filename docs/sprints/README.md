@@ -14,7 +14,7 @@ Releases are delivered in one-week sprints. Each sprint has its own file, `sNN-<
 | [s07](s07-thin-deployment.md) | Runner image, Compose stack and scheduling, so Microsoft 365 evidence runs nightly; users and settings as configuration; tutorial for the private compliance repo and first deployment | 1 |
 | [s08](s08-sophos-veeam-collectors.md) | Sophos Central reference collector, and the local trial with Sophos and Microsoft 365 | 1 |
 | [s09](s09-e8-gap-collectors.md) | Essential Eight gap collectors: application control from Intune and Defender, vulnerability scan import, manual-upload templates, Veeam, and the Sophos and Microsoft 365 work moved from s08 | 1 |
-| [s10](s10-third-parties.md) | Suppliers, contracts and supplier assessments as configuration; the evidence plan as recurring CISO Assistant tasks | 1 |
+| [s10](s10-third-parties.md) | Third-party documentation; the evidence plan as recurring CISO Assistant tasks; s09 tasks carried over that wait on the maintainer's own environment | 1 |
 | [s11](s11-e8-ssp-and-ai-grc.md) | Reporting per programme; Essential Eight system security plan and POA&M drafted from CISO Assistant records; AI governance: AI6 framework and mapping, AI system register in CISO Assistant, `ai.*` checks | 1 |
 | [s12](s12-e8-mapping-and-adoption.md) | Essential Eight mapping completed, adoption guides, committee and board reporting | 1 |
 | [s13](s13-release-1.md) | Backups, hardening guide, packaging, release pipeline, docs site | 1 |

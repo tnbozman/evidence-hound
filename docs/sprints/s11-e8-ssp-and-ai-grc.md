@@ -438,7 +438,7 @@ Also applied, following decision 4:
 - **s12-04** reuses the CISO Assistant reads built for the SSP (s11-02) when it builds the posture snapshot.
 - **s17** now targets CMMC Level 2 through CISO Assistant's built-in `cmmc-2.0` framework (Rev 3 optional), and keeps only the NIST SP 800-171 / CMMC Level 2 SSP layout (s17-03) and its documentation (s17-04); the SSP engine, ISM-style layout, review and versions are s11-02 to s11-07.
 
-Not applied, to keep clear of the s09 work in progress: the README's s10 row still describes suppliers, which moved to s09.
+- **README** s10 row no longer lists suppliers (moved to s09) and names the s09 tasks carried into s10.
 
 ## Decisions
 
