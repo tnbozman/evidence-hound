@@ -33,12 +33,14 @@ public sealed class CapabilitySignalsTests
         var proposals = CapabilitySignals.Prefill(Mitigations, Systems, Facts, microsoftSystem: "Example 365");
 
         var mfa = proposals.Single(p => p.Mitigation == "mfa");
-        (mfa.Suggested, mfa.Systems).ShouldBe((CapabilityProvision.System, ["Example 365"]));
+        mfa.Suggested.ShouldBe(CapabilityProvision.System);
+        mfa.Systems.ShouldBe(["Example 365"]);
         mfa.Signals.ShouldBe(["Microsoft Graph (recorded 2026-11-23): licence AAD_PREMIUM_P2 (Microsoft Entra ID P2) is subscribed"]);
         var ac = proposals.Single(p => p.Mitigation == "ac");
         ac.Signals.ShouldBe(["Microsoft Graph (recorded 2026-11-23): Intune holds an endpoint protection configuration, which can carry application control"]);
         var rb = proposals.Single(p => p.Mitigation == "rb");
-        (rb.Suggested, rb.Systems).ShouldBe((CapabilityProvision.System, ["Example backup"]));
+        rb.Suggested.ShouldBe(CapabilityProvision.System);
+        rb.Systems.ShouldBe(["Example backup"]);
         rb.Signals.ShouldBe(["scope/setup.yaml: Example backup is tagged capabilities: rb"]);
 
         // A proposal is never a decision: it takes the person's answer and an approver to become one, and keeps its signals as a record.
