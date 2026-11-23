@@ -1,3 +1,5 @@
+using System.Text.Json.Nodes;
+
 namespace EvidenceHound.Cli.Tests;
 
 /// <summary><c>hound explain</c> reads a saved plan, a diff, or two versions of a file, and writes a review summary. Review only.</summary>
@@ -58,6 +60,23 @@ public sealed class ExplainCommandTests : IDisposable
         // Nothing to read is a usage error.
         (exit, _, _) = await RunAsync(["explain", "--no-model", "--repo", _root], "");
         exit.ShouldBe(ExitCodes.Usage);
+    }
+
+    [Fact]
+    public async Task Json_gives_what_code_reads_from_the_change_and_asks_no_model()
+    {
+        var plan = Path.Combine(_root, "plan.md");
+        await File.WriteAllTextAsync(plan, Plan, _ct);
+
+        // s09-37: for an agent. No onboarding config exists, and none is needed.
+        var (exit, output, error) = await RunAsync(["explain", plan, "--json", "--repo", _root], "");
+
+        exit.ShouldBe(ExitCodes.Ok, error);
+        var explained = JsonNode.Parse(output)!;
+        (explained["source"]!.GetValue<string>(), explained["kind"]!.GetValue<string>()).ShouldBe(("plan.md", "plan"));
+        explained["summary"]!.GetValue<string>().ShouldBe("1 to create, 0 to update, 1 to delete, 0 drifted.");
+        explained["flags"]!.AsArray().Select(f => f!.GetValue<string>()).ShouldContain("Deletes control CTL-OLD.");
+        explained["topics"]!.AsArray().ShouldNotBeNull();
     }
 
     public void Dispose() => Directory.Delete(_root, recursive: true);

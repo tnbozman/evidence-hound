@@ -145,6 +145,19 @@ public sealed class ScopePlanCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Json_flag_gives_the_plan_as_json()
+    {
+        await WriteScopeAsync();
+        EmptyInstance();
+
+        // s09-37: --json on every command an agent reads, the same output as --format json.
+        var exitCode = await Plan("--json");
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        JsonNode.Parse(_output.ToString())!["changes"]!.AsArray().ShouldContain(c => c!["kind"]!.GetValue<string>() == "system");
+    }
+
+    [Fact]
     public async Task Plan_on_the_day_given_opens_the_periods_of_an_audit_with_a_cycle_and_lists_them()
     {
         await WriteScopeAsync(ScopeCommandTests.Audit.Replace("EXAMPLE-BASELINE-2026", "EXAMPLE-BASELINE", StringComparison.Ordinal) + "\ncycle: {period: quarter, starts: \"2026-07-01\"}\n");

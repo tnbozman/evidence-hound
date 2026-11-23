@@ -43,6 +43,17 @@ public static class HoundCli
         CancellationToken cancellationToken) =>
         RunAsync(args, input, output, error, null, [], settings, null, cancellationToken);
 
+    /// <summary>Runs as from a terminal or not: <paramref name="terminal"/> is true only when a person is typing the answers.</summary>
+    internal static Task<int> RunAsync(
+        string[] args,
+        TextReader input,
+        TextWriter output,
+        TextWriter error,
+        IReadOnlyDictionary<string, string?> settings,
+        bool terminal,
+        CancellationToken cancellationToken) =>
+        RunAsync(args, input, output, error, null, [], settings, null, cancellationToken, terminal);
+
     /// <summary>Runs with extra configuration settings (for example <c>HOUND_CA_TOKEN</c>) on top of the environment.</summary>
     internal static Task<int> RunAsync(
         string[] args,
@@ -102,7 +113,8 @@ public static class HoundCli
         IReadOnlyList<Command> extraCommands,
         IReadOnlyDictionary<string, string?> settings,
         Action<IServiceCollection>? configureServices,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool terminal = false)
     {
         ArgumentNullException.ThrowIfNull(error);
 
@@ -111,25 +123,24 @@ public static class HoundCli
         var logger = loggers.CreateLogger("hound");
 
         return await CollectorRegistry.FromServices(host.Services).Match(
-            registry => InvokeAsync(args, input, output, error, extraCommands, host.Services, registry, loggers, cancellationToken),
+            registry => InvokeAsync(args, new Terminal(input, output, error, terminal), extraCommands, host.Services, registry, loggers, cancellationToken),
             problems => Task.FromResult(Log.Problems(logger, problems)));
     }
 
     private static async Task<int> InvokeAsync(
         string[] args,
-        TextReader input,
-        TextWriter output,
-        TextWriter error,
+        Terminal terminal,
         IReadOnlyList<Command> extraCommands,
         IServiceProvider services,
         CollectorRegistry registry,
         ILoggerFactory loggers,
         CancellationToken cancellationToken)
     {
+        var (output, error) = (terminal.Output, terminal.Error);
         var logger = loggers.CreateLogger("hound");
         var collectorServices = new CollectorServices(loggers, services.GetRequiredService<IHttpClientFactory>());
         var root = BuildRootCommand(
-            new Terminal(input, output, error), loggers, services.GetRequiredService<IConfiguration>(), registry, collectorServices, services.GetRequiredService<EnvironmentLookup>());
+            terminal, loggers, services.GetRequiredService<IConfiguration>(), registry, collectorServices, services.GetRequiredService<EnvironmentLookup>());
         foreach (var command in extraCommands)
         {
             root.Subcommands.Add(command);

@@ -76,6 +76,44 @@ public class SupplierGateTests
             Today).Notes.ShouldBeEmpty();
     }
 
+    [Fact]
+    public void Approval_recorded_in_config_registers_the_system_with_its_supplier_in_one_apply()
+    {
+        // s09-37: the person approved the supplier with hound approve, so the active contract and the review's conclusion are in the scope,
+        // and CISO Assistant holds neither yet.
+        ScopeEntity Host(string contract, string? result) => new("SUP-HOST", "Example Hosting", At)
+        {
+            Solutions = [new ScopeSolution("SOL-HOST", "Managed hosting", null, 3, At)],
+            Contracts = [new ScopeContract("CTR-HOST", "Hosting agreement", contract, At)],
+            Assessments =
+            [
+                new ScopeEntityAssessment("ENA-HOST", "Example Hosting review", new ScopeRef("Suppliers", At), At)
+                {
+                    DueDate = "2026-12-22",
+                    ReviewMonths = 12,
+                    Conclusions = result is null ? [] : [new ScopeConclusion("ENA-HOST-2026-12", result, "Sam Example", "2026-11-22", At)],
+                },
+            ],
+        };
+        ScopeDocument Declared(string contract, string? result)
+        {
+            var scope = Scope(System("Example portal", "SOL-HOST", null));
+            return scope with { ThirdParties = [Host(contract, result), .. scope.ThirdParties.Where(e => e.RefId != "SUP-HOST")] };
+        }
+
+        SupplierReview.Check(Declared("active", "ok"), [], Today).Refused.ShouldBeEmpty();
+
+        // A draft contract, no conclusion, or a blocker in config still refuses the system.
+        SupplierReview.Check(Declared("draft", "ok"), [], Today).Refused.ShouldHaveSingleItem().Message.ShouldContain("no active contract");
+        SupplierReview.Check(Declared("active", null), [], Today).Refused.ShouldHaveSingleItem().Message.ShouldContain("no concluded assessment");
+        SupplierReview.Check(Declared("active", "blocker"), [], Today).Refused.ShouldHaveSingleItem().Message.ShouldContain("ENA-HOST-2026-12 concluded blocker");
+
+        // The conclusion in config wins over what CISO Assistant holds for the same review.
+        SupplierReview.Check(Declared("active", "blocker"), [Contract("CTR-HOST", "SUP-HOST", "active"), Assessment("ENA-HOST-2026-12", "SUP-HOST", "2026-12-22", "ok", null)], Today)
+            .Refused.ShouldHaveSingleItem().Message.ShouldContain("concluded blocker");
+        SupplierReview.Check(Declared("active", "blocker"), [], Today).Refused.Single().Hint.ShouldContain("hound approve");
+    }
+
     internal static ScopeDocument Scope(ScopeSystem system, params ScopeEntity[] more) =>
         new(new ScopeSetup("Global", [], [new ScopeDomain("Example Pty Ltd", null, [], [system], At)]), [], [])
         {

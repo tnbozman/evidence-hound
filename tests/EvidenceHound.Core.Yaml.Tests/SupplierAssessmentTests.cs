@@ -65,6 +65,50 @@ public class SupplierAssessmentTests
     }
 
     [Fact]
+    public void Conclusion_in_the_file_is_declared_on_its_review_with_who_and_when()
+    {
+        const string conclusions = "\n    conclusions:\n      - review: ENA-EXCLOUD-2026-03\n        result: ok\n        by: Sam Example\n        on: \"2026-04-02\"\n";
+        var concluded = Assessed + conclusions;
+
+        Problems(concluded).ShouldBeEmpty();
+        var conclusion = Parse(concluded).Scope.ThirdParties.Single().Assessments.Single().Conclusions.ShouldHaveSingleItem();
+        (conclusion.Review, conclusion.Result, conclusion.By, conclusion.On).ShouldBe(("ENA-EXCLOUD-2026-03", "ok", "Sam Example", "2026-04-02"));
+
+        // The review it names carries the conclusion to CISO Assistant; the next review stays open.
+        var reviews = Desired(concluded, Today).Where(o => o.Kind == ScopeKind.EntityAssessment).ToArray();
+        reviews.Select(r => (r.Key, r.Fields.GetValueOrDefault("conclusion"))).ShouldBe([("ENA-EXCLOUD-2026-03", "ok"), ("ENA-EXCLOUD-2027-03", null)]);
+
+        // Who and when are required, the result is ok, warning or blocker, and the review is one of this assessment's.
+        var broken = concluded
+            .Replace("result: ok", "result: fine", StringComparison.Ordinal)
+            .Replace("        by: Sam Example\n", "", StringComparison.Ordinal)
+            .Replace("on: \"2026-04-02\"", "on: last week", StringComparison.Ordinal);
+        Problems(broken).Select(p => p.Code).Order(StringComparer.Ordinal).ShouldBe(["scope.key_missing", "scope.value_invalid", "scope.value_invalid"]);
+        var other = Problems(concluded.Replace("review: ENA-EXCLOUD-2026-03", "review: ENA-OTHER-2026-03", StringComparison.Ordinal)).ShouldHaveSingleItem();
+        other.Code.ShouldBe("supplier.conclusion_review_unknown");
+        other.Message.ShouldContain("ENA-OTHER-2026-03");
+
+        // Without a cycle the one review is the assessment itself.
+        var once = concluded.Replace("\n    review_every: 12 months", "", StringComparison.Ordinal).Replace("review: ENA-EXCLOUD-2026-03", "review: ENA-EXCLOUD", StringComparison.Ordinal);
+        Problems(once).ShouldBeEmpty();
+        Desired(once, Today).Single(o => o.Kind == ScopeKind.EntityAssessment).Fields["conclusion"].ShouldBe("ok");
+    }
+
+    [Fact]
+    public void A_contract_records_who_approved_the_supplier_and_when()
+    {
+        var approved = Assessed.Replace("    status: active\n", "    status: active\n    approved_by: Sam Example\n    approved_on: \"2026-01-05\"\n", StringComparison.Ordinal);
+        approved.ShouldNotBe(Assessed);
+
+        Problems(approved).ShouldBeEmpty();
+        var contract = Parse(approved).Scope.ThirdParties.Single().Contracts[0];
+        (contract.ApprovedBy, contract.ApprovedOn).ShouldBe(("Sam Example", "2026-01-05"));
+
+        // Who approved is hound's record, not a field CISO Assistant holds.
+        Desired(approved, Today).Where(o => o.Kind == ScopeKind.Contract).SelectMany(o => o.Fields.Keys).ShouldNotContain(k => k.StartsWith("approved", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void Assessment_references_are_checked()
     {
         var broken = Assessed

@@ -79,6 +79,13 @@ internal static partial class YamlEdit
         });
     }
 
+    /// <summary>Replaces the scalar at <paramref name="path"/>, which must exist, keeping the rest of its line.</summary>
+    public static Result<string> ReplaceScalar(string yaml, string path, string value)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        return Result.Fail<string>(new Problem("setup.not_a_value", $"'{path}' cannot be replaced yet."));
+    }
+
     /// <summary>The item as block lines, its dash at <paramref name="indent"/>.</summary>
     private static IEnumerable<string> Item(YamlMap item, int indent) =>
         Entries(item, indent + 2).Select((line, index) => index == 0 ? $"{Indent(indent)}- {line.TrimStart()}" : line);

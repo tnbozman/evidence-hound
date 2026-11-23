@@ -45,6 +45,24 @@ public sealed class YamlEditTests
     }
 
     [Fact]
+    public void Replaces_a_value_in_place_keeping_its_comment()
+    {
+        const string yaml = """
+            contracts:
+              - ref_id: "CTR-EXAMPLE"
+                status: draft   # until approved
+                solutions: ["SOL-EXAMPLE"]
+
+            """;
+
+        var edited = Ok(YamlEdit.ReplaceScalar(yaml, "contracts[ref_id=CTR-EXAMPLE].status", "active"));
+
+        edited.ShouldBe(yaml.Replace("status: draft ", "status: active ", StringComparison.Ordinal));
+        YamlEdit.ReplaceScalar(yaml, "contracts[ref_id=CTR-EXAMPLE].end", "2027-01-01").ShouldBeOfType<Result<string>.Fail>().Errors.ShouldHaveSingleItem().Code.ShouldBe("setup.path_missing");
+        YamlEdit.ReplaceScalar(yaml, "contracts[ref_id=CTR-EXAMPLE].solutions", "x").ShouldBeOfType<Result<string>.Fail>().Errors.ShouldHaveSingleItem().Code.ShouldBe("setup.not_a_value");
+    }
+
+    [Fact]
     public void Appends_to_a_block_list_in_its_indentation_keeping_comments()
     {
         const string yaml = """

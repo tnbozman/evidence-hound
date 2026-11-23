@@ -12,8 +12,12 @@ public sealed class SupplierClientTests : IDisposable
     private readonly FakeCisoAssistant _ca = new();
     private readonly CancellationToken _ct = TestContext.Current.CancellationToken;
 
-    public SupplierClientTests()
+    public SupplierClientTests() => Arrange(_ca);
+
+    /// <summary>A CISO Assistant holding one supplier with its solutions, contract, representative and a review concluded ok.</summary>
+    internal static void Arrange(FakeCisoAssistant ca)
     {
+        void Respond(string method, string path, JsonObject body) => SupplierClientTests.Respond(ca, method, path, body);
         foreach (var resource in new[] { "users", "actors", "frameworks", "loaded-libraries", "assets", "compliance-assessments", "evidences", "applied-controls" })
         {
             Respond("GET", $"/api/{resource}/", List());
@@ -184,6 +188,7 @@ public sealed class SupplierClientTests : IDisposable
             ["domain"] = "Example Pty Ltd",
             ["perimeter"] = "Suppliers",
             ["due_date"] = "2026-06-30",
+            ["conclusion"] = "ok",
         }, ignoreOrder: true);
         review.Observed.ShouldBe(new Dictionary<string, string> { ["conclusion"] = "ok", ["expiry_date"] = "2027-06-30" }, ignoreOrder: true);
         held.Single(a => a.Held.Kind == ScopeKind.Entity && a.Held.Key == "SUP-EXCLOUD").Observed["tier"].ShouldBe("important");
@@ -243,8 +248,10 @@ public sealed class SupplierClientTests : IDisposable
     private JsonObject Body(string path) =>
         JsonNode.Parse(_ca.Server.LogEntries.Single(e => e.RequestMessage!.Method == "POST" && e.RequestMessage.Path == path).RequestMessage!.Body!)!.AsObject();
 
-    private static JsonObject List(params JsonObject[] items) => new() { ["count"] = items.Length, ["results"] = new JsonArray([.. items]) };
+    internal static JsonObject List(params JsonObject[] items) => new() { ["count"] = items.Length, ["results"] = new JsonArray([.. items]) };
 
-    private void Respond(string method, string path, JsonObject body) =>
-        _ca.Server.Given(Request.Create().WithPath(path).UsingMethod(method)).RespondWith(Response.Create().WithStatusCode(method == "POST" ? 201 : 200).WithBody(body.ToJsonString()));
+    private void Respond(string method, string path, JsonObject body) => Respond(_ca, method, path, body);
+
+    internal static void Respond(FakeCisoAssistant ca, string method, string path, JsonObject body) =>
+        ca.Server.Given(Request.Create().WithPath(path).UsingMethod(method)).RespondWith(Response.Create().WithStatusCode(method == "POST" ? 201 : 200).WithBody(body.ToJsonString()));
 }

@@ -77,6 +77,11 @@ public sealed record ScopeContract(string RefId, string Name, string Status, Sou
     public SourceLine? CurrencyAt { get; init; }
 
     public IReadOnlyList<ScopeRef> Solutions { get; init; } = [];
+
+    /// <summary>Who approved the supplier by making this contract active with <c>hound approve</c>, and when. hound's record; CISO Assistant holds neither.</summary>
+    public string? ApprovedBy { get; init; }
+
+    public string? ApprovedOn { get; init; }
 }
 
 /// <summary>A person at the entity, matched by email. <c>hound</c> never gives a representative a login.</summary>
@@ -112,4 +117,13 @@ public sealed record ScopeEntityAssessment(string RefId, string Name, ScopeRef P
 
     /// <summary>Months between reviews, from <c>review_every</c>.</summary>
     public int? ReviewMonths { get; init; }
+
+    /// <summary>The reviews a person concluded with <c>hound approve</c>.</summary>
+    public IReadOnlyList<ScopeConclusion> Conclusions { get; init; } = [];
 }
+
+/// <summary>
+/// A review's conclusion, approved by a person in the config repo: the review by its key (<c>&lt;ref_id&gt;-yyyy-MM</c> on a cycle, else the
+/// assessment's <c>ref_id</c>), the result (<c>ok</c>, <c>warning</c> or <c>blocker</c>), who concluded it and when.
+/// </summary>
+public sealed record ScopeConclusion(string Review, string Result, string By, string On, SourceLine At);
