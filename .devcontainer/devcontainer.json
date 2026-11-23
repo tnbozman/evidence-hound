@@ -24,7 +24,7 @@
   },
   // CISO Assistant's UI is published on the host at https://localhost:8443 by the caddy service.
   "postCreateCommand": "bash .devcontainer/post-create.sh",
-  "postStartCommand": "bash scripts/dev-ca-env.sh && bash scripts/ca-apply-scope.sh || echo 'CISO Assistant is not ready yet; run scripts/dev-ca-env.sh and scripts/ca-apply-scope.sh later.'",
+  "postStartCommand": "bash scripts/dev-ca-env.sh || echo 'CISO Assistant is not ready yet; run scripts/dev-ca-env.sh later.'",
   "customizations": {
     "vscode": {
       "extensions": [
