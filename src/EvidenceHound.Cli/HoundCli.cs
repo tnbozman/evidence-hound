@@ -1,4 +1,5 @@
 using System.CommandLine;
+using EvidenceHound.Collectors.M365;
 using EvidenceHound.Runtime;
 using EvidenceHound.Runtime.Collectors;
 using Microsoft.Extensions.Configuration;
@@ -92,7 +93,7 @@ public static class HoundCli
         CancellationToken cancellationToken) =>
         RunAsync(args, TextReader.Null, output, error, configureLogging, extraCommands, settings, null, cancellationToken);
 
-    private static async Task<int> RunAsync(
+    internal static async Task<int> RunAsync(
         string[] args,
         TextReader input,
         TextWriter output,
@@ -127,7 +128,8 @@ public static class HoundCli
     {
         var logger = loggers.CreateLogger("hound");
         var collectorServices = new CollectorServices(loggers, services.GetRequiredService<IHttpClientFactory>());
-        var root = BuildRootCommand(new Terminal(input, output, error), loggers, services.GetRequiredService<IConfiguration>(), registry, collectorServices);
+        var root = BuildRootCommand(
+            new Terminal(input, output, error), loggers, services.GetRequiredService<IConfiguration>(), registry, collectorServices, services.GetRequiredService<EnvironmentLookup>());
         foreach (var command in extraCommands)
         {
             root.Subcommands.Add(command);
@@ -167,7 +169,7 @@ public static class HoundCli
     }
 
     private static RootCommand BuildRootCommand(
-        Terminal terminal, ILoggerFactory loggers, IConfiguration configuration, CollectorRegistry registry, CollectorServices collectorServices)
+        Terminal terminal, ILoggerFactory loggers, IConfiguration configuration, CollectorRegistry registry, CollectorServices collectorServices, EnvironmentLookup lookup)
     {
         var output = terminal.Output;
         return new("Evidence Hound: collects compliance evidence and publishes it to CISO Assistant.")
@@ -179,7 +181,7 @@ public static class HoundCli
             Setup.InitCommand.Build(terminal, loggers, configuration, registry),
             Setup.AddCommands.Build(terminal, loggers, configuration, registry),
             ExplainCommand.Build(terminal, loggers, configuration),
-            OnboardCommands.Build(terminal, loggers, configuration),
+            OnboardCommands.Build(terminal, loggers, configuration, new GraphAccess(registry.Descriptions, collectorServices.HttpClients, lookup, configuration)),
             ManualCommand.Build(terminal, loggers, registry, new SystemClock()),
             MappingCommands.Build(output, loggers),
             ScopeCommands.Build(output, loggers, configuration, registry),

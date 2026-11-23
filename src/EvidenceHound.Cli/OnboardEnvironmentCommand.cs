@@ -1,11 +1,15 @@
 using System.CommandLine;
 using System.Text.Json.Nodes;
 using EvidenceHound.Cli.Setup;
+using EvidenceHound.Collectors;
+using EvidenceHound.Collectors.M365;
 using EvidenceHound.Core.Frameworks;
 using EvidenceHound.Core.Results;
 using EvidenceHound.Core.Scope;
 using EvidenceHound.Core.Yaml;
 using EvidenceHound.Onboarding.Capabilities;
+using EvidenceHound.Runtime.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace EvidenceHound.Cli;
@@ -17,30 +21,39 @@ namespace EvidenceHound.Cli;
 /// </summary>
 internal static class OnboardEnvironmentCommand
 {
-    public static Command Build(Terminal terminal, ILoggerFactory loggers)
+    public static Command Build(Terminal terminal, ILoggerFactory loggers, GraphAccess access)
     {
         var logger = loggers.CreateLogger("hound.onboard");
         var repo = new Option<DirectoryInfo>("--repo") { Description = "The config repo to work in. Default: the current folder." };
         var framework = new Option<FileInfo>("--framework") { Description = "The framework snapshot whose mitigations to decide. Default: frameworks/essential-eight-2023.json in the repo." };
         var signals = new Option<FileInfo>("--signals") { Description = "Recorded answers of the read-only Microsoft Graph lookups (subscribed licences and Intune configuration kinds), as JSON." };
+        var graph = new Option<string>("--graph") { Description = "Read the licences and Intune configuration kinds live, read-only, as this m365 collector of the deployment config." };
+        var config = new Option<FileInfo>("--config") { Description = "The deployment config that names the --graph collector. Default: hound.yaml in the repo." };
         var microsoft = new Option<string>("--microsoft-system") { Description = "The system in scope/setup.yaml that is Microsoft 365, which Microsoft signals suggest. Default: the first whose name has 365." };
         var noModel = new Option<bool>("--no-model") { Description = "Decide from the signals and your answers only." };
         var command = new Command("environment", "Decide which system provides each mitigation, before systems are onboarded, and write scope/capabilities.yaml for review.")
         {
-            repo, framework, signals, microsoft, noModel,
+            repo, framework, signals, graph, config, microsoft, noModel,
         };
         command.SetAction(async (parseResult, cancellationToken) =>
         {
             var root = parseResult.GetValue(repo)?.FullName ?? Directory.GetCurrentDirectory();
             var frameworkFile = parseResult.GetValue(framework)?.FullName ?? Path.Combine(root, "frameworks", "essential-eight-2023.json");
-            var result = await RunAsync(root, frameworkFile, parseResult.GetValue(signals), parseResult.GetValue(microsoft), terminal, cancellationToken);
+            var source = new SignalSource(parseResult.GetValue(signals), parseResult.GetValue(graph), parseResult.GetValue(config)?.FullName ?? Path.Combine(root, "hound.yaml"));
+            var result = await RunAsync(root, frameworkFile, source, access, parseResult.GetValue(microsoft), terminal, cancellationToken);
             return result.Match(_ => ExitCodes.Ok, problems => Log.Problems(logger, problems));
         });
         return command;
     }
 
-    private static async Task<Result<Unit>> RunAsync(string root, string frameworkFile, FileInfo? signalsFile, string? microsoftSystem, Terminal terminal, CancellationToken cancellationToken)
+    private static async Task<Result<Unit>> RunAsync(
+        string root, string frameworkFile, SignalSource source, GraphAccess access, string? microsoftSystem, Terminal terminal, CancellationToken cancellationToken)
     {
+        if (source.Recorded is not null && source.Collector is not null)
+        {
+            return Result.Fail<Unit>(new Problem("onboard.signals_twice", "Give --signals (recorded answers) or --graph (read live), not both."));
+        }
+
         if (!File.Exists(frameworkFile))
         {
             return Result.Fail<Unit>(new Problem("onboard.framework_missing", $"{frameworkFile} does not exist. Make it with 'hound framework snapshot', or name it with --framework."));
@@ -72,7 +85,12 @@ internal static class OnboardEnvironmentCommand
             return Result.Fail<Unit>(new Problem("capability.framework_unknown", $"scope/capabilities.yaml maps {held.Framework.Value}, not {snapshot.FrameworkUrn}."));
         }
 
-        var facts = signalsFile is null ? Result.Ok(EnvironmentFacts.None) : ReadFacts(await File.ReadAllTextAsync(signalsFile.FullName, cancellationToken), signalsFile.Name);
+        var facts = source switch
+        {
+            { Recorded: { } recorded } => ReadFacts(await File.ReadAllTextAsync(recorded.FullName, cancellationToken), recorded.Name),
+            { Collector: { } collector } => await LiveFactsAsync(collector, source.Config, access, cancellationToken),
+            _ => Result.Ok(EnvironmentFacts.None),
+        };
         if (facts is Result<EnvironmentFacts>.Fail { Errors: var factProblems })
         {
             return Result.Fail<Unit>(factProblems);
@@ -211,6 +229,28 @@ internal static class OnboardEnvironmentCommand
         return null;
     }
 
+    /// <summary>The two read-only Graph lookups, signed in as the named m365 collector of the deployment config, with its own settings and secrets.</summary>
+    private static async Task<Result<EnvironmentFacts>> LiveFactsAsync(string collector, string configFile, GraphAccess access, CancellationToken cancellationToken)
+    {
+        var loaded = await ConfigLoader.LoadAsync(configFile, access.CollectorTypes, cancellationToken);
+        if (loaded is Result<DeploymentConfig>.Fail { Errors: var problems })
+        {
+            return Result.Fail<EnvironmentFacts>(problems);
+        }
+
+        var instance = ((Result<DeploymentConfig>.Ok)loaded).Value.Collectors.FirstOrDefault(c => c.Name == collector);
+        if (instance is not { Type: M365Collector.TypeName })
+        {
+            return Result.Fail<EnvironmentFacts>(new Problem(
+                "onboard.graph_collector_unknown", $"{Path.GetFileName(configFile)} has no m365 collector named '{collector}'; --graph names one, such as the one that collects from Microsoft 365."));
+        }
+
+        var secrets = ConfigCommands.Secrets(access.Configuration);
+        var read = await Result.Combine(instance.Secrets.Select(pair => secrets.Resolve(pair.Value).Map(secret => KeyValuePair.Create(pair.Key, secret))))
+            .BindAsync(resolved => access.Lookup.ReadAsync(new CollectorSettings(instance.Settings), resolved.ToDictionary(), access.HttpClients, cancellationToken));
+        return read.Map(found => new EnvironmentFacts($"Microsoft Graph ({collector})", found.Licences, found.ConfigurationTypes));
+    }
+
     private static Result<EnvironmentFacts> ReadFacts(string json, string name)
     {
         try
@@ -240,4 +280,10 @@ internal static class OnboardEnvironmentCommand
             thirdParties: [.. await Task.WhenAll(Files("third-parties").Select(Read))],
             capabilities: File.Exists(capabilities) ? await Read(capabilities) : null);
     }
+
+    /// <summary>Where the Microsoft signals come from: a recorded file, a collector to read live as, or neither.</summary>
+    private sealed record SignalSource(FileInfo? Recorded, string? Collector, string Config);
 }
+
+/// <summary>What <c>--graph</c> needs from the composition root: the collector types, HTTP clients, the lookup and configuration for secrets.</summary>
+internal sealed record GraphAccess(IReadOnlyDictionary<string, CollectorDescription> CollectorTypes, IHttpClientFactory HttpClients, EnvironmentLookup Lookup, IConfiguration Configuration);

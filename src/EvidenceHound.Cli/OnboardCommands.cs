@@ -30,7 +30,7 @@ internal static class OnboardCommands
         ["properties"] = new JsonObject { ["ok"] = new JsonObject { ["type"] = "boolean" } },
     };
 
-    public static Command Build(Terminal terminal, ILoggerFactory loggers, IConfiguration configuration)
+    public static Command Build(Terminal terminal, ILoggerFactory loggers, IConfiguration configuration, GraphAccess access)
     {
         var logger = loggers.CreateLogger("hound.onboard");
         var provider = new Option<string?>("--provider") { Description = "The model provider: anthropic or openai." };
@@ -48,7 +48,7 @@ internal static class OnboardCommands
                     new Wizard(terminal, parseResult.GetValue(yes)), terminal, logger, configuration, path, parseResult.GetValue(provider), parseResult.GetValue(model), cancellationToken);
         });
 
-        var onboard = new Command("onboard", "Onboard a system with the help of a language model you choose. Never used by collection.") { config, OnboardEnvironmentCommand.Build(terminal, loggers) };
+        var onboard = new Command("onboard", "Onboard a system with the help of a language model you choose. Never used by collection.") { config, OnboardEnvironmentCommand.Build(terminal, loggers, access) };
         OnboardSystemCommand.Attach(onboard, terminal, loggers, configuration);
         return onboard;
     }
