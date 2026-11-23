@@ -33,6 +33,48 @@ public sealed partial class ExampleRepoTests : IDisposable
     }
 
     [Fact]
+    public void Scope_guide_documents_the_ref_id_conventions_once_and_the_examples_follow_them()
+    {
+        var guide = File.ReadAllText(Path.Combine(RepoRoot, "docs", "scope.md"));
+        foreach (var convention in RefIds.Table.Where(c => c.Prefix.Length > 0))
+        {
+            guide.Split($"| {convention.Name} | `{convention.Prefix}` | `{convention.Example}` |").Length.ShouldBe(2, convention.Name);
+        }
+
+        guide.ShouldContain("`scope.ref_id_convention`");
+
+        // Every ref ID declared in the example repo and the tutorial's files follows its kind's convention.
+        string[] folders = [Path.Combine(Repo, "scope"), Path.Combine(Tutorial, "scope")];
+        (string Key, RefIdKind Kind)[] nested = [("solutions", RefIdKind.Solution), ("contracts", RefIdKind.Contract), ("assessments", RefIdKind.EntityAssessment)];
+        foreach (var file in folders.SelectMany(f => Directory.GetFiles(f, "*.yaml", SearchOption.AllDirectories)))
+        {
+            var kindOfTop = file.Contains("third-parties", StringComparison.Ordinal) ? RefIdKind.Supplier : file.Contains("audits", StringComparison.Ordinal) ? RefIdKind.Audit : (RefIdKind?)null;
+            var section = "";
+            foreach (var line in File.ReadLines(file))
+            {
+                if (line.Length > 0 && !char.IsWhiteSpace(line[0]) && line.Contains(':', StringComparison.Ordinal) && !line.StartsWith("ref_id", StringComparison.Ordinal))
+                {
+                    section = line.Split(':')[0];
+                }
+
+                if (line.TrimStart().TrimStart('-', ' ').StartsWith("ref_id:", StringComparison.Ordinal))
+                {
+                    var refId = line.Split(':', 2)[1].Trim().Trim('"');
+                    var kind = !char.IsWhiteSpace(line[0]) ? kindOfTop
+                        : kindOfTop == RefIdKind.Supplier ? nested.Where(n => n.Key == section).Select(n => (RefIdKind?)n.Kind).FirstOrDefault()
+                        : kindOfTop == RefIdKind.Audit ? RefIdKind.Control
+                        : file.EndsWith("controls.yaml", StringComparison.Ordinal) ? RefIdKind.Control
+                        : null;
+                    if (kind is { } known)
+                    {
+                        RefIds.Follows(known, refId).ShouldBeTrue($"{file}: {refId}");
+                    }
+                }
+            }
+        }
+    }
+
+    [Fact]
     public void Example_compliance_repo_has_the_config_scope_mappings_snapshots_manual_sources_assistant_guide_and_workflow()
     {
         string[] expected =

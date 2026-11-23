@@ -42,6 +42,9 @@ public sealed class AuditDraftCommandTests : IDisposable
         (exit, _, error) = await DraftAsync("EX-E8-2026", "--system", "Example 365");
         exit.ShouldBe(ExitCodes.Configuration);
         error.ShouldContain("EX-E8-2026 already exists");
+        (exit, _, error) = await DraftAsync("Example audit", "--system", "Example 365");
+        exit.ShouldBe(ExitCodes.Configuration);
+        error.ShouldContain("<CODE>-<FRAMEWORK>-<YEAR>");
 
         // An agent cannot approve it; a person on a terminal moves it into the scope, where it validates.
         (exit, _, _) = await ApproveAsync("Sam Example\ny\n", terminal: false);
