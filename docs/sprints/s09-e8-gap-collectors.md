@@ -1228,8 +1228,10 @@ Found while resetting the trial for s09-34 to s09-42. The compliance owner defau
 - Result (2026-11-23): `make run ARGS="init <scratch>/init-check --yes"` wrote 8 files and audit EX-E8-2027; `scope/controls.yaml` has `owner: ceo@example.com`; `hound scope validate` answered "scope valid: 1 domain(s), 1 control(s), 1 audit(s)" (exit 0); `hound init --help` says "Default: ceo@example.com." for `--owner`.
 - As built: `DefaultOwner` in `InitCommand` and the table in `docs/guided-setup.md`. The trial's own `hound add` steps still name `it@example.com` as the system and control owner, which is right for those.
 
-### s09-44 The trial hands the Sophos perimeter firewall to the agent (added 2026-11-23)
+### s09-45 The trial hands the Sophos perimeter firewall to the agent (added 2026-11-23)
 - [x] Done
+
+Numbered s09-44 in its commits by mistake (that number is the Microsoft 365 dev server); renumbered the same day.
 
 At the maintainer's request (2026-11-23): the trial focuses on the Sophos perimeter firewall, and s09-39 has the agent onboard it. Step 5 added an example backup service, a backup control and a restore-test manual source, which the agent path does not use.
 
