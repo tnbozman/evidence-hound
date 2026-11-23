@@ -584,6 +584,12 @@ Added at the maintainer's request (2026-11-23): s09-01 to s09-04 and the Microso
 - Served by the existing test server in unit tests, and on a local port in the dev container (`make m365-dev`), so `hound collect --dry-run` with the instance's `graph_url` pointed at it runs end to end. No sign-in leaves the machine.
 - `docs/tutorials/m365-dev-server.md`: what the tenant holds, the two variants, how to add a setting or a deviation, and what it cannot show (throttling patterns, licence quirks and results of a real tenant), which s09-18 and s09-27 still check.
 
+**Sources read (2026-11-23)**
+- ASD Blueprint `intune-config-policies`: six Graph beta `configurationPolicies` exports (Office hardening, both macro variants, Windows hardening, user rights, Edge), the same shape the collector already reads, so they can be served as they are. Their setting IDs differ from our hand-written fixture in one place (Excel: `l_exceloptions` in the export, `l_excel_options` in `configuration-policies.json`); the dev tenant takes the export's spelling.
+- ASD Blueprint `automation/dsc`: Microsoft365DSC configurations (15 Conditional Access policies, ASR rules, antivirus, compliance policies). They are not Graph responses, so they are translated into Graph shapes by hand, each citing the DSC resource it came from.
+- An Essential Eight PowerShell checklist (MIT) checks a single Windows endpoint locally (registry, services, AppLocker). It reads nothing from Graph, so it does not feed this tenant; noted under Discovered work as a reference for endpoint evidence.
+- ASD's example ML3 assessment test plan: to be read for which tests each check answers once a copy is available (the site could not be reached from the cloud session).
+
 **Tests first**
 - `M365DevTenantTests.Every_collection_the_collector_reads_is_served`
 - `M365DevTenantTests.Ids_are_the_same_across_collections`
@@ -1204,6 +1210,8 @@ Design decision 10, and the reworded rule: no model in collection, and no eviden
 - Deviations: `--check <check id>=<result>` gives one check a different result from `--result` (a source can have several checks). `hound manual approve` takes `--config`, as `hound manual upload` does, and has a stop answer (`s`). A proposal is refused when the file is already attested, and is skipped in the walk when the file changed after it was proposed. Extra tests: `AgentSkillTests.Manual_evidence_skill_proposes_from_the_file_and_never_attests`.
 
 ## Discovered work
+
+- s09-43: Essential Eight evidence from the endpoint itself (registry, services, AppLocker effective policy, Office macro settings), as an MIT PowerShell checklist does, is outside every current collector. Consider it with ASD's example assessment test plan, which names endpoint tests, when planning release 2.
 
 - s09-42: an agent finds files waiting for a proposal by listing the drop folder. Add `hound manual pending --json` (files with neither an attestation nor a proposal, per source, with what each check asks for).
 - s09-42: `hound manual upload` writes an attestation without the file's hash, so a file changed after a person attested it unaided is not noticed. Record `file_sha256` there too.
