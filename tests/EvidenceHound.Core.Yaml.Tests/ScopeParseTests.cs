@@ -44,7 +44,7 @@ public class ScopeParseTests
         var audit = ScopeFixture.Audit.Replace("unlisted:", """
             cycle: {period: quarter, starts: "2026-01-01", close: auto}
             sign_offs:
-              - {period: 2026Q1, by: ceo@example.com, date: "2026-04-14"}
+              - {period: Q3-2026FY, by: ceo@example.com, date: "2026-04-14"}
             unlisted:
             """, StringComparison.Ordinal);
 
@@ -53,7 +53,7 @@ public class ScopeParseTests
         parsed.Problems.ShouldBeEmpty();
         var read = parsed.Scope.Audits.ShouldHaveSingleItem();
         (read.Cycle!.Period, read.Cycle.Starts, read.Cycle.Close).ShouldBe(("quarter", "2026-01-01", "auto"));
-        read.SignOffs.ShouldHaveSingleItem().ShouldBe(new SignOff("2026Q1", "ceo@example.com", "2026-04-14") { At = read.SignOffs[0].At });
+        read.SignOffs.ShouldHaveSingleItem().ShouldBe(new SignOff("Q3-2026FY", "ceo@example.com", "2026-04-14") { At = read.SignOffs[0].At });
     }
 
     [Fact]

@@ -44,7 +44,7 @@ public static partial class ScopeLoader
     private static readonly string[] Statuses = ["to_do", "in_progress", "in_review", "done"];
     private static readonly string[] CycleKeys = ["period", "starts", "close"];
     private static readonly string[] Closes = ["sign_off", "auto"];
-    private static readonly string[] Periods = ["month", "quarter", "half_year", "year"];
+    private static readonly string[] Periods = [.. AuditPeriods.Lengths];
     private static readonly string[] SignOffKeys = ["period", "by", "date"];
     private static readonly string[] UnlistedKeys = ["result", "reason"];
     private static readonly string[] SystemTypes = ["primary", "supporting"];

@@ -3,10 +3,14 @@ using static EvidenceHound.Cli.Setup.YamlEdit;
 
 namespace EvidenceHound.Cli.Setup;
 
-/// <summary>The answers <c>hound init</c> builds a new organisation's compliance repo from.</summary>
-internal sealed record NewOrganisation(string Name, string Code, string CisoAssistantUrl, string TimeZone, int Level, DateOnly DueDate, string Owner, string EvidenceRoot)
+/// <summary>
+/// The answers <c>hound init</c> builds a new organisation's compliance repo from. The audit runs by <c>Interval</c>, <c>quarter</c> or
+/// <c>month</c>, from <c>Starts</c>: the first day of the financial-year quarter, or the month, holding the day hound init ran.
+/// </summary>
+internal sealed record NewOrganisation(string Name, string Code, string CisoAssistantUrl, string TimeZone, int Level, string Interval, DateOnly Starts, string Owner, string EvidenceRoot)
 {
-    public string AuditRef => string.Create(CultureInfo.InvariantCulture, $"{Code}-E8-{DueDate.Year}");
+    /// <summary>The audit series, <c>&lt;CODE&gt;-E8</c>; each period's ref ID reads <c>&lt;CODE&gt;-E8-Q2-2027FY</c> (s09-46).</summary>
+    public string AuditRef => $"{Code}-E8";
 
     public string AuditFile => $"scope/audits/{AuditRef.ToLowerInvariant()}.yaml";
 }
@@ -88,15 +92,16 @@ internal static class RepoTemplate
         "    category: process");
 
     private static string Audit(NewOrganisation org) => Lines(
-        $"# {org.Name}'s Essential Eight (November 2023) maturity level {org.Level.ToString(CultureInfo.InvariantCulture)} audit, written by hound init.",
+        $"# {org.Name}'s Essential Eight (November 2023) maturity level {org.Level.ToString(CultureInfo.InvariantCulture)} audit, by {org.Interval}, written by hound init.",
         "# Collectors publish their results to it. Write results no check covers under assessments; see docs/scope.md.",
         $"ref_id: {Scalar(org.AuditRef)}",
-        $"name: {Scalar(string.Create(CultureInfo.InvariantCulture, $"Essential Eight ML{org.Level} {org.DueDate.Year}"))}",
+        $"name: {Scalar(string.Create(CultureInfo.InvariantCulture, $"Essential Eight ML{org.Level}"))}",
         $"framework: {Framework}",
         $"groups: [{string.Join(", ", Enumerable.Range(1, org.Level).Select(level => $"\"{level.ToString(CultureInfo.InvariantCulture)}\""))}]",
         $"domain: {Scalar(org.Name)}",
         $"perimeter: {Perimeter}",
-        $"due_date: \"{org.DueDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}\"",
+        "# Each period is its own audit: <CODE>-E8-Q2-2027FY is October to December 2026, its ETA the period's last day. See docs/scope.md, Audit periods.",
+        $"cycle: {{period: {org.Interval}, starts: \"{org.Starts.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}\"}}",
         "systems: []",
         "documents: []",
         "controls: []",

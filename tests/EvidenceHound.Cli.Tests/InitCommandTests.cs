@@ -38,19 +38,56 @@ public sealed class InitCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Writes_a_quarterly_series_starting_this_financial_year_quarter()
+    {
+        // s09-47: the organisation's audit is the series <CODE>-E8; its periods read EX-E8-Q2-2027FY and so on (s09-46).
+        var exitCode = await RunOn("2026-11-23", "", "init", Repo, "--yes");
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var audit = await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "audits", "ex-e8.yaml"), TestContext.Current.CancellationToken);
+        audit.ShouldContain("ref_id: EX-E8\n");
+        audit.ShouldContain("name: Essential Eight ML2\n");
+        audit.ShouldContain("cycle: {period: quarter, starts: \"2026-10-01\"}");
+        audit.ShouldNotContain("due_date");
+        (await File.ReadAllTextAsync(Path.Combine(Repo, "hound.yaml"), TestContext.Current.CancellationToken)).ShouldContain("compliance_assessment: EX-E8\n");
+        await ShouldValidateAsync();
+    }
+
+    [Fact]
+    public async Task A_monthly_series_starts_this_month()
+    {
+        var exitCode = await RunOn("2026-11-23", "", "init", Repo, "--yes", "--interval", "month", "--due", "2027-06-30");
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        (await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "audits", "ex-e8.yaml"), TestContext.Current.CancellationToken))
+            .ShouldContain("cycle: {period: month, starts: \"2026-11-01\"}");
+        _error.ToString().ShouldContain("--due is no longer used");
+    }
+
+    [Fact]
+    public async Task An_interval_other_than_month_or_quarter_is_refused()
+    {
+        var exitCode = await RunOn("2026-11-23", "", "init", Repo, "--yes", "--interval", "year");
+
+        exitCode.ShouldBe(ExitCodes.Configuration);
+        _error.ToString().ShouldContain("The audit interval 'year' must be quarter or month.");
+        Directory.Exists(Repo).ShouldBeFalse();
+    }
+
+    [Fact]
     public async Task Every_answer_can_be_given_as_an_option()
     {
         // s09-41: an agent gives every answer as an option, so nothing is asked even without --yes, and reads the result as JSON.
         var exitCode = await Run(
             "", "init", Repo, "--org", "Example Two Pty Ltd", "--code", "EX2", "--url", "https://ciso.example.com/api/", "--time-zone", "Australia/Perth", "--level", "1",
-            "--due", "2027-03-31", "--owner", "grc@example.com", "--assistant", "claude", "--json");
+            "--interval", "month", "--owner", "grc@example.com", "--assistant", "claude", "--json");
 
         exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
         _error.ToString().ShouldNotContain("]: ");
         _error.ToString().ShouldNotContain("Organisation name");
         var answer = System.Text.Json.Nodes.JsonNode.Parse(_output.ToString())!;
         answer["organisation"]!.GetValue<string>().ShouldBe("Example Two Pty Ltd");
-        answer["audit"]!.GetValue<string>().ShouldBe("EX2-E8-2027");
+        answer["audit"]!.GetValue<string>().ShouldBe("EX2-E8");
         var files = answer["files"]!.AsArray().Select(f => f!.GetValue<string>()).ToArray();
         files.ShouldContain("scope/setup.yaml");
         files.ShouldContain("CLAUDE.md");
@@ -62,27 +99,28 @@ public sealed class InitCommandTests : IDisposable
     [Fact]
     public async Task Answers_on_stdin_set_the_organisation_code_level_and_owner()
     {
-        // Organisation, code, CISO Assistant URL, time zone, maturity level, due date, owner.
-        var exitCode = await Run("Example Two Pty Ltd\nEX2\n\n\n3\n2027-03-31\ngrc@example.com\n", "init", Repo);
+        // Organisation, code, CISO Assistant URL, time zone, maturity level, audit interval, owner.
+        var exitCode = await Run("Example Two Pty Ltd\nEX2\n\n\n3\nquarter\ngrc@example.com\n", "init", Repo);
 
         exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
         var setup = await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "setup.yaml"), TestContext.Current.CancellationToken);
         setup.ShouldContain("- name: Example Two Pty Ltd");
-        var audit = await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "audits", "ex2-e8-2027.yaml"), TestContext.Current.CancellationToken);
-        audit.ShouldContain("ref_id: EX2-E8-2027");
+        var audit = await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "audits", "ex2-e8.yaml"), TestContext.Current.CancellationToken);
+        audit.ShouldContain("ref_id: EX2-E8");
         audit.ShouldContain("groups: [\"1\", \"2\", \"3\"]");
-        audit.ShouldContain("due_date: \"2027-03-31\"");
+        audit.ShouldContain("cycle: {period: quarter, starts: ");
         (await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "controls.yaml"), TestContext.Current.CancellationToken)).ShouldContain("owner: grc@example.com");
-        (await File.ReadAllTextAsync(Path.Combine(Repo, "hound.yaml"), TestContext.Current.CancellationToken)).ShouldContain("compliance_assessment: EX2-E8-2027");
+        (await File.ReadAllTextAsync(Path.Combine(Repo, "hound.yaml"), TestContext.Current.CancellationToken)).ShouldContain("compliance_assessment: EX2-E8");
         _error.ToString().ShouldContain("Organisation name [Example Pty Ltd]");
         _error.ToString().ShouldContain("Compliance owner's email, as a CISO Assistant user");
+        _error.ToString().ShouldContain("Audit interval (quarter or month) [quarter]");
         await ShouldValidateAsync();
     }
 
     [Fact]
     public async Task A_pasted_control_character_is_dropped_from_an_answer()
     {
-        var exitCode = await Run("Example Two Pty Ltd\nEX2\n\n\n2\n2027-03-31\n\u0016grc@example.com\n", "init", Repo);
+        var exitCode = await Run("Example Two Pty Ltd\nEX2\n\n\n2\nquarter\n\u0016grc@example.com\n", "init", Repo);
 
         exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
         var controls = await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "controls.yaml"), TestContext.Current.CancellationToken);
@@ -117,6 +155,9 @@ public sealed class InitCommandTests : IDisposable
         (await Run("", "config", "validate", config)).ShouldBe(ExitCodes.Ok, _error.ToString() + _output);
         (await Run("", "scope", "validate", Path.Combine(Repo, "scope"), "--config", config)).ShouldBe(ExitCodes.Ok, _error.ToString() + _output);
     }
+
+    private Task<int> RunOn(string today, string input, params string[] args) =>
+        HoundCli.RunAsync(args, new StringReader(input), _output, _error, new Dictionary<string, string?> { ["HOUND_TODAY"] = today }, TestContext.Current.CancellationToken);
 
     private Task<int> Run(string input, params string[] args) =>
         HoundCli.RunAsync(args, new StringReader(input), _output, _error, configureLogging: null, TestContext.Current.CancellationToken);

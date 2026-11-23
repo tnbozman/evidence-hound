@@ -1263,7 +1263,67 @@ At the maintainer's request (2026-11-23): the trial focuses on the Sophos perime
 - Full trial (2026-11-23), against the dev container's CISO Assistant after clearing the old trial's objects: `HOUND_TRIAL_YES=1 make trial` exit 0 through step 5 (init with owner `ceo@example.com`, scope applied, 17 agent files written, wrapper linked, hand-over printed); a second run applied 0 changes. From `.dev/trial/repo` with `bin` on `PATH`: `hound scope validate --json` answered `[]`; `hound approve` and `hound manual approve` refused without a terminal (exit 2). Step 6 with the maintainer's saved read-only Sophos Central credential, given as options (`--secret-file client_secret=…`, `--yes`): `config validate --check-secrets` valid, dry run succeeded (3 planned), run succeeded (3 sent, 2 checks passed), and `sophos/firewalls.json`, `admins.json`, `roles.json` and the health record are in CISO Assistant; ISM-1501 stays not assessed until the Microsoft 365 check runs, as the step says. Step 7 not run (no tenant; waits on s09-44). The agent's onboarding itself is s09-39, by the maintainer.
 - Deviation: the agent can only reach files under `.dev/trial`, so the hand-over asks for the specification in `specs/` and the vendor documents in `inbox/`; an absolute path outside the workspace in a `hound` argument does not resolve in the container.
 
+### s09-46 One ref ID pattern for audit periods: organisation, framework, interval, financial year, system (added 2026-11-23)
+- [x] Done
+
+At the maintainer's request (2026-11-23): every audit reads `<ORG>-<FRAMEWORK>-<INTERVAL>-<YEAR>FY[-<SYSTEM>]`, such as `EX-E8-Q1-2027FY-SOPHOS-NETWORK`. The interval is a quarter of the financial year (`Q1` is July to September) or a calendar month (`M07` is July). The year is the financial year, named by the year it ends (`2027FY` runs from 1 July 2026 to 30 June 2027). The framework part is its code only (`E8`); the maturity level stays in the audit's name and groups. The system part is the system's ref ID without `SYS-`.
+
+**Story:** As a GRC lead, I want every audit period's ref ID to say whose audit it is, of what, for which quarter or month of which financial year, and for which system, so that audits sort together and read the same way in every report.
+
+**Acceptance criteria**
+- An audit series' `ref_id` is `<ORG>-<FRAMEWORK>[-<SYSTEM>]`; each period's ref ID puts its label after the first two parts: `EX-E8` gives `EX-E8-Q1-2027FY`, `EX-E8-SOPHOS-NETWORK` gives `EX-E8-Q1-2027FY-SOPHOS-NETWORK`.
+- Quarter labels are `Q1` to `Q4` of the financial year (1 July to 30 June) with `-<end year>FY`; month labels are `M01` to `M12`, the calendar month, with the same year: July 2026 is `M07-2027FY`, February 2027 is `M02-2027FY`.
+- A cycle's `period` is `month` or `quarter`; `half_year` and `year` are refused. A quarterly cycle starts on the first day of a financial-year quarter (1 July, 1 October, 1 January or 1 April); otherwise `scope.cycle_start_invalid`.
+- Sign-offs name periods by the new labels (`{period: Q1-2027FY, …}`). `docs/scope.md` describes the pattern.
+
+**Tests first**
+- `PeriodTests.Quarter_of_date_and_period_ref_id` (new cases), `PeriodTests.System_part_follows_the_period`
+- `ScopeValidationTests.Cycle_and_sign_off_problems_are_reported` (half year, year, a quarter starting off a financial-year quarter)
+
+**Functional check**
+- `hound scope plan` on a copy of the example scope with a quarterly cycle starting 2026-07-01, as of `HOUND_TODAY=2026-11-23`, lists `EX-E8-Q1-2027FY` (closes) and `EX-E8-Q2-2027FY` (opens).
+- Result (2026-11-23): in a scratch copy of `examples/` with `ex-e8-2026.yaml` changed to `ref_id: EX-E8` and `cycle: {period: quarter, starts: "2026-07-01"}` (and the config's target to `EX-E8`), `HOUND_TODAY=2026-11-23 hound scope validate` answered "scope valid: 1 domain(s), 3 control(s), 3 audit(s)", and `hound scope plan` against the dev container's CISO Assistant listed `Create | audit | EX-E8-Q1-2027FY` (eta 2026-09-30, `in_review`) and `Create | audit | EX-E8-Q2-2027FY` (eta 2026-12-31, `in_progress`, baseline `EX-E8-Q1-2027FY`), with the target's rows under `EX-E8-Q2-2027FY/…`. Unit suite 1312 passed; lint clean.
+- As built: `AuditPeriod.RefId` splits the series into organisation, framework and the rest, and puts the label between them; `AuditPeriods.Label` counts quarters from July and names the year by its end; `AuditPeriods.Lengths` is `month, quarter`, which `ScopeLoader` and the schema use; `AuditPeriods.StartsOnItsUnit` backs `scope.cycle_start_invalid`. `docs/scope.md` (Audit periods) and `schemas/scope.schema.json` describe the pattern.
+- Deviation: `ScopePeriods.Notes` sorted periods by ref ID, which no longer sorts by date once the quarter leads (`Q1-2027FY` before `Q4-2026FY`); it now sorts by the period's end. The tests that held old labels as plain strings (client, contract, parse, plan and functional tests) were moved to the new form, so the repo shows one pattern.
+
+### s09-47 hound init writes a quarterly audit series (added 2026-11-23)
+- [x] Done
+
+**Story:** As a GRC lead starting with hound, I want `hound init` to write the organisation's audit as a quarterly series `<CODE>-E8`, so that its periods follow the s09-46 pattern from the first day.
+
+**Acceptance criteria**
+- `hound init` writes `ref_id: <CODE>-E8` with `cycle: {period: quarter, starts: <first day of the financial-year quarter holding today>}`, named `Essential Eight ML<level>` (each period's name ends with its label), and the config's target names that series. It asks for the interval (`quarter` or `month`, default `quarter`) in place of the due date; `--interval` gives it, and `--due` is accepted with a note and ignored (each period's ETA is its last day).
+- The trial, the agent skill that runs `hound init`, and the docs that describe it use the pattern.
+
+**Tests first**
+- `InitCommandTests.Writes_a_quarterly_series_starting_this_financial_year_quarter`
+- `InitCommandTests.A_monthly_series_starts_this_month`
+- `InitCommandTests.An_interval_other_than_month_or_quarter_is_refused`
+
+**Functional check**
+- `hound init <folder> --yes` as of `HOUND_TODAY=2026-11-23`, then `hound scope plan` names `EX-E8-Q2-2027FY`.
+- Result (2026-11-23): `HOUND_TODAY=2026-11-23 hound init <scratch>/s0947 --yes` wrote 8 files, "audit EX-E8"; `scope/audits/ex-e8.yaml` has `ref_id: EX-E8`, `name: Essential Eight ML2`, `cycle: {period: quarter, starts: "2026-10-01"}`, and `hound.yaml` targets `EX-E8`. `hound scope plan` against the dev container's CISO Assistant listed `Create | audit | EX-E8-Q2-2027FY` (name "Essential Eight ML2 Q2-2027FY") and, under Audit periods, `EX-E8-Q2-2027FY | opens`. Unit suite 1315 passed; script tests and lint clean.
+- As built: `NewOrganisation` carries `Interval` and `Starts` in place of `DueDate`; `AuditRef` is `<CODE>-E8`; `InitCommand.FirstDay` finds the month, or the financial-year quarter, holding today (`HOUND_TODAY` sets today). The skill `onboard-the-organisation`, `docs/guided-setup.md`, `docs/onboarding.md`, the ref ID conventions in `docs/scope.md` and the trial guide say `--interval`.
+- Deviation: the fictional example repo (`examples/compliance-repo`, audits `EX-E8-2026`, `EX-ESSENTIALS-2026`, `EXAMPLE-BASELINE-2026`) keeps audits without a cycle; moving it to series touches the example run, its mappings' targets and many tests that use those ref IDs as fixtures. Listed under Discovered work.
+
+### s09-48 hound onboard writes the system's audit as a series of the organisation's audit (added 2026-11-23)
+- [ ] Done
+
+**Story:** As a GRC lead onboarding a system, I want the system's audit to be `<ORG>-<FRAMEWORK>-<SYSTEM>` on the organisation audit's cycle, so that the firewall's audit for a quarter is `EX-E8-Q1-2027FY-SOPHOS-NETWORK`, next to `EX-E8-Q1-2027FY`.
+
+**Acceptance criteria**
+- `hound onboard` writes `ref_id: <organisation series>-<system ref ID without SYS->` with the organisation series' cycle; with no series in the repo it says what is missing.
+- The agent skills and onboarding docs name the pattern.
+
+**Tests first**
+- `OnboardOutputTests.System_audit_is_a_series_of_the_organisation_audit`
+
+**Functional check**
+- In a scratch copy of the trial repo, `hound onboard <system> pending` and `decide` for one requirement, then `hound scope plan` names `EX-E8-Q2-2027FY-<SYSTEM>`.
+
 ## Discovered work
+
+- s09-47: move the fictional example repo's audits to series (`EX-E8`, `EX-ESSENTIALS`, `EX-BASELINE` with cycles), with its config targets, the example run and the tests that use `EX-E8-2026` as a fixture.
 
 - s09-45: the trial's `apply_scope` redirects `hound scope apply` to `.dev/trial/scope-apply.json`, and the `$ hound …` line the trial prints goes there too, so the report is not valid JSON. Print the command line to stderr.
 - s09-45: `examples/compliance-repo/frameworks/example-baseline.yaml` gained EX-4 and EX-4.1 without its `version: 1` changing, so a CISO Assistant that stored the library before keeps the old copy and `scope apply` fails on EX-4.1's result. Bump the version (and have `hound scope validate` warn when a stored library of the same version differs, if CISO Assistant shows its content).

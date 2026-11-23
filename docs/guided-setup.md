@@ -17,11 +17,11 @@ Writes a new compliance repo into the folder, which must be missing or empty:
 | Question | Option | Default |
 | --- | --- | --- |
 | Organisation name, also its domain in CISO Assistant | `--org` | Example Pty Ltd |
-| Short code for ref IDs, such as EX in EX-E8-2027 | `--code` | from the name |
+| Short code for ref IDs, such as EX in EX-E8-Q2-2027FY | `--code` | from the name |
 | CISO Assistant API address | `--url` | `https://ciso.example.com/api/` |
 | Time zone schedules run in | `--time-zone` | Australia/Sydney |
 | Essential Eight maturity level to assess, 1 to 3 | `--level` | 2 |
-| Audit due date | `--due` | 30 June next year |
+| Audit interval: each quarter of the financial year (July to June), or each month | `--interval` | quarter |
 | Compliance owner's email | `--owner` | ceo@example.com |
 
 `--evidence-root` sets where the runner keeps evidence (default `/var/lib/evidence-hound/evidence`, outside the repo).
@@ -33,7 +33,7 @@ It writes:
 | `hound.yaml` | The deployment config: CISO Assistant, evidence, the schedule's time zone, no collectors yet, and the Essential Eight target with its health control |
 | `scope/setup.yaml` | The root folder, the Essential Eight framework with its snapshot, and one domain with its perimeter |
 | `scope/controls.yaml` | The health control, AC-AUTO-EVIDENCE |
-| `scope/audits/<code>-e8-<year>.yaml` | The audit at that maturity level, with no hand-written results yet. `hound scope new-audit` lists every requirement, if you want them all in the file |
+| `scope/audits/<code>-e8.yaml` | The audit series `<CODE>-E8` at that maturity level, by quarter or month from the period holding today, with no hand-written results yet. Each period is its own audit, such as `EX-E8-Q2-2027FY` ([Audit periods](scope.md#audit-periods)). `hound scope new-audit` lists every requirement, if you want them all in the file |
 | `mappings/essential-eight-2023.yaml`, `frameworks/essential-eight-2023.json` | The Essential Eight mapping and framework snapshot of this `hound` version |
 | `.gitignore`, `README.md` | What never goes in the repo, and the next steps |
 
@@ -44,7 +44,7 @@ At the end `hound init` asks whether to set up a coding assistant in the new rep
 ## hound add system
 
 ```bash
-hound add system --scope scope --audit EX-E8-2027
+hound add system --scope scope --audit EX-E8
 ```
 
 Adds a system to a domain in `scope/setup.yaml`: its name, ref ID (default `SYS-` and the name), type (`primary` or `supporting`), owner, description and the systems it supports (`--name`, `--ref-id`, `--type`, `--owner`, `--description`, `--parents`). The domain is asked only when the scope has more than one (`--domain`). Each `--audit` adds the system to that audit's `systems`.
@@ -52,7 +52,7 @@ Adds a system to a domain in `scope/setup.yaml`: its name, ref ID (default `SYS-
 ## hound add control
 
 ```bash
-hound add control --scope scope --audit EX-E8-2027
+hound add control --scope scope --audit EX-E8
 ```
 
 Declares an applied control in `scope/controls.yaml`: its ref ID, name, owner, category (default `technical`) and the systems it covers (`--ref-id`, `--name`, `--owner`, `--category`, `--systems`), with status `to_do` until the first apply. With `--audit`, it asks which of that audit's requirements the control supports (`--requirements ISM-1511,ISM-1515`) and links them in the audit file. A requirement the framework does not have is refused.

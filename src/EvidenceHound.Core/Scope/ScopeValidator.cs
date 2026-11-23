@@ -118,7 +118,10 @@ public static class ScopeValidator
         ];
     }
 
-    /// <summary>A cycle starts on the first of a month; each sign-off names one of its periods, and is dated after that period ended.</summary>
+    /// <summary>
+    /// A cycle starts on the first of a month, and a quarterly one on the first day of a financial-year quarter; each sign-off names one of its
+    /// periods, and is dated after that period ended.
+    /// </summary>
     private static IEnumerable<ScopeProblem> CycleProblems(ScopeAudit audit)
     {
         if (audit.Cycle is not { } cycle)
@@ -130,15 +133,16 @@ public static class ScopeValidator
                 "Add a 'cycle', or remove the sign-offs."));
         }
 
-        if (!DateOnly.TryParseExact(cycle.Starts, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var first) || first.Day != 1)
+        if (!DateOnly.TryParseExact(cycle.Starts, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var first) || !AuditPeriods.StartsOnItsUnit(cycle.Period, first))
         {
+            var unit = cycle.Period == "quarter" ? "the first day of a financial-year quarter (1 July, 1 October, 1 January or 1 April)" : "the first day of a month";
             return
             [
                 new ScopeProblem(
                     "scope.cycle_start_invalid",
                     cycle.At,
-                    $"the cycle of audit '{audit.RefId}' starts on '{cycle.Starts}', which is not the first day of a month.",
-                    "Start the cycle on the first of a month, such as \"2026-07-01\"."),
+                    $"the cycle of audit '{audit.RefId}' starts on '{cycle.Starts}', which is not {unit}.",
+                    $"Start the cycle on {unit}, such as \"2026-07-01\"."),
             ];
         }
 

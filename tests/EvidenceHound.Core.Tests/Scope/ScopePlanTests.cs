@@ -250,8 +250,8 @@ public class ScopePlanTests
     public void A_period_audit_declared_without_its_status_is_neither_drift_nor_an_update()
     {
         // Applied as a period of a series, in progress; exported later as a plain audit, which says nothing of its status.
-        var applied = Applied(Declared(ScopeKind.Audit, "EX-PERIOD-2026Q4", ("name", "Backups 2026Q4"), ("status", "in_progress")));
-        var declared = Declared(ScopeKind.Audit, "EX-PERIOD-2026Q4", ("name", "Backups 2026Q4"));
+        var applied = Applied(Declared(ScopeKind.Audit, "EX-PERIOD-Q2-2027FY", ("name", "Backups Q2-2027FY"), ("status", "in_progress")));
+        var declared = Declared(ScopeKind.Audit, "EX-PERIOD-Q2-2027FY", ("name", "Backups Q2-2027FY"));
 
         ScopePlanner.Plan([declared], [applied], prune: false).IsEmpty.ShouldBeTrue();
     }

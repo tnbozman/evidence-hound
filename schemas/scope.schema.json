@@ -407,7 +407,7 @@
           }
         },
         "cycle": {
-          "description": "Run the audit in periods: each period is its own audit, <ref_id>-<label> such as EX-E8-BACKUP-2026Q4.",
+          "description": "Run the audit in periods: each period is its own audit, its label after the ref_id's organisation and framework, such as EX-E8-Q2-2027FY-BACKUP for EX-E8-BACKUP.",
           "type": "object",
           "additionalProperties": false,
           "required": [
@@ -418,13 +418,11 @@
             "period": {
               "enum": [
                 "month",
-                "quarter",
-                "half_year",
-                "year"
+                "quarter"
               ]
             },
             "starts": {
-              "description": "The first period's first day: the first of a month.",
+              "description": "The first period's first day: the first of a month, and for a quarter the first day of a financial-year quarter (1 July, 1 October, 1 January or 1 April).",
               "$ref": "#/$defs/date"
             },
             "close": {
@@ -449,7 +447,7 @@
             ],
             "properties": {
               "period": {
-                "description": "The period's label, such as 2026Q4.",
+                "description": "The period's label, such as Q2-2027FY or M07-2027FY.",
                 "$ref": "#/$defs/text"
               },
               "by": {
