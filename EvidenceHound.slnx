@@ -7,6 +7,7 @@
     <Project Path="src/EvidenceHound.Collectors.Testing/EvidenceHound.Collectors.Testing.csproj" />
     <Project Path="src/EvidenceHound.Core/EvidenceHound.Core.csproj" />
     <Project Path="src/EvidenceHound.Core.Yaml/EvidenceHound.Core.Yaml.csproj" />
+    <Project Path="src/EvidenceHound.M365DevServer/EvidenceHound.M365DevServer.csproj" />
     <Project Path="src/EvidenceHound.Onboarding/EvidenceHound.Onboarding.csproj" />
     <Project Path="src/EvidenceHound.Runtime/EvidenceHound.Runtime.csproj" />
     <Project Path="src/EvidenceHound.Transport.Kafka/EvidenceHound.Transport.Kafka.csproj" />

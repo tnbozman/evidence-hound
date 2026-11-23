@@ -1326,6 +1326,13 @@
       "evidencehound.core": {
         "type": "Project"
       },
+      "m365-dev": {
+        "type": "Project",
+        "dependencies": {
+          "EvidenceHound.Core": "[0.1.0, )",
+          "WireMock.Net": "[2.32.0, )"
+        }
+      },
       "Azure.Identity": {
         "type": "CentralTransitive",
         "requested": "[1.21.0, )",
