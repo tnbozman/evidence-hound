@@ -67,7 +67,7 @@ A prompt for a ref ID (`hound add system`, `hound add control`, `hound onboard <
 Who can do what in CISO Assistant, so access changes are reviewed as pull requests and a rebuilt instance gets the same access. The file is optional; without it `hound` neither reads nor changes users.
 
 - `users`: `email` (the key, compared without case), `first_name`, `last_name`, `active` (default `true`), and `service_account` for an account that is not a person: `publish` (or `true`) for the collector runner, `apply` for an account that applies the scope.
-- `teams`: `name`, `description`, `domain` (left out for the root folder), `leader` and `members` by email.
+- `teams`: `name`, `description`, `domain` (left out for the root folder), `leader` and `members` by email, and `email`, the team's address for CISO Assistant's task reminders. A team with an `email` and no leader or members is an owner contact: it is reminded and has no login, so it holds no role ([Manual evidence](manual-evidence.md#owner-contacts)).
 - `roles`: a `role` on a `domain` (or the root folder, `Global`, for the whole organisation), for `users` and for every leader and member of `teams`. Built-in roles are `administrator`, `domain_manager`, `analyst`, `approver`, `auditor` (CISO Assistant calls it Reader) and `baseline_reader`; list user groups you created in CISO Assistant under `custom_roles` to use them as roles.
 
 `hound` never sets or reads a password and never creates an API token: a key such as `password` or `api_token` anywhere in the file is an error (`scope.secret_in_file`) whose message never shows the value. A new user gets CISO Assistant's own invitation and sets their password there. Validation also reports duplicate or malformed emails, unknown roles, domains, users and teams, and any domain without an active user who can approve (an approver, domain manager or administrator on it or on `Global`), because risk acceptances and period sign-offs need one.
@@ -216,6 +216,17 @@ error: it is waiting to be onboarded. `hound scope plan` lists each gap under "C
 requirements no system's audit answers. It lists each requirement an audit leaves open for another system under "Open dependencies" (JSON
 `dependencies`): the audit, the requirement, the system that meets it, that system's audit if it has one, and the result there (as the scope
 declares it, "from collectors" when that audit's mapping computes it, or "no audit yet").
+
+## evidence-plan.yaml
+
+How each control's evidence arrives, from whom and how often. Optional. The guide is [Manual evidence](manual-evidence.md).
+
+| Key | Meaning |
+| --- | --- |
+| `grc_team` | The team (in `access.yaml`) that receives and reviews evidence, for rows that do not name their own. |
+| `evidence` | One row per control: `ref_id` (`EV-`), `control`, `requirements` (optional), `method` (`automated`, `manual` or `hybrid`), `collector` (a collector in `hound.yaml`, for automated and hybrid rows), `owner` (a team, for manual and hybrid rows), `grc_team`, `every` (`3 months`, `6 months` or `12 months`) and `runbook` (a Markdown file in the repo). |
+
+Each row becomes an evidence item labelled `method:` and `collector:`; each manual and hybrid row also becomes a recurring task for the owner and the GRC team, with the runbook as its description. Problems: `evidence_plan.owner_missing`, `evidence_plan.every_missing`, `evidence_plan.runbook_missing`, `evidence_plan.runbook_file_missing`, `evidence_plan.collector_missing`, `evidence_plan.collector_unknown`, `evidence_plan.team_unknown`, `evidence_plan.control_unknown` and `evidence_plan.owner_contact_has_role`.
 
 ## audits/&lt;audit&gt;.yaml
 
