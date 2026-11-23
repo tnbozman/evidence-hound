@@ -1228,6 +1228,27 @@ Found while resetting the trial for s09-34 to s09-42. The compliance owner defau
 - Result (2026-11-23): `make run ARGS="init <scratch>/init-check --yes"` wrote 8 files and audit EX-E8-2027; `scope/controls.yaml` has `owner: ceo@example.com`; `hound scope validate` answered "scope valid: 1 domain(s), 1 control(s), 1 audit(s)" (exit 0); `hound init --help` says "Default: ceo@example.com." for `--owner`.
 - As built: `DefaultOwner` in `InitCommand` and the table in `docs/guided-setup.md`. The trial's own `hound add` steps still name `it@example.com` as the system and control owner, which is right for those.
 
+### s09-44 The trial hands the Sophos perimeter firewall to the agent (added 2026-11-23)
+- [ ] Done
+
+At the maintainer's request (2026-11-23): the trial focuses on the Sophos perimeter firewall, and s09-39 has the agent onboard it. Step 5 added an example backup service, a backup control and a restore-test manual source, which the agent path does not use.
+
+**Story:** As the maintainer, I want `make trial` to set up my coding agent in the trial repo and tell me what to ask it, so that the agent onboards the Sophos perimeter firewall and the script does not do that work for it.
+
+**Acceptance criteria**
+- Step 5 no longer adds the example backup service, the AC-BACKUP control or the restore-test manual source.
+- Step 5 runs `hound agent setup --assistant both` in the trial repo and links `.dev/trial/bin/hound`, a wrapper that runs the trial's runner image in the folder it is called from inside the workspace (refusing a folder outside it), so the agent's `hound` commands reach the trial's CISO Assistant with the trial's token.
+- It prints how to start the agent in the trial repo with the wrapper on `PATH`, and what to ask: onboard the Sophos perimeter firewall (Sophos and the managed service provider as third parties, the system, its audit and its manual evidence) for the trial's audit, approving with `hound approve` and `hound manual approve` in a terminal.
+- Unattended (`HOUND_TRIAL_YES=1`) it does the same and does not stop. Steps 6 and 7 are unchanged. `docs/tutorials/local-trial.md` describes the new step.
+
+**Tests first**
+- `trial.bats`: "the agent hand-over names the Sophos perimeter firewall, the audit and approval in a terminal"
+- `trial.bats`: "hound for the agent runs in the folder it is called from, inside the trial workspace only"
+- `trial.bats`: "the trial adds no example system, control or manual source of its own"
+
+**Functional check**
+- `HOUND_TRIAL_YES=1 make trial` against the dev container's CISO Assistant: step 5 writes the agent files and the wrapper and prints the hand-over; `.dev/trial/bin/hound scope validate scope --config hound.yaml` run from `.dev/trial/repo` passes.
+
 ## Discovered work
 
 - s09-43: in the dev container, `make test` has one failure, `PublishCommandTests.Without_a_url_exits_three`, because the container sets `HOUND_CA_URL` and the test reads the process environment; it passes with `env -u HOUND_CA_URL make test`. Have the test (or `Publish`) not see the ambient variable.

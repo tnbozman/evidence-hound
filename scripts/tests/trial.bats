@@ -68,3 +68,31 @@ setup() {
   [ "$(trial_collector_step 0 "$config" m365)" = "add" ]
   [ "$(trial_collector_step 0 "$BATS_TEST_TMPDIR/missing.yaml" m365)" = "add" ]
 }
+
+@test "the agent hand-over names the Sophos perimeter firewall, the audit and approval in a terminal" {
+  run trial_agent_brief EX-E8-2027
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Sophos perimeter firewall"* ]]
+  [[ "$output" == *"EX-E8-2027"* ]]
+  [[ "$output" == *"third parties"* ]]
+  [[ "$output" == *"manual evidence"* ]]
+  [[ "$output" == *"hound approve"* ]]
+  [[ "$output" == *"hound manual approve"* ]]
+}
+
+@test "hound for the agent runs in the folder it is called from, inside the trial workspace only" {
+  [ "$(trial_workdir /work/.dev/trial /work/.dev/trial/repo)" = "/trial/repo" ]
+  [ "$(trial_workdir /work/.dev/trial /work/.dev/trial/repo/scope/audits)" = "/trial/repo/scope/audits" ]
+  [ "$(trial_workdir /work/.dev/trial /work/.dev/trial)" = "/trial" ]
+  run trial_workdir /work/.dev/trial /work/.dev/trial-other
+  [ "$status" -ne 0 ]
+  run trial_workdir /work/.dev/trial /work
+  [ "$status" -ne 0 ]
+  run trial_hound_argv_in /trial/repo/scope img "--network host" /w 1:1 http://backend:8000/api/ no scope validate .
+  [[ "$(printf '%s ' $output)" == *" -v /w:/trial -w /trial/repo/scope "* ]]
+}
+
+@test "the trial adds no example system, control or manual source of its own" {
+  run grep -nE 'Example backup service|AC-BACKUP|example-backup-restore-test|add (system|control|collector manual)' "$BATS_TEST_DIRNAME/../trial.sh"
+  [ "$status" -eq 1 ]
+}
