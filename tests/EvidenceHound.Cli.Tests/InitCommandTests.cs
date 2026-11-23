@@ -44,7 +44,6 @@ public sealed class InitCommandTests : IDisposable
         var exitCode = await RunOn("2026-11-23", "", "init", Repo, "--yes");
 
         exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
-        _error.ToString().ShouldContain("Audit interval (quarter or month) [quarter]");
         var audit = await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "audits", "ex-e8.yaml"), TestContext.Current.CancellationToken);
         audit.ShouldContain("ref_id: EX-E8\n");
         audit.ShouldContain("name: Essential Eight ML2\n");
@@ -114,6 +113,7 @@ public sealed class InitCommandTests : IDisposable
         (await File.ReadAllTextAsync(Path.Combine(Repo, "hound.yaml"), TestContext.Current.CancellationToken)).ShouldContain("compliance_assessment: EX2-E8");
         _error.ToString().ShouldContain("Organisation name [Example Pty Ltd]");
         _error.ToString().ShouldContain("Compliance owner's email, as a CISO Assistant user");
+        _error.ToString().ShouldContain("Audit interval (quarter or month) [quarter]");
         await ShouldValidateAsync();
     }
 

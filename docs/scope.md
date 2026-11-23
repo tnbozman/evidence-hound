@@ -41,7 +41,7 @@ Every ref ID reads the same way whoever wrote it: its kind's prefix, then upper 
 | perimeter | `PER-` | `PER-CORP` |
 | supplier assessment | `EA-` | `EA-SUP-EXAMPLE` |
 
-An audit has no prefix. Its ref ID reads `<CODE>-<FRAMEWORK>-<YEAR>` in the same characters, such as `EX-E8-2026`, as `hound init` writes it.
+An audit has no prefix. An audit that runs in periods, as `hound init` writes it, is a series `<CODE>-<FRAMEWORK>`, such as `EX-E8`, or `<CODE>-<FRAMEWORK>-<SYSTEM>` for one system; each period reads `<CODE>-<FRAMEWORK>-<INTERVAL>-<YEAR>FY[-<SYSTEM>]`, such as `EX-E8-Q2-2027FY` ([Audit periods](#audit-periods)). An audit without a cycle reads `<CODE>-<FRAMEWORK>-<YEAR>`, such as `EX-E8-2026`.
 
 A prompt for a ref ID (`hound add system`, `hound add control`, `hound onboard <system>`) prints the prefix as part of the prompt, such as `Supplier ref_id: SUP-`, and takes only the rest. The answer is upper-cased, and an answer with a space or any other character is asked again with the rule. An option such as `--ref-id` is taken in full when it has its prefix and is given the prefix when it has not. `hound scope validate` reports any other ref ID as `scope.ref_id_convention`, naming the kind, the prefix and the ref ID to rename it to.
 

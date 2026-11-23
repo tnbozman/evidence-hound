@@ -268,7 +268,7 @@ The agent drafts each kind through a command that asks nothing; `hound` checks i
 
 | What | Command | Where the draft waits |
 | --- | --- | --- |
-| The organisation | `hound init <folder> --org ... --code ... --url ... --time-zone ... --level ... --due ... --owner ... --assistant ... --json` | The new repo itself, for review |
+| The organisation | `hound init <folder> --org ... --code ... --url ... --time-zone ... --level ... --interval ... --owner ... --assistant ... --json` | The new repo itself, for review |
 | The environment | `hound onboard environment pending --json`, then `hound onboard environment decide <mitigation> --provided-by system\|manual\|gap --reason ... [--system ...]` | `scope/capabilities.yaml`, with no approver |
 | A third party | `hound supplier draft --kind vendor\|reseller\|msp [--for <vendor>] ... [--document <path>]...` | `scope/third-parties/<ref>.yaml`, with a draft contract |
 | A system | `hound onboard <system> pending` and `decide` | `onboarding/<SYSTEM>/session.json` |

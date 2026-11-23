@@ -2,6 +2,7 @@ using System.CommandLine;
 using System.Globalization;
 using System.Text.Json.Nodes;
 using EvidenceHound.Core.Results;
+using EvidenceHound.Core.Scope;
 using EvidenceHound.Runtime.Collectors;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -16,6 +17,7 @@ internal static class InitCommand
     private static readonly string DefaultTimeZone = "Australia/Sydney";
     private static readonly string DefaultOwner = "ceo@example.com";
     private static readonly string DefaultEvidenceRoot = "/var/lib/evidence-hound/evidence";
+    private static readonly string DefaultInterval = "quarter";
 
     public static Command Build(Terminal terminal, ILoggerFactory loggers, IConfiguration configuration, CollectorRegistry registry)
     {
@@ -26,7 +28,8 @@ internal static class InitCommand
         var url = new Option<string?>("--url") { Description = $"The CISO Assistant API address. Default: {DefaultUrl}" };
         var timeZone = new Option<string?>("--time-zone") { Description = $"The IANA time zone schedules run in. Default: {DefaultTimeZone}." };
         var level = new Option<string?>("--level") { Description = "The Essential Eight maturity level to assess, 1 to 3. Default: 2." };
-        var due = new Option<string?>("--due") { Description = "The audit's due date, yyyy-MM-dd. Default: 30 June next year." };
+        var interval = new Option<string?>("--interval") { Description = "How the audit runs: quarter (each quarter of the financial year, July to June) or month. Default: quarter." };
+        var due = new Option<string?>("--due") { Hidden = true, Description = "No longer used: the audit runs in periods, each due on its last day." };
         var owner = new Option<string?>("--owner") { Description = $"The email of whoever owns compliance. Default: {DefaultOwner}." };
         var evidenceRoot = new Option<string>("--evidence-root") { Description = "Where the runner keeps evidence, outside the repo.", DefaultValueFactory = _ => DefaultEvidenceRoot };
         var assistant = new Option<string?>("--assistant") { Description = "Also set up a coding assistant in the repo, as 'hound agent setup' does: claude, copilot, both or none. Default: none." };
@@ -35,7 +38,7 @@ internal static class InitCommand
 
         var init = new Command("init", "Write a new organisation's compliance repo: config, scope, an Essential Eight audit and its mapping. Asks each question it needs.")
         {
-            folder, org, code, url, timeZone, level, due, owner, evidenceRoot, assistant, yes, json,
+            folder, org, code, url, timeZone, level, interval, due, owner, evidenceRoot, assistant, yes, json,
         };
         init.SetAction(async (parseResult, cancellationToken) =>
         {
@@ -43,6 +46,11 @@ internal static class InitCommand
             if (target.Exists && target.EnumerateFileSystemInfos().Any())
             {
                 return Log.Problems(logger, [new Problem("init.folder_not_empty", $"{target.FullName} is not empty. hound init writes a new repo; give it a new or empty folder.")]);
+            }
+
+            if (parseResult.GetValue(due) is not null)
+            {
+                await terminal.Error.WriteLineAsync("hound init: --due is no longer used; the audit runs by quarter or month, and each period is due on its last day.".AsMemory(), cancellationToken);
             }
 
             var wizard = new Wizard(terminal, parseResult.GetValue(yes));
@@ -53,9 +61,10 @@ internal static class InitCommand
                 await wizard.AskAsync("CISO Assistant API address", parseResult.GetValue(url), DefaultUrl, cancellationToken),
                 await wizard.AskAsync("Time zone", parseResult.GetValue(timeZone), DefaultTimeZone, cancellationToken),
                 await wizard.AskAsync("Essential Eight maturity level to assess (1, 2 or 3)", parseResult.GetValue(level), "2", cancellationToken),
-                await wizard.AskAsync("Audit due date", parseResult.GetValue(due), DefaultDue(AuditSeries.Today(configuration)), cancellationToken),
+                await wizard.AskAsync("Audit interval (quarter or month)", parseResult.GetValue(interval), DefaultInterval, cancellationToken),
                 await wizard.AskAsync("Compliance owner's email, as a CISO Assistant user", parseResult.GetValue(owner), DefaultOwner, cancellationToken),
-                parseResult.GetRequiredValue(evidenceRoot));
+                parseResult.GetRequiredValue(evidenceRoot),
+                AuditSeries.Today(configuration));
 
             // With --json the steps' own lines are held back, and one JSON answer says what was written.
             var asJson = parseResult.GetValue(json);
@@ -94,7 +103,7 @@ internal static class InitCommand
 
     internal const string AssistantQuestion = "Set up an AI assistant in this repo (claude, copilot, both or none)";
 
-    private sealed record Answers(string Name, string Code, string Url, string TimeZone, string Level, string Due, string Owner, string EvidenceRoot);
+    private sealed record Answers(string Name, string Code, string Url, string TimeZone, string Level, string Interval, string Owner, string EvidenceRoot, DateOnly Today);
 
     private static Result<NewOrganisation> Check(Answers a)
     {
@@ -125,9 +134,10 @@ internal static class InitCommand
             problems.Add(new Problem("init.answer_invalid", $"The maturity level '{a.Level}' must be 1, 2 or 3."));
         }
 
-        if (!DateOnly.TryParseExact(a.Due, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dueDate))
+        var interval = a.Interval.ToLowerInvariant();
+        if (!AuditPeriods.Lengths.Contains(interval, StringComparer.Ordinal))
         {
-            problems.Add(new Problem("init.answer_invalid", $"The due date '{a.Due}' must be yyyy-MM-dd."));
+            problems.Add(new Problem("init.answer_invalid", $"The audit interval '{a.Interval}' must be quarter or month."));
         }
 
         if (!a.Owner.Contains('@', StringComparison.Ordinal))
@@ -137,7 +147,7 @@ internal static class InitCommand
 
         return problems.Count > 0
             ? Result.Fail<NewOrganisation>([.. problems])
-            : Result.Ok(new NewOrganisation(a.Name, code, a.Url, a.TimeZone, level, dueDate, a.Owner, a.EvidenceRoot));
+            : Result.Ok(new NewOrganisation(a.Name, code, a.Url, a.TimeZone, level, interval, FirstDay(interval, a.Today), a.Owner, a.EvidenceRoot));
     }
 
     private static async Task<int> WriteAsync(
@@ -188,5 +198,9 @@ internal static class InitCommand
     private static string DefaultCode(string name) =>
         Wizard.Slug(name).Replace("-", "", StringComparison.Ordinal) is { Length: > 0 } letters ? letters[..Math.Min(2, letters.Length)] : "EX";
 
-    private static string DefaultDue(DateOnly today) => new DateOnly(today.Year + 1, 6, 30).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+    /// <summary>The first day of the period holding <paramref name="today"/>: its month, or its financial-year quarter (July, October, January, April).</summary>
+    private static DateOnly FirstDay(string interval, DateOnly today) =>
+        interval == "quarter"
+            ? new DateOnly(today.Year, today.Month, 1).AddMonths(-((today.Month - AuditPeriods.FinancialYearStart + 12) % 3))
+            : new DateOnly(today.Year, today.Month, 1);
 }
