@@ -320,6 +320,8 @@ Every problem is reported at once with its file, line, code and a hint, and the 
 HOUND_CA_URL=http://localhost:8000/api/ HOUND_CA_TOKEN=… hound scope plan scope/ [--config hound.yaml] [--format markdown|json] [--prune] [--detailed-exitcode] [--out plan.json]
 ```
 
+With `--config`, the plan reaches CISO Assistant at the config's `ciso_assistant.url` with the token its `ciso_assistant.token` reference resolves to, so `hound scope plan scope/ --config hound.yaml` needs no variables when the token reference does (for example `env:HOUND_CA_TOKEN`). `HOUND_CA_URL` and `HOUND_CA_TOKEN` override them when set, and are needed without `--config`. `hound scope apply` reads them the same way.
+
 With `--detailed-exitcode`, as with Terraform, the plan exits 0 when there is nothing to change and no drift, 2 when there is, and 1 on any error, a usage error included, so that a pipeline can gate on 2. Without it, the exit codes are hound's usual ones. `--out` also saves the plan to a file, for [Saved plans](#saved-plans).
 
 The plan validates the scope first and stops, reading nothing, when there are problems. Otherwise it reads CISO Assistant (GET requests only) and prints what applying the scope would do, as Markdown for a pull request comment or as JSON for tools. It writes nothing.
