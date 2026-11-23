@@ -37,6 +37,8 @@ public class ScopeSchemaTests
         Errors(SupplierScopeTests.OrganisationSetup).ShouldBeEmpty();
         Errors(CapabilityLoaderTests.Capabilities).ShouldBeEmpty();
         Errors(OpenDependencyTests.WaitingAudit).ShouldBeEmpty();
+        Errors(EvidencePlanScopeTests.Access).ShouldBeEmpty();
+        Errors(EvidencePlanScopeTests.Plan).ShouldBeEmpty();
     }
 
     [Fact]
@@ -58,6 +60,8 @@ public class ScopeSchemaTests
     [InlineData("users:\n  - {email: it@example.com, service_account: robot}\n")]
     [InlineData("roles:\n  - {role: approver, users: [it@example.com]}\n")]
     [InlineData("teams:\n  - {name: IT team, colour: blue}\n")]
+    [InlineData("grc_team: GRC team\nevidence:\n  - {ref_id: EVP-A, control: AC-1, method: manual, every: 2 months}\n")]
+    [InlineData("evidence:\n  - {ref_id: EVP-A, control: AC-1, method: by hand}\n")]
     [InlineData("feature_flags:\n  third_parties: true\n")]
     [InlineData("feature_flags:\n  tprm: yes\n")]
     [InlineData("general:\n  openai_api_key: not-a-real-secret\n")]
