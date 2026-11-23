@@ -34,7 +34,28 @@ setup() {
 @test "network choice: host namespace for the dev container's CISO Assistant, its network for a make ca-up stack" {
   [ "$(trial_network_args bundled)" = "--network host" ]
   [ "$(trial_network_args local)" = "--network host" ]
-  [ "$(trial_network_args "network hound-ciso-assistant_default")" = "--network hound-ciso-assistant_default" ]
+  [ "$(trial_network_args "network hound-ciso-assistant_default")" = "--network hound-ciso-assistant_default --add-host host.docker.internal:host-gateway" ]
+}
+
+@test "the Sophos Central dev server's address as hound's container sees it, for each case" {
+  [ "$(trial_dev_url bundled 5370)" = "http://localhost:5370/" ]
+  [ "$(trial_dev_url local 5370)" = "http://localhost:5370/" ]
+  [ "$(trial_dev_url "network hound-ciso-assistant_default" 5370)" = "http://host.docker.internal:5370/" ]
+}
+
+@test "the sophos collector for the dev server reads it with the sophos-central profile and asks for no credential" {
+  run trial_sophos_dev_sets http://localhost:5370/
+  [ "$status" -eq 0 ]
+  sets="$(printf '%s|' "${lines[@]}")"
+  [ "$sets" = "--set|profile=sophos-central|--set|profiles_path=/trial/profiles|--set|client_id=00000000-0000-4000-8000-0000050d0001|--set|id_url=http://localhost:5370/|--set|api_url=http://localhost:5370/|--set|supported_firewall_firmware=21.0, 21.5|" ]
+}
+
+@test "a sophos collector already in the config uses the dev server when its address is the dev server's" {
+  config="$BATS_TEST_TMPDIR/hound.yaml"
+  printf 'collectors:\n  - name: sophos\n    settings:\n      id_url: http://localhost:5370/\n' >"$config"
+  trial_uses_dev_server "$config" 5370
+  printf 'collectors:\n  - name: sophos\n    settings:\n      id_url: https://id.sophos.com/\n' >"$config"
+  ! trial_uses_dev_server "$config" 5370
 }
 
 @test "API address for each case" {
