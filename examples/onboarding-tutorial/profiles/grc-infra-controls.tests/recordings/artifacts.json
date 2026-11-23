@@ -1,0 +1,13 @@
+{
+  "total_count": 1,
+  "artifacts": [
+    {
+      "id": 9101,
+      "name": "control-tests",
+      "size_in_bytes": 1024,
+      "expired": false,
+      "created_at": "2026-11-22T22:59:00Z",
+      "workflow_run": { "id": 7101, "head_branch": "main", "head_sha": "0123456789abcdef0123456789abcdef01234567" }
+    }
+  ]
+}

@@ -44,3 +44,8 @@ Thumbs.db
 # Local hound onboard config and sessions from running hound in this checkout; they belong in a compliance repo, never here.
 /onboarding.yaml
 /onboarding/*/
+
+# Terraform working folders (s09-55 example)
+.terraform/
+*.tfstate
+*.tfstate.*

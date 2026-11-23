@@ -1,0 +1,79 @@
+# Infrastructure tests, read from the JUnit report an IaC pipeline published as a GitHub Actions artefact (s09-55).
+# hound never runs Terraform, never reads state and holds no cloud credentials: the pipeline runs
+#   terraform test -junit-xml=controls.xml   (mock providers need no cloud account)
+# and uploads the report as controls.xml in an artefact. This profile only reads: the newest completed run of that workflow, its
+# artefact and the report. Each test case is one control; copy this profile into your config repo and add one check per control
+# with `with: { test: <run block name> }`, so a mapping can name it. See docs/collectors/terraform-tests.md.
+# Token: a fine-grained token on the IaC repository only, with Actions: read. Nothing else.
+profile: terraform-tests
+version: "1.0.0"
+source: evidence-hound/profiles/terraform-tests.yaml
+description: Infrastructure tests from the JUnit report an IaC pipeline published as a GitHub Actions artefact; read only.
+requires:
+  hound: ">=0.1"
+
+parameters:
+  repository:
+    type: string
+    required: true
+    description: The IaC repository, as owner/name.
+  workflow:
+    type: string
+    required: true
+    description: The workflow file that runs terraform test, for example controls.yml.
+  branch:
+    type: string
+    default: main
+    description: The branch whose runs are read.
+  artifact:
+    type: string
+    default: control-tests
+    description: The artefact holding controls.xml.
+  max_age:
+    type: duration
+    default: P8D
+    description: The oldest report still trusted, as an ISO 8601 duration. Older is unable to assess.
+  api_url:
+    type: url
+    default: https://api.github.com/
+    description: The GitHub API (GitHub Enterprise Server has its own).
+
+secrets:
+  token:
+    required: true
+    description: A fine-grained token on the IaC repository with Actions read only.
+
+connection:
+  base_url: ${api_url}
+  allowed_hosts: ["${api_url}"]
+  auth: { type: bearer, token: "${secrets.token}" }
+  rate_limit:
+    per_second: 2
+    max_retries: 3
+
+queries:
+  run:
+    get: repos/${repository}/actions/workflows/${workflow}/runs
+    query: { branch: "${branch}", status: completed, per_page: "1" }
+    items: $.workflow_runs
+    keep: [id, run_number, head_sha, head_branch, event, status, conclusion, created_at, updated_at, html_url]
+    vars: { run_id: "$.workflow_runs[0].id" }
+  artifacts:
+    get: repos/${repository}/actions/runs/${run_id}/artifacts
+    query: { name: "${artifact}" }
+    items: $.artifacts
+    vars: { artifact_id: "$.artifacts[0].id" }
+  tests:
+    get: repos/${repository}/actions/artifacts/${artifact_id}/zip
+    format: zip
+    member: controls.xml
+    redirect_hosts: ["*.actions.githubusercontent.com", "*.blob.core.windows.net"]
+    arrays: [$.testsuites.testsuite, $.testsuites.testsuite.testcase]
+    items: $.testsuites.testsuite[*].testcase[*]
+
+checks:
+  - id: infrastructure.tests.pass
+    title: Every infrastructure test passes
+    over: [run, tests]
+    code: terraform.tests_pass
+    with: { max_age: "${max_age}", repository: "${repository}" }

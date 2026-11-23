@@ -1,0 +1,26 @@
+# Recorded answers from the fictional Example Pty Ltd IaC repository: the newest control-tests run published a report in which every test passed.
+description: Every control test passed.
+now: 2026-11-23T02:00:00Z
+settings:
+  repository: example/grc-infra
+  workflow: controls.yml
+secrets:
+  token: example-test-token
+responses:
+  - { get: /repos/example/grc-infra/actions/workflows/controls.yml/runs, file: recordings/runs.json }
+  - { get: /repos/example/grc-infra/actions/runs/7101/artifacts, file: recordings/artifacts.json }
+  - { get: /repos/example/grc-infra/actions/artifacts/9101/zip, file: recordings/report-pass.zip }
+expect:
+  infrastructure.tests.pass: pass
+  infrastructure.controls.vm_has_no_public_ip: pass
+  infrastructure.controls.https_only_from_the_office: pass
+  infrastructure.controls.office_range_is_not_the_internet: pass
+  infrastructure.controls.no_ssh_from_the_internet: pass
+  infrastructure.controls.vpn_routes_only_the_office: pass
+  infrastructure.controls.storage_encrypted: pass
+  infrastructure.controls.vm_metadata_v2_only: pass
+  infrastructure.controls.backups_private_and_in_another_region: pass
+  infrastructure.controls.backups_retention_locked: pass
+  infrastructure.controls.backup_retention_cannot_be_shortened: pass
+  infrastructure.controls.only_backup_admins_reach_backups: pass
+  infrastructure.controls.volume_backed_up_weekly: pass

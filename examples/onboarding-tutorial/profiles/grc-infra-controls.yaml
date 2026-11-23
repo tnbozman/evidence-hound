@@ -1,0 +1,154 @@
+# Example Pty Ltd's copy of the terraform-tests library profile (s09-55), with one check per hosting control of the GRC platform
+# (GRC-PLATFORM), named after the run blocks in infra/oci/tests/controls.tftest.hcl. The library profile's header follows.
+#
+# Infrastructure tests, read from the JUnit report an IaC pipeline published as a GitHub Actions artefact.
+# hound never runs Terraform, never reads state and holds no cloud credentials: the pipeline runs
+#   terraform test -junit-xml=controls.xml   (mock providers need no cloud account)
+# and uploads the report as controls.xml in an artefact. This profile only reads: the newest completed run of that workflow, its
+# artefact and the report. Each test case is one control; copy this profile into your config repo and add one check per control
+# with `with: { test: <run block name> }`, so a mapping can name it. See docs/collectors/terraform-tests.md.
+# Token: a fine-grained token on the IaC repository only, with Actions: read. Nothing else.
+profile: grc-infra-controls
+version: "1.0.0"
+source: example/grc-config/profiles/grc-infra-controls.yaml (copied from evidence-hound/profiles/terraform-tests.yaml 1.0.0)
+description: The GRC platform's hosting controls, from the JUnit report an IaC pipeline published as a GitHub Actions artefact; read only.
+requires:
+  hound: ">=0.1"
+
+parameters:
+  repository:
+    type: string
+    required: true
+    description: The IaC repository, as owner/name.
+  workflow:
+    type: string
+    required: true
+    description: The workflow file that runs terraform test, for example controls.yml.
+  branch:
+    type: string
+    default: main
+    description: The branch whose runs are read.
+  artifact:
+    type: string
+    default: control-tests
+    description: The artefact holding controls.xml.
+  max_age:
+    type: duration
+    default: P8D
+    description: The oldest report still trusted, as an ISO 8601 duration. Older is unable to assess.
+  api_url:
+    type: url
+    default: https://api.github.com/
+    description: The GitHub API (GitHub Enterprise Server has its own).
+
+secrets:
+  token:
+    required: true
+    description: A fine-grained token on the IaC repository with Actions read only.
+
+connection:
+  base_url: ${api_url}
+  allowed_hosts: ["${api_url}"]
+  auth: { type: bearer, token: "${secrets.token}" }
+  rate_limit:
+    per_second: 2
+    max_retries: 3
+
+queries:
+  run:
+    get: repos/${repository}/actions/workflows/${workflow}/runs
+    query: { branch: "${branch}", status: completed, per_page: "1" }
+    items: $.workflow_runs
+    keep: [id, run_number, head_sha, head_branch, event, status, conclusion, created_at, updated_at, html_url]
+    vars: { run_id: "$.workflow_runs[0].id" }
+  artifacts:
+    get: repos/${repository}/actions/runs/${run_id}/artifacts
+    query: { name: "${artifact}" }
+    items: $.artifacts
+    vars: { artifact_id: "$.artifacts[0].id" }
+  tests:
+    get: repos/${repository}/actions/artifacts/${artifact_id}/zip
+    format: zip
+    member: controls.xml
+    redirect_hosts: ["*.actions.githubusercontent.com", "*.blob.core.windows.net"]
+    arrays: [$.testsuites.testsuite, $.testsuites.testsuite.testcase]
+    items: $.testsuites.testsuite[*].testcase[*]
+
+checks:
+  - id: infrastructure.tests.pass
+    title: Every infrastructure test passes
+    over: [run, tests]
+    code: terraform.tests_pass
+    with: { max_age: "${max_age}", repository: "${repository}" }
+
+  - id: infrastructure.controls.vm_has_no_public_ip
+    title: The GRC platform's VM has no public IP address
+    over: [run, tests]
+    code: terraform.tests_pass
+    with: { max_age: "${max_age}", repository: "${repository}", test: vm_has_no_public_ip }
+
+  - id: infrastructure.controls.https_only_from_the_office
+    title: Only the office reaches the VM, on HTTPS only
+    over: [run, tests]
+    code: terraform.tests_pass
+    with: { max_age: "${max_age}", repository: "${repository}", test: https_only_from_the_office }
+
+  - id: infrastructure.controls.office_range_is_not_the_internet
+    title: The code refuses to open the VM to the whole internet
+    over: [run, tests]
+    code: terraform.tests_pass
+    with: { max_age: "${max_age}", repository: "${repository}", test: office_range_is_not_the_internet }
+
+  - id: infrastructure.controls.no_ssh_from_the_internet
+    title: SSH comes only through time-limited Bastion sessions from the office
+    over: [run, tests]
+    code: terraform.tests_pass
+    with: { max_age: "${max_age}", repository: "${repository}", test: no_ssh_from_the_internet }
+
+  - id: infrastructure.controls.vpn_routes_only_the_office
+    title: The Site-to-Site VPN carries the office network only
+    over: [run, tests]
+    code: terraform.tests_pass
+    with: { max_age: "${max_age}", repository: "${repository}", test: vpn_routes_only_the_office }
+
+  - id: infrastructure.controls.storage_encrypted
+    title: The boot volume and the backup bucket are encrypted
+    over: [run, tests]
+    code: terraform.tests_pass
+    with: { max_age: "${max_age}", repository: "${repository}", test: storage_encrypted }
+
+  - id: infrastructure.controls.vm_metadata_v2_only
+    title: The VM serves instance metadata on the v2 endpoint only
+    over: [run, tests]
+    code: terraform.tests_pass
+    with: { max_age: "${max_age}", repository: "${repository}", test: vm_metadata_v2_only }
+
+  - id: infrastructure.controls.backups_private_and_in_another_region
+    title: Backups are private and kept in another region
+    over: [run, tests]
+    code: terraform.tests_pass
+    with: { max_age: "${max_age}", repository: "${repository}", test: backups_private_and_in_another_region }
+
+  - id: infrastructure.controls.backups_retention_locked
+    title: A retention rule stops anyone deleting or changing a backup for 35 days
+    over: [run, tests]
+    code: terraform.tests_pass
+    with: { max_age: "${max_age}", repository: "${repository}", test: backups_retention_locked }
+
+  - id: infrastructure.controls.backup_retention_cannot_be_shortened
+    title: The code refuses a retention shorter than 35 days
+    over: [run, tests]
+    code: terraform.tests_pass
+    with: { max_age: "${max_age}", repository: "${repository}", test: backup_retention_cannot_be_shortened }
+
+  - id: infrastructure.controls.only_backup_admins_reach_backups
+    title: Only backup administrators read backups, and the VM only adds them
+    over: [run, tests]
+    code: terraform.tests_pass
+    with: { max_age: "${max_age}", repository: "${repository}", test: only_backup_admins_reach_backups }
+
+  - id: infrastructure.controls.volume_backed_up_weekly
+    title: The boot volume is backed up weekly and kept 35 days
+    over: [run, tests]
+    code: terraform.tests_pass
+    with: { max_age: "${max_age}", repository: "${repository}", test: volume_backed_up_weekly }

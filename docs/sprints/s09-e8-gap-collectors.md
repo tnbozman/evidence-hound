@@ -1362,7 +1362,6 @@ At the maintainer's request (2026-11-23): the example audits (`EX-E8-2026`, `EX-
 - The example objects removed from the dev container's CISO Assistant, the trial's scope and Sophos run applied again; the audits list holds only `EX-E8-Q2-2027FY`.
 - Result (2026-11-23): through the API, the Example Pty Ltd domain folder, the evidence in Global and the example-only libraries (example baseline, loaded and stored; ASD Essentials, loaded) were removed. `HOUND_TRIAL_YES=1 make trial` applied the trial's scope again and the Sophos run published 3 items, 0 failed, to `EX-E8-Q2-2027FY`. CISO Assistant then held one audit (`EX-E8-Q2-2027FY`, "Essential Eight ML2 Q2-2027FY", in progress), one applied control (AC-AUTO-EVIDENCE), no assets, and the four Sophos evidence items. `bats scripts/tests` all ok.
 - As built: `postStartCommand` runs `scripts/dev-ca-env.sh` only; `README.md` says to run `scripts/ca-apply-scope.sh` for the example. The change takes effect the next time the dev container starts.
-
 ### s09-51 The trial onboards in order: organisation, third parties, system, its audit, controls, evidence (added 2026-11-23)
 - [x] Done
 
@@ -1456,6 +1455,81 @@ Added at the maintainer's request (2026-11-23; built as s09-52, renumbered on me
 - Not yet: `HOUND_TRIAL_YES=1 make trial` needs Docker and a CISO Assistant, which the cloud session does not have. Ticking waits on the maintainer running it (and `make trial` by hand) in the dev container.
 - As built: `src/EvidenceHound.SophosDevServer` (`sophos-dev`, not in the runner image): `SophosDevTenant` (firewalls, admins, predefined roles, `Compliant`, `Deviations`, `For`, `Settings(url)`), `SophosAnswers` (pure: `whoami`, the token answer, the three lists), `DevSophosServer` (WireMock, pages of 2 by `page`, every interface when a port is given, `--public-url` named in `whoami`), `DevServerOptions`. Trial: `trial_network_args` adds `--add-host host.docker.internal:host-gateway` on a `make ca-up` network; `trial_dev_url`, `trial_sophos_dev_sets` and `trial_uses_dev_server` in `scripts/lib/trial.sh`; step 9 starts the server in the background (stopped when the trial ends), adds the collector with `--yes`, and offers a second run with `unsupported-firmware`. Docs: `docs/tutorials/sophos-dev-server.md` and section 9 of `docs/tutorials/local-trial.md`.
 - The token address answers one fixed response and checks nothing, as the profile's recorded tests do. It is not sign-in logic, but say so if the maintainer would rather the profile skip auth for a dev server instead.
+### s09-55 Hosting controls proven by Terraform tests with mock providers, read from the IaC pipeline (added 2026-11-23)
+- [x] Done
+
+Numbered s09-49 and then s09-51 in its commits by mistake (those numbers are other tasks); renumbered s09-53 the same day, and s09-55 when merged, because the sprint branch had taken s09-53 for the trial's Microsoft 365 step.
+
+At the maintainer's request (2026-11-23), instead of an AWS variant on LocalStack: the goal is to detail the GRC platform's hosting
+controls and collect evidence for them, not to prove the VPN connects. LocalStack emulates AWS only, its free Hobby plan is for
+non-commercial use, needs an account, and mocks EC2 and VPN resources as records only; `terraform test` with `mock_provider`
+(Terraform 1.7 and later) runs the real OCI code with no cloud account, Docker or licence, so the Oracle tutorial stays as it is.
+
+**Story:** As a GRC team member, I want the GRC platform's hosting controls (no public address, HTTPS only from the office, no SSH
+from the internet, encrypted storage, backups private, in another region and locked by a retention rule) written as Terraform tests
+that the IaC pipeline runs on every change, and `hound` to read their report, so that each control has dated evidence naming the
+commit it was proven on, without `hound` running Terraform or holding cloud credentials.
+
+**Acceptance criteria**
+- `examples/onboarding-tutorial/infra/oci/` holds the tutorial's infrastructure as Terraform (VCN, private subnet, security list,
+  VM with no public IP, DRG, CPE and IPSec connection with a static route to the office only, Bastion, NAT and service gateways,
+  the backup bucket in another region with a retention rule and the volume backup policy), fictional values and documentation
+  ranges only.
+- `infra/oci/tests/controls.tftest.hcl` uses `mock_provider "oci"` and has one `run` block per control, named after it
+  (for example `vm_has_no_public_ip`), each asserting on the planned configuration with a message that names the control. Where
+  the code guards a control itself (the office range may not be the internet, backups kept at least 35 days), a run with
+  `expect_failures` shows the guard refuses a bad value.
+- An example pipeline (`infra/oci/.github/workflows/controls.yml`) runs `terraform test -junit-xml=controls.xml` and uploads it
+  as the `control-tests` artefact. No cloud credentials are used by that job.
+- A library profile `terraform-tests` reads the newest completed run of a named workflow, its artefact and the JUnit member
+  (`format: zip`, XML), with check `infrastructure.tests.pass` through a code check `terraform.tests_pass`: every test passed
+  passes; a failed or errored test fails, naming it and its message; no run, a failed run, a stale report (`max_age`) or no
+  report is unable to assess; `with.test` narrows the check to one named test, and a named test absent from the report is
+  unable to assess. Each finding names the repository, commit and run, read from the run, as `terraform.no_drift` does.
+- The tutorial's config repo copies the profile as `profiles/grc-infra-controls.yaml` with one check per control test, and a
+  mapping `mappings/grc-platform-essential-eight-2023.yaml` maps the backup rows whose evidence was "captured quarterly"
+  (ISM-1811, ISM-1814, ISM-1707, ISM-1812, ISM-1705) to their control test and to `infrastructure.drift.none` together
+  (`all_pass`): the code proves the control and the drift check proves the live cloud still matches the code. The audit's
+  observations for those rows say so. Network controls with no Essential Eight requirement are evidence kept with each run, as
+  drift is, and the tutorial says which later framework rows they serve.
+- The tutorial (s09-32) gains a "Prove the hosting controls" step and the controls table names each test. A guide,
+  `docs/collectors/terraform-tests.md`, explains the pattern for any provider, and what a mock does not prove.
+- CI runs `terraform test` on the example (no credentials).
+
+**Tests first**
+- `TerraformTestsProfileTests.All_tests_passing_passes`
+- `TerraformTestsProfileTests.A_failed_test_fails_naming_it_and_its_message`
+- `TerraformTestsProfileTests.Missing_failed_or_stale_report_is_unable_to_assess`
+- `TerraformTestsProfileTests.A_named_test_is_checked_alone_and_absent_is_unable_to_assess`
+- `TerraformTestsProfileTests.Library_profile_replays_each_case`
+- `ExampleRepoTests.Grc_infra_control_checks_name_tests_that_exist`
+- `ExampleRepoTests.Grc_platform_backup_rows_need_the_control_test_and_no_drift`
+- `terraform test` in `examples/onboarding-tutorial/infra/oci` (the control tests themselves, written before the resources)
+
+**Functional check**
+- `terraform test -junit-xml=controls.xml` in `infra/oci` passes; breaking one control in a scratch copy fails its test. That
+  report, zipped as the pipeline uploads it, replayed by `hound profile test grc-infra-controls`, gives pass for each control,
+  and fail naming the broken one.
+
+- Result (2026-11-23), Terraform 1.13.4 with the OCI provider 9.14.0 from a local mirror (the cloud session cannot reach the registry;
+  CI and the dev container can): `make test-terraform` gave "Success! 12 passed, 0 failed." In a scratch copy with
+  `assign_public_ip = "true"`, `terraform test -junit-xml` gave "Failure! 11 passed, 1 failed." with `vm_has_no_public_ip`'s message.
+  Both reports, put in a scratch copy of `grc-infra-controls.tests` as the zipped artefact, replayed by
+  `hound profile test grc-infra-controls`: all-pass, missing-report and one-fails passed (13 checks each), the broken report giving
+  fail for `infrastructure.controls.vm_has_no_public_ip` and `infrastructure.tests.pass` and pass for the other eleven. Unit suite
+  1327 passed; `dotnet format` clean; `scripts/test-profiles.sh` passes for `terraform-tests`.
+- As built: code check `terraform.tests_pass` in `CodeChecks` (shares `Provenance` and `Stale` with `terraform.no_drift`); a failed
+  run counts, because a failing test fails it; skipped tests are unable to assess. Library profile `profiles/terraform-tests.yaml`
+  (`format: zip`, member `controls.xml`, `arrays:` so one suite or test reads as a list; `max_age` P8D for a weekly schedule) with
+  recordings from real `terraform test` reports. The tutorial: `infra/oci/` (`main.tf`, `variables.tf`, `versions.tf`, lock hashes for
+  five platforms, `tests/controls.tftest.hcl` with 12 runs, two of them `expect_failures` on validations,
+  `.github/workflows/controls.yml`), `profiles/grc-infra-controls.yaml` (12 per-control checks), `mappings/grc-platform-essential-eight-2023.yaml`,
+  the answers for the five backup rows changed from `m` to `c` and the audit and onboarding record written again from them
+  (5 API checks, 32 manual). `hound.yaml` gains `example-grc-infra-controls` and the platform's target. Step 6 "Prove the hosting
+  controls" in the tutorial (review is step 7), and `docs/collectors/terraform-tests.md`. CI job `terraform` (Terraform by checksum,
+  no credentials), `make test-terraform`, and the dev container's Terraform feature.
+- Deviation: a negative run per control was dropped; only the two controls the code guards itself (office range, retention) have
+  one, since a toggle to turn a control off would be worse code. Breaking a control by hand is the functional check instead.
 
 ## Discovered work
 
@@ -1463,6 +1537,12 @@ Added at the maintainer's request (2026-11-23; built as s09-52, renumbered on me
 - s09-54: the Microsoft 365 (s09-44) and Sophos Central dev servers each have their own small serving code (paging, request log). Once both are merged, move it into one shared helper.
 - s09-54: scheduled collection after the trial needs the Sophos Central dev server running; the trial stops it when it ends. Consider a compose service for it beside the runner, if the trial grows a scheduler step.
 - s09-51: a manual evidence source needs its check mapped to a requirement, and the requirement taken out of `manual_only`; no command does it, so an agent edits the mapping by hand and the trial has no manual evidence stage. Add `hound mapping add-check --mapping <file> --requirement <ref> --check <id>` (asks nothing, `--json`), then a manual evidence stage in the trial (drop a scan report, `hound manual propose` by the agent, `hound manual approve` by the person).
+- s09-55: a Terraform plan or state JSON holds sensitive values in plain text (for example an IPSec tunnel's shared secret), and
+  `terraform-drift` keeps `resource_drift` and `resource_changes` whole, so a drift on such a resource would store the secret as
+  evidence. Keep only `address` and `change.actions` in the profile, or have the pipeline redact values marked in
+  `sensitive_values` before upload. The JUnit report of `terraform-tests` holds only test names and messages.
+- s09-55: `hound profile test` prints each case's outcome, not the observation; showing it with an option would make a functional
+  check read like the finding in CISO Assistant.
 
 - s09-47: move the fictional example repo's audits to series (`EX-E8`, `EX-ESSENTIALS`, `EX-BASELINE` with cycles), with its config targets, the example run and the tests that use `EX-E8-2026` as a fixture.
 

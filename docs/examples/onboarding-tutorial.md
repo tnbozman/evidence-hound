@@ -67,10 +67,11 @@ Inside the VM, the reference Compose stack runs Caddy, CISO Assistant's frontend
 | The VM and its operating system | Private subnet, no public IP, Ubuntu LTS with unattended security updates | GRC-PLATFORM's audit: patching (ISM-1695, ISM-1501) as manual evidence |
 | CISO Assistant sign-in | Single sign-on with Example 365 | GRC-PLATFORM's audit: MFA rows provided by Example 365 |
 | TLS | Caddy terminates HTTPS with its own certificate authority, or yours | The first deployment tutorial |
-| PostgreSQL and its backups | On the VM's encrypted boot volume; nightly dumps to an Object Storage bucket with a retention rule, weekly volume backups | GRC-PLATFORM's audit: backups (ISM-1511 to ISM-1707) as manual evidence |
+| PostgreSQL and its backups | On the VM's encrypted boot volume; nightly dumps to an Object Storage bucket with a retention rule, weekly volume backups | GRC-PLATFORM's audit: the bucket's rows (ISM-1811, ISM-1705, ISM-1812, ISM-1707, ISM-1814) from the control tests `backups_private_and_in_another_region`, `backups_retention_locked`, `storage_encrypted` and `only_backup_admins_reach_backups` with the drift check (step 6); taking backups and restore tests (ISM-1511, ISM-1810, ISM-1515) as manual evidence |
 | Secrets | Files in `/etc/evidence-hound/secrets` on the VM, given to containers as Docker secrets under `/run/secrets`; never in the repo | The first deployment tutorial |
 | The runner's schedule | `hound serve` runs each collector in `hound.yaml` on its cron schedule, in `scheduler.time_zone` | The collector health control `AC-AUTO-EVIDENCE` |
-| The cloud configuration | Terraform in its own repository, with a nightly refresh-only plan | The `terraform-drift` profile (step 5) |
+| The network path | Private subnet with no public IP, HTTPS only from the office, SSH only from the Bastion, the VPN carrying the office network only | The control tests `vm_has_no_public_ip`, `https_only_from_the_office`, `office_range_is_not_the_internet`, `no_ssh_from_the_internet`, `vpn_routes_only_the_office` and `vm_metadata_v2_only` (step 6): evidence kept with each run; the Essential Eight has no row for them |
+| The cloud configuration | Terraform in its own repository, with control tests on every change and a nightly refresh-only plan | The `grc-infra-controls` and `terraform-drift` profiles (steps 5 and 6) |
 | The office firewall | Firmware in support, few Super Admins in Sophos Central | OFFICE-FIREWALL's audit: ISM-1501 and ISM-1883 from the `sophos-central` profile |
 
 ## 1. Build the platform on OCI
@@ -96,7 +97,10 @@ Inside the VM, the reference Compose stack runs Caddy, CISO Assistant's frontend
 6. **Backups.** Schedule a nightly database dump to an Object Storage bucket in another region with a retention rule, and a weekly backup
    policy on the boot volume. Test a restore to a scratch VM each quarter; that test is the evidence for ISM-1515.
 7. **The infrastructure code.** Keep the VCN, VM, VPN and bucket as Terraform in a repository of its own, with a nightly plan workflow
-   (see [Infrastructure drift from your IaC pipeline](../collectors/terraform-drift.md)). The cloud credentials stay in that pipeline.
+   (see [Infrastructure drift from your IaC pipeline](../collectors/terraform-drift.md)) and control tests on every change (step 6). The
+   cloud credentials stay in that pipeline. The tutorial's Terraform is in
+   [`examples/onboarding-tutorial/infra/oci`](../../examples/onboarding-tutorial/infra/oci/main.tf): steps 2 to 6 above as code, with
+   fictional values.
 
 **On another cloud.** Only the names change: a VM in a private subnet with no public address, the provider's site-to-site IPsec VPN, its
 bastion or session manager, a NAT gateway for outbound HTTPS and object storage for backups. The supplier is your provider instead of
@@ -165,8 +169,10 @@ cp examples/onboarding-tutorial/scope/third-parties/sup-ciso-assistant.yaml exam
      rows do not apply. Application control, Microsoft Office macros and user application hardening at maturity level two cover
      workstations and internet-facing servers, and this is a private Linux container host with no office suite, browser or PDF software.
      Each has its justification and "Approved by Alex Example".
-   - **Manual evidence (37):** patching (OCI Vulnerability Scanning, unattended upgrades, pinned images updated through a pull request),
-     backups and restore tests, privileged access reviews, logging to OCI Logging, and incident response.
+   - **Manual evidence (32):** patching (OCI Vulnerability Scanning, unattended upgrades, pinned images updated through a pull request),
+     taking backups and restore tests, privileged access reviews, logging to OCI Logging, and incident response.
+   - **API check (5):** the backup bucket's rows (ISM-1811, ISM-1705, ISM-1812, ISM-1707 and ISM-1814), from the control tests and the
+     drift check (steps 5 and 6).
    - **Another system (9):** MFA for the platform's users and administrators is provided by Example 365, through single sign-on; the
      privileged operating environment rows by the administrators' Example laptops.
 
@@ -239,10 +245,36 @@ hound profile test terraform-drift --profiles /tmp/grc-repo/profiles
 Keep the Terraform in its own repository, as recommended in the [drift guide](../collectors/terraform-drift.md#where-the-terraform-lives):
 each finding names that repository and the commit the plan was made from. A monorepo works too.
 
-## 6. Review, validate, plan and apply
+## 6. Prove the hosting controls
+
+The hosting controls are written as Terraform tests in the IaC repository,
+[`infra/oci/tests/controls.tftest.hcl`](../../examples/onboarding-tutorial/infra/oci/tests/controls.tftest.hcl): one `run` block per
+control, such as `vm_has_no_public_ip` or `backups_retention_locked`. They use mock providers, so they need no Oracle account and create
+nothing. Try them:
+
+```sh
+cd examples/onboarding-tutorial/infra/oci && terraform init -backend=false && terraform test
+```
+
+The IaC pipeline ([`controls.yml`](../../examples/onboarding-tutorial/infra/oci/.github/workflows/controls.yml)) runs them on every
+change and weekly, and publishes the JUnit report as the `control-tests` artefact. The `grc-infra-controls` profile, the tutorial's copy
+of `terraform-tests` with one check per control, reads it with the same Actions-read token (instance `example-grc-infra-controls` in
+`hound.yaml`). Copy it and its tests into the repo:
+
+```sh
+cp -R examples/onboarding-tutorial/profiles/grc-infra-controls.yaml examples/onboarding-tutorial/profiles/grc-infra-controls.tests /tmp/grc-repo/profiles/
+hound profile test grc-infra-controls --profiles /tmp/grc-repo/profiles
+```
+
+The GRC platform's mapping, [`grc-platform-essential-eight-2023.yaml`](../../examples/onboarding-tutorial/mappings/grc-platform-essential-eight-2023.yaml),
+needs a control test **and** the drift check for each backup row: the test proves the code declares the setting, and the drift check
+proves the live tenancy still matches the code. A mock alone proves only the code. See
+[Hosting controls proven by your infrastructure tests](../collectors/terraform-tests.md).
+
+## 7. Review, validate, plan and apply
 
 1. **Review** the change as a pull request: the four supplier files, the two audits, the two systems in `scope/setup.yaml`, the onboarding
-   records, `hound.yaml` and the firewall's mapping. Each not applicable row carries its justification and approver, and each row met by
+   records, `hound.yaml`, the two mappings and the `grc-infra-controls` profile. Each not applicable row carries its justification and approver, and each row met by
    another system names it.
 2. **Validate** offline:
 
@@ -267,7 +299,8 @@ each finding names that repository and the commit the plan was made from. A mono
    cd /tmp/grc-repo && hound status --config hound.yaml
    ```
 
-From then on, the runner's schedule keeps the firewall's two rows and the drift check current, and the manual rows wait for their evidence.
+From then on, the runner's schedule keeps the firewall's two rows, the platform's five backup rows and the drift check current, and the
+manual rows wait for their evidence.
 
 ## What your repo holds now
 
@@ -278,8 +311,10 @@ From then on, the runner's schedule keeps the firewall's two rows and the drift 
 | [`scope/audits/grc-platform-essential-eight-2023.yaml`](../../examples/onboarding-tutorial/scope/audits/grc-platform-essential-eight-2023.yaml) | Onboarding |
 | [`scope/audits/office-firewall-essential-eight-2023.yaml`](../../examples/onboarding-tutorial/scope/audits/office-firewall-essential-eight-2023.yaml) | Onboarding |
 | [`onboarding/`](../../examples/onboarding-tutorial/onboarding/) | Onboarding: one record per system, every decision and who accepted it |
-| [`hound.yaml`](../../examples/onboarding-tutorial/hound.yaml) | By hand: the two collector instances and the firewall's target |
+| [`hound.yaml`](../../examples/onboarding-tutorial/hound.yaml) | By hand: the three collector instances and the two systems' targets |
 | [`mappings/office-firewall-essential-eight-2023.yaml`](../../examples/onboarding-tutorial/mappings/office-firewall-essential-eight-2023.yaml) | By hand: the firewall's two API checks |
+| [`mappings/grc-platform-essential-eight-2023.yaml`](../../examples/onboarding-tutorial/mappings/grc-platform-essential-eight-2023.yaml) | By hand: the platform's five backup rows, each from its control tests and the drift check |
+| [`profiles/grc-infra-controls.yaml`](../../examples/onboarding-tutorial/profiles/grc-infra-controls.yaml) | By hand: a copy of `terraform-tests` with one check per control |
 | [`deploy/compose.override.yml`](../../examples/onboarding-tutorial/deploy/compose.override.yml) | By hand: the two collectors' secrets |
 
 The audits in `examples/onboarding-tutorial` also start with a schema comment line, so editors check them; onboarding does not write it.

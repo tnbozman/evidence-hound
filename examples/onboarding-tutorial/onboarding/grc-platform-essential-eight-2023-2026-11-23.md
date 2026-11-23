@@ -8,7 +8,7 @@ Supplier: Oracle Cloud Infrastructure (SUP-ORACLE), solution OCI compute, networ
 
 ## Decisions
 
-107 requirements: 0 API check(s), 37 manual, 61 not applicable, 9 for another system.
+107 requirements: 5 API check(s), 32 manual, 61 not applicable, 9 for another system.
 
 | Requirement | Proposed | Decided | Reasoning | Accepted by | Justification, approver or system |
 | --- | --- | --- | --- | --- | --- |
@@ -113,9 +113,9 @@ Supplier: Oracle Cloud Infrastructure (SUP-ORACLE), solution OCI compute, networ
 | urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1819 | (none) | not_applicable | Its mitigation does not apply to this system, so there are no such events here. | Sam Example | User application hardening covers office suites, web browsers, PDF software and PowerShell on workstations and internet-facing servers. None run on this private Linux server. Approved by Alex Example. |
 | ISM-1511 | (none) | manual | Nightly database dumps and weekly OCI block volume backups, kept 35 days, per the backup procedure. | Sam Example |  |
 | ISM-1810 | (none) | manual | The database dump and the volume backup are taken in the same nightly window, so they restore to a common point. | Sam Example |  |
-| ISM-1811 | (none) | manual | Backups go to an OCI Object Storage bucket with retention rules, in another region; the bucket settings are captured quarterly. | Sam Example |  |
+| ISM-1811 | (none) | api_check | The backup bucket is private, encrypted, in another region and locked by a retention rule, proven by the control tests and the drift check on every change (grc-infra-controls and terraform-drift profiles). | Sam Example |  |
 | ISM-1515 | (none) | manual | A restore to a scratch VM is tested each quarter; the test record is the evidence. | Sam Example |  |
-| ISM-1812 | (none) | manual | Only the backup group can read the bucket; its policy is captured quarterly. | Sam Example |  |
-| ISM-1705 | (none) | manual | Only the backup administrators group can read the bucket; its policy is captured quarterly. | Sam Example |  |
-| ISM-1814 | (none) | manual | Retention rules stop anyone deleting or changing a backup before it expires; the rule is captured quarterly. | Sam Example |  |
-| ISM-1707 | (none) | manual | Retention rules stop anyone deleting or changing a backup before it expires; the rule is captured quarterly. | Sam Example |  |
+| ISM-1812 | (none) | api_check | Only the backup administrators read the bucket, proven by the control tests and the drift check on every change (grc-infra-controls and terraform-drift profiles). | Sam Example |  |
+| ISM-1705 | (none) | api_check | Only the backup administrators read the bucket, proven by the control tests and the drift check on every change (grc-infra-controls and terraform-drift profiles). | Sam Example |  |
+| ISM-1814 | (none) | api_check | A retention rule stops anyone deleting or changing a backup for 35 days, proven by the control tests and the drift check on every change (grc-infra-controls and terraform-drift profiles). | Sam Example |  |
+| ISM-1707 | (none) | api_check | A retention rule stops anyone deleting or changing a backup for 35 days, proven by the control tests and the drift check on every change (grc-infra-controls and terraform-drift profiles). | Sam Example |  |

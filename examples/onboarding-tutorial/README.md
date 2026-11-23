@@ -9,8 +9,11 @@ What [the onboarding tutorial](../../docs/examples/onboarding-tutorial.md) adds 
 - `scope/setup.yaml`: the template's, with the two systems onboarding added at the end.
 - `scope/audits/`, `onboarding/`: each system's Essential Eight audit and onboarding record, as `hound onboard` wrote them, with a schema
   comment line added.
-- `hound.yaml`, `mappings/office-firewall-essential-eight-2023.yaml`, `deploy/compose.override.yml`: the template's, with the two
-  collectors, the firewall's target and their secrets.
+- `hound.yaml`, `mappings/`, `deploy/compose.override.yml`: the template's, with the three collectors (Sophos Central, drift and the
+  control tests), the two systems' targets and their secrets.
+- `profiles/grc-infra-controls.yaml` and its tests: the tutorial's copy of the `terraform-tests` profile, one check per hosting control.
+- `infra/oci/`: the GRC platform's OCI Terraform, its control tests (`terraform test` with mock providers, no Oracle account needed) and
+  the pipeline that publishes their report. In a real setup this lives in its own IaC repository.
 
 The template itself stays without them, so a new compliance repo starts empty and applies in one go: these systems are registered only
 once their suppliers are approved in CISO Assistant.

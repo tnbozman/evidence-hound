@@ -12,6 +12,10 @@
     },
     "ghcr.io/devcontainers/features/docker-in-docker:4": {},
     "ghcr.io/devcontainers/features/github-cli:1": {},
+    // terraform test for the tutorial's control tests (make test-terraform); hound itself never runs Terraform.
+    "ghcr.io/devcontainers/features/terraform:1": {
+      "version": "1.13.4"
+    },
     "ghcr.io/devcontainers/features/node:2": {
       "version": "lts"
     },

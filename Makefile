@@ -10,7 +10,7 @@ CA_COMPOSE := dev/ciso-assistant/compose.yml
 CA_ENV := HOUND_CA_SECRET_KEY="$$(scripts/ca-secret-key.sh)"
 SHELL_SCRIPTS := $(wildcard scripts/*.sh scripts/lib/*.sh deploy/compose/*.sh .devcontainer/*.sh dev/ciso-assistant/seed/*.sh) .githooks/pre-commit
 
-.PHONY: help restore build test test-functional test-profiles test-template test-scripts coverage image test-image test-compose compose-smoke lint lint-dotnet lint-shell format run m365-dev sophos-dev hooks ca-up ca-up-kafka ca-down trial trial-clean
+.PHONY: help restore build test test-functional test-profiles test-template test-scripts test-terraform coverage image test-image test-compose compose-smoke lint lint-dotnet lint-shell format run m365-dev sophos-dev hooks ca-up ca-up-kafka ca-down trial trial-clean
 
 help: ## List targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-16s %s\n", $$1, $$2}'
@@ -41,6 +41,13 @@ test-template: ## Generate a collector from templates/collector, then build and 
 
 test-scripts: ## Shell script tests (bats)
 	bats scripts/tests
+
+TF_EXAMPLE ?= examples/onboarding-tutorial/infra/oci
+
+test-terraform: ## The tutorial's Terraform control tests, with mock providers (no cloud account)
+	terraform -chdir=$(TF_EXAMPLE) fmt -check -recursive
+	terraform -chdir=$(TF_EXAMPLE) init -backend=false -input=false
+	terraform -chdir=$(TF_EXAMPLE) test
 
 image: ## Build the collector runner image (HOUND_IMAGE, default evidence-hound-runner:test)
 	docker build -f src/EvidenceHound.Cli/Dockerfile -t $(HOUND_IMAGE) .

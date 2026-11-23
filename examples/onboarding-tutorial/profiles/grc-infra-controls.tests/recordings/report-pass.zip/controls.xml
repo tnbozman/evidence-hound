@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?><testsuites>
+  <testsuite name="tests/controls.tftest.hcl" tests="12" skipped="0" failures="0" errors="0">
+    <testcase name="vm_has_no_public_ip" classname="tests/controls.tftest.hcl" timestamp="2026-11-22T22:58:00Z"></testcase>
+    <testcase name="https_only_from_the_office" classname="tests/controls.tftest.hcl" timestamp="2026-11-22T22:58:00Z"></testcase>
+    <testcase name="office_range_is_not_the_internet" classname="tests/controls.tftest.hcl" timestamp="2026-11-22T22:58:00Z"></testcase>
+    <testcase name="no_ssh_from_the_internet" classname="tests/controls.tftest.hcl" timestamp="2026-11-22T22:58:00Z"></testcase>
+    <testcase name="vpn_routes_only_the_office" classname="tests/controls.tftest.hcl" timestamp="2026-11-22T22:58:00Z"></testcase>
+    <testcase name="storage_encrypted" classname="tests/controls.tftest.hcl" timestamp="2026-11-22T22:58:00Z"></testcase>
+    <testcase name="vm_metadata_v2_only" classname="tests/controls.tftest.hcl" timestamp="2026-11-22T22:58:00Z"></testcase>
+    <testcase name="backups_private_and_in_another_region" classname="tests/controls.tftest.hcl" timestamp="2026-11-22T22:58:00Z"></testcase>
+    <testcase name="backups_retention_locked" classname="tests/controls.tftest.hcl" timestamp="2026-11-22T22:58:00Z"></testcase>
+    <testcase name="backup_retention_cannot_be_shortened" classname="tests/controls.tftest.hcl" timestamp="2026-11-22T22:58:00Z"></testcase>
+    <testcase name="only_backup_admins_reach_backups" classname="tests/controls.tftest.hcl" timestamp="2026-11-22T22:58:00Z"></testcase>
+    <testcase name="volume_backed_up_weekly" classname="tests/controls.tftest.hcl" timestamp="2026-11-22T22:58:00Z"></testcase>
+  </testsuite>
+</testsuites>
