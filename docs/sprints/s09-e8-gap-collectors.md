@@ -1,6 +1,6 @@
 # s09 Essential Eight gap collectors
 
-Status: In progress
+Status: Done
 
 **Goal:** close the largest Essential Eight ML2 gaps left after the Microsoft 365, Sophos and Veeam collectors: application control evidenced from Intune and Microsoft Defender for Endpoint, patching evidenced from imported vulnerability scans, and a ready-made manual-upload template for every requirement that stays manual. After this sprint every ML1 and ML2 row in the example Essential Eight audit gets a result from a check or an attested manual source.
 
@@ -1841,3 +1841,19 @@ Added at the maintainer's request (2026-11-23): "run a trial yourself and an onb
   - Environment `pending` counts every group while a system's session counts only its groups.
 
 ## Sprint review
+
+**2026-11-23.** Closed at the maintainer's request, to merge s09 and the AI governance plan to main and start s10. 42 tasks done, each with red and green commits; the trial runs unattended in CI against CISO Assistant, and the trial's agent stages were rehearsed by an agent in a scratch repo (s09-59, s09-60).
+
+- **The generic REST collector** with YAML profiles, a tested public library (`profiles/`), declarative and code checks, earlier evidence for checks that need history (firmware upgrade age), and Sophos Central as a profile (s09-09 to s09-15).
+- **Third parties and onboarding without a built-in model**: suppliers, solutions, contracts and reviews; the capability map; the agent interface (`pending`, `decide`, `--json`) driven by the person's own agent from `hound agent setup`, and `hound approve` for the person at a terminal; `hound explain` (s09-19 to s09-42).
+- **Patching and application control evidence**: Defender advanced hunting, the `vuln-scan` collector and its eleven patching checks (s09-02 to s09-04, s09-06).
+- **A trial with no API keys**: dev servers for Microsoft 365, Sophos Central and the IaC pipeline, fictional scan exports, and the private-hosting use case on Oracle Cloud with an XGS 88W (s09-44, s09-51 to s09-58).
+
+About 1,500 unit, contract and functional tests; lint, ShellCheck and the bats tests pass, and CI's functional, trial, compose and image jobs are green.
+
+Carried to s10, waiting on the maintainer's own environment rather than on code: s09-01 (a real Graph export for App Control for Business setting IDs), s09-15 (whether the read-only role may call the firmware upgrade check), s09-17 (the real-tenant Sophos trial), s09-29 (a run against the maintainer's tenant), s09-38 to s09-42 (the maintainer's own agent-driven onboarding), s09-54 and s09-57 (`make trial` on the maintainer's machine). They stay unticked here, with their notes. s09-16 is not applicable.
+
+What the feedback taught us:
+- Rehearse with an agent that has only what the person's agent will have. It found empty folders and help text that contradicted the commands, which unit tests had not.
+- CISO Assistant refuses attachments outside its allow-list (`.nessus`), and a mapped requirement clashes with a hand-written row; the trial in CI caught both.
+- Side pull requests into the sprint branch cost the maintainer more than they saved; from s10 the work goes straight onto the sprint branch.
