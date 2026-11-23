@@ -11,7 +11,7 @@ namespace EvidenceHound.Onboarding.Tests.Skills;
 /// </summary>
 public sealed class OrganisationSkillTests
 {
-    private const string Secret = "sk-test-not-a-real-key";
+    internal const string Secret = "sk-test-not-a-real-key";
     private static readonly GuardTerms Terms = new(new Dictionary<string, string> { ["llm_api_key"] = Secret }, []);
     private readonly CancellationToken _ct = TestContext.Current.CancellationToken;
 

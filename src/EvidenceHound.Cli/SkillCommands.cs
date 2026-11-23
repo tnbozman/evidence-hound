@@ -11,8 +11,10 @@ internal static class SkillCommands
 {
     public const string SkillsSetting = "HOUND_SKILLS_PATH";
 
-    public static Command Build(TextWriter output, ILoggerFactory loggers, IConfiguration configuration)
+    public static Command Build(Terminal terminal, ILoggerFactory loggers, IConfiguration configuration)
     {
+        ArgumentNullException.ThrowIfNull(terminal);
+        var output = terminal.Output;
         var logger = loggers.CreateLogger("hound.skill");
 
         var list = new Command("list", "List every active skill: its source (default or organisation), version, SHA-256, and any default it overrides.") { FolderOption() };
@@ -31,7 +33,33 @@ internal static class SkillCommands
         validate.SetAction((parseResult, cancellationToken) =>
             ValidateAsync(output, logger, Folder(parseResult, configuration), parseResult.GetValue(deny)?.FullName, cancellationToken));
 
-        return new Command("skill", "Work with the onboarding assistant's skills.") { list, create, add, validate };
+        var repo = new Option<DirectoryInfo>("--repo") { Description = "The config repo the drafts read: its systems, suppliers and capability map. Default: the current folder." };
+        var only = new Option<string[]>("--only") { Description = $"Draft only this skill: {string.Join(", ", OrganisationSkills.Kinds.Select(k => k.Name))}. Repeat for more.", AllowMultipleArgumentsPerToken = false };
+        var noModel = new Option<bool>("--no-model") { Description = "Write the skills as templates, their questions as headings, to fill in by hand." };
+        var show = new Option<bool>("--show-requests") { Description = "Show each request before it is sent to the model." };
+        var config = new Option<FileInfo>("--config") { Description = $"The onboarding config. Default: {OnboardCommands.DefaultConfig} in the repo." };
+        var draft = new Command("draft", "Draft the organisation's own skills (its profile, risk appetite, IT and AI landscape) into the skills folder, for you to review, edit and commit.")
+        {
+            FolderOption(), repo, only, noModel, show, config,
+        };
+        draft.SetAction((parseResult, cancellationToken) =>
+        {
+            var root = parseResult.GetValue(repo)?.FullName ?? Directory.GetCurrentDirectory();
+            return SkillDraftCommand.RunAsync(
+                new SkillDraftCommand.Settings(
+                    Folder(parseResult, configuration),
+                    root,
+                    parseResult.GetValue(only) ?? [],
+                    parseResult.GetValue(noModel),
+                    parseResult.GetValue(show),
+                    parseResult.GetValue(config)?.FullName ?? Path.Combine(root, OnboardCommands.DefaultConfig)),
+                terminal,
+                logger,
+                configuration,
+                cancellationToken);
+        });
+
+        return new Command("skill", "Work with the onboarding assistant's skills.") { list, create, add, validate, draft };
     }
 
     private static Option<DirectoryInfo> FolderOption() =>
@@ -133,11 +161,13 @@ internal static class SkillCommands
         var warnings = valid.Skills.SelectMany(s => SkillCatalogue.Warnings(s, denyTerms)).ToArray();
         foreach (var warning in warnings)
         {
-            await output.WriteLineAsync($"warning: {warning.Message}".AsMemory(), cancellationToken);
+            await output.WriteLineAsync($"error {warning.Code}: {warning.Message}".AsMemory(), cancellationToken);
         }
 
         var mine = valid.Skills.Count(s => s.Source == SkillSource.Organisation);
         await output.WriteLineAsync($"{valid.Skills.Count} skills valid ({mine} from {folder}), {warnings.Length} warnings.".AsMemory(), cancellationToken);
-        return ExitCodes.Ok;
+
+        // Skills are sent to the model provider: one that holds organisation data is refused, not only reported.
+        return warnings.Length == 0 ? ExitCodes.Ok : ExitCodes.Configuration;
     }
 }
