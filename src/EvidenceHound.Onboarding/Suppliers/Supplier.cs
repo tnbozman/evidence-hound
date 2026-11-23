@@ -193,6 +193,12 @@ public enum SupplierDrafter
     Agent,
 }
 
+/// <summary>
+/// What a draft says beyond the choice and the levels: the third party's description (such as which vendor a reseller stands for), and the
+/// documents that were read and kept in the repo, each with its SHA-256.
+/// </summary>
+public sealed record SupplierNotes(string? Description, IReadOnlyList<(string Path, string Sha256)> Documents);
+
 /// <summary>Writes the drafted supplier as <c>scope/third-parties/&lt;entity&gt;.yaml</c>: levels with their reasons as comments, and a draft contract.</summary>
 public static class SupplierFile
 {
@@ -202,7 +208,8 @@ public static class SupplierFile
         return $"{choice.EntityRef.ToLowerInvariant()}.yaml";
     }
 
-    public static string Write(SupplierChoice choice, IReadOnlyList<LevelProposal> levels, string? system, DateOnly today, AuditPlace? place = null, SupplierDrafter drafter = SupplierDrafter.Person)
+    public static string Write(
+        SupplierChoice choice, IReadOnlyList<LevelProposal> levels, string? system, DateOnly today, AuditPlace? place = null, SupplierDrafter drafter = SupplierDrafter.Person, SupplierNotes? notes = null)
     {
         ArgumentNullException.ThrowIfNull(choice);
         ArgumentNullException.ThrowIfNull(levels);
@@ -213,7 +220,17 @@ public static class SupplierFile
         text.Append(agent
             ? "# A person approves the supplier and concludes its review with hound approve, in a terminal.\n"
             : "# Once the supplier is approved, make the contract active and run hound onboard again.\n");
+        foreach (var (path, sha256) in notes?.Documents ?? [])
+        {
+            text.Append(CultureInfo.InvariantCulture, $"# Kept document: {path} (sha256 {sha256})\n");
+        }
+
         text.Append(CultureInfo.InvariantCulture, $"ref_id: {Quote(choice.EntityRef)}\nname: {Quote(choice.EntityName)}\n");
+        if (notes?.Description is { Length: > 0 } description)
+        {
+            text.Append(CultureInfo.InvariantCulture, $"description: {Quote(description)}\n");
+        }
+
         if (place is not null)
         {
             text.Append(CultureInfo.InvariantCulture, $"domain: {Quote(place.Domain)}\n");

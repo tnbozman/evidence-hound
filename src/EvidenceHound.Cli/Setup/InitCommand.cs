@@ -1,5 +1,6 @@
 using System.CommandLine;
 using System.Globalization;
+using System.Text.Json.Nodes;
 using EvidenceHound.Core.Results;
 using EvidenceHound.Runtime.Collectors;
 using Microsoft.Extensions.Configuration;
@@ -30,10 +31,11 @@ internal static class InitCommand
         var evidenceRoot = new Option<string>("--evidence-root") { Description = "Where the runner keeps evidence, outside the repo.", DefaultValueFactory = _ => DefaultEvidenceRoot };
         var assistant = new Option<string?>("--assistant") { Description = "Also set up a coding assistant in the repo, as 'hound agent setup' does: claude, copilot, both or none. Default: none." };
         var yes = new Option<bool>("--yes", "-y") { Description = "Ask nothing: take the options given and the defaults." };
+        var json = new Option<bool>("--json") { Description = "Answer in JSON, for an agent: the organisation, the audit and every file written." };
 
         var init = new Command("init", "Write a new organisation's compliance repo: config, scope, an Essential Eight audit and its mapping. Asks each question it needs.")
         {
-            folder, org, code, url, timeZone, level, due, owner, evidenceRoot, assistant, yes,
+            folder, org, code, url, timeZone, level, due, owner, evidenceRoot, assistant, yes, json,
         };
         init.SetAction(async (parseResult, cancellationToken) =>
         {
@@ -55,8 +57,13 @@ internal static class InitCommand
                 await wizard.AskAsync("Compliance owner's email, as a CISO Assistant user", parseResult.GetValue(owner), DefaultOwner, cancellationToken),
                 parseResult.GetRequiredValue(evidenceRoot));
 
-            var written = await Check(answers).Match(
-                organisation => WriteAsync(target, organisation, terminal, logger, registry, configuration, cancellationToken),
+            // With --json the steps' own lines are held back, and one JSON answer says what was written.
+            var asJson = parseResult.GetValue(json);
+            using var held = new StringWriter();
+            var steps = asJson ? terminal with { Output = held } : terminal;
+            var checkedAnswers = Check(answers);
+            var written = await checkedAnswers.Match(
+                organisation => WriteAsync(target, organisation, steps, logger, registry, configuration, cancellationToken),
                 problems => Task.FromResult(Log.Problems(logger, problems)));
             if (written != ExitCodes.Ok)
             {
@@ -65,9 +72,21 @@ internal static class InitCommand
 
             // The offer at the end: the assistant files, as hound agent setup writes them.
             var wanted = await wizard.AskAsync(AssistantQuestion, parseResult.GetValue(assistant), "none", cancellationToken);
-            return AgentCommands.Parse(wanted) is { } chosen
-                ? await AgentCommands.SetupAsync(target.FullName, chosen, terminal, logger, cancellationToken)
-                : ExitCodes.Ok;
+            var setUp = AgentCommands.Parse(wanted) is { } chosen ? await AgentCommands.SetupAsync(target.FullName, chosen, steps, logger, cancellationToken) : ExitCodes.Ok;
+            if (asJson && setUp == ExitCodes.Ok)
+            {
+                var organisation = checkedAnswers.Match(o => o, _ => throw new InvalidOperationException());
+                var files = Directory.GetFiles(target.FullName, "*", SearchOption.AllDirectories).Select(f => Path.GetRelativePath(target.FullName, f).Replace('\\', '/')).Order(StringComparer.Ordinal);
+                await terminal.Output.WriteLineAsync(new JsonObject
+                {
+                    ["folder"] = target.FullName,
+                    ["organisation"] = organisation.Name,
+                    ["audit"] = organisation.AuditRef,
+                    ["files"] = new JsonArray([.. files.Select(f => (JsonNode)f)]),
+                }.ToJsonString(OnboardAgentCommand.Indented).AsMemory(), cancellationToken);
+            }
+
+            return setUp;
         });
 
         return init;

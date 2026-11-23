@@ -35,13 +35,13 @@ public sealed class AuditDraftCommandTests : IDisposable
         // What the scope does not hold is refused, and nothing is written.
         (exit, _, error) = await DraftAsync("EX-E8-2028", "--system", "Example mainframe");
         exit.ShouldBe(ExitCodes.Configuration);
-        error.ShouldContain("audit.system_unknown");
+        error.ShouldContain("'Example mainframe' is not a system");
         (exit, _, error) = await DraftAsync("EX-E8-2028", "--system", "Example 365", "--perimeter", "Nowhere");
         exit.ShouldBe(ExitCodes.Configuration);
-        error.ShouldContain("audit.perimeter_unknown");
+        error.ShouldContain("'Nowhere' is not a perimeter");
         (exit, _, error) = await DraftAsync("EX-E8-2026", "--system", "Example 365");
         exit.ShouldBe(ExitCodes.Configuration);
-        error.ShouldContain("audit.exists");
+        error.ShouldContain("EX-E8-2026 already exists");
 
         // An agent cannot approve it; a person on a terminal moves it into the scope, where it validates.
         (exit, _, _) = await ApproveAsync("Sam Example\ny\n", terminal: false);

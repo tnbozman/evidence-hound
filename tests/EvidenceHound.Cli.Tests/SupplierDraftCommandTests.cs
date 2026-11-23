@@ -55,13 +55,13 @@ public sealed class SupplierDraftCommandTests : IDisposable
         // A reseller or managed service provider stands for a vendor already drafted; a kept document is a file in the repo.
         (exit, _, error) = await DraftAsync("SUP-OTHER", "Example Other Pty Ltd", "Resale", "--kind", "reseller");
         exit.ShouldBe(ExitCodes.Configuration);
-        error.ShouldContain("supplier.for_missing");
+        error.ShouldContain("names the vendor with --for");
         (exit, _, error) = await DraftAsync("SUP-OTHER", "Example Other Pty Ltd", "Resale", "--kind", "msp", "--for", "SUP-NOBODY");
         exit.ShouldBe(ExitCodes.Configuration);
-        error.ShouldContain("supplier.for_unknown");
+        error.ShouldContain("SUP-NOBODY is not a third party");
         (exit, _, error) = await DraftAsync("SUP-OTHER", "Example Other Pty Ltd", "Resale", "--document", "documents/suppliers/missing.pdf");
         exit.ShouldBe(ExitCodes.Configuration);
-        error.ShouldContain("supplier.document_missing");
+        error.ShouldContain("documents/suppliers/missing.pdf does not exist");
         File.Exists(Path.Combine(Repo, "scope", "third-parties", "sup-other.yaml")).ShouldBeFalse();
     }
 

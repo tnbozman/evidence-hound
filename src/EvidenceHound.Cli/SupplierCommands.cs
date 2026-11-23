@@ -1,5 +1,6 @@
 using System.CommandLine;
 using System.Globalization;
+using System.Security.Cryptography;
 using System.Text.Json.Nodes;
 using EvidenceHound.Core.Results;
 using EvidenceHound.Onboarding.Output;
@@ -32,10 +33,18 @@ internal static class SupplierCommands
             Description = $"A level with its reason, as <name>=<value>:<reason>. Names: {string.Join(", ", SupplierProposal.Scales.Select(s => $"{s.Name} ({s.Low} to {s.High})"))}. Repeat for more.",
             AllowMultipleArgumentsPerToken = false,
         };
+        var kind = new Option<string>("--kind") { Description = "What the third party is: vendor (makes the product), reseller (sells it) or msp (a managed service provider that runs it).", DefaultValueFactory = _ => "vendor" };
+        kind.AcceptOnlyFromAmong([.. Kinds.Keys]);
+        var standsFor = new Option<string?>("--for") { Description = "For a reseller or msp: the ref_id of the vendor whose product it sells or runs, already in scope/third-parties/." };
+        var documents = new Option<string[]>("--document")
+        {
+            Description = "A document that was read for this draft and kept in the repo, as a path relative to the repo. Named in the file with its SHA-256. Repeat for more.",
+            AllowMultipleArgumentsPerToken = false,
+        };
         var json = new Option<bool>("--json") { Description = "Answer in JSON, for an agent." };
         var draft = new Command("draft", "Draft a third party's file under scope/third-parties/ with a draft contract and an open review. A person approves it with 'hound approve'.")
         {
-            repo, system, entityRef, entityName, solutionRef, solutionName, contractRef, contractName, levels, json,
+            repo, system, entityRef, entityName, solutionRef, solutionName, contractRef, contractName, levels, kind, standsFor, documents, json,
         };
         draft.SetAction(async (parseResult, cancellationToken) =>
         {
@@ -43,13 +52,15 @@ internal static class SupplierCommands
             var choice = new SupplierChoice(
                 parseResult.GetRequiredValue(entityRef), parseResult.GetRequiredValue(entityName), parseResult.GetRequiredValue(solutionRef),
                 parseResult.GetRequiredValue(solutionName), parseResult.GetRequiredValue(contractRef), parseResult.GetRequiredValue(contractName));
+            var role = parseResult.GetValue(kind) ?? "vendor";
             var written = await Levels(parseResult.GetValue(levels) ?? [])
-                .BindAsync(read => DraftAsync(root, choice, read, parseResult.GetValue(system), AuditSeries.Today(configuration), cancellationToken));
+                .BindAsync(async read => (await NotesAsync(root, role, parseResult.GetValue(standsFor), parseResult.GetValue(documents) ?? [], cancellationToken)).Bind(notes => Result.Ok((read, notes))))
+                .BindAsync(read => DraftAsync(root, choice, read.read, read.notes, parseResult.GetValue(system), AuditSeries.Today(configuration), cancellationToken));
             return await written.Match(
                 async file =>
                 {
                     await terminal.Output.WriteLineAsync((parseResult.GetValue(json)
-                        ? new JsonObject { ["file"] = file, ["supplier"] = choice.EntityRef, ["approved"] = false }.ToJsonString(OnboardAgentCommand.Indented)
+                        ? new JsonObject { ["file"] = file, ["supplier"] = choice.EntityRef, ["kind"] = role, ["approved"] = false }.ToJsonString(OnboardAgentCommand.Indented)
                         : $"Drafted {file} with a draft contract. A person approves {choice.EntityRef} and concludes its review with 'hound approve'.").AsMemory(), cancellationToken);
                     return ExitCodes.Ok;
                 },
@@ -100,7 +111,61 @@ internal static class SupplierCommands
             : Result.Ok<IReadOnlyList<LevelProposal>>(levels);
     }
 
-    private static async Task<Result<string>> DraftAsync(string repo, SupplierChoice choice, IReadOnlyList<LevelProposal> levels, string? system, DateOnly today, CancellationToken cancellationToken)
+    /// <summary>The words that say what a reseller or a managed service provider is to the vendor it stands for.</summary>
+    private static readonly Dictionary<string, string?> Kinds = new(StringComparer.Ordinal)
+    {
+        ["vendor"] = null,
+        ["reseller"] = "Reseller of",
+        ["msp"] = "Managed service provider for",
+    };
+
+    /// <summary>
+    /// The draft's description and kept documents: a reseller or managed service provider names a vendor already in the repo, and every
+    /// document is a file in the repo, named with its SHA-256.
+    /// </summary>
+    private static async Task<Result<SupplierNotes>> NotesAsync(string repo, string kind, string? standsFor, IReadOnlyList<string> documents, CancellationToken cancellationToken)
+    {
+        var problems = new List<Problem>();
+        string? description = null;
+        if (Kinds[kind] is { } words)
+        {
+            var vendor = standsFor is null ? null : (await OnboardSystemCommand.ThirdPartiesAsync(repo, cancellationToken)).FirstOrDefault(e => e.RefId == standsFor);
+            if (standsFor is null)
+            {
+                problems.Add(new Problem("supplier.for_missing", $"A {kind} names the vendor with --for: the ref_id of the third party whose product it sells or runs."));
+            }
+            else if (vendor is null)
+            {
+                problems.Add(new Problem("supplier.for_unknown", $"{standsFor} is not a third party in scope/third-parties/. Draft the vendor first, then the {kind}."));
+            }
+            else
+            {
+                description = $"{words} {vendor.Name} ({vendor.RefId}).";
+            }
+        }
+        else if (standsFor is not null)
+        {
+            problems.Add(new Problem("supplier.for_unexpected", "--for is for a reseller or msp; a vendor stands for itself."));
+        }
+
+        var kept = new List<(string Path, string Sha256)>();
+        foreach (var document in documents)
+        {
+            var file = Path.GetFullPath(Path.Combine(repo, document));
+            if (!file.StartsWith(Path.GetFullPath(repo) + Path.DirectorySeparatorChar, StringComparison.Ordinal) || !File.Exists(file))
+            {
+                problems.Add(new Problem("supplier.document_missing", $"{document} does not exist in the repo. Keep the document under documents/ first, then name it relative to the repo."));
+                continue;
+            }
+
+            kept.Add((document.Replace('\\', '/'), Convert.ToHexStringLower(SHA256.HashData(await File.ReadAllBytesAsync(file, cancellationToken)))));
+        }
+
+        return problems.Count > 0 ? Result.Fail<SupplierNotes>(problems) : Result.Ok(new SupplierNotes(description, kept));
+    }
+
+    private static async Task<Result<string>> DraftAsync(
+        string repo, SupplierChoice choice, IReadOnlyList<LevelProposal> levels, SupplierNotes notes, string? system, DateOnly today, CancellationToken cancellationToken)
     {
         var relative = $"scope/third-parties/{SupplierFile.FileName(choice)}";
         var file = Path.Combine(repo, relative);
@@ -112,7 +177,7 @@ internal static class SupplierCommands
         var domains = await OnboardSystemCommand.DomainsAsync(repo, cancellationToken);
         var place = domains is [{ Perimeters: [var perimeter, ..] } domain, ..] ? new AuditPlace(domain.Name, perimeter.Name) : null;
         Directory.CreateDirectory(Path.GetDirectoryName(file)!);
-        await File.WriteAllTextAsync(file, SupplierFile.Write(choice, levels, system, today, place, SupplierDrafter.Agent), cancellationToken);
+        await File.WriteAllTextAsync(file, SupplierFile.Write(choice, levels, system, today, place, SupplierDrafter.Agent, notes), cancellationToken);
         return Result.Ok(relative);
     }
 }

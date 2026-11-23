@@ -38,6 +38,7 @@ internal static class OnboardEnvironmentCommand
         {
             repo, framework, signals, graph, deployment, config, microsoft, noModel, show,
         };
+        OnboardEnvironmentAgent.AddTo(command, terminal, logger);
         command.SetAction(async (parseResult, cancellationToken) =>
         {
             var root = parseResult.GetValue(repo)?.FullName ?? Directory.GetCurrentDirectory();
@@ -332,7 +333,7 @@ internal static class OnboardEnvironmentCommand
         }
     }
 
-    private static async Task<ScopeParse> ParseAsync(string scopeDir, CancellationToken cancellationToken)
+    internal static async Task<ScopeParse> ParseAsync(string scopeDir, CancellationToken cancellationToken)
     {
         async Task<ScopeSource> Read(string path) => new(path, await File.ReadAllTextAsync(path, cancellationToken));
         string[] Files(string folder) => Directory.Exists(Path.Combine(scopeDir, folder)) ? [.. Directory.GetFiles(Path.Combine(scopeDir, folder), "*.yaml").Order(StringComparer.Ordinal)] : [];

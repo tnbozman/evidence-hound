@@ -1,6 +1,6 @@
 ---
 name: assess-a-supplier
-description: Draft a supplier (third party) with its solution, contract and review levels for a person to approve. Use before onboarding a system whose supplier is not yet in scope/third-parties/.
+description: Judge a third party's dependency, penetration, maturity, trust and criticality levels from its documents, each with a reason. Use with the skill onboard-a-third-party when drafting a supplier.
 includes: [supplier-assessment, supplier-assurance-documents]
 ---
 ## Assess a supplier

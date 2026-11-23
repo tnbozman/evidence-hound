@@ -131,7 +131,7 @@ internal static class ScopeCommands
             connection => ExportAsync(parseResult.GetRequiredValue(outDir), parseResult.GetRequiredValue(rootFolder), parseResult.GetValue(withFiles), connection, loggers, output, logger, cancellationToken),
             problems => Task.FromResult(Log.Problems(logger, problems))));
 
-        return new Command("scope", "Work with a compliance repo's scope files.") { validate, newAudit, plan, apply, export };
+        return new Command("scope", "Work with a compliance repo's scope files.") { validate, newAudit, plan, apply, export, ScopeImportCommand.Build(output, logger) };
     }
 
     private static async Task<int> ApplyAsync(

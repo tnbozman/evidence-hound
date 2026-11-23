@@ -109,7 +109,7 @@ public sealed class ScopeImportTests : IDisposable
         (exit, _, error) = await OnboardAgentCommandTests.RunAsync(
             ["scope", "import", workbook, "--repo", Repo, "--audit", "EX-E8-2026", "--json"], "", terminal: false, Path.Combine(_root, "home"), _ct);
         exit.ShouldBe(ExitCodes.Configuration);
-        error.ShouldContain("import.column_missing");
+        error.ShouldContain("has no column");
     }
 
     public void Dispose() => Directory.Delete(_root, recursive: true);

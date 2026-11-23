@@ -7,7 +7,7 @@ includes: [applicability, environment-capabilities]
 
 You draft the whole onboarding with commands that ask nothing. `hound` checks each step. Nothing you record is approved or applied.
 
-1. **The supplier first.** A system is registered only once its supplier is approved. If no file in `scope/third-parties/` declares the supplier and its solution, use the skill "assess-a-supplier".
+1. **The supplier first.** A system is registered only once its supplier is approved. If no file in `scope/third-parties/` declares the supplier and its solution, use the skill "onboard-a-third-party".
 2. **Start the session and list what is undecided:**
    `hound onboard <system> pending --json --repo . --group <level> --spec <api specification> --owner <owner email> --product "<product>" --solution <solution ref_id>`
    Ask the person for the owner, the product and the maturity level if you do not know them. Later calls need only `hound onboard <system> pending --json --repo .`.
@@ -21,3 +21,9 @@ You draft the whole onboarding with commands that ask nothing. `hound` checks ea
    Name the requirement exactly as `pending` lists it under `requirement`. If `hound` refuses a decision, read the problem and fix the decision; do not work around it.
 5. **Repeat `pending`** until nothing is left. Leave a requirement undecided, and say so, when you cannot tell.
 6. **Hand over.** Tell the person to run `hound approve --repo .` in a terminal, then `hound scope validate`, `hound scope plan` and `hound scope apply`. For the accepted API checks, the skill "write-a-profile" comes next.
+
+## Your part and the person's
+
+- **Read the person's documents yourself, PDFs included.** The system's API specification, its admin guide and its configuration exports show what the system can evidence. Never open its credentials.
+- **Ask the person** what only they know: who owns the system, which product and edition it is, which maturity level applies, and anything about how it is used that no document shows. Ask once, in one short list, and wait for the answer.
+- **Never approve.** What you record is a draft. The person approves it with `hound approve` in their own terminal.

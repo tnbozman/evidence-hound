@@ -58,6 +58,8 @@ internal static class ApproveCommand
             var walked = await CapabilitiesAsync(cancellationToken);
             walked = await walked.BindAsync(_ => SuppliersAsync(cancellationToken));
             walked = await walked.BindAsync(_ => SystemsAsync(cancellationToken));
+            walked = await walked.BindAsync(_ => AuditsAsync(cancellationToken));
+            walked = await walked.BindAsync(_ => ImportsAsync(cancellationToken));
             if (walked is Result<Unit>.Ok)
             {
                 var waiting = string.Concat(_waiting.Select(w => $"\n{w}"));
@@ -288,6 +290,93 @@ internal static class ApproveCommand
                 if (await OnboardSystemCommand.WriteAsync(settings, session, prompt, terminal, today, cancellationToken) is Result<OnboardSession>.Fail { Errors: var problems })
                 {
                     return Result.Fail<Unit>(problems);
+                }
+            }
+
+            return Result.Ok(Unit.Value);
+        }
+
+        /// <summary>Each audit an agent drafted: approving moves it into scope/audits/, with who approved it and when in its first line.</summary>
+        private async Task<Result<Unit>> AuditsAsync(CancellationToken cancellationToken)
+        {
+            foreach (var (file, text, audit) in await Drafts.AuditsAsync(repo, Drafts.Audits, cancellationToken))
+            {
+                var target = Path.Combine(repo, "scope", "audits", Path.GetFileName(file));
+                if (File.Exists(target))
+                {
+                    _waiting.Add($"{audit.RefId} waits: scope/audits/{Path.GetFileName(file)} already exists. Remove the draft, or the audit it would replace.");
+                    continue;
+                }
+
+                var item = $"[audit] {audit.RefId} {audit.Name}: {audit.Framework.Value}, groups {(audit.Groups.Count > 0 ? string.Join(", ", audit.Groups.Select(g => g.Value)) : "all")}, "
+                    + $"in {audit.Domain.Value} / {audit.Perimeter.Value}, for {string.Join(", ", audit.Systems.Select(s => s.Value))}, due {audit.DueDate ?? "on no set date"}.";
+                if (await ApproveAsync(item, $"Approve this audit and add it to the scope", cancellationToken) is null)
+                {
+                    continue;
+                }
+
+                var lines = text.Split('\n');
+                var drafted = lines[0].StartsWith("# Drafted by an agent with hound audit draft on ", StringComparison.Ordinal)
+                    && DateOnly.TryParseExact(lines[0].AsSpan(48, 10), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var on) ? on : today;
+                var header = AuditCommands.Header(drafted, _approver, today);
+                var approved = lines[0].StartsWith('#') ? string.Join('\n', [header, .. lines[1..]]) : $"{header}\n{text}";
+                Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+                await File.WriteAllTextAsync(target, approved, cancellationToken);
+                File.Delete(file);
+            }
+
+            return Result.Ok(Unit.Value);
+        }
+
+        /// <summary>
+        /// Each workbook row imported without an approver: approving writes it to the audit's hand-written assessments, with this person and
+        /// today's date as its approver beside the workbook and row it came from.
+        /// </summary>
+        private async Task<Result<Unit>> ImportsAsync(CancellationToken cancellationToken)
+        {
+            var folder = Path.Combine(repo, Drafts.Imports);
+            foreach (var file in Directory.Exists(folder) ? Directory.GetFiles(folder, "*.json").Order(StringComparer.Ordinal).ToArray() : [])
+            {
+                if (Drafts.ImportDraft.Read(await File.ReadAllTextAsync(file, cancellationToken)) is not { } draft)
+                {
+                    continue;
+                }
+
+                var held = (await Drafts.AuditsAsync(repo, "scope/audits", cancellationToken)).FirstOrDefault(a => a.Audit.RefId == draft.Audit);
+                if (held.Audit is null)
+                {
+                    _waiting.Add($"{draft.Rows.Count} imported row(s) wait for audit {draft.Audit}, which is not in scope/audits/.");
+                    continue;
+                }
+
+                var yaml = held.Text;
+                var left = draft.Rows.ToList();
+                foreach (var row in draft.Rows)
+                {
+                    var item = $"[imported row] {draft.Audit} {row.Requirement}: {row.Result}. {row.Observation}\n  From {draft.Workbook}, row {row.Row}, where no one is recorded as approving it."
+                        + (row.Evidence.Length > 0 ? $"\n  Evidence: {row.Evidence}" : "");
+                    if (await ApproveAsync(item, "Approve this result as the audit's", cancellationToken) is null)
+                    {
+                        continue;
+                    }
+
+                    var edited = ScopeImportCommand.Append(yaml, row, draft.Workbook, _approver!, Day);
+                    if (edited is not Result<string>.Ok { Value: var changed })
+                    {
+                        return Failed(edited, $"scope/audits/{Path.GetFileName(held.File)}");
+                    }
+
+                    yaml = changed;
+                    left.Remove(row);
+                    await File.WriteAllTextAsync(held.File, yaml, cancellationToken);
+                    if (left.Count == 0)
+                    {
+                        File.Delete(file);
+                    }
+                    else
+                    {
+                        await File.WriteAllTextAsync(file, (draft with { Rows = left }).Write(), cancellationToken);
+                    }
                 }
             }
 

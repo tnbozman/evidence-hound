@@ -74,10 +74,10 @@ public sealed class OnboardEnvironmentTests : IDisposable
         exit.ShouldBe(ExitCodes.Ok, error);
         (exit, _, error) = await AgentAsync("decide", "nope", "--provided-by", "gap", "--reason", "None.");
         exit.ShouldBe(ExitCodes.Configuration);
-        error.ShouldContain("capability.mitigation_unknown");
+        error.ShouldContain("is not a mitigation of");
         (exit, _, error) = await AgentAsync("decide", "rb", "--provided-by", "system", "--reason", "The backup service.");
         exit.ShouldBe(ExitCodes.Configuration);
-        error.ShouldContain("capability.systems_missing");
+        error.ShouldContain("name it with --system");
 
         (exit, output, error) = await AgentAsync("pending");
         System.Text.Json.Nodes.JsonNode.Parse(output)!["pending"]!.AsArray().Count.ShouldBe(6);
@@ -89,7 +89,7 @@ public sealed class OnboardEnvironmentTests : IDisposable
         output.ShouldContain("Approved 2 of 2.");
         (exit, _, error) = await AgentAsync("decide", "mfa", "--provided-by", "gap", "--reason", "Changed my mind.");
         exit.ShouldBe(ExitCodes.Configuration);
-        error.ShouldContain("capability.already_approved");
+        error.ShouldContain("was approved by Sam Example");
     }
 
     private Task<(int Exit, string Output, string Error)> AgentAsync(params string[] args) =>
