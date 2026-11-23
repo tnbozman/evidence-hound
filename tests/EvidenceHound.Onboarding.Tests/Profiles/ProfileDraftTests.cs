@@ -3,7 +3,6 @@ using EvidenceHound.Core.Results;
 using EvidenceHound.Onboarding.Decisions;
 using EvidenceHound.Onboarding.Models;
 using EvidenceHound.Onboarding.Profiles;
-using EvidenceHound.Onboarding.Tests.Journey;
 
 namespace EvidenceHound.Onboarding.Tests.Profiles;
 
@@ -41,7 +40,7 @@ public sealed class ProfileDraftTests
         request.Step.ShouldBe("profile");
         request.Inputs.Select(i => i.Name).ShouldBe(["system", "api", "checks", "shape devices"]);
         request.Inputs[2].Content.ShouldBe("[EX-1] Operating systems are supported. (Devices list os.version.)");
-        request.Instructions.ShouldContain("example-assets");
+        request.Inputs[0].Content.ShouldContain("Profile name: example-assets");
         request.Schema["required"]!.AsArray().Select(r => r!.GetValue<string>()).ShouldBe(["profile_yaml", "notes"]);
     }
 
