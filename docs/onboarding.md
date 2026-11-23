@@ -83,8 +83,16 @@ judges a requirement only on the audit of the system that provides it, and never
 hound onboard environment --repo . --framework frameworks/essential-eight-2023.json --signals signals.json --no-model
 ```
 
-- **Signals suggest, you decide.** `--signals` is a JSON file of read-only Microsoft Graph answers (`source`, `licences` as SKU part
-  numbers, `configuration_types` as Intune configuration types). A licence such as Entra ID P2 suggests the Microsoft 365 system
+```sh
+hound onboard environment --repo . --graph example-m365 --no-model      # read the signals live, as an m365 collector in hound.yaml
+```
+
+- **Signals suggest, you decide.** `--graph <collector>` signs in as that `m365` collector of the deployment config (`--config`, default
+  `hound.yaml` in the repo), with its own settings and secrets, and makes two read-only Graph reads: subscribed licences
+  (`v1.0/subscribedSkus`, enabled or in warning, needs `Organization.Read.All`) and the kinds of Intune configuration
+  (`v1.0/deviceManagement/deviceConfigurations`, already granted to the collector). A tenant without Intune has no configuration kinds.
+  Nothing is kept as evidence. Or give `--signals`, a JSON file of recorded answers (`source`, `licences` as SKU part numbers,
+  `configuration_types` as Intune configuration types), not both. A licence such as Entra ID P2 suggests the Microsoft 365 system
   (`--microsoft-system`, by default the first system whose name has "365") for MFA; a system in `scope/setup.yaml` tagged
   `capabilities: ac, rb` is suggested for those mitigations first. Each suggestion shows the signal and its source, and is recorded with
   the decision, never as the decision.
@@ -98,7 +106,7 @@ hound onboard environment --repo . --framework frameworks/essential-eight-2023.j
   supplier gate first; each gap is listed as requirements no system's audit answers.
 
 The default skill `environment-capabilities` describes how to tell which product is authoritative. In this version proposals come from the
-signals only; model proposals and live Graph lookups follow.
+signals only; model proposals follow.
 
 ## Explain a change for review
 
