@@ -129,14 +129,59 @@ public sealed class OnboardEnvironmentTests : IDisposable
         error.ShouldContain("example-nothing");
     }
 
+    [Fact]
+    public async Task The_model_proposes_after_the_signals_and_the_person_decides()
+    {
+        using var anthropic = WireMockServer.Start();
+        var proposal = new System.Text.Json.Nodes.JsonObject
+        {
+            ["mitigations"] = new System.Text.Json.Nodes.JsonArray(new System.Text.Json.Nodes.JsonObject
+            {
+                ["mitigation"] = "pa",
+                ["provided_by"] = "gap",
+                ["systems"] = new System.Text.Json.Nodes.JsonArray(),
+                ["reasoning"] = "No vulnerability scanner is in scope.",
+            }),
+        }.ToJsonString();
+        var message = new System.Text.Json.Nodes.JsonObject
+        {
+            ["id"] = "msg_example",
+            ["type"] = "message",
+            ["role"] = "assistant",
+            ["model"] = "claude-opus-5-5",
+            ["content"] = new System.Text.Json.Nodes.JsonArray(new System.Text.Json.Nodes.JsonObject { ["type"] = "text", ["text"] = proposal }),
+            ["stop_reason"] = "end_turn",
+            ["stop_sequence"] = null,
+            ["usage"] = new System.Text.Json.Nodes.JsonObject { ["input_tokens"] = 900, ["output_tokens"] = 60 },
+        }.ToJsonString();
+        anthropic.Given(Request.Create().WithPath("/v1/messages").UsingPost())
+            .RespondWith(Response.Create().WithStatusCode(200).WithHeader("Content-Type", "application/json").WithBody(message));
+        await File.WriteAllTextAsync(
+            Path.Combine(Repo, "onboarding.yaml"),
+            $"llm:\n  provider: anthropic\n  model: \"\"\n  api_key: env:EXAMPLE_LLM_KEY\nskills_path: {Path.Combine(Repo, "skills")}\n",
+            _ct);
+
+        var (exit, _, error) = await RunAsync("Alex Example\nGRC lead\na\nq\n", ["--signals", Path.Combine(Repo, "signals.json")], model: anthropic.Url);
+
+        exit.ShouldBe(ExitCodes.Ok, error);
+        error.ShouldContain("Suggested: a gap.");
+        error.ShouldContain("Model: No vulnerability scanner is in scope.");
+        var sent = anthropic.LogEntries.ShouldHaveSingleItem().RequestMessage!.Body!;
+        sent.ShouldContain("environment-capabilities");
+        sent.ShouldContain("AAD_PREMIUM_P2");
+        var map = await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "capabilities.yaml"), _ct);
+        map.ShouldContain("Accepted by Alex Example from the model's proposal: No vulnerability scanner is in scope.");
+        Directory.GetFiles(Path.Combine(Repo, "onboarding", "environment", "requests")).ShouldNotBeEmpty();
+    }
+
     public void Dispose() => Directory.Delete(_root, recursive: true);
 
-    private async Task<(int Exit, string Output, string Error)> RunAsync(string input, string[]? source = null)
+    private async Task<(int Exit, string Output, string Error)> RunAsync(string input, string[]? source = null, string? model = null)
     {
         string[] args =
         [
             "onboard", "environment", "--repo", Repo, "--framework", Path.Combine(Repo, "frameworks", "essential-eight-2023.json"),
-            .. source ?? ["--signals", Path.Combine(Repo, "signals.json")], "--microsoft-system", "Example 365", "--no-model",
+            .. source ?? ["--signals", Path.Combine(Repo, "signals.json")], "--microsoft-system", "Example 365", .. model is null ? ["--no-model"] : Array.Empty<string>(),
         ];
         using var reader = new StringReader(input);
         using var output = new StringWriter();
@@ -145,6 +190,8 @@ public sealed class OnboardEnvironmentTests : IDisposable
         {
             ["XDG_CONFIG_HOME"] = Path.Combine(_root, "home"),
             ["EXAMPLE_M365_SECRET"] = "example-client-secret-value-7c2d",
+            ["EXAMPLE_LLM_KEY"] = "example-llm-key-value-5e1a",
+            ["HOUND_ANTHROPIC_BASE_URL"] = model,
         };
         var exit = await HoundCli.RunAsync(
             args, reader, output, error, null, [], settings, services => services.Replace(ServiceDescriptor.Singleton<IGraphCredentialFactory>(new FixedCredentials())), _ct);
