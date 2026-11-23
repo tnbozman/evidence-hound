@@ -10,7 +10,7 @@ CA_COMPOSE := dev/ciso-assistant/compose.yml
 CA_ENV := HOUND_CA_SECRET_KEY="$$(scripts/ca-secret-key.sh)"
 SHELL_SCRIPTS := $(wildcard scripts/*.sh scripts/lib/*.sh deploy/compose/*.sh .devcontainer/*.sh dev/ciso-assistant/seed/*.sh) .githooks/pre-commit
 
-.PHONY: help restore build test test-functional test-profiles test-template test-scripts test-terraform coverage image test-image test-compose compose-smoke lint lint-dotnet lint-shell format run m365-dev sophos-dev iac-dev hooks ca-up ca-up-kafka ca-down trial trial-clean
+.PHONY: help restore build test test-functional test-profiles test-template test-scripts test-terraform coverage image test-image test-compose compose-smoke lint lint-dotnet lint-shell format run m365-dev sophos-dev iac-dev scan-dev hooks ca-up ca-up-kafka ca-down trial trial-clean
 
 help: ## List targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-16s %s\n", $$1, $$2}'
@@ -83,6 +83,9 @@ sophos-dev: ## Serve the fictional Sophos Central tenant on port 5370, for examp
 
 iac-dev: ## Serve the fictional IaC pipeline (GitHub Actions) on port 5380, for example: make iac-dev ARGS="--deviation drift"
 	dotnet run --project src/EvidenceHound.IacDevServer -c $(CONFIGURATION) -- $(ARGS)
+
+scan-dev: ## Write fictional vulnerability scan exports, one per scope, into .dev/scans, for example: make scan-dev ARGS="--variant gaps"
+	dotnet run --project src/EvidenceHound.ScanDev -c $(CONFIGURATION) -- $(ARGS)
 
 hooks: ## Install the git pre-commit hook (format check and gitleaks)
 	git config core.hooksPath .githooks

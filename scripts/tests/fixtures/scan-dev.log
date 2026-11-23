@@ -1,0 +1,6 @@
+Example Pty Ltd scan exports (compliant; deviations: none), dated from 2026-11-23:
+  ../scans/internet-facing/internet-facing-2026-11-23.nessus
+  ../scans/laptops/defender-vulnerabilities-2026-11-23.csv
+Sources for the vuln-scan collector, one per scope (name, then settings):
+  internet-facing-scans drop_folder=../scans/internet-facing format=nessus scope=internet_facing owner=it@example.com
+  laptops-scans drop_folder=../scans/laptops format=csv scope=common_apps owner=it@example.com column_host=DeviceName column_finding_id=CveId

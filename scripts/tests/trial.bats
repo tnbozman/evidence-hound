@@ -245,3 +245,18 @@ LOG
   [ "$(trial_host_mode local)" = "local" ]
   [ "$(trial_host_mode "network hound-ciso-assistant_default")" = "local" ]
 }
+
+@test "the scan step reads the sources make scan-dev printed" {
+  local log="$BATS_TEST_DIRNAME/fixtures/scan-dev.log"
+  run trial_scan_source_names "$log"
+  [ "$status" -eq 0 ]
+  [ "${lines[*]}" = "internet-facing-scans laptops-scans" ]
+  run trial_scan_source_args "$log" laptops-scans
+  [ "$status" -eq 0 ]
+  args="$(printf '%s|' "${lines[@]}")"
+  [ "$args" = "--name|laptops-scans|--set|drop_folder=../scans/laptops|--set|format=csv|--set|scope=common_apps|--set|owner=it@example.com|--set|column_host=DeviceName|--set|column_finding_id=CveId|" ]
+  run trial_scan_source_args "$log" nowhere-scans
+  [ "$status" -ne 0 ]
+  run trial_scan_source_names "$BATS_TEST_TMPDIR/missing.log"
+  [ "$status" -ne 0 ]
+}

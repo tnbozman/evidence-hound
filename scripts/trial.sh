@@ -580,6 +580,44 @@ m365_dev() {
   fi
 }
 
+# scans writes the fictional scan exports, adds a vuln-scan source per scope if it is not there yet, runs and publishes them, then
+# offers to write the gaps estate and collect again
+scans() {
+  step "15. Patching evidence: vulnerability scans, fictional exports on this machine"
+  local log="$ws/scan-dev.log" name args=()
+  say "Scanners export files rather than answer an API, so the vuln-scan collector reads exports dropped in a folder."
+  say "make scan-dev writes a fictional Example Pty Ltd estate's exports, dated from today, into ${ws#"$root"/}/scans:"
+  say "Nessus for internet-facing services, other applications and operating systems, and a Defender CSV for the laptops."
+  scan_dev compliant
+  for name in $(trial_scan_source_names "$log"); do
+    if ! grep -q "^  - name: $name\$" "$ws/repo/hound.yaml"; then
+      mapfile -t args < <(trial_scan_source_args "$log" "$name")
+      hound no add collector vuln-scan --config hound.yaml --schedule "0 7 * * *" --yes "${args[@]}"
+    fi
+  done
+  for name in $(trial_scan_source_names "$log"); do
+    run_collector "$name" "the patching requirements its scope maps to (docs/collectors/vuln-scan.md)" "reads the newest export in its folder"
+  done
+  say "A real deployment drops each new export into the same folder, by hand or with hound manual upload --source <name>."
+  if ask "Write the gaps estate (a stale scan, overdue patches, unsupported software) and collect again?"; then
+    scan_dev gaps
+    for name in $(trial_scan_source_names "$log"); do
+      hound no run --config hound.yaml --only "$name"
+    done
+    hound no status --config hound.yaml
+    say "Look at the $(audit_ref) audit in CISO Assistant again: the patching rows now fail, naming the hosts and findings."
+    say "Run make trial again to write the compliant estate once more."
+  fi
+}
+
+# scan_dev VARIANT writes that estate's exports into the workspace's scans folder, as make scan-dev does
+scan_dev() {
+  show "make scan-dev ARGS=\"--variant $1 --out ../scans\""
+  (cd "$ws/repo" && dotnet run --project "$root/src/EvidenceHound.ScanDev" -- --variant "$1" --out ../scans) >"$ws/scan-dev.log" 2>&1 ||
+    die "make scan-dev failed; see ${ws#"$root"/}/scan-dev.log."
+  trial_scan_source_names "$ws/scan-dev.log" >/dev/null || die "make scan-dev printed no scan sources; see ${ws#"$root"/}/scan-dev.log."
+}
+
 preflight
 build_image
 workspace
@@ -593,5 +631,6 @@ done
 grc_platform_evidence
 sophos
 m365
+scans
 step "Done"
 say "Run make trial again to repeat any step, or make trial-clean to remove the workspace (CISO Assistant keeps running)."
