@@ -11,7 +11,41 @@ public sealed class RestEngineTests : IDisposable
 {
     private readonly WireMockServer _api = WireMockServer.Start();
 
-    public void Dispose() => _api.Dispose();
+    private readonly WireMockServer _storage = WireMockServer.Start();
+
+    public void Dispose()
+    {
+        _api.Dispose();
+        _storage.Dispose();
+    }
+
+    [Fact]
+    public async Task Redirect_to_a_listed_host_is_followed_without_credentials()
+    {
+        _api.Given(Request.Create().WithPath("/v1/artefact.zip").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(302).WithHeader("Location", _storage.Url + "/signed/artefact.zip?sig=abc"));
+        _storage.Given(Request.Create().WithPath("/signed/artefact.zip").UsingGet())
+            .RespondWith(Response.Create().WithBody(Zip(("plan.json", "{\"resource_drift\": []}"))));
+        var storage = new Uri(_storage.Url!).Authority;
+
+        var snapshot = await Engines.RunAsync(Engines.Profile($"""
+              listed:
+                get: v1/artefact.zip
+                format: zip
+                member: plan.json
+                redirect_hosts: ["{storage}"]
+              unlisted:
+                get: v1/artefact.zip
+                format: zip
+                member: plan.json
+            """), _api);
+
+        snapshot.Collected("listed").Items.Count.ShouldBe(1);
+        snapshot.Failed("unlisted").Reason.ShouldContain("redirect");
+        var download = _storage.LogEntries.ShouldHaveSingleItem().RequestMessage!;
+        download.Headers!.Keys.ShouldNotContain("Authorization");
+        download.RawQuery.ShouldContain("sig=abc");
+    }
 
     [Fact]
     public async Task Zip_member_is_read_with_the_size_caps()
