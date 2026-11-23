@@ -47,6 +47,51 @@ public sealed class RestEngineTests : IDisposable
         download.RawQuery.ShouldContain("sig=abc");
     }
 
+    private static string Trigger => """
+          dispatch:
+            post: repos/example/grc-infra/actions/workflows/drift.yml/dispatches
+            body: { ref: main, return_run_details: true }
+            write: true
+            async: { status_url: $.run_url, done: { field: $.status, equals: completed }, result_url: $.artifacts_url, poll_seconds: 10, timeout_seconds: 600 }
+            items: $.artifacts
+        """;
+
+    [Fact]
+    public async Task Trigger_is_refused_unless_both_profile_and_settings_opt_in()
+    {
+        _api.Given(Request.Create().UsingPost()).RespondWith(Response.Create().WithStatusCode(500));
+
+        var off = await Engines.RunAsync(Engines.Profile(Trigger), _api);
+
+        off.Failed("dispatch").Reason.ShouldContain("allow_writes");
+        _api.LogEntries.ShouldBeEmpty();
+        Engines.Profile(Trigger).Queries.Single().Write.ShouldBeTrue();
+        Engines.Profile("  runs:\n    get: v1/runs\n").Queries.Single().Write.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task Trigger_polls_the_run_then_reads_its_artefact()
+    {
+        var run = _api.Url + "/repos/example/grc-infra/actions/runs/7001";
+        _api.Given(Request.Create().WithPath("/repos/example/grc-infra/actions/workflows/drift.yml/dispatches").UsingPost())
+            .RespondWith(Json($$"""{"workflow_run_id": 7001, "run_url": "{{run}}"}"""));
+        _api.Given(Request.Create().WithPath("/repos/example/grc-infra/actions/runs/7001").UsingGet()).InScenario("run").WillSetStateTo("completed")
+            .RespondWith(Json("""{"id": 7001, "status": "in_progress"}"""));
+        _api.Given(Request.Create().WithPath("/repos/example/grc-infra/actions/runs/7001").UsingGet()).InScenario("run").WhenStateIs("completed")
+            .RespondWith(Json($$"""{"id": 7001, "status": "completed", "conclusion": "success", "artifacts_url": "{{run}}/artifacts"}"""));
+        _api.Given(Request.Create().WithPath("/repos/example/grc-infra/actions/runs/7001/artifacts").UsingGet())
+            .RespondWith(Json("""{"total_count": 1, "artifacts": [{"id": 9001, "name": "drift-plan", "workflow_run": {"id": 7001, "head_sha": "0123abc"}}]}"""));
+        var clock = new TestClock();
+
+        var snapshot = await Engines.RunAsync(Engines.Profile(Trigger), _api, clock, allowWrites: true);
+
+        snapshot.Collected("dispatch").Items.Single()!["id"]!.GetValue<int>().ShouldBe(9001);
+        _api.LogEntries.Count(e => e.RequestMessage!.Method == "POST").ShouldBe(1);
+        clock.Waits.Count(w => w == TimeSpan.FromSeconds(10)).ShouldBe(2);
+    }
+
+    private static IResponseBuilder Json(string body) => Response.Create().WithHeader("Content-Type", "application/json").WithBody(body);
+
     [Fact]
     public async Task Zip_member_is_read_with_the_size_caps()
     {

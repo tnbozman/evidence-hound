@@ -33,11 +33,11 @@ internal static class Engines
         new Dictionary<string, Secret>(StringComparer.Ordinal) { ["token"] = new("engine-test-token-3a7f0c"), ["key"] = new("engine-test-key-91be44") },
         includeIdentities);
 
-    public static Task<Snapshot> RunAsync(Profile profile, WireMockServer server, TestClock? clock = null)
+    public static Task<Snapshot> RunAsync(Profile profile, WireMockServer server, TestClock? clock = null, bool allowWrites = false)
     {
         clock ??= new TestClock();
         var engine = new QueryEngine(RecordedExample.HttpClients.CreateClient("rest"), clock, clock);
-        return engine.CollectAsync(profile, Values(server), TestContext.Current.CancellationToken);
+        return engine.CollectAsync(profile, Values(server) with { AllowWrites = allowWrites }, TestContext.Current.CancellationToken);
     }
 
     public static QueryResult.Collected Collected(this Snapshot snapshot, string name) =>
