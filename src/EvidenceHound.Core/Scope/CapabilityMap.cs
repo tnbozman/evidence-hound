@@ -38,7 +38,8 @@ public static class CapabilityMap
 
     /// <summary>
     /// Every problem with the map: a framework the scope does not load, a mitigation decided twice, unknown or not at all, a decision without
-    /// an approver, a system decision naming no system, and systems or suppliers the scope does not declare.
+    /// an approver, a system decision naming no system, and a supplier the scope does not declare. A system not declared yet is not a
+    /// problem: it is <see cref="Pending"/>, to be onboarded.
     /// </summary>
     public static IReadOnlyList<ScopeProblem> Validate(ScopeDocument scope, IReadOnlyDictionary<string, FrameworkSnapshot> snapshots)
     {
@@ -57,7 +58,6 @@ public static class CapabilityMap
         }
 
         var codes = Mitigations(snapshot).Select(m => m.Code).ToArray();
-        var systems = scope.Setup.Domains.SelectMany(d => d.Systems).Select(s => s.Name).ToHashSet(StringComparer.Ordinal);
         var suppliers = scope.ThirdParties.Select(e => e.RefId).ToHashSet(StringComparer.Ordinal);
         var problems = new List<ScopeProblem>();
         foreach (var repeated in map.Mitigations.GroupBy(m => m.Mitigation, StringComparer.Ordinal).Where(g => g.Count() > 1))
@@ -86,8 +86,6 @@ public static class CapabilityMap
                     "capability.systems_missing", decision.At, $"mitigation '{decision.Mitigation}' is provided by a system but names none.", "List the systems under 'systems', or use provided_by: manual or gap."));
             }
 
-            problems.AddRange(decision.Systems.Where(s => !systems.Contains(s.Value)).Select(s => new ScopeProblem(
-                "scope.reference_unknown", s.At, $"system '{s.Value}' is not declared in scope/setup.yaml.", "Declare it under a domain's systems, or onboard it first.")));
             if (decision.Supplier is { } supplier && !suppliers.Contains(supplier.Value))
             {
                 problems.Add(new ScopeProblem(
@@ -106,7 +104,16 @@ public static class CapabilityMap
     /// system and its audit; rows the audit already writes by hand, and requirements outside its groups, are left alone. Gaps are listed
     /// apart: no audit answers them, and none fails for them.
     /// </summary>
-    public static IReadOnlyList<PendingSystem> Pending(ScopeDocument scope) => [];
+    /// <summary>The systems the map names that <c>scope/setup.yaml</c> does not declare yet, with their mitigations and supplier, in map order.</summary>
+    public static IReadOnlyList<PendingSystem> Pending(ScopeDocument scope)
+    {
+        ArgumentNullException.ThrowIfNull(scope);
+        var declared = scope.Setup.Domains.SelectMany(d => d.Systems).Select(s => s.Name).ToHashSet(StringComparer.Ordinal);
+        return [.. (scope.Capabilities?.Mitigations ?? [])
+            .SelectMany(m => m.Systems.Where(s => !declared.Contains(s.Value)).Select(s => (System: s.Value, Decision: m)))
+            .GroupBy(x => x.System, StringComparer.Ordinal)
+            .Select(g => new PendingSystem(g.Key, [.. g.Select(x => x.Decision.Mitigation)], g.Select(x => x.Decision.Supplier?.Value).FirstOrDefault(v => v is not null)))];
+    }
 
     public static CapabilityRows Rows(ScopeDocument scope, FrameworkSnapshot snapshot)
     {

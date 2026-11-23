@@ -48,7 +48,7 @@ internal static class OnboardCommands
                     new Wizard(terminal, parseResult.GetValue(yes)), terminal, logger, configuration, path, parseResult.GetValue(provider), parseResult.GetValue(model), cancellationToken);
         });
 
-        var onboard = new Command("onboard", "Onboard a system with the help of a language model you choose. Never used by collection.") { config };
+        var onboard = new Command("onboard", "Onboard a system with the help of a language model you choose. Never used by collection.") { config, OnboardEnvironmentCommand.Build(terminal, loggers) };
         OnboardSystemCommand.Attach(onboard, terminal, loggers, configuration);
         return onboard;
     }

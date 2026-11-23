@@ -649,7 +649,7 @@ internal static class OnboardSystemCommand
     }
 
     /// <summary>Questions on stderr, answers from the terminal's input; null once the input has ended, so a closed input stops rather than loops.</summary>
-    private sealed class Prompt(Terminal terminal)
+    internal sealed class Prompt(Terminal terminal)
     {
         public async Task<string?> AskAsync(string question, CancellationToken cancellationToken)
         {
