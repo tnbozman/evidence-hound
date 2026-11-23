@@ -990,6 +990,8 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 
 Functional check, run 2026-11-23 with `--no-model` (the answers files stand in for the fake model): following the tutorial on a fresh copy of the template reproduces `scope/setup.yaml`, both audits and both onboarding records exactly (apart from the schema comment line), `hound config validate` and `hound scope validate scope --config hound.yaml` pass (4 third parties, 5 audits), and `hound profile test` passes for `sophos-central` and `terraform-drift`. `TutorialTests.Onboarding_tutorial_answers_reproduce_the_committed_files` repeats this in the unit suite. The plan against CISO Assistant is `OnboardingTutorialFunctionalTests` (suppliers applied, reviews concluded ok, then the plan creates both systems and audits), run in CI: passed in CI run 45121842725 (2026-11-23, head 6648e42), with the whole functional suite.
 
+Re-checked 2026-11-23 after the OCI Terraform mock control tests (s09-53, PR #28) merged: the tutorial's step 6 "Prove the hosting controls" names `infra/oci/tests/controls.tftest.hcl` and the `grc-infra-controls` profile, `TutorialTests` pass, and CI's `make test-terraform` job passed (run 45190409531). Nothing left to change.
+
 **Order:** after the hands-on Sophos path (s09-25).
 
 ### s09-33 Infrastructure drift from the IaC pipeline's plan artefact, without a Terraform dependency (added 2026-11-23)
@@ -1627,11 +1629,45 @@ At the maintainer's request (2026-11-23): "we are self-hosting CISO Assistant an
 **Functional check**
 - `HOUND_TRIAL_YES=1 make trial` against the dev container's CISO Assistant, twice (the second applies nothing new); then `make trial` by hand.
 - Result so far (2026-11-23, cloud session, no Docker, so no CISO Assistant and no trial container): the replay's commands, run with the built `hound` in a scratch folder, in the trial's order: `hound init --yes`; the four `hound supplier draft` calls, then the approved copies; for each system `hound onboard <system> pending` and the tutorial's decisions typed into `hound onboard` ("The system's audit is EX-E8-GRC-PLATFORM", "… EX-E8-OFFICE-FIREWALL"); the three `hound add control` calls. `trial_stage_ready` saw every stage ready; `hound scope validate` answered "scope valid: 1 domain(s), 4 control(s), 3 audit(s), 4 third party(ies)". Then both mappings copied with `trial_add_target`, the `sophos` and two IaC collectors added with the trial's settings (`hound add collector rest … --yes`): `hound config validate --check-secrets` valid; with `make sophos-dev` and `make iac-dev` running, `hound run --no-publish` succeeded for all three, `hound status` sophos 2 passed, grc-infra-controls 13 passed, grc-infra-drift 1 passed. `bats scripts/tests` (64) and ShellCheck clean.
+- CI run 45177384299 (2026-11-23, head c3640ea, dispatched): the `trial` job ran `HOUND_TRIAL_YES=1 make trial` against CISO Assistant in CI and passed, with the functional suite.
 - Not yet: plan and apply against CISO Assistant, publishing, and Terraform's real report, which need Docker and Terraform. Ticking waits on the maintainer running `HOUND_TRIAL_YES=1 make trial` twice and `make trial` in the dev container.
 - As built: `scripts/lib/trial.sh` gains `trial_scene`, `trial_systems`, `trial_system_product`, `trial_system_solution`, `trial_add_target` (a single `target:` becomes `targets:`; a target is added once, inside the block), `trial_iac_dev_sets`, `trial_controls_report_args`; `trial_brief` and `trial_stage_ready` take the system (four third parties; a control naming the system). `scripts/trial.sh`: the scene after the workspace; stage 5 the four third parties; `onboard_system` runs stages 6 to 8 for `GRC-PLATFORM` and 9 to 11 for `OFFICE-FIREWALL`; `wire_audit` copies the tutorial's system mapping and adds its target; step 12 runs `terraform test` when Terraform is there, starts `make iac-dev` with that report, adds `grc-infra-controls` and `grc-infra-drift`, and offers a `drift` run; step 13 Sophos Central for `OFFICE-FIREWALL`; step 14 Microsoft 365. `examples/trial/third-parties`: Oracle, Sophos, CISO Assistant and Evidence Hound; the managed service provider is removed. `docs/tutorials/local-trial.md` follows the new order.
 
+### s09-58 Fictional scan exports for the trial (`make scan-dev`)
+- [x] Done
+
+Added at the maintainer's request (2026-11-23): s09-03 and s09-04 need a testbed, as the Microsoft 365 and Sophos dev servers are for theirs.
+
+**Story:** As a developer or someone trying Evidence Hound, I want fictional vulnerability scan exports dated from today, so that the scan checks can be tried in the trial and changed without a scanner.
+
+**Acceptance criteria**
+- `make scan-dev` (project `EvidenceHound.ScanDev`, `scan-dev`) writes one export per scope for an invented Example Pty Ltd estate, dated from `--today` (default today, UTC): Nessus for internet-facing services, other applications and operating systems, and a Microsoft Defender vulnerability management CSV for the laptops' common applications. Writing again replaces that scope's exports.
+- `--variant compliant|gaps` and `--deviation <name>`: the compliant estate passes all eleven `vuln.*` checks; each deviation fails only the checks it names; gaps applies them all.
+- It prints the four `vuln-scan` sources' settings, and `make trial` adds them, writes the compliant exports, runs and publishes, then offers to write a deviation and collect again.
+- `docs/tutorials/scan-dev.md` lists every deviation.
+
+**Tests first**
+- `ScanDevEstateTests.Compliant_estate_passes_all_eleven_checks`
+- `ScanDevEstateTests.Each_deviation_fails_only_its_named_checks`
+- `ScanDevEstateTests.Writing_again_replaces_the_exports_so_the_latest_estate_is_current`
+- `ScanDevEstateTests.Tutorial_lists_every_deviation`
+- A bats test for the trial step's helper.
+
+**Functional check**
+- `make scan-dev ARGS="--variant gaps --out <dir>"`, then `hound run --no-publish` for the four sources: each fails what the tutorial table says. CI's trial job publishes the compliant estate to the local CISO Assistant.
+
+**As built (2026-11-23)**
+- `src/EvidenceHound.ScanDev` (`scan-dev`, not in the runner image): `ScanDevEstate` describes the estate once (four scans with hosts and findings dated in days before today, six deviations), `ScanExports` renders Nessus XML and the Defender CSV, `ScanDevWriter` replaces each scope folder's exports, `ScanDevOptions` parses `--variant`, `--deviation`, `--out` and `--today`. Owner `it@example.com`, hosts `*.example.com`, documentation addresses.
+- Deviations: `internet-facing-scan-stale`, `exploited-web-flaw-unpatched`, `unsupported-vpn-appliance`, `browser-patch-overdue`, `os-update-overdue`, `unsupported-laptop-os`. The gaps estate fails six of the eleven checks (other applications stay compliant).
+- Trial step 15 (`scans` in `scripts/trial.sh`), with `trial_scan_source_names` and `trial_scan_source_args` in `scripts/lib/trial.sh`. The bats test was written alongside the helpers rather than before them.
+
+**Functional result (2026-11-23)**
+- In a scratch repo: `scan-dev --variant compliant --out ../scans`, the four sources added with `hound add collector vuln-scan --yes` from the printed settings through the trial helpers, `hound config validate` valid, `hound run --only <each> --no-publish`: 3, 3, 2 and 3 passed, none failed. Then `--variant gaps` and the same runs: internet-facing 0 passed 3 failed, laptops 2 and 1, other apps 2 and 0, operating systems 1 and 2, as the tutorial table says; each folder held only the new export. `ScanDevEstateTests` (8) pass; `bats scripts/tests` all ok; ShellCheck clean. Publishing to CISO Assistant runs in CI's trial job (dispatched on this branch).
+- CI run 45199442036 (2026-11-23, head 667708c, dispatched): the `trial` job ran step 15 against CISO Assistant and published all four scan sources, after two fixes the first trial run (45194527491) found: CISO Assistant refuses a `.nessus` attachment, so the collector stores and cites `<name>.nessus.xml` (s09-03, s09-04); and the example workbook's unapproved row moved from ISM-1698, which the scan checks now compute, to ISM-1507 (`WorkbookImportFunctionalTests`). The functional suite passed in the same run.
+
 ## Discovered work
 
+- s09-58: the trial's first CI run (45194527491) found that CISO Assistant refuses a `.nessus` attachment (it allows jpg, jpeg, png, doc, docx, odt, ppt, pptx, txt, xls, xlsx, ods, csv, md, pdf, json, yaml, yml, toml, xml, msg, eml, zip, 7z, tar, gz, log, svg, mp4, mov, gif, webp). Fixed in vuln-scan by storing `<name>.nessus.xml`. Other collectors can still hand it a file it refuses: the manual collector's `patterns` (for example `*.html`) are not checked. Have `hound config validate` warn on a pattern whose extension CISO Assistant refuses, or store such files zipped.
 - s09-04 follow-up (2026-11-23): done when s09-15 merged: ISM-1694 needs both `network.firewall.firmware_current` and `vuln.internet_facing.patched_in_window` (`all_pass`), in both E8 mappings. Still to do: map `vuln.other_apps.unsupported_removed` (ISM-0304) when an ML3 mapping is written. Consider a `min_severity` setting if owners want low findings out of the windows.
 
 - s09-01 follow-ups (2026-11-23): read AppLocker values Graph returns encrypted through `getOmaSettingPlainTextValue`; read App Control for Business set through the ApplicationControl CSP in custom profiles (a binary policy); cover compiled HTML, HTML applications and control panel applets (ISM-1657); suggest `ac` for the Intune and Microsoft 365 E3/E5 licences in `CapabilitySignals`.

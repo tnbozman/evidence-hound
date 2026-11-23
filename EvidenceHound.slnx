@@ -11,6 +11,7 @@
     <Project Path="src/EvidenceHound.Onboarding/EvidenceHound.Onboarding.csproj" />
     <Project Path="src/EvidenceHound.Runtime/EvidenceHound.Runtime.csproj" />
     <Project Path="src/EvidenceHound.IacDevServer/EvidenceHound.IacDevServer.csproj" />
+    <Project Path="src/EvidenceHound.ScanDev/EvidenceHound.ScanDev.csproj" />
     <Project Path="src/EvidenceHound.SophosDevServer/EvidenceHound.SophosDevServer.csproj" />
     <Project Path="src/EvidenceHound.Transport.Kafka/EvidenceHound.Transport.Kafka.csproj" />
   </Folder>
@@ -33,6 +34,7 @@
     <Project Path="tests/EvidenceHound.Onboarding.Tests/EvidenceHound.Onboarding.Tests.csproj" />
     <Project Path="tests/EvidenceHound.Runtime.Tests/EvidenceHound.Runtime.Tests.csproj" />
     <Project Path="tests/EvidenceHound.IacDevServer.Tests/EvidenceHound.IacDevServer.Tests.csproj" />
+    <Project Path="tests/EvidenceHound.ScanDev.Tests/EvidenceHound.ScanDev.Tests.csproj" />
     <Project Path="tests/EvidenceHound.SophosDevServer.Tests/EvidenceHound.SophosDevServer.Tests.csproj" />
   </Folder>
 </Solution>

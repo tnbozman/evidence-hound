@@ -253,3 +253,31 @@ trial_host_mode() {
     *) echo "$1" ;;
   esac
 }
+
+# trial_scan_source_names LOG -> the vuln-scan source names make scan-dev printed to LOG, one per line
+trial_scan_source_names() {
+  [[ -s "$1" ]] || return 1
+  local found=0 line
+  while IFS= read -r line; do
+    [[ "$line" =~ ^\ \ ([a-z0-9-]+-scans)\ .*drop_folder= ]] || continue
+    echo "${BASH_REMATCH[1]}"
+    found=1
+  done <"$1"
+  ((found))
+}
+
+# trial_scan_source_args LOG NAME -> hound add collector options for the vuln-scan source NAME that make scan-dev printed to LOG,
+# one word per line: --name NAME, then --set key=value for each setting
+trial_scan_source_args() {
+  [[ -s "$1" ]] || return 1
+  local line setting
+  while IFS= read -r line; do
+    [[ "$line" == "  $2 "* ]] || continue
+    printf -- '--name\n%s\n' "$2"
+    for setting in ${line#"  $2 "}; do
+      printf -- '--set\n%s\n' "$setting"
+    done
+    return 0
+  done <"$1"
+  return 1
+}
