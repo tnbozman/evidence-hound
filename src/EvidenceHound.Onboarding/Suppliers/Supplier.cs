@@ -71,6 +71,9 @@ public sealed record SupplierProposal(IReadOnlyList<LevelProposal> Levels, IRead
     public const string Answers = "answers";
 
     /// <summary>Each level and its range, as CISO Assistant's stakeholder and solution scales have them.</summary>
+    /// <summary>A level on a 1 to 4 scale that the inputs give no evidence for: left out of the supplier file for the person to decide.</summary>
+    public const int NotYetAssessed = 0;
+
     public static readonly IReadOnlyList<(string Name, int Low, int High)> Scales =
         [("dependency", 0, 4), ("penetration", 0, 4), ("maturity", 1, 4), ("trust", 1, 4), ("criticality", 1, 4)];
 
@@ -79,6 +82,7 @@ public sealed record SupplierProposal(IReadOnlyList<LevelProposal> Levels, IRead
         penetration, maturity and trust for the supplier and criticality for its solution, each with a short reason and the names of the
         inputs it rests on ("answers" or a document's name). Then summarise what the documents say about certifications, where data is held
         and the support lifecycle, each point with its source. Use only the inputs; leave the summary empty when no document says anything.
+        Maturity, trust and criticality run from 1 to 4; give 0 when not yet assessed, and say in the reason what evidence to ask for.
         """;
 
     public static JsonObject Schema()
@@ -144,7 +148,7 @@ public sealed record SupplierProposal(IReadOnlyList<LevelProposal> Levels, IRead
             {
                 problems.Add(named.Length == 0 ? $"{name} is missing" : $"{name} is given {named.Length} times");
             }
-            else if (named[0].Value < low || named[0].Value > high)
+            else if ((named[0].Value < low || named[0].Value > high) && !(low > NotYetAssessed && named[0].Value == NotYetAssessed))
             {
                 problems.Add($"{name} is {named[0].Value}, outside {low} to {high}");
             }
@@ -228,7 +232,11 @@ public static class SupplierFile
 
     private static void Level(StringBuilder text, string indent, string name, int low, int high, IReadOnlyList<LevelProposal> levels)
     {
-        if (levels.FirstOrDefault(l => l.Name == name) is { } level)
+        if (levels.FirstOrDefault(l => l.Name == name) is { } assessed && low > SupplierProposal.NotYetAssessed && assessed.Value == SupplierProposal.NotYetAssessed)
+        {
+            text.Append(CultureInfo.InvariantCulture, $"{indent}# {name}: not yet assessed ({low} to {high}): {OneLine(assessed.Reason)} ({string.Join(", ", assessed.Sources)})\n");
+        }
+        else if (levels.FirstOrDefault(l => l.Name == name) is { } level)
         {
             text.Append(CultureInfo.InvariantCulture, $"{indent}# {name}: {OneLine(level.Reason)} ({string.Join(", ", level.Sources)})\n{indent}{name}: {level.Value}\n");
         }

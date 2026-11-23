@@ -71,7 +71,7 @@ public sealed class OnboardSupplierTests
         proposal.Levels.Single(l => l.Name == "maturity").Value.ShouldBe(SupplierProposal.NotYetAssessed);
         SupplierProposal.Instructions.ShouldContain("0 when not yet assessed");
         var yaml = SupplierFile.Write(Choice, proposal.Levels, "EXAMPLE-ASSETS", new DateOnly(2026, 11, 23));
-        yaml.ShouldContain("# maturity: not yet assessed (1 to 4): No assurance documents were given. (answers)\n");
+        yaml.ShouldContain("# maturity: not yet assessed (1 to 4): No assurance documents were given. (https://www.example.com/trust)\n");
         yaml.ShouldNotContain("maturity: 0");
         yaml.ShouldNotContain("trust: 0");
         var parsed = ScopeLoader.Parse(
