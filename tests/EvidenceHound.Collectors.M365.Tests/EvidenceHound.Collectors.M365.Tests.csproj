@@ -7,6 +7,6 @@
   <ItemGroup>
     <None Include="..\fixtures\m365\*.json" Link="m365\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\docs\collectors\m365.md" Link="docs\m365.md" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\..\docs\tutorials\m365-dev-server.md" Link="docs\m365-dev-server.md" CopyToOutputDirectory="PreserveNewest" Condition="Exists('..\..\docs\tutorials\m365-dev-server.md')" />
+    <None Include="..\..\docs\tutorials\m365-dev-server.md" Link="docs\m365-dev-server.md" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

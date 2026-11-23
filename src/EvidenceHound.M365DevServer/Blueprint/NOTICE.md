@@ -9,13 +9,13 @@ The files in this folder come from the ASD Blueprint for Secure Cloud, published
 
 | File here | Published as | Changes |
 | --- | --- | --- |
-| `OfficeHardening.txt` | `intune-config-policies/OfficeHardening.txt` | None. The dev server adds an assignment to all users when it serves the policy, because an export carries none. |
+| `OfficeHardening.txt` | `intune-config-policies/OfficeHardening.txt` | None to the file. When it serves the policy, the dev server drops the export's `@odata.context`, adds a description naming this source and assigns it to all users, because an export carries no assignments. |
 
 Translated by hand, not copied (the source is a Microsoft365DSC configuration, not a Graph response):
 
 | Served as | Translated from | Changes |
 | --- | --- | --- |
-| Settings catalog policy "ASD Windows Hardening Guidelines - Attack Surface Reduction" | `automation/dsc/BlueprintDefenderDsc.txt`, resource `IntuneSettingCatalogASRRulesPolicyWindows10` | Every rule the configuration sets to block, as Graph settings catalog choices. |
+| Settings catalog policy "ASD Windows Hardening Guidelines - Attack Surface Reduction" | `automation/dsc/BlueprintDefenderDsc.txt`, resource `IntuneSettingCatalogASRRulesPolicyWindows10` | Every rule the configuration sets to block, as Graph settings catalog choices whose IDs are the lower-cased Microsoft365DSC property names. Assigned to all users, as in the configuration. |
 | Conditional Access "USR - G - Require strong auth" | `automation/dsc/BlueprintEntraDsc.txt` | State `enabled` instead of report-only; the excluded group `$ConditionalExclude` is replaced by the two break-glass accounts. |
 | Conditional Access "USR - B - Block access via legacy auth" | `automation/dsc/BlueprintEntraDsc.txt` | As above. |
 
