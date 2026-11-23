@@ -1379,8 +1379,15 @@ Added at the maintainer's request (2026-11-23): an example of IT to audit, so th
 
 **Functional check**
 - `make sophos-dev`, then `hound run --only sophos --dry-run` against it; `HOUND_TRIAL_YES=1 make trial` in the dev container goes through step 6 with no credential.
+- Result (2026-11-23, cloud session, no Docker): `make sophos-dev ARGS="--variant gaps --port 5372"` printed the tenant and the collector settings. With a config holding only that `sophos` collector (placeholder secret in a file), `hound config validate --check-secrets` answered "valid", `hound collect` wrote `firewalls.json`, `admins.json` (5 admins over 3 pages) and `roles.json`, and `hound run --only sophos --dry-run` ended `succeeded` with no problems. `SophosDevTenantTests` (7) run the rest collector with the library profile against the compliant tenant (both checks pass), each deviation alone (each fails only its named check) and the gaps tenant (both fail); the token address answers with or without a credential. `SophosDevServerOptionsTests` (7) pass; `bats scripts/tests` and shellcheck are clean; whole unit suite green apart from the Docker-only functional tests.
+- Not yet: `HOUND_TRIAL_YES=1 make trial` needs Docker and a CISO Assistant, which the cloud session does not have. Ticking waits on the maintainer running it (and `make trial` by hand) in the dev container.
+- As built: `src/EvidenceHound.SophosDevServer` (`sophos-dev`, not in the runner image): `SophosDevTenant` (firewalls, admins, predefined roles, `Compliant`, `Deviations`, `For`, `Settings(url)`), `SophosAnswers` (pure: `whoami`, the token answer, the three lists), `DevSophosServer` (WireMock, pages of 2 by `page`, every interface when a port is given, `--public-url` named in `whoami`), `DevServerOptions`. Trial: `trial_network_args` adds `--add-host host.docker.internal:host-gateway` on a `make ca-up` network; `trial_dev_url`, `trial_sophos_dev_sets` and `trial_uses_dev_server` in `scripts/lib/trial.sh`; step 6 starts the server in the background (stopped when the trial ends), adds the collector with `--yes`, and offers a second run with `unsupported-firmware`. Docs: `docs/tutorials/sophos-dev-server.md` and section 6 of `docs/tutorials/local-trial.md`.
+- The token address answers one fixed response and checks nothing, as the profile's recorded tests do. It is not sign-in logic, but say so if the maintainer would rather the profile skip auth for a dev server instead.
 
 ## Discovered work
+
+- s09-52: the Microsoft 365 (s09-44) and Sophos Central dev servers each have their own small serving code (paging, request log). Once both are merged, move it into one shared helper.
+- s09-52: scheduled collection after the trial needs the Sophos Central dev server running; the trial stops it when it ends. Consider a compose service for it beside the runner, if the trial grows a scheduler step.
 
 - s09-47: move the fictional example repo's audits to series (`EX-E8`, `EX-ESSENTIALS`, `EX-BASELINE` with cycles), with its config targets, the example run and the tests that use `EX-E8-2026` as a fixture.
 
