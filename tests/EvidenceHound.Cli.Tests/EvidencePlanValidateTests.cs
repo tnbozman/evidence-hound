@@ -38,6 +38,35 @@ public sealed class EvidencePlanValidateTests : IDisposable
         problems.ShouldBe([("evidence_plan.runbook_file_missing", 3), ("evidence_plan.collector_unknown", 12)], ignoreOrder: true);
     }
 
+    [Fact]
+    public async Task A_hand_written_row_conflicts_only_once_a_configured_collector_reports_its_checks()
+    {
+        // s10-04: manual checks are mapped, but a run publishes a requirement only when every one of its checks is reported, so a team
+        // keeps hand-writing a row until it configures the manual source for it.
+        var scope = Path.Combine(_root, "scope");
+        var config = Path.Combine(_root, "hound.yaml");
+        (await Hound("scope", "validate", scope, "--config", config)).ShouldBe(ExitCodes.Ok, _error.ToString());
+
+        var text = await File.ReadAllTextAsync(config, _ct);
+        await File.WriteAllTextAsync(config, text.Replace("\ntarget:", """
+
+              - name: user-application-hardening
+                type: manual
+                schedule: "0 6 * * *"
+                settings:
+                  drop_folder: /var/lib/evidence-hound/manual/user-application-hardening
+                  checks: browser.java_blocked
+                  due_days: 183
+                  owner: Example endpoint owner
+
+            target:
+            """, StringComparison.Ordinal), _ct);
+
+        (await Hound("scope", "validate", scope, "--config", config)).ShouldNotBe(ExitCodes.Ok);
+        _error.ToString().ShouldContain("scope.result_conflict");
+        _error.ToString().ShouldContain("ISM-1486");
+    }
+
     public void Dispose()
     {
         _output.Dispose();
