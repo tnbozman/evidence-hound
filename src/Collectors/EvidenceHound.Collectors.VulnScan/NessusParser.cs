@@ -83,7 +83,7 @@ public static partial class NessusParser
             "2" => Severity.Medium,
             "3" => Severity.High,
             "4" => Severity.Critical,
-            var other => (Severity?)null,
+            _ => (Severity?)null,
         };
         if (severity is not { } known)
         {
