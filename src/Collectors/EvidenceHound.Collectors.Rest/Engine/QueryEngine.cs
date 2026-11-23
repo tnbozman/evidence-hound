@@ -1,4 +1,6 @@
 using System.Globalization;
+using System.IO.Compression;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using EvidenceHound.Collectors.Rest.Profiles;
@@ -158,13 +160,13 @@ public sealed class QueryEngine(HttpClient http, IClock clock, IDelay delay)
                 }
 
                 _pages++;
-                _bytes += response.Body.Length;
+                _bytes += query.Format == ResponseFormat.Zip ? response.Bytes.Length : response.Body.Length;
                 if (_bytes > query.MaxBytes)
                 {
                     return Fail(string.Create(CultureInfo.InvariantCulture, $"Its answers passed the byte cap of {query.MaxBytes} bytes; raise max_bytes or use keep."));
                 }
 
-                var tree = Read(response);
+                var tree = query.Format == ResponseFormat.Zip ? ZipMember.Read(response.Bytes, query.Member!, query.MaxBytes - _bytes, query.MaxBytes).Bind(text => Read(response with { Body = text }, ZipMember.FormatOf(query.Member!))) : Read(response, query.Format);
                 if (tree is not Result<JsonBody>.Ok { Value.Node: var body })
                 {
                     return Fail(Describe(((Result<JsonBody>.Fail)tree).Errors));
@@ -250,9 +252,9 @@ public sealed class QueryEngine(HttpClient http, IClock clock, IDelay delay)
                 _ => null,
             };
 
-        private Result<JsonBody> Read(RestResponse response)
+        private Result<JsonBody> Read(RestResponse response, ResponseFormat declared)
         {
-            var format = query.Format switch
+            var format = declared switch
             {
                 ResponseFormat.Auto when response.ContentType?.Contains("xml", StringComparison.OrdinalIgnoreCase) == true => ResponseFormat.Xml,
                 ResponseFormat.Auto when response.ContentType?.Contains("csv", StringComparison.OrdinalIgnoreCase) == true => ResponseFormat.Csv,
@@ -360,4 +362,56 @@ public static class LinkHeader
             .Where(bits => bits.Skip(1).Any(b => b.Trim().Replace(" ", "", StringComparison.Ordinal) is "rel=\"next\"" or "rel=next"))
             .Select(bits => bits[0].Trim().TrimStart('<').TrimEnd('>'))
             .FirstOrDefault();
+}
+
+/// <summary>Reads one member of a zip archive as text, refusing it when it is larger than the bytes left under the query's cap.</summary>
+public static class ZipMember
+{
+    public static Result<string> Read(ReadOnlyMemory<byte> archive, string member, long bytesLeft, long cap)
+    {
+        try
+        {
+            using var zip = new ZipArchive(new MemoryStream(archive.ToArray(), writable: false), ZipArchiveMode.Read);
+            var entry = zip.Entries.FirstOrDefault(e => string.Equals(e.FullName, member, StringComparison.Ordinal));
+            if (entry is null)
+            {
+                return Result.Fail<string>(new Problem("rest.zip_member_missing", $"The archive has no {member}; it holds {string.Join(", ", zip.Entries.Select(e => e.FullName))}."));
+            }
+
+            if (entry.Length > bytesLeft)
+            {
+                return Result.Fail<string>(TooLarge(cap));
+            }
+
+            using var stream = entry.Open();
+            using var limited = new MemoryStream();
+            var buffer = new byte[81920];
+            for (int read; (read = stream.Read(buffer)) > 0;)
+            {
+                if (limited.Length + read > bytesLeft)
+                {
+                    return Result.Fail<string>(TooLarge(cap));
+                }
+
+                limited.Write(buffer, 0, read);
+            }
+
+            return Result.Ok(Encoding.UTF8.GetString(limited.ToArray()));
+        }
+        catch (InvalidDataException ex)
+        {
+            return Result.Fail<string>(new Problem("rest.response_invalid", $"The answer is not a zip archive: {ex.Message}"));
+        }
+    }
+
+    /// <summary>How a member is read, by its extension.</summary>
+    public static ResponseFormat FormatOf(string member) => Path.GetExtension(member).ToLowerInvariant() switch
+    {
+        ".xml" => ResponseFormat.Xml,
+        ".csv" => ResponseFormat.Csv,
+        _ => ResponseFormat.Json,
+    };
+
+    private static Problem TooLarge(long cap) =>
+        new("rest.response_too_large", string.Create(CultureInfo.InvariantCulture, $"Its answers passed the byte cap of {cap} bytes once unzipped; raise max_bytes or use keep."));
 }

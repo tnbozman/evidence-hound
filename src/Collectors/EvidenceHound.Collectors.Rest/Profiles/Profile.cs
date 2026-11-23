@@ -147,6 +147,9 @@ public sealed record Query(string Name, string Method, string Path)
 
     public ResponseFormat Format { get; init; } = ResponseFormat.Auto;
 
+    /// <summary>With <see cref="ResponseFormat.Zip"/>: the archive member read, by its extension as JSON, XML or CSV (JSON otherwise).</summary>
+    public string? Member { get; init; }
+
     /// <summary>Paths that are always arrays when an XML response is read.</summary>
     public IReadOnlyList<string> Arrays { get; init; } = [];
 
@@ -182,6 +185,9 @@ public enum ResponseFormat
     Json,
     Xml,
     Csv,
+
+    /// <summary>A zip archive, such as a pipeline artefact, of which one <see cref="Query.Member"/> is read.</summary>
+    Zip,
 }
 
 /// <summary>How a query's pages are followed.</summary>

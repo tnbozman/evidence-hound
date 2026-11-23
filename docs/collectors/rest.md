@@ -178,7 +178,8 @@ A **bootstrap** query runs before the others, is not saved as evidence and canno
 | `for_each` | Another query: this one is called once per item of it, with `${item.path}`. At most `max_calls` calls (default 100). |
 | `optional_on` | Status codes that mean "not available here", such as a missing licence: `[403, 404]`. Checks over it become not applicable, with the reason. |
 | `async` | A report run as a job: `status_url` (path in the first answer), `done` (a test on the status answer), `result_url`, `poll_seconds` and `timeout_seconds`. |
-| `format` | `auto` (from the content type), `json`, `xml` or `csv`. `arrays` names XML paths that are always lists. |
+| `format` | `auto` (from the content type), `json`, `xml`, `csv` or `zip`. `arrays` names XML paths that are always lists. |
+| `member` | With `format: zip` (a pipeline artefact, for example), the file in the archive to read, as JSON, XML or CSV by its extension. Required with `zip`, refused without it. The archive and the unzipped member both count towards `max_bytes`, so a member that unzips past the cap is refused. |
 | `keep` | Keep only these properties of each item, in memory and in evidence, for very large lists. |
 | `max_items`, `max_bytes`, `max_pages` | Caps. Defaults 50,000 items, 50 MB and 1,000 pages. Over a cap, checks over the query are unable to assess, naming the cap. |
 
@@ -322,6 +323,8 @@ Profile problems start with `profile.` and are listed by `hound profile validate
 | `rest.value_missing` | A placeholder has no value: a missing parameter, or a variable a query did not set. |
 | `rest.rate_limited` | Still `429` or `503` after every retry. |
 | `rest.response_invalid` | An answer that is not the format expected, or has no items where `items` says. |
+| `rest.zip_member_missing` | A zip answer without the `member` the query names; the message lists what the archive holds. |
+| `rest.response_too_large` | A zip `member` that unzips past `max_bytes`. |
 | `rest.job_failed`, `rest.job_timeout` | An `async` report failed or did not finish in time. |
 | `rest.secret_in_evidence` | Evidence held a secret value; it was not written. |
 | `rest.unreachable` | The API could not be reached (network, DNS or proxy). |

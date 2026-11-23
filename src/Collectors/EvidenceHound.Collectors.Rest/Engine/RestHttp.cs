@@ -18,6 +18,9 @@ public sealed record RestRequest(HttpMethod Method, Uri Url, IReadOnlyDictionary
 /// <summary>An answer: status, body text, content type, the headers the engine reads (Link, Location, Retry-After) and the address it came from.</summary>
 public sealed record RestResponse(HttpStatusCode Status, string Body, string? ContentType, IReadOnlyDictionary<string, string> Headers, Uri Url)
 {
+    /// <summary>The body as received, for a binary answer such as a zip; empty when only the text was kept.</summary>
+    public ReadOnlyMemory<byte> Bytes { get; init; }
+
     public bool IsSuccess => (int)Status is >= 200 and < 300;
 
     public string? Header(string name) => Headers.GetValueOrDefault(name);
@@ -138,7 +141,8 @@ public sealed class RestHttp(HttpClient http, IClock clock, IDelay delay, Connec
         try
         {
             using var response = await http.SendAsync(message, cancellationToken);
-            var text = await response.Content.ReadAsStringAsync(cancellationToken);
+            var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+            var text = Encoding.UTF8.GetString(bytes);
             var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             if (response.Headers.Location is { } location)
             {
@@ -155,7 +159,7 @@ public sealed class RestHttp(HttpClient http, IClock clock, IDelay delay, Connec
                 headers["Link"] = string.Join(", ", links);
             }
 
-            return Result.Ok(new RestResponse(response.StatusCode, text, response.Content.Headers.ContentType?.MediaType, headers, request.Url));
+            return Result.Ok(new RestResponse(response.StatusCode, text, response.Content.Headers.ContentType?.MediaType, headers, request.Url) { Bytes = bytes });
         }
         catch (HttpRequestException ex)
         {

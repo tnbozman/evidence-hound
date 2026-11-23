@@ -20,7 +20,7 @@ public static class ProfileParser
     private static readonly string[] TlsKeys = ["pinned_thumbprint", "client_certificate"];
     private static readonly string[] QueryKeys =
     [
-        "get", "post", "headers", "query", "body", "paging", "items", "identities", "vars", "for_each", "max_calls", "optional_on", "async", "format", "arrays", "keep",
+        "get", "post", "headers", "query", "body", "paging", "items", "identities", "vars", "for_each", "max_calls", "optional_on", "async", "format", "member", "arrays", "keep",
         "max_items", "max_bytes", "max_pages",
     ];
     private static readonly string[] AsyncKeys = ["status_url", "done", "result_url", "poll_seconds", "timeout_seconds"];
@@ -87,6 +87,7 @@ public static class ProfileParser
         ["json"] = ResponseFormat.Json,
         ["xml"] = ResponseFormat.Xml,
         ["csv"] = ResponseFormat.Csv,
+        ["zip"] = ResponseFormat.Zip,
     };
 
     public static Result<Profile> Parse(string yaml, string source)
@@ -245,8 +246,16 @@ public static class ProfileParser
                 (null, { } post) => ("POST", post),
                 _ => Problem(map, "profile.value_invalid", $"query '{name}' needs exactly one of 'get' or 'post'.", ("GET", "")),
             };
+            var member = OptionalText(map, "member");
+            var zip = OptionalText(map, "format") == "zip";
+            if (zip != member is not null)
+            {
+                Problem(map, "profile.value_invalid", zip ? $"query '{name}' reads a zip, so it needs 'member': the file in the archive to read." : $"query '{name}' has a 'member', which only a query with 'format: zip' reads.", 0);
+            }
+
             return new Query(name, method, path)
             {
+                Member = member,
                 Headers = Strings(map, "headers"),
                 Parameters = Strings(map, "query"),
                 Body = Child(map, "body") is { } body ? ToJson(body) : null,
@@ -259,7 +268,7 @@ public static class ProfileParser
                 OptionalOn = [.. Texts(map, "optional_on").Select(code => int.TryParse(code, CultureInfo.InvariantCulture, out var status) ? status : Problem(map, "profile.value_invalid", $"'optional_on' must list HTTP status codes, not '{code}'.", 0))],
                 Async = Child(map, "async") is YamlMappingNode job ? Async(job) : null,
                 Format = OptionalText(map, "format") is { } format
-                    ? Formats.TryGetValue(format, out var f) ? f : Problem(map, "profile.value_invalid", $"unknown format '{format}'; use json, xml or csv.", ResponseFormat.Auto)
+                    ? Formats.TryGetValue(format, out var f) ? f : Problem(map, "profile.value_invalid", $"unknown format '{format}'; use json, xml, csv or zip.", ResponseFormat.Auto)
                     : ResponseFormat.Auto,
                 Arrays = Texts(map, "arrays"),
                 Keep = Texts(map, "keep"),

@@ -37,6 +37,17 @@ public sealed class RestEngineTests : IDisposable
     }
 
     [Fact]
+    public async Task A_member_that_unzips_past_the_cap_is_refused()
+    {
+        var padded = "{\"resource_drift\": []" + new string(' ', 200_000) + "}";
+        _api.Given(Request.Create().WithPath("/v1/artefact.zip").UsingGet()).RespondWith(Response.Create().WithBody(Zip(("plan.json", padded))));
+
+        var snapshot = await Engines.RunAsync(Engines.Profile("  plan:\n    get: v1/artefact.zip\n    format: zip\n    member: plan.json\n    max_bytes: 100000\n"), _api);
+
+        snapshot.Failed("plan").Reason.ShouldContain("byte cap of 100000 bytes once unzipped");
+    }
+
+    [Fact]
     public void Member_is_required_with_zip_and_only_with_zip()
     {
         Should.Throw<ShouldAssertException>(() => Engines.Profile("  plan:\n    get: v1/a.zip\n    format: zip\n")).Message.ShouldContain("member");
