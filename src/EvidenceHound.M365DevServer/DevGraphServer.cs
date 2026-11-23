@@ -25,7 +25,14 @@ public sealed class DevGraphServer : IDisposable
         Url = new Uri((server.Url ?? throw new InvalidOperationException("WireMock started without a URL.")) + "/");
         foreach (var (name, items) in GraphCollections.Render(tenant, Url))
         {
-            Serve(GraphCollections.Paths[name], items);
+            if (GraphCollections.IsHunting(name))
+            {
+                Hunt(name, items);
+            }
+            else
+            {
+                Serve(GraphCollections.Paths[name], items);
+            }
         }
     }
 
@@ -64,6 +71,21 @@ public sealed class DevGraphServer : IDisposable
             _server.Given(request).AtPriority(i == 0 ? 10 : 1)
                 .RespondWith(Response.Create().WithStatusCode(200).WithHeader("Content-Type", "application/json").WithBody(page.ToJsonString()));
         }
+    }
+
+    /// <summary>Answers the advanced hunting query whose body carries <paramref name="name"/>'s marker, with its rows under <c>results</c>.</summary>
+    private void Hunt(string name, JsonArray rows)
+    {
+        var columns = rows.OfType<JsonObject>().FirstOrDefault()?.Select(p => (JsonNode)new JsonObject { ["name"] = p.Key, ["type"] = p.Value is JsonValue v && v.TryGetValue<int>(out _) ? "Int64" : "String" }) ?? [];
+        var answer = new JsonObject
+        {
+            ["@odata.context"] = $"{Url}v1.0/$metadata#microsoft.graph.security.huntingQueryResults",
+            ["schema"] = new JsonArray([.. columns]),
+            ["results"] = rows.DeepClone(),
+        };
+        _server.Given(Request.Create().WithPath(GraphCollections.HuntingPath).UsingPost()
+                .WithBody((string? body) => body?.Contains($"evidence-hound: {name}", StringComparison.Ordinal) == true))
+            .RespondWith(Response.Create().WithStatusCode(200).WithHeader("Content-Type", "application/json").WithBody(answer.ToJsonString()));
     }
 
     private static int Status(object? code) => code switch

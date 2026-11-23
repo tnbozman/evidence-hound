@@ -17,7 +17,15 @@ public static class GraphCollections
         ["managed-devices"] = "/v1.0/deviceManagement/managedDevices",
         ["device-configurations"] = "/v1.0/deviceManagement/deviceConfigurations",
         ["configuration-policies"] = "/beta/deviceManagement/configurationPolicies",
+        ["hunting-app-control-events"] = HuntingPath,
+        ["hunting-app-control-blocked-files"] = HuntingPath,
+        ["hunting-defender-onboarding"] = HuntingPath,
     };
+
+    /// <summary>Advanced hunting: one POST address, each query told apart by its <c>// evidence-hound: &lt;name&gt;</c> marker.</summary>
+    public const string HuntingPath = "/v1.0/security/runHuntingQuery";
+
+    public static bool IsHunting(string name) => name.StartsWith("hunting-", StringComparison.Ordinal);
 
     private static readonly string AsrSetting = "device_vendor_msft_policy_config_defender_attacksurfacereductionrules";
 
@@ -38,6 +46,22 @@ public static class GraphCollections
             ["managed-devices"] = [.. tenant.Devices.Select(Device)],
             ["device-configurations"] = [DeviceConfiguration(), AppLocker(tenant.AppLocker)],
             ["configuration-policies"] = [OfficeHardening(tenant.OfficeHardeningAssigned), Asr(tenant.AsrRules)],
+            ["hunting-app-control-events"] = [.. tenant.Defender.Events.Select(e => (JsonNode)new JsonObject
+            {
+                ["DeviceId"] = e.DeviceId,
+                ["ActionType"] = e.ActionType,
+                ["Events"] = e.Events,
+                ["LastSeen"] = "2026-11-22T21:40:00Z",
+            })],
+            ["hunting-app-control-blocked-files"] = [.. tenant.Defender.BlockedFiles.Select(f => (JsonNode)new JsonObject
+            {
+                ["FileName"] = f.FileName,
+                ["SHA256"] = f.Sha256,
+                ["Publisher"] = f.Publisher,
+                ["Blocks"] = f.Blocks,
+                ["Devices"] = 1,
+            })],
+            ["hunting-defender-onboarding"] = new JsonArray(new JsonObject { ["OnboardingStatus"] = "Onboarded", ["Devices"] = tenant.Defender.OnboardedWindows }),
         };
     }
 

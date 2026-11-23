@@ -32,7 +32,7 @@ public sealed class M365RunTests : IDisposable
         run.Stored.Complete.ShouldBeTrue();
         var manifest = JsonNode.Parse(await File.ReadAllTextAsync(Path.Combine(run.Stored.Location, Manifests.FileName), TestContext.Current.CancellationToken))!;
         manifest.ToJsonString().ShouldContain("configuration-policies.json");
-        run.Manifest.Files.Count.ShouldBe(9);
+        run.Manifest.Files.Count.ShouldBe(12);
         run.Manifest.Files.ShouldAllBe(f => File.Exists(Path.Combine(run.Stored.Location, f.FileName)));
     }
 
