@@ -19,6 +19,7 @@ public enum ScopeKind
     Solution,
     Contract,
     Representative,
+    EntityAssessment,
     Assessment,
 }
 

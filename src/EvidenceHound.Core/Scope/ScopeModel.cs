@@ -60,7 +60,14 @@ public sealed record ScopeSystem(
     string? Owner,
     IReadOnlyList<ScopeRef> Parents,
     IReadOnlyDictionary<string, string> Tags,
-    SourceLine At);
+    SourceLine At)
+{
+    /// <summary>The supplier's solution the system is, from <c>scope/third-parties/</c>; its supplier must be approved before the system is registered.</summary>
+    public ScopeRef? Solution { get; init; }
+
+    /// <summary>The reseller or provider the contract is with, when not the solution's own supplier; it must be approved too.</summary>
+    public ScopeRef? SuppliedThrough { get; init; }
+}
 
 /// <summary>An applied control, declared once in <c>scope/controls.yaml</c> and used by any number of audits.</summary>
 public sealed record ScopeControl(

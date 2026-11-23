@@ -38,6 +38,16 @@ public sealed record ScopeEntity(string RefId, string Name, SourceLine At)
 
     public IReadOnlyList<ScopeRepresentative> Representatives { get; init; } = [];
 
+    /// <summary>The tier the organisation holds this supplier at whatever its assessment says, one of the tier scale's keys; needs a reason.</summary>
+    public string? ForcedTier { get; init; }
+
+    public string? ForcedTierReason { get; init; }
+
+    public SourceLine? ForcedTierAt { get; init; }
+
+    /// <summary>The supplier's assessments, each with its questionnaire, set up from the file; answers and conclusions stay CISO Assistant's.</summary>
+    public IReadOnlyList<ScopeEntityAssessment> Assessments { get; init; } = [];
+
     /// <summary>Where each level was written, for problems about its range.</summary>
     public IReadOnlyDictionary<string, SourceLine> LevelsAt { get; init; } = new Dictionary<string, SourceLine>();
 
@@ -79,4 +89,27 @@ public sealed record ScopeRepresentative(string Email, SourceLine At)
     public string? Role { get; init; }
 
     public string? Phone { get; init; }
+}
+
+/// <summary>
+/// An assessment of the entity: which of its solutions, the perimeter it sits in, when it is due and how critical it is, and the questionnaire
+/// framework (by URN) whose audit CISO Assistant creates with it. With <see cref="ReviewMonths"/>, the next review opens once one falls due.
+/// </summary>
+public sealed record ScopeEntityAssessment(string RefId, string Name, ScopeRef Perimeter, SourceLine At)
+{
+    public IReadOnlyList<ScopeRef> Solutions { get; init; } = [];
+
+    /// <summary>The perimeter's domain; the entity's own domain when left out.</summary>
+    public ScopeRef? Domain { get; init; }
+
+    public string? DueDate { get; init; }
+
+    public int? Criticality { get; init; }
+
+    public ScopeRef? Questionnaire { get; init; }
+
+    public IReadOnlyList<string> Groups { get; init; } = [];
+
+    /// <summary>Months between reviews, from <c>review_every</c>.</summary>
+    public int? ReviewMonths { get; init; }
 }

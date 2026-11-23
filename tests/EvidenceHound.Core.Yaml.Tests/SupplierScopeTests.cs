@@ -87,6 +87,17 @@ public class SupplierScopeTests
     }
 
     [Fact]
+    public void Forced_tier_requires_reason()
+    {
+        var forced = Supplier + "\nforced_tier:\n  tier: critical\n";
+
+        var problem = Problems(forced).ShouldHaveSingleItem();
+        problem.Code.ShouldBe("supplier.forced_tier_reason_missing");
+        problem.Message.ShouldContain("SUP-EXCLOUD");
+        Problems(forced + "  reason: Hosts the customer portal.\n").ShouldBeEmpty();
+    }
+
+    [Fact]
     public void Active_contract_past_end_date_is_reported()
     {
         var lapsed = Supplier.Replace("end: \"2026-12-31\"", "end: \"2026-10-31\"", StringComparison.Ordinal);
