@@ -151,6 +151,19 @@ public sealed partial class AgentSetupTests : IDisposable
     }
 
     [Fact]
+    public async Task The_profile_skill_says_where_the_library_and_the_guide_are_since_neither_is_in_the_compliance_repo()
+    {
+        (await SetupAsync("", "--assistant", "claude")).Exit.ShouldBe(ExitCodes.Ok);
+
+        var skill = await ReadAsync(".claude", "skills", "write-a-profile", "SKILL.md");
+
+        skill.ShouldContain("https://github.com/tnbozman/evidence-hound/tree/main/profiles");
+        skill.ShouldContain("https://github.com/tnbozman/evidence-hound/blob/main/docs/collectors/rest.md");
+        skill.ShouldContain("profiles_path");
+        skill.ShouldNotContain("Follow docs/collectors/rest.md");
+    }
+
+    [Fact]
     public async Task Init_offers_the_setup_at_the_end()
     {
         var repo = Path.Combine(_root, "compliance");

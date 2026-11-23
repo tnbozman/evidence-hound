@@ -112,6 +112,28 @@ internal static class PublishCommand
             new Invariant(!string.IsNullOrWhiteSpace(token), new Problem("config.ca_token_missing", $"Set {TokenSetting} to a CISO Assistant personal access token.")));
     }
 
+    /// <summary>
+    /// The connection for a command given a deployment config: <c>HOUND_CA_URL</c> and <c>HOUND_CA_TOKEN</c> when set, otherwise the
+    /// config's <c>ciso_assistant</c> address and token reference. Without a config, both variables are needed.
+    /// </summary>
+    internal static async Task<Result<CisoAssistantOptions>> ConnectionAsync(
+        IConfiguration configuration, FileInfo? configFile, CollectorRegistry registry, CancellationToken cancellationToken)
+    {
+        if (configFile is null || (configuration[UrlSetting] is { Length: > 0 } && configuration[TokenSetting] is { Length: > 0 }))
+        {
+            return Connection(configuration);
+        }
+
+        var deployment = await ConfigCommands.LoadAsync(configFile, registry, cancellationToken);
+        return deployment.Bind(config =>
+        {
+            var url = configuration[UrlSetting] is { Length: > 0 } overridden ? new Uri(overridden.EndsWith('/') ? overridden : overridden + "/") : config.CisoAssistant.Url;
+            return configuration[TokenSetting] is { Length: > 0 } token
+                ? Result.Ok(new CisoAssistantOptions(url, token))
+                : ConfigCommands.Secrets(configuration).Resolve(config.CisoAssistant.Token).Map(secret => new CisoAssistantOptions(url, secret.Reveal()));
+        });
+    }
+
     /// <summary>Each audit's requirement items counted, for the publish and run reports.</summary>
     internal static JsonArray AuditsJson(PublishReport report) =>
         new([.. report.Audits.Select(a => new JsonObject

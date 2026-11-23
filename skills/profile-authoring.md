@@ -1,12 +1,16 @@
 ---
 name: profile-authoring
 description: Writing a REST profile that hound can test and run.
-version: 1.0.0
+version: 1.1.0
 applies_to: [profile]
 ---
 # Writing a REST profile
 
-A profile is YAML that the generic REST collector runs. Follow docs/collectors/rest.md exactly; never invent keys.
+A profile is YAML that the generic REST collector runs. Neither the guide nor the profile library is in this compliance repo, so read them from hound's public repository:
+
+- **The guide:** https://github.com/tnbozman/evidence-hound/blob/main/docs/collectors/rest.md. Follow it exactly; never invent keys.
+- **The library:** https://github.com/tnbozman/evidence-hound/tree/main/profiles. Before writing a profile, check whether one already exists there. If it does, copy its folder, tests included, into this repo's `profiles/` folder instead of writing a new one.
+- **Where hound looks:** hound reads profiles only from the REST collector's `profiles_path` setting (default `/config/profiles`). If this repo's `profiles/` folder is not mounted there, add the collector with `--set profiles_path=<that folder as hound sees it>`.
 
 - **Parameters and secrets.** Anything an organisation sets (client ID, supported versions, limits) is a parameter with a description; credentials are secrets, never parameters, never defaults.
 - **Connection.** Set `base_url`, list every host that may receive the credential in `allowed_hosts`, and use the authentication type the API documents.
