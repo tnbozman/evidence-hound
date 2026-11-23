@@ -90,6 +90,18 @@ public sealed class VulnScanCollectorTests : IDisposable
     }
 
     [Fact]
+    public async Task Every_check_cites_only_files_the_collector_stores()
+    {
+        Drop("internet-facing-2026-11-09.nessus", Encoding.UTF8.GetBytes(Fixtures.Text(Fixtures.Nessus).Replace("Nov 16", "Nov 09", StringComparison.Ordinal).Replace("HOST_END_TIMESTAMP", "IGNORED", StringComparison.Ordinal)), Now.AddDays(-14));
+        Drop(Fixtures.Nessus, Fixtures.Bytes(Fixtures.Nessus), Now.AddDays(-7));
+
+        var result = (await CollectAsync(Settings())).Value();
+
+        var stored = result.Files.Select(f => f.FileName).ToArray();
+        result.Checks.SelectMany(c => c.EvidenceRefs).Distinct().ShouldAllBe(r => stored.Contains(r));
+    }
+
+    [Fact]
     public async Task Older_exports_are_listed_as_history()
     {
         Drop("internet-facing-2026-11-09.nessus", Encoding.UTF8.GetBytes(Fixtures.Text(Fixtures.Nessus).Replace("Nov 16", "Nov 09", StringComparison.Ordinal).Replace("HOST_END_TIMESTAMP", "IGNORED", StringComparison.Ordinal)), Now.AddDays(-14));
