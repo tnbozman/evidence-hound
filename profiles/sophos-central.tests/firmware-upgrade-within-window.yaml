@@ -1,0 +1,21 @@
+# hound has seen the 21.5 upgrade offered since a run ten days ago.
+description: An upgrade offered for ten days, within the 14 allowed.
+now: 2026-11-22T02:00:00Z
+settings:
+  client_id: 00000000-0000-4000-8000-0000000050d1
+  supported_firewall_firmware: "20.0, 21.0"
+secrets:
+  client_secret: example-test-client-secret
+history:
+  - { at: 2026-11-12T02:00:00Z, evidence: firmware_upgrades.json, file: recordings/history/firmware_upgrades-2026-11-12.json }
+  - { at: 2026-11-17T02:00:00Z, evidence: firmware_upgrades.json, file: recordings/history/firmware_upgrades-2026-11-17.json }
+responses:
+  - { post: /api/v2/oauth2/token, file: recordings/token.json }
+  - { get: /whoami/v1, file: recordings/whoami.json }
+  - { get: /firewall/v1/firewalls, file: recordings/firewalls.json }
+  - { get: /common/v1/admins, file: recordings/admins.json }
+  - { get: /common/v1/admins, query: { page: "2" }, file: recordings/admins.2.json }
+  - { get: /common/v1/roles, file: recordings/roles.json }
+  - { post: /firewall/v1/firewalls/actions/firmware-upgrade-check, file: recordings/firmware-upgrade-offered.json }
+expect:
+  network.firewall.firmware_current: pass

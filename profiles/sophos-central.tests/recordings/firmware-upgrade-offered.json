@@ -1,0 +1,8 @@
+{
+  "firewalls": [
+    { "id": "00000000-0000-4000-8000-00000000f001", "firmwareVersion": "SFOS 21.0.1 MR-1-Build237", "upgradeToVersion": ["21.5.0 GA-Build171"] }
+  ],
+  "firmwareVersions": [
+    { "version": "21.5.0 GA-Build171", "size": "1.1 GB", "bugs": ["NC-00001"], "news": ["Fictional release notes for the example."] }
+  ]
+}
