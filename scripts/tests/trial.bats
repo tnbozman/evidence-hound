@@ -90,42 +90,103 @@ setup() {
   [ "$(trial_collector_step 0 "$BATS_TEST_TMPDIR/missing.yaml" m365)" = "add" ]
 }
 
+@test "the scene names each part of the private deployment" {
+  run trial_scene
+  [ "$status" -eq 0 ]
+  for part in "Oracle Cloud" "private" "site-to-site VPN" "XGS 88W" "CISO Assistant" "Evidence Hound" "Microsoft 365" "Essential Eight" "GRC-PLATFORM" "OFFICE-FIREWALL"; do
+    [[ "$output" == *"$part"* ]] || { echo "missing: $part"; return 1; }
+  done
+}
+
+@test "the trial onboards the onboarding tutorial's two systems" {
+  [ "$(trial_systems)" = "GRC-PLATFORM OFFICE-FIREWALL" ]
+  for system in $(trial_systems); do
+    [ -f "$BATS_TEST_DIRNAME/../../examples/onboarding-tutorial/answers/$(printf '%s' "$system" | tr '[:upper:]' '[:lower:]').decisions.txt" ]
+    [ -n "$(trial_system_solution "$system")" ]
+    [ -n "$(trial_system_product "$system")" ]
+  done
+  [[ "$(trial_system_product OFFICE-FIREWALL)" == *"XGS 88W"* ]]
+  [[ "$(trial_system_product GRC-PLATFORM)" == *"OCI"* ]]
+  run trial_system_solution SOPHOS-NETWORK
+  [ "$status" -ne 0 ]
+}
+
 @test "each agent stage's request names what to draft, the skills and the person's part" {
-  run trial_brief third-parties EX-E8 SOPHOS-NETWORK
-  [[ "$output" == *"Sophos"* && "$output" == *"managed service provider"* && "$output" == *"onboard-a-third-party"* && "$output" == *"hound supplier draft"* ]]
-  run trial_brief system EX-E8 SOPHOS-NETWORK
-  [[ "$output" == *"SOPHOS-NETWORK"* && "$output" == *"onboard-a-system-with-hound"* && "$output" == *"pending"* && "$output" == *"../specs"* ]]
-  run trial_brief audit EX-E8 SOPHOS-NETWORK
-  [[ "$output" == *"decide"* && "$output" == *"review-before-apply"* && "$output" == *"EX-E8-SOPHOS-NETWORK"* ]]
-  run trial_brief controls EX-E8 SOPHOS-NETWORK
-  [[ "$output" == *"hound add control"* && "$output" == *"--audit EX-E8-SOPHOS-NETWORK"* ]]
-  run trial_brief unknown EX-E8 SOPHOS-NETWORK
+  run trial_brief third-parties EX-E8
+  for name in Oracle Sophos "CISO Assistant" "Evidence Hound" GRC-PLATFORM OFFICE-FIREWALL onboard-a-third-party "hound supplier draft" "hound approve"; do
+    [[ "$output" == *"$name"* ]] || { echo "missing: $name"; return 1; }
+  done
+  run trial_brief system EX-E8 GRC-PLATFORM
+  [[ "$output" == *"GRC-PLATFORM"* && "$output" == *"onboard-a-system-with-hound"* && "$output" == *"pending"* && "$output" == *"SOL-OCI-HOSTING"* ]]
+  run trial_brief system EX-E8 OFFICE-FIREWALL
+  [[ "$output" == *"XGS 88W"* && "$output" == *"../specs"* ]]
+  run trial_brief audit EX-E8 OFFICE-FIREWALL
+  [[ "$output" == *"decide"* && "$output" == *"review-before-apply"* && "$output" == *"EX-E8-OFFICE-FIREWALL"* ]]
+  run trial_brief controls EX-E8 GRC-PLATFORM
+  [[ "$output" == *"hound add control"* && "$output" == *"--audit EX-E8-GRC-PLATFORM"* ]]
+  run trial_brief unknown EX-E8 GRC-PLATFORM
   [ "$status" -ne 0 ]
 }
 
 @test "a stage is ready once its draft is in the repo" {
   repo="$BATS_TEST_TMPDIR/repo"
-  mkdir -p "$repo/scope/third-parties" "$repo/onboarding/SOPHOS-NETWORK" "$repo/scope/audits"
-  run trial_stage_ready third-parties "$repo" SOPHOS-NETWORK
+  mkdir -p "$repo/scope/third-parties" "$repo/onboarding/GRC-PLATFORM" "$repo/scope/audits"
+  for f in sup-oracle sup-sophos sup-ciso-assistant; do
+    touch "$repo/scope/third-parties/$f.yaml"
+    run trial_stage_ready third-parties "$repo"
+    [ "$status" -ne 0 ]
+  done
+  touch "$repo/scope/third-parties/sup-evidence-hound.yaml"
+  trial_stage_ready third-parties "$repo"
+  run trial_stage_ready system "$repo" GRC-PLATFORM
   [ "$status" -ne 0 ]
-  touch "$repo/scope/third-parties/sup-sophos.yaml"
-  run trial_stage_ready third-parties "$repo" SOPHOS-NETWORK
+  printf '{"stage": "deciding"}' >"$repo/onboarding/GRC-PLATFORM/session.json"
+  trial_stage_ready system "$repo" GRC-PLATFORM
+  run trial_stage_ready audit "$repo" GRC-PLATFORM
   [ "$status" -ne 0 ]
-  touch "$repo/scope/third-parties/sup-example-msp.yaml"
-  trial_stage_ready third-parties "$repo" SOPHOS-NETWORK
-  run trial_stage_ready system "$repo" SOPHOS-NETWORK
+  touch "$repo/scope/audits/grc-platform-essential-eight-2023.yaml"
+  trial_stage_ready audit "$repo" GRC-PLATFORM
+  run trial_stage_ready audit "$repo" OFFICE-FIREWALL
   [ "$status" -ne 0 ]
-  printf '{"stage": "deciding"}' >"$repo/onboarding/SOPHOS-NETWORK/session.json"
-  trial_stage_ready system "$repo" SOPHOS-NETWORK
-  run trial_stage_ready audit "$repo" SOPHOS-NETWORK
-  [ "$status" -ne 0 ]
-  touch "$repo/scope/audits/sophos-network-essential-eight-2023.yaml"
-  trial_stage_ready audit "$repo" SOPHOS-NETWORK
   printf 'controls:\n  - ref_id: AC-AUTO-EVIDENCE\n' >"$repo/scope/controls.yaml"
-  run trial_stage_ready controls "$repo" SOPHOS-NETWORK
+  run trial_stage_ready controls "$repo" GRC-PLATFORM
   [ "$status" -ne 0 ]
-  printf '  - ref_id: AC-EXTERNAL-SCAN\n' >>"$repo/scope/controls.yaml"
-  trial_stage_ready controls "$repo" SOPHOS-NETWORK
+  printf '  - ref_id: AC-RESTORE-TEST\n    systems: [GRC-PLATFORM]\n' >>"$repo/scope/controls.yaml"
+  trial_stage_ready controls "$repo" GRC-PLATFORM
+  run trial_stage_ready controls "$repo" OFFICE-FIREWALL
+  [ "$status" -ne 0 ]
+}
+
+@test "a system's audit becomes a target: a single target turns into a list, and adding it twice adds it once" {
+  config="$BATS_TEST_TMPDIR/hound.yaml"
+  printf 'collectors: []\ntarget:\n  mapping: mappings/essential-eight-2023.yaml\n  compliance_assessment: EX-E8\n  health_control: AC-AUTO-EVIDENCE\n' >"$config"
+  trial_add_target "$config" mappings/grc-platform-essential-eight-2023.yaml EX-E8-GRC-PLATFORM
+  printf 'scheduler:\n  time_zone: UTC\n' >>"$config"
+  trial_add_target "$config" mappings/grc-platform-essential-eight-2023.yaml EX-E8-GRC-PLATFORM
+  trial_add_target "$config" mappings/grc-platform-essential-eight-2023.yaml EX-E8-GRC-PLATFORM
+  trial_add_target "$config" mappings/office-firewall-essential-eight-2023.yaml EX-E8-OFFICE-FIREWALL
+  run cat "$config"
+  [[ "$output" == *"targets:"* && "$output" != *$'\ntarget:'* ]]
+  [[ "$output" == *"  - mapping: mappings/essential-eight-2023.yaml"$'\n'"    compliance_assessment: EX-E8"$'\n'"    health_control: AC-AUTO-EVIDENCE"* ]]
+  [ "$(grep -c 'compliance_assessment: EX-E8-GRC-PLATFORM$' "$config")" -eq 1 ]
+  [ "$(grep -c 'compliance_assessment: EX-E8-OFFICE-FIREWALL$' "$config")" -eq 1 ]
+  [[ "$output" == "collectors: []"* ]]
+  [ "$(grep -n 'EX-E8-OFFICE-FIREWALL' "$config" | cut -d: -f1)" -lt "$(sed -n '/^scheduler:/=' "$config")" ]
+  run grep -A2 '^scheduler:' "$config"
+  [[ "$output" == *"time_zone: UTC"* ]]
+}
+
+@test "the IaC collectors read the pipeline dev server with their profiles and a placeholder token" {
+  run trial_iac_dev_sets http://localhost:5380/ grc-infra-controls
+  [[ "$(printf '%s ' $output)" == *"--set profile=grc-infra-controls --set profiles_path=/trial/profiles --set api_url=http://localhost:5380/ --set repository=example/grc-infra --set workflow=controls.yml"* ]]
+  run trial_iac_dev_sets http://localhost:5380/ terraform-drift
+  [[ "$output" == *"workflow=drift.yml"* && "$output" == *"profile=terraform-drift"* ]]
+}
+
+@test "a control-test report from terraform test goes to the dev server when there is one" {
+  [ -z "$(trial_controls_report_args "$BATS_TEST_TMPDIR")" ]
+  touch "$BATS_TEST_TMPDIR/controls.xml"
+  [ "$(trial_controls_report_args "$BATS_TEST_TMPDIR")" = "--controls-report $BATS_TEST_TMPDIR/controls.xml" ]
 }
 
 @test "hound for the agent runs in the folder it is called from, inside the trial workspace only" {
@@ -142,11 +203,13 @@ setup() {
 
 @test "the unattended replay uses committed fictional files" {
   fixtures="$BATS_TEST_DIRNAME/../../examples/trial"
-  for f in third-parties/sup-sophos.yaml third-parties/sup-example-msp.yaml; do
+  for f in third-parties/sup-oracle.yaml third-parties/sup-sophos.yaml third-parties/sup-ciso-assistant.yaml third-parties/sup-evidence-hound.yaml; do
     grep -q "status: active" "$fixtures/$f"
     grep -q "result: ok" "$fixtures/$f"
   done
   [ -f "$BATS_TEST_DIRNAME/../../examples/onboarding-tutorial/answers/office-firewall.decisions.txt" ]
+  [ -f "$BATS_TEST_DIRNAME/../../examples/onboarding-tutorial/answers/grc-platform.decisions.txt" ]
+  [ ! -e "$fixtures/third-parties/sup-example-msp.yaml" ]
   run grep -nE 'Example backup service|AC-BACKUP|example-backup-restore-test' "$BATS_TEST_DIRNAME/../trial.sh"
   [ "$status" -eq 1 ]
 }

@@ -1531,10 +1531,63 @@ commit it was proven on, without `hound` running Terraform or holding cloud cred
 - Deviation: a negative run per control was dropped; only the two controls the code guards itself (office range, retention) have
   one, since a toggle to turn a control off would be worse code. Breaking a control by hand is the functional check instead.
 
+### s09-56 IaC pipeline dev server: the GitHub Actions answers the Terraform profiles read (added 2026-11-23)
+- [x] Done
+
+At the maintainer's request (2026-11-23), so the trial's GRC platform collects its hosting evidence with no GitHub account or token. Follows the Sophos Central (s09-54) and Microsoft 365 (s09-44) dev servers: no sign-in logic.
+
+**Story:** As someone trying Evidence Hound, I want the `terraform-tests` and `terraform-drift` profiles to read a fictional IaC repository's pipeline on my machine, so that the GRC platform's control tests and drift check publish to CISO Assistant with no GitHub account, no token and no cloud account.
+
+**Acceptance criteria**
+- `make iac-dev` serves the fictional repository `example/grc-infra`: its workflows `controls.yml` (artefact `control-tests`, member `controls.xml`) and `drift.yml` (artefact `drift-plan`, member `plan.json`), each with one completed, successful run on `main` dated a minute before the server started, the run's artefacts by name and each artefact's zip. The bearer token is accepted without being checked.
+- The control-test report is, by default, a JUnit report of the tutorial's `controls.tftest.hcl` with every run passing; `--controls-report FILE` serves a report you made (`terraform test -junit-xml`) instead. The drift plan is a refresh-only plan with no drift.
+- Deviations: `public-ip` (the report's `vm_has_no_public_ip` fails), `drift` (the plan has resource drift on the backup bucket). `--variant gaps` applies both.
+- `--port` (default 5380) and `--public-url`, as `make sophos-dev` has.
+
+**Tests first**
+- `IacDevServerTests.Compliant_pipeline_passes_both_profiles` (the library `terraform-tests` and `terraform-drift` profiles, and the tutorial's `grc-infra-controls`, run against the server)
+- `IacDevServerTests.Each_deviation_fails_its_named_check`
+- `IacDevServerTests.A_given_report_is_served_as_the_artefact`
+- `IacDevServerTests.Runs_are_dated_from_the_clock` (the run is never older than `max_age`)
+- `IacDevServerOptionsTests` (port, public URL, variant, deviation, report file)
+
+**Functional check**
+- `make iac-dev`; a config with `terraform-tests` and `terraform-drift` pointed at it (`api_url`); `hound run --only <both> --dry-run` succeeds and both checks pass. With `--deviation public-ip`, `vm_has_no_public_ip` fails.
+- Result (2026-11-23, cloud session, no Docker, no Terraform): `make iac-dev ARGS="--port 5382"` printed the pipeline and the settings for both profiles. A scratch config with two rest collectors, `grc-infra-controls` (the tutorial's copy of `terraform-tests`) and `terraform-drift`, both on `api_url: http://localhost:5382/` with a placeholder token file and the GRC platform's mapping as target: `hound config validate --check-secrets` valid; `hound run --no-publish` succeeded; `hound status` showed grc-infra-controls 13 passed, 0 failed and grc-infra-drift 1 passed. Restarted with `--variant gaps`: grc-infra-controls 11 passed, 2 failed (`vm_has_no_public_ip` and `infrastructure.tests.pass`), grc-infra-drift 0 passed, 1 failed. `IacDevServerTests` (5) and `IacDevServerOptionsTests` (9) pass; whole unit suite green apart from the Docker-only functional tests.
+- Not yet: serving a report from a real `terraform test -junit-xml` run, as Terraform is not installed in the cloud session; the trial (s09-57) does it in the dev container, which has Terraform.
+- As built: `src/EvidenceHound.IacDevServer` (`iac-dev`, `make iac-dev`, not in the runner image): `IacDevPipeline` (repository, head commit, control tests, drift, an optional given report; `Compliant`, `Deviations`, `For`, `Settings(url, profile)`, `WithReport`), `IacAnswers` (pure: runs, artefacts, JUnit report, plan, zip), `DevIacServer` (WireMock, runs dated from the start time), `DevServerOptions` (`--controls-report` read by `Program`). Guide: `docs/tutorials/iac-dev-server.md`.
+
+### s09-57 The trial is the private-hosting use case: CISO Assistant and Evidence Hound on Oracle Cloud, the office on an XGS 88W (added 2026-11-23)
+- [ ] Done
+
+At the maintainer's request (2026-11-23): "we are self-hosting CISO Assistant and Evidence Hound. We are going to privately host in Oracle Cloud with a site-to-site vpn to an SOPHOS XGS 88W firewall. we want to audit controls and evidence to E8ML2 in CISO assistant. We need to follow our process with 3rd parties, systems, controls, audits and the like. The trial is used to allow someone to explore ciso assistant and evidence hound with low fuss ... I would like the evidence where possible auto collecting with collectors." The onboarding tutorial (s09-32) already describes this deployment; the trial now walks it.
+
+**Story:** As someone exploring CISO Assistant and Evidence Hound, I want `make trial` to set the scene of Example Pty Ltd's private deployment (the GRC platform on one private OCI VM, the office reaching it over a site-to-site VPN through a Sophos XGS 88W, sign-in through Microsoft 365) and onboard it in our order, so that I see third parties, systems, their Essential Eight ML2 audits, controls and automatically collected evidence in CISO Assistant with no account, key or cloud.
+
+**Acceptance criteria**
+- The trial opens with the scene: the deployment diagram's parts in a few lines and a link to the tutorial's diagram.
+- Third parties, as the tutorial has them: Oracle (cloud), Sophos (firewall and Sophos Central), and the open-source CISO Assistant and Evidence Hound projects, each with its solution, contract and review. The Example Pty Ltd managed service provider is dropped: the use case has none.
+- Systems, each with its own E8 ML2 audit: `GRC-PLATFORM` (the tutorial's decisions) and `OFFICE-FIREWALL` (the XGS 88W; the tutorial's decisions), replacing `SOPHOS-NETWORK`. Their controls as the tutorial adds them.
+- Collectors, all against fictional tenants on the machine: Sophos Central (s09-54) for `OFFICE-FIREWALL`, Microsoft 365 (s09-53) for the identity rows, and the IaC pipeline (s09-56) for `GRC-PLATFORM`'s hosting controls and drift. Where Terraform is installed, the trial runs the tutorial's `terraform test` first and the dev server serves that real report.
+- The rows no collector can answer stay manual, and the trial says which and who submits them.
+- Unattended (`HOUND_TRIAL_YES=1`) runs every step with no credential; a second run applies nothing new. `docs/tutorials/local-trial.md` follows the new order.
+
+**Tests first**
+- `trial.bats`: the scene names each part; the stages use the tutorial's systems; the IaC collectors get the dev server's address; a report from `terraform test` is passed to the dev server when Terraform is there.
+- `trial.bats`: the replay's approved supplier files and the tutorial's answers for both systems are committed; a system's audit becomes a target in the config, once.
+
+**Functional check**
+- `HOUND_TRIAL_YES=1 make trial` against the dev container's CISO Assistant, twice (the second applies nothing new); then `make trial` by hand.
+- Result so far (2026-11-23, cloud session, no Docker, so no CISO Assistant and no trial container): the replay's commands, run with the built `hound` in a scratch folder, in the trial's order: `hound init --yes`; the four `hound supplier draft` calls, then the approved copies; for each system `hound onboard <system> pending` and the tutorial's decisions typed into `hound onboard` ("The system's audit is EX-E8-GRC-PLATFORM", "… EX-E8-OFFICE-FIREWALL"); the three `hound add control` calls. `trial_stage_ready` saw every stage ready; `hound scope validate` answered "scope valid: 1 domain(s), 4 control(s), 3 audit(s), 4 third party(ies)". Then both mappings copied with `trial_add_target`, the `sophos` and two IaC collectors added with the trial's settings (`hound add collector rest … --yes`): `hound config validate --check-secrets` valid; with `make sophos-dev` and `make iac-dev` running, `hound run --no-publish` succeeded for all three, `hound status` sophos 2 passed, grc-infra-controls 13 passed, grc-infra-drift 1 passed. `bats scripts/tests` (64) and ShellCheck clean.
+- Not yet: plan and apply against CISO Assistant, publishing, and Terraform's real report, which need Docker and Terraform. Ticking waits on the maintainer running `HOUND_TRIAL_YES=1 make trial` twice and `make trial` in the dev container.
+- As built: `scripts/lib/trial.sh` gains `trial_scene`, `trial_systems`, `trial_system_product`, `trial_system_solution`, `trial_add_target` (a single `target:` becomes `targets:`; a target is added once, inside the block), `trial_iac_dev_sets`, `trial_controls_report_args`; `trial_brief` and `trial_stage_ready` take the system (four third parties; a control naming the system). `scripts/trial.sh`: the scene after the workspace; stage 5 the four third parties; `onboard_system` runs stages 6 to 8 for `GRC-PLATFORM` and 9 to 11 for `OFFICE-FIREWALL`; `wire_audit` copies the tutorial's system mapping and adds its target; step 12 runs `terraform test` when Terraform is there, starts `make iac-dev` with that report, adds `grc-infra-controls` and `grc-infra-drift`, and offers a `drift` run; step 13 Sophos Central for `OFFICE-FIREWALL`; step 14 Microsoft 365. `examples/trial/third-parties`: Oracle, Sophos, CISO Assistant and Evidence Hound; the managed service provider is removed. `docs/tutorials/local-trial.md` follows the new order.
+
 ## Discovered work
 
 - s09-52: `hound config validate` passed a config with `sign_in: none` and the real Graph address; the refusal comes at `hound run`. Have `config validate` run each collector's option checks.
 - s09-54: the Microsoft 365 (s09-44) and Sophos Central dev servers each have their own small serving code (paging, request log). Once both are merged, move it into one shared helper.
+- s09-57: no hound command adds a system's mapping and target, so the trial copies the tutorial's mapping and edits `hound.yaml` (`trial_add_target`). Add `hound mapping add-check` (s09-51 item) and a `hound add target --mapping <file> --audit <series>`.
+- s09-57: the Example 365 identity rows on `GRC-PLATFORM` are "met by another system"; the m365 collector publishes to the organisation's audit only. Consider a Microsoft supplier and an `SYS-365` system with its own audit in the trial.
 - s09-54: scheduled collection after the trial needs the Sophos Central dev server running; the trial stops it when it ends. Consider a compose service for it beside the runner, if the trial grows a scheduler step.
 - s09-51: a manual evidence source needs its check mapped to a requirement, and the requirement taken out of `manual_only`; no command does it, so an agent edits the mapping by hand and the trial has no manual evidence stage. Add `hound mapping add-check --mapping <file> --requirement <ref> --check <id>` (asks nothing, `--json`), then a manual evidence stage in the trial (drop a scan report, `hound manual propose` by the agent, `hound manual approve` by the person).
 - s09-55: a Terraform plan or state JSON holds sensitive values in plain text (for example an IPSec tunnel's shared secret), and

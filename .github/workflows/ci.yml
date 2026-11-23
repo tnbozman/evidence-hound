@@ -161,8 +161,9 @@ jobs:
         run: make compose-smoke
 
   trial:
-    # s08-09: the interactive local trial, unattended, against a fresh local CISO Assistant (stops before Sophos).
-    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    # s08-09: the interactive local trial, unattended, against a fresh local CISO Assistant; every collector reads its dev server
+    # (s09-57). Also by hand (workflow dispatch), for a branch whose pull request is not into main.
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
