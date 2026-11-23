@@ -51,14 +51,42 @@ trial_ca_url() {
 # A throwaway container with the trial workspace at /trial. The token is read from a file inside the workspace,
 # so no secret is ever on a command line.
 trial_hound_argv() {
-  local image="$1" network="$2" workspace="$3" user="$4" url="$5" tty="$6"
-  shift 6
+  trial_hound_argv_in /trial/repo "$@"
+}
+
+# trial_hound_argv_in WORKDIR IMAGE NETWORK_ARGS WORKSPACE UID:GID CA_URL TTY(yes|no) HOUND_ARGS... -> one word per line
+# The same container, working in WORKDIR (a path under /trial) instead of the repo's root.
+trial_hound_argv_in() {
+  local workdir="$1" image="$2" network="$3" workspace="$4" user="$5" url="$6" tty="$7"
+  shift 7
   local words=(docker run --rm -i)
   [[ "$tty" == yes ]] && words+=(-t)
   # shellcheck disable=SC2206  # network is "--network <name>", two words on purpose
-  words+=(--user "$user" $network -v "$workspace:/trial" -w /trial/repo
+  words+=(--user "$user" $network -v "$workspace:/trial" -w "$workdir"
     -e "HOUND_CA_URL=$url" -e HOUND_CA_TOKEN_FILE=/trial/secrets/ca_token "$image" "$@")
   printf '%s\n' "${words[@]}"
+}
+
+# trial_workdir WORKSPACE DIR -> DIR as hound's container sees it (/trial/...); fails when DIR is outside WORKSPACE
+trial_workdir() {
+  local workspace="${1%/}" dir="${2%/}"
+  if [[ "$dir" == "$workspace" ]]; then
+    echo /trial
+  elif [[ "$dir" == "$workspace"/* ]]; then
+    echo "/trial/${dir#"$workspace"/}"
+  else
+    return 1
+  fi
+}
+
+# trial_agent_brief AUDIT -> what to ask the coding agent in the trial repo
+trial_agent_brief() {
+  cat <<TEXT
+Onboard the Sophos perimeter firewall with hound for the $1 audit: draft Sophos and the managed service provider
+as third parties, then the firewall as a system, its audit decisions and its manual evidence. Use the API
+specification and vendor documents in ../specs and ../inbox. Run the review before proposing apply.
+I approve in my own terminal with hound approve and hound manual approve.
+TEXT
 }
 
 # trial_collector_step UNATTENDED(1|0) CONFIG NAME -> unattended | added already | add

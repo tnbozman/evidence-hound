@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Interactive local trial: from the dev container, with CISO Assistant already running, run Evidence Hound in a
-# container next to it. The guided steps are hound's own wizards: a new organisation (hound init), a system, a
-# control and a manual evidence source (hound add), then Sophos and Microsoft 365.
+# container next to it. The guided steps: a new organisation (hound init), a hand-over to your coding agent, which
+# onboards the Sophos perimeter firewall (hound agent setup), then the Sophos Central collector and Microsoft 365.
 # Guide: docs/tutorials/local-trial.md
 #
 # Usage: make trial (or scripts/trial.sh). Safe to stop and run again: finished steps are skipped.
@@ -124,7 +124,7 @@ build_image() {
 
 workspace() {
   step "3. Trial workspace in ${ws#"$root"/}"
-  mkdir -p "$ws/repo" "$ws/evidence" "$ws/manual" "$ws/inbox"
+  mkdir -p "$ws/repo" "$ws/evidence" "$ws/manual" "$ws/inbox" "$ws/specs"
   token
   say "hound writes the organisation's compliance repo into repo/, evidence into evidence/, and secrets into secrets/."
 }
@@ -168,52 +168,33 @@ add() {
   if [[ "$yes" == 1 ]]; then hound no add "$@" --yes; else hound yes add "$@"; fi
 }
 
-manual_evidence() {
-  step "5. Manual evidence and controls"
-  local audit source=example-backup-restore-test today file system=() control=() manual=()
+agent() {
+  step "5. Hand the Sophos perimeter firewall to your coding agent"
+  local audit
   audit="$(audit_ref)"
-  if [[ "$yes" == 1 ]]; then
-    system=(--name "Example backup service" --owner it@example.com --description "Daily backups of the file share.")
-    control=(--ref-id AC-BACKUP --name "Daily backups with quarterly restore tests" --owner it@example.com --systems "Example backup service" --requirements "ISM-1511, ISM-1515")
-    manual=(--set due_days=92 --set "owner=Sam Example")
+  if ! done_already agent; then
+    say "hound agent setup writes the skills and agent files Claude Code and GitHub Copilot read in the trial repo."
+    hound no agent setup --assistant both
+    mkdir -p "$ws/bin"
+    ln -sfn "$root/scripts/trial-hound.sh" "$ws/bin/hound"
+    say "${ws#"$root"/}/bin/hound runs this image against this CISO Assistant, so your agent's hound commands reach it."
+    mark_done agent
   fi
-  if ! done_already additions; then
-    say "Add the system that holds the backups. Suggested answers: Example backup service, then Enter for the rest."
-    add system --scope scope --audit "$audit" "${system[@]}"
-    say "Declare the control the team relies on, linked to the audit's backup requirements."
-    say "Suggested answers: AC-BACKUP, Daily backups with quarterly restore tests, your email, Enter, Example backup service, ISM-1511, ISM-1515."
-    add control --scope scope --audit "$audit" "${control[@]}"
-    say "Add a manual evidence source: the system owner sends the GRC team a restore test record every quarter."
-    add collector manual --config hound.yaml --name "$source" --schedule "0 6 * * *" \
-      --set "drop_folder=/trial/manual/$source" --set checks=backup.restore_tested "${manual[@]}"
-    mark_done additions
-  fi
-  done_already scope-additions || apply_scope scope-additions
-
-  today="$(date +%F)"
-  file="restore-test-$today.txt"
-  printf 'Example Pty Ltd restore test, %s\nRestored the example file share to a scratch folder and compared checksums: all files matched.\n' "$today" >"$ws/inbox/$file"
-  say "A system owner has sent the GRC team an example restore test record: inbox/$file."
-  say "Upload it into the $source source and attest it (answer the prompts: y, your name, pass, a note)."
-  if [[ "$yes" == 1 ]]; then
-    printf 'y\nSam Example\npass\nTrial restore test.\n' | hound no manual upload --config hound.yaml --source "$source" "/trial/inbox/$file"
-  else
-    hound yes manual upload --config hound.yaml --source "$source" "/trial/inbox/$file"
-  fi
-  say "Now collect it and publish the result to the $audit audit."
-  hound no run --config hound.yaml --only "$source"
-  hound no status --config hound.yaml
-  mark_done manual
   cat <<TEXT
 
-Look in CISO Assistant (https://localhost:8443, sign in as admin@example.com):
-  - Compliance > Audits > $audit > ISM-1515: the result, the observation naming who attested,
-    and the evidence $source/$file.
-  - Operations > Applied controls: AC-BACKUP (added with hound add control) and AC-AUTO-EVIDENCE, the
-    health control, which now has this run's health evidence.
-  - Assets: Example backup service, added with hound add system.
+The agent onboards the firewall, not this script. In a new terminal:
+  cd ${ws#"$root"/}/repo && export PATH="\$PWD/../bin:\$PATH"
+  claude        (or open the folder in VS Code and pick the hound-onboarding agent in Copilot)
+Put the firewall's API specification in ${ws#"$root"/}/specs and the vendor documents in ${ws#"$root"/}/inbox:
+hound's container sees only ${ws#"$root"/}. Then ask:
+
+$(trial_agent_brief "$audit" | sed 's/^/  /')
+
+Approve its drafts in that terminal (the wrapper gives hound a terminal there): hound approve --repo . and
+hound manual approve --config hound.yaml. Then hound scope plan and hound scope apply, as the agent proposes.
 TEXT
-  ask "Seen it? Carry on to Sophos?" || { say "Stopped before Sophos. Run make trial again to add it."; exit 0; }
+  [[ "$yes" == 1 ]] && return 0
+  ask "Carry on to the Sophos Central collector?" || { say "Stopped before Sophos. Run make trial again to add it."; exit 0; }
 }
 
 sophos() {
@@ -284,7 +265,7 @@ preflight
 build_image
 workspace
 organisation
-manual_evidence
+agent
 sophos
 m365
 step "Done"

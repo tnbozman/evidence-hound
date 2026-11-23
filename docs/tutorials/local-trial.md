@@ -1,6 +1,6 @@
 # Local trial: Evidence Hound next to your CISO Assistant
 
-This tutorial is interactive: `make trial` runs it step by step from the dev container. It takes Evidence Hound from nothing to results in CISO Assistant with `hound`'s own wizards ([guided setup](../guided-setup.md)): a new organisation (the fictional Example Pty Ltd, if you press Enter through the questions), a system, a control and a manual evidence source, then your own Sophos Central tenant, and optionally a Microsoft 365 test tenant. You need no server. Allow an hour, most of it the first image build.
+This tutorial is interactive: `make trial` runs it step by step from the dev container. It takes Evidence Hound from nothing to results in CISO Assistant: a new organisation with `hound init` ([guided setup](../guided-setup.md)) (the fictional Example Pty Ltd, if you press Enter through the questions), a hand-over to your coding agent, which onboards the Sophos perimeter firewall, then your own Sophos Central tenant, and optionally a Microsoft 365 test tenant. You need no server. Allow an hour, most of it the first image build.
 
 ```bash
 make trial
@@ -48,9 +48,11 @@ In both cases the API is `http://backend:8000/api/`. The token is copied from `.
 | `repo/` | The organisation's compliance repo, as `hound init` writes it |
 | `secrets/` | The API token and, later, the Sophos client secret (folder 700, files 600) |
 | `profiles/` | The `sophos-central` profile and its tests, copied from the repository for the Sophos step |
-| `manual/` | The manual source's drop folder |
+| `manual/` | Drop folders for manual evidence sources |
 | `evidence/` | Evidence and run records |
-| `inbox/` | The example export the trial uploads |
+| `specs/` | The firewall's API specification, for the agent |
+| `inbox/` | Vendor documents for the agent, and the Microsoft 365 test certificate |
+| `bin/hound` | `hound` for your coding agent: the trial's image, against the trial's CISO Assistant |
 
 ## 4. A new organisation
 
@@ -65,22 +67,24 @@ hound scope apply /trial/scope-plan.json
 
 Read the plan before you answer: it lists every object and field the apply would create or change. The plan is saved outside the repo, and apply writes exactly that saved plan. If the scope or CISO Assistant changed in between, it refuses with `scope.plan_stale` ([Saved plans](../scope.md#saved-plans)). A second run plans nothing new.
 
-## 5. Manual evidence and controls
+## 5. Hand the Sophos perimeter firewall to your coding agent
 
-Some evidence has no API. Here a system owner sends the GRC team a restore test record every quarter. The trial walks you through three wizards, suggesting answers for each:
+The trial does not add a system itself: your coding agent onboards the firewall with hound's skills, and you approve what it drafts. The trial:
 
-1. `hound add system --scope scope --audit <audit>`: the system that holds the backups (Example backup service), added to the domain and the audit.
-2. `hound add control --scope scope --audit <audit>`: the control the team relies on (AC-BACKUP, daily backups with quarterly restore tests), linked to the audit's backup requirements ISM-1511 and ISM-1515.
-3. `hound add collector manual --config hound.yaml`: the manual source `example-backup-restore-test`, for the `backup.restore_tested` check. You give how often fresh evidence is due and who owns it.
+1. Runs `hound agent setup --assistant both` in the trial repo, which writes the skills and agent files for Claude Code and GitHub Copilot ([onboarding](../onboarding.md)).
+2. Links `.dev/trial/bin/hound` to `scripts/trial-hound.sh`. It runs the trial's runner image against the trial's CISO Assistant with the trial's token, in the folder you call it from. hound's container sees only `.dev/trial`, so it refuses a folder outside it.
+3. Prints how to start the agent and what to ask it.
 
-It plans and applies the scope again, so the system and the control reach CISO Assistant, and writes an example restore test record to `inbox/`. You then:
+In a new terminal:
 
-1. **Upload and attest** it with `hound manual upload --config hound.yaml --source example-backup-restore-test …`. Answer `y`, your name, `pass` and a note.
-2. **Collect and publish**: `hound run --config hound.yaml --only example-backup-restore-test`, then `hound status --config hound.yaml`.
-3. **Look in CISO Assistant** at `https://localhost:8443`, signed in as `admin@example.com`:
-   - The audit, requirement ISM-1515: its result, an observation naming who attested, and the uploaded evidence.
-   - The applied controls AC-BACKUP and AC-AUTO-EVIDENCE, the health control, which links each run's health evidence.
-   - The asset Example backup service.
+```bash
+cd .dev/trial/repo && export PATH="$PWD/../bin:$PATH"
+claude
+```
+
+Or open `.dev/trial/repo` in VS Code and pick the `hound-onboarding` agent in Copilot. Put the firewall's API specification in `.dev/trial/specs` and the vendor documents in `.dev/trial/inbox` first. Then ask the agent to onboard the Sophos perimeter firewall for the trial's audit: Sophos and the managed service provider as third parties, the firewall as a system, its audit decisions and its manual evidence, with the review before it proposes apply.
+
+The agent drafts; you decide. Approve in that terminal with `hound approve --repo .` and, for manual evidence it proposes, `hound manual approve --config hound.yaml`. Both need a person at a terminal and refuse the agent. Then run `hound scope plan` and `hound scope apply` as the agent proposes.
 
 ## 6. Your Sophos Central tenant
 
