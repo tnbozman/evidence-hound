@@ -5,6 +5,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\profiles\sophos-central.yaml" Link="profiles\sophos-central.yaml" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\..\docs\tutorials\sophos-dev-server.md" Link="docs\sophos-dev-server.md" CopyToOutputDirectory="PreserveNewest" Condition="Exists('..\..\docs\tutorials\sophos-dev-server.md')" />
+    <None Include="..\..\docs\tutorials\sophos-dev-server.md" Link="docs\sophos-dev-server.md" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
