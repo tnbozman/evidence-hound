@@ -72,7 +72,11 @@ public sealed record Attestation(string Who, DateTimeOffset Date, IReadOnlyDicti
         Problem[] problems = [.. ProblemsOf(who), .. ProblemsOf(date), .. ProblemsOf(outcomes)];
         return problems.Length > 0
             ? Result.Fail<Attestation>(problems)
-            : who.Bind(w => date.Bind(d => outcomes.Map(o => new Attestation(w, d, o, note))));
+            : who.Bind(w => date.Bind(d => outcomes.Map(o => new Attestation(w, d, o, note)
+            {
+                ProposedBy = Text(root, "proposed_by") is { Length: > 0 } proposer ? proposer : null,
+                FileSha256 = Text(root, "file_sha256") is { Length: > 0 } hash ? hash : null,
+            })));
     }
 
     public string ToYaml()
@@ -82,6 +86,16 @@ public sealed record Attestation(string Who, DateTimeOffset Date, IReadOnlyDicti
             ["who"] = Who,
             ["date"] = Date.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture),
         };
+        if (ProposedBy is not null)
+        {
+            document["proposed_by"] = ProposedBy;
+        }
+
+        if (FileSha256 is not null)
+        {
+            document["file_sha256"] = FileSha256;
+        }
+
         if (Note is not null)
         {
             document["note"] = Note;
@@ -101,7 +115,7 @@ public sealed record Attestation(string Who, DateTimeOffset Date, IReadOnlyDicti
         _ => throw new ArgumentOutOfRangeException(nameof(outcome), outcome, "Only pass, fail, partial and not_applicable can be attested."),
     };
 
-    private static Result<IReadOnlyDictionary<string, CheckOutcome>> ParseOutcomes(YamlMappingNode root, string source) =>
+    internal static Result<IReadOnlyDictionary<string, CheckOutcome>> ParseOutcomes(YamlMappingNode root, string source) =>
         root.Children.TryGetValue(new YamlScalarNode("outcomes"), out var node) && node is YamlMappingNode map
             ? Result.Combine(map.Children.Select(pair => pair is { Key: YamlScalarNode { Value: { } check }, Value: YamlScalarNode { Value: { } value } } && TryParseOutcome(value, out var outcome)
                     ? Result.Ok(KeyValuePair.Create(check, outcome))
@@ -109,7 +123,7 @@ public sealed record Attestation(string Who, DateTimeOffset Date, IReadOnlyDicti
                 .Map(pairs => (IReadOnlyDictionary<string, CheckOutcome>)pairs.ToDictionary(StringComparer.Ordinal))
             : Result.Ok<IReadOnlyDictionary<string, CheckOutcome>>(new Dictionary<string, CheckOutcome>(StringComparer.Ordinal));
 
-    private static string? Text(YamlMappingNode root, string key) =>
+    internal static string? Text(YamlMappingNode root, string key) =>
         root.Children.TryGetValue(new YamlScalarNode(key), out var node) && node is YamlScalarNode { Value: { } value } ? value.Trim() : null;
 
     private static Problem Problem(string source, string message) => new(Invalid, $"{source}: {message}");

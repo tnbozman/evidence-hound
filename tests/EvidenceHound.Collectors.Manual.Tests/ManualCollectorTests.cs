@@ -39,8 +39,8 @@ public sealed class ManualCollectorTests : IDisposable
     {
         // s09-42: an agent's proposal beside the file is pending. It is not evidence, and no run publishes it or what it says.
         const string content = "rule 1: allow https from any to web-01.example.com";
-        var hash = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(content)));
         _drop.Add(Export, content, Now.AddDays(-2));
+        var hash = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(Path.Combine(_drop.Path, Export))));
         File.WriteAllText(Path.Combine(_drop.Path, Export + ".proposal.yaml"), $"proposed_by: agent\nfile_sha256: {hash}\nobservation: The agent read 14 rules.\noutcomes:\n  {Reviewed}: pass\n");
 
         var pending = (await _drop.CollectAsync()).Value();

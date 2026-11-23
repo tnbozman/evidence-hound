@@ -31,10 +31,15 @@ internal static class ManualCommand
                 problems => Task.FromResult(Log.Problems(logger, problems)));
         });
 
-        return new Command("manual", "Work with manual-upload sources.") { upload };
+        return new Command("manual", "Work with manual-upload sources: upload a file, propose a result as an agent, attest proposals as a person.")
+        {
+            upload,
+            ManualProposalCommands.BuildPropose(terminal, logger, registry, clock),
+            ManualProposalCommands.BuildApprove(terminal, logger, registry, clock),
+        };
     }
 
-    private static Result<ManualSource> Find(DeploymentConfig deployment, string name) =>
+    internal static Result<ManualSource> Find(DeploymentConfig deployment, string name) =>
         deployment.Collectors.FirstOrDefault(c => c.Name == name) switch
         {
             null => Result.Fail<ManualSource>(new Problem(
