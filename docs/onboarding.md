@@ -1,31 +1,24 @@
-# Onboarding with a language model
+# Onboarding
 
-`hound onboard` helps a GRC team member onboard a system: a language model the person chooses proposes how the system fits a framework and
-drafts its configuration, and the person accepts or edits every decision. The output is files for a pull request in the config repo; nothing
-is applied to CISO Assistant until a person reviews it and runs `hound scope validate`, `plan` and `apply`. The design is in
-[design/onboarding-assistant.md](design/onboarding-assistant.md).
+`hound onboard` takes a GRC team member through onboarding a system: the supplier first, then how each requirement of a framework is
+met for the system. The output is files for a pull request in the config repo; nothing is applied to CISO Assistant until a person reviews
+it and runs `hound scope validate`, `plan` and `apply`.
 
-**No model in evidence collection, and no evidence without a person.** Only `hound onboard` uses a model. `hound run`, `hound serve` and every collector never do: they cannot
-reach the onboarding code, and the runner refuses a deployment config (`hound.yaml`) that has an `llm` section or refers to the onboarding
-key (`config.llm_in_runner`). For manual evidence a coding assistant may read a file and propose its result with
-`hound manual propose`, but the result becomes evidence only when a person attests it with `hound manual approve`
-([manual sources](configuration.md#manual-sources)).
+**hound has no language model of its own.** There is no API key, provider or token budget to manage. For model help, set up your coding
+assistant (Claude Code or GitHub Copilot) with [`hound agent setup`](#set-up-your-coding-assistant-hound-agent-setup): it reads your
+documents and API specifications, drafts through `hound` commands that check everything it writes, and you approve with `hound approve`
+in a terminal. Without an assistant, every step below works by answering `hound`'s questions yourself. The design is in
+[design/agent-driven-onboarding.md](design/agent-driven-onboarding.md); it supersedes the earlier
+[onboarding assistant design](design/onboarding-assistant.md), in which `hound` called a model itself.
 
-## Set up the model
+**No model in evidence collection, and no evidence without a person.** `hound run`, `hound serve` and every collector are deterministic
+code, and the runner refuses a deployment config (`hound.yaml`) that has an `llm` section (`config.llm_in_runner`). For manual evidence a
+coding assistant may read a file and propose its result with `hound manual propose`, but the result becomes evidence only when a person
+attests it with `hound manual approve` ([manual sources](configuration.md#manual-sources)).
 
-```console
-$ hound onboard config
-Model provider (anthropic or openai) [anthropic]:
-Model (empty for the provider's default):
-API key for anthropic (not shown):
-Wrote /work/config-repo/onboarding.yaml; the key is in /home/example/.config/hound/secrets/llm_api_key, readable only by you.
-$ hound onboard config --check
-anthropic claude-opus-5-5: the key works.
-```
-
-The key is saved once, outside the repo, in a file only you can read (`$XDG_CONFIG_HOME/hound/secrets/llm_api_key`, else
-`~/.config/hound/secrets/llm_api_key`). `onboarding.yaml` holds only a reference to it, so it is safe to commit. `--check` makes one minimal
-request and never prints the key. Options: `--provider`, `--model`, `--config <file>` and `--yes`.
+Removed with the built-in model: `hound onboard config`, `onboarding.yaml`, and the options `--no-model`, `--show-requests` and (for the
+onboarding config) `--config`. `hound onboard config` now only says so. The options are still taken, so an older script keeps working;
+each does nothing and prints a line pointing to `hound agent setup`.
 
 ## Onboard a system
 
@@ -34,15 +27,14 @@ $ hound onboard EXAMPLE-ASSETS --framework frameworks/essential-eight-2023.json 
 ```
 
 Run it in the config repo (or pass `--repo`). The session goes in this order, and saves after every answer in
-`onboarding/<system>/session.json`, with each request and reply beside it in `onboarding/<system>/requests/`. Run the same command again to
-carry on where it stopped; the model is never asked again for what it already answered.
+`onboarding/<system>/session.json`. Run the same command again to carry on where it stopped.
 
 1. **Who and what.** Your name (recorded as who accepted each decision), the system owner, the product, and who supplies it: the supplier,
    the solution it provides and the contract covering it, each by `ref_id` and name.
-2. **Supplier first.** A supplier not yet under `scope/third-parties/` is drafted there: the model proposes dependency, penetration,
-   maturity and trust, and the solution's criticality, each with its reason and sources, and you accept each or type your own. Vendor
-   documents you keep (an https URL or a file) are saved under `documents/suppliers/<supplier>/` with their SHA-256 and retrieval date; the
-   model reads only the text ones. Its summary of them stays in the session as a draft, never as evidence. The contract is drafted as
+2. **Supplier first.** A supplier not yet under `scope/third-parties/` is drafted there, with dependency, penetration, maturity and
+   trust, and the solution's criticality, left for you to decide in the file (a coding assistant drafts them with their reasons through
+   `hound supplier draft`). What the supplier provides, in your words, is kept in the session. Vendor documents you keep (an https URL or a file) are saved under `documents/suppliers/<supplier>/` with
+   their SHA-256 and retrieval date. The contract is drafted as
    `status: draft`, and the session stops: **a system is onboarded only once its supplier is approved.** Onboarding checks the scope
    files for an active contract covering the solution; `hound scope plan` then checks approval in CISO Assistant, where the GRC team
    concludes the supplier's assessment (see [Supplier approval](scope.md#supplier-approval)). A drafted supplier file includes that
@@ -50,11 +42,11 @@ carry on where it stopped; the model is never asked again for what it already an
    order is: approve the contract in the file, apply the supplier, conclude its review as ok in CISO Assistant, then finish onboarding
    and apply the system.
 3. **What the API offers.** Each `--spec` (an OpenAPI 3 document, JSON or YAML) is read into a short summary: the endpoints that read,
-   sign-in and paging. Only that summary is sent, never the specification.
-4. **Applicability.** Every requirement in the `--group` implementation groups (all of them without `--group`) gets one proposal. Give the
+   sign-in and paging.
+4. **Applicability.** Every requirement in the `--group` implementation groups (all of them without `--group`) gets one decision. Give the
    groups as your audits declare them, so the system's audit matches: for Essential Eight ML2 that is `--group 1 --group 2`. Each requirement gets one of `api_check`,
-   `manual`, `not_applicable` or `other_system`, with its reasoning. For each, type `a` to accept, `c`, `m`, `n` or `o` to decide otherwise,
-   `l` to accept every remaining proposal that is not `not_applicable`, or `s` to save and stop. Not applicable always needs a justification
+   `manual`, `not_applicable` or `other_system`, with its reasoning. For each, type `c`, `m`, `n` or `o` to decide (`a` accepts a
+   proposal where a session has one, and `l` every remaining one that is not `not_applicable`), or `s` to save and stop. Not applicable always needs a justification
    and the name of who approves it; another system needs that system's name.
 
 5. **Written for review.** Once every requirement is decided, it asks for the domain and perimeter of the system's audit (the first ones in
@@ -69,17 +61,17 @@ carry on where it stopped; the model is never asked again for what it already an
    - `mappings/<framework>.yaml`: manual requirements the mapping does not name yet are added to `manual_only`, with your reasoning as the
      suggested source. Existing lines are never changed.
    - `onboarding/<system>-<framework>-<date>.md`: the record for auditors: the system, the supplier and its levels, the documents kept
-     with their hashes, the model and skills (with versions and SHA-256), and every decision with its proposal and who accepted it.
+     with their hashes, and every decision with who drafted it and who accepted it.
 
    Nothing is sent to CISO Assistant. Review the files in a pull request, then run `hound scope validate scope`, `hound scope plan scope`
    and `hound scope apply scope`. Running `hound onboard` again for the same system writes nothing; to onboard it against another
    framework, pass that framework's file and it writes a separate audit and record.
 
-`--no-model` runs the same steps with empty proposals, for teams without a key. `--show-requests` prints each request before it is sent.
+## Validate, sample and test the profile
 
-## Draft, sample and test the profile
-
-Once applicability is decided, the model drafts the profile for the requirements you accepted as API checks:
+Once applicability is decided, write the profile for the requirements you accepted as API checks: by hand ([REST profiles](collectors/rest.md)),
+or ask your coding assistant, whose `write-a-profile` skill iterates with `hound profile validate` and `hound profile test`. Then check it
+against the real API yourself:
 
 ```sh
 hound onboard profile EXAMPLE-ASSETS --name example-assets \
@@ -87,18 +79,16 @@ hound onboard profile EXAMPLE-ASSETS --name example-assets \
   --secret client_secret=env:EXAMPLE_ASSETS_SECRET
 ```
 
-- **Drafted, then checked.** The model writes `profiles/<name>.yaml` (`--profiles`, `--name`; by default the system's name in lower case)
-  from the API summary of the session's `--spec` files and the accepted checks, guided by the `profile` skills. Every draft is loaded and
-  validated as `hound profile validate` does.
-- **Sampled once, with your go-ahead.** It asks before it calls the API (`--sample` answers yes). The draft's queries run once, read-only,
-  with the instance settings (`--set name=value`) and secrets (`--secret name=env:VAR` or `file:/path`) you give. A query that fails is a
-  problem for the next draft, such as a wrong path. Each answer is kept as a recording with the profile's `identities` fields hashed,
-  tokens replaced and the API's address as `{{api}}`; an answer still holding a secret is refused. Only the answers' shapes (field names,
-  types, counts and short setting-like values; never identities, IDs or dates) go to the model.
+- **Checked as written.** It reads `profiles/<name>.yaml` (`--profiles`, `--name`; by default the system's name in lower case), which
+  must exist, and loads and validates it as `hound profile validate` does. It never changes the profile.
+- **Sampled once, with your go-ahead.** It asks before it calls the API (`--sample` answers yes). The profile's queries run once, read-only,
+  with the instance settings (`--set name=value`) and secrets (`--secret name=env:VAR` or `file:/path`) you give. A query that fails is
+  listed, such as a wrong path. Each answer is kept as a recording with the profile's `identities` fields hashed, tokens replaced and the
+  API's address as `{{api}}`; an answer still holding a secret is refused.
 - **You confirm each result.** Each check's result on the sample is shown; type `y` if it is right, or the result it should give. Your
   answers and the recordings are saved as the profile test `profiles/<name>.tests/onboarding.yaml`, and the test runs.
-- **A few rounds.** Validation, sample and test problems go back to the model with its previous draft, for at most `llm.max_rounds`
-  drafts (default 3; `--rounds` for one run). What is still wrong is listed, and the command exits 1, as a failing `hound profile test` does.
+- **What is still wrong is listed,** and the command exits 1, as a failing `hound profile test` does. Fix the profile (or have your
+  assistant fix it from the listed problems) and run it again.
 - **Nothing is scheduled.** Review the profile and its test in a pull request, run `hound profile validate <name>` and
   `hound profile test <name>`, then add a `rest` collector instance for it to `hound.yaml`.
 
@@ -108,11 +98,11 @@ Before onboarding systems one by one, decide once, for each mitigation of the fr
 judges a requirement only on the audit of the system that provides it, and never fails an audit because it looked at the wrong system.
 
 ```sh
-hound onboard environment --repo . --framework frameworks/essential-eight-2023.json --signals signals.json --no-model
+hound onboard environment --repo . --framework frameworks/essential-eight-2023.json --signals signals.json
 ```
 
 ```sh
-hound onboard environment --repo . --graph example-m365 --no-model      # read the signals live, as an m365 collector in hound.yaml
+hound onboard environment --repo . --graph example-m365      # read the signals live, as an m365 collector in hound.yaml
 ```
 
 - **Signals suggest, you decide.** `--graph <collector>` signs in as that `m365` collector of the deployment config (`--deployment`, default
@@ -133,16 +123,13 @@ hound onboard environment --repo . --graph example-m365 --no-model      # read t
 - **What comes next:** each named system not onboarded yet is listed with `hound onboard "<system>"`, whose supplier goes through the
   supplier gate first; each gap is listed as requirements no system's audit answers.
 
-- **Then the model proposes.** Without `--no-model`, after the signals are read, one request through the onboarding gate (the model in
-  `onboarding.yaml`, `--config`; requests kept in `onboarding/environment/requests/`; `--show-requests` prints them) sends the mitigations,
-  the systems in scope with their descriptions, and the signals, guided by the `environment` skills. The model proposes a system, manual or
-  gap for each mitigation with its reasoning, shown as `Model: ...` under the suggestion. Accepting records "from the model's proposal" and
-  the reasoning; it is still your decision. A reply about a mitigation not asked about is refused.
+- **With a coding assistant,** the same decisions are drafted through `hound onboard environment pending` and `decide`
+  ([every kind of onboarding](#every-kind-of-onboarding-the-same-way)) and approved with `hound approve`.
 - **Gaps in the plan.** `hound scope plan` lists each mitigation decided as a gap under "Capability gaps" (and `gaps` in `--json`): the
   requirements no system's audit answers, never a fail on some system.
 
 The default skill `environment-capabilities` describes how to tell which product is authoritative; organisation skills that apply to the
-`environment` step extend it.
+`environment` step extend it. Both reach a coding assistant through its skill files and `pending --json`.
 
 ## Set up your coding assistant: hound agent setup
 
@@ -273,25 +260,21 @@ agent proposed a result for, and you attest, change or reject it ([manual source
 the output of `hound scope plan` (Markdown or `--json`), `hound plan`, a diff (a file, or piped in: `git diff | hound explain`), or two
 versions of one file (`hound explain before.yaml after.yaml`).
 
-- **Code reads it first.** The counts, the objects and what needs a careful look (requirements newly marked not applicable, deletions,
+- **Code reads it.** The counts, the objects and what needs a careful look (requirements newly marked not applicable, deletions,
   removed checks in mappings or profiles, a check removed from a profile that a mapping in `mappings/` still uses, a system
-  without an owner, a supplier contract that is not active) come from code, not the model. The plan is the source
-  of truth: the summary quotes its counts, and a reply that names an object the plan does not contain is refused (`llm.invalid_reply`).
-- **The right skills.** The `explain` step's skills, plus those for what the change touches: third parties get the supplier skills,
-  not-applicable rows the applicability skill, profiles the profile authoring skill, mappings and audits the framework's mapping skill
-  (`--framework`, default `essential-eight-2023`). `--skill <name>` chooses instead. The summary lists each skill with its source,
-  version and SHA-256.
-- **Same gate as onboarding.** The model connection from `onboarding.yaml`, the outbound guard and deny terms, `--show-requests`, and a
-  record in `onboarding/explain/requests/`. Object IDs, email, IP and MAC addresses and secret values are replaced before anything is sent.
-- **Review only.** It never edits config or applies a plan, and collection never uses it. `--no-model` prints only what code found.
+  without an owner, a supplier contract that is not active) come from code. The plan is the source of truth: the summary quotes its
+  counts. No model is asked.
+- **For an agent,** `--json` gives the same facts (counts, objects, flags and topics); the `review-before-apply` skill has a coding
+  assistant read them with the plan and the changed files before it proposes an apply.
+- **Review only.** It never edits config or applies a plan, and collection never uses it.
 
 ## Tutorial: onboard the example API
 
 For a worked example of a whole stack, two systems and four suppliers, see the [onboarding tutorial](examples/onboarding-tutorial.md):
 Example Pty Ltd's privately hosted GRC platform on Oracle Cloud and its office firewall, onboarded, reviewed, validated and applied.
 
-This walk-through onboards the fictional Example Asset API into a copy of the template config repo, without a model (`--no-model`), so it
-needs no key and sends nothing anywhere. It takes about ten minutes. Run it from the root of this repository.
+This walk-through onboards the fictional Example Asset API into a copy of the template config repo by answering `hound`'s questions
+yourself: it needs no key and sends nothing anywhere. It takes about ten minutes. Run it from the root of this repository.
 
 1. **A config repo to work in.**
 
@@ -303,7 +286,7 @@ needs no key and sends nothing anywhere. It takes about ten minutes. Run it from
 
    ```sh
    hound onboard EXAMPLE-ASSETS --repo /tmp/tutorial-repo --group 1 \
-     --spec examples/apis/example-asset-api.openapi.yaml --no-model
+     --spec examples/apis/example-asset-api.openapi.yaml
    ```
 
    Answer the questions: your name, the system owner's email (`owner@example.com`), the product (`Example Asset Service`), the supplier
@@ -319,8 +302,8 @@ needs no key and sends nothing anywhere. It takes about ten minutes. Run it from
    real repo you would now apply the supplier and conclude its review `EA-SUP-EXAMPLE` as ok in CISO Assistant (see
    [Supplier approval](scope.md#supplier-approval)); the tutorial skips that, because onboarding itself checks only the contract.
 
-4. **Decide applicability.** Run the same command again. It shows what the API offers, then each requirement with "No proposal", since no
-   model is asked. Type `c` for ISM-1807 (the API lists devices and their last check-in) with a reason, and `m` with a reason for the rest.
+4. **Decide applicability.** Run the same command again. It shows what the API offers, then each requirement with "No proposal": the
+   decisions are yours. Type `c` for ISM-1807 (the API lists devices and their last check-in) with a reason, and `m` with a reason for the rest.
    Type `s` at any point to stop; the next run carries on from there. At the end, accept the default domain and perimeter:
 
    ```console
@@ -335,53 +318,21 @@ needs no key and sends nothing anywhere. It takes about ten minutes. Run it from
    cd /tmp/tutorial-repo && hound scope validate scope
    ```
 
-6. **The profile.** With a model, `hound onboard profile EXAMPLE-ASSETS` drafts it (see [Draft, sample and test the
-   profile](#draft-sample-and-test-the-profile)). Without one, copy the library's example profile and its tests, and run them offline:
+6. **The profile.** Copy the library's example profile and its tests, and run them offline (for your own system you would write the
+   profile, or have your coding assistant write it, then [validate, sample and test it](#validate-sample-and-test-the-profile)):
 
    ```sh
    mkdir -p profiles && cp -R <evidence-hound>/profiles/example.yaml <evidence-hound>/profiles/example.tests profiles/
    hound profile test example --profiles profiles
    ```
 
-To try the model steps, run `hound onboard config` with your own key and repeat from step 2 without `--no-model`, adding
-`--show-requests` to see each request before it is sent.
-
-## onboarding.yaml
-
-Separate from `hound.yaml`; only `hound onboard` reads it.
-
-| Key | Meaning |
-| --- | --- |
-| `llm.provider` | Required. `anthropic` or `openai`. |
-| `llm.model` | The model. Empty means the provider's default from `onboarding/models.yaml`, shipped beside `hound` and editable without a new build (`claude-opus-5-5` and `gpt-6.2-astra` today). |
-| `llm.api_key` | Required. A reference, `env:NAME` or `file:/path`. A key written here is refused (`onboarding.api_key_literal`). |
-| `llm.effort` | Optional: `low`, `medium`, `high` or `max`. How hard the model thinks. |
-| `llm.max_tokens_per_session` | Optional, default 2,000,000. A session stops asking the model once it has used this many tokens (`llm.budget_reached`). |
-| `llm.max_rounds` | Optional, default 3. The most drafts the model makes of a profile in `hound onboard profile`, each checked and its problems sent back. |
-| `llm.deny_terms_file` | Optional. A text file of terms, one per line, that must never be sent: your organisation's name, domains, project names. |
-| `skills_path` | The organisation's own skills. Default `/config/skills`. |
-| `profiles_path` | The organisation's profiles folder. Default `/config/profiles`. |
-
-## What is sent, and what is not
-
-Every request passes one gate before it leaves:
-
-- **The outbound guard** scans the instructions, every input and the schema for the values of the secrets in use, the deny terms, and email,
-  IP and MAC addresses. A hit sends nothing and names what matched and where (`llm.blocked_content`), never the matched value. Documentation
-  addresses pass (`192.0.2.0/24`, `198.51.100.0/24`, `203.0.113.0/24`, `2001:db8::/32`, loopback, `example.com`), so fictional material can be
-  sent.
-- **Response shapes, not responses.** A system's API answers are reduced to field names, types and counts. Values are kept only for
-  settings-like fields (a few short distinct values, such as `active` and `inactive`) and never for a profile's `identities`, email
-  addresses, IDs or free text.
-- **A local record.** Every request and reply is saved with the session (`NNN-step.request.json`, `NNN-step.reply.json`), and
-  `--show-requests` prints each request before it is sent.
-- **Replies are checked.** Each reply must meet the step's JSON schema (`llm.invalid_reply`); a model that declines is `llm.refused`, and a
-  provider that cannot be reached is `llm.unreachable`.
+To do the same with a coding assistant, run `hound agent setup` in the repo and ask it to onboard the system with hound.
 
 ## Skills: the assistant's guidance
 
-A skill is a Markdown file with frontmatter that tells the model how to approach a step. Skills only guide: the outbound guard, response
-shapes, the named approver for not applicable, the supplier gate, schema checks and profile tests stay in code, and no skill can change them.
+A skill is a Markdown file with frontmatter that says how to approach a step. `hound` gives the skills for a step to a coding assistant
+with `hound onboard <system> pending --json`, and `hound agent setup` writes the defaults into the assistant's own skill files. Skills only
+guide: the named approver for not applicable, the supplier gate, `hound approve` and profile tests stay in code, and no skill can change them.
 
 ```markdown
 ---
@@ -392,7 +343,7 @@ applies_to: [applicability]          # supplier, system, applicability, profile,
 frameworks: [essential-eight-2023]    # optional: only for these frameworks
 overrides: applicability              # optional: replace this default on purpose
 ---
-Guidance for the model, in plain Markdown.
+Guidance, in plain Markdown.
 ```
 
 - **Defaults** are built into `hound`, from this repository's [`skills/`](../skills/) folder: supplier assessment and tiering, supplier
@@ -400,17 +351,15 @@ Guidance for the model, in plain Markdown.
   specification, and reviewing a config change (for `hound explain`).
 - **Organisation skills** live in the config repo's `skills/` folder (`skills_path`, mounted read-only like profiles). They add to the
   defaults; one with a default's name is an error unless it says `overrides:`.
-- **Choosing:** at each step the model gets every skill whose `applies_to` names the step and whose `frameworks` match, defaults first, within
-  a size budget. Over the budget is an error naming the skills, never a silent cut. Specifications and responses are passed separately, as
-  material to read.
-- **Recorded:** each session's `skills.json` lists every skill used with its source, version and SHA-256.
+- **Choosing:** a step gets every skill whose `applies_to` names the step and whose `frameworks` match, defaults first, within
+  a size budget. Over the budget is an error naming the skills, never a silent cut.
 
 | Command | Does |
 | --- | --- |
 | `hound skill list` | Every active skill: source, version, SHA-256, steps and override. |
 | `hound skill new <name>` | Writes a skeleton to fill in. |
 | `hound skill add <file>` | Validates the skill against the defaults and the folder, then copies it in. |
-| `hound skill validate [--deny-terms <file>]` | Checks every skill and refuses (`skill.sensitive_content`) any that holds organisation data such as an email, IP or MAC address or a deny term, since skills are sent to the model provider. |
-| `hound skill draft [--repo <repo>] [--only <name>]... [--no-model] [--show-requests]` | Drafts the organisation's own skills (`organisation-profile`, `risk-appetite`, `it-landscape`, `ai-landscape`) from your answers and the repo's systems, suppliers and capability map, through the same gate as onboarding. Identifiers are stripped before writing; each draft starts at version 1 and a re-draft shows the change and bumps it. `--no-model` writes templates with the questions as headings. Drafts go only into the skills folder, for you to review, edit and commit. |
+| `hound skill validate` | Checks every skill: frontmatter, steps, size and overrides. |
+| `hound skill draft [--only <name>]...` | Writes the organisation's own skills (`organisation-profile`, `risk-appetite`, `it-landscape`, `ai-landscape`) as templates with their questions as headings, for you or your coding assistant to answer. A skill already in the folder is kept as it is. Templates go only into the skills folder, for you to review, edit and commit. |
 
 Each takes `--skills <folder>` (default `HOUND_SKILLS_PATH`, else `./skills`).

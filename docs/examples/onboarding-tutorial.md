@@ -11,7 +11,7 @@ You start from a copy of the template compliance repo, `examples/compliance-repo
 [`examples/onboarding-tutorial`](../../examples/onboarding-tutorial/README.md), at the same paths, so you can compare your result with it.
 The template itself stays without them, so a new repo still starts empty.
 
-It assumes you have read [Onboarding with a language model](../onboarding.md) and, for installing the stack, the
+It assumes you have read [Onboarding](../onboarding.md) and, for installing the stack, the
 [first deployment tutorial](../tutorials/first-deployment.md).
 
 ## The deployment
@@ -127,11 +127,11 @@ cp examples/onboarding-tutorial/scope/third-parties/sup-ciso-assistant.yaml exam
 
 ## 3. Onboard the GRC platform
 
-1. **Start.** With a model, leave out `--no-model` and it proposes each level and decision for you to accept; without one, you decide
-   each yourself.
+1. **Start.** You decide each level and decision yourself here. With a coding assistant set up by `hound agent setup`, it drafts
+   them through `hound` and you approve with `hound approve`.
 
    ```sh
-   hound onboard GRC-PLATFORM --repo /tmp/grc-repo --group 1 --group 2 --no-model
+   hound onboard GRC-PLATFORM --repo /tmp/grc-repo --group 1 --group 2
    ```
 
    Groups 1 and 2 are Essential Eight maturity levels one and two: 107 requirements. Answer the first questions:
@@ -170,7 +170,7 @@ cp examples/onboarding-tutorial/scope/third-parties/sup-ciso-assistant.yaml exam
    To replay these decisions instead of typing them, give the tutorial's answers as input:
 
    ```sh
-   hound onboard GRC-PLATFORM --repo /tmp/grc-repo --group 1 --group 2 --no-model < examples/onboarding-tutorial/answers/grc-platform.decisions.txt
+   hound onboard GRC-PLATFORM --repo /tmp/grc-repo --group 1 --group 2 < examples/onboarding-tutorial/answers/grc-platform.decisions.txt
    ```
 
    At the end, accept the default domain and perimeter. It writes the audit
@@ -185,7 +185,7 @@ cp examples/onboarding-tutorial/scope/third-parties/sup-ciso-assistant.yaml exam
    `CTR-SOPHOS-2026`. Review the drafted `scope/third-parties/sup-sophos.yaml` as you did Oracle's.
 
    ```sh
-   hound onboard OFFICE-FIREWALL --repo /tmp/grc-repo --group 1 --group 2 --no-model
+   hound onboard OFFICE-FIREWALL --repo /tmp/grc-repo --group 1 --group 2
    ```
 
 2. **Decide applicability.** Two requirements become API checks, which the `sophos-central` profile answers: ISM-1501 (the firmware is
@@ -194,7 +194,7 @@ cp examples/onboarding-tutorial/scope/third-parties/sup-ciso-assistant.yaml exam
    control, Office macros and user application hardening do not apply to an appliance.
 
    ```sh
-   hound onboard OFFICE-FIREWALL --repo /tmp/grc-repo --group 1 --group 2 --no-model < examples/onboarding-tutorial/answers/office-firewall.decisions.txt
+   hound onboard OFFICE-FIREWALL --repo /tmp/grc-repo --group 1 --group 2 < examples/onboarding-tutorial/answers/office-firewall.decisions.txt
    ```
 
    The API check rows are left out of the audit file: the collector's results fill them.

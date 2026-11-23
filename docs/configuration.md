@@ -178,6 +178,6 @@ A collector is a class implementing `ICollector` from `EvidenceHound.Collectors.
 
 ## No language model here
 
-A deployment config never sets up a language model. An `llm` section, or any value that refers to the onboarding key (`llm_api_key`), is
-refused with `config.llm_in_runner`. Model settings belong in `onboarding.yaml`, which only `hound onboard` reads; see
+A deployment config never sets up a language model. An `llm` section, or any value that names a model key (`llm_api_key`), is
+refused with `config.llm_in_runner`. hound has no model of its own at all; model help comes from your coding assistant, see
 [onboarding.md](onboarding.md).
