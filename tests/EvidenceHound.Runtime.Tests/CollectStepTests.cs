@@ -3,6 +3,7 @@ using EvidenceHound.Collectors;
 using EvidenceHound.Core.Checks;
 using EvidenceHound.Core.Packaging;
 using EvidenceHound.Core.Results;
+using EvidenceHound.Core.Scope;
 using EvidenceHound.Core.Secrets;
 using EvidenceHound.Runtime.Configuration;
 using EvidenceHound.Runtime.Storage;
@@ -47,6 +48,25 @@ public sealed class CollectStepTests : IDisposable
         context.Name.ShouldBe("idp");
         context.Settings.Find("tenant").ShouldBe("example.com");
         context.Clock.UtcNow.ShouldBe(Now);
+    }
+
+    [Fact]
+    public async Task The_capabilities_another_product_provides_are_passed_to_the_collector()
+    {
+        var collector = new StubCollector(Output);
+        var at = new SourceLine("scope/capabilities.yaml", 1);
+        var framework = new ScopeRef("urn:example:framework", at);
+        var scope = new ScopeDocument(new ScopeSetup("Example Pty Ltd", [], []), [], [])
+        {
+            Capabilities = new ScopeCapabilityMap(framework, [new ScopeCapability("ac", CapabilityProvision.System, at) { Route = "example-app-control", Systems = [new ScopeRef("Example app control", at)], ApprovedBy = "GRC lead" }], at),
+        };
+
+        await Step().RunAsync(Instance(), collector, TestContext.Current.CancellationToken);
+        collector.Calls.Single().Capabilities.ProvidedElsewhere.ShouldBeEmpty();
+
+        var step = new CollectStep(Secrets.From([]), new FileEvidenceStore(_root), _clock, null, TestCollectorServices.None) { Scope = scope };
+        await step.RunAsync(Instance(), collector, TestContext.Current.CancellationToken);
+        collector.Calls[1].Capabilities.ProvidedElsewhere.ShouldBe(new Dictionary<string, string> { ["ac"] = "Example app control (no audit yet)" });
     }
 
     [Fact]
