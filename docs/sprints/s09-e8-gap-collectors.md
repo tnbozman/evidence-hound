@@ -660,7 +660,7 @@ The first run found that a single-system audit needs `unlisted:` and that a requ
 - `hound run` with fictional exports for two scopes updates the example Essential Eight audit's patching rows in the local CISO Assistant.
 
 ### s09-05 Manual-upload templates for the remaining requirements
-- [ ] Done
+- Moved to s10-04 (2026-11-23, maintainer's decision): the templates and the evidence plan describe the same thing from two ends, so they are built together. Kept here as a record.
 
 **Story:** As a system owner, I want a ready template for each Essential Eight requirement that cannot be collected, so that I know what to export, how often, and how to attest it.
 
@@ -683,7 +683,7 @@ The first run found that a single-system audit needs `unlisted:` and that a requ
 **Acceptance criteria**
 - `docs/collectors/m365.md` gains the application control checks, the `ThreatHunting.Read.All` permission with its justification, licence notes and limits.
 - `docs/collectors/vuln-scan.md`: formats, column maps (including Defender's export), scopes, every check with its limits, and how to schedule exports from common scanners.
-- `docs/collectors/manual-templates.md` indexes the templates by Essential Eight strategy.
+- ~~`docs/collectors/manual-templates.md` indexes the templates by Essential Eight strategy.~~ Moved to s10-04 with s09-05.
 
 **Tests first**
 - Docs check-ID tests for the M365 and `vuln-scan` collectors.
