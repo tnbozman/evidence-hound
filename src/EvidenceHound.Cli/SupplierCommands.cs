@@ -38,16 +38,22 @@ internal static class SupplierCommands
         };
         var kind = new Option<string>("--kind") { Description = "What the third party is: vendor (makes the product), reseller (sells it) or msp (a managed service provider that runs it).", DefaultValueFactory = _ => "vendor" };
         kind.AcceptOnlyFromAmong([.. Kinds.Keys]);
-        var standsFor = new Option<string?>("--for") { Description = "For a reseller or msp: the ref_id of the vendor whose product it sells or runs, already in scope/third-parties/." };
+        var standsFor = new Option<string?>("--for") { Description = "For a reseller (required) or an msp that runs one vendor's product: that vendor's ref_id, already in scope/third-parties/. An msp that runs the organisation's own systems leaves it out." };
         var documents = new Option<string[]>("--document")
         {
             Description = "A document that was read for this draft and kept in the repo, as a path relative to the repo. Named in the file with its SHA-256. Repeat for more.",
             AllowMultipleArgumentsPerToken = false,
         };
+        var description = new Option<string?>("--description") { Description = "What the third party does for the organisation, in a sentence." };
+        var start = new Option<string?>("--start") { Description = "The contract's start date, yyyy-MM-dd." };
+        var end = new Option<string?>("--end") { Description = "The contract's end or renewal date, yyyy-MM-dd." };
+        var expense = new Option<decimal?>("--annual-expense") { Description = "The contract's annual expense, a plain number." };
+        var currency = new Option<string?>("--currency") { Description = "The annual expense's currency, ISO 4217 such as AUD or USD." };
         var json = new Option<bool>("--json") { Description = "Answer in JSON, for an agent." };
         var draft = new Command("draft", "Draft a third party's file under scope/third-parties/ with a draft contract and an open review. A person approves it with 'hound approve'.")
         {
-            repo, system, entityRef, entityName, solutionRef, solutionName, contractRef, contractName, levels, kind, standsFor, documents, json,
+            repo, system, entityRef, entityName, solutionRef, solutionName, contractRef, contractName, levels, kind, standsFor, documents,
+            description, start, end, expense, currency, json,
         };
         draft.SetAction(async (parseResult, cancellationToken) =>
         {
@@ -68,8 +74,13 @@ internal static class SupplierCommands
                 completed[0], parseResult.GetRequiredValue(entityName), completed[1],
                 parseResult.GetRequiredValue(solutionName), completed[2], parseResult.GetRequiredValue(contractName));
             var role = parseResult.GetValue(kind) ?? "vendor";
+            var given = new ContractTerms(
+                parseResult.GetValue(start), parseResult.GetValue(end),
+                parseResult.GetValue(expense)?.ToString(CultureInfo.InvariantCulture), parseResult.GetValue(currency)?.ToUpperInvariant());
             var written = await Levels(parseResult.GetValue(levels) ?? [])
-                .BindAsync(async read => (await NotesAsync(root, role, parseResult.GetValue(standsFor), parseResult.GetValue(documents) ?? [], cancellationToken)).Bind(notes => Result.Ok((read, notes))))
+                .Bind(read => Terms(given).Map(terms => (read, terms)))
+                .BindAsync(async read => (await NotesAsync(root, role, parseResult.GetValue(standsFor), parseResult.GetValue(documents) ?? [], cancellationToken))
+                    .Bind(notes => Result.Ok((read: read.read, notes: notes with { Description = parseResult.GetValue(description) ?? notes.Description, Terms = read.terms }))))
                 .BindAsync(read => DraftAsync(root, choice, read.read, read.notes, parseResult.GetValue(system), AuditSeries.Today(configuration), cancellationToken));
             return await written.Match(
                 async file =>
@@ -126,6 +137,35 @@ internal static class SupplierCommands
             : Result.Ok<IReadOnlyList<LevelProposal>>(levels);
     }
 
+    /// <summary>The contract's dates are yyyy-MM-dd and the end is not before the start. Pure.</summary>
+    internal static Result<ContractTerms> Terms(ContractTerms terms)
+    {
+        var problems = new List<Problem>();
+        DateOnly? Day(string name, string? text)
+        {
+            if (text is null)
+            {
+                return null;
+            }
+
+            if (DateOnly.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var day))
+            {
+                return day;
+            }
+
+            problems.Add(new Problem("supplier.contract_date_invalid", $"--{name} '{text}' is not a date; write it as yyyy-MM-dd."));
+            return null;
+        }
+
+        var (from, to) = (Day("start", terms.Start), Day("end", terms.End));
+        if (from is { } first && to is { } last && last < first)
+        {
+            problems.Add(new Problem("supplier.contract_dates_invalid", $"The contract ends before it starts: --end {terms.End} is before --start {terms.Start}."));
+        }
+
+        return problems.Count > 0 ? Result.Fail<ContractTerms>(problems) : Result.Ok(terms);
+    }
+
     /// <summary>The words that say what a reseller or a managed service provider is to the vendor it stands for.</summary>
     private static readonly Dictionary<string, string?> Kinds = new(StringComparer.Ordinal)
     {
@@ -145,7 +185,11 @@ internal static class SupplierCommands
         if (Kinds[kind] is { } words)
         {
             var vendor = standsFor is null ? null : (await OnboardSystemCommand.ThirdPartiesAsync(repo, cancellationToken)).FirstOrDefault(e => e.RefId == standsFor);
-            if (standsFor is null)
+            if (standsFor is null && kind == "msp")
+            {
+                description = "Managed service provider.";
+            }
+            else if (standsFor is null)
             {
                 problems.Add(new Problem("supplier.for_missing", $"A {kind} names the vendor with --for: the ref_id of the third party whose product it sells or runs."));
             }

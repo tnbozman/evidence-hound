@@ -27,7 +27,9 @@ A small team does not need to type this up. `hound agent setup` gives your codin
 2. **The agent drafts each supplier** with `hound supplier draft`: the entity, the solution you buy, the contract as a draft, and an
    open review. Each level (dependency, penetration, maturity, trust, criticality) carries its reason, and the agent leaves maturity
    and trust undecided when no document backs them. A document you agree to keep goes under `documents/suppliers/<supplier>/`, so the
-   reason can point at it.
+   reason can point at it. The contract's dates and cost come from the spreadsheet as options (`--start`, `--end`,
+   `--annual-expense`, `--currency`), and `--description` says what the supplier does for you. A managed service provider that runs your
+   own laptops and network is drafted with `--kind msp` and no `--for`.
 3. **Check the draft.** `hound scope validate scope --config hound.yaml` reports any problem with a file, a line and a hint; the agent
    fixes them.
 4. **You approve.** `hound approve`, in your own terminal, shows each supplier's levels and reasons, then asks you to make its
@@ -38,6 +40,10 @@ A small team does not need to type this up. `hound agent setup` gives your codin
 For worked examples, see the onboarding tutorial's four fictional suppliers in `examples/onboarding-tutorial/scope/third-parties/` (in the
 Evidence Hound repo): a cloud host, a firewall vendor and two open-source projects, each with its levels, reasons, contract and review.
 The [onboarding tutorial](examples/onboarding-tutorial.md) shows them being drafted and approved.
+
+For CMMC Level 2, the register is where you show a prime which service providers handle or protect your controlled unclassified
+information (CUI). `hound` cannot yet record that on a supplier, nor run a NIST SP 800-171 audit (both are planned); until then, say it
+in each supplier's `description` and keep the provider's authorisation documents under `documents/suppliers/`.
 
 ## Keeping it current
 
