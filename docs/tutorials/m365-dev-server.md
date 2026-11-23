@@ -63,4 +63,4 @@ A recording of a real tenant (s09-27) and a trial against one (s09-18) still mat
 - licences: what Graph answers without Entra ID P2 or Intune, beyond the cases the unit tests already stand in;
 - real data: odd values, very large collections and settings nobody wrote down.
 
-The server answers Graph only. `hound collect` against it still needs a sign-in, which the server does not answer yet, so the tests run the collector with a stand-in credential.
+The server answers Graph only, not sign-in. To collect from it with `hound`, add `sign_in: none` to the m365 collector's settings with `graph_url: http://localhost:5365/`: the collector then sends a placeholder token and asks for no certificate or secret. `sign_in: none` is refused for any address that is not on this machine, so real Graph always signs in ([settings](../collectors/m365.md)). The trial's Microsoft 365 step does this for you ([local trial](local-trial.md)).

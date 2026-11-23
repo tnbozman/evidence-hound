@@ -1,6 +1,5 @@
 using EvidenceHound.Core.Checks;
 using EvidenceHound.Core.Results;
-using EvidenceHound.Core.Secrets;
 
 namespace EvidenceHound.Collectors.M365;
 
@@ -22,6 +21,7 @@ public sealed class M365Collector(IGraphCredentialFactory credentials, IGraphWai
             new(M365Settings.TenantId, "Directory (tenant) ID of the Entra tenant.", Required: true),
             new(M365Settings.ClientId, "Application (client) ID of the app registration the collector signs in as.", Required: true),
             new(M365Settings.GraphUrl, "Microsoft Graph address. Default: https://graph.microsoft.com/.", Required: false),
+            new(M365Settings.SignIn, "app signs in as the app registration (the default); none sends no credential, for the Microsoft 365 dev server on localhost only.", Required: false),
             new(M365Settings.IncludeIdentities, "true keeps user principal names, mail addresses and people's names in evidence. Default: false (hashed).", Required: false),
             new(M365Settings.BreakGlassAccounts, "Comma-separated object IDs of break-glass accounts that Conditional Access policies may exclude.", Required: false),
             new(M365Settings.MfaPartialPercent, "Percentage of MFA-capable members at or above which MFA registration is partial rather than failed. Default: 90.", Required: false),
@@ -44,7 +44,7 @@ public sealed class M365Collector(IGraphCredentialFactory credentials, IGraphWai
         cancellationToken.ThrowIfCancellationRequested();
 
         return await M365Options.FromSettings(context.Settings)
-            .Bind(options => credentials.Create(Connection(options, context.Secrets)).Map(credential => (options, credential)))
+            .Bind(options => GraphSignIn.For(options, credentials, context.Secrets).Map(credential => (options, credential)))
             .BindAsync(async pair =>
             {
                 using var http = context.HttpClients.CreateClient(TypeName);
@@ -52,12 +52,6 @@ public sealed class M365Collector(IGraphCredentialFactory credentials, IGraphWai
                 return (await ReadAsync(client, cancellationToken)).Bind(collections => Evaluate(collections, pair.options, context));
             });
     }
-
-    private static GraphConnection Connection(M365Options options, IReadOnlyDictionary<string, Secret> secrets) => new(
-        options.TenantId,
-        options.ClientId,
-        secrets.GetValueOrDefault(M365Settings.ClientCertificate),
-        secrets.GetValueOrDefault(M365Settings.ClientSecret));
 
     /// <summary>Reads every collection. One the tenant is not licensed for is left out when the source allows it, so its checks can say so.</summary>
     private static async Task<Result<IReadOnlyList<(GraphSource Source, GraphCollection? Collection)>>> ReadAsync(GraphClient client, CancellationToken cancellationToken)

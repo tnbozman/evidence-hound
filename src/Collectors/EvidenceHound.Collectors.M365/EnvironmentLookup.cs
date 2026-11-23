@@ -26,9 +26,7 @@ public sealed class EnvironmentLookup(IGraphCredentialFactory credentials, IGrap
         ArgumentNullException.ThrowIfNull(secrets);
         ArgumentNullException.ThrowIfNull(httpClients);
         return await M365Options.FromSettings(settings)
-            .Bind(options => credentials.Create(new GraphConnection(
-                options.TenantId, options.ClientId, secrets.GetValueOrDefault(M365Settings.ClientCertificate), secrets.GetValueOrDefault(M365Settings.ClientSecret)))
-                .Map(credential => (options, credential)))
+            .Bind(options => GraphSignIn.For(options, credentials, secrets).Map(credential => (options, credential)))
             .BindAsync(async pair =>
             {
                 using var http = httpClients.CreateClient(M365Collector.TypeName);
