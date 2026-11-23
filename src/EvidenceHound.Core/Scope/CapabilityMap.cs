@@ -6,7 +6,11 @@ namespace EvidenceHound.Core.Scope;
 public sealed record Mitigation(string Code, IReadOnlyList<SnapshotNode> Requirements);
 
 /// <summary>A row to write in a system's audit: the requirement, by <c>ref</c> or <c>urn</c>, and why it is not applicable there.</summary>
-public sealed record CapabilityRow(string Key, string Requirement, string Observation);
+public sealed record CapabilityRow(string Key, string Requirement, string Observation)
+{
+    /// <summary>The systems the capability map says meet the requirement.</summary>
+    public IReadOnlyList<string> ProvidedBy { get; init; } = [];
+}
 
 /// <summary>
 /// The rows the map writes into one system's own audit file, and the requirements left out because the audit's mapping computes them

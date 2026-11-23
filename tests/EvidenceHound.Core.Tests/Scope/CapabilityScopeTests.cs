@@ -14,12 +14,13 @@ public class CapabilityScopeTests
 
         var ms365 = rows.Audits.Single(a => a.AuditRefId == "EX365-E8");
         ms365.File.ShouldBe("scope/audits/ex365-e8.yaml");
-        ms365.Rows.ShouldBe(
+        ms365.Rows.Select(r => (r.Key, r.Requirement, r.Observation)).ShouldBe(
         [
-            new CapabilityRow("ref", "AC-1", "Provided by Example app control (audit APPCONTROL-E8), as recorded in scope/capabilities.yaml (approved by GRC lead on 2026-11-23)."),
-            new CapabilityRow("ref", "AC-2", "Provided by Example app control (audit APPCONTROL-E8), as recorded in scope/capabilities.yaml (approved by GRC lead on 2026-11-23)."),
-            new CapabilityRow("ref", "RB-1", "Provided by Example backup (audit BACKUP-E8), as recorded in scope/capabilities.yaml (approved by GRC lead on 2026-11-23)."),
+            ("ref", "AC-1", "Met by Example app control (audit APPCONTROL-E8), as recorded in scope/capabilities.yaml (approved by GRC lead on 2026-11-23); open until that audit shows it met."),
+            ("ref", "AC-2", "Met by Example app control (audit APPCONTROL-E8), as recorded in scope/capabilities.yaml (approved by GRC lead on 2026-11-23); open until that audit shows it met."),
+            ("ref", "RB-1", "Met by Example backup (audit BACKUP-E8), as recorded in scope/capabilities.yaml (approved by GRC lead on 2026-11-23); open until that audit shows it met."),
         ]);
+        ms365.Rows.Select(r => string.Join(", ", r.ProvidedBy)).ShouldBe(["Example app control", "Example app control", "Example backup"]);
     }
 
     [Fact]
@@ -50,7 +51,7 @@ public class CapabilityScopeTests
         var scope = ScopeOf(Standard(), Audit("EX365-E8", "Example 365"));
 
         CapabilityMap.Rows(scope, Snapshot).Audits.ShouldHaveSingleItem().Rows[0].Observation
-            .ShouldStartWith("Provided by Example app control (no audit yet; onboard it with 'hound onboard Example app control'),");
+            .ShouldStartWith("Met by Example app control (no audit yet; onboard it with 'hound onboard Example app control'),");
     }
 
     [Fact]

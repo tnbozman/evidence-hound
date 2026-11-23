@@ -36,9 +36,12 @@ public sealed class OnboardOutputTests
         notApplicable.Status.ShouldBe("done");
         notApplicable.Observation.ShouldBe("Not applicable: Only the supplier administers it. Approved by Sam Example; accepted by Alex Example when onboarding EXAMPLE-ASSETS on 2026-11-23 (onboarding/example-assets-example-framework-2026-11-23.md).");
 
+        // Met by another system: open until that system's audit shows it met, never not applicable.
         var elsewhere = parsed.Assessments.Single(a => a.Requirement.Key.Value == "EX-3");
-        elsewhere.Result.ShouldBe(ComplianceResult.NotApplicable);
-        elsewhere.Observation.ShouldStartWith("Provided by Example backup service: Backups are taken by the backup service.");
+        elsewhere.Result.ShouldBe(ComplianceResult.NotAssessed);
+        elsewhere.Status.ShouldBe("to_do");
+        elsewhere.ProvidedBy.ShouldBe(["Example backup service"]);
+        elsewhere.Observation.ShouldStartWith("Met by Example backup service; open until that system's audit shows it met: Backups are taken by the backup service.");
 
         var manual = parsed.Assessments.Single(a => a.Requirement.Key.Value == "EX-1");
         manual.Status.ShouldBe("to_do");

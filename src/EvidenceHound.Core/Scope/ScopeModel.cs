@@ -98,7 +98,11 @@ public sealed record ScopeEvidenceDocument(string Id, string Name, IReadOnlyList
 public sealed record AuditControl(ScopeRef Control, IReadOnlyList<RequirementRef> Requirements);
 
 /// <summary>A hand-written result for a requirement no check covers.</summary>
-public sealed record HandAssessment(RequirementRef Requirement, string Status, ComplianceResult Result, string Observation);
+public sealed record HandAssessment(RequirementRef Requirement, string Status, ComplianceResult Result, string Observation)
+{
+    /// <summary>The systems that meet this requirement for the audit, when another system does; the row stays open until their audit shows it met.</summary>
+    public IReadOnlyList<string> ProvidedBy { get; init; } = [];
+}
 
 /// <summary>
 /// An audit that runs in periods: how long each period is, when the first starts, and how an ended period closes: <c>sign_off</c> (locked once

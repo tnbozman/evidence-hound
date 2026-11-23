@@ -291,4 +291,7 @@ internal sealed record PlanNotes(IReadOnlyList<PeriodNote> Periods, IReadOnlyLis
 
     /// <summary>Mitigations the capability map says no product provides.</summary>
     public IReadOnlyList<CapabilityGap> Gaps { get; init; } = [];
+
+    /// <summary>Requirements left open because another system meets them.</summary>
+    public IReadOnlyList<OpenDependency> Dependencies { get; init; } = [];
 }

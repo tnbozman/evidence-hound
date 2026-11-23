@@ -110,6 +110,31 @@ public class ScopeValidationTests
     }
 
     [Theory]
+    [InlineData("    result: not_applicable\n    provided_by: [Example laptops]\n    observation: Met by Example laptops.")]
+    [InlineData("    result: not_applicable\n    observation: Provided by Example laptops, as recorded in scope/capabilities.yaml.")]
+    public void Not_applicable_naming_another_system_is_reported(string row)
+    {
+        var audit = ScopeFixture.Audit.Replace("    result: compliant\n    observation: Reviewed by hand.", row, StringComparison.Ordinal);
+
+        var problem = ScopeFixture.Problems(audit: audit).ShouldHaveSingleItem();
+
+        (problem.Code, problem.At).ShouldBe(("scope.other_system_as_not_applicable", new SourceLine(ScopeFixture.AuditPath, 24)));
+        problem.Message.ShouldContain("EX-1.2");
+        problem.Hint.ShouldContain("result: not_assessed");
+    }
+
+    [Fact]
+    public void Open_row_met_by_another_system_is_valid()
+    {
+        var audit = ScopeFixture.Audit.Replace(
+            "    status: done\n    result: compliant\n    observation: Reviewed by hand.",
+            "    status: to_do\n    result: not_assessed\n    provided_by: [Example laptops]\n    observation: Met by Example laptops.",
+            StringComparison.Ordinal);
+
+        ScopeFixture.Problems(audit: audit).ShouldBeEmpty();
+    }
+
+    [Theory]
     [InlineData("observation", "read")]
     [InlineData("result", "hidden")]
     [InlineData("evidences", "read")]
