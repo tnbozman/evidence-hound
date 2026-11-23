@@ -83,21 +83,32 @@ public static class ProfileDraft
     /// Drafts, checks with <paramref name="check"/> (validate, then test), and sends the problems back until the draft is clean or
     /// <paramref name="maxRounds"/> drafts were made. An invalid reply stops the loop.
     /// </summary>
-    public static async Task<Result<DraftOutcome>> RunAsync(
+    public static Task<Result<DraftOutcome>> RunAsync(
         IDraftingModel model,
         IReadOnlyList<Skill> skills,
         ProfileContext context,
         Func<string, CancellationToken, Task<IReadOnlyList<Problem>>> check,
         int maxRounds,
+        CancellationToken cancellationToken) =>
+        RunAsync(model, skills, () => context, check, maxRounds, cancellationToken);
+
+    /// <summary>As above, reading the context before each round, so shapes from a sample run reach the next round.</summary>
+    public static async Task<Result<DraftOutcome>> RunAsync(
+        IDraftingModel model,
+        IReadOnlyList<Skill> skills,
+        Func<ProfileContext> context,
+        Func<string, CancellationToken, Task<IReadOnlyList<Problem>>> check,
+        int maxRounds,
         CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(check);
         string? previous = null;
         IReadOnlyList<Problem> problems = [];
         for (var round = 1; round <= Math.Max(1, maxRounds); round++)
         {
-            var drafted = (await model.DraftAsync(Request(skills, context, previous, problems), cancellationToken)).Bind(reply => Read(reply.Value));
+            var drafted = (await model.DraftAsync(Request(skills, context(), previous, problems), cancellationToken)).Bind(reply => Read(reply.Value));
             if (drafted is not Result<string>.Ok { Value: var yaml })
             {
                 return Result.Fail<DraftOutcome>(((Result<string>.Fail)drafted).Errors);
