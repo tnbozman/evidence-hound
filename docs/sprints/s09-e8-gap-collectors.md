@@ -1337,7 +1337,7 @@ Found in the trial after s09-47: `hound run` published to `EX-E8-Q2-2027FY`, and
 Trial after s09-46 to s09-49 (2026-11-23), against the dev container's CISO Assistant cleared again of the trial's objects and with the example scope re-applied: `HOUND_TRIAL_YES=1 make trial` wrote "audit EX-E8" (`cycle: {period: quarter, starts: "2026-10-01"}`) and applied `EX-E8-Q2-2027FY` ("Essential Eight ML2 Q2-2027FY", in progress, ETA 2026-12-31); the Sophos collector with the maintainer's saved read-only credential published 3 items to `EX-E8-Q2-2027FY`, 0 failed.
 
 ### s09-50 The dev container no longer applies the example scope on start (added 2026-11-23)
-- [ ] Done
+- [x] Done
 
 At the maintainer's request (2026-11-23): the example audits (`EX-E8-2026`, `EX-ESSENTIALS-2026`, `EXAMPLE-BASELINE-2026`) and the example's systems, controls and documents sat in the same Example Pty Ltd domain as the trial's, and came back on every container start.
 
@@ -1352,6 +1352,8 @@ At the maintainer's request (2026-11-23): the example audits (`EX-E8-2026`, `EX-
 
 **Functional check**
 - The example objects removed from the dev container's CISO Assistant, the trial's scope and Sophos run applied again; the audits list holds only `EX-E8-Q2-2027FY`.
+- Result (2026-11-23): through the API, the Example Pty Ltd domain folder, the evidence in Global and the example-only libraries (example baseline, loaded and stored; ASD Essentials, loaded) were removed. `HOUND_TRIAL_YES=1 make trial` applied the trial's scope again and the Sophos run published 3 items, 0 failed, to `EX-E8-Q2-2027FY`. CISO Assistant then held one audit (`EX-E8-Q2-2027FY`, "Essential Eight ML2 Q2-2027FY", in progress), one applied control (AC-AUTO-EVIDENCE), no assets, and the four Sophos evidence items. `bats scripts/tests` all ok.
+- As built: `postStartCommand` runs `scripts/dev-ca-env.sh` only; `README.md` says to run `scripts/ca-apply-scope.sh` for the example. The change takes effect the next time the dev container starts.
 
 ## Discovered work
 
