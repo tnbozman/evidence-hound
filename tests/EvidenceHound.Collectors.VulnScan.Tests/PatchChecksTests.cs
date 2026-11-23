@@ -34,7 +34,7 @@ public class PatchChecksTests
 
         finding.Outcome.ShouldBe(CheckOutcome.Pass);
         finding.Observation.ShouldBe("Scanned 2026-11-23 (scan.nessus): within the 1-day interval for internet_facing.");
-        finding.EvidenceRefs.ShouldBe(["scan.nessus", VulnScanCollector.ScanFile]);
+        finding.EvidenceRefs.ShouldBe(["scan.nessus.xml", VulnScanCollector.ScanFile]);
     }
 
     [Fact]
@@ -64,7 +64,7 @@ public class PatchChecksTests
 
         finding.Outcome.ShouldBe(CheckOutcome.Pass);
         finding.Observation.ShouldBe("No open finding in the 2026-11-23 scan (scan.nessus) is past its window (14 days, or 48 hours with an exploit): 1 finding on 1 host.");
-        finding.EvidenceRefs.ShouldBe(["scan.nessus", VulnScanCollector.ScanFile, PatchChecks.AssessmentFile]);
+        finding.EvidenceRefs.ShouldBe(["scan.nessus.xml", VulnScanCollector.ScanFile, PatchChecks.AssessmentFile]);
     }
 
     [Fact]

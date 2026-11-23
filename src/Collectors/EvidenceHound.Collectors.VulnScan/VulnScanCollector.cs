@@ -64,7 +64,7 @@ public sealed class VulnScanCollector : ICollector
             IReadOnlyList<CollectedEvidence> evidence = folder.Current is { } scan
                 ?
                 [
-                    CollectedEvidence.FromBytes(scan.FileName, source.Format == ScanFormat.Nessus ? "application/xml" : "text/csv", hashes[scan.FileName].Content),
+                    Export(source, scan.FileName, hashes[scan.FileName].Content),
                     ScanEvidence.Scan(source, scan, hashes[scan.FileName].ContentHash),
                     ScanEvidence.History(source, runs),
                     ScanEvidence.Assessment(source, PatchChecks.Assessment(source, folder)),
@@ -72,6 +72,18 @@ public sealed class VulnScanCollector : ICollector
                 : [ScanEvidence.History(source, runs)];
             return new CollectionResult(checks, evidence, []);
         }));
+
+    /// <summary>
+    /// The export as evidence. CISO Assistant refuses a <c>.nessus</c> attachment, so a Nessus export is stored with <c>.xml</c> added;
+    /// the scan record keeps its original name.
+    /// </summary>
+    private static CollectedEvidence Export(VulnScanSource source, string fileName, ReadOnlyMemory<byte> content) => source.Format == ScanFormat.Nessus
+        ? CollectedEvidence.FromBytes(ExportName(source, fileName), "application/xml", content)
+        : CollectedEvidence.FromBytes(fileName, "text/csv", content);
+
+    /// <summary>The name an export is stored and cited under: a Nessus export gains <c>.xml</c>, a CSV export keeps its name.</summary>
+    internal static string ExportName(VulnScanSource source, string fileName) =>
+        source.Format != ScanFormat.Nessus || fileName.EndsWith(".xml", StringComparison.OrdinalIgnoreCase) ? fileName : fileName + ".xml";
 
     private static Result<ScanRun> Parse(VulnScanSource source, ExportFile file) => source.Format == ScanFormat.Nessus
         ? NessusParser.Parse(file.FileName, file.Content)
