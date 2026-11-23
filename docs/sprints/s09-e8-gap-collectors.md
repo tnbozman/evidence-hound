@@ -1410,7 +1410,7 @@ At the maintainer's request (2026-11-23), so the trial's Microsoft 365 step can 
 - As built: `M365Settings.SignIn` and `M365Options.SignIn` (`app` or `none`, loopback rule in `FromSettings`); `GraphSignIn.For` chooses the app registration's credential or a placeholder token, for both `M365Collector` and `EnvironmentLookup`. The collector description lists `sign_in`, so `hound collectors` and `hound add collector` show it (`CollectorsCommandTests` lists it too).
 
 ### s09-53 The trial's Microsoft 365 step runs against the dev server (added 2026-11-23)
-- [ ] Done
+- [x] Done
 
 **Story:** As a GRC lead trying hound without a Microsoft 365 tenant, I want the trial's step 10 to start the fictional tenant and collect from it, so that I see Microsoft 365 checks reach CISO Assistant, with a real test tenant as the option.
 
@@ -1424,6 +1424,9 @@ At the maintainer's request (2026-11-23), so the trial's Microsoft 365 step can 
 
 **Functional check**
 - `HOUND_TRIAL_YES=1 make trial` against the dev container's CISO Assistant: step 10 publishes 11 Microsoft 365 checks to `EX-E8-Q2-2027FY`.
+- Result (2026-11-23): `HOUND_TRIAL_YES=1 make trial` against the dev container's CISO Assistant: step 10 started the dev server (compliant), added the m365 collector with its settings, `graph_url: http://localhost:5365/` and `sign_in: none`, `config validate --check-secrets` valid, dry run and run succeeded, `hound status` "m365 … 11 passed, 0 failed, 18 sent, 0 skipped, 0 failed" and `EX-E8-Q2-2027FY` 9 changed; the server was stopped (nothing listening on 5365). The run after it found the collector already there and ran it again. `bats scripts/tests` all ok; ShellCheck clean.
+- As built: `trial_m365_dev_args` (the server's printed settings as `--set` options, plus `sign_in=none`) and `trial_host_mode` in `scripts/lib/trial.sh`; `m365_dev` in `scripts/trial.sh` starts the server in its own process group with an exit trap, and runs the collector with `host_mode` set, so hound's container is on the host network (a `make ca-up` stack is then reached on its published port).
+- Found on the way: the first run failed with "needs the secret client_certificate" because the trial image was older than s09-52 (see the s09-43 note on stale images); rebuilt. It also left the dev server running when the step failed, hence the exit trap.
 
 ## Discovered work
 
