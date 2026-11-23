@@ -194,7 +194,7 @@ jobs:
         run: make test-scripts
 
   terraform:
-    # s09-51: the tutorial's control tests, with mock providers. No cloud account or credentials.
+    # s09-53: the tutorial's control tests, with mock providers. No cloud account or credentials.
     runs-on: ubuntu-latest
     env:
       TERRAFORM_VERSION: 1.13.4

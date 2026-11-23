@@ -5,7 +5,7 @@ using EvidenceHound.Core.Checks;
 namespace EvidenceHound.Collectors.Rest.Tests;
 
 /// <summary>
-/// s09-51: the terraform-tests profile reads the JUnit report of <c>terraform test</c> an IaC pipeline published as an artefact;
+/// s09-53: the terraform-tests profile reads the JUnit report of <c>terraform test</c> an IaC pipeline published as an artefact;
 /// hound never runs Terraform. Each test case is a row as the engine reads the XML: attributes as <c>@name</c>, and a
 /// <c>failure</c>, <c>error</c> or <c>skipped</c> element when the test did not pass.
 /// </summary>

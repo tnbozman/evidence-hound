@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=../../../schemas/mapping.schema.json
 # The GRC platform's Essential Eight audit (GRC-PLATFORM-ESSENTIAL-EIGHT-2023): the backup requirements the backup bucket's settings
-# answer (s09-51). Each needs two checks: the control test proves the infrastructure code declares the setting (grc-infra-controls,
+# answer (s09-53). Each needs two checks: the control test proves the infrastructure code declares the setting (grc-infra-controls,
 # terraform test with mock providers), and the drift check proves the live tenancy still matches that code (terraform-drift). Every
 # other row of that audit is in its audit file, decided when it was onboarded; the restore test (ISM-1515) stays manual evidence.
 framework_urn: urn:intuitem:risk:framework:essential-eight-2023

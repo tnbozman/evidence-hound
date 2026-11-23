@@ -1,4 +1,4 @@
-# Infrastructure tests, read from the JUnit report an IaC pipeline published as a GitHub Actions artefact (s09-51).
+# Infrastructure tests, read from the JUnit report an IaC pipeline published as a GitHub Actions artefact (s09-53).
 # hound never runs Terraform, never reads state and holds no cloud credentials: the pipeline runs
 #   terraform test -junit-xml=controls.xml   (mock providers need no cloud account)
 # and uploads the report as controls.xml in an artefact. This profile only reads: the newest completed run of that workflow, its
