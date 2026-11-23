@@ -8,6 +8,7 @@ using EvidenceHound.Core.Results;
 using EvidenceHound.Core.Scope;
 using EvidenceHound.Core.Yaml;
 using EvidenceHound.Onboarding.Capabilities;
+using EvidenceHound.Onboarding.Skills;
 using EvidenceHound.Runtime.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -28,26 +29,31 @@ internal static class OnboardEnvironmentCommand
         var framework = new Option<FileInfo>("--framework") { Description = "The framework snapshot whose mitigations to decide. Default: frameworks/essential-eight-2023.json in the repo." };
         var signals = new Option<FileInfo>("--signals") { Description = "Recorded answers of the read-only Microsoft Graph lookups (subscribed licences and Intune configuration kinds), as JSON." };
         var graph = new Option<string>("--graph") { Description = "Read the licences and Intune configuration kinds live, read-only, as this m365 collector of the deployment config." };
-        var config = new Option<FileInfo>("--config") { Description = "The deployment config that names the --graph collector. Default: hound.yaml in the repo." };
+        var deployment = new Option<FileInfo>("--deployment") { Description = "The deployment config that names the --graph collector. Default: hound.yaml in the repo." };
+        var config = new Option<FileInfo>("--config") { Description = $"The onboarding config. Default: {OnboardCommands.DefaultConfig} in the repo." };
+        var show = new Option<bool>("--show-requests") { Description = "Print each request to the model before it is sent." };
         var microsoft = new Option<string>("--microsoft-system") { Description = "The system in scope/setup.yaml that is Microsoft 365, which Microsoft signals suggest. Default: the first whose name has 365." };
-        var noModel = new Option<bool>("--no-model") { Description = "Decide from the signals and your answers only." };
+        var noModel = new Option<bool>("--no-model") { Description = "Decide from the signals and your answers only; no model is asked." };
         var command = new Command("environment", "Decide which system provides each mitigation, before systems are onboarded, and write scope/capabilities.yaml for review.")
         {
-            repo, framework, signals, graph, config, microsoft, noModel,
+            repo, framework, signals, graph, deployment, config, microsoft, noModel, show,
         };
         command.SetAction(async (parseResult, cancellationToken) =>
         {
             var root = parseResult.GetValue(repo)?.FullName ?? Directory.GetCurrentDirectory();
             var frameworkFile = parseResult.GetValue(framework)?.FullName ?? Path.Combine(root, "frameworks", "essential-eight-2023.json");
-            var source = new SignalSource(parseResult.GetValue(signals), parseResult.GetValue(graph), parseResult.GetValue(config)?.FullName ?? Path.Combine(root, "hound.yaml"));
-            var result = await RunAsync(root, frameworkFile, source, access, parseResult.GetValue(microsoft), terminal, cancellationToken);
+            var source = new SignalSource(parseResult.GetValue(signals), parseResult.GetValue(graph), parseResult.GetValue(deployment)?.FullName ?? Path.Combine(root, "hound.yaml"));
+            var assistant = parseResult.GetValue(noModel)
+                ? null
+                : new ModelChoice(parseResult.GetValue(config)?.FullName ?? Path.Combine(root, OnboardCommands.DefaultConfig), parseResult.GetValue(show));
+            var result = await RunAsync(root, frameworkFile, source, assistant, access, parseResult.GetValue(microsoft), terminal, cancellationToken);
             return result.Match(_ => ExitCodes.Ok, problems => Log.Problems(logger, problems));
         });
         return command;
     }
 
     private static async Task<Result<Unit>> RunAsync(
-        string root, string frameworkFile, SignalSource source, GraphAccess access, string? microsoftSystem, Terminal terminal, CancellationToken cancellationToken)
+        string root, string frameworkFile, SignalSource source, ModelChoice? assistant, GraphAccess access, string? microsoftSystem, Terminal terminal, CancellationToken cancellationToken)
     {
         if (source.Recorded is not null && source.Collector is not null)
         {
@@ -103,6 +109,17 @@ internal static class OnboardEnvironmentCommand
         var decisions = (scope.Capabilities?.Mitigations ?? []).ToList();
         var suppliers = new Dictionary<string, string>(StringComparer.Ordinal);
         var undecided = mitigations.Where(m => !decisions.Any(d => d.Mitigation == m.Code)).ToArray();
+        if (undecided.Length > 0 && assistant is not null)
+        {
+            var proposed = await ProposeAsync(assistant, root, Path.GetFileNameWithoutExtension(frameworkFile), mitigations, systems, proposals, terminal, access, cancellationToken);
+            if (proposed is Result<IReadOnlyList<CapabilityProposal>>.Fail { Errors: var modelProblems })
+            {
+                return Result.Fail<Unit>(modelProblems);
+            }
+
+            proposals = ((Result<IReadOnlyList<CapabilityProposal>>.Ok)proposed).Value;
+        }
+
         var today = DateOnly.FromDateTime(DateTime.Today);
         var written = new List<string>();
         if (undecided.Length == 0)
@@ -182,7 +199,18 @@ internal static class OnboardEnvironmentCommand
         ScopeDocument scope, Dictionary<string, string> suppliers, string by, string role, DateOnly today, CancellationToken cancellationToken)
     {
         var lines = new List<string> { $"{heading}: {mitigation.Requirements.Count} requirement(s), such as {mitigation.Requirements[0].RefId}: {mitigation.Requirements[0].Title}" };
-        lines.Add(proposal.Suggested is null ? "  No suggestion." : $"  Suggested: provided by {string.Join(" and ", proposal.Systems)}.");
+        lines.Add(proposal.Suggested switch
+        {
+            CapabilityProvision.System => $"  Suggested: provided by {string.Join(" and ", proposal.Systems)}.",
+            CapabilityProvision.Manual => "  Suggested: manual evidence.",
+            CapabilityProvision.Gap => "  Suggested: a gap.",
+            _ => "  No suggestion.",
+        });
+        if (proposal.Reasoning is { Length: > 0 } reasoning)
+        {
+            lines.Add($"  Model: {reasoning}");
+        }
+
         lines.AddRange(proposal.Signals.Select(s => $"  - {s}"));
         await terminal.Error.WriteLineAsync(string.Join('\n', lines).AsMemory(), cancellationToken);
         while (await prompt.AskAsync("a accept, s name the systems, m manual evidence, g gap, q save and stop", cancellationToken) is { } answer)
@@ -227,6 +255,17 @@ internal static class OnboardEnvironmentCommand
         }
 
         return null;
+    }
+
+    /// <summary>The model's proposals after the signals, through the onboarding gate, with the environment skills; requests kept in onboarding/environment/requests.</summary>
+    private static async Task<Result<IReadOnlyList<CapabilityProposal>>> ProposeAsync(
+        ModelChoice choice, string root, string frameworkName, IReadOnlyList<Mitigation> mitigations, IReadOnlyList<ScopeSystem> systems,
+        IReadOnlyList<CapabilityProposal> prefilled, Terminal terminal, GraphAccess access, CancellationToken cancellationToken)
+    {
+        var assistant = await OnboardSystemCommand.AssistantAsync(
+            choice.Config, Path.Combine(root, "onboarding", "environment", "requests"), choice.Show, terminal, access.Configuration, cancellationToken);
+        return await assistant.BindAsync(a => SkillSelection.Select(a.Skills, SkillStep.Environment, frameworkName, SkillSelection.DefaultBudgetCharacters)
+            .BindAsync(skills => CapabilityProposals.ProposeAsync(a.Model, skills, mitigations, systems, prefilled, cancellationToken)));
     }
 
     /// <summary>The two read-only Graph lookups, signed in as the named m365 collector of the deployment config, with its own settings and secrets.</summary>
@@ -283,6 +322,9 @@ internal static class OnboardEnvironmentCommand
 
     /// <summary>Where the Microsoft signals come from: a recorded file, a collector to read live as, or neither.</summary>
     private sealed record SignalSource(FileInfo? Recorded, string? Collector, string Config);
+
+    /// <summary>The onboarding config that names the model, and whether to print each request; none with <c>--no-model</c>.</summary>
+    private sealed record ModelChoice(string Config, bool Show);
 }
 
 /// <summary>What <c>--graph</c> needs from the composition root: the collector types, HTTP clients, the lookup and configuration for secrets.</summary>

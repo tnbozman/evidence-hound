@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using EvidenceHound.Core.Scope;
 
@@ -51,5 +52,8 @@ public static class CapabilityFile
     }
 
     /// <summary>A JSON string is a valid YAML double-quoted scalar.</summary>
-    private static string Quote(string value) => JsonSerializer.Serialize(value);
+    private static string Quote(string value) => JsonSerializer.Serialize(value, Readable);
+
+    /// <summary>Keeps apostrophes and accented letters as they are, so the file reads well in review; quotes and control characters are still escaped.</summary>
+    private static readonly JsonSerializerOptions Readable = new() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
 }

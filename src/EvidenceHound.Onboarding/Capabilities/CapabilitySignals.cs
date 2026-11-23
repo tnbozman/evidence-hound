@@ -10,7 +10,11 @@ public sealed record EnvironmentFacts(string Source, IReadOnlyList<string> Licen
 }
 
 /// <summary>A pre-filled answer for one mitigation: what the signals suggest, if anything, and each signal with its source. Never a decision.</summary>
-public sealed record CapabilityProposal(string Mitigation, CapabilityProvision? Suggested, IReadOnlyList<string> Systems, IReadOnlyList<string> Signals);
+public sealed record CapabilityProposal(string Mitigation, CapabilityProvision? Suggested, IReadOnlyList<string> Systems, IReadOnlyList<string> Signals)
+{
+    /// <summary>The model's reasoning when the suggestion is the model's; null when it comes from the signals.</summary>
+    public string? Reasoning { get; init; }
+}
 
 /// <summary>The person's answer to a proposal.</summary>
 public sealed record CapabilityAnswer(string Kind, IReadOnlyList<string> Systems)
@@ -84,7 +88,10 @@ public static class CapabilityAnswers
 
         (CapabilityProvision Provision, IReadOnlyList<string> Systems, string Reason)? decided = answer.Kind switch
         {
-            "accept" when proposal.Suggested is { } suggested => (suggested, proposal.Systems, $"Accepted by {acceptedBy} from the signals."),
+            "accept" when proposal.Suggested is { } suggested => (
+                suggested,
+                suggested == CapabilityProvision.System ? proposal.Systems : [],
+                proposal.Reasoning is { } why ? $"Accepted by {acceptedBy} from the model's proposal: {why}" : $"Accepted by {acceptedBy} from the signals."),
             "system" when answer.Systems.Count > 0 => (CapabilityProvision.System, answer.Systems, $"Decided by {acceptedBy}: provided by {string.Join(" and ", answer.Systems)}."),
             "manual" => (CapabilityProvision.Manual, [], $"Decided by {acceptedBy}: manual evidence."),
             "gap" => (CapabilityProvision.Gap, [], $"Decided by {acceptedBy}: nothing provides it yet."),
