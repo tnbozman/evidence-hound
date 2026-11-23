@@ -62,6 +62,20 @@ public abstract class DraftingModelContractTests<TModel> : IDisposable
     }
 
     [Fact]
+    public async Task A_request_without_inputs_still_sends_a_user_message_with_content()
+    {
+        Reply("reply");
+        var bare = new DraftRequest("check", "Reply with ok set to true.", [], Schema);
+
+        await Create(new Uri(Server.Url!), Model).DraftAsync(bare, _ct);
+
+        var sent = JsonNode.Parse(Server.LogEntries.Single().RequestMessage!.Body!)!;
+        var user = sent["messages"]!.AsArray().Where(m => m!["role"]!.GetValue<string>() == "user").ShouldHaveSingleItem()!;
+        var content = user["content"] is JsonValue value ? value.GetValue<string>() : user["content"]!.ToJsonString();
+        content.Trim().ShouldNotBeEmpty("providers refuse an empty user message (Anthropic answers 400)");
+    }
+
+    [Fact]
     public async Task Maps_a_refusal_to_llm_refused()
     {
         Reply("refusal");
