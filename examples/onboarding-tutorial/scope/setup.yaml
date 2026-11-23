@@ -44,11 +44,13 @@ domains:
         description: Daily backups of Example 365 and the laptops.
         owner: it@example.com
       - name: GRC-PLATFORM
+        ref_id: SYS-GRC-PLATFORM
         type: primary
         description: "CISO Assistant and Evidence Hound on an OCI Compute VM, from Oracle Cloud Infrastructure."
         owner: it@example.com
         solution: SOL-OCI-HOSTING
       - name: OFFICE-FIREWALL
+        ref_id: SYS-OFFICE-FIREWALL
         type: primary
         description: "Sophos Firewall on an XGS appliance, managed in Sophos Central, from Sophos."
         owner: it@example.com

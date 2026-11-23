@@ -1307,12 +1307,12 @@ At the maintainer's request (2026-11-23): every audit reads `<ORG>-<FRAMEWORK>-<
 - Deviation: the fictional example repo (`examples/compliance-repo`, audits `EX-E8-2026`, `EX-ESSENTIALS-2026`, `EXAMPLE-BASELINE-2026`) keeps audits without a cycle; moving it to series touches the example run, its mappings' targets and many tests that use those ref IDs as fixtures. Listed under Discovered work.
 
 ### s09-48 hound onboard writes the system's audit as a series of the organisation's audit (added 2026-11-23)
-- [ ] Done
+- [x] Done
 
 **Story:** As a GRC lead onboarding a system, I want the system's audit to be `<ORG>-<FRAMEWORK>-<SYSTEM>` on the organisation audit's cycle, so that the firewall's audit for a quarter is `EX-E8-Q1-2027FY-SOPHOS-NETWORK`, next to `EX-E8-Q1-2027FY`.
 
 **Acceptance criteria**
-- `hound onboard` writes `ref_id: <organisation series>-<system ref ID without SYS->` with the organisation series' cycle; with no series in the repo it says what is missing.
+- `hound onboard` writes `ref_id: <organisation series>-<system ref ID without SYS->` with the organisation series' cycle; with no series in the repo it keeps `<SYSTEM>-<FRAMEWORK>` without a cycle and says so.
 - The agent skills and onboarding docs name the pattern.
 
 **Tests first**
@@ -1320,6 +1320,29 @@ At the maintainer's request (2026-11-23): every audit reads `<ORG>-<FRAMEWORK>-<
 
 **Functional check**
 - In a scratch copy of the trial repo, `hound onboard <system> pending` and `decide` for one requirement, then `hound scope plan` names `EX-E8-Q2-2027FY-<SYSTEM>`.
+- Result (2026-11-23): in a scratch copy of `examples/compliance-repo` with `ex-e8-2026.yaml` made the series `EX-E8` (quarterly from 2026-07-01), `hound onboard OFFICE-FIREWALL --repo <copy> --group 1 --group 2` with the tutorial's recorded answers (`examples/onboarding-tutorial/answers/office-firewall.*.txt`, the tutorial's `sup-sophos.yaml` standing in for the person's review) said "The system's audit is EX-E8-OFFICE-FIREWALL, a series of EX-E8 by quarter." and wrote `ref_id: "EX-E8-OFFICE-FIREWALL"` with `cycle: {period: quarter, starts: "2026-07-01"}`, and `ref_id: SYS-OFFICE-FIREWALL` on the system. `scope validate` passed. `scope plan` first stopped at the supplier gate (no concluded review, as it should); with a conclusion written in the copy as `hound approve` writes it, the plan against the dev container's CISO Assistant (`HOUND_TODAY=2026-11-23`) listed `EX-E8-Q1-2027FY`, `EX-E8-Q2-2027FY`, `EX-E8-Q1-2027FY-OFFICE-FIREWALL` and `EX-E8-Q2-2027FY-OFFICE-FIREWALL`, and under Audit periods the Q1 pair closing and the Q2 pair opening, each from its own Q1. Unit suite 1317 passed; lint and script tests clean.
+- As built: `AuditPlace` gains `Series` (`OrganisationSeries`: ref ID, period, start) and `SystemRefId`; `OnboardOutput.SeriesRefId` drops `SYS-`; `OnboardSystemCommand.OrganisationSeriesAsync` takes the scope's one two-part series, or the one `hound.yaml` targets. A system that onboarding declares now carries `ref_id` (`RefIds.Suggest`, as `hound add system` defaults it), so `examples/onboarding-tutorial/scope/setup.yaml` gains `SYS-GRC-PLATFORM` and `SYS-OFFICE-FIREWALL`. The skill `onboard-a-system-with-hound` and `docs/onboarding.md` describe the name.
+
+### s09-49 hound status shows the audit period a series target publishes to (added 2026-11-23)
+- [x] Done
+
+Found in the trial after s09-47: `hound run` published to `EX-E8-Q2-2027FY`, and `hound status` listed `EX-E8  never run`, looking the series up in the run history by its own ref ID.
+
+**Story:** As a GRC lead, I want `hound status` to show the open period's last run when the config targets an audit series, so that status says what the run just did.
+
+**Acceptance criteria**
+- With a target naming a series, `hound status` shows the period open today (`HOUND_TODAY` sets today) with its last run from the history, as `hound run` resolves it.
+- A target naming an audit without a cycle shows as before.
+
+**Tests first**
+- `StatusCommandTests.A_series_target_shows_the_period_open_today`
+
+**Functional check**
+- In the trial repo after a Sophos run: `hound status --config hound.yaml` lists `EX-E8-Q2-2027FY` with the run's ID.
+- Result (2026-11-23): after rebuilding the trial image, `.dev/trial/bin/hound status --config hound.yaml` from `.dev/trial/repo` listed `EX-E8-Q2-2027FY  2026-11-23 11:32:16  20261123T113216Z  0  0  0` (before the fix: `EX-E8  never run`). Unit suite 1318 passed; lint clean.
+- As built: `StatusCommand` takes the configuration and resolves the loaded config with `AuditSeries.ResolveAsync` before reading the history, as `hound run` does.
+
+Trial after s09-46 to s09-49 (2026-11-23), against the dev container's CISO Assistant cleared again of the trial's objects and with the example scope re-applied: `HOUND_TRIAL_YES=1 make trial` wrote "audit EX-E8" (`cycle: {period: quarter, starts: "2026-10-01"}`) and applied `EX-E8-Q2-2027FY` ("Essential Eight ML2 Q2-2027FY", in progress, ETA 2026-12-31); the Sophos collector with the maintainer's saved read-only credential published 3 items to `EX-E8-Q2-2027FY`, 0 failed.
 
 ## Discovered work
 

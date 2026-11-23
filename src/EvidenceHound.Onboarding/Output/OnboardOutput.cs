@@ -2,13 +2,26 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using EvidenceHound.Core.Scope;
 using EvidenceHound.Onboarding.Decisions;
 using EvidenceHound.Onboarding.Sessions;
 
 namespace EvidenceHound.Onboarding.Output;
 
 /// <summary>Where the system's audit sits in CISO Assistant: a domain and one of its perimeters from <c>scope/setup.yaml</c>.</summary>
-public sealed record AuditPlace(string Domain, string Perimeter);
+/// <summary>
+/// Where the system's audit goes: its domain and perimeter, and, when the organisation's audit runs in periods, that <see cref="Series"/>
+/// and the system's ref ID, so the system's audit is <c>&lt;series&gt;-&lt;system ref ID without SYS-&gt;</c> on the same cycle (s09-48).
+/// </summary>
+public sealed record AuditPlace(string Domain, string Perimeter)
+{
+    public OrganisationSeries? Series { get; init; }
+
+    public string? SystemRefId { get; init; }
+}
+
+/// <summary>The organisation's audit series, such as <c>EX-E8</c> by quarter from 2026-10-01.</summary>
+public sealed record OrganisationSeries(string RefId, string Period, string Starts);
 
 /// <summary>A skill that guided the session, as the session record lists it.</summary>
 public sealed record SkillUse(string Name, string Source, string Version, string Sha256);
@@ -26,6 +39,15 @@ public static partial class OnboardOutput
 
     public static string AuditRefId(string system, string frameworkName) => $"{system}-{frameworkName}".ToUpperInvariant();
 
+    /// <summary>The system's audit in the organisation's series: <c>EX-E8</c> and <c>SYS-SOPHOS-NETWORK</c> give <c>EX-E8-SOPHOS-NETWORK</c>.</summary>
+    public static string SeriesRefId(OrganisationSeries series, string systemRefId)
+    {
+        ArgumentNullException.ThrowIfNull(series);
+        ArgumentNullException.ThrowIfNull(systemRefId);
+        var prefix = RefIds.Prefix(RefIdKind.System);
+        return $"{series.RefId}-{(systemRefId.StartsWith(prefix, StringComparison.Ordinal) ? systemRefId[prefix.Length..] : systemRefId)}";
+    }
+
     /// <summary>
     /// <c>scope/audits/&lt;system&gt;-&lt;framework&gt;.yaml</c>: one audit for the system. Not applicable rows are done with result
     /// <c>not_applicable</c>, their justification and approver in the observation; rows another system meets stay open with <c>provided_by</c>
@@ -39,7 +61,8 @@ public static partial class OnboardOutput
         var record = $"onboarding/{RecordFileName(session.System, frameworkName, today)}";
         var text = new StringBuilder();
         text.Append(CultureInfo.InvariantCulture, $"# Written by hound onboard for {session.System} on {today:yyyy-MM-dd}; how each row was decided is in {record}.\n");
-        text.Append(CultureInfo.InvariantCulture, $"ref_id: {Quote(AuditRefId(session.System, frameworkName))}\n");
+        var series = place.Series is { } org && place.SystemRefId is { } systemRef ? org : null;
+        text.Append(CultureInfo.InvariantCulture, $"ref_id: {Quote(series is null ? AuditRefId(session.System, frameworkName) : SeriesRefId(series, place.SystemRefId!))}\n");
         text.Append(CultureInfo.InvariantCulture, $"name: {Quote($"{session.System} {frameworkName}")}\n");
         text.Append(CultureInfo.InvariantCulture, $"framework: {Quote(frameworkUrn)}\n");
         if (session.Groups.Count > 0)
@@ -48,6 +71,12 @@ public static partial class OnboardOutput
         }
 
         text.Append(CultureInfo.InvariantCulture, $"domain: {Quote(place.Domain)}\nperimeter: {Quote(place.Perimeter)}\nsystems: [{Quote(session.System)}]\n");
+        if (series is not null)
+        {
+            text.Append(CultureInfo.InvariantCulture, $"# A series of {series.RefId}, on its cycle: each period is its own audit, such as {series.RefId}-Q2-2027FY-<system>.\n");
+            text.Append(CultureInfo.InvariantCulture, $"cycle: {{period: {series.Period}, starts: {Quote(series.Starts)}}}\n");
+        }
+
         text.Append("# Requirements not listed below are checked through the API; they stay not assessed until the collector's results are published.\n");
         text.Append("unlisted:\n  result: not_assessed\n");
         var accepted = string.Create(CultureInfo.InvariantCulture, $"when onboarding {session.System} on {today:yyyy-MM-dd} ({record}).");

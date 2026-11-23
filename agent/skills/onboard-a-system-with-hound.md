@@ -20,7 +20,8 @@ You draft the whole onboarding with commands that ask nothing. `hound` checks ea
    - `other_system`: add `--other-system <name>` when another system provides it.
    Name the requirement exactly as `pending` lists it under `requirement`. If `hound` refuses a decision, read the problem and fix the decision; do not work around it.
 5. **Repeat `pending`** until nothing is left. Leave a requirement undecided, and say so, when you cannot tell.
-6. **Hand over.** Tell the person to run `hound approve --repo .` in a terminal, then `hound scope validate`, `hound scope plan` and `hound scope apply`. For the accepted API checks, the skill "write-a-profile" comes next.
+6. **The system's audit** is written when the person approves: `<series>-<system ref ID without SYS->`, such as `EX-E8-SOPHOS-NETWORK`, on the organisation series' cycle, so each period reads `EX-E8-Q2-2027FY-SOPHOS-NETWORK`. Name it that way when you talk about it; never write its ref ID by hand.
+7. **Hand over.** Tell the person to run `hound approve --repo .` in a terminal, then `hound scope validate`, `hound scope plan` and `hound scope apply`. For the accepted API checks, the skill "write-a-profile" comes next.
 
 ## Your part and the person's
 
