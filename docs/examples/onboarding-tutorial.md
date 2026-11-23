@@ -141,11 +141,14 @@ cp examples/onboarding-tutorial/scope/third-parties/sup-ciso-assistant.yaml exam
    | Your name | Sam Example |
    | System owner's email | it@example.com |
    | Product | CISO Assistant and Evidence Hound on an OCI Compute VM |
-   | Supplier ref_id and name | `SUP-ORACLE`, Oracle Cloud Infrastructure |
-   | Solution ref_id and name | `SOL-OCI-HOSTING`, OCI compute, networking and storage |
-   | Contract ref_id and name | `CTR-OCI-2026`, OCI pay-as-you-go 2026 |
+   | Supplier ref_id and name | `ORACLE` after the `SUP-` the prompt shows, Oracle Cloud Infrastructure |
+   | Solution ref_id and name | `OCI-HOSTING` after `SOL-`, OCI compute, networking and storage |
+   | Contract ref_id and name | `OCI-2026` after `CTR-`, OCI pay-as-you-go 2026 |
    | What it provides | The private VM, network, site-to-site VPN, bastion, block volumes, object storage, logging and vault that host the GRC platform |
    | A vendor document | Enter, for none |
+   | Each of the five levels | Enter, to decide it in the file in the next step, or a number from the scale printed above it and a reason |
+
+   Each question comes with a line saying what it is for and an example.
 
    Oracle is a new supplier, so `hound` drafts `scope/third-parties/sup-oracle.yaml` with a draft contract and a review, `EA-SUP-ORACLE`,
    and stops.

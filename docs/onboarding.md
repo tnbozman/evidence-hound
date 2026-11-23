@@ -31,9 +31,10 @@ Run it in the config repo (or pass `--repo`). The session goes in this order, an
 
 1. **Who and what.** Your name (recorded as who accepted each decision), the system owner, the product, and who supplies it: the supplier,
    the solution it provides and the contract covering it, each by `ref_id` and name.
-2. **Supplier first.** A supplier not yet under `scope/third-parties/` is drafted there, with dependency, penetration, maturity and
-   trust, and the solution's criticality, left for you to decide in the file (a coding assistant drafts them with their reasons through
-   `hound supplier draft`). What the supplier provides, in your words, is kept in the session. Vendor documents you keep (an https URL or a file) are saved under `documents/suppliers/<supplier>/` with
+2. **Supplier first.** A supplier not yet under `scope/third-parties/` is drafted there. Dependency, penetration, maturity and
+   trust, and the solution's criticality, are each asked with their scale printed first (see
+   [What the terminal tells you](#what-the-terminal-tells-you)); a level you leave empty stays in the file to decide (a coding assistant
+   drafts them with their reasons through `hound supplier draft`). What the supplier provides, in your words, is kept in the session. Vendor documents you keep (an https URL or a file) are saved under `documents/suppliers/<supplier>/` with
    their SHA-256 and retrieval date. The contract is drafted as
    `status: draft`, and the session stops: **a system is onboarded only once its supplier is approved.** Onboarding checks the scope
    files for an active contract covering the solution; `hound scope plan` then checks approval in CISO Assistant, where the GRC team
@@ -66,6 +67,63 @@ Run it in the config repo (or pass `--repo`). The session goes in this order, an
    Nothing is sent to CISO Assistant. Review the files in a pull request, then run `hound scope validate scope`, `hound scope plan scope`
    and `hound scope apply scope`. Running `hound onboard` again for the same system writes nothing; to onboard it against another
    framework, pass that framework's file and it writes a separate audit and record.
+
+### What the terminal tells you
+
+Before the first question, `hound onboard` prints the three steps ahead (the supplier, applicability, the files) and reminds you that nothing reaches CISO Assistant until `hound scope apply`. It refuses to start, before writing anything, in a folder with no `scope/setup.yaml`, because that is not a compliance repo. Without `--spec` it says that it cannot list what the system's API offers, so you can stop and add one.
+
+Every opening question comes with a line that says what the answer is for and gives an example, such as `The service, and what depends on it, e.g. "Perimeter firewall; all office internet traffic passes through it"`. A ref ID's prompt ends with its prefix (`Supplier ref_id: SUP-`), so you type only the rest; see [Ref ID conventions](scope.md#ref-id-conventions).
+
+After the vendor documents, each supplier level is asked with its scale printed first. Answer with a number and, when asked, a sentence saying why; the reason is written beside the level in the supplier file with your name. Leave a level empty to decide it later in the file. These are the scales, as the terminal prints them. Dependency, penetration, maturity and trust follow EBIOS Risk Manager's stakeholder criteria, which CISO Assistant's third-party records use.
+
+**dependency**: how much the system relies on this supplier to keep working.
+
+| Value | Meaning |
+| --- | --- |
+| 0 | None: nothing stops if the supplier does. |
+| 1 | Low: the supplier is useful, and work carries on without it. |
+| 2 | Moderate: work is harder without it, and another supplier could step in. |
+| 3 | High: the supplier is needed, though it could be replaced with effort. |
+| 4 | Total: the supplier is needed, and nothing could replace it in the short term. |
+
+**penetration**: how far the supplier can reach into your systems and data.
+
+| Value | Meaning |
+| --- | --- |
+| 0 | None: no access to your systems or data. |
+| 1 | Access as an ordinary user, or to user devices only. |
+| 2 | Administrator access to user devices, or physical access to your premises. |
+| 3 | Administrator access to business systems or servers. |
+| 4 | Administrator access to core infrastructure, or physical access to server rooms. |
+
+**maturity**: how well the supplier manages its own cyber security.
+
+| Value | Meaning |
+| --- | --- |
+| 1 | Security is handled case by case, with nothing written down. |
+| 2 | Good practice and regulation are followed, without one overall policy. |
+| 3 | An overall security policy is applied, and problems are mostly handled as they arise. |
+| 4 | Risk is managed under an overall policy, ahead of problems. |
+
+**trust**: how sure you are that the supplier's intentions and interests line up with yours.
+
+| Value | Meaning |
+| --- | --- |
+| 1 | Its intentions cannot be judged. |
+| 2 | Its intentions are taken to be neutral. |
+| 3 | Its intentions are known and probably good. |
+| 4 | Its intentions are known and fully in line with yours. |
+
+**criticality**: how much the business depends on what the supplier provides (the solution).
+
+| Value | Meaning |
+| --- | --- |
+| 1 | Low: the business carries on without it. |
+| 2 | Medium: some work is slower or harder without it. |
+| 3 | High: important work stops without it. |
+| 4 | Critical: the business cannot run without it. |
+
+Maturity, trust and criticality have no 0: a level you leave empty is not yet assessed, and stays in the file as a comment to decide.
 
 ## Validate, sample and test the profile
 
