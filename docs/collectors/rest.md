@@ -179,6 +179,7 @@ A **bootstrap** query runs before the others, is not saved as evidence and canno
 | `optional_on` | Status codes that mean "not available here", such as a missing licence: `[403, 404]`. Checks over it become not applicable, with the reason. |
 | `async` | A report run as a job: `status_url` (path in the first answer), `done` (a test on the status answer), `result_url`, `poll_seconds` and `timeout_seconds`. |
 | `format` | `auto` (from the content type), `json`, `xml`, `csv` or `zip`. `arrays` names XML paths that are always lists. |
+| `redirect_hosts` | Hosts other than the API's that a redirect from this query's GET may lead to, such as the signed storage a pipeline artefact downloads from. They get a plain GET with no sign-in and no headers, so they never receive credentials. Any other redirect off the API's host is refused (`rest.redirect_refused`). |
 | `member` | With `format: zip` (a pipeline artefact, for example), the file in the archive to read, as JSON, XML or CSV by its extension. Required with `zip`, refused without it. The archive and the unzipped member both count towards `max_bytes`, so a member that unzips past the cap is refused. |
 | `keep` | Keep only these properties of each item, in memory and in evidence, for very large lists. |
 | `max_items`, `max_bytes`, `max_pages` | Caps. Defaults 50,000 items, 50 MB and 1,000 pages. Over a cap, checks over the query are unable to assess, naming the cap. |

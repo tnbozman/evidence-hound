@@ -208,7 +208,8 @@ public sealed class QueryEngine(HttpClient http, IClock clock, IDelay delay)
                                 query.Method == "POST" ? HttpMethod.Post : HttpMethod.Get,
                                 FirstPage(parameters.Aggregate(url, (u, p) => QueryString.Set(u, p.Key, p.Value))),
                                 headers.ToDictionary(StringComparer.OrdinalIgnoreCase),
-                                body.Node)))));
+                                body.Node)
+                            { RedirectHosts = [.. query.RedirectHosts.Select(h => renderer.Render(h, item).Match(v => v, _ => ""))] }))));
 
         private Result<Uri> Address(string path) =>
             Uri.TryCreate(baseUrl, path, out var url) && url.IsAbsoluteUri
@@ -337,7 +338,7 @@ public sealed class QueryEngine(HttpClient http, IClock clock, IDelay delay)
                 if (IsDone(job.Done, stateBody))
                 {
                     return Scalar(stateBody, job.ResultUrl) is { Length: > 0 } result && Uri.TryCreate(baseUrl, result, out var resultUrl)
-                        ? Result.Ok(new RestRequest(HttpMethod.Get, FirstPage(resultUrl), start.Headers))
+                        ? Result.Ok(new RestRequest(HttpMethod.Get, FirstPage(resultUrl), start.Headers) { RedirectHosts = start.RedirectHosts })
                         : Result.Fail<RestRequest>(new Problem("rest.job_failed", $"The finished job has no result address at {job.ResultUrl}."));
                 }
             }

@@ -147,6 +147,9 @@ public sealed record Query(string Name, string Method, string Path)
 
     public ResponseFormat Format { get; init; } = ResponseFormat.Auto;
 
+    /// <summary>Hosts other than the API's that a redirect may lead to, such as signed download storage. They receive a plain GET without credentials.</summary>
+    public IReadOnlyList<string> RedirectHosts { get; init; } = [];
+
     /// <summary>With <see cref="ResponseFormat.Zip"/>: the archive member read, by its extension as JSON, XML or CSV (JSON otherwise).</summary>
     public string? Member { get; init; }
 

@@ -13,7 +13,14 @@ using EvidenceHound.Core.Results;
 namespace EvidenceHound.Collectors.Rest.Engine;
 
 /// <summary>One request to send: method, address (without auth), headers and an optional JSON body.</summary>
-public sealed record RestRequest(HttpMethod Method, Uri Url, IReadOnlyDictionary<string, string> Headers, JsonNode? Body = null);
+public sealed record RestRequest(HttpMethod Method, Uri Url, IReadOnlyDictionary<string, string> Headers, JsonNode? Body = null)
+{
+    /// <summary>Other hosts a redirect may lead to, such as signed download storage. They get a plain GET: no sign-in and no headers.</summary>
+    public IReadOnlyList<string> RedirectHosts { get; init; } = [];
+
+    /// <summary>True once a redirect has left for one of <see cref="RedirectHosts"/>: send it unsigned.</summary>
+    internal bool Unsigned { get; init; }
+}
 
 /// <summary>An answer: status, body text, content type, the headers the engine reads (Link, Location, Retry-After) and the address it came from.</summary>
 public sealed record RestResponse(HttpStatusCode Status, string Body, string? ContentType, IReadOnlyDictionary<string, string> Headers, Uri Url)
@@ -46,15 +53,16 @@ public sealed class RestHttp(HttpClient http, IClock clock, IDelay delay, Connec
         ArgumentNullException.ThrowIfNull(request);
         var refreshed = false;
         var url = request.Url;
+        var unsigned = false;
         for (var redirects = 0; ; redirects++)
         {
-            var sent = await SendWithRetriesAsync(request with { Url = url }, cancellationToken);
+            var sent = await SendWithRetriesAsync(unsigned ? new RestRequest(HttpMethod.Get, url, new Dictionary<string, string>()) { Unsigned = true } : request with { Url = url }, cancellationToken);
             if (sent is not Result<RestResponse>.Ok { Value: var response })
             {
                 return sent;
             }
 
-            if (response.Status == HttpStatusCode.Unauthorized && connection.Auth is OAuthClientCredentials && !refreshed)
+            if (response.Status == HttpStatusCode.Unauthorized && connection.Auth is OAuthClientCredentials && !refreshed && !unsigned)
             {
                 _token = null;
                 refreshed = true;
@@ -63,6 +71,13 @@ public sealed class RestHttp(HttpClient http, IClock clock, IDelay delay, Connec
 
             if ((int)response.Status is >= 300 and < 400 && Location(response) is { } location)
             {
+                if (redirects < MaxRedirects && !SameOrigin(location, url) && request.Method == HttpMethod.Get && HostRules.IsAllowed(location, request.RedirectHosts))
+                {
+                    url = location;
+                    unsigned = true;
+                    continue;
+                }
+
                 if (!SameOrigin(location, url) || redirects == MaxRedirects)
                 {
                     return Result.Fail<RestResponse>(new Problem("rest.redirect_refused", $"{url.Host} answered with a redirect to {location.Host}; redirects are only followed on the same host, so nothing was sent there."));
@@ -82,7 +97,7 @@ public sealed class RestHttp(HttpClient http, IClock clock, IDelay delay, Connec
 
     private async Task<Result<RestResponse>> SendWithRetriesAsync(RestRequest request, CancellationToken cancellationToken)
     {
-        if (!HostRules.IsAllowed(request.Url, allowedHosts))
+        if (!request.Unsigned && !HostRules.IsAllowed(request.Url, allowedHosts))
         {
             return Result.Fail<RestResponse>(new Problem("rest.host_not_allowed", $"{request.Url.Host} is not in allowed_hosts, so nothing was sent there."));
         }
@@ -117,7 +132,7 @@ public sealed class RestHttp(HttpClient http, IClock clock, IDelay delay, Connec
 
     private async Task<Result<RestResponse>> SendOnceAsync(RestRequest request, CancellationToken cancellationToken)
     {
-        var auth = await AuthorisationAsync(cancellationToken);
+        var auth = request.Unsigned ? Result.Ok(Signer.None) : await AuthorisationAsync(cancellationToken);
         if (auth is Result<Signer>.Fail failed)
         {
             return Result.Fail<RestResponse>(failed.Errors);

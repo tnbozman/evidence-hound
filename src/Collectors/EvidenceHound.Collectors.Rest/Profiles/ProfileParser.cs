@@ -20,7 +20,7 @@ public static class ProfileParser
     private static readonly string[] TlsKeys = ["pinned_thumbprint", "client_certificate"];
     private static readonly string[] QueryKeys =
     [
-        "get", "post", "headers", "query", "body", "paging", "items", "identities", "vars", "for_each", "max_calls", "optional_on", "async", "format", "member", "arrays", "keep",
+        "get", "post", "headers", "query", "body", "paging", "items", "identities", "vars", "for_each", "max_calls", "optional_on", "async", "format", "member", "redirect_hosts", "arrays", "keep",
         "max_items", "max_bytes", "max_pages",
     ];
     private static readonly string[] AsyncKeys = ["status_url", "done", "result_url", "poll_seconds", "timeout_seconds"];
@@ -256,6 +256,7 @@ public static class ProfileParser
             return new Query(name, method, path)
             {
                 Member = member,
+                RedirectHosts = Texts(map, "redirect_hosts"),
                 Headers = Strings(map, "headers"),
                 Parameters = Strings(map, "query"),
                 Body = Child(map, "body") is { } body ? ToJson(body) : null,
