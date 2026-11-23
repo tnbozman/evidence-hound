@@ -16,6 +16,7 @@ public enum SkillStep
     Profile,
     Mapping,
     Explain,
+    Environment,
 }
 
 public enum SkillSource
@@ -47,7 +48,7 @@ public static partial class SkillParser
 
     private static readonly string[] Keys = ["name", "description", "version", "applies_to", "frameworks", "overrides"];
 
-    public static IReadOnlyList<string> Steps { get; } = ["supplier", "system", "applicability", "profile", "mapping", "explain"];
+    public static IReadOnlyList<string> Steps { get; } = ["supplier", "system", "applicability", "profile", "mapping", "explain", "environment"];
 
     public static Result<Skill> Parse(string text, string path, SkillSource source)
     {
