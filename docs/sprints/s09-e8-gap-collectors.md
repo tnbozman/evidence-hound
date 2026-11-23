@@ -1355,7 +1355,30 @@ At the maintainer's request (2026-11-23): the example audits (`EX-E8-2026`, `EX-
 - Result (2026-11-23): through the API, the Example Pty Ltd domain folder, the evidence in Global and the example-only libraries (example baseline, loaded and stored; ASD Essentials, loaded) were removed. `HOUND_TRIAL_YES=1 make trial` applied the trial's scope again and the Sophos run published 3 items, 0 failed, to `EX-E8-Q2-2027FY`. CISO Assistant then held one audit (`EX-E8-Q2-2027FY`, "Essential Eight ML2 Q2-2027FY", in progress), one applied control (AC-AUTO-EVIDENCE), no assets, and the four Sophos evidence items. `bats scripts/tests` all ok.
 - As built: `postStartCommand` runs `scripts/dev-ca-env.sh` only; `README.md` says to run `scripts/ca-apply-scope.sh` for the example. The change takes effect the next time the dev container starts.
 
+### s09-51 The trial onboards in order: organisation, third parties, system, its audit, controls, evidence (added 2026-11-23)
+- [ ] Done
+
+At the maintainer's request (2026-11-23): the trial should follow the onboarding order as a guided, interactive tutorial. Each stage says what it is, prints what to ask the coding agent (and the skill it uses), waits, checks the draft with `hound`, has the person approve in the terminal where one is needed, then validates, plans and applies, and says what to look at in CISO Assistant. Unattended (`HOUND_TRIAL_YES=1`, CI) each stage replays committed fictional answers instead, through the same commands an agent uses; a committed approved file stands in for `hound approve`, which refuses without a person at a terminal.
+
+**Story:** As a GRC lead trying hound, I want the trial to take me through the organisation, its third parties, the system, the system's audit, its controls and its evidence collectors in that order, so that I learn the onboarding as I will do it.
+
+**Acceptance criteria**
+- Stages after the workspace: 4 organisation (`hound init`, `hound agent setup`, the `bin/hound` wrapper); 5 third parties (Sophos and a fictional managed service provider; `hound approve`); 6 the system (`SOPHOS-NETWORK`: `hound onboard … pending` starts its session); 7 its audit (one decision per requirement, review, `hound approve` writes the system and `<series>-SOPHOS-NETWORK`); 8 controls (`hound add control … --audit <series>-SOPHOS-NETWORK`); 9 evidence collectors (Sophos Central, as before); 10 Microsoft 365 (as before).
+- Each agent stage prints the request and the skills, and waits until its check passes (or the person stops); a finished stage is skipped on the next run.
+- Unattended, stages 5 to 8 replay `examples/trial/` (approved third-party files) and `examples/onboarding-tutorial/answers/office-firewall.decisions.txt` and apply each stage; a second run applies nothing new. The old backup example stays out.
+- `docs/tutorials/local-trial.md` describes the stages.
+
+**Tests first**
+- `trial.bats`: "each agent stage's request names what to draft, the skills and the person's part"
+- `trial.bats`: "a stage is ready once its draft is in the repo"
+- `trial.bats`: "the unattended replay uses committed fictional files" (replaces "the trial adds no example system, control or manual source of its own", whose `add control` clause the new controls stage supersedes)
+
+**Functional check**
+- `HOUND_TRIAL_YES=1 make trial` twice against the dev container's CISO Assistant, cleared of the trial: the first run applies every stage, the second applies nothing; CISO Assistant holds `EX-E8-Q2-2027FY`, `EX-E8-Q2-2027FY-SOPHOS-NETWORK`, the two third parties and AC-EXTERNAL-SCAN.
+
 ## Discovered work
+
+- s09-51: a manual evidence source needs its check mapped to a requirement, and the requirement taken out of `manual_only`; no command does it, so an agent edits the mapping by hand and the trial has no manual evidence stage. Add `hound mapping add-check --mapping <file> --requirement <ref> --check <id>` (asks nothing, `--json`), then a manual evidence stage in the trial (drop a scan report, `hound manual propose` by the agent, `hound manual approve` by the person).
 
 - s09-47: move the fictional example repo's audits to series (`EX-E8`, `EX-ESSENTIALS`, `EX-BASELINE` with cycles), with its config targets, the example run and the tests that use `EX-E8-2026` as a fixture.
 
