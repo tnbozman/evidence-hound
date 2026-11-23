@@ -100,7 +100,7 @@ public sealed class FileEvidenceStoreTests : IDisposable
         var store = new FileEvidenceStore(_root);
         var run = (await store.WriteRunAsync(Manifest(At), Files, TestContext.Current.CancellationToken)).Value();
 
-        (await store.ReadFileAsync(run, "backups.json", TestContext.Current.CancellationToken)).ShouldBe(Files[1].Content);
+        (await store.ReadFileAsync(run, "backups.json", TestContext.Current.CancellationToken)).ShouldBe(Files[1].Content.ToArray());
         (await store.ReadFileAsync(run, "missing.json", TestContext.Current.CancellationToken)).ShouldBeNull();
         (await store.ReadFileAsync(run, "../backups.json", TestContext.Current.CancellationToken)).ShouldBeNull();
     }
