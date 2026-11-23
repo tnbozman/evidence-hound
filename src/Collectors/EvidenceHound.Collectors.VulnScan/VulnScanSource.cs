@@ -10,6 +10,9 @@ public static class VulnScanSettings
     public const string Format = "format";
     public const string Scope = "scope";
     public const string Owner = "owner";
+    public const string ScanIntervalDays = "scan_interval_days";
+    public const string PatchWindowDays = "patch_window_days";
+    public const string ExploitedPatchWindowHours = "exploited_patch_window_hours";
     public const string ColumnHost = "column_host";
     public const string ColumnFindingId = "column_finding_id";
     public const string ColumnSeverity = "column_severity";
@@ -35,12 +38,21 @@ public enum ScanFormat
 /// </summary>
 public sealed record VulnScanSource(string DropFolder, ScanFormat Format, string Scope, string Owner, ColumnMap? Columns)
 {
+    private readonly PatchPolicy? _policy;
+
     /// <summary>The scopes a scan can cover, as the Essential Eight patching requirements group them.</summary>
     public static IReadOnlyList<string> Scopes { get; } = ["internet_facing", "common_apps", "other_apps", "operating_systems"];
 
     private static readonly string Missing = "vuln_scan.setting_missing";
 
     private static readonly string Invalid = "vuln_scan.setting_invalid";
+
+    /// <summary>How often the scope must be scanned and how soon it must be patched; the scope's maturity level 2 defaults unless set.</summary>
+    public PatchPolicy Policy
+    {
+        get => _policy ?? PatchPolicy.For(Scope);
+        init => _policy = value;
+    }
 
     /// <summary>The file pattern the format reads: <c>*.nessus</c> or <c>*.csv</c>.</summary>
     public string Pattern => Format == ScanFormat.Nessus ? "*.nessus" : "*.csv";
@@ -79,6 +91,24 @@ public sealed record VulnScanSource(string DropFolder, ScanFormat Format, string
         }
 
         var owner = Required(VulnScanSettings.Owner);
+        int? Positive(string name)
+        {
+            if (settings.Find(name) is not { } text)
+            {
+                return null;
+            }
+
+            if (int.TryParse(text.Trim(), System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var value) && value > 0)
+            {
+                return value;
+            }
+
+            return Reject<int?>(problems, $"Setting '{name}' must be a whole number greater than zero, not '{text}'.", null);
+        }
+
+        var interval = Positive(VulnScanSettings.ScanIntervalDays);
+        var window = Positive(VulnScanSettings.PatchWindowDays);
+        var exploited = Positive(VulnScanSettings.ExploitedPatchWindowHours);
         ColumnMap? columns = null;
         if (format == ScanFormat.Csv)
         {
@@ -99,7 +129,14 @@ public sealed record VulnScanSource(string DropFolder, ScanFormat Format, string
             };
         }
 
-        return problems.Count > 0 ? Result.Fail<VulnScanSource>(problems) : Result.Ok(new VulnScanSource(folder, format!.Value, scope, owner, columns));
+        if (problems.Count > 0)
+        {
+            return Result.Fail<VulnScanSource>(problems);
+        }
+
+        var defaults = PatchPolicy.For(scope);
+        var policy = new PatchPolicy(interval ?? defaults.ScanIntervalDays, window ?? defaults.PatchWindowDays, exploited ?? defaults.ExploitedWindowHours);
+        return Result.Ok(new VulnScanSource(folder, format!.Value, scope, owner, columns) { Policy = policy });
     }
 
     private static T Reject<T>(List<Problem> problems, string message, T fallback)

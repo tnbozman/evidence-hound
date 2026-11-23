@@ -34,6 +34,38 @@ internal static class ScanEvidence
         })]),
     });
 
+    public static CollectedEvidence Assessment(VulnScanSource source, PatchAssessment assessment) => File(PatchChecks.AssessmentFile, new JsonObject
+    {
+        ["scope"] = source.Scope,
+        ["file"] = assessment.Scan.FileName,
+        ["scan_date"] = Date(assessment.Scan.ScanDate),
+        ["policy"] = new JsonObject
+        {
+            ["scan_interval_days"] = source.Policy.ScanIntervalDays,
+            ["patch_window_days"] = source.Policy.PatchWindowDays,
+            ["exploited_patch_window_hours"] = source.Policy.ExploitedWindowHours,
+        },
+        ["overdue"] = new JsonArray([.. assessment.Overdue.Select(o => (JsonNode)new JsonObject
+        {
+            ["host"] = o.Finding.Host,
+            ["finding_id"] = o.Finding.FindingId,
+            ["name"] = o.Finding.Name,
+            ["severity"] = o.Finding.Severity.ToString().ToLowerInvariant(),
+            ["exploit_available"] = o.Finding.ExploitAvailable,
+            ["counted_from"] = o.CountedFrom,
+            ["since"] = Date(o.Since),
+            ["since_file"] = o.SinceFile,
+            ["age_hours"] = (int)Math.Floor(o.AgeHours),
+            ["window_hours"] = o.WindowHours,
+        })]),
+        ["unsupported"] = new JsonArray([.. assessment.Unsupported.Select(f => (JsonNode)new JsonObject
+        {
+            ["host"] = f.Host,
+            ["finding_id"] = f.FindingId,
+            ["name"] = f.Name,
+        })]),
+    });
+
     private static JsonNode Finding(ScanFinding f) => new JsonObject
     {
         ["host"] = f.Host,

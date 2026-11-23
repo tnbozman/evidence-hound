@@ -48,18 +48,22 @@ requirements:
     checks:
       - endpoint.os.supported_versions
       - network.firewall.firmware_supported
+      - vuln.operating_systems.unsupported_removed
   # Patch operating systems. Internet-facing network devices: no firmware upgrade offered to a Sophos Central firewall for more
-  # than firmware_update_days (14). Internet-facing servers, and fixes for exploited vulnerabilities within 48 hours, still need
-  # the scanner and patch records (s09-03, s09-04).
+  # than firmware_update_days (14); internet-facing services: no scanned finding past its window (two weeks, or 48 hours when an
+  # exploit exists). Both must pass.
   - ref: ISM-1694
     rule: all_pass
     checks:
       - network.firewall.firmware_current
-  # Patch operating systems. Stands for ISM-1695 only if the Intune compliance policy requires a minimum OS version that tracks monthly updates.
+      - vuln.internet_facing.patched_in_window
+  # Patch operating systems. Intune compliance stands for ISM-1695 only if its policy requires a minimum OS version that tracks monthly
+  # updates; the operating system scans show what is still missing a month after release.
   - ref: ISM-1695
     rule: all_pass
     checks:
       - endpoint.managed.compliant_ratio
+      - vuln.operating_systems.patched_in_window
   # Restrict Microsoft Office macros.
   - ref: ISM-1488
     rule: all_pass
@@ -126,6 +130,56 @@ requirements:
     rule: all_pass
     checks:
       - endpoint.application_control.events_centrally_logged
+  # Patch applications and patch operating systems, from vulnerability scan exports (the vuln-scan collector), one instance per
+  # scope. Internet-facing scans cover the applications and operating systems of internet-facing services, servers and network devices.
+  - ref: ISM-1698
+    rule: all_pass
+    checks:
+      - vuln.internet_facing.scanned_in_interval
+  - ref: ISM-1701
+    rule: all_pass
+    checks:
+      - vuln.internet_facing.scanned_in_interval
+  - ref: ISM-1876
+    rule: all_pass
+    checks:
+      - vuln.internet_facing.patched_in_window
+  - ref: ISM-1690
+    rule: all_pass
+    checks:
+      - vuln.internet_facing.patched_in_window
+  - ref: ISM-1877
+    rule: all_pass
+    checks:
+      - vuln.internet_facing.patched_in_window
+  - ref: ISM-1905
+    rule: all_pass
+    checks:
+      - vuln.internet_facing.unsupported_removed
+  - ref: ISM-1699
+    rule: all_pass
+    checks:
+      - vuln.common_apps.scanned_in_interval
+  - ref: ISM-1691
+    rule: all_pass
+    checks:
+      - vuln.common_apps.patched_in_window
+  - ref: ISM-1704
+    rule: all_pass
+    checks:
+      - vuln.common_apps.unsupported_removed
+  - ref: ISM-1700
+    rule: all_pass
+    checks:
+      - vuln.other_apps.scanned_in_interval
+  - ref: ISM-1693
+    rule: all_pass
+    checks:
+      - vuln.other_apps.patched_in_window
+  - ref: ISM-1702
+    rule: all_pass
+    checks:
+      - vuln.operating_systems.scanned_in_interval
   # Application control. Manual source: the application control ruleset review.
   - ref: ISM-1582
     rule: all_pass
@@ -138,30 +192,6 @@ manual_only:
   - ref: ISM-1808  # Patch applications, Patch operating systems
     rows: all
     source: Vulnerability scanner configuration showing database update frequency.
-  - ref: ISM-1698  # Patch applications
-    source: Vulnerability scanner reports and application patch records, exported monthly and attested by the application owner.
-  - ref: ISM-1699  # Patch applications
-    source: Vulnerability scanner reports and application patch records, exported monthly and attested by the application owner.
-  - ref: ISM-1700  # Patch applications
-    source: Vulnerability scanner reports and application patch records, exported monthly and attested by the application owner.
-  - ref: ISM-1876  # Patch applications
-    source: Vulnerability scanner reports and application patch records, exported monthly and attested by the application owner.
-  - ref: ISM-1690  # Patch applications
-    source: Vulnerability scanner reports and application patch records, exported monthly and attested by the application owner.
-  - ref: ISM-1691  # Patch applications
-    source: Vulnerability scanner reports and application patch records, exported monthly and attested by the application owner.
-  - ref: ISM-1693  # Patch applications
-    source: Vulnerability scanner reports and application patch records, exported monthly and attested by the application owner.
-  - ref: ISM-1905  # Patch applications
-    source: Vulnerability scanner reports and application patch records, exported monthly and attested by the application owner.
-  - ref: ISM-1704  # Patch applications
-    source: Vulnerability scanner reports and application patch records, exported monthly and attested by the application owner.
-  - ref: ISM-1701  # Patch operating systems
-    source: Vulnerability scanner reports and operating system patch records, exported monthly and attested by the infrastructure owner.
-  - ref: ISM-1702  # Patch operating systems
-    source: Vulnerability scanner reports and operating system patch records, exported monthly and attested by the infrastructure owner.
-  - ref: ISM-1877  # Patch operating systems
-    source: Vulnerability scanner reports and operating system patch records, exported monthly and attested by the infrastructure owner.
   - ref: ISM-1679  # Multi-factor authentication
     source: Identity provider MFA configuration export and policy review, attested by the identity owner.
   - ref: ISM-1680  # Multi-factor authentication

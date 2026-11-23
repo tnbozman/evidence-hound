@@ -36,8 +36,8 @@ public sealed class CollectorsCommandTests : IDisposable
               settings: profile (required), profiles_path (optional), include_identities (optional), allow_writes (optional), require_profile_tests (optional)
               secrets: none
             vuln-scan 1.0.0
-              checks: set per instance by its settings
-              settings: drop_folder (required), format (required), scope (required), owner (required), column_host (optional), column_finding_id (optional), column_severity (optional), column_name (optional), column_cve (optional), column_first_seen (optional), column_patch_published (optional), column_exploit_available (optional), column_unsupported (optional), column_scan_date (optional)
+              checks: vuln.common_apps.patched_in_window, vuln.common_apps.scanned_in_interval, vuln.common_apps.unsupported_removed, vuln.internet_facing.patched_in_window, vuln.internet_facing.scanned_in_interval, vuln.internet_facing.unsupported_removed, vuln.operating_systems.patched_in_window, vuln.operating_systems.scanned_in_interval, vuln.operating_systems.unsupported_removed, vuln.other_apps.patched_in_window, vuln.other_apps.scanned_in_interval
+              settings: drop_folder (required), format (required), scope (required), owner (required), scan_interval_days (optional), patch_window_days (optional), exploited_patch_window_hours (optional), column_host (optional), column_finding_id (optional), column_severity (optional), column_name (optional), column_cve (optional), column_first_seen (optional), column_patch_published (optional), column_exploit_available (optional), column_unsupported (optional), column_scan_date (optional)
               secrets: none
             widget 0.1.0
               checks: widget.patched
