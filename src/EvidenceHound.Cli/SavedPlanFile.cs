@@ -95,7 +95,7 @@ internal static class SavedPlanFile
                 Text(root, "root_folder"),
                 new ScopePlan(
                     [.. plan["changes"]!.AsArray().Select(c => new ScopeChange(
-                        Parse<ScopeKind>(Text(c!, "kind")),
+                        Kind(Text(c!, "kind")),
                         Text(c!, "key"),
                         Parse<ScopeAction>(Text(c!, "action")),
                         ReadFields(c!["fields"]!),
@@ -104,7 +104,7 @@ internal static class SavedPlanFile
                         Desired = c["desired"] is { } desired ? ReadObject(desired) : null,
                     })],
                     [.. plan["drift"]!.AsArray().Select(d => new ScopeDrift(
-                        Parse<ScopeKind>(Text(d!, "kind")),
+                        Kind(Text(d!, "kind")),
                         Text(d!, "key"),
                         Parse<DriftReason>(Text(d!, "reason")),
                         d!["managed"]!.GetValue<bool>(),
@@ -135,7 +135,7 @@ internal static class SavedPlanFile
     };
 
     private static ScopeObject ReadObject(JsonNode node) =>
-        new(Parse<ScopeKind>(Text(node, "kind")), Text(node, "key"), ReadMap(node["fields"]!))
+        new(Kind(Text(node, "kind")), Text(node, "key"), ReadMap(node["fields"]!))
         {
             Initial = ReadMap(node["initial"]!),
             Files = [.. node["files"]!.AsArray().Select(f => new ScopeFile(Text(f!, "path"), Text(f!, "sha256")))],
@@ -158,6 +158,12 @@ internal static class SavedPlanFile
     private static int Number(JsonNode node, string name) => node[name]?.GetValue<int>() ?? throw new FormatException($"'{name}' is missing");
 
     /// <summary>An enum value from its snake_case name, as <see cref="Snake"/> writes it.</summary>
+    /// <summary>A kind by the name the plan writes for it (<see cref="ScopePlanOutput.Kind"/>), so every kind the writer names reads back.</summary>
+    private static ScopeKind Kind(string name) =>
+        Enum.GetValues<ScopeKind>().FirstOrDefault(k => ScopePlanOutput.Kind(k) == name) is var kind && ScopePlanOutput.Kind(kind) == name
+            ? kind
+            : throw new FormatException($"'{name}' is not a ScopeKind");
+
     private static T Parse<T>(string name)
         where T : struct, Enum =>
         Enum.TryParse<T>(name.Replace("_", "", StringComparison.Ordinal), ignoreCase: true, out var value) && Enum.IsDefined(value)
