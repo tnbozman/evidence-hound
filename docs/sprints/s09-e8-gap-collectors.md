@@ -999,7 +999,7 @@ Added at the person's request after the s09-22 Sophos onboarding trial, where th
 **Order:** with s09-34; both before the next hands-on onboarding.
 
 ### s09-36 Met by another system: an open state, never not applicable (added 2026-11-23)
-- [ ] Done
+- [x] Done
 
 From the s09-25 Sophos run and the [agent-driven onboarding design](../design/agent-driven-onboarding.md) (decision 4).
 
@@ -1019,6 +1019,8 @@ From the s09-25 Sophos run and the [agent-driven onboarding design](../design/ag
 
 **Functional check**
 - The trial repo: the Sophos firewall audit's other-system rows are reported, rewritten as open, and the plan lists them as dependencies.
+- Result (2026-11-23), in the trial repo against the local CISO Assistant: `hound scope validate scope --config hound.yaml` exited 3 with `scope.other_system_as_not_applicable` for 109 rows (82 in the organisation's audit from the capability map, 27 in the Sophos firewall audit, the 27 "another system" decisions). The rows were rewritten as `to_do` / `not_assessed` with `provided_by` (a one-off script in the trial workspace); validate then passed, `hound scope plan` planned 109 updates with no regressions and listed 116 rows under "Open dependencies", all "no audit yet" (7 rows wait on two systems); `hound scope apply` wrote 109, and a second plan was empty. In CISO Assistant the firewall audit shows 33 not applicable, 1 compliant and 126 not assessed, and the organisation's audit no longer shows the 82 rows as not applicable.
+- As built: assessments take `provided_by: [<system>]` (model, loader, `schemas/scope.schema.json`); both writers (a system's audit and the environment capability map) write such rows open; `OpenDependencies.Of` gives the plan's section and JSON `dependencies`, with the result as the scope declares it, "from collectors" when that audit's mapping computes it, or "no audit yet". Tests: `OnboardOutputTests.Decisions_become_scope_assessments_and_another_systems_row_stays_open`, `CapabilityScopeTests.Requirement_another_system_meets_stays_open_naming_that_system` (both renamed from the names earlier tasks list), `ScopeValidationTests.Not_applicable_naming_another_system_is_reported`, `ScopeValidationTests.Open_row_met_by_another_system_is_valid`, `OpenDependencyTests` (3), `OpenDependencyPlanTests` (3), `ScopeSchemaTests` now also over the onboarding tutorial's files. Skipping rows the mapping computes was already built in s09-28 (`OnboardEnvironmentTests.Requirements_the_mapping_computes_are_left_to_it_so_the_scope_validates_with_the_deployment`). The onboarding tutorial's two audit files were regenerated from its recorded answers.
 
 ### s09-37 The agent interface (added 2026-11-23)
 - [ ] Done
@@ -1191,5 +1193,11 @@ Design decision 10, and the reworded rule: no model in collection, and no eviden
 - `hound onboard` does not keep `--group` between runs: the second run (after the supplier stop) without the same `--group` options decides every requirement of the framework (152 for the Essential Eight, not 107). Save the groups with the session at the start, or refuse a run whose groups differ (found in s09-32).
 
 - `hound onboard` writes an apostrophe in an observation as `\u0027` (JSON escaping inside a YAML string), and names the audit by the system ID and framework slug ("GRC-PLATFORM essential-eight-2023"). Write plain YAML strings and a readable name (found in s09-32).
+
+- `hound scope validate` reports older not-applicable rows that name another system, but nothing rewrites them: in the trial 109 rows were fixed with a one-off script. A `hound scope fix` (or a `--fix` on validate) that rewrites them as open rows with `provided_by` would save hand edits (found in s09-36).
+
+- An open dependency's "result there" comes from the scope files, not from CISO Assistant, so a requirement a collector has marked compliant in the providing system's audit reads "from collectors", not "compliant". Read the held result when the plan has it (found in s09-36).
+
+- The plan's "Open dependencies" lists one line per row, which was 116 lines in the trial. Group by providing system, with counts, and list rows only with `--detailed` (found in s09-36).
 
 ## Sprint review
