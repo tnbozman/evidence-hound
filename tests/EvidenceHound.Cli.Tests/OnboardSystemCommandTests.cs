@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using EvidenceHound.Core.Scope;
 using EvidenceHound.Core.Yaml;
+using EvidenceHound.Onboarding.Suppliers;
 
 namespace EvidenceHound.Cli.Tests;
 
@@ -125,6 +126,101 @@ public sealed class OnboardSystemCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Scale_is_shown_before_each_level()
+    {
+        // Dependency 3 with its reason, penetration left, maturity 9 refused then 2 with its reason, trust and criticality left.
+        var answers = SupplierAnswers + "3\nHolds the asset register.\n\n9\n2\nNo certificate seen yet.\n\n\n";
+
+        var (exit, _, error) = await RunAsync(answers);
+
+        exit.ShouldBe(ExitCodes.Ok, error);
+        foreach (var (name, low, high) in SupplierProposal.Scales)
+        {
+            var scale = error.IndexOf(SupplierScales.Describe(name), StringComparison.Ordinal);
+            scale.ShouldBeGreaterThan(-1, name);
+            error.IndexOf($"{name} ({low} to {high}; empty to decide later): ", StringComparison.Ordinal).ShouldBeGreaterThan(scale, name);
+        }
+
+        error.ShouldContain("'9' is not a whole number from 1 to 4");
+        var drafted = await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "third-parties", "sup-example.yaml"), _ct);
+        drafted.ShouldContain("# dependency: Holds the asset register. (decided by Alex Example)\ndependency: 3\n");
+        drafted.ShouldContain("# penetration: to decide (0 to 4)\n");
+        drafted.ShouldContain("# maturity: No certificate seen yet. (decided by Alex Example)\nmaturity: 2\n");
+        drafted.ShouldContain("# trust: to decide (1 to 4)\n");
+        drafted.ShouldContain("    # criticality: to decide (1 to 4)\n");
+    }
+
+    [Fact]
+    public async Task Every_opening_question_has_an_example()
+    {
+        var (exit, _, error) = await RunAsync(SupplierAnswers);
+
+        exit.ShouldBe(ExitCodes.Ok, error);
+        OnboardGuide.Opening.Count.ShouldBe(11);
+        foreach (var (question, hint) in OnboardGuide.Opening)
+        {
+            hint.ShouldContain("e.g. ");
+            var shown = error.IndexOf(hint, StringComparison.Ordinal);
+            shown.ShouldBeGreaterThan(-1, hint);
+            error.IndexOf(question.Replace("{supplier}", "Example Assets Ltd", StringComparison.Ordinal).Replace("{system}", System, StringComparison.Ordinal), shown, StringComparison.Ordinal)
+                .ShouldBeGreaterThan(shown, question);
+        }
+    }
+
+    [Fact]
+    public async Task It_says_what_is_about_to_happen_before_the_first_question()
+    {
+        var (exit, _, error) = await RunAsync(SupplierAnswers);
+
+        exit.ShouldBe(ExitCodes.Ok, error);
+        var intro = error.IndexOf("Onboarding EXAMPLE-ASSETS in three steps", StringComparison.Ordinal);
+        intro.ShouldBeGreaterThan(-1, error);
+        intro.ShouldBeLessThan(error.IndexOf("Your name", StringComparison.Ordinal));
+        error.ShouldContain("Nothing reaches CISO Assistant until 'hound scope apply'");
+    }
+
+    [Fact]
+    public async Task Repo_without_setup_is_refused_before_writing()
+    {
+        File.Delete(Path.Combine(Repo, "scope", "setup.yaml"));
+
+        var (exit, _, error) = await RunAsync(SupplierAnswers);
+
+        exit.ShouldBe(ExitCodes.Configuration);
+        error.ShouldContain("is not a compliance repo");
+        error.ShouldContain("scope/setup.yaml");
+        error.ShouldNotContain("Your name");
+        Directory.Exists(Path.Combine(Repo, "onboarding", System)).ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task Without_a_spec_it_says_what_is_missing_before_starting()
+    {
+        var (exit, _, error) = await RunAsync(SupplierAnswers, spec: false);
+
+        exit.ShouldBe(ExitCodes.Ok, error);
+        var note = error.IndexOf("No --spec was given", StringComparison.Ordinal);
+        note.ShouldBeGreaterThan(-1, error);
+        note.ShouldBeLessThan(error.IndexOf("Your name", StringComparison.Ordinal));
+        (await RunAsync(SupplierAnswers.Replace("SUP-EXAMPLE", "SUP-OTHER", StringComparison.Ordinal))).Error.ShouldNotContain("No --spec was given");
+    }
+
+    [Fact]
+    public async Task Help_lists_the_steps_and_points_to_the_guide()
+    {
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+
+        var exit = await HoundCli.RunAsync(["onboard", "--help"], new StringReader(""), output, error, configureLogging: null, _ct);
+
+        exit.ShouldBe(ExitCodes.Ok);
+        output.ToString().ShouldContain("1. The supplier");
+        output.ToString().ShouldContain("2. Applicability");
+        output.ToString().ShouldContain("3. The files");
+        output.ToString().ShouldContain("docs/onboarding.md");
+    }
+
+    [Fact]
     public async Task System_owner_is_asked_as_a_ciso_assistant_users_email_and_a_name_is_asked_again()
     {
         var answers = SupplierAnswers.Replace("Alex Example\nalex@example.com\n", "Alex Example\nAlex Example\nalex@example.com\n", StringComparison.Ordinal);
@@ -170,12 +266,12 @@ public sealed class OnboardSystemCommandTests : IDisposable
 
     private JsonNode Session() => JsonNode.Parse(File.ReadAllText(Path.Combine(Repo, "onboarding", System, "session.json")))!;
 
-    private async Task<(int Exit, string Output, string Error)> RunAsync(string input)
+    private async Task<(int Exit, string Output, string Error)> RunAsync(string input, bool spec = true)
     {
         string[] args =
         [
             "onboard", System, "--repo", Repo, "--framework", Path.Combine(Repo, "frameworks", "example-framework.json"), "--group", "2",
-            "--spec", Path.Combine(ExampleRepoTests.RepoRoot, "examples", "apis", "example-asset-api.openapi.yaml"),
+            .. spec ? ["--spec", Path.Combine(ExampleRepoTests.RepoRoot, "examples", "apis", "example-asset-api.openapi.yaml")] : Array.Empty<string>(),
         ];
         using var reader = new StringReader(input);
         using var output = new StringWriter();

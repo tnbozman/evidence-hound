@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using EvidenceHound.Onboarding.Suppliers;
 
 namespace EvidenceHound.Cli.Tests;
 
@@ -20,6 +21,20 @@ public sealed partial class OnboardingDocsTests
         options.ShouldNotBeEmpty();
         options.Where(option => !Guide.Contains($"`{option}", StringComparison.Ordinal) && !Guide.Contains($" {option}", StringComparison.Ordinal))
             .ShouldBeEmpty($"hound {command} options missing from docs/onboarding.md");
+    }
+
+    [Fact]
+    public void The_guide_prints_the_supplier_scales_as_the_terminal_does()
+    {
+        foreach (var (name, _, _) in SupplierProposal.Scales)
+        {
+            var scale = SupplierScales.For(name);
+            Guide.ShouldContain(scale.About);
+            foreach (var line in scale.Lines)
+            {
+                Guide.ShouldContain($"| {line.Value} | {line.Meaning} |");
+            }
+        }
     }
 
     [Fact]
