@@ -18,7 +18,7 @@ namespace EvidenceHound.Cli;
 /// <c>hound onboard &lt;system&gt;</c>: supplier first, then one decision per in-scope requirement. The session is saved after every answer in
 /// <c>onboarding/&lt;system&gt;/session.json</c> and resumes where it stopped. It writes only into the config repo's working copy.
 /// </summary>
-internal static class OnboardSystemCommand
+internal static partial class OnboardSystemCommand
 {
     internal const string Choices = "a accept, c API check, m manual, n not applicable, o another system, l accept all remaining proposals, s save and stop";
 
@@ -401,7 +401,14 @@ internal static class OnboardSystemCommand
             written.Add("scope/setup.yaml");
         }
 
-        await WriteFileAsync(settings.Repo, auditFile, OnboardOutput.Audit(session, snapshot.FrameworkUrn, settings.FrameworkName, new AuditPlace(domain, perimeter), today), cancellationToken);
+        var series = await OrganisationSeriesAsync(settings.Repo, cancellationToken);
+        var systemRef = (await DomainsAsync(settings, cancellationToken)).SelectMany(d => d.Systems).FirstOrDefault(x => x.Name == session.System)?.RefId
+            ?? RefIds.Suggest(RefIdKind.System, session.System);
+        var place = new AuditPlace(domain, perimeter) { Series = series, SystemRefId = systemRef };
+        await WriteFileAsync(settings.Repo, auditFile, OnboardOutput.Audit(session, snapshot.FrameworkUrn, settings.FrameworkName, place, today), cancellationToken);
+        var seriesNote = series is null
+            ? $"No audit series in scope/audits, so the system's audit is {OnboardOutput.AuditRefId(session.System, settings.FrameworkName)} without a cycle; hound init writes the organisation's audit as a series (docs/scope.md, Audit periods)."
+            : $"The system's audit is {OnboardOutput.SeriesRefId(series, systemRef)}, a series of {series.RefId} by {series.Period}.";
 
         var mappingFile = Path.Combine("mappings", $"{settings.FrameworkName}.yaml").Replace('\\', '/');
         var mappingNote = $"No {mappingFile} to add manual rows to; add the manual requirements to your mapping by hand.";
@@ -430,12 +437,31 @@ internal static class OnboardSystemCommand
                 : $"\n{settings.System} is registered only once {named.EntityRef} is approved: {(review is null ? $"add a review to {named.EntityRef}'s file and conclude it" : $"conclude {review}")} as ok with 'hound approve' before 'hound scope plan'."
             : "";
         await terminal.Output.WriteLineAsync(
-            $"Wrote {string.Join(", ", written)}. {mappingNote}{gate}\nNext: review the changes in a pull request, then run 'hound scope validate scope', 'hound scope plan scope' and 'hound scope apply scope'.".AsMemory(),
+            $"Wrote {string.Join(", ", written)}. {seriesNote} {mappingNote}{gate}\nNext: review the changes in a pull request, then run 'hound scope validate scope', 'hound scope plan scope' and 'hound scope apply scope'.".AsMemory(),
             cancellationToken);
         return Result.Ok(session);
     }
 
     private static Task<IReadOnlyList<ScopeDomain>> DomainsAsync(Settings settings, CancellationToken cancellationToken) => DomainsAsync(settings.Repo, cancellationToken);
+
+    /// <summary>
+    /// The organisation's audit series in the repo: an audit with a cycle whose ref ID is <c>&lt;ORG&gt;-&lt;FRAMEWORK&gt;</c>, the one the
+    /// config targets when there are several. Null when there is none.
+    /// </summary>
+    private static async Task<OrganisationSeries?> OrganisationSeriesAsync(string repo, CancellationToken cancellationToken)
+    {
+        var cycles = await AuditSeries.CyclesAsync(Path.Combine(repo, "scope"), cancellationToken);
+        var organisation = cycles.Where(c => c.Key.Split('-').Length == 2).ToArray();
+        var config = Path.Combine(repo, "hound.yaml");
+        var targeted = File.Exists(config) ? TargetedAudit().Match(await File.ReadAllTextAsync(config, cancellationToken)) : null;
+        var chosen = organisation.Length == 1
+            ? organisation[0]
+            : organisation.FirstOrDefault(c => targeted is { Success: true } && c.Key == targeted.Groups[1].Value);
+        return chosen.Value is { } cycle ? new OrganisationSeries(chosen.Key, cycle.Period, cycle.Starts) : null;
+    }
+
+    [System.Text.RegularExpressions.GeneratedRegex("compliance_assessment:\\s*\"?([A-Z0-9-]+)")]
+    private static partial System.Text.RegularExpressions.Regex TargetedAudit();
 
     internal static async Task<IReadOnlyList<ScopeDomain>> DomainsAsync(string repo, CancellationToken cancellationToken)
     {
@@ -470,6 +496,7 @@ internal static class OnboardSystemCommand
             var description = session.Supplier is { } from ? $"{session.Product}, from {from.EntityName}." : session.Product ?? "";
             edited = YamlEdit.AppendItem(yaml, $"domains[name={domain}].systems", YamlMap.Of(
                 ("name", new YamlText(session.System)),
+                ("ref_id", new YamlText(RefIds.Suggest(RefIdKind.System, session.System))),
                 ("type", new YamlText("primary")),
                 ("description", new YamlText(description)),
                 ("owner", session.Owner is { } owner && owner.Contains('@', StringComparison.Ordinal) ? new YamlText(owner) : null),
