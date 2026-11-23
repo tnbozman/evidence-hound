@@ -151,7 +151,13 @@ internal static class ScopeCommands
                 var compliance = ComplianceImpact.Of(plan, declared, held, checkedScope.Inputs);
                 if (dryRun)
                 {
-                    await output.WriteAsync(ScopePlanOutput.Markdown(plan, PlanNotes.None with { Periods = ScopePeriods.Notes(declared, plan), Compliance = compliance, Suppliers = suppliers.Notes }));
+                    await output.WriteAsync(ScopePlanOutput.Markdown(plan, PlanNotes.None with
+                    {
+                        Periods = ScopePeriods.Notes(declared, plan),
+                        Compliance = compliance,
+                        Suppliers = suppliers.Notes,
+                        Gaps = CapabilityMap.Gaps(checkedScope.Scope, checkedScope.Inputs.Snapshots),
+                    }));
                     return ExitCodes.Ok;
                 }
 
@@ -338,6 +344,7 @@ internal static class ScopeCommands
                 var notes = new PlanNotes(ScopePeriods.Notes(declared, plan), AccessReview.Notes(checkedScope.Scope.Access, read.Users))
                 {
                     Suppliers = suppliers.Notes,
+                    Gaps = CapabilityMap.Gaps(checkedScope.Scope, checkedScope.Inputs.Snapshots),
                     Unmanaged = options.ShowUnmanaged ? UnmanagedSettings(declared, read.Held) : [],
                     Compliance = ComplianceImpact.Of(plan, declared, read.Held, checkedScope.Inputs),
                 };

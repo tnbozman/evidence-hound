@@ -115,6 +115,14 @@ public static class CapabilityMap
             .Select(g => new PendingSystem(g.Key, [.. g.Select(x => x.Decision.Mitigation)], g.Select(x => x.Decision.Supplier?.Value).FirstOrDefault(v => v is not null)))];
     }
 
+    /// <summary>The mitigations no product provides, from the snapshot of the framework the map names; none without a map or that snapshot.</summary>
+    public static IReadOnlyList<CapabilityGap> Gaps(ScopeDocument scope, IReadOnlyDictionary<string, FrameworkSnapshot> snapshots)
+    {
+        ArgumentNullException.ThrowIfNull(scope);
+        ArgumentNullException.ThrowIfNull(snapshots);
+        return scope.Capabilities is { } map && snapshots.TryGetValue(map.Framework.Value, out var snapshot) ? Rows(scope, snapshot).Gaps : [];
+    }
+
     public static CapabilityRows Rows(ScopeDocument scope, FrameworkSnapshot snapshot)
     {
         ArgumentNullException.ThrowIfNull(scope);
