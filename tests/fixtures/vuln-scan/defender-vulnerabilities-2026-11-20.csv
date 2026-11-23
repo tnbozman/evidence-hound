@@ -1,0 +1,4 @@
+DeviceId,DeviceName,OSPlatform,SoftwareVendor,SoftwareName,SoftwareVersion,CveId,VulnerabilitySeverityLevel,RecommendedSecurityUpdate,ExploitabilityLevel,FirstSeenTimestamp,LastSeenTimestamp
+0f1e2d3c4b5a69788796a5b4c3d2e1f000000001,laptop-01.example.com,Windows11,example-vendor,example-pdf-reader,24.1.0,CVE-2026-0201,Critical,"Update example-pdf-reader to 24.3",ExploitIsPublic,2026-11-01T08:00:00Z,2026-11-20T06:00:00Z
+0f1e2d3c4b5a69788796a5b4c3d2e1f000000001,laptop-01.example.com,Windows11,example-vendor,example-browser,130.0,CVE-2026-0202,High,"Update example-browser to 131",NoExploit,2026-11-12T08:00:00Z,2026-11-20T06:05:00Z
+0f1e2d3c4b5a69788796a5b4c3d2e1f000000002,laptop-02.example.com,Windows11,example-vendor,example-browser,130.0,CVE-2026-0202,High,"Update example-browser to 131",NoExploit,2026-11-12T09:00:00Z,2026-11-19T22:00:00Z
