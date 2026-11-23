@@ -14,6 +14,7 @@ internal static class M365Checks
     internal const string PatchOperatingSystems = "pos";
     internal const string OfficeMacros = "rmom";
     internal const string UserApplicationHardening = "uah";
+    internal const string ApplicationControl = "ac";
 
     public static IReadOnlyList<M365Check> All { get; } =
     [
@@ -28,6 +29,8 @@ internal static class M365Checks
         new("endpoint.os.supported_versions", [PatchOperatingSystems], DeviceChecks.SupportedVersions),
         new("apps.office.macros_blocked_from_internet", [OfficeMacros], OfficeChecks.MacrosBlockedFromInternet),
         new("endpoint.asr.office_rules_enabled", [OfficeMacros, UserApplicationHardening], OfficeChecks.AsrOfficeRulesEnabled),
+        new("endpoint.application_control.enforced", [ApplicationControl], AppControlChecks.Enforced),
+        new("endpoint.application_control.file_types_covered", [ApplicationControl], AppControlChecks.FileTypesCovered),
     ];
 
     /// <summary>The capabilities the checks judge, in order.</summary>

@@ -12,7 +12,8 @@ internal sealed record TenantData(
     IReadOnlyList<RoleGrant>? Instances,
     IReadOnlyList<ManagedDevice> Devices,
     IReadOnlyList<IntunePolicy> ConfigurationPolicies,
-    IReadOnlyList<IntunePolicy> DeviceConfigurations)
+    IReadOnlyList<IntunePolicy> DeviceConfigurations,
+    IReadOnlyList<AppControlPolicy> AppControl)
 {
     /// <summary>Whether the tenant has Privileged Identity Management, that is whether its eligibility and schedule collections could be read.</summary>
     public bool HasPim => Eligibilities is not null && Instances is not null;
@@ -29,7 +30,11 @@ internal sealed record TenantData(
             Optional(collections, GraphSources.RoleInstances)?.Select(RoleGrant.From).ToArray(),
             Items(collections, GraphSources.ManagedDevices).Select(ManagedDevice.From).ToArray(),
             Items(collections, GraphSources.ConfigurationPolicies).Select(IntunePolicy.FromSettingsCatalog).ToArray(),
-            Items(collections, GraphSources.DeviceConfigurations).Select(IntunePolicy.FromDeviceConfiguration).ToArray());
+            Items(collections, GraphSources.DeviceConfigurations).Select(IntunePolicy.FromDeviceConfiguration).ToArray(),
+            [
+                .. Items(collections, GraphSources.ConfigurationPolicies).SelectMany(AppControlPolicy.FromSettingsCatalog),
+                .. Items(collections, GraphSources.DeviceConfigurations).SelectMany(AppControlPolicy.FromDeviceConfiguration),
+            ]);
     }
 
     internal static IEnumerable<JsonObject> Items(IReadOnlyDictionary<string, JsonArray?> collections, string name) =>

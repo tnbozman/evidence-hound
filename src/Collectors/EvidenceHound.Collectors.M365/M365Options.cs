@@ -19,6 +19,7 @@ public static class M365Settings
     public const string CompliantPassPercent = "compliant_pass_percent";
     public const string CompliantPartialPercent = "compliant_partial_percent";
     public const string SupportedWindowsBuilds = "supported_windows_builds";
+    public const string ApplicationControlGroups = "application_control_groups";
     public const string ClientCertificate = "client_certificate";
     public const string ClientSecret = "client_secret";
     public const string System = "system";
@@ -41,6 +42,9 @@ internal sealed partial record M365Options(
 {
     /// <summary><c>app</c> signs in as the app registration; <c>none</c> sends a placeholder token, for the loopback dev server only.</summary>
     public string SignIn { get; init; } = "app";
+
+    /// <summary>The group IDs an enforced application control policy must be assigned to, when none is assigned to all devices.</summary>
+    public IReadOnlyList<string> ApplicationControlGroups { get; init; } = [];
 
     public static readonly Uri DefaultGraphUrl = new("https://graph.microsoft.com/");
 
@@ -81,7 +85,7 @@ internal sealed partial record M365Options(
             compliantPass,
             compliantPartial,
             [.. builds.Select(b => string.Join('.', b.Split('.').Take(3)))])
-        { SignIn = signIn });
+        { SignIn = signIn, ApplicationControlGroups = read.List(M365Settings.ApplicationControlGroups) });
     }
 
     private static bool IsLoopback(Uri url) =>
