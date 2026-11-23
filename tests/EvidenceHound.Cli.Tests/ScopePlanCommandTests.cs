@@ -25,6 +25,8 @@ public sealed class ScopePlanCommandTests : IDisposable
     private readonly string _workDir = Directory.CreateTempSubdirectory("hound-scope-plan-tests-").FullName;
     private readonly CancellationToken _ct = TestContext.Current.CancellationToken;
 
+    private static string Mapping => Path.Combine(AppContext.BaseDirectory, "files", "mappings", "example.yaml");
+
     private string ScopeDir => Path.Combine(_workDir, "scope");
 
     [Fact]
@@ -189,6 +191,45 @@ public sealed class ScopePlanCommandTests : IDisposable
         exitCode.ShouldBe(ExitCodes.Configuration);
         _logs.Messages.ShouldContain(m => m.Contains("scope.reference_unknown", StringComparison.Ordinal));
         _ca.LogEntries.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task Plan_with_a_config_reads_the_ciso_assistant_address_and_token_from_it()
+    {
+        await WriteScopeAsync();
+        EmptyInstance();
+        var config = Path.Combine(_workDir, "hound.yaml");
+        await File.WriteAllTextAsync(config, $$"""
+            ciso_assistant: {url: "{{_ca.Url}}/api/", token: "env:EXAMPLE_CA_TOKEN"}
+            evidence: {root: ./evidence}
+            collectors: []
+            target: {mapping: "{{Mapping}}", compliance_assessment: EXAMPLE-BASELINE-2026}
+            """, _ct);
+
+        var exitCode = await Plan(settings: new() { ["EXAMPLE_CA_TOKEN"] = Token }, "--config", config);
+
+        exitCode.ShouldBe(ExitCodes.Ok, string.Join("\n", _logs.Messages));
+        _ca.LogEntries.ShouldNotBeEmpty();
+        _ca.LogEntries.ShouldAllBe(e => e.RequestMessage!.Headers!["Authorization"].Single() == $"Token {Token}");
+    }
+
+    [Fact]
+    public async Task The_environment_overrides_the_configs_ciso_assistant_address()
+    {
+        await WriteScopeAsync();
+        EmptyInstance();
+        var config = Path.Combine(_workDir, "hound.yaml");
+        await File.WriteAllTextAsync(config, $$"""
+            ciso_assistant: {url: "https://ciso.example.com/api/", token: "env:EXAMPLE_CA_TOKEN"}
+            evidence: {root: ./evidence}
+            collectors: []
+            target: {mapping: "{{Mapping}}", compliance_assessment: EXAMPLE-BASELINE-2026}
+            """, _ct);
+
+        var exitCode = await Plan(settings: new() { ["HOUND_CA_URL"] = $"{_ca.Url}/api/", ["EXAMPLE_CA_TOKEN"] = Token }, "--config", config);
+
+        exitCode.ShouldBe(ExitCodes.Ok, string.Join("\n", _logs.Messages));
+        _ca.LogEntries.ShouldNotBeEmpty();
     }
 
     [Fact]
