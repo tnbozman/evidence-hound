@@ -65,6 +65,23 @@ public sealed class SupplierDraftCommandTests : IDisposable
         File.Exists(Path.Combine(Repo, "scope", "third-parties", "sup-other.yaml")).ShouldBeFalse();
     }
 
+    [Fact]
+    public async Task Ref_ids_get_their_prefix_and_one_that_does_not_fit_is_refused()
+    {
+        var (exit, _, error) = await DraftAsync("example-other", "Example Other Pty Ltd", "Resale");
+
+        exit.ShouldBe(ExitCodes.Ok, error);
+        var drafted = await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "third-parties", "sup-example-other.yaml"), _ct);
+        drafted.ShouldContain("ref_id: \"SUP-EXAMPLE-OTHER\"");
+        drafted.ShouldContain("ref_id: \"SOL-EXAMPLE-OTHER\"");
+        drafted.ShouldContain("ref_id: \"CTR-EXAMPLE-OTHER\"");
+
+        (exit, _, error) = await DraftAsync("Example Another", "Example Another Pty Ltd", "Resale");
+        exit.ShouldBe(ExitCodes.Configuration);
+        error.ShouldContain("'Example Another' is not a ref ID");
+        error.ShouldContain("SUP-");
+    }
+
     public void Dispose() => Directory.Delete(_root, recursive: true);
 
     private string Repo => Path.Combine(_root, "repo");
