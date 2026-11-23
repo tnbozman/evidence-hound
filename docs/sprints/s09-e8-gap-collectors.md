@@ -998,6 +998,103 @@ Added at the person's request after the s09-22 Sophos onboarding trial, where th
 
 **Order:** with s09-34; both before the next hands-on onboarding.
 
+### s09-36 Met by another system: an open state, never not applicable (added 2026-11-23)
+- [ ] Done
+
+From the s09-25 Sophos run and the [agent-driven onboarding design](../design/agent-driven-onboarding.md) (decision 4).
+
+**Story:** As a GRC lead, I want a requirement another system provides to stay open until that system's audit shows it met, so that no gap shows as closed.
+
+**Acceptance criteria**
+- An applicability decision and an environment capability can be `other_system`, naming the system. It is written as `not_assessed` with an observation naming the system, never `not_applicable`, and needs no not-applicable approval.
+- `hound scope plan` lists open dependencies: each such row, the system it waits on, and whether that system has an audit and the requirement's result there.
+- `hound onboard environment` writes no row the audit's mapping computes, says which it skipped, and never overwrites collector evidence.
+- Existing not-applicable rows that name another system are reported by `hound scope validate` as `scope.other_system_as_not_applicable`, with the fix.
+
+**Tests first**
+- `ApplicabilityTests.Other_system_is_written_open_naming_the_system`
+- `ScopePlanTests.Open_dependencies_are_listed`
+- `OnboardEnvironmentTests.Rows_the_mapping_computes_are_skipped_and_named`
+- `ScopeValidatorTests.Not_applicable_naming_another_system_is_reported`
+
+**Functional check**
+- The trial repo: the Sophos firewall audit's other-system rows are reported, rewritten as open, and the plan lists them as dependencies.
+
+### s09-37 The agent interface (added 2026-11-23)
+- [ ] Done
+
+Design decisions 2 and 3.
+
+**Story:** As a person driving `hound` from Claude Code or Copilot, I want commands an agent can run without prompts, so that it can draft a whole onboarding and `hound` checks every step.
+
+**Acceptance criteria**
+- `hound onboard <system> pending --json`: the undecided requirements with their text, the API summary and the skills that apply.
+- `hound onboard <system> decide <requirement> --kind <api_check|manual|not_applicable|other_system> --reasoning <text> [--source <name>]... [--other-system <name>]`: records one decision as "drafted by agent", validated as the interactive flow is.
+- `hound supplier draft` takes the supplier answers and levels as options; `--json` on `scope validate`, `scope plan` and `explain`.
+- Approvals refuse an agent: a not-applicable decision drafted with `decide` stays a draft until a person confirms it on a terminal (`hound onboard <system> approve`), and supplier approval stays the person's edit and conclusion. Without a terminal, `approve` refuses.
+
+**Tests first**
+- `OnboardAgentCommandTests.Pending_lists_undecided_requirements_as_json`
+- `OnboardAgentCommandTests.Decide_records_a_draft_decision`
+- `OnboardAgentCommandTests.Not_applicable_stays_a_draft_until_approved_on_a_terminal`
+- `OnboardAgentCommandTests.Approve_without_a_terminal_is_refused`
+
+**Functional check**
+- The example API onboarded with `pending` and `decide` only, then `approve` on a terminal; `hound scope validate` is valid.
+
+### s09-38 hound agent setup: skills and agent files for Claude Code and Copilot (added 2026-11-23)
+- [ ] Done
+
+Design decision 9. The person chose Claude Code and Copilot custom agents in VS Code (`.github/agents/`).
+
+**Story:** As a person using Claude Code or GitHub Copilot in VS Code, I want `hound` to set up my assistant in the compliance repo, so that it can onboard systems and suppliers, import my audit workbook and review a plan before apply.
+
+**Acceptance criteria**
+- `hound agent setup [--assistant claude|copilot|both]` asks when not given, and writes from one source of skills: Claude Code `CLAUDE.md`, `.claude/skills/<skill>/SKILL.md`, `.claude/agents/<agent>.md`; Copilot `.github/agents/<agent>.agent.md` (frontmatter `name`, `description`, `tools`, `skills`) and `.github/copilot-instructions.md`.
+- Skills: onboard a system with hound, assess a supplier, read an API specification, import an audit workbook, write a profile, review before apply. Agents: onboarding (`read`, `search`, `edit`, `execute`) and review (`read`, `search`, `execute`, no `edit`).
+- Every file starts with the rules: organisation data stays in this private repo; never open `secrets/`; never approve on the person's behalf; nothing reaches CISO Assistant except through `hound scope plan` and `apply`.
+- Files `hound` wrote carry a marker and its version; re-running updates them and leaves any other file alone. `hound init` offers setup at the end.
+
+**Tests first**
+- `AgentSetupTests.Claude_files_are_written_from_the_skill_source`
+- `AgentSetupTests.Copilot_agents_have_frontmatter_and_least_tools`
+- `AgentSetupTests.Rerun_updates_hounds_files_and_keeps_the_persons`
+- `AgentSetupTests.Every_file_starts_with_the_rules`
+
+**Functional check**
+- `hound agent setup --assistant both` in the trial repo; VS Code lists the hound agents in the Copilot agent picker and Claude Code lists the skills.
+
+### s09-39 Onboard the Sophos firewall again, driven by the agent (added 2026-11-23)
+- [ ] Done
+
+**Story:** As the maintainer, I want the Sophos XGS onboarded again by Claude Code with the hound skills, so that the agent path is proven against the s09-25 run before the built-in model goes.
+
+**Acceptance criteria**
+- In a fresh copy of the trial repo: the agent reads the vendor documents (PDF included), the API spec and the compliance card, drafts the supplier and every decision through `pending` and `decide`, iterates a profile until `hound profile test` passes, and runs the review agent before proposing apply. The person approves.
+- Compared with s09-25 in `docs/evidence/s09/s09-39.md`: decisions per kind, API checks found, profile rounds, flags the review raised and cleared, time taken. No organisation data.
+
+**Functional check**
+- The run itself, recorded as above.
+
+### s09-40 Remove the built-in model from hound (added 2026-11-23)
+- [ ] Done
+
+Design decision 8. Only after s09-39.
+
+**Story:** As the maintainer, I want the language model removed from `hound`, so that there are no API keys, provider SDKs or token budgets to manage, and the agent is the one way to get model help.
+
+**Acceptance criteria**
+- The Anthropic and OpenAI SDKs, the model port and adapters, `hound onboard config`, `onboarding.yaml`, the outbound guard, deny terms, token budget and request record are removed, with their tests and docs.
+- `hound onboard`, `onboard environment`, `onboard profile`, `explain` and `skill draft` keep their deterministic parts; options that only served the model are removed, with a message pointing to `hound agent setup`.
+- `docs/onboarding.md` describes the agent path; `docs/design/onboarding-assistant.md` is marked superseded by the agent-driven design.
+
+**Tests first**
+- `HoundCliTests.Onboard_config_points_to_agent_setup`
+- Existing onboarding tests pass with the model removed.
+
+**Functional check**
+- `make test`, `make lint` and the example tutorial pass; `dotnet list package` shows neither SDK.
+
 ## Discovered work
 
 - s09-28: the capability map's signals do not yet include devices onboarded to Defender for Endpoint (`security/machines` needs a Defender API permission, not Graph). Add when s09-02 reads Defender.
