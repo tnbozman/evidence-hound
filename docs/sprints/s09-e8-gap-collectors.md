@@ -1356,7 +1356,7 @@ At the maintainer's request (2026-11-23): the example audits (`EX-E8-2026`, `EX-
 - As built: `postStartCommand` runs `scripts/dev-ca-env.sh` only; `README.md` says to run `scripts/ca-apply-scope.sh` for the example. The change takes effect the next time the dev container starts.
 
 ### s09-51 The trial onboards in order: organisation, third parties, system, its audit, controls, evidence (added 2026-11-23)
-- [ ] Done
+- [x] Done
 
 At the maintainer's request (2026-11-23): the trial should follow the onboarding order as a guided, interactive tutorial. Each stage says what it is, prints what to ask the coding agent (and the skill it uses), waits, checks the draft with `hound`, has the person approve in the terminal where one is needed, then validates, plans and applies, and says what to look at in CISO Assistant. Unattended (`HOUND_TRIAL_YES=1`, CI) each stage replays committed fictional answers instead, through the same commands an agent uses; a committed approved file stands in for `hound approve`, which refuses without a person at a terminal.
 
@@ -1375,6 +1375,9 @@ At the maintainer's request (2026-11-23): the trial should follow the onboarding
 
 **Functional check**
 - `HOUND_TRIAL_YES=1 make trial` twice against the dev container's CISO Assistant, cleared of the trial: the first run applies every stage, the second applies nothing; CISO Assistant holds `EX-E8-Q2-2027FY`, `EX-E8-Q2-2027FY-SOPHOS-NETWORK`, the two third parties and AC-EXTERNAL-SCAN.
+- Result (2026-11-23): with the trial's objects cleared from the dev container's CISO Assistant and a fresh workspace, `HOUND_TRIAL_YES=1 make trial` exit 0, then again exit 0: the second run skipped stages 5 to 8 ("Done already") and its apply wrote 0. CISO Assistant then held the audits `EX-E8-Q2-2027FY` and `EX-E8-Q2-2027FY-SOPHOS-NETWORK` (both in progress), the entities SUP-SOPHOS and SUP-EXAMPLE-MSP with their solutions, contracts and reviews (EA-SUP-SOPHOS-2026-12, EA-SUP-EXAMPLE-MSP-2026-12), the asset SYS-SOPHOS-NETWORK, and the controls AC-AUTO-EVIDENCE and AC-EXTERNAL-SCAN. `bats scripts/tests` all ok; ShellCheck clean; unit suite passed. The interactive agent path itself is s09-39, by the maintainer.
+- As built: `trial_brief` and `trial_stage_ready` in `scripts/lib/trial.sh`; in `scripts/trial.sh`, `agent_setup` (now part of step 4) and one `stage` runner with a replay per stage. `examples/trial/` holds the approved supplier files and a README; the decisions are the onboarding tutorial's. The first run found that the replay redirected the answers from a container path; they are read on the host and reach the container on standard input.
+- Deviations: the environment (which system provides each mitigation) is not a stage, as the maintainer's order leaves it out; the system and its audit are written together when the person approves the session, as `hound approve` does, so stage 6 starts the session and stage 7 applies both. Manual evidence is not a stage yet (Discovered work).
 
 ## Discovered work
 
