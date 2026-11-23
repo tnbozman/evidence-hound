@@ -21,7 +21,7 @@ internal static class OnboardCommands
             return ExitCodes.Usage;
         });
 
-        var onboard = new Command("onboard", "Onboard a system, the environment or a profile: you answer, or your coding assistant drafts and you approve. Never used by collection.")
+        var onboard = new Command("onboard", $"Onboard a system, the environment or a profile: you answer, or your coding assistant drafts and you approve. Never used by collection.\n\nhound onboard <system> works in three steps:\n{OnboardGuide.Steps}\nThe guide is docs/onboarding.md.")
         {
             config, OnboardEnvironmentCommand.Build(terminal, loggers, access), OnboardProfileCommand.Build(terminal, loggers, configuration),
         };

@@ -77,6 +77,11 @@ internal static class OnboardSystemCommand
 
     private static async Task<int> RunAsync(Settings settings, Terminal terminal, ILogger logger, CancellationToken cancellationToken)
     {
+        if (!File.Exists(Path.Combine(settings.Repo, "scope", "setup.yaml")))
+        {
+            return Log.Problems(logger, [new Problem("onboard.not_a_repo", $"{settings.Repo} is not a compliance repo: it has no scope/setup.yaml. Run hound onboard in the repo 'hound init' wrote, or name it with --repo.")]);
+        }
+
         var loaded = File.Exists(settings.SessionFile)
             ? OnboardSessionJson.Read(await File.ReadAllTextAsync(settings.SessionFile, cancellationToken))
             : Result.Ok(new OnboardSession(settings.System, OnboardStage.Supplier));
@@ -103,6 +108,7 @@ internal static class OnboardSystemCommand
 
         if (session.Supplier is null)
         {
+            await terminal.Error.WriteAsync((OnboardGuide.Intro(settings.System) + (settings.Specs.Count == 0 ? OnboardGuide.NoSpec : "")).AsMemory(), cancellationToken);
             var started = await StartAsync(session, prompt, cancellationToken);
             if (started is null)
             {
@@ -147,15 +153,15 @@ internal static class OnboardSystemCommand
     {
         string?[] answers =
         [
-            await prompt.AskAsync("Your name, recorded as who accepted each decision", cancellationToken),
-            await prompt.AskEmailAsync("System owner's email, as a CISO Assistant user (hound matches the owner by email)", cancellationToken),
-            await prompt.AskAsync("Product, as the vendor names it", cancellationToken),
-            await prompt.AskRefIdAsync(RefIdKind.Supplier, "Supplier ref_id", cancellationToken),
-            await prompt.AskAsync("Supplier name", cancellationToken),
-            await prompt.AskRefIdAsync(RefIdKind.Solution, "Solution ref_id (what the supplier provides)", cancellationToken),
-            await prompt.AskAsync("Solution name", cancellationToken),
-            await prompt.AskRefIdAsync(RefIdKind.Contract, "Contract ref_id", cancellationToken),
-            await prompt.AskAsync("Contract name", cancellationToken),
+            await prompt.AskAsync(0, cancellationToken),
+            await prompt.AskEmailAsync(1, cancellationToken),
+            await prompt.AskAsync(2, cancellationToken),
+            await prompt.AskRefIdAsync(RefIdKind.Supplier, 3, cancellationToken),
+            await prompt.AskAsync(4, cancellationToken),
+            await prompt.AskRefIdAsync(RefIdKind.Solution, 5, cancellationToken),
+            await prompt.AskAsync(6, cancellationToken),
+            await prompt.AskRefIdAsync(RefIdKind.Contract, 7, cancellationToken),
+            await prompt.AskAsync(8, cancellationToken),
         ];
         if (answers.Any(a => string.IsNullOrWhiteSpace(a)))
         {
@@ -187,9 +193,11 @@ internal static class OnboardSystemCommand
             return Result.Fail<OnboardSession>(new Problem("onboard.supplier_file_exists", $"{file} exists but does not declare {choice.EntityRef}. Correct its ref_id, or choose another supplier ref_id."));
         }
 
-        var provides = await prompt.AskAsync($"What does {choice.EntityName} provide for {settings.System}", cancellationToken) ?? "";
+        await prompt.HintAsync(9, cancellationToken);
+        var provides = await prompt.AskAsync(OnboardGuide.Question(9, choice.EntityName, settings.System), cancellationToken) ?? "";
         var kept = new List<KeptDocument>();
-        while (await prompt.AskAsync("A vendor document to keep (https URL or file; empty to finish)", cancellationToken) is { Length: > 0 } where)
+        await prompt.HintAsync(10, cancellationToken);
+        while (await prompt.AskAsync(OnboardGuide.Question(10), cancellationToken) is { Length: > 0 } where)
         {
             var document = await KeepAsync(settings.Repo, choice, where, cancellationToken);
             if (document is Result<KeptDocument>.Ok { Value: var got })
@@ -203,13 +211,54 @@ internal static class OnboardSystemCommand
             }
         }
 
-        // The levels are the person's to decide in the supplier file, or their coding assistant's to draft with 'hound supplier draft'.
-        LevelProposal[] levels = [];
+        // The levels are the person's to decide, here or later in the supplier file; a coding assistant drafts them with 'hound supplier draft'.
+        var levels = await LevelsAsync(prompt, terminal, session.Reviewer ?? "the reviewer", cancellationToken);
         Directory.CreateDirectory(Path.GetDirectoryName(file)!);
         var place = (await DomainsAsync(settings, cancellationToken)) is [{ Perimeters: [var perimeter, ..] } domain, ..] ? new AuditPlace(domain.Name, perimeter.Name) : null;
         await File.WriteAllTextAsync(file, SupplierFile.Write(choice, levels, settings.System, DateOnly.FromDateTime(DateTime.Today), place), cancellationToken);
         await terminal.Error.WriteLineAsync($"Drafted {file} with a draft contract{(place is null ? "" : " and a review for the GRC team to conclude in CISO Assistant")}.".AsMemory(), cancellationToken);
         return Result.Ok((session with { SupplierLevels = levels, SupplierProvides = provides.Length > 0 ? provides : null, Documents = [.. session.Documents, .. kept] }).Advance(SupplierStatus.NotApproved));
+    }
+
+    /// <summary>
+    /// Each level, asked after its scale is printed: a whole number on the scale and why, or empty to leave it to decide in the file. Stops
+    /// asking once the input has ended.
+    /// </summary>
+    private static async Task<IReadOnlyList<LevelProposal>> LevelsAsync(Prompt prompt, Terminal terminal, string reviewer, CancellationToken cancellationToken)
+    {
+        var levels = new List<LevelProposal>();
+        foreach (var (name, low, high) in SupplierProposal.Scales)
+        {
+            await terminal.Error.WriteAsync(SupplierScales.Describe(name).AsMemory(), cancellationToken);
+            while (await prompt.AskAsync($"{name} ({low} to {high}; empty to decide later)", cancellationToken) is var answer)
+            {
+                if (answer is null)
+                {
+                    return levels;
+                }
+
+                if (answer.Length == 0)
+                {
+                    break;
+                }
+
+                if (!int.TryParse(answer, NumberStyles.None, CultureInfo.InvariantCulture, out var value) || value < low || value > high)
+                {
+                    await terminal.Error.WriteLineAsync($"'{answer}' is not a whole number from {low} to {high}.".AsMemory(), cancellationToken);
+                    continue;
+                }
+
+                if (await prompt.AskUntilAnsweredAsync($"Why {value}, in a sentence (kept as the reason)", cancellationToken) is not { } reason)
+                {
+                    return levels;
+                }
+
+                levels.Add(new LevelProposal(name, value, reason, [$"decided by {reviewer}"]));
+                break;
+            }
+        }
+
+        return levels;
     }
 
     /// <summary>Saves a vendor document under documents/suppliers/&lt;supplier&gt;/ with its hash.</summary>
@@ -574,9 +623,29 @@ internal static class OnboardSystemCommand
             return await terminal.Input.ReadLineAsync(cancellationToken) is { } line ? Answers.Clean(line) : null;
         }
 
+        /// <summary>The hint of an opening question (<see cref="OnboardGuide.Opening"/>): what it is for and an example, on a line before the question.</summary>
+        public Task HintAsync(int opening, CancellationToken cancellationToken) =>
+            terminal.Error.WriteLineAsync($"  {OnboardGuide.Opening[opening].Hint}".AsMemory(), cancellationToken);
+
+        /// <summary>An opening question, after its hint.</summary>
+        public async Task<string?> AskAsync(int opening, CancellationToken cancellationToken)
+        {
+            await HintAsync(opening, cancellationToken);
+            return await AskAsync(OnboardGuide.Question(opening), cancellationToken);
+        }
+
+        public async Task<string?> AskEmailAsync(int opening, CancellationToken cancellationToken)
+        {
+            await HintAsync(opening, cancellationToken);
+            return await AskEmailAsync(OnboardGuide.Question(opening), cancellationToken);
+        }
+
         /// <summary>A ref ID, with its kind's prefix shown in the prompt and only the rest typed; asked again until it fits. Null once the input has ended.</summary>
-        public Task<string?> AskRefIdAsync(RefIdKind kind, string question, CancellationToken cancellationToken) =>
-            RefIdPrompt.AskAsync(terminal, kind, question, "", cancellationToken);
+        public async Task<string?> AskRefIdAsync(RefIdKind kind, int opening, CancellationToken cancellationToken)
+        {
+            await HintAsync(opening, cancellationToken);
+            return await RefIdPrompt.AskAsync(terminal, kind, OnboardGuide.Question(opening), "", cancellationToken);
+        }
 
         public async Task<string> AskWithDefaultAsync(string question, string @default, CancellationToken cancellationToken)
         {
