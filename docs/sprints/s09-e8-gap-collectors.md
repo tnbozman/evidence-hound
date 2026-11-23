@@ -1284,11 +1284,13 @@ At the maintainer's request (2026-11-23): every audit reads `<ORG>-<FRAMEWORK>-<
 **Story:** As a GRC lead starting with hound, I want `hound init` to write the organisation's audit as a quarterly series `<CODE>-E8`, so that its periods follow the s09-46 pattern from the first day.
 
 **Acceptance criteria**
-- `hound init` writes `ref_id: <CODE>-E8` with `cycle: {period: quarter, starts: <first day of the financial-year quarter holding today>}`, and the config's target names that series. It asks for the interval (`quarter` or `month`, default `quarter`) in place of the due date; `--interval` gives it.
-- The fictional examples, the trial and the docs use the pattern.
+- `hound init` writes `ref_id: <CODE>-E8` with `cycle: {period: quarter, starts: <first day of the financial-year quarter holding today>}`, named `Essential Eight ML<level>` (each period's name ends with its label), and the config's target names that series. It asks for the interval (`quarter` or `month`, default `quarter`) in place of the due date; `--interval` gives it, and `--due` is accepted with a note and ignored (each period's ETA is its last day).
+- The trial, the agent skill that runs `hound init`, and the docs that describe it use the pattern.
 
 **Tests first**
 - `InitCommandTests.Writes_a_quarterly_series_starting_this_financial_year_quarter`
+- `InitCommandTests.A_monthly_series_starts_this_month`
+- `InitCommandTests.An_interval_other_than_month_or_quarter_is_refused`
 
 **Functional check**
 - `hound init <folder> --yes` as of `HOUND_TODAY=2026-11-23`, then `hound scope plan` names `EX-E8-Q2-2027FY`.
