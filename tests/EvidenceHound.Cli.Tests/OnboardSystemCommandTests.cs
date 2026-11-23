@@ -192,6 +192,16 @@ public sealed class OnboardSystemCommandTests : IDisposable
     }
 
     [Fact]
+    public void The_steps_say_where_the_supplier_gate_holds_for_a_person_and_for_an_agent()
+    {
+        // At a terminal onboarding stops at an unapproved supplier; an agent's pending and decide go on, and approve takes the supplier first.
+        var supplier = OnboardGuide.Steps.Split('\n')[0];
+
+        supplier.ShouldContain("At a terminal, hound stops here until the supplier is approved");
+        supplier.ShouldContain("hound approve asks for the supplier before the system");
+    }
+
+    [Fact]
     public async Task It_says_what_is_about_to_happen_before_the_first_question()
     {
         var (exit, _, error) = await RunAsync(SupplierAnswers);

@@ -164,6 +164,21 @@ public sealed partial class AgentSetupTests : IDisposable
     }
 
     [Fact]
+    public async Task The_onboarding_skill_names_the_environment_stage_the_profile_library_and_how_a_source_is_written()
+    {
+        (await SetupAsync("", "--assistant", "claude")).Exit.ShouldBe(ExitCodes.Ok);
+
+        var skill = await ReadAsync(".claude", "skills", "onboard-a-system-with-hound", "SKILL.md");
+
+        // Found in a rehearsal: an agent decided 107 firewall requirements one by one, guessed how to write a source from a
+        // library profile, and named the system's audit from an example with a SYS- prefix the system did not have.
+        skill.ShouldContain("onboard-the-environment");
+        skill.ShouldContain("https://github.com/tnbozman/evidence-hound/tree/main/profiles");
+        skill.ShouldContain("${data_region}");
+        skill.ShouldContain("EX-E8-OFFICE-FIREWALL");
+    }
+
+    [Fact]
     public async Task Init_offers_the_setup_at_the_end()
     {
         var repo = Path.Combine(_root, "compliance");
