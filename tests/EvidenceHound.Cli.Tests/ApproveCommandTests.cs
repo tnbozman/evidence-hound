@@ -8,7 +8,7 @@ namespace EvidenceHound.Cli.Tests;
 /// </summary>
 public sealed class ApproveCommandTests : IDisposable
 {
-    private const string Capabilities = """
+    internal const string Capabilities = """
         framework: "urn:example:framework"
         mitigations:
           - mitigation: "EX"

@@ -14,8 +14,8 @@ namespace EvidenceHound.Functional.Tests;
 [Collection(SharedCisoAssistant.Name)]
 public sealed class AgentOnboardingFunctionalTests(CisoAssistantFixture ciso) : IDisposable
 {
-    private const string System = "EXAMPLE-AGENT-API";
-    private const string Today = "2026-11-23";
+    internal const string System = "EXAMPLE-AGENT-API";
+    internal const string Today = "2026-11-23";
 
     private readonly string _repo = Directory.CreateTempSubdirectory("hound-agent-onboarding-").FullName;
     private readonly string _results = Directory.CreateDirectory(Path.Combine(CisoAssistantFixture.RepoRoot, "test-results", "agent-onboarding")).FullName;
