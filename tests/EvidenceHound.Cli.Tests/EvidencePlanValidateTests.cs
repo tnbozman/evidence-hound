@@ -35,7 +35,7 @@ public sealed class EvidencePlanValidateTests : IDisposable
 
         exit.ShouldNotBe(ExitCodes.Ok);
         var problems = JsonNode.Parse(_output.ToString())!.AsArray().Select(p => (Code: p!["code"]!.GetValue<string>(), Line: p["line"]!.GetValue<int>())).ToArray();
-        problems.ShouldBe([("evidence_plan.runbook_file_missing", 3), ("evidence_plan.collector_unknown", 13)], ignoreOrder: true);
+        problems.ShouldBe([("evidence_plan.runbook_file_missing", 3), ("evidence_plan.collector_unknown", 12)], ignoreOrder: true);
     }
 
     public void Dispose()

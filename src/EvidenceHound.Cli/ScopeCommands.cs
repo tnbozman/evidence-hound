@@ -430,6 +430,7 @@ internal static class ScopeCommands
         var thirdPartiesDir = Path.Combine(dir.ToString(), "third-parties");
         var thirdParties = Directory.Exists(thirdPartiesDir) ? Directory.GetFiles(thirdPartiesDir, "*.yaml").Order(StringComparer.Ordinal).ToArray() : [];
         var capabilitiesPath = Path.Combine(dir.ToString(), "capabilities.yaml");
+        var planPath = Path.Combine(dir.ToString(), "evidence-plan.yaml");
         var parsed = ScopeLoader.Parse(
             await ReadAsync(setupPath, cancellationToken),
             File.Exists(controlsPath) ? await ReadAsync(controlsPath, cancellationToken) : null,
@@ -437,12 +438,15 @@ internal static class ScopeCommands
             File.Exists(accessPath) ? await ReadAsync(accessPath, cancellationToken) : null,
             File.Exists(settingsPath) ? await ReadAsync(settingsPath, cancellationToken) : null,
             [.. await Task.WhenAll(thirdParties.Select(t => ReadAsync(t, cancellationToken)))],
-            File.Exists(capabilitiesPath) ? await ReadAsync(capabilitiesPath, cancellationToken) : null);
+            File.Exists(capabilitiesPath) ? await ReadAsync(capabilitiesPath, cancellationToken) : null,
+            File.Exists(planPath) ? await ReadAsync(planPath, cancellationToken) : null);
 
         var snapshots = await SnapshotsAsync(parsed.Scope.Setup.Frameworks, Path.GetDirectoryName(Path.GetFullPath(setupPath))!, cancellationToken);
-        var targets = configFile is null ? Result.Ok<IReadOnlyList<ScopeTarget>>([]) : await TargetsAsync(configFile, registry, cancellationToken);
+        var deployment = configFile is null ? Result.Ok(Deployment.None) : await DeploymentAsync(configFile, registry, cancellationToken);
+        var targets = deployment.Map(d => d.Targets);
         var scope = parsed.Scope;
-        var files = await FilesAsync(scope, Path.GetDirectoryName(Path.GetFullPath(dir.ToString().TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)))!, Path.GetDirectoryName(Path.GetFullPath(setupPath))!, cancellationToken);
+        var repoDir = Path.GetDirectoryName(Path.GetFullPath(dir.ToString().TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)))!;
+        var files = await FilesAsync(scope, repoDir, Path.GetDirectoryName(Path.GetFullPath(setupPath))!, cancellationToken);
         IReadOnlyList<ScopeProblem> problems =
         [
             .. parsed.Problems,
@@ -451,6 +455,8 @@ internal static class ScopeCommands
             .. targets.Match(_ => [], ps => ps.Select(p => new ScopeProblem(p.Code, new SourceLine(configFile!.ToString(), 0), p.Message, "Fix the deployment config first."))),
             .. ScopeValidator.Validate(scope, snapshots.Loaded, targets.Match(t => t, _ => [])),
             .. SupplierValidator.Validate(scope, today),
+            .. RunbooksMissing(scope, repoDir),
+            .. configFile is null ? [] : deployment.Match(d => EvidencePlanValidator.Collectors(scope, d.Collectors), _ => []),
         ];
         return new(
             problems,
@@ -458,6 +464,16 @@ internal static class ScopeCommands
             scope,
             new ScopeInputs(snapshots.Loaded, configFile is null ? null : targets.Match(t => t, _ => []), files.Found) { Today = today });
     }
+
+    /// <summary>Each evidence plan runbook must be a file in the compliance repo (the folder that holds the scope folder).</summary>
+    private static IEnumerable<ScopeProblem> RunbooksMissing(ScopeDocument scope, string repoDir) =>
+        (scope.EvidencePlan?.Rows ?? [])
+            .Where(r => r.Runbook is { } runbook && !File.Exists(Path.GetFullPath(runbook, repoDir)))
+            .Select(r => new ScopeProblem(
+                "evidence_plan.runbook_file_missing",
+                r.At,
+                $"evidence row '{r.RefId}' names the runbook {r.Runbook}, which is not in the compliance repo.",
+                "Add the runbook (what to export, from where, and how to send it to the GRC team), or fix the path: it is relative to the folder that holds scope/."));
 
     /// <summary>", N third party(ies)" when the scope declares any, so a scope without them reads as before.</summary>
     private static string ThirdPartyCount(ScopeDocument scope) =>
@@ -574,19 +590,26 @@ internal static class ScopeCommands
     }
 
     /// <summary>The deployment's targets: each audit, the requirements its mapping computes, and every control it names.</summary>
-    private static async Task<Result<IReadOnlyList<ScopeTarget>>> TargetsAsync(FileInfo configFile, CollectorRegistry registry, CancellationToken cancellationToken)
+    /// <summary>What scope validation needs from the deployment config: its targets, and its collector instances by name.</summary>
+    private sealed record Deployment(IReadOnlyList<ScopeTarget> Targets, IReadOnlyList<string> Collectors)
+    {
+        public static Deployment None { get; } = new([], []);
+    }
+
+    private static async Task<Result<Deployment>> DeploymentAsync(FileInfo configFile, CollectorRegistry registry, CancellationToken cancellationToken)
     {
         var config = await ConfigCommands.LoadAsync(configFile, registry, cancellationToken);
         return await config.Match(
-            async c => (await PlanCommand.LoadMappingsAsync(c.Targets, cancellationToken)).Map(loaded => (IReadOnlyList<ScopeTarget>)
+            async c => (await PlanCommand.LoadMappingsAsync(c.Targets, cancellationToken)).Map(loaded => new Deployment(
             [
                 .. loaded.Select(t => new ScopeTarget(
                     t.Target.ComplianceAssessmentRefId,
                     [.. t.Mapping.Requirements.Select(r => r.Key)],
                     [.. t.Target.Controls.Values.Append(t.Target.HealthControlRefId).OfType<string>().Distinct(StringComparer.Ordinal)],
                     new SourceLine(configFile.ToString(), 0))),
-            ]),
-            problems => Task.FromResult(Result.Fail<IReadOnlyList<ScopeTarget>>(problems)));
+            ],
+            [.. c.Collectors.Select(i => i.Name)])),
+            problems => Task.FromResult(Result.Fail<Deployment>(problems)));
     }
 
     private static async Task<int> ReportAsync(IReadOnlyList<ScopeProblem> problems, string summary, string format, TextWriter output, ILogger logger)
