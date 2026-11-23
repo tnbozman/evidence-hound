@@ -1279,7 +1279,7 @@ At the maintainer's request (2026-11-23): every audit reads `<ORG>-<FRAMEWORK>-<
 - Deviation: `ScopePeriods.Notes` sorted periods by ref ID, which no longer sorts by date once the quarter leads (`Q1-2027FY` before `Q4-2026FY`); it now sorts by the period's end. The tests that held old labels as plain strings (client, contract, parse, plan and functional tests) were moved to the new form, so the repo shows one pattern.
 
 ### s09-47 hound init writes a quarterly audit series (added 2026-11-23)
-- [ ] Done
+- [x] Done
 
 **Story:** As a GRC lead starting with hound, I want `hound init` to write the organisation's audit as a quarterly series `<CODE>-E8`, so that its periods follow the s09-46 pattern from the first day.
 
@@ -1294,6 +1294,9 @@ At the maintainer's request (2026-11-23): every audit reads `<ORG>-<FRAMEWORK>-<
 
 **Functional check**
 - `hound init <folder> --yes` as of `HOUND_TODAY=2026-11-23`, then `hound scope plan` names `EX-E8-Q2-2027FY`.
+- Result (2026-11-23): `HOUND_TODAY=2026-11-23 hound init <scratch>/s0947 --yes` wrote 8 files, "audit EX-E8"; `scope/audits/ex-e8.yaml` has `ref_id: EX-E8`, `name: Essential Eight ML2`, `cycle: {period: quarter, starts: "2026-10-01"}`, and `hound.yaml` targets `EX-E8`. `hound scope plan` against the dev container's CISO Assistant listed `Create | audit | EX-E8-Q2-2027FY` (name "Essential Eight ML2 Q2-2027FY") and, under Audit periods, `EX-E8-Q2-2027FY | opens`. Unit suite 1315 passed; script tests and lint clean.
+- As built: `NewOrganisation` carries `Interval` and `Starts` in place of `DueDate`; `AuditRef` is `<CODE>-E8`; `InitCommand.FirstDay` finds the month, or the financial-year quarter, holding today (`HOUND_TODAY` sets today). The skill `onboard-the-organisation`, `docs/guided-setup.md`, `docs/onboarding.md`, the ref ID conventions in `docs/scope.md` and the trial guide say `--interval`.
+- Deviation: the fictional example repo (`examples/compliance-repo`, audits `EX-E8-2026`, `EX-ESSENTIALS-2026`, `EXAMPLE-BASELINE-2026`) keeps audits without a cycle; moving it to series touches the example run, its mappings' targets and many tests that use those ref IDs as fixtures. Listed under Discovered work.
 
 ### s09-48 hound onboard writes the system's audit as a series of the organisation's audit (added 2026-11-23)
 - [ ] Done
@@ -1311,6 +1314,8 @@ At the maintainer's request (2026-11-23): every audit reads `<ORG>-<FRAMEWORK>-<
 - In a scratch copy of the trial repo, `hound onboard <system> pending` and `decide` for one requirement, then `hound scope plan` names `EX-E8-Q2-2027FY-<SYSTEM>`.
 
 ## Discovered work
+
+- s09-47: move the fictional example repo's audits to series (`EX-E8`, `EX-ESSENTIALS`, `EX-BASELINE` with cycles), with its config targets, the example run and the tests that use `EX-E8-2026` as a fixture.
 
 - s09-45: the trial's `apply_scope` redirects `hound scope apply` to `.dev/trial/scope-apply.json`, and the `$ hound …` line the trial prints goes there too, so the report is not valid JSON. Print the command line to stderr.
 - s09-45: `examples/compliance-repo/frameworks/example-baseline.yaml` gained EX-4 and EX-4.1 without its `version: 1` changing, so a CISO Assistant that stored the library before keeps the old copy and `scope apply` fails on EX-4.1's result. Bump the version (and have `hound scope validate` warn when a stored library of the same version differs, if CISO Assistant shows its content).
