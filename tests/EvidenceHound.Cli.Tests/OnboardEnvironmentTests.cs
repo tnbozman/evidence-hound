@@ -88,6 +88,19 @@ public sealed class OnboardEnvironmentTests : IDisposable
     }
 
     [Fact]
+    public async Task Requirements_the_mapping_computes_are_left_to_it_so_the_scope_validates_with_the_deployment()
+    {
+        var (exit, output, error) = await RunAsync(Answers);
+
+        exit.ShouldBe(ExitCodes.Ok, error);
+        output.ShouldContain("Left to the mapping of audit EX-E8-2026, which computes them: ");
+        var problems = new StringWriter();
+        var validate = await HoundCli.RunAsync(
+            ["scope", "validate", Path.Combine(Repo, "scope"), "--config", Path.Combine(Repo, "hound.yaml")], new StringWriter(), problems, null, new Dictionary<string, string?>(StringComparer.Ordinal), _ct);
+        validate.ShouldBe(ExitCodes.Ok, problems.ToString());
+    }
+
+    [Fact]
     public async Task Graph_signals_come_from_the_m365_collector_in_hound_yaml()
     {
         using var graph = WireMockServer.Start();
