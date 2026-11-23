@@ -28,38 +28,27 @@ internal static class SkillCommands
         var add = new Command("add", "Validate a skill against the defaults and the folder's skills, then copy it into the skills folder.") { file, FolderOption() };
         add.SetAction((parseResult, cancellationToken) => AddAsync(output, logger, Folder(parseResult, configuration), parseResult.GetRequiredValue(file).FullName, cancellationToken));
 
-        var deny = new Option<FileInfo?>("--deny-terms") { Description = "A file of terms, one per line, that must never reach a model; a skill holding one is a warning." };
-        var validate = new Command("validate", "Check every skill in the folder: frontmatter, steps, size, overrides, and anything that looks like organisation data.") { FolderOption(), deny };
-        validate.SetAction((parseResult, cancellationToken) =>
-            ValidateAsync(output, logger, Folder(parseResult, configuration), parseResult.GetValue(deny)?.FullName, cancellationToken));
-
-        var repo = new Option<DirectoryInfo>("--repo") { Description = "The config repo the drafts read: its systems, suppliers and capability map. Default: the current folder." };
-        var only = new Option<string[]>("--only") { Description = $"Draft only this skill: {string.Join(", ", OrganisationSkills.Kinds.Select(k => k.Name))}. Repeat for more.", AllowMultipleArgumentsPerToken = false };
-        var noModel = new Option<bool>("--no-model") { Description = "Write the skills as templates, their questions as headings, to fill in by hand." };
-        var show = new Option<bool>("--show-requests") { Description = "Show each request before it is sent to the model." };
-        var config = new Option<FileInfo>("--config") { Description = $"The onboarding config. Default: {OnboardCommands.DefaultConfig} in the repo." };
-        var draft = new Command("draft", "Draft the organisation's own skills (its profile, risk appetite, IT and AI landscape) into the skills folder, for you to review, edit and commit.")
+        var validate = new Command("validate", "Check every skill in the folder: frontmatter, steps, size and overrides.") { FolderOption() };
+        var retiredValidate = Retired.On(validate, config: false, "--deny-terms");
+        validate.SetAction(async (parseResult, cancellationToken) =>
         {
-            FolderOption(), repo, only, noModel, show, config,
-        };
-        draft.SetAction((parseResult, cancellationToken) =>
-        {
-            var root = parseResult.GetValue(repo)?.FullName ?? Directory.GetCurrentDirectory();
-            return SkillDraftCommand.RunAsync(
-                new SkillDraftCommand.Settings(
-                    Folder(parseResult, configuration),
-                    root,
-                    parseResult.GetValue(only) ?? [],
-                    parseResult.GetValue(noModel),
-                    parseResult.GetValue(show),
-                    parseResult.GetValue(config)?.FullName ?? Path.Combine(root, OnboardCommands.DefaultConfig)),
-                terminal,
-                logger,
-                configuration,
-                cancellationToken);
+            await retiredValidate.NoteAsync(parseResult, terminal, cancellationToken);
+            return await ValidateAsync(output, logger, Folder(parseResult, configuration), cancellationToken);
         });
 
-        return new Command("skill", "Work with the onboarding assistant's skills.") { list, create, add, validate, draft };
+        var only = new Option<string[]>("--only") { Description = $"Write only this skill: {string.Join(", ", OrganisationSkills.Kinds.Select(k => k.Name))}. Repeat for more.", AllowMultipleArgumentsPerToken = false };
+        var draft = new Command("draft", "Write the organisation's own skills (its profile, risk appetite, IT and AI landscape) as templates into the skills folder, for you to fill in, review and commit.")
+        {
+            FolderOption(), only,
+        };
+        var retiredDraft = Retired.On(draft, config: true, "--repo");
+        draft.SetAction(async (parseResult, cancellationToken) =>
+        {
+            await retiredDraft.NoteAsync(parseResult, terminal, cancellationToken);
+            return await SkillDraftCommand.RunAsync(new SkillDraftCommand.Settings(Folder(parseResult, configuration), parseResult.GetValue(only) ?? []), terminal, logger, cancellationToken);
+        });
+
+        return new Command("skill", "Work with the skills that guide onboarding: hound's defaults and the organisation's own.") { list, create, add, validate, draft };
     }
 
     private static Option<DirectoryInfo> FolderOption() =>
@@ -140,16 +129,11 @@ internal static class SkillCommands
 
         Directory.CreateDirectory(folder);
         await File.WriteAllTextAsync(target, text, cancellationToken);
-        foreach (var warning in SkillCatalogue.Warnings(added, []))
-        {
-            await output.WriteLineAsync($"warning: {warning.Message}".AsMemory(), cancellationToken);
-        }
-
         await output.WriteLineAsync($"Added {added.Name} {added.Version} to {folder}{(added.Overrides is { } o ? $", replacing the default {o}" : "")}.".AsMemory(), cancellationToken);
         return ExitCodes.Ok;
     }
 
-    private static async Task<int> ValidateAsync(TextWriter output, ILogger logger, string folder, string? denyTermsFile, CancellationToken cancellationToken)
+    private static async Task<int> ValidateAsync(TextWriter output, ILogger logger, string folder, CancellationToken cancellationToken)
     {
         var catalogue = Catalogue(folder);
         if (catalogue is not Result<SkillCatalogue>.Ok { Value: var valid })
@@ -157,17 +141,8 @@ internal static class SkillCommands
             return Log.Problems(logger, ((Result<SkillCatalogue>.Fail)catalogue).Errors);
         }
 
-        IReadOnlyList<string> denyTerms = denyTermsFile is null ? [] : [.. (await File.ReadAllLinesAsync(denyTermsFile, cancellationToken)).Where(l => l.Trim().Length > 0 && !l.TrimStart().StartsWith('#'))];
-        var warnings = valid.Skills.SelectMany(s => SkillCatalogue.Warnings(s, denyTerms)).ToArray();
-        foreach (var warning in warnings)
-        {
-            await output.WriteLineAsync($"error {warning.Code}: {warning.Message}".AsMemory(), cancellationToken);
-        }
-
         var mine = valid.Skills.Count(s => s.Source == SkillSource.Organisation);
-        await output.WriteLineAsync($"{valid.Skills.Count} skills valid ({mine} from {folder}), {warnings.Length} warnings.".AsMemory(), cancellationToken);
-
-        // Skills are sent to the model provider: one that holds organisation data is refused, not only reported.
-        return warnings.Length == 0 ? ExitCodes.Ok : ExitCodes.Configuration;
+        await output.WriteLineAsync($"{valid.Skills.Count} skills valid ({mine} from {folder}).".AsMemory(), cancellationToken);
+        return ExitCodes.Ok;
     }
 }

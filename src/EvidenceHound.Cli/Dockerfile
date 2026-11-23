@@ -14,7 +14,6 @@ COPY mappings/essential-eight-2023.yaml mappings/
 COPY frameworks/essential-eight-2023.json frameworks/
 COPY examples/compliance-repo/.gitignore examples/compliance-repo/
 # hound onboard's default model per provider (onboarding only; the runner refuses any model settings).
-COPY onboarding/models.yaml onboarding/
 # hound onboard's default skills, built into hound.
 COPY skills/ skills/
 COPY agent/ agent/

@@ -1,4 +1,0 @@
-# The model hound onboard uses when onboarding.yaml leaves llm.model empty: each provider's current top model.
-# Edit this file to move to a newer model without a new build of hound. Only hound onboard reads it.
-anthropic: claude-opus-5-5
-openai: gpt-6.2-astra

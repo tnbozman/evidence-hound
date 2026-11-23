@@ -1,13 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
-    <PackageReference Include="WireMock.Net" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\..\src\EvidenceHound.Core.Yaml\EvidenceHound.Core.Yaml.csproj" />
     <ProjectReference Include="..\..\src\EvidenceHound.Onboarding\EvidenceHound.Onboarding.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\..\onboarding\models.yaml" Link="files\onboarding\models.yaml" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\fixtures\llm\**\*" Link="files\llm\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

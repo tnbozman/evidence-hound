@@ -38,7 +38,7 @@ public sealed class CapabilityMapFunctionalTests(CisoAssistantFixture ciso) : ID
         await File.WriteAllTextAsync(Path.Combine(_repo, "signals.json"), Signals, ct);
         var (onboardExit, onboarded) = await StepAsync(
             "1-onboard-environment",
-            ["onboard", "environment", "--repo", _repo, "--signals", Path.Combine(_repo, "signals.json"), "--microsoft-system", "Example 365", "--no-model"],
+            ["onboard", "environment", "--repo", _repo, "--signals", Path.Combine(_repo, "signals.json"), "--microsoft-system", "Example 365"],
             Answers,
             ct);
         onboardExit.ShouldBe(ExitCodes.Ok, onboarded);

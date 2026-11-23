@@ -1,35 +1,31 @@
 using System.CommandLine;
 using EvidenceHound.Core.Results;
 using EvidenceHound.Onboarding.Explain;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace EvidenceHound.Cli;
 
 /// <summary>
 /// <c>hound explain</c>: a plain-English review summary of a saved plan, a diff (a file or standard input) or two versions of a file. The
-/// counts and flags are read in code; the model, through the onboarding gate, only adds a summary checked against them. Review only: it
-/// never edits config or applies anything, and it is never part of collection.
+/// counts and flags are read in code; no model is asked. Review only: it never edits config or applies anything, and it is never part of
+/// collection.
 /// </summary>
 internal static class ExplainCommand
 {
-    public static Command Build(Terminal terminal, ILoggerFactory loggers, IConfiguration configuration)
+    public static Command Build(Terminal terminal, ILoggerFactory loggers)
     {
         var logger = loggers.CreateLogger("hound.explain");
         var files = new Argument<FileInfo[]>("files") { Description = "A saved plan ('hound scope plan' or 'hound plan' output) or a diff; or two versions of one file. None reads a plan or diff from standard input.", Arity = new ArgumentArity(0, 2) };
-        var repo = new Option<DirectoryInfo>("--repo") { Description = "The config repo: its onboarding config, skills and request record. Default: the current folder." };
-        var framework = new Option<string>("--framework") { Description = "The framework whose mapping skills apply, as skills name it. Default: essential-eight-2023." };
-        var skills = new Option<string[]>("--skill") { Description = "Use this skill instead of the ones chosen by what the change touches. Repeat for more.", AllowMultipleArgumentsPerToken = false };
-        var noModel = new Option<bool>("--no-model") { Description = "Only the counts and flags read in code; no model summary." };
-        var show = new Option<bool>("--show-requests") { Description = "Show each request before it is sent to the model." };
-        var config = new Option<FileInfo>("--config") { Description = $"The onboarding config. Default: {OnboardCommands.DefaultConfig} in the repo." };
-        var json = new Option<bool>("--json") { Description = "What code reads from the change (counts, objects, flags and topics) as JSON, for an agent. Asks no model." };
+        var repo = new Option<DirectoryInfo>("--repo") { Description = "The config repo, whose mappings the change is checked against. Default: the current folder." };
+        var json = new Option<bool>("--json") { Description = "What code reads from the change (counts, objects, flags and topics) as JSON, for an agent." };
         var command = new Command("explain", "Explain a plan or config change in plain English for review, and flag what needs a careful look. Never changes anything.")
         {
-            files, repo, framework, skills, noModel, show, config, json,
+            files, repo, json,
         };
+        var retired = Retired.On(command, config: true, "--framework", "--skill");
         command.SetAction(async (parseResult, cancellationToken) =>
         {
+            await retired.NoteAsync(parseResult, terminal, cancellationToken);
             var root = parseResult.GetValue(repo)?.FullName ?? Directory.GetCurrentDirectory();
             var read = await ReadAsync(parseResult.GetValue(files) ?? [], root, terminal, cancellationToken);
             if (read is Result<ChangeFacts>.Fail { Errors: var readProblems })
@@ -49,32 +45,8 @@ internal static class ExplainCommand
                 return ExitCodes.Ok;
             }
 
-            if (parseResult.GetValue(noModel))
-            {
-                await terminal.Output.WriteAsync(Explanation.Render(facts, null, []).AsMemory(), cancellationToken);
-                return ExitCodes.Ok;
-            }
-
-            var explained = await (await OnboardSystemCommand.AssistantAsync(
-                    parseResult.GetValue(config)?.FullName ?? Path.Combine(root, OnboardCommands.DefaultConfig),
-                    Path.Combine(root, "onboarding", "explain", "requests"),
-                    parseResult.GetValue(show),
-                    terminal,
-                    configuration,
-                    cancellationToken))
-                .BindAsync(assistant => ExplainSkills.Choose(assistant.Skills, facts.Topics, parseResult.GetValue(framework) ?? "essential-eight-2023", parseResult.GetValue(skills) ?? [])
-                    .BindAsync(async chosen =>
-                    {
-                        await assistant.Record.SaveSkillsAsync(chosen, cancellationToken);
-                        return (await Explanation.DraftAsync(assistant.Model, chosen, facts, assistant.Terms, cancellationToken)).Map(reply => Explanation.Render(facts, reply, chosen));
-                    }));
-            return await explained.Match(
-                async text =>
-                {
-                    await terminal.Output.WriteAsync(text.AsMemory(), cancellationToken);
-                    return ExitCodes.Ok;
-                },
-                problems => Task.FromResult(Log.Problems(logger, problems)));
+            await terminal.Output.WriteAsync(Explanation.Render(facts).AsMemory(), cancellationToken);
+            return ExitCodes.Ok;
         });
         return command;
     }

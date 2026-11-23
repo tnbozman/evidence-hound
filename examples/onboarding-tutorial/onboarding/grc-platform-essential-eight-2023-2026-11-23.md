@@ -2,8 +2,6 @@
 
 System: GRC-PLATFORM, product CISO Assistant and Evidence Hound on an OCI Compute VM, owner it@example.com. Reviewed by Sam Example. Implementation groups: 1, 2.
 
-Model: none (--no-model); every proposal was left to the reviewer.
-
 ## Supplier
 
 Supplier: Oracle Cloud Infrastructure (SUP-ORACLE), solution OCI compute, networking and storage, contract CTR-OCI-2026.

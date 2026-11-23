@@ -7,9 +7,6 @@
     <RootNamespace>EvidenceHound.Onboarding</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Anthropic" />
-    <PackageReference Include="JsonSchema.Net" />
-    <PackageReference Include="OpenAI" />
     <PackageReference Include="YamlDotNet" />
   </ItemGroup>
   <ItemGroup>

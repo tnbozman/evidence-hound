@@ -342,7 +342,7 @@ public static partial class ConfigLoader
     /// </summary>
     private static IEnumerable<Problem> LlmInRunner(YamlMappingNode root, Locator at)
     {
-        const string Hint = "the runner never uses a language model; model settings and their key belong in onboarding.yaml, which only 'hound onboard' reads.";
+        const string Hint = "hound never uses a language model, in a run or anywhere else. For model help, set up your coding assistant with 'hound agent setup'.";
         if (root.Children.Keys.OfType<YamlScalarNode>().FirstOrDefault(k => k.Value == "llm") is { } section)
         {
             yield return at.Problem(section.Start, "config.llm_in_runner", $"'llm' is not allowed here: {Hint}");
@@ -350,7 +350,7 @@ public static partial class ConfigLoader
 
         foreach (var value in root.AllNodes.OfType<YamlScalarNode>().Where(n => n.Value?.Contains("llm_api_key", StringComparison.OrdinalIgnoreCase) == true))
         {
-            yield return at.Problem(value.Start, "config.llm_in_runner", $"this refers to the onboarding model key: {Hint}");
+            yield return at.Problem(value.Start, "config.llm_in_runner", $"this refers to a model key: {Hint}");
         }
     }
 

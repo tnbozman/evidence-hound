@@ -3,8 +3,8 @@ using System.Reflection;
 namespace EvidenceHound.Cli.Tests;
 
 /// <summary>
-/// No language model in evidence collection: only <c>hound onboard</c> reaches the onboarding code and the model SDKs. The core, the runtime,
-/// the collectors and the CISO Assistant client never reference them, and the commands that collect, publish and run never use them.
+/// No language model in evidence collection, and none in hound at all (s09-40): no assembly references a model SDK. The core, the runtime,
+/// the collectors and the CISO Assistant client never reference the onboarding code, and the commands that collect, publish and run never use it.
 /// </summary>
 public sealed class ArchitectureTests
 {
@@ -27,7 +27,7 @@ public sealed class ArchitectureTests
             references.ShouldNotContain(r => Forbidden.Any(f => r == f || r.StartsWith(f + ".", StringComparison.Ordinal)), $"{name} must not reach a language model");
         }
 
-        Assembly.Load("EvidenceHound.Onboarding").GetReferencedAssemblies().Select(r => r.Name).ShouldContain("Anthropic");
+        Assembly.Load("EvidenceHound.Onboarding").GetReferencedAssemblies().Select(r => r.Name).ShouldNotContain(r => r == "Anthropic" || r == "OpenAI");
         foreach (var file in CollectionCommands)
         {
             File.ReadAllText(Path.Combine(ExampleRepoTests.RepoRoot, "src", "EvidenceHound.Cli", file)).ShouldNotContain("Onboarding", customMessage: file);

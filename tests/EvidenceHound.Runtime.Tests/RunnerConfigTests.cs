@@ -38,7 +38,7 @@ public sealed class RunnerConfigTests
         var withLlm = ConfigLoader.Parse(Config + "\nllm:\n  provider: anthropic\n", Source, Known).Problems().ShouldHaveSingleItem();
         withLlm.Code.ShouldBe("config.llm_in_runner");
         withLlm.Message.ShouldContain("hound.yaml line 15");
-        withLlm.Message.ShouldContain("onboarding.yaml");
+        withLlm.Message.ShouldContain("hound agent setup");
 
         var withKey = ConfigLoader.Parse(Config.Replace("file:/run/secrets/example_client_secret", "file:/home/example/.config/hound/secrets/llm_api_key", StringComparison.Ordinal), Source, Known)
             .Problems().ShouldHaveSingleItem();

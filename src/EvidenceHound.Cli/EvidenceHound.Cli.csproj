@@ -23,7 +23,6 @@
   </ItemGroup>
   <ItemGroup>
     <!-- hound onboard reads each provider's default model from here; edit it to change model without a new build. -->
-    <None Include="..\..\onboarding\models.yaml" Link="onboarding\models.yaml" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\EvidenceHound.CisoAssistant\EvidenceHound.CisoAssistant.csproj" />

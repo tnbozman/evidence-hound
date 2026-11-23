@@ -74,7 +74,7 @@ public sealed class OnboardFunctionalTests(CisoAssistantFixture ciso) : IDisposa
             + "\n\n";
         string[] onboard =
         [
-            "onboard", "EXAMPLE-ASSETS", "--repo", _repo, "--group", "1", "--group", "2", "--no-model",
+            "onboard", "EXAMPLE-ASSETS", "--repo", _repo, "--group", "1", "--group", "2",
             "--spec", Path.Combine(CisoAssistantFixture.RepoRoot, "examples", "apis", "example-asset-api.openapi.yaml"),
         ];
         var (onboardExit, onboarded) = await StepAsync("1-onboard", onboard, answers, ct);
@@ -92,7 +92,7 @@ public sealed class OnboardFunctionalTests(CisoAssistantFixture ciso) : IDisposa
         // s09-30: the plan explained for review quotes the plan's own counts.
         var saved = Path.Combine(_repo, "plan.md");
         await File.WriteAllTextAsync(saved, plan, ct);
-        var (explainExit, explained) = await StepAsync("3b-explain", ["explain", saved, "--repo", _repo, "--no-model"], "", ct);
+        var (explainExit, explained) = await StepAsync("3b-explain", ["explain", saved, "--repo", _repo], "", ct);
         explainExit.ShouldBe(ExitCodes.Ok, explained);
         var counts = System.Text.RegularExpressions.Regex.Match(plan, @"\d+ to create, \d+ to update, \d+ to delete").Value;
         explained.ShouldContain($"The plan is the source of truth: {counts}");

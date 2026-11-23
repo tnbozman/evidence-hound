@@ -237,7 +237,7 @@ internal static class ApproveCommand
                 }
 
                 var settings = new OnboardSystemCommand.Settings(
-                    session.System, repo, Path.Combine(repo, session.Framework ?? Path.Combine("frameworks", "essential-eight-2023.json")), session.Groups, session.Specs, NoModel: true, Show: false, Config: "");
+                    session.System, repo, Path.Combine(repo, session.Framework ?? Path.Combine("frameworks", "essential-eight-2023.json")), session.Groups, session.Specs);
                 foreach (var draft in session.Drafts.Where(d => d.Kind == DecisionKind.NotApplicable).ToArray())
                 {
                     var title = session.Proposals.FirstOrDefault(p => p.Key == draft.Key)?.Title;

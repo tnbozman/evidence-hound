@@ -1,39 +1,21 @@
 using System.Globalization;
 using System.Text;
-using System.Text.Json.Nodes;
-using EvidenceHound.Core.Results;
 using EvidenceHound.Onboarding.Explain;
-using EvidenceHound.Onboarding.Guard;
-using EvidenceHound.Onboarding.Models;
 
 namespace EvidenceHound.Onboarding.Skills;
 
 /// <summary>An organisation skill onboarding can draft: its name, what it is for, the steps it guides, and the questions that fill it.</summary>
 public sealed record OrganisationSkillKind(string Name, string Description, IReadOnlyList<string> AppliesTo, IReadOnlyList<string> Questions);
 
-public sealed record SkillAnswer(string Question, string Answer);
-
 /// <summary>A drafted skill file: its text with frontmatter, its version, and the change from the file it replaces.</summary>
 public sealed record SkillDraft(string Name, string Text, string Version, string? Diff);
 
 /// <summary>
-/// Organisation skills drafted for the organisation's own skills folder: from the person's answers and what the config repo holds, through
-/// the onboarding gate. Every draft is stripped of identifiers before it is written, starts at version 1 and goes up on each re-draft.
-/// Pure except <see cref="DraftAsync"/>.
+/// Organisation skills for the organisation's own skills folder, written as templates whose questions a person, or their coding assistant,
+/// answers. A skill starts at version 1 and goes up each time it is written again. Pure.
 /// </summary>
 public static class OrganisationSkills
 {
-    public const string Step = "skill_draft";
-
-    internal const string Instructions = """
-        You help a GRC team write guidance about their own organisation for an assistant that helps them onboard systems and suppliers and
-        review configuration changes. Write the body of one Markdown skill, in plain English, as short rules and facts the assistant should
-        follow: what the organisation does, what it will and will not accept, and how its systems fit together. Use only the answers and the
-        configuration material given; where they do not say, leave the point out rather than guessing. Never include secrets, host names,
-        IP addresses, tenant or account IDs, or people's names and contact details; refer to roles instead. Return the body only, without
-        frontmatter.
-        """;
-
     public static IReadOnlyList<OrganisationSkillKind> Kinds { get; } =
     [
         new(
@@ -77,46 +59,7 @@ public static class OrganisationSkills
             ]),
     ];
 
-    /// <summary>The config repo's files (path to text) as inputs for the model, with identifiers replaced.</summary>
-    public static IReadOnlyList<DraftInput> Material(IReadOnlyDictionary<string, string> files, GuardTerms terms)
-    {
-        ArgumentNullException.ThrowIfNull(files);
-        ArgumentNullException.ThrowIfNull(terms);
-        return [.. files.OrderBy(f => f.Key, StringComparer.Ordinal).Select(f => new DraftInput(f.Key, OutboundGuard.Redact(f.Value, terms)))];
-    }
-
-    public static async Task<Result<string>> DraftAsync(
-        IDraftingModel model, OrganisationSkillKind kind, IReadOnlyList<SkillAnswer> answers, IReadOnlyList<DraftInput> material, GuardTerms terms, CancellationToken cancellationToken)
-    {
-        ArgumentNullException.ThrowIfNull(model);
-        ArgumentNullException.ThrowIfNull(kind);
-        ArgumentNullException.ThrowIfNull(answers);
-        ArgumentNullException.ThrowIfNull(terms);
-        var request = StepRequest.Compose(
-            Instructions,
-            [],
-            [
-                new DraftInput("skill", $"Name: {kind.Name}\nPurpose: {kind.Description}\nGuides: {string.Join(", ", kind.AppliesTo)}"),
-                new DraftInput("answers", OutboundGuard.Redact(string.Join("\n\n", answers.Where(a => a.Answer.Trim().Length > 0).Select(a => $"Q: {a.Question}\nA: {a.Answer.Trim()}")), terms)),
-                .. material,
-            ],
-            Schema(),
-            Step);
-        return (await model.DraftAsync(request, cancellationToken)).Bind(reply =>
-            reply.Value is JsonObject root && root["body"] is JsonValue value && value.TryGetValue<string>(out var body) && body.Trim().Length > 0
-                ? Result.Ok(body.Trim())
-                : Result.Fail<string>(LlmProblems.InvalidReply("The reply has no skill body.")));
-    }
-
-    /// <summary>The skill file for <paramref name="body"/>, stripped of identifiers, with the version after <paramref name="existing"/>'s.</summary>
-    public static SkillDraft Draft(OrganisationSkillKind kind, string body, string? existing, GuardTerms terms)
-    {
-        ArgumentNullException.ThrowIfNull(kind);
-        ArgumentNullException.ThrowIfNull(body);
-        return Build(kind, OutboundGuard.Redact(body.Trim(), terms), existing);
-    }
-
-    /// <summary>The skill as a template, its questions as headings, for teams without a model.</summary>
+    /// <summary>The skill as a template, its questions as headings.</summary>
     public static SkillDraft Template(OrganisationSkillKind kind, string? existing)
     {
         ArgumentNullException.ThrowIfNull(kind);
@@ -152,12 +95,4 @@ public static class OrganisationSkills
             ? (number + 1).ToString(CultureInfo.InvariantCulture)
             : "2";
     }
-
-    private static JsonObject Schema() => new()
-    {
-        ["type"] = "object",
-        ["properties"] = new JsonObject { ["body"] = new JsonObject { ["type"] = "string" } },
-        ["required"] = new JsonArray("body"),
-        ["additionalProperties"] = false,
-    };
 }

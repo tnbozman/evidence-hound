@@ -2,8 +2,6 @@
 
 System: OFFICE-FIREWALL, product Sophos Firewall on an XGS appliance, managed in Sophos Central, owner it@example.com. Reviewed by Sam Example. Implementation groups: 1, 2.
 
-Model: none (--no-model); every proposal was left to the reviewer.
-
 ## Supplier
 
 Supplier: Sophos (SUP-SOPHOS), solution Sophos XGS firewall and Sophos Central, contract CTR-SOPHOS-2026.

@@ -126,7 +126,7 @@ internal static class OnboardAgentCommand
     private sealed record Given(string? Framework, IReadOnlyList<string> Groups, IReadOnlyList<string> Specs);
 
     private static Settings Of(string system, string repo, string? framework, IReadOnlyList<string> groups, IReadOnlyList<string> specs) =>
-        new(system, repo, framework ?? Path.Combine(repo, "frameworks", "essential-eight-2023.json"), groups, specs, NoModel: true, Show: false, Config: "");
+        new(system, repo, framework ?? Path.Combine(repo, "frameworks", "essential-eight-2023.json"), groups, specs);
 
     private static async Task<Result<JsonObject>> PendingAsync(string system, string repo, Start start, Given given, CancellationToken cancellationToken)
     {

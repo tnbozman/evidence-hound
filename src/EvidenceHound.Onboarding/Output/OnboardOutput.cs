@@ -135,10 +135,7 @@ public static partial class OnboardOutput
             text.Append(CultureInfo.InvariantCulture, $" Implementation groups: {string.Join(", ", session.Groups)}.");
         }
 
-        text.Append("\n\n");
-        text.Append(session.Model is { } model
-            ? $"Model: {model.Provider} {model.Model}. Every request and reply is in [requests/]({session.System}/requests/).\n"
-            : "Model: none (--no-model); every proposal was left to the reviewer.\n");
+        text.Append('\n');
 
         if (session.Supplier is { } supplier)
         {

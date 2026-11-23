@@ -155,7 +155,7 @@ public sealed class OnboardAgentCommandTests : IDisposable
         File.Exists(audit).ShouldBeFalse();
 
         // The interactive command writes nothing from drafts either: it points to hound approve.
-        var (exit, output, error) = await RunAsync(["onboard", System, "--repo", Repo, "--no-model"]);
+        var (exit, output, error) = await RunAsync(["onboard", System, "--repo", Repo]);
         exit.ShouldBe(ExitCodes.Ok, error);
         output.ShouldContain("hound approve");
         File.Exists(audit).ShouldBeFalse();

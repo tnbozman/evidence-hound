@@ -1,9 +1,7 @@
-using System.Text.Json.Nodes;
 using EvidenceHound.Core.Scope;
 using EvidenceHound.Core.Yaml;
 using EvidenceHound.Onboarding.Output;
 using EvidenceHound.Onboarding.Sessions;
-using EvidenceHound.Onboarding.Skills;
 using EvidenceHound.Onboarding.Suppliers;
 
 namespace EvidenceHound.Onboarding.Tests.Journey;
@@ -31,46 +29,16 @@ public sealed class OnboardSupplierTests
     }
 
     [Fact]
-    public void Supplier_proposals_carry_reasons_and_sources()
-    {
-        string[] sources = ["answers", "https://www.example.com/trust"];
-        var proposal = SupplierProposal.Read(Reply(), sources).Value();
-
-        proposal.Levels.Select(l => (l.Name, l.Value)).ShouldBe([("dependency", 3), ("penetration", 2), ("maturity", 3), ("trust", 3), ("criticality", 3)]);
-        proposal.Levels.ShouldAllBe(l => l.Reason.Length > 0 && l.Sources.Count > 0);
-        proposal.Summary.ShouldHaveSingleItem().Source.ShouldBe("https://www.example.com/trust");
-
-        var noReason = Reply();
-        noReason["levels"]![0]!["reason"] = "";
-        SupplierProposal.Read(noReason, sources).Problems().ShouldHaveSingleItem().Message.ShouldContain("dependency has no reason");
-
-        var madeUp = Reply();
-        madeUp["summary"]![0]!["source"] = "https://www.example.org/elsewhere";
-        SupplierProposal.Read(madeUp, sources).Problems().ShouldHaveSingleItem().Message.ShouldContain("https://www.example.org/elsewhere");
-
-        var outOfRange = Reply();
-        outOfRange["levels"]![2]!["value"] = 5;
-        SupplierProposal.Read(outOfRange, sources).Problems().ShouldHaveSingleItem().Message.ShouldContain("maturity is 5, outside 1 to 4");
-
-        var missing = Reply();
-        ((JsonArray)missing["levels"]!).RemoveAt(4);
-        SupplierProposal.Read(missing, sources).Problems().ShouldHaveSingleItem().Message.ShouldContain("criticality");
-    }
-
-    [Fact]
     public void Maturity_and_trust_without_evidence_are_not_yet_assessed_and_left_out_of_the_file()
     {
-        string[] sources = ["answers", "https://www.example.com/trust"];
-        var reply = Reply();
-        reply["levels"]![2]!["value"] = 0;
-        reply["levels"]![2]!["reason"] = "No assurance documents were given.";
-        reply["levels"]![3]!["value"] = 0;
+        LevelProposal[] levels =
+        [
+            .. Levels.Where(l => l.Name is not ("maturity" or "trust")),
+            new("maturity", SupplierProposal.NotYetAssessed, "No assurance documents were given.", ["https://www.example.com/trust"]),
+            new("trust", SupplierProposal.NotYetAssessed, "Long-standing supplier.", ["answers"]),
+        ];
 
-        var proposal = SupplierProposal.Read(reply, sources).Value();
-
-        proposal.Levels.Single(l => l.Name == "maturity").Value.ShouldBe(SupplierProposal.NotYetAssessed);
-        SupplierProposal.Instructions.ShouldContain("0 when not yet assessed");
-        var yaml = SupplierFile.Write(Choice, proposal.Levels, "EXAMPLE-ASSETS", new DateOnly(2026, 11, 23));
+        var yaml = SupplierFile.Write(Choice, levels, "EXAMPLE-ASSETS", new DateOnly(2026, 11, 23));
         yaml.ShouldContain("# maturity: not yet assessed (1 to 4): No assurance documents were given. (https://www.example.com/trust)\n");
         yaml.ShouldNotContain("maturity: 0");
         yaml.ShouldNotContain("trust: 0");
@@ -84,9 +52,7 @@ public sealed class OnboardSupplierTests
     [Fact]
     public void Drafted_supplier_file_is_a_draft_contract_with_each_reason()
     {
-        var proposal = SupplierProposal.Read(Reply(), ["answers", "https://www.example.com/trust"]).Value();
-
-        var yaml = SupplierFile.Write(Choice, proposal.Levels, "EXAMPLE-ASSETS", new DateOnly(2026, 11, 22));
+        var yaml = SupplierFile.Write(Choice, Levels, "EXAMPLE-ASSETS", new DateOnly(2026, 11, 22));
 
         yaml.ShouldContain("ref_id: \"SUP-EXAMPLE\"");
         yaml.ShouldContain("# dependency: The asset inventory depends on it. (answers)\ndependency: 3\n");
@@ -127,7 +93,6 @@ public sealed class OnboardSupplierTests
     [Fact]
     public void Summary_is_not_evidence_and_kept_documents_are_attached_with_hash()
     {
-        var proposal = SupplierProposal.Read(Reply(), ["answers", "https://www.example.com/trust"]).Value();
         var kept = KeptDocument.Of(new Uri("https://www.example.com/trust"), "documents/suppliers/SUP-EXAMPLE/trust.html", "trust page"u8.ToArray(), new DateTimeOffset(2026, 11, 22, 1, 2, 3, TimeSpan.Zero));
 
         kept.Sha256.ShouldBe(Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData("trust page"u8)));
@@ -135,8 +100,8 @@ public sealed class OnboardSupplierTests
         kept.RetrievedAt.ShouldBe(new DateTimeOffset(2026, 11, 22, 1, 2, 3, TimeSpan.Zero));
 
         // The summary stays in the onboarding session as a draft; the supplier file holds only the levels.
-        var session = new OnboardSession("EXAMPLE-ASSETS", OnboardStage.Supplier) { Supplier = Choice, SupplierSummary = proposal.Summary, Documents = [kept] };
-        var yaml = SupplierFile.Write(Choice, proposal.Levels, "EXAMPLE-ASSETS", new DateOnly(2026, 11, 22));
+        var session = new OnboardSession("EXAMPLE-ASSETS", OnboardStage.Supplier) { Supplier = Choice, SupplierSummary = [new SummaryPoint("data location", "Data is held in Australia.", "https://www.example.com/trust")], Documents = [kept] };
+        var yaml = SupplierFile.Write(Choice, Levels, "EXAMPLE-ASSETS", new DateOnly(2026, 11, 22));
         yaml.ShouldNotContain("Data is held");
         var read = OnboardSessionJson.Read(OnboardSessionJson.Write(session)).Value();
         read.SupplierSummary.ShouldHaveSingleItem().Evidence.ShouldBeFalse();
@@ -144,37 +109,14 @@ public sealed class OnboardSupplierTests
         read.Documents[0].Source.ShouldBe(new Uri("https://www.example.com/trust"));
     }
 
-    [Fact]
-    public async Task Supplier_step_sends_the_answers_and_documents_with_the_supplier_skills()
-    {
-        var model = new ApplicabilityTests.ScriptedModel(_ => Reply());
-        var skills = SkillSelection.Select(SkillCatalogue.Build(SkillCatalogue.Defaults().Value(), []).Value(), SkillStep.Supplier, null, SkillSelection.DefaultBudgetCharacters).Value();
-
-        var proposal = await SupplierProposal.DraftAsync(
-            model, skills, Choice, "Hosts the asset inventory.", [new Models.DraftInput("https://www.example.com/trust", "Certified to ISO/IEC 27001.")], TestContext.Current.CancellationToken);
-
-        proposal.Value().Levels.Count.ShouldBe(5);
-        var sent = model.Sent.ShouldHaveSingleItem();
-        sent.Step.ShouldBe("supplier");
-        sent.Instructions.ShouldContain("<skill name=\"supplier-assessment\"");
-        sent.Inputs.Select(i => i.Name).ShouldBe(["answers", "https://www.example.com/trust"]);
-        sent.Inputs[0].Content.ShouldContain("Hosts the asset inventory.");
-    }
-
-    internal static JsonObject Reply() => (JsonObject)JsonNode.Parse("""
-        {
-          "levels": [
-            {"name":"dependency","value":3,"reason":"The asset inventory depends on it.","sources":["answers"]},
-            {"name":"penetration","value":2,"reason":"Read access to device data.","sources":["answers"]},
-            {"name":"maturity","value":3,"reason":"Certified to ISO/IEC 27001.","sources":["https://www.example.com/trust"]},
-            {"name":"trust","value":3,"reason":"Long-standing supplier.","sources":["answers"]},
-            {"name":"criticality","value":3,"reason":"Holds the asset register.","sources":["answers"]}
-          ],
-          "summary": [
-            {"topic":"data location","text":"Data is held in Australia.","source":"https://www.example.com/trust"}
-          ]
-        }
-        """)!;
+    internal static readonly LevelProposal[] Levels =
+    [
+        new("dependency", 3, "The asset inventory depends on it.", ["answers"]),
+        new("penetration", 2, "Read access to device data.", ["answers"]),
+        new("maturity", 3, "Certified to ISO/IEC 27001.", ["https://www.example.com/trust"]),
+        new("trust", 3, "Long-standing supplier.", ["answers"]),
+        new("criticality", 3, "Holds the asset register.", ["answers"]),
+    ];
 
     private static ScopeEntity Entity(string status) =>
         new("SUP-EXAMPLE", "Example Assets Ltd", Here)

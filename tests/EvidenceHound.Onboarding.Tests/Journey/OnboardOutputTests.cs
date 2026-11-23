@@ -88,15 +88,15 @@ public sealed class OnboardOutputTests
     }
 
     [Fact]
-    public void Record_lists_every_decision_and_model()
+    public void Record_lists_every_decision()
     {
-        var session = Decided() with { Model = new ModelUsed("anthropic", "claude-opus-5-5") };
+        var session = Decided();
         SkillUse[] skills = [new("applicability", "default", "1.0.0", "abc123")];
 
         var record = OnboardOutput.Record(session, skills, "example-framework", Today);
 
         record.ShouldContain("# Onboarding EXAMPLE-ASSETS: example-framework, 2026-11-23");
-        record.ShouldContain("Model: anthropic claude-opus-5-5. Every request and reply is in [requests/](EXAMPLE-ASSETS/requests/).");
+        record.ShouldNotContain("Model:");
         record.ShouldContain("| applicability | default | 1.0.0 | `abc123` |");
         foreach (var decision in session.Decisions)
         {
@@ -108,8 +108,6 @@ public sealed class OnboardOutputTests
         record.ShouldContain("Supplier: Example Assets Ltd (SUP-EXAMPLE), solution Asset inventory, contract CTR-EXAMPLE-ASSETS.");
         record.ShouldContain("This summary is a draft from the documents below; it is not evidence.");
         record.ShouldContain("| https://www.example.com/trust | documents/suppliers/sup-example/trust.html | `");
-
-        OnboardOutput.Record(Decided(), [], "example-framework", Today).ShouldContain("Model: none (--no-model); every proposal was left to the reviewer.");
     }
 
     [Fact]

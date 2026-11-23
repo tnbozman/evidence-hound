@@ -16,7 +16,7 @@ One decision per mitigation: which system provides it, that it is evidenced by h
    - `gap`: nothing provides it yet. Say so plainly; a gap is an honest answer, never a failure to hide.
 3. Deciding a mitigation again replaces your draft. A decision a person approved is refused; leave it.
 4. Repeat `pending` until nothing is left, or say what you could not decide.
-5. Once the person has approved the decisions, `hound onboard environment --no-model --repo .` writes the rows each system's audit leaves open for another system.
+5. Once the person has approved the decisions, `hound onboard environment --repo .` writes the rows each system's audit leaves open for another system.
 
 ## Your part and the person's
 

@@ -4,19 +4,12 @@ using EvidenceHound.Cli.Setup;
 using EvidenceHound.Core.Frameworks;
 using EvidenceHound.Core.Results;
 using EvidenceHound.Core.Scope;
-using EvidenceHound.Core.Secrets;
 using EvidenceHound.Core.Yaml;
-using EvidenceHound.Onboarding.Configuration;
 using EvidenceHound.Onboarding.Decisions;
-using EvidenceHound.Onboarding.Guard;
-using EvidenceHound.Onboarding.Models;
 using EvidenceHound.Onboarding.Output;
 using EvidenceHound.Onboarding.Sessions;
-using EvidenceHound.Onboarding.Skills;
 using EvidenceHound.Onboarding.Specs;
 using EvidenceHound.Onboarding.Suppliers;
-using EvidenceHound.Runtime.Secrets;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace EvidenceHound.Cli;
@@ -29,7 +22,7 @@ internal static class OnboardSystemCommand
 {
     internal const string Choices = "a accept, c API check, m manual, n not applicable, o another system, l accept all remaining proposals, s save and stop";
 
-    public static void Attach(Command onboard, Terminal terminal, ILoggerFactory loggers, IConfiguration configuration)
+    public static void Attach(Command onboard, Terminal terminal, ILoggerFactory loggers)
     {
         var logger = loggers.CreateLogger("hound.onboard");
         var system = new Argument<string?>("system") { Description = "The system to onboard, as an ID such as EXAMPLE-FIREWALL.", Arity = ArgumentArity.ZeroOrOne };
@@ -37,11 +30,9 @@ internal static class OnboardSystemCommand
         var framework = new Option<FileInfo>("--framework") { Description = "The framework snapshot to decide against. Default: frameworks/essential-eight-2023.json in the repo." };
         var groups = new Option<string[]>("--group") { Description = "An implementation group in scope, such as 2 for maturity level two. Repeat for more; none means every requirement.", AllowMultipleArgumentsPerToken = false };
         var specs = new Option<FileInfo[]>("--spec") { Description = "The system's API specification (OpenAPI, JSON or YAML). Repeat for more." };
-        var noModel = new Option<bool>("--no-model") { Description = "Run every step without a model: proposals are left empty for you to decide." };
-        var show = new Option<bool>("--show-requests") { Description = "Show each request before it is sent to the model." };
-        var config = new Option<FileInfo>("--config") { Description = $"The onboarding config. Default: {OnboardCommands.DefaultConfig} in the repo." };
+        var retired = Retired.On(onboard);
         OnboardAgentCommand.Attach(onboard, system, terminal, loggers);
-        foreach (var symbol in new Symbol[] { system, repo, framework, groups, specs, noModel, show, config })
+        foreach (var symbol in new Symbol[] { system, repo, framework, groups, specs })
         {
             switch (symbol)
             {
@@ -58,25 +49,23 @@ internal static class OnboardSystemCommand
         {
             if (parseResult.GetValue(system) is not { Length: > 0 } name)
             {
-                Log.Usage(logger, "Name the system to onboard: hound onboard <system> --framework <file> --spec <file>, or hound onboard config to choose a model.");
+                Log.Usage(logger, "Name the system to onboard: hound onboard <system> --framework <file> --spec <file>.");
                 return ExitCodes.Usage;
             }
 
+            await retired.NoteAsync(parseResult, terminal, cancellationToken);
             var root = parseResult.GetValue(repo)?.FullName ?? Directory.GetCurrentDirectory();
             var options = new Settings(
                 name,
                 root,
                 parseResult.GetValue(framework)?.FullName ?? Path.Combine(root, "frameworks", "essential-eight-2023.json"),
                 parseResult.GetValue(groups) ?? [],
-                [.. (parseResult.GetValue(specs) ?? []).Select(s => s.FullName)],
-                parseResult.GetValue(noModel),
-                parseResult.GetValue(show),
-                parseResult.GetValue(config)?.FullName ?? Path.Combine(root, OnboardCommands.DefaultConfig));
-            return await RunAsync(options, terminal, logger, configuration, cancellationToken);
+                [.. (parseResult.GetValue(specs) ?? []).Select(s => s.FullName)]);
+            return await RunAsync(options, terminal, logger, cancellationToken);
         });
     }
 
-    internal sealed record Settings(string System, string Repo, string Framework, IReadOnlyList<string> Groups, IReadOnlyList<string> Specs, bool NoModel, bool Show, string Config)
+    internal sealed record Settings(string System, string Repo, string Framework, IReadOnlyList<string> Groups, IReadOnlyList<string> Specs)
     {
         public string Folder => Path.Combine(Repo, "onboarding", System);
 
@@ -86,22 +75,8 @@ internal static class OnboardSystemCommand
         public string FrameworkName => Path.GetFileNameWithoutExtension(Framework);
     }
 
-    /// <summary>The model behind the gate and the skills to guide it; none with <c>--no-model</c>.</summary>
-    internal sealed record Assistant(IDraftingModel Model, SkillCatalogue Skills, SessionRecord Record, ModelUsed Used, GuardTerms Terms, int MaxRounds = 3);
-
-    private static async Task<int> RunAsync(Settings settings, Terminal terminal, ILogger logger, IConfiguration configuration, CancellationToken cancellationToken)
+    private static async Task<int> RunAsync(Settings settings, Terminal terminal, ILogger logger, CancellationToken cancellationToken)
     {
-        Assistant? model = null;
-        if (!settings.NoModel)
-        {
-            var assistant = await AssistantAsync(settings.Config, Path.Combine(settings.Folder, "requests"), settings.Show, terminal, configuration, cancellationToken);
-            if (assistant is Result<Assistant>.Fail { Errors: var assistantProblems })
-            {
-                return Log.Problems(logger, assistantProblems);
-            }
-
-            model = ((Result<Assistant>.Ok)assistant).Value;
-        }
         var loaded = File.Exists(settings.SessionFile)
             ? OnboardSessionJson.Read(await File.ReadAllTextAsync(settings.SessionFile, cancellationToken))
             : Result.Ok(new OnboardSession(settings.System, OnboardStage.Supplier));
@@ -140,7 +115,7 @@ internal static class OnboardSystemCommand
 
         if (session.Stage is OnboardStage.Supplier or OnboardStage.AwaitingSupplier)
         {
-            var supplier = await SupplierAsync(settings, session, model, prompt, terminal, cancellationToken);
+            var supplier = await SupplierAsync(settings, session, prompt, terminal, cancellationToken);
             if (supplier is Result<OnboardSession>.Fail { Errors: var supplierProblems })
             {
                 return Log.Problems(logger, supplierProblems);
@@ -158,43 +133,13 @@ internal static class OnboardSystemCommand
             }
         }
 
-        var decided = await ApplicabilityAsync(settings, session, model, prompt, terminal, cancellationToken);
+        var decided = await ApplicabilityAsync(settings, session, prompt, terminal, cancellationToken);
         if (decided is Result<OnboardSession>.Ok { Value: { Stage: OnboardStage.Decided } done })
         {
             decided = await WriteAsync(settings, done, prompt, terminal, DateOnly.FromDateTime(DateTime.Today), cancellationToken);
         }
 
         return decided.Match(_ => ExitCodes.Ok, problems => Log.Problems(logger, problems));
-    }
-
-    /// <summary>The model behind the gate (guard, deny terms, session record in <paramref name="recordFolder"/>, token budget) and the skills catalogue.</summary>
-    internal static async Task<Result<Assistant>> AssistantAsync(string configFile, string recordFolder, bool show, Terminal terminal, IConfiguration configuration, CancellationToken cancellationToken)
-    {
-        var loaded = await ModelDefaults.Load(ModelDefaults.ShippedPath).BindAsync(defaults => OnboardingConfigLoader.LoadAsync(configFile, defaults, cancellationToken));
-        if (loaded is not Result<OnboardingConfig>.Ok { Value: var config })
-        {
-            return Result.Fail<Assistant>(((Result<OnboardingConfig>.Fail)loaded).Errors);
-        }
-
-        var key = CompositeSecretProvider.Standard(name => configuration[name]).Resolve(config.ApiKey);
-        if (key is not Result<Secret>.Ok { Value: var secret })
-        {
-            return Result.Fail<Assistant>(((Result<Secret>.Fail)key).Errors);
-        }
-
-        var skills = SkillCatalogue.Defaults().Bind(defaults => SkillCatalogue.FromFolder(config.SkillsPath).Bind(own => SkillCatalogue.Build(defaults, own)));
-        if (skills is not Result<SkillCatalogue>.Ok { Value: var catalogue })
-        {
-            return Result.Fail<Assistant>(((Result<SkillCatalogue>.Fail)skills).Errors);
-        }
-
-        var deny = config.DenyTermsFile is { } denyFile && File.Exists(denyFile)
-            ? (await File.ReadAllLinesAsync(denyFile, cancellationToken)).Select(l => l.Trim()).Where(l => l.Length > 0 && !l.StartsWith('#')).ToArray()
-            : [];
-        var record = new SessionRecord(recordFolder);
-        var terms = new GuardTerms(new Dictionary<string, string>(StringComparer.Ordinal) { ["llm_api_key"] = secret.Reveal() }, deny);
-        var guarded = new GuardedModel(OnboardCommands.Model(config.Llm, secret, configuration), terms, record, config.MaxTokensPerSession, show ? terminal.Error : null);
-        return Result.Ok(new Assistant(guarded, catalogue, record, new ModelUsed(OnboardingConfigLoader.NameOf(config.Llm.Provider), config.Llm.Model), terms, config.MaxRounds));
     }
 
     /// <summary>The questions that start a session: who reviews, who owns the system, the product, and who supplies it. Null when input ended.</summary>
@@ -227,7 +172,7 @@ internal static class OnboardSystemCommand
     }
 
     private static async Task<Result<OnboardSession>> SupplierAsync(
-        Settings settings, OnboardSession session, Assistant? assistant, Prompt prompt, Terminal terminal, CancellationToken cancellationToken)
+        Settings settings, OnboardSession session, Prompt prompt, Terminal terminal, CancellationToken cancellationToken)
     {
         var choice = session.Supplier!;
         var status = SupplierGate.Check(await ThirdPartiesAsync(settings.Repo, cancellationToken), choice);
@@ -243,98 +188,50 @@ internal static class OnboardSystemCommand
         }
 
         var provides = await prompt.AskAsync($"What does {choice.EntityName} provide for {settings.System}", cancellationToken) ?? "";
-        var kept = new List<(KeptDocument Document, string Text)>();
+        var kept = new List<KeptDocument>();
         while (await prompt.AskAsync("A vendor document to keep (https URL or file; empty to finish)", cancellationToken) is { Length: > 0 } where)
         {
             var document = await KeepAsync(settings.Repo, choice, where, cancellationToken);
-            if (document is Result<(KeptDocument, string)>.Ok { Value: var got })
+            if (document is Result<KeptDocument>.Ok { Value: var got })
             {
                 kept.Add(got);
-                await terminal.Error.WriteLineAsync($"Kept {got.Item1.Path} (SHA-256 {got.Item1.Sha256}).".AsMemory(), cancellationToken);
-                if (got.Item2.Length == 0)
-                {
-                    await terminal.Error.WriteLineAsync(
-                        "It is kept as evidence, but the model cannot read it: hound reads only HTML, text and Markdown documents for the model. Save the relevant page as text to give it to the model.".AsMemory(),
-                        cancellationToken);
-                }
+                await terminal.Error.WriteLineAsync($"Kept {got.Path} (SHA-256 {got.Sha256}).".AsMemory(), cancellationToken);
             }
             else
             {
-                await terminal.Error.WriteLineAsync(string.Join("; ", ((Result<(KeptDocument, string)>.Fail)document).Errors.Select(e => e.Message)).AsMemory(), cancellationToken);
+                await terminal.Error.WriteLineAsync(string.Join("; ", ((Result<KeptDocument>.Fail)document).Errors.Select(e => e.Message)).AsMemory(), cancellationToken);
             }
         }
 
-        var levels = new List<LevelProposal>();
-        var summary = new List<SummaryPoint>();
-        if (assistant is not null)
-        {
-            var skills = SkillSelection.Select(assistant.Skills, SkillStep.Supplier, null, SkillSelection.DefaultBudgetCharacters);
-            var drafted = await skills.BindAsync(chosen => SupplierProposal.DraftAsync(
-                assistant.Model, chosen, choice, provides, [.. kept.Where(k => k.Text.Length > 0).Select(k => new DraftInput(k.Document.Source.ToString(), k.Text))], cancellationToken));
-            if (drafted is Result<SupplierProposal>.Fail { Errors: var problems })
-            {
-                return Result.Fail<OnboardSession>(problems);
-            }
-
-            await assistant.Record.SaveSkillsAsync(((Result<IReadOnlyList<Skill>>.Ok)skills).Value, cancellationToken);
-            var proposal = ((Result<SupplierProposal>.Ok)drafted).Value;
-            summary.AddRange(proposal.Summary);
-            foreach (var level in proposal.Levels)
-            {
-                levels.Add(await ConfirmLevelAsync(level, prompt, terminal, cancellationToken));
-            }
-        }
-
+        // The levels are the person's to decide in the supplier file, or their coding assistant's to draft with 'hound supplier draft'.
+        LevelProposal[] levels = [];
         Directory.CreateDirectory(Path.GetDirectoryName(file)!);
         var place = (await DomainsAsync(settings, cancellationToken)) is [{ Perimeters: [var perimeter, ..] } domain, ..] ? new AuditPlace(domain.Name, perimeter.Name) : null;
         await File.WriteAllTextAsync(file, SupplierFile.Write(choice, levels, settings.System, DateOnly.FromDateTime(DateTime.Today), place), cancellationToken);
         await terminal.Error.WriteLineAsync($"Drafted {file} with a draft contract{(place is null ? "" : " and a review for the GRC team to conclude in CISO Assistant")}.".AsMemory(), cancellationToken);
-        return Result.Ok((session with { SupplierLevels = levels, SupplierSummary = summary, Documents = [.. session.Documents, .. kept.Select(k => k.Document)] }).Advance(SupplierStatus.NotApproved));
+        return Result.Ok((session with { SupplierLevels = levels, SupplierProvides = provides.Length > 0 ? provides : null, Documents = [.. session.Documents, .. kept] }).Advance(SupplierStatus.NotApproved));
     }
 
-    private static async Task<LevelProposal> ConfirmLevelAsync(LevelProposal level, Prompt prompt, Terminal terminal, CancellationToken cancellationToken)
-    {
-        var (_, low, high) = SupplierProposal.Scales.Single(s => s.Name == level.Name);
-        var shown = low > SupplierProposal.NotYetAssessed && level.Value == SupplierProposal.NotYetAssessed ? "not yet assessed" : level.Value.ToString(CultureInfo.InvariantCulture);
-        await terminal.Error.WriteLineAsync($"{level.Name}: {shown}, because {level.Reason} ({string.Join(", ", level.Sources)})".AsMemory(), cancellationToken);
-        while (true)
-        {
-            var answer = await prompt.AskAsync($"Accept {level.Name} {shown} (enter), or type {low} to {high}", cancellationToken);
-            if (string.IsNullOrEmpty(answer))
-            {
-                return level;
-            }
-
-            if (int.TryParse(answer, NumberStyles.None, CultureInfo.InvariantCulture, out var value) && value >= low && value <= high)
-            {
-                var reason = await prompt.AskAsync("Your reason", cancellationToken) ?? "";
-                return new LevelProposal(level.Name, value, reason.Length > 0 ? reason : level.Reason, ["answers"]);
-            }
-        }
-    }
-
-    /// <summary>Saves a vendor document under documents/suppliers/&lt;supplier&gt;/ with its hash; returns its text when it is text a model can read.</summary>
-    private static async Task<Result<(KeptDocument, string)>> KeepAsync(string repo, SupplierChoice choice, string where, CancellationToken cancellationToken)
+    /// <summary>Saves a vendor document under documents/suppliers/&lt;supplier&gt;/ with its hash.</summary>
+    private static async Task<Result<KeptDocument>> KeepAsync(string repo, SupplierChoice choice, string where, CancellationToken cancellationToken)
     {
         byte[] content;
         Uri source;
-        string? mediaType = null;
         if (Uri.TryCreate(where, UriKind.Absolute, out var url) && url.Scheme is "http" or "https")
         {
             if (url.Scheme != Uri.UriSchemeHttps)
             {
-                return Result.Fail<(KeptDocument, string)>(new Problem("onboard.document_not_https", $"{where}: only https documents are fetched."));
+                return Result.Fail<KeptDocument>(new Problem("onboard.document_not_https", $"{where}: only https documents are fetched."));
             }
 
             using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
             using var response = await http.GetAsync(url, cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
-                return Result.Fail<(KeptDocument, string)>(new Problem("onboard.document_unreachable", $"{where}: {(int)response.StatusCode} {response.ReasonPhrase}."));
+                return Result.Fail<KeptDocument>(new Problem("onboard.document_unreachable", $"{where}: {(int)response.StatusCode} {response.ReasonPhrase}."));
             }
 
             content = await response.Content.ReadAsByteArrayAsync(cancellationToken);
-            mediaType = response.Content.Headers.ContentType?.MediaType;
             source = url;
         }
         else if (File.Exists(where))
@@ -344,7 +241,7 @@ internal static class OnboardSystemCommand
         }
         else
         {
-            return Result.Fail<(KeptDocument, string)>(new Problem("onboard.document_not_found", $"{where} is neither an https URL nor a file."));
+            return Result.Fail<KeptDocument>(new Problem("onboard.document_not_found", $"{where} is neither an https URL nor a file."));
         }
 
         var name = Path.GetFileName(source.AbsolutePath) is { Length: > 0 } last ? last : "document.html";
@@ -352,13 +249,11 @@ internal static class OnboardSystemCommand
         var path = Path.Combine(repo, relative);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         await File.WriteAllBytesAsync(path, content, cancellationToken);
-        var isText = mediaType is "text/html" or "text/plain" or "text/markdown" || Path.GetExtension(name) is ".html" or ".htm" or ".txt" or ".md";
-        var text = isText ? System.Text.RegularExpressions.Regex.Replace(System.Text.Encoding.UTF8.GetString(content), "<[^>]+>", " ", System.Text.RegularExpressions.RegexOptions.None, TimeSpan.FromSeconds(1)) : "";
-        return Result.Ok((KeptDocument.Of(source, relative, content, DateTimeOffset.UtcNow), text.Length > 40_000 ? text[..40_000] : text));
+        return Result.Ok(KeptDocument.Of(source, relative, content, DateTimeOffset.UtcNow));
     }
 
     private static async Task<Result<OnboardSession>> ApplicabilityAsync(
-        Settings settings, OnboardSession session, Assistant? assistant, Prompt prompt, Terminal terminal, CancellationToken cancellationToken)
+        Settings settings, OnboardSession session, Prompt prompt, Terminal terminal, CancellationToken cancellationToken)
     {
         var summary = await ApiAsync(settings.Specs.Count > 0 ? settings.Specs : session.Specs, cancellationToken);
         if (summary is not Result<string>.Ok { Value: var api })
@@ -380,26 +275,12 @@ internal static class OnboardSystemCommand
             }
 
             var requirements = Applicability.InScope(snapshot, settings.Groups);
-            var proposals = assistant is null
-                ? Result.Ok(Applicability.Empty(requirements))
-                : await SkillSelection.Select(assistant.Skills, SkillStep.Applicability, settings.FrameworkName, SkillSelection.DefaultBudgetCharacters).BindAsync(async skills =>
-                {
-                    await assistant.Record.SaveSkillsAsync(skills, cancellationToken);
-                    return await Applicability.ProposeAsync(
-                        assistant.Model, skills, requirements, new SystemFacts(settings.System, session.Product ?? "", session.Owner ?? ""), api, Applicability.DefaultBatch, cancellationToken);
-                });
-            if (proposals is Result<IReadOnlyList<Proposal>>.Fail { Errors: var problems })
-            {
-                return Result.Fail<OnboardSession>(problems);
-            }
-
             session = session with
             {
                 Framework = Path.GetRelativePath(settings.Repo, settings.Framework).Replace('\\', '/'),
                 Groups = settings.Groups,
                 Specs = [.. settings.Specs],
-                Proposals = ((Result<IReadOnlyList<Proposal>>.Ok)proposals).Value,
-                Model = assistant?.Used,
+                Proposals = Applicability.Empty(requirements),
             };
             await SaveAsync(settings, session, cancellationToken);
         }

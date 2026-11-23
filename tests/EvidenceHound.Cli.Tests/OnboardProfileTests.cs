@@ -1,4 +1,3 @@
-using System.Text.Json.Nodes;
 using EvidenceHound.Onboarding.Decisions;
 using EvidenceHound.Onboarding.Sessions;
 using WireMock.RequestBuilders;
@@ -8,9 +7,9 @@ using WireMock.Server;
 namespace EvidenceHound.Cli.Tests;
 
 /// <summary>
-/// s09-23: <c>hound onboard profile &lt;system&gt;</c> after applicability: a fake model drafts the profile for the accepted API checks; with
-/// the go-ahead the draft samples the recorded Example Asset API once; a wrong path in the first draft is fed back and fixed in the second
-/// round; the person confirms each check's result, which is saved with the hashed recordings as a profile test that passes.
+/// s09-23, s09-40: <c>hound onboard profile &lt;system&gt;</c> after applicability checks the profile written for the accepted API checks
+/// (by a person or their coding assistant; hound drafts none itself). With the go-ahead it samples the recorded Example Asset API once; the
+/// person confirms each check's result, which is saved with the hashed recordings as a profile test that passes.
 /// </summary>
 public sealed class OnboardProfileTests : IDisposable
 {
@@ -20,14 +19,12 @@ public sealed class OnboardProfileTests : IDisposable
 
     private readonly string _root = Directory.CreateTempSubdirectory("hound-onboard-profile-").FullName;
     private readonly CancellationToken _ct = TestContext.Current.CancellationToken;
-    private readonly WireMockServer _model = WireMockServer.Start();
     private readonly WireMockServer _api = WireMockServer.Start();
 
     public OnboardProfileTests()
     {
         Directory.CreateDirectory(Path.Combine(Repo, "skills"));
         Directory.CreateDirectory(Path.Combine(Repo, "profiles"));
-        File.WriteAllText(Path.Combine(Repo, "onboarding.yaml"), $"llm:\n  provider: anthropic\n  model: \"\"\n  api_key: env:EXAMPLE_LLM_KEY\nskills_path: {Path.Combine(Repo, "skills")}\n");
         var folder = Path.Combine(Repo, "onboarding", "EXAMPLE-ASSETS");
         Directory.CreateDirectory(folder);
         string[] keys = ["EX-1", "EX-2", "EX-3", "EX-4"];
@@ -40,12 +37,6 @@ public sealed class OnboardProfileTests : IDisposable
             Decisions = [.. keys.Select(k => new Decision(k, $"urn:example:{k}", k, DecisionKind.ApiCheck, "The API reads it.", DecisionKind.ApiCheck, "Alex Example"))],
         };
         File.WriteAllText(Path.Combine(folder, "session.json"), OnboardSessionJson.Write(session));
-
-        var example = File.ReadAllText(Path.Combine(Library, "example.yaml"));
-        _model.Given(Request.Create().WithPath("/v1/messages").UsingPost()).InScenario("rounds").WillSetStateTo("second")
-            .RespondWith(Reply(example.Replace("get: v1/orgs/${org_id}/devices", "get: v1/orgs/${org_id}/devcies", StringComparison.Ordinal)));
-        _model.Given(Request.Create().WithPath("/v1/messages").UsingPost()).InScenario("rounds").WhenStateIs("second")
-            .RespondWith(Reply(example));
 
         var recordings = Path.Combine(Library, "example.tests", "recordings");
         Serve("/oauth2/token", "token.json", null, "POST");
@@ -67,22 +58,21 @@ public sealed class OnboardProfileTests : IDisposable
 
     private string Repo => Path.Combine(_root, "repo");
 
+    private string Profile => Path.Combine(Repo, "profiles", "example.yaml");
+
+    private static string Example => File.ReadAllText(Path.Combine(Library, "example.yaml"));
+
     [Fact]
-    public async Task A_wrong_path_is_fixed_in_the_second_round_and_the_confirmed_results_become_a_passing_test()
+    public async Task The_written_profile_is_sampled_and_the_confirmed_results_become_a_passing_test()
     {
+        await File.WriteAllTextAsync(Profile, Example, _ct);
+
         var (exit, output, error) = await RunAsync("y\ny\ny\ny\n");
 
         exit.ShouldBe(ExitCodes.Ok, error);
-        output.ShouldContain("2 round(s)");
-        _model.LogEntries.Count.ShouldBe(2);
-        var second = _model.LogEntries[1].RequestMessage!.Body!;
-        second.ShouldContain("devcies");
-        second.ShouldContain("profile.sample_failed");
-        var sent = string.Concat(_model.LogEntries.Select(e => e.RequestMessage!.Body));
-        sent.ShouldNotContain("alex@example.com");
-        sent.ShouldNotContain(Secret);
-
-        File.ReadAllText(Path.Combine(Repo, "profiles", "example.yaml")).ShouldNotContain("devcies");
+        output.ShouldContain("Checked profiles/example.yaml.");
+        output.ShouldContain("Sampled once, read-only");
+        (await File.ReadAllTextAsync(Profile, _ct)).ShouldBe(Example);
         var test = File.ReadAllText(Path.Combine(Repo, "profiles", "example.tests", "onboarding.yaml"));
         test.ShouldContain("\"example.device.os_supported\": \"pass\"");
         test.ShouldNotContain(Secret);
@@ -93,38 +83,45 @@ public sealed class OnboardProfileTests : IDisposable
     }
 
     [Fact]
+    public async Task A_wrong_path_in_the_profile_is_reported_and_the_profile_is_left_as_written()
+    {
+        var wrong = Example.Replace("get: v1/orgs/${org_id}/devices", "get: v1/orgs/${org_id}/devcies", StringComparison.Ordinal);
+        await File.WriteAllTextAsync(Profile, wrong, _ct);
+
+        var (exit, output, _) = await RunAsync("y\ny\ny\ny\n");
+
+        exit.ShouldBe(ExitCodes.ProfileTestsFailed);
+        output.ShouldContain("Still to fix: profile.sample_failed");
+        (await File.ReadAllTextAsync(Profile, _ct)).ShouldBe(wrong);
+    }
+
+    [Fact]
+    public async Task Without_a_profile_it_points_to_the_coding_assistant()
+    {
+        var (exit, _, error) = await RunAsync("");
+
+        exit.ShouldBe(ExitCodes.Configuration);
+        error.ShouldContain("profiles/example.yaml does not exist");
+        error.ShouldContain("hound agent setup");
+        _api.LogEntries.ShouldBeEmpty();
+    }
+
+    [Fact]
     public async Task Without_the_go_ahead_nothing_calls_the_api()
     {
+        await File.WriteAllTextAsync(Profile, Example, _ct);
+
         var (exit, output, error) = await RunAsync("n\n", sample: false);
 
         exit.ShouldBe(ExitCodes.Ok, error);
         _api.LogEntries.ShouldBeEmpty();
         output.ShouldContain("not sampled");
-        File.Exists(Path.Combine(Repo, "profiles", "example.yaml")).ShouldBeTrue();
     }
 
     public void Dispose()
     {
-        _model.Dispose();
         _api.Dispose();
         Directory.Delete(_root, recursive: true);
-    }
-
-    private static IResponseBuilder Reply(string profile)
-    {
-        var text = new JsonObject { ["profile_yaml"] = profile, ["notes"] = "Drafted from the API summary." }.ToJsonString();
-        var message = new JsonObject
-        {
-            ["id"] = "msg_example",
-            ["type"] = "message",
-            ["role"] = "assistant",
-            ["model"] = "claude-opus-5-5",
-            ["content"] = new JsonArray(new JsonObject { ["type"] = "text", ["text"] = text }),
-            ["stop_reason"] = "end_turn",
-            ["stop_sequence"] = null,
-            ["usage"] = new JsonObject { ["input_tokens"] = 900, ["output_tokens"] = 600 },
-        };
-        return Response.Create().WithStatusCode(200).WithHeader("Content-Type", "application/json").WithBody(message.ToJsonString());
     }
 
     private async Task<(int Exit, string Output, string Error)> RunAsync(string input, bool sample = true)
@@ -141,9 +138,7 @@ public sealed class OnboardProfileTests : IDisposable
         var settings = new Dictionary<string, string?>(StringComparer.Ordinal)
         {
             ["XDG_CONFIG_HOME"] = Path.Combine(_root, "home"),
-            ["EXAMPLE_LLM_KEY"] = "example-llm-key-value-5e1a",
             ["EXAMPLE_API_SECRET"] = Secret,
-            ["HOUND_ANTHROPIC_BASE_URL"] = _model.Url,
         };
         var exit = await HoundCli.RunAsync(args, reader, output, error, settings, _ct);
         return (exit, output.ToString(), error.ToString());

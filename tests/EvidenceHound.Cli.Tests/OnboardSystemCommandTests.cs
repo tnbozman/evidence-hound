@@ -118,7 +118,7 @@ public sealed class OnboardSystemCommandTests : IDisposable
     }
 
     [Fact]
-    public async Task A_kept_document_the_model_cannot_read_says_so()
+    public async Task A_vendor_document_is_kept_with_its_hash()
     {
         var pdf = Path.Combine(_root, "example-certificate.pdf");
         await File.WriteAllBytesAsync(pdf, "%PDF-1.4\n%example\n"u8.ToArray(), _ct);
@@ -128,7 +128,9 @@ public sealed class OnboardSystemCommandTests : IDisposable
 
         exit.ShouldBe(ExitCodes.Ok, error);
         (output + error).ShouldContain("Kept documents/suppliers/sup-example/example-certificate.pdf");
-        (output + error).ShouldContain("the model cannot read it");
+        (output + error).ShouldContain("(SHA-256 ");
+        Session()["supplier_provides"]!.GetValue<string>().ShouldBe("Hosts the asset inventory.");
+        (output + error).ShouldNotContain("model");
     }
 
     [Fact]
@@ -142,28 +144,18 @@ public sealed class OnboardSystemCommandTests : IDisposable
         Session()["owner"]!.GetValue<string>().ShouldBe("alex@example.com");
     }
 
-    [Fact]
-    public async Task Without_an_onboarding_config_a_model_session_is_refused()
-    {
-        var (exit, _, error) = await RunAsync(SupplierAnswers, noModel: false);
-
-        exit.ShouldBe(ExitCodes.Configuration);
-        error.ShouldContain("Run 'hound onboard config' to choose a model");
-        Directory.Exists(Path.Combine(Repo, "onboarding", System)).ShouldBeFalse();
-    }
-
     public void Dispose() => Directory.Delete(_root, recursive: true);
 
     private string Repo => Path.Combine(_root, "repo");
 
     private JsonNode Session() => JsonNode.Parse(File.ReadAllText(Path.Combine(Repo, "onboarding", System, "session.json")))!;
 
-    private async Task<(int Exit, string Output, string Error)> RunAsync(string input, bool noModel = true)
+    private async Task<(int Exit, string Output, string Error)> RunAsync(string input)
     {
         string[] args =
         [
             "onboard", System, "--repo", Repo, "--framework", Path.Combine(Repo, "frameworks", "example-framework.json"), "--group", "2",
-            "--spec", Path.Combine(ExampleRepoTests.RepoRoot, "examples", "apis", "example-asset-api.openapi.yaml"), .. noModel ? new[] { "--no-model" } : [],
+            "--spec", Path.Combine(ExampleRepoTests.RepoRoot, "examples", "apis", "example-asset-api.openapi.yaml"),
         ];
         using var reader = new StringReader(input);
         using var output = new StringWriter();

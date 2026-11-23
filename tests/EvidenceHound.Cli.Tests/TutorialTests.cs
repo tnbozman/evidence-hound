@@ -113,7 +113,7 @@ public sealed partial class TutorialTests
 
             foreach (var system in TutorialSystems)
             {
-                string[] args = ["onboard", system.Id, "--repo", repo, "--group", "1", "--group", "2", "--no-model"];
+                string[] args = ["onboard", system.Id, "--repo", repo, "--group", "1", "--group", "2"];
                 (await Onboard(args, Path.Combine(OnboardingAnswers, $"{system.Slug}.supplier.txt"), ct)).ShouldBe(ExitCodes.Ok);
                 File.Exists(Path.Combine(repo, "scope", "third-parties", system.Supplier)).ShouldBeTrue($"onboarding {system.Id} drafts its supplier");
                 File.Copy(Path.Combine(expected, "scope", "third-parties", system.Supplier), Path.Combine(repo, "scope", "third-parties", system.Supplier), overwrite: true);

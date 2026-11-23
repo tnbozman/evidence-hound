@@ -11,7 +11,6 @@ public sealed partial class OnboardingDocsTests
 
     [Theory]
     [InlineData("onboard")]
-    [InlineData("onboard config")]
     [InlineData("onboard environment")]
     [InlineData("onboard profile")]
     public void Every_onboard_option_is_documented(string command)
@@ -39,7 +38,6 @@ public sealed partial class OnboardingDocsTests
     {
         Guide.ShouldContain("## Tutorial: onboard the example API");
         Guide.ShouldContain("examples/apis/example-asset-api.openapi.yaml");
-        Guide.ShouldContain("--no-model");
     }
 
     /// <summary>The long option names that <c>hound &lt;command&gt; --help</c> lists, apart from help and version.</summary>

@@ -25,17 +25,16 @@ public sealed class ExplainCommandTests : IDisposable
         var plan = Path.Combine(_root, "plan.md");
         await File.WriteAllTextAsync(plan, Plan, _ct);
 
-        var (exit, output, error) = await RunAsync(["explain", plan, "--no-model", "--repo", _root], "");
+        var (exit, output, error) = await RunAsync(["explain", plan, "--repo", _root], "");
 
         exit.ShouldBe(ExitCodes.Ok, error);
         output.ShouldContain("The plan is the source of truth: 1 to create, 0 to update, 1 to delete, 0 drifted.");
         output.ShouldContain("- Deletes control CTL-OLD.");
-        output.ShouldContain("No model summary (--no-model).");
         File.ReadAllText(plan).ShouldBe(Plan);
 
         // A diff on standard input, such as git diff | hound explain.
         const string diff = "diff --git a/mappings/example.yaml b/mappings/example.yaml\n--- a/mappings/example.yaml\n+++ b/mappings/example.yaml\n@@ -1,3 +1,2 @@\n requirements:\n-  - ref: EX-4\n   - ref: EX-5\n";
-        (exit, output, error) = await RunAsync(["explain", "--no-model", "--repo", _root], diff);
+        (exit, output, error) = await RunAsync(["explain", "--repo", _root], diff);
         exit.ShouldBe(ExitCodes.Ok, error);
         output.ShouldContain("1 file changed, 0 lines added, 1 line removed.");
         output.ShouldContain("Removes 1 line(s) naming checks or requirements from mappings/example.yaml.");
@@ -44,7 +43,7 @@ public sealed class ExplainCommandTests : IDisposable
         Directory.CreateDirectory(Path.Combine(_root, "mappings"));
         await File.WriteAllTextAsync(Path.Combine(_root, "mappings", "example.yaml"), "requirements:\n  - ref: EX-4\n    checks: [devices.supported_os]\n", _ct);
         const string profileDiff = "--- a/profiles/example.yaml\n+++ b/profiles/example.yaml\n@@ -1,2 +1,1 @@\n checks:\n-  - id: devices.supported_os\n";
-        (exit, output, error) = await RunAsync(["explain", "--no-model", "--repo", _root], profileDiff);
+        (exit, output, error) = await RunAsync(["explain", "--repo", _root], profileDiff);
         exit.ShouldBe(ExitCodes.Ok, error);
         output.ShouldContain("Removes check devices.supported_os from profiles/example.yaml, but mappings/example.yaml still uses it.");
 
@@ -53,12 +52,12 @@ public sealed class ExplainCommandTests : IDisposable
         var after = Path.Combine(_root, "after.yaml");
         await File.WriteAllTextAsync(before, "ref_id: EX-AUDIT\nresult: not_assessed\n", _ct);
         await File.WriteAllTextAsync(after, "ref_id: EX-AUDIT\nresult: not_applicable\n", _ct);
-        (exit, output, error) = await RunAsync(["explain", before, after, "--no-model", "--repo", _root], "");
+        (exit, output, error) = await RunAsync(["explain", before, after, "--repo", _root], "");
         exit.ShouldBe(ExitCodes.Ok, error);
         output.ShouldContain("Marks 1 requirement(s) not applicable in after.yaml.");
 
         // Nothing to read is a usage error.
-        (exit, _, _) = await RunAsync(["explain", "--no-model", "--repo", _root], "");
+        (exit, _, _) = await RunAsync(["explain", "--repo", _root], "");
         exit.ShouldBe(ExitCodes.Usage);
     }
 
