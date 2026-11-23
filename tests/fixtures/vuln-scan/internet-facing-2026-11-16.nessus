@@ -1,0 +1,50 @@
+<?xml version="1.0" ?>
+<NessusClientData_v2>
+<Policy><policyName>Example Pty Ltd internet-facing weekly</policyName></Policy>
+<Report name="Example Pty Ltd internet-facing 2026-11-16">
+<ReportHost name="203.0.113.10">
+<HostProperties>
+<tag name="HOST_START_TIMESTAMP">1794823200</tag>
+<tag name="HOST_END_TIMESTAMP">1794823800</tag>
+<tag name="HOST_END">Mon Nov 16 10:10:00 2026</tag>
+<tag name="host-fqdn">web-01.example.com</tag>
+<tag name="host-ip">203.0.113.10</tag>
+</HostProperties>
+<ReportItem port="443" svc_name="www" protocol="tcp" severity="0" pluginID="10107" pluginName="HTTP Server Type and Version" pluginFamily="Web Servers">
+<risk_factor>None</risk_factor>
+</ReportItem>
+<ReportItem port="443" svc_name="www" protocol="tcp" severity="3" pluginID="900101" pluginName="Example Web Server 2.4.x &lt; 2.4.62 Multiple Vulnerabilities" pluginFamily="Web Servers">
+<risk_factor>High</risk_factor>
+<cve>CVE-2026-0101</cve>
+<cve>CVE-2026-0102</cve>
+<exploit_available>true</exploit_available>
+<patch_publication_date>2026/11/10</patch_publication_date>
+<plugin_publication_date>2026/11/11</plugin_publication_date>
+</ReportItem>
+<ReportItem port="22" svc_name="ssh" protocol="tcp" severity="2" pluginID="900102" pluginName="Example SSH Server Weak Key Exchange Algorithms Enabled" pluginFamily="Misc.">
+<risk_factor>Medium</risk_factor>
+<exploit_available>false</exploit_available>
+</ReportItem>
+</ReportHost>
+<ReportHost name="203.0.113.11">
+<HostProperties>
+<tag name="HOST_END">Mon Nov 16 10:20:00 2026</tag>
+<tag name="host-fqdn">vpn.example.com</tag>
+</HostProperties>
+<ReportItem port="443" svc_name="www" protocol="tcp" severity="4" pluginID="900103" pluginName="Example VPN Appliance Unsupported Version Detection" pluginFamily="Firewalls">
+<risk_factor>Critical</risk_factor>
+<unsupported_by_vendor>true</unsupported_by_vendor>
+<patch_publication_date>2025/06/01</patch_publication_date>
+</ReportItem>
+</ReportHost>
+<ReportHost name="203.0.113.12">
+<HostProperties>
+<tag name="HOST_END">Mon Nov 16 10:25:00 2026</tag>
+<tag name="host-fqdn">mail.example.com</tag>
+</HostProperties>
+<ReportItem port="0" svc_name="general" protocol="tcp" severity="0" pluginID="19506" pluginName="Nessus Scan Information" pluginFamily="Settings">
+<risk_factor>None</risk_factor>
+</ReportItem>
+</ReportHost>
+</Report>
+</NessusClientData_v2>

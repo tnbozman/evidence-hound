@@ -32,6 +32,7 @@ dev/ciso-assistant/db/
 *.pdf
 !examples/**/*.xlsx
 !examples/**/*.csv
+!tests/fixtures/**/*.csv
 !examples/**/*.pdf
 
 # Claude Code: personal settings stay on each developer's machine
