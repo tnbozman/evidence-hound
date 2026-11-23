@@ -8,7 +8,7 @@ namespace EvidenceHound.Collectors.M365;
 /// </summary>
 internal static class AppControlChecks
 {
-    private const string GroupPolicy = " Policies set by Group Policy are not seen.";
+    private static readonly string GroupPolicy = " Policies set by Group Policy are not seen.";
 
     private static readonly string[] Sources = [GraphSources.ConfigurationPolicies, GraphSources.DeviceConfigurations];
 

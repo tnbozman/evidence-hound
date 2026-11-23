@@ -37,10 +37,10 @@ internal sealed partial record AppControlPolicy(
     public const string AppControlForBusiness = "App Control for Business";
     public const string AppLocker = "AppLocker";
 
-    private const string TemplateFamily = "endpointSecurityApplicationControl";
+    private static readonly string TemplateFamily = "endpointSecurityApplicationControl";
 
     /// <summary>The built-in controls choice: <c>_0</c> enforces, <c>_1</c> audits. Confirm against a recorded export (s09-01 notes).</summary>
-    private const string BuiltInControls = "device_vendor_msft_policy_config_applicationcontrol_built_in_controls_enable_app_control";
+    private static readonly string BuiltInControls = "device_vendor_msft_policy_config_applicationcontrol_built_in_controls_enable_app_control";
 
     private static readonly Dictionary<string, FileType> AppLockerCollections = new(StringComparer.OrdinalIgnoreCase)
     {
