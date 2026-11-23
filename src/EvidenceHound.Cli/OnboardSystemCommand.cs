@@ -662,7 +662,7 @@ internal static class OnboardSystemCommand
         {
             await terminal.Error.WriteAsync($"{question}: ".AsMemory(), cancellationToken);
             await terminal.Error.FlushAsync(cancellationToken);
-            return (await terminal.Input.ReadLineAsync(cancellationToken))?.Trim();
+            return await terminal.Input.ReadLineAsync(cancellationToken) is { } line ? Answers.Clean(line) : null;
         }
 
         public async Task<string> AskWithDefaultAsync(string question, string @default, CancellationToken cancellationToken)

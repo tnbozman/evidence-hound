@@ -37,14 +37,14 @@ internal sealed class Wizard(Terminal terminal, bool yes)
             return typed;
         }
 
-        return (await terminal.Input.ReadLineAsync(cancellationToken))?.Trim() ?? "";
+        return Answers.Clean(await terminal.Input.ReadLineAsync(cancellationToken) ?? "");
     }
 
     private async Task<string> PromptAsync(string prompt, CancellationToken cancellationToken)
     {
         await terminal.Error.WriteAsync(prompt.AsMemory(), cancellationToken);
         await terminal.Error.FlushAsync(cancellationToken);
-        return (await terminal.Input.ReadLineAsync(cancellationToken))?.Trim() ?? "";
+        return Answers.Clean(await terminal.Input.ReadLineAsync(cancellationToken) ?? "");
     }
 
     private static string ReadHidden()
