@@ -182,7 +182,8 @@ same framework, the mitigation's requirements are `not_applicable`, naming the p
 `setup.yaml` does not load (`capability.framework_unknown`), a mitigation decided twice (`scope.duplicate`), not in the framework
 (`capability.mitigation_unknown`) or not decided at all (`capability.decision_missing`), a missing approver (`capability.approver_missing`),
 a system decision with no systems (`capability.systems_missing`) and an unknown supplier. A system named but not declared yet is not an
-error: it is waiting to be onboarded.
+error: it is waiting to be onboarded. `hound scope plan` lists each gap under "Capability gaps" (JSON `gaps`): the mitigation and the
+requirements no system's audit answers.
 
 ## audits/&lt;audit&gt;.yaml
 

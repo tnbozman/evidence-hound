@@ -407,7 +407,11 @@ $ hound skill validate --skills /tmp/fc21/sk/skills
 - `CapabilitySignals` (Onboarding, pure): Microsoft licences and Intune configuration kinds suggest the Microsoft 365 system; systems tagged `capabilities: ac, rb` are suggested first. `CapabilityAnswers` turns a proposal and the person's answer into a decision; a proposal never decides.
 - `hound onboard environment --signals <recorded Graph answers> --no-model` decides each mitigation, writes `scope/capabilities.yaml` after each, appends the rows to each audit with the YAML editor (comments kept), and lists systems to onboard with their supplier and the gaps. Default skill `environment-capabilities`.
 - Live read-only Graph lookups: `--graph <collector>` signs in as that `m365` collector of `hound.yaml` (its settings and secrets) through `EnvironmentLookup` in the M365 collector project, reading `v1.0/subscribedSkus` (enabled or warning SKUs; `Organization.Read.All`, onboarding only) and the `@odata.type` of `v1.0/deviceManagement/deviceConfigurations` (none without Intune). `--graph` and `--signals` together are refused. Tests: `EnvironmentLookupTests` (WireMock), `OnboardEnvironmentTests.Graph_signals_come_from_the_m365_collector_in_hound_yaml`.
-- Still to do here: model proposals with the skill. Without `--no-model` the command currently runs on signals only.
+- Model proposals: `CapabilityProposals` (Onboarding) sends one request through the gate with the mitigations, systems and signals, guided by the `environment` skills; a reply about an unknown mitigation or one twice is refused; a system proposal without systems is no suggestion; mitigations it leaves out keep the signals' suggestion. Accepting records "from the model's proposal: <reasoning>". `--config` is the onboarding config, as in `hound onboard <system>`; the deployment config for `--graph` is `--deployment`.
+- `hound scope plan` lists the map's gaps ("Capability gaps", JSON `gaps`) through `CapabilityMap.Gaps`.
+- Capability files keep apostrophes readable (relaxed JSON escaping in the quoted YAML).
+- Not done here, noted under Discovered work: Defender for Endpoint onboarded devices as a signal.
+- Functional test: `CapabilityMapFunctionalTests` (recorded signals, no model, then `hound scope plan` against the local CISO Assistant).
 
 **Functional check (so far):** on a copy of the example repo with recorded answers (`SPE_E3`), `hound onboard environment --no-model` wrote `scope/capabilities.yaml` and 14 application control rows in `ex-e8-2026.yaml` as "Provided by Example app control (no audit yet; …)", listed the app control product to onboard and patch applications as a gap; `hound scope validate` passed.
 
@@ -910,6 +914,8 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 **Order:** after the hands-on Sophos path (s09-25), with s09-32.
 
 ## Discovered work
+
+- s09-28: the capability map's signals do not yet include devices onboarded to Defender for Endpoint (`security/machines` needs a Defender API permission, not Graph). Add when s09-02 reads Defender.
 
 - Open items from s08's discovered work (trial token refresh, the seed's compliance owner, HTTP logging at `info`, wizard prompts, trial re-runs, evidence on applied controls, the "unlisted rule" wording, `HOUND_CA_URL` in the dev container) are listed in [s08](s08-sophos-veeam-collectors.md#discovered-work); pick them up here or in s12.
 

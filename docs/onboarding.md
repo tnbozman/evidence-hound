@@ -87,7 +87,7 @@ hound onboard environment --repo . --framework frameworks/essential-eight-2023.j
 hound onboard environment --repo . --graph example-m365 --no-model      # read the signals live, as an m365 collector in hound.yaml
 ```
 
-- **Signals suggest, you decide.** `--graph <collector>` signs in as that `m365` collector of the deployment config (`--config`, default
+- **Signals suggest, you decide.** `--graph <collector>` signs in as that `m365` collector of the deployment config (`--deployment`, default
   `hound.yaml` in the repo), with its own settings and secrets, and makes two read-only Graph reads: subscribed licences
   (`v1.0/subscribedSkus`, enabled or in warning, needs `Organization.Read.All`) and the kinds of Intune configuration
   (`v1.0/deviceManagement/deviceConfigurations`, already granted to the collector). A tenant without Intune has no configuration kinds.
@@ -105,8 +105,16 @@ hound onboard environment --repo . --graph example-m365 --no-model      # read t
 - **What comes next:** each named system not onboarded yet is listed with `hound onboard "<system>"`, whose supplier goes through the
   supplier gate first; each gap is listed as requirements no system's audit answers.
 
-The default skill `environment-capabilities` describes how to tell which product is authoritative. In this version proposals come from the
-signals only; model proposals follow.
+- **Then the model proposes.** Without `--no-model`, after the signals are read, one request through the onboarding gate (the model in
+  `onboarding.yaml`, `--config`; requests kept in `onboarding/environment/requests/`; `--show-requests` prints them) sends the mitigations,
+  the systems in scope with their descriptions, and the signals, guided by the `environment` skills. The model proposes a system, manual or
+  gap for each mitigation with its reasoning, shown as `Model: ...` under the suggestion. Accepting records "from the model's proposal" and
+  the reasoning; it is still your decision. A reply about a mitigation not asked about is refused.
+- **Gaps in the plan.** `hound scope plan` lists each mitigation decided as a gap under "Capability gaps" (and `gaps` in `--json`): the
+  requirements no system's audit answers, never a fail on some system.
+
+The default skill `environment-capabilities` describes how to tell which product is authoritative; organisation skills that apply to the
+`environment` step extend it.
 
 ## Explain a change for review
 
