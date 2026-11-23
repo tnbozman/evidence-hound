@@ -1316,7 +1316,7 @@ At the maintainer's request (2026-11-23): every audit reads `<ORG>-<FRAMEWORK>-<
 - As built: `AuditPlace` gains `Series` (`OrganisationSeries`: ref ID, period, start) and `SystemRefId`; `OnboardOutput.SeriesRefId` drops `SYS-`; `OnboardSystemCommand.OrganisationSeriesAsync` takes the scope's one two-part series, or the one `hound.yaml` targets. A system that onboarding declares now carries `ref_id` (`RefIds.Suggest`, as `hound add system` defaults it), so `examples/onboarding-tutorial/scope/setup.yaml` gains `SYS-GRC-PLATFORM` and `SYS-OFFICE-FIREWALL`. The skill `onboard-a-system-with-hound` and `docs/onboarding.md` describe the name.
 
 ### s09-49 hound status shows the audit period a series target publishes to (added 2026-11-23)
-- [ ] Done
+- [x] Done
 
 Found in the trial after s09-47: `hound run` published to `EX-E8-Q2-2027FY`, and `hound status` listed `EX-E8  never run`, looking the series up in the run history by its own ref ID.
 
@@ -1331,6 +1331,10 @@ Found in the trial after s09-47: `hound run` published to `EX-E8-Q2-2027FY`, and
 
 **Functional check**
 - In the trial repo after a Sophos run: `hound status --config hound.yaml` lists `EX-E8-Q2-2027FY` with the run's ID.
+- Result (2026-11-23): after rebuilding the trial image, `.dev/trial/bin/hound status --config hound.yaml` from `.dev/trial/repo` listed `EX-E8-Q2-2027FY  2026-11-23 11:32:16  20261123T113216Z  0  0  0` (before the fix: `EX-E8  never run`). Unit suite 1318 passed; lint clean.
+- As built: `StatusCommand` takes the configuration and resolves the loaded config with `AuditSeries.ResolveAsync` before reading the history, as `hound run` does.
+
+Trial after s09-46 to s09-49 (2026-11-23), against the dev container's CISO Assistant cleared again of the trial's objects and with the example scope re-applied: `HOUND_TRIAL_YES=1 make trial` wrote "audit EX-E8" (`cycle: {period: quarter, starts: "2026-10-01"}`) and applied `EX-E8-Q2-2027FY` ("Essential Eight ML2 Q2-2027FY", in progress, ETA 2026-12-31); the Sophos collector with the maintainer's saved read-only credential published 3 items to `EX-E8-Q2-2027FY`, 0 failed.
 
 ## Discovered work
 
