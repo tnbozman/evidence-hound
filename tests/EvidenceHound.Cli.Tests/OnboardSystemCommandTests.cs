@@ -118,6 +118,20 @@ public sealed class OnboardSystemCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task A_kept_document_the_model_cannot_read_says_so()
+    {
+        var pdf = Path.Combine(_root, "example-certificate.pdf");
+        await File.WriteAllBytesAsync(pdf, "%PDF-1.4\n%example\n"u8.ToArray(), _ct);
+        var answers = SupplierAnswers.Replace("Hosts the asset inventory.\n\n", $"Hosts the asset inventory.\n{pdf}\n\n", StringComparison.Ordinal);
+
+        var (exit, output, error) = await RunAsync(answers);
+
+        exit.ShouldBe(ExitCodes.Ok, error);
+        (output + error).ShouldContain("Kept documents/suppliers/sup-example/example-certificate.pdf");
+        (output + error).ShouldContain("the model cannot read it");
+    }
+
+    [Fact]
     public async Task Without_an_onboarding_config_a_model_session_is_refused()
     {
         var (exit, _, error) = await RunAsync(SupplierAnswers, noModel: false);

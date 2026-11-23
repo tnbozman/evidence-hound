@@ -967,4 +967,6 @@ Added at the person's request after the s09-22 onboarding trial, where a contrac
 
 - A 4xx other than 401 or 403 from the model provider still says "Check the key with 'hound onboard config --check'", which sent the person looking at the key when the request itself was wrong. Name the provider's error type (such as `invalid_request_error`, which never echoes the request) and suggest the key only for 401 and 403 (found in s09-21).
 
+- Supplier documents in PDF (such as a vendor's ISO/IEC 27001 certificate) are kept with their hash but not given to the model: hound reads only HTML, text and Markdown, so the supplier step cannot use the strongest assurance a vendor publishes. Since 2026-11-23 the person is told; next, extract PDF text (a maintained PDF library, checked as any new dependency) or send the PDF to the provider as a document block, within the same outbound guard and token budget (found in s09-22, Sophos trial).
+
 ## Sprint review

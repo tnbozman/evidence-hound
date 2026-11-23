@@ -242,6 +242,12 @@ internal static class OnboardSystemCommand
             {
                 kept.Add(got);
                 await terminal.Error.WriteLineAsync($"Kept {got.Item1.Path} (SHA-256 {got.Item1.Sha256}).".AsMemory(), cancellationToken);
+                if (got.Item2.Length == 0)
+                {
+                    await terminal.Error.WriteLineAsync(
+                        "It is kept as evidence, but the model cannot read it: hound reads only HTML, text and Markdown documents for the model. Save the relevant page as text to give it to the model.".AsMemory(),
+                        cancellationToken);
+                }
             }
             else
             {
@@ -279,11 +285,12 @@ internal static class OnboardSystemCommand
 
     private static async Task<LevelProposal> ConfirmLevelAsync(LevelProposal level, Prompt prompt, Terminal terminal, CancellationToken cancellationToken)
     {
-        await terminal.Error.WriteLineAsync($"{level.Name}: {level.Value}, because {level.Reason} ({string.Join(", ", level.Sources)})".AsMemory(), cancellationToken);
         var (_, low, high) = SupplierProposal.Scales.Single(s => s.Name == level.Name);
+        var shown = low > SupplierProposal.NotYetAssessed && level.Value == SupplierProposal.NotYetAssessed ? "not yet assessed" : level.Value.ToString(CultureInfo.InvariantCulture);
+        await terminal.Error.WriteLineAsync($"{level.Name}: {shown}, because {level.Reason} ({string.Join(", ", level.Sources)})".AsMemory(), cancellationToken);
         while (true)
         {
-            var answer = await prompt.AskAsync($"Accept {level.Name} {level.Value} (enter), or type {low} to {high}", cancellationToken);
+            var answer = await prompt.AskAsync($"Accept {level.Name} {shown} (enter), or type {low} to {high}", cancellationToken);
             if (string.IsNullOrEmpty(answer))
             {
                 return level;
