@@ -1387,6 +1387,42 @@ At the maintainer's request (2026-11-23): the trial should follow the onboarding
 - As built: `trial_brief` and `trial_stage_ready` in `scripts/lib/trial.sh`; in `scripts/trial.sh`, `agent_setup` (now part of step 4) and one `stage` runner with a replay per stage. `examples/trial/` holds the approved supplier files and a README; the decisions are the onboarding tutorial's. The first run found that the replay redirected the answers from a container path; they are read on the host and reach the container on standard input.
 - Deviations: the environment (which system provides each mitigation) is not a stage, as the maintainer's order leaves it out; the system and its audit are written together when the person approves the session, as `hound approve` does, so stage 6 starts the session and stage 7 applies both. Manual evidence is not a stage yet (Discovered work).
 
+### s09-52 The Microsoft 365 collector reads the dev server without signing in, on loopback only (added 2026-11-23)
+- [ ] Done
+
+At the maintainer's request (2026-11-23), so the trial's Microsoft 365 step can run against the s09-44 dev server: the collector always signs in at Microsoft (Azure.Identity), and the dev server answers Graph only.
+
+**Story:** As the maintainer without a test tenant, I want the m365 collector to read the dev server with no sign-in, and never to skip sign-in for real Graph, so that the trial runs end to end offline and safely.
+
+**Acceptance criteria**
+- A setting `sign_in`: `app` (the default, the app registration's certificate or secret) or `none`, which sends a fixed placeholder token and asks for no credential.
+- `none` is accepted only when `graph_url` is `http` or `https` on `localhost`, `127.0.0.1` or `[::1]`; any other address, the default included, is refused (`m365.sign_in_not_loopback`), as is any other value.
+- Collection and the environment lookup both honour it. `docs/collectors/m365.md` and the dev server guide describe it.
+
+**Tests first**
+- `M365SignInTests.Without_sign_in_the_collector_reads_the_dev_server_and_asks_for_no_credential`
+- `M365SignInTests.Without_sign_in_is_refused_for_an_address_that_is_not_loopback`
+- `M365SignInTests.Sign_in_is_app_or_none`
+
+**Functional check**
+- `make m365-dev` in one terminal; a config with the server's printed settings, `graph_url: http://localhost:5365/` and `sign_in: none`; `hound run --only m365 --no-publish` reports 11 checks passed.
+
+### s09-53 The trial's Microsoft 365 step runs against the dev server (added 2026-11-23)
+- [ ] Done
+
+**Story:** As a GRC lead trying hound without a Microsoft 365 tenant, I want the trial's step 10 to start the fictional tenant and collect from it, so that I see Microsoft 365 checks reach CISO Assistant, with a real test tenant as the option.
+
+**Acceptance criteria**
+- Step 10 offers the dev server first (`compliant` or `gaps`); it starts `make m365-dev` in the background, adds the m365 collector with the server's settings, `graph_url` and `sign_in: none`, dry-runs and, after asking, publishes, then stops the server. A real test tenant stays the other choice, as before.
+- Unattended, step 10 runs against the `compliant` tenant and publishes; a second run publishes again without adding the collector twice.
+- `docs/tutorials/local-trial.md` section 10 describes both.
+
+**Tests first**
+- `trial.bats`: "the dev server collector is added with its settings and no sign-in"
+
+**Functional check**
+- `HOUND_TRIAL_YES=1 make trial` against the dev container's CISO Assistant: step 10 publishes 11 Microsoft 365 checks to `EX-E8-Q2-2027FY`.
+
 ## Discovered work
 
 - s09-51: a manual evidence source needs its check mapped to a requirement, and the requirement taken out of `manual_only`; no command does it, so an agent edits the mapping by hand and the trial has no manual evidence stage. Add `hound mapping add-check --mapping <file> --requirement <ref> --check <id>` (asks nothing, `--json`), then a manual evidence stage in the trial (drop a scan report, `hound manual propose` by the agent, `hound manual approve` by the person).
