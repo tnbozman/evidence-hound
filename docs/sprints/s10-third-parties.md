@@ -115,6 +115,31 @@ Added at the maintainer's request (2026-11-23): "trial, onboard and maintain evi
 **Functional check**
 - The rehearsal notes themselves, under each task, and the CI trial job green.
 
+### s10-06 Sensitive data on suppliers and systems (added 2026-11-23)
+- [ ] Done
+
+Decided (maintainer, 2026-11-23): add it in s10 and make it broader than CUI. A small defence supplier is asked about four kinds of sensitive data, and a prime, an auditor or the security committee needs to see which suppliers and systems handle each kind and on what authority.
+
+**Story:** As a small team's GRC lead, I want each supplier's solution and each system to say which sensitive data it handles and what authorises it, so that I can draw the boundary tightly, see a supplier handling data it is not approved for, and give a prime the list it asks for without a questionnaire.
+
+**Acceptance criteria**
+- A framework-neutral `data` list on a solution (in `third-parties/<entity>.yaml`) and on a system (in `setup.yaml`): `kind` (`cui`, `pii`, `export_controlled`, `classified`), `detail` (free text such as `CUI//SP-CTI`, `ITAR`, `EAR`, `DSGL`, `OFFICIAL: Sensitive`, `PROTECTED`), `role` (`stores`, `processes`, `transmits`, `protects`), and for a solution an `authority`: what approves it (such as FedRAMP Moderate or equivalent, an IRAP assessment to PROTECTED, an ISO 27001 certificate, an export licence or registration, DISP membership), with `evidence` (a document in the repo) and `expires`.
+- Validation: a system that handles a kind through a solution (`solution:` or `supplied_through:`) whose `data` does not list that kind is reported (`data.supplier_not_authorised`); an authority past `expires` is reported (`data.authority_expired`); `classified` and `export_controlled` need a `detail`.
+- `scope apply` shows the kinds in CISO Assistant with its own features only: filtering labels `data:<kind>` on the solution's and the system's records, and the authority in the solution's description. Nothing bespoke.
+- `hound supplier list --data <kind>` prints, as Markdown or JSON, each supplier and solution handling that kind, with its role, authority, evidence and expiry: the list a prime or auditor asks for.
+- `docs/third-parties.md` and `docs/scope.md` explain the four kinds with an Australian and a US example of each (Privacy Act and state privacy law; DSGL and ITAR/EAR; PSPF classifications; CUI), and say what `hound` does not decide (whether data is CUI or export controlled is the owner's and the prime's call).
+- The supplier skill and `hound supplier draft --data` let an agent record a kind from a trust centre or contract, leaving the authority empty when no document backs it.
+
+**Tests first**
+- `SensitiveDataScopeTests.System_with_cui_through_an_unauthorised_supplier_is_reported`
+- `SensitiveDataScopeTests.Expired_authority_is_reported`
+- `SensitiveDataScopeTests.Classified_and_export_controlled_need_detail`
+- `SensitiveDataPlanTests.Kinds_become_filtering_labels`
+- `SupplierListCommandTests.Lists_suppliers_handling_a_kind_with_authority`
+
+**Functional check**
+- Apply the tutorial's suppliers with data kinds to the local CISO Assistant and filter solutions by `data:cui`; the machine-shop rehearsal produces the prime's list with `hound supplier list --data cui`.
+
 ### Carried from s09 (2026-11-23)
 
 Built and tested in CI; each waits on a run in the maintainer's own environment, not on code. Details stay under the task in `s09-e8-gap-collectors.md`.
@@ -128,7 +153,7 @@ Built and tested in CI; each waits on a run in the maintainer's own environment,
 ## Discovered work
 
 - From the s10-03 rehearsal (machine shop, CMMC Level 2), not fixed there:
-  - No CUI on a supplier: which suppliers handle or protect CUI, of what kind (cloud service, managed service, security service) and on what authority (FedRAMP Moderate or equivalent, ISO 27001 certificate with scope and expiry). Today it is a comment. With it, a `hound supplier list --cui` would be the list a prime asks for (maintainer's choice pending).
+  - No CUI on a supplier: which suppliers handle or protect CUI, of what kind (cloud service, managed service, security service) and on what authority (FedRAMP Moderate or equivalent, ISO 27001 certificate with scope and expiry). Today it is a comment. Now s10-06, broadened to PII, export-controlled data and security classification (maintainer, 2026-11-23).
   - `hound init` writes only an Essential Eight audit; a CMMC shop gets the wrong framework. CMMC / NIST SP 800-171 is s16/s17; until then `hound init` should say so.
   - Scope cannot be kept tight: every drafted supplier goes into the first perimeter with a review a month out and yearly after, whatever its criticality. Offer `--perimeter` on `supplier draft` and a review interval from criticality, as the assess-a-supplier skill describes.
   - Structured assurance (standard, certificate ID, scope, valid until, document) so an MSP's ISO 27001 is recorded once, warned on expiry, and reused across frameworks.
