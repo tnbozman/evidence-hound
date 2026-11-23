@@ -14,7 +14,7 @@ To write your first profile, follow the tutorial [Write a profile](../tutorials/
 
 ## The profiles folder and the library
 
-`hound` has no profiles built in. Every profile loads from the organisation's **profiles folder**, by default `/etc/evidence-hound/profiles`, mounted read-only into the runner. Keep the folder in your private compliance repo, next to `hound.yaml`. Each profile is `<name>.yaml`, and its tests are in `<name>.tests/` beside it.
+`hound` has no profiles built in. Every profile loads from the organisation's **profiles folder**, by default `/config/profiles`, mounted read-only into the runner. Keep the folder in your private compliance repo, next to `hound.yaml`. Each profile is `<name>.yaml`, and its tests are in `<name>.tests/` beside it.
 
 This repository keeps a public **library** of tested profiles in [`profiles/`](../../profiles): `example` (the fictional Example Asset API) and `sophos-central`. To use one, copy the profile and its tests into your profiles folder:
 
@@ -52,7 +52,7 @@ collectors:
 | Setting | Required | Meaning |
 | --- | --- | --- |
 | `profile` | yes | The profile's name, its file name without `.yaml`. |
-| `profiles_path` | no | The profiles folder. Default `/etc/evidence-hound/profiles`. |
+| `profiles_path` | no | The profiles folder. Default `/config/profiles`. |
 | `include_identities` | no | `true` keeps the identities the profile lists in evidence. Default `false`: they are hashed. |
 | `allow_writes` | no | `true` lets the profile's `write: true` queries run, such as the opt-in pipeline trigger of `terraform-drift-trigger`. Default `false`: they are refused and nothing is sent. Give the instance a token that can do only that one write. |
 | `require_profile_tests` | no | `true` makes a profile without tests unable to assess. Default `false`: a warning in the log. |

@@ -1665,6 +1665,30 @@ Added at the maintainer's request (2026-11-23): s09-03 and s09-04 need a testbed
 - In a scratch repo: `scan-dev --variant compliant --out ../scans`, the four sources added with `hound add collector vuln-scan --yes` from the printed settings through the trial helpers, `hound config validate` valid, `hound run --only <each> --no-publish`: 3, 3, 2 and 3 passed, none failed. Then `--variant gaps` and the same runs: internet-facing 0 passed 3 failed, laptops 2 and 1, other apps 2 and 0, operating systems 1 and 2, as the tutorial table says; each folder held only the new export. `ScanDevEstateTests` (8) pass; `bats scripts/tests` all ok; ShellCheck clean. Publishing to CISO Assistant runs in CI's trial job (dispatched on this branch).
 - CI run 45199442036 (2026-11-23, head 667708c, dispatched): the `trial` job ran step 15 against CISO Assistant and published all four scan sources, after two fixes the first trial run (45194527491) found: CISO Assistant refuses a `.nessus` attachment, so the collector stores and cites `<name>.nessus.xml` (s09-03, s09-04); and the example workbook's unapproved row moved from ISM-1698, which the scan checks now compute, to ISM-1507 (`WorkbookImportFunctionalTests`). The functional suite passed in the same run.
 
+### s09-59 Fixes from an agent onboarding dry run (added 2026-11-23)
+- [x] Done
+
+Added while the maintainer is away (2026-11-23): before they onboard their own firewall with an agent, an agent was given only what `hound init` and `hound agent setup` write into a scratch compliance repo, with the Sophos Central dev server running, and asked to onboard the firewall. What blocked it is fixed here; the rest is under Discovered work.
+
+**Story:** As a person whose agent drives onboarding, I want the agent to find the profile library and to reach CISO Assistant with the address in `hound.yaml`, so that it does not stop on things the repo already says.
+
+**Acceptance criteria**
+- `hound scope plan` and `hound scope apply` with `--config` use the config's `ciso_assistant` address and token (resolving `env:` and `file:` references); `HOUND_CA_URL` and `HOUND_CA_TOKEN` still override them. Without `--config` both variables are still needed.
+- The `write-a-profile` skill `hound agent setup` writes names the public guide and profile library by URL (neither is in a compliance repo), says to copy a library profile with its tests into `profiles/` rather than write a new one, and names `profiles_path`.
+
+**Tests first**
+- `ScopePlanCommandTests.Plan_with_a_config_reads_the_ciso_assistant_address_and_token_from_it`
+- `ScopePlanCommandTests.The_environment_overrides_the_configs_ciso_assistant_address`
+- `AgentSetupTests.The_profile_skill_says_where_the_library_and_the_guide_are_since_neither_is_in_the_compliance_repo`
+
+**Functional check**
+- The dry run itself: in the scratch repo the agent's `hound scope plan --config hound.yaml` stopped on "HOUND_CA_URL is not set" although `hound.yaml` named the address; after the fix the same command with only the token variable set reaches CISO Assistant (WireMock in the tests; the trial's own CISO Assistant is the maintainer's to run). The cited skill now resolves for an agent with only the repo.
+
+**As built (2026-11-23)**
+- `PublishCommand.ConnectionAsync` loads the config only when `--config` is given and either variable is missing; `ScopeCommands` plan and apply (not a saved plan, which carries its own target) use it. Help texts and `docs/scope.md` say so.
+- `skills/profile-authoring.md` 1.1.0.
+- `docs/collectors/rest.md` gave the `profiles_path` default as `/etc/evidence-hound/profiles`; the code's default is `/config/profiles` (`ProfileFolder.DefaultPath`), and the guide now says so.
+
 ## Discovered work
 
 - s09-58: the trial's first CI run (45194527491) found that CISO Assistant refuses a `.nessus` attachment (it allows jpg, jpeg, png, doc, docx, odt, ppt, pptx, txt, xls, xlsx, ods, csv, md, pdf, json, yaml, yml, toml, xml, msg, eml, zip, 7z, tar, gz, log, svg, mp4, mov, gif, webp). Fixed in vuln-scan by storing `<name>.nessus.xml`. Other collectors can still hand it a file it refuses: the manual collector's `patterns` (for example `*.html`) are not checked. Have `hound config validate` warn on a pattern whose extension CISO Assistant refuses, or store such files zipped.
@@ -1770,5 +1794,13 @@ Added at the maintainer's request (2026-11-23): s09-03 and s09-04 need a testbed
 - An open dependency's "result there" comes from the scope files, not from CISO Assistant, so a requirement a collector has marked compliant in the providing system's audit reads "from collectors", not "compliant". Read the held result when the plan has it (found in s09-36).
 
 - The plan's "Open dependencies" lists one line per row, which was 116 lines in the trial. Group by providing system, with counts, and list rows only with `--detailed` (found in s09-36).
+
+- From the s09-59 agent dry run (2026-11-23), not fixed there:
+  - Requirement text is cut with "…" at `FrameworkSnapshot.TitleLength` in `hound onboard <system> pending --json`, the session and the snapshot, so an agent decides on part of the requirement. Give `pending --json` the full text.
+  - `hound onboard <system> decide --kind api_check` is accepted with no API specification given; the approve step then has nothing to show. Refuse it, or require `--spec`.
+  - The supplier assessment asks for a level with no scale named in the skill or the help. Name the scale.
+  - `pending` drafts decisions before the supplier is approved while its help says onboarding "stops here"; only the approve step waits. Reword the help.
+  - `--owner` is required but the usage line does not show it; the usage `hound onboard [<system>] profile <system>` names the system twice.
+  - `hound add collector rest` asks for no profile settings when the profile is missing from `profiles_path`; it should say the profile was not found.
 
 ## Sprint review
