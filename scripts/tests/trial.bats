@@ -260,3 +260,17 @@ LOG
   run trial_scan_source_names "$BATS_TEST_TMPDIR/missing.log"
   [ "$status" -ne 0 ]
 }
+
+@test "the agent finds the vendor notes and the API specification the stage requests name" {
+  ws="$BATS_TEST_TMPDIR/ws"
+  trial_seed_inputs "$BATS_TEST_DIRNAME/../.." "$ws"
+  for supplier in oracle sophos ciso-assistant evidence-hound; do
+    grep -qi "fictional" "$ws/inbox/$supplier.md"
+  done
+  grep -q "firmware-upgrade-check" "$ws/specs/sophos-central.openapi.yaml"
+  grep -q "/whoami/v1" "$ws/specs/sophos-central.openapi.yaml"
+  # Seeding again changes nothing the person or agent wrote.
+  printf 'mine\n' >"$ws/inbox/oracle.md"
+  trial_seed_inputs "$BATS_TEST_DIRNAME/../.." "$ws"
+  [ "$(cat "$ws/inbox/oracle.md")" = mine ]
+}
