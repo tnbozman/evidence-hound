@@ -4,7 +4,7 @@
 profile: sophos-central
 version: "1.0.0"
 source: evidence-hound/profiles/sophos-central.yaml
-description: Sophos Central firewalls (firmware) and admins (Super Admin count), read with a tenant API credential.
+description: Sophos Central firewalls (firmware support and upgrade age) and admins (Super Admin count), read with a tenant API credential.
 requires:
   hound: ">=0.1"
 
@@ -25,6 +25,10 @@ parameters:
     type: list
     required: true
     description: Supported SFOS versions, for example "21.0, 21.5". 21.0 covers 21.0.1 and later 21.0 builds.
+  firmware_update_days:
+    type: int
+    default: 14
+    description: Most days a firewall may have a firmware upgrade offered before it fails (ISM-1694 allows two weeks).
   super_admin_max:
     type: int
     default: 2
@@ -63,6 +67,15 @@ queries:
     paging: { style: page_number, page: page, total_pages: $.pages.total }
     items: $.items
     identities: [hostname, name, serialNumber, ipv4Addresses, ipv6Addresses, macAddresses, externalIpv4Addresses, externalIpv6Addresses, internalIpv4Addresses, geoLocation]
+  # Which firmware upgrades Sophos Central offers each firewall. A POST that changes nothing; Sophos Central gives no release dates,
+  # so the check counts an offer's age from hound's earlier runs (history below).
+  firmware_upgrades:
+    for_each: firewalls
+    max_calls: 100
+    post: ${data_region}/firewall/v1/firewalls/actions/firmware-upgrade-check
+    headers: { X-Tenant-ID: "${tenant_id}" }
+    body: { firewalls: ["${item.id}"] }
+    items: $.firewalls
   admins:
     get: ${data_region}/common/v1/admins
     headers: { X-Tenant-ID: "${tenant_id}" }
@@ -85,6 +98,13 @@ checks:
     require: all
     when_empty: not_applicable
     describe: "{passed} of {total} firewalls run supported firmware. Supported: ${supported_firewall_firmware}."
+
+  - id: network.firewall.firmware_current
+    title: Firewalls take firmware upgrades within the allowed days
+    over: [firewalls, firmware_upgrades]
+    history: firmware_upgrades
+    code: sophos.firmware_upgrade_age
+    with: { days: "${firmware_update_days}" }
 
   - id: network.management.super_admin_count
     title: Few Sophos Central admins hold Super Admin

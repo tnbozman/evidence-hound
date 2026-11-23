@@ -27,7 +27,7 @@ public static class ProfileParser
     private static readonly string[] DatasetKeys = ["from", "join", "flatten", "where", "fields"];
     private static readonly string[] JoinKeys = ["with", "on", "as", "optional"];
     private static readonly string[] OnKeys = ["left", "right"];
-    private static readonly string[] CheckKeys = ["id", "title", "over", "where", "each", "require", "when_empty", "describe", "code", "with"];
+    private static readonly string[] CheckKeys = ["id", "title", "over", "where", "each", "require", "when_empty", "describe", "code", "with", "history"];
     private static readonly string[] TestModifiers = ["field", "missing", "negate"];
 
     /// <summary>The YAML name of each value.</summary>
@@ -353,6 +353,7 @@ public static class ProfileParser
                 Describe = OptionalText(map, "describe"),
                 Code = OptionalText(map, "code"),
                 With = Strings(map, "with"),
+                History = OptionalText(map, "history"),
             };
         }
 

@@ -48,6 +48,13 @@ requirements:
     checks:
       - endpoint.os.supported_versions
       - network.firewall.firmware_supported
+  # Patch operating systems. Internet-facing network devices: no firmware upgrade offered to a Sophos Central firewall for more
+  # than firmware_update_days (14). Internet-facing servers, and fixes for exploited vulnerabilities within 48 hours, still need
+  # the scanner and patch records (s09-03, s09-04).
+  - ref: ISM-1694
+    rule: all_pass
+    checks:
+      - network.firewall.firmware_current
   # Patch operating systems. Stands for ISM-1695 only if the Intune compliance policy requires a minimum OS version that tracks monthly updates.
   - ref: ISM-1695
     rule: all_pass
@@ -154,8 +161,6 @@ manual_only:
   - ref: ISM-1702  # Patch operating systems
     source: Vulnerability scanner reports and operating system patch records, exported monthly and attested by the infrastructure owner.
   - ref: ISM-1877  # Patch operating systems
-    source: Vulnerability scanner reports and operating system patch records, exported monthly and attested by the infrastructure owner.
-  - ref: ISM-1694  # Patch operating systems
     source: Vulnerability scanner reports and operating system patch records, exported monthly and attested by the infrastructure owner.
   - ref: ISM-1679  # Multi-factor authentication
     source: Identity provider MFA configuration export and policy review, attested by the identity owner.

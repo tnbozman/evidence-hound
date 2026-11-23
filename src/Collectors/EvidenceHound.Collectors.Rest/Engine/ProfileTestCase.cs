@@ -8,6 +8,9 @@ namespace EvidenceHound.Collectors.Rest.Engine;
 /// <summary>One recorded answer: the request it answers (method, path, and the query values it requires) and the response.</summary>
 public sealed record RecordedResponse(string Method, string Path, IReadOnlyDictionary<string, string> Query, int Status, string? File, string? Body);
 
+/// <summary>An evidence file an earlier run saved, for a check with <c>history</c>: when it was collected, its name, and the recording.</summary>
+public sealed record RecordedEvidence(DateTimeOffset At, string Evidence, string File);
+
 /// <summary>
 /// One test case of a profile, read from <c>&lt;profile&gt;.tests/&lt;case&gt;.yaml</c>: the instance's settings and (fake) secrets, the
 /// run's clock, the recorded answers, and the result each check must give.
@@ -21,10 +24,13 @@ public sealed record ProfileTestCase(
     IReadOnlyList<RecordedResponse> Responses,
     IReadOnlyDictionary<string, string> Expect)
 {
+    /// <summary>Earlier runs' evidence files, which checks with <c>history</c> are given.</summary>
+    public IReadOnlyList<RecordedEvidence> History { get; init; } = [];
+
     /// <summary>The result names a case can expect.</summary>
     public static IReadOnlyList<string> Results { get; } = ["pass", "fail", "partial", "not_applicable", "unable_to_assess"];
 
-    private static readonly string[] Keys = ["description", "now", "settings", "secrets", "responses", "expect"];
+    private static readonly string[] Keys = ["description", "now", "settings", "secrets", "responses", "history", "expect"];
 
     private static readonly string[] Methods = ["get", "post", "put", "patch", "delete"];
 
@@ -74,9 +80,16 @@ public sealed record ProfileTestCase(
             _ => Fail<List<RecordedResponse>>(problems, "'responses' must be a list.", []),
         };
 
+        var history = Child(root, "history") switch
+        {
+            null => [],
+            YamlSequenceNode list => list.Children.Select(node => Earlier(node, problems)).OfType<RecordedEvidence>().ToList(),
+            _ => Fail<List<RecordedEvidence>>(problems, "'history' must be a list.", []),
+        };
+
         return problems.Count > 0
             ? Invalid(name, string.Join(" ", problems))
-            : Result.Ok(new ProfileTestCase(name, Text(root, "description") ?? "", now!.Value, Map(root, "settings", problems), Map(root, "secrets", problems), responses, expect));
+            : Result.Ok(new ProfileTestCase(name, Text(root, "description") ?? "", now!.Value, Map(root, "settings", problems), Map(root, "secrets", problems), responses, expect) { History = history });
     }
 
     private static RecordedResponse? Response(YamlNode node, List<string> problems)
@@ -106,6 +119,21 @@ public sealed record ProfileTestCase(
         }
 
         return new RecordedResponse(method.ToUpperInvariant(), path, Map(map, "query", problems), status, file, Text(map, "body"));
+    }
+
+    private static RecordedEvidence? Earlier(YamlNode node, List<string> problems)
+    {
+        if (node is not YamlMappingNode map
+            || Text(map, "at") is not { } at || !DateTimeOffset.TryParse(at, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var collected)
+            || Text(map, "evidence") is not { Length: > 0 } evidence || Text(map, "file") is not { Length: > 0 } file)
+        {
+            return Fail<RecordedEvidence?>(problems, "each history entry is a map such as { at: 2026-11-12T02:00:00Z, evidence: firmware_upgrades.json, file: recordings/history/x.json }.", null);
+        }
+
+        problems.AddRange(Unknown(map, ["at", "evidence", "file"]).Select(k => $"unknown history key '{k}'; use at, evidence, file."));
+        return Path.IsPathRooted(file) || file.Split('/', '\\').Contains("..")
+            ? Fail<RecordedEvidence?>(problems, $"the history file '{file}' must be inside the tests folder.", null)
+            : new RecordedEvidence(collected, evidence, file);
     }
 
     private static Dictionary<string, string> Map(YamlMappingNode map, string key, List<string> problems)
