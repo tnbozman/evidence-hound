@@ -38,6 +38,14 @@ public sealed class ExplainCommandTests : IDisposable
         output.ShouldContain("1 file changed, 0 lines added, 1 line removed.");
         output.ShouldContain("Removes 1 line(s) naming checks or requirements from mappings/example.yaml.");
 
+        // A check removed from a profile that a mapping in the repo still uses.
+        Directory.CreateDirectory(Path.Combine(_root, "mappings"));
+        await File.WriteAllTextAsync(Path.Combine(_root, "mappings", "example.yaml"), "requirements:\n  - ref: EX-4\n    checks: [devices.supported_os]\n", _ct);
+        const string profileDiff = "--- a/profiles/example.yaml\n+++ b/profiles/example.yaml\n@@ -1,2 +1,1 @@\n checks:\n-  - id: devices.supported_os\n";
+        (exit, output, error) = await RunAsync(["explain", "--no-model", "--repo", _root], profileDiff);
+        exit.ShouldBe(ExitCodes.Ok, error);
+        output.ShouldContain("Removes check devices.supported_os from profiles/example.yaml, but mappings/example.yaml still uses it.");
+
         // Two versions of one file.
         var before = Path.Combine(_root, "before.yaml");
         var after = Path.Combine(_root, "after.yaml");

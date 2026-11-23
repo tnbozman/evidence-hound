@@ -767,7 +767,7 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 **Order:** after the Sophos onboarding (s09-25); needs the person's recording from s09-18.
 
 ### s09-30 Explain a config change in plain English: `hound explain` (added 2026-11-22)
-- [ ] Done
+- [x] Done
 
 **Story:** As a GRC team member reviewing a lot of new configuration, I want a plain-English summary of what a change does and what looks risky, so that I review config quickly and approve only what I understand.
 
@@ -795,7 +795,7 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 - `hound explain [<plan-or-diff> | <before> <after>] [--repo] [--framework] [--skill]... [--no-model] [--show-requests] [--config]`, reading a file, two versions of one file, or standard input (`git diff | hound explain`). It reads `hound scope plan` output (Markdown or JSON), `hound plan` output (JSON) and unified diffs.
 - `ChangeReader` reads counts, objects, topics and flags in code: not applicable rows, deletions, removed check or requirement lines in mappings and profiles, and supplier contracts that are not active. `Explanation` sends them through the onboarding gate (`onboarding/explain/requests/`), with object IDs, email, IP and MAC addresses, deny terms and secret values replaced first (`OutboundGuard.Redact`), and refuses a reply that names an object the plan or diff does not contain.
 - A new `explain` skill step and default skill `reviewing-a-config-change`; `ExplainSkills.Choose` adds the supplier, applicability, profile or mapping skills by what the change touches, and `--skill` chooses instead. The summary lists each skill with source, version and SHA-256.
-- Not yet flagged: a system without an owner, and a mapping that no longer matches a profile's checks. Both need more than the diff (the scope's systems, and the profiles' check IDs); left open on this task.
+- Also flagged: a system created or updated without an owner (from the plan's fields), and a check a diff removes from a profile that a mapping in the repo's `mappings/` still uses.
 
 **Functional check (2026-11-23)**
 - `hound explain plan.md --repo <copy of the example repo> --show-requests` with a fake Anthropic server: prints "The plan is the source of truth: 1 to create, 0 to update, 0 to delete, 0 drifted.", the not applicable flag, the fake summary and four skills; the requests shown and saved (`001-explain.request.json`) hold no email address from the plan's access review.

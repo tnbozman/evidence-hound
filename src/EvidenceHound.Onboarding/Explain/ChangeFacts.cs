@@ -45,7 +45,7 @@ public static partial class ChangeReader
     /// <summary>As <see cref="Read(string, string)"/>, also flagging checks a diff removes from a profile that <paramref name="mappings"/> (path to text) still use.</summary>
     public static Result<ChangeFacts> Read(string text, string source, IReadOnlyDictionary<string, string> mappings)
     {
-        _ = mappings;
+        ArgumentNullException.ThrowIfNull(mappings);
         ArgumentNullException.ThrowIfNull(text);
         var normalised = text.Replace("\r\n", "\n", StringComparison.Ordinal);
         var trimmed = normalised.TrimStart();
@@ -60,7 +60,7 @@ public static partial class ChangeReader
         }
 
         return normalised.Split('\n').Any(l => l.StartsWith("+++ ", StringComparison.Ordinal))
-            ? Result.Ok(DiffFacts(normalised, source))
+            ? Result.Ok(DiffFacts(normalised, source, mappings))
             : Unreadable(source);
     }
 
@@ -122,7 +122,7 @@ public static partial class ChangeReader
                 ((string?)c["action"] ?? "").ToLowerInvariant(),
                 (string?)c["kind"] ?? "",
                 (string?)c["key"] ?? "",
-                c["fields"]?.ToJsonString() ?? "")).ToArray();
+                JsonFields(c["fields"]))).ToArray();
             var drifted = root["drift"] is JsonArray drift ? drift.Count : 0;
             var shown = string.Join('\n', rows.Select(r => $"- {r.Action} {r.Kind} {r.Key}: {r.Fields}"));
             return Result.Ok(PlanFacts(source, rows, rows.Count(r => r.Action == "create"), rows.Count(r => r.Action == "update"), rows.Count(r => r.Action == "delete"), drifted, shown));
@@ -166,6 +166,11 @@ public static partial class ChangeReader
                 flags.Add($"Deletes {row.Kind} {row.Key}.");
             }
 
+            if (row.Kind == "system" && row.Action != "delete" && OwnerMissing(row.Fields))
+            {
+                flags.Add($"System {row.Key} has no owner.");
+            }
+
             if (row.Fields.Contains("not_applicable", StringComparison.Ordinal))
             {
                 topics.Add(ChangeTopic.NotApplicable);
@@ -188,7 +193,7 @@ public static partial class ChangeReader
             shown);
     }
 
-    private static ChangeFacts DiffFacts(string text, string source)
+    private static ChangeFacts DiffFacts(string text, string source, IReadOnlyDictionary<string, string> mappings)
     {
         var files = new List<FileChange>();
         string? from = null;
@@ -254,6 +259,16 @@ public static partial class ChangeReader
                 flags.Add(string.Create(CultureInfo.InvariantCulture, $"Removes {removedChecks} line(s) naming checks or requirements from {file.Path}."));
             }
 
+            if (Has(file.Path, "profiles"))
+            {
+                var kept = file.Added.Select(l => CheckId().Match(l)).Where(m => m.Success).Select(m => m.Groups["id"].Value).ToHashSet(StringComparer.Ordinal);
+                foreach (var id in file.Removed.Select(l => CheckId().Match(l)).Where(m => m.Success).Select(m => m.Groups["id"].Value).Where(id => !kept.Contains(id)).Distinct(StringComparer.Ordinal))
+                {
+                    flags.AddRange(mappings.Where(m => Names(m.Value, id)).OrderBy(m => m.Key, StringComparer.Ordinal)
+                        .Select(m => $"Removes check {id} from {file.Path}, but {m.Key} still uses it."));
+                }
+            }
+
             if (Has(file.Path, "third-parties"))
             {
                 flags.AddRange(file.Added.Select(l => ContractStatus().Match(l)).Where(m => m.Success && m.Groups["status"].Value != "active")
@@ -295,6 +310,18 @@ public static partial class ChangeReader
             yield return ChangeTopic.Audit;
         }
     }
+
+    /// <summary>Whether a plan row's fields (<c>field: new</c> or <c>field: old → new</c>, joined by <c>&lt;br&gt;</c>) leave the owner empty.</summary>
+    private static bool OwnerMissing(string fields) =>
+        fields.Split("<br>").Select(f => f.Trim()).Any(f => f == "owner:" || (f.StartsWith("owner:", StringComparison.Ordinal) && (f.EndsWith("→ (none)", StringComparison.Ordinal) || f.EndsWith('→'))));
+
+    private static string JsonFields(JsonNode? fields) =>
+        fields is not JsonArray array ? fields?.ToJsonString() ?? ""
+        : string.Join("<br>", array.OfType<JsonObject>().Select(f => (Field: (string?)f["field"] ?? "", Old: (string?)f["old"], New: (string?)f["new"]))
+            .Select(f => f.Old is null ? $"{f.Field}: {f.New}" : $"{f.Field}: {f.Old} → {f.New ?? "(none)"}"));
+
+    private static bool Names(string text, string id) =>
+        Regex.IsMatch(text, $@"(?<![\w.]){Regex.Escape(id)}(?![\w.])", RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1));
 
     private static bool Has(string path, string folder) => path.Split('/').Contains(folder, StringComparer.Ordinal);
 
@@ -361,6 +388,9 @@ public static partial class ChangeReader
 
     [GeneratedRegex(@"^\s*(?:-\s*(?:ref|urn|id|check)\s*:|checks\s*:)", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 1000)]
     private static partial Regex CheckLine();
+
+    [GeneratedRegex(@"^\s*-\s*id\s*:\s*""?(?<id>[A-Za-z0-9_.-]+)", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex CheckId();
 
     [GeneratedRegex(@"^\s*status\s*:\s*""?(?<status>[a-z_]+)", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 1000)]
     private static partial Regex ContractStatus();

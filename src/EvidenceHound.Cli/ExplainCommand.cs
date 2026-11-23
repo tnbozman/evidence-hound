@@ -74,17 +74,24 @@ internal static class ExplainCommand
 
     private static async Task<Result<ChangeFacts>> ReadAsync(IReadOnlyList<FileInfo> files, string root, Terminal terminal, CancellationToken cancellationToken)
     {
+        var folder = Path.Combine(root, "mappings");
+        var mappings = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var mapping in Directory.Exists(folder) ? Directory.GetFiles(folder, "*.yaml").Order(StringComparer.Ordinal).ToArray() : [])
+        {
+            mappings[$"mappings/{Path.GetFileName(mapping)}"] = await File.ReadAllTextAsync(mapping, cancellationToken);
+        }
+
         switch (files)
         {
             case []:
                 var input = await terminal.Input.ReadToEndAsync(cancellationToken);
                 return input.Trim().Length == 0
                     ? Result.Fail<ChangeFacts>(new Problem("explain.nothing", "Nothing to explain: name a saved plan or diff, two versions of a file, or pipe one in, such as 'git diff | hound explain'."))
-                    : ChangeReader.Read(input, "standard input");
+                    : ChangeReader.Read(input, "standard input", mappings);
             case [var one]:
                 return !one.Exists
                     ? Missing(one)
-                    : ChangeReader.Read(await File.ReadAllTextAsync(one.FullName, cancellationToken), one.Name);
+                    : ChangeReader.Read(await File.ReadAllTextAsync(one.FullName, cancellationToken), one.Name, mappings);
             case [var before, var after]:
                 if (!before.Exists || !after.Exists)
                 {
@@ -93,7 +100,7 @@ internal static class ExplainCommand
 
                 var name = Path.GetRelativePath(root, after.FullName).Replace('\\', '/');
                 var diff = ChangeReader.Diff(await File.ReadAllTextAsync(before.FullName, cancellationToken), await File.ReadAllTextAsync(after.FullName, cancellationToken), name.StartsWith("..", StringComparison.Ordinal) ? after.Name : name);
-                return ChangeReader.Read(diff, $"{before.Name} to {after.Name}");
+                return ChangeReader.Read(diff, $"{before.Name} to {after.Name}", mappings);
             default:
                 return Result.Fail<ChangeFacts>(new Problem("explain.too_many", "Give one plan or diff, or two versions of one file."));
         }

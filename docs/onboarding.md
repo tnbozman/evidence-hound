@@ -74,7 +74,8 @@ the output of `hound scope plan` (Markdown or `--json`), `hound plan`, a diff (a
 versions of one file (`hound explain before.yaml after.yaml`).
 
 - **Code reads it first.** The counts, the objects and what needs a careful look (requirements newly marked not applicable, deletions,
-  removed checks in mappings or profiles, a supplier contract that is not active) come from code, not the model. The plan is the source
+  removed checks in mappings or profiles, a check removed from a profile that a mapping in `mappings/` still uses, a system
+  without an owner, a supplier contract that is not active) come from code, not the model. The plan is the source
   of truth: the summary quotes its counts, and a reply that names an object the plan does not contain is refused (`llm.invalid_reply`).
 - **The right skills.** The `explain` step's skills, plus those for what the change touches: third parties get the supplier skills,
   not-applicable rows the applicability skill, profiles the profile authoring skill, mappings and audits the framework's mapping skill
