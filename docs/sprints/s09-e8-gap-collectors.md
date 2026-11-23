@@ -980,6 +980,8 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 
 Functional check, run 2026-11-23 with `--no-model` (the answers files stand in for the fake model): following the tutorial on a fresh copy of the template reproduces `scope/setup.yaml`, both audits and both onboarding records exactly (apart from the schema comment line), `hound config validate` and `hound scope validate scope --config hound.yaml` pass (4 third parties, 5 audits), and `hound profile test` passes for `sophos-central` and `terraform-drift`. `TutorialTests.Onboarding_tutorial_answers_reproduce_the_committed_files` repeats this in the unit suite. The plan against CISO Assistant is `OnboardingTutorialFunctionalTests` (suppliers applied, reviews concluded ok, then the plan creates both systems and audits), run in CI: passed in CI run 45121842725 (2026-11-23, head 6648e42), with the whole functional suite.
 
+Re-checked 2026-11-23 after the OCI Terraform mock control tests (s09-53, PR #28) merged: the tutorial's step 6 "Prove the hosting controls" names `infra/oci/tests/controls.tftest.hcl` and the `grc-infra-controls` profile, `TutorialTests` pass, and CI's `make test-terraform` job passed (run 45190409531). Nothing left to change.
+
 **Order:** after the hands-on Sophos path (s09-25).
 
 ### s09-33 Infrastructure drift from the IaC pipeline's plan artefact, without a Terraform dependency (added 2026-11-23)
