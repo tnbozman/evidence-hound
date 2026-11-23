@@ -102,7 +102,7 @@ From a Nessus export:
 
 | File | Contents |
 | --- | --- |
-| The current export | The export itself, unchanged. |
+| The current export | The export itself, unchanged. A Nessus export is stored as `<name>.nessus.xml`, because CISO Assistant refuses the `.nessus` extension. |
 | `scan.json` | The current scan, parsed: scope, owner, file, SHA-256, scan date, hosts, and each finding with host, finding ID, name, severity, CVEs, first seen, patch published, exploit available and unsupported. |
 | `scan-history.json` | Every export read, newest first: file, SHA-256, scan date, number of hosts and number of findings. |
 | `patch-assessment.json` | The policy used, and every overdue finding (host, finding ID, name, severity, exploit, what its age counts from, since when, its age and window in hours) and every unsupported one. The checks name at most 20; this file has them all. |
