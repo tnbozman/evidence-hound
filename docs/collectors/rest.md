@@ -54,6 +54,7 @@ collectors:
 | `profile` | yes | The profile's name, its file name without `.yaml`. |
 | `profiles_path` | no | The profiles folder. Default `/etc/evidence-hound/profiles`. |
 | `include_identities` | no | `true` keeps the identities the profile lists in evidence. Default `false`: they are hashed. |
+| `allow_writes` | no | `true` lets the profile's `write: true` queries run, such as the opt-in pipeline trigger of `terraform-drift-trigger`. Default `false`: they are refused and nothing is sent. Give the instance a token that can do only that one write. |
 | `require_profile_tests` | no | `true` makes a profile without tests unable to assess. Default `false`: a warning in the log. |
 
 Every other setting is one of the profile's `parameters`, and every secret one of its `secrets`. `hound add collector rest --set profile=<name>` asks for the ones the profile requires. `hound config validate` checks each instance against its profile: unknown settings, missing parameters, values of the wrong type and missing secrets are all reported before anything is called.
@@ -179,6 +180,7 @@ A **bootstrap** query runs before the others, is not saved as evidence and canno
 | `optional_on` | Status codes that mean "not available here", such as a missing licence: `[403, 404]`. Checks over it become not applicable, with the reason. |
 | `async` | A report run as a job: `status_url` (path in the first answer), `done` (a test on the status answer), `result_url`, `poll_seconds` and `timeout_seconds`. |
 | `format` | `auto` (from the content type), `json`, `xml`, `csv` or `zip`. `arrays` names XML paths that are always lists. |
+| `write` | `true` marks a query that changes something, such as starting a pipeline run (`terraform-drift-trigger`). It runs only when the collector instance also sets `allow_writes: true`; otherwise nothing is sent and checks over it are unable to assess. Every other query only reads. |
 | `redirect_hosts` | Hosts other than the API's that a redirect from this query's GET may lead to, such as the signed storage a pipeline artefact downloads from. They get a plain GET with no sign-in and no headers, so they never receive credentials. Any other redirect off the API's host is refused (`rest.redirect_refused`). |
 | `member` | With `format: zip` (a pipeline artefact, for example), the file in the archive to read, as JSON, XML or CSV by its extension. Required with `zip`, refused without it. The archive and the unzipped member both count towards `max_bytes`, so a member that unzips past the cap is refused. |
 | `keep` | Keep only these properties of each item, in memory and in evidence, for very large lists. |

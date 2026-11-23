@@ -33,6 +33,9 @@ public sealed class QueryEngine(HttpClient http, IClock clock, IDelay delay)
             cancellationToken.ThrowIfCancellationRequested();
             var scoped = renderer.WithVars(vars);
             var result = Blocked(query, dependencies[query.Name], results)
+                ?? (query.Write && !values.AllowWrites
+                    ? new QueryResult.Failed(query.Name, "It changes something (write: true), and this instance does not set allow_writes: true, so nothing was sent.")
+                    : null)
                 ?? await baseUrl.Match(
                     url => new QueryRun(query, scoped, url, sender, clock, delay).RunAsync(results, cancellationToken),
                     problems => Task.FromResult<QueryResult>(new QueryResult.Failed(query.Name, Describe(problems))));

@@ -147,6 +147,9 @@ public sealed record Query(string Name, string Method, string Path)
 
     public ResponseFormat Format { get; init; } = ResponseFormat.Auto;
 
+    /// <summary>The query changes something, such as starting a pipeline run. It runs only when the instance sets <c>allow_writes: true</c>.</summary>
+    public bool Write { get; init; }
+
     /// <summary>Hosts other than the API's that a redirect may lead to, such as signed download storage. They receive a plain GET without credentials.</summary>
     public IReadOnlyList<string> RedirectHosts { get; init; } = [];
 

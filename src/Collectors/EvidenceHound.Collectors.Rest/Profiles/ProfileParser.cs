@@ -20,7 +20,7 @@ public static class ProfileParser
     private static readonly string[] TlsKeys = ["pinned_thumbprint", "client_certificate"];
     private static readonly string[] QueryKeys =
     [
-        "get", "post", "headers", "query", "body", "paging", "items", "identities", "vars", "for_each", "max_calls", "optional_on", "async", "format", "member", "redirect_hosts", "arrays", "keep",
+        "get", "post", "headers", "query", "body", "paging", "items", "identities", "vars", "for_each", "max_calls", "optional_on", "async", "format", "member", "redirect_hosts", "write", "arrays", "keep",
         "max_items", "max_bytes", "max_pages",
     ];
     private static readonly string[] AsyncKeys = ["status_url", "done", "result_url", "poll_seconds", "timeout_seconds"];
@@ -257,6 +257,7 @@ public static class ProfileParser
             {
                 Member = member,
                 RedirectHosts = Texts(map, "redirect_hosts"),
+                Write = OptionalText(map, "write") is { } write && (write == "true" || (write != "false" && Problem(map, "profile.value_invalid", $"query '{name}': 'write' is true or false.", false))),
                 Headers = Strings(map, "headers"),
                 Parameters = Strings(map, "query"),
                 Body = Child(map, "body") is { } body ? ToJson(body) : null,

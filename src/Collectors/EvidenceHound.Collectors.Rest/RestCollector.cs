@@ -15,6 +15,7 @@ public static class RestSettings
     public const string ProfilesPath = "profiles_path";
     public const string IncludeIdentities = "include_identities";
     public const string RequireProfileTests = "require_profile_tests";
+    public const string AllowWrites = "allow_writes";
 }
 
 /// <summary>
@@ -51,6 +52,7 @@ public sealed partial class RestCollector : ICollector, IInstanceValidator
             new(RestSettings.Profile, "Name of the profile in the profiles folder, for example sophos-central.", Required: true),
             new(RestSettings.ProfilesPath, $"The profiles folder, mounted read-only. Default: {ProfileFolder.DefaultPath}.", Required: false, IsPath: true),
             new(RestSettings.IncludeIdentities, "true keeps names, addresses and other identities in evidence. Default: false (hashed).", Required: false),
+            new(RestSettings.AllowWrites, "true lets queries the profile marks write: true run, such as starting a pipeline run. Default: false (they are refused, nothing is sent).", Required: false),
             new(RestSettings.RequireProfileTests, "true makes a profile without tests (<profile>.tests/) unable to assess. Default: false (a warning).", Required: false),
         ],
         [])
@@ -166,7 +168,10 @@ public sealed partial class RestCollector : ICollector, IInstanceValidator
             .Where(p => p.Value is not null)
             .ToDictionary(p => p.Name, p => p.Value!, StringComparer.Ordinal),
         context.Secrets,
-        bool.TryParse(context.Settings.Find(RestSettings.IncludeIdentities), out var include) && include);
+        bool.TryParse(context.Settings.Find(RestSettings.IncludeIdentities), out var include) && include)
+    {
+        AllowWrites = bool.TryParse(context.Settings.Find(RestSettings.AllowWrites), out var allow) && allow,
+    };
 
     private static Result<LoadedProfile> Load(CollectorSettings settings) =>
         settings.Find(RestSettings.Profile) is { Length: > 0 } name
