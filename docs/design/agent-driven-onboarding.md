@@ -38,6 +38,17 @@ The person running the trial asked for a best-effort pass that a small business 
 
    Agents get only the tools their job needs: the review agent has `read`, `search` and `execute` (to run `hound`) but not `edit`, because VS Code warns that an instruction not to edit is no permission boundary. Approvals are enforced by `hound`, not by the agent files.
 
+## Principle: one hound, two ways to drive it
+
+Every command works for a person at the terminal and for an agent at the terminal, with nothing either can do that the other cannot (except approve):
+
+- **A person** gets prompts, with a hint and an example for each answer, and plain-text output.
+- **An agent** gives the same answers as options and reads `--json` output; nothing waits on a prompt.
+- **Both** go through the same validation, the same plan and the same records, so a decision reads the same however it was made, apart from saying who drafted it.
+- **Approvals are the one exception:** they need a person on a terminal, whoever drove the rest.
+
+A task that adds or changes a command is done only when both ways work and are tested.
+
 ## Rules that do not change
 
 - **No model in evidence collection, and no evidence without a person.** `hound run`, `hound serve` and every collector stay model-free. For manual evidence an agent may read the file and propose a result, but a result becomes evidence only when a person attests it with `hound manual approve` (decision 10). This rewords the rule of the [onboarding assistant design](onboarding-assistant.md), at the maintainer's request: the person attests, as before, with the agent's proposal in front of them.
