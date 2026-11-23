@@ -914,6 +914,29 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 
 **Order:** after the hands-on Sophos path (s09-25), with s09-32.
 
+### s09-34 Ref ID conventions enforced at the prompt and in scope validate (added 2026-11-23)
+- [ ] Done
+
+Added at the person's request after the s09-22 onboarding trial, where a contract ref was saved as "Renewal" because prompts only suggested the prefix.
+
+**Story:** As a GRC lead, I want every ref ID to follow one convention (SUP-, SOL-, CTR- and the rest), shown in the terminal so I only type the part after the prefix, so that the repo and CISO Assistant read the same way whoever wrote them.
+
+**Acceptance criteria**
+- One table of conventions in the core, used by every prompt and by validation: `SUP-` supplier (third party), `SOL-` solution, `CTR-` contract, `SYS-` system, `AC-` applied control, `PER-` perimeter, `EA-` entity assessment. The part after the prefix is upper case letters, digits and hyphens.
+- Every prompt for a ref ID (`hound init`, `hound add system|control`, `hound onboard <system>`) prints the prefix as part of the prompt (`Supplier ref_id: SUP-`) and takes only the rest; the answer is upper-cased, and anything else (spaces, other characters, empty) is asked again with the rule. A `--ref-id` option given in full with the right prefix is accepted as it is; with the prefix left out, the prefix is added.
+- `hound scope validate` reports a ref ID without its kind's prefix or with other characters as `scope.ref_id_convention`, naming the file, line, kind and expected prefix, with the suggested fix. Audit ref IDs keep their own form (`<CODE>-<FRAMEWORK>-<YEAR>`, as `hound init` writes) and are checked against it.
+- The example compliance repo, tutorials and `docs/scope.md` follow the conventions and document the table once.
+
+**Tests first**
+- `RefIdConventionTests.Prefix_and_allowed_characters_per_kind`
+- `OnboardSystemCommandTests.Ref_id_prompts_show_the_prefix_and_take_the_rest`
+- `AddSystemCommandTests.Ref_id_without_its_prefix_gets_it`
+- `ScopeValidatorTests.Ref_id_without_the_kinds_prefix_is_reported`
+- `ExampleRepoTests`: the example repo validates under the conventions.
+
+**Functional check**
+- `hound onboard SOPHOS-FIREWALL ... --no-model` in the trial repo: the supplier, solution and contract prompts show `SUP-`, `SOL-` and `CTR-`; typing "renewal" for the contract gives `CTR-RENEWAL`; a hand-edited `ref_id: Renewal` in `scope/third-parties/` fails `hound scope validate` with `scope.ref_id_convention`.
+
 ## Discovered work
 
 - s09-28: the capability map's signals do not yet include devices onboarded to Defender for Endpoint (`security/machines` needs a Defender API permission, not Graph). Add when s09-02 reads Defender.
