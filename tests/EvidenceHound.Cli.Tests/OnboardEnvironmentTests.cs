@@ -1,5 +1,15 @@
+using EvidenceHound.Collectors.M365;
+using EvidenceHound.Core.Results;
 using EvidenceHound.Core.Scope;
 using EvidenceHound.Core.Yaml;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using WireMock.RequestBuilders;
+using WireMock.ResponseBuilders;
+using WireMock.Server;
+using AccessToken = Azure.Core.AccessToken;
+using TokenCredential = Azure.Core.TokenCredential;
+using TokenRequestContext = Azure.Core.TokenRequestContext;
 
 namespace EvidenceHound.Cli.Tests;
 
@@ -77,19 +87,84 @@ public sealed class OnboardEnvironmentTests : IDisposable
         (await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "audits", "ex-e8-2026.yaml"), _ct)).ShouldBe(audit);
     }
 
+    [Fact]
+    public async Task Graph_signals_come_from_the_m365_collector_in_hound_yaml()
+    {
+        using var graph = WireMockServer.Start();
+        Respond(graph, "/v1.0/subscribedSkus", """{"value": [{"skuPartNumber": "AAD_PREMIUM_P2", "capabilityStatus": "Enabled"}]}""");
+        Respond(graph, "/v1.0/deviceManagement/deviceConfigurations", """{"value": [{"@odata.type": "#microsoft.graph.windowsUpdateForBusinessConfiguration", "id": "c1"}]}""");
+        var config = Path.Combine(Repo, "hound.yaml");
+        var text = await File.ReadAllTextAsync(config, _ct);
+        await File.WriteAllTextAsync(
+            config,
+            text.Replace("      supported_windows_builds: \"10.0.22631, 10.0.26100\"\n", $"      supported_windows_builds: \"10.0.22631, 10.0.26100\"\n      graph_url: {graph.Url}/\n", StringComparison.Ordinal)
+                .Replace("client_certificate: file:/run/secrets/m365_client_certificate", "client_secret: env:EXAMPLE_M365_SECRET", StringComparison.Ordinal),
+            _ct);
+
+        var (exit, _, error) = await RunAsync("Alex Example\nGRC lead\ng\na\nq\n", ["--graph", "example-m365"]);
+
+        exit.ShouldBe(ExitCodes.Ok, error);
+        error.ShouldContain("Microsoft Graph (example-m365): Intune holds a Windows Update for Business ring");
+        error.ShouldNotContain("example-client-secret-value");
+        graph.LogEntries.Count.ShouldBe(2);
+        var map = await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "capabilities.yaml"), _ct);
+        map.ShouldContain("Example 365");
+    }
+
+    [Fact]
+    public async Task Graph_and_recorded_signals_are_not_both_given()
+    {
+        var (exit, _, error) = await RunAsync("", ["--graph", "example-m365", "--signals", Path.Combine(Repo, "signals.json")]);
+
+        exit.ShouldBe(ExitCodes.Configuration, error);
+        error.ShouldContain("not both");
+    }
+
+    [Fact]
+    public async Task An_unknown_collector_is_named()
+    {
+        var (exit, _, error) = await RunAsync("", ["--graph", "example-nothing"]);
+
+        exit.ShouldBe(ExitCodes.Configuration, error);
+        error.ShouldContain("example-nothing");
+    }
+
     public void Dispose() => Directory.Delete(_root, recursive: true);
 
-    private async Task<(int Exit, string Output, string Error)> RunAsync(string input)
+    private async Task<(int Exit, string Output, string Error)> RunAsync(string input, string[]? source = null)
     {
         string[] args =
         [
             "onboard", "environment", "--repo", Repo, "--framework", Path.Combine(Repo, "frameworks", "essential-eight-2023.json"),
-            "--signals", Path.Combine(Repo, "signals.json"), "--microsoft-system", "Example 365", "--no-model",
+            .. source ?? ["--signals", Path.Combine(Repo, "signals.json")], "--microsoft-system", "Example 365", "--no-model",
         ];
         using var reader = new StringReader(input);
         using var output = new StringWriter();
         using var error = new StringWriter();
-        var exit = await HoundCli.RunAsync(args, reader, output, error, new Dictionary<string, string?>(StringComparer.Ordinal) { ["XDG_CONFIG_HOME"] = Path.Combine(_root, "home") }, _ct);
+        var settings = new Dictionary<string, string?>(StringComparer.Ordinal)
+        {
+            ["XDG_CONFIG_HOME"] = Path.Combine(_root, "home"),
+            ["EXAMPLE_M365_SECRET"] = "example-client-secret-value-7c2d",
+        };
+        var exit = await HoundCli.RunAsync(
+            args, reader, output, error, null, [], settings, services => services.Replace(ServiceDescriptor.Singleton<IGraphCredentialFactory>(new FixedCredentials())), _ct);
         return (exit, output.ToString(), error.ToString());
+    }
+
+    private static void Respond(WireMockServer server, string path, string body) =>
+        server.Given(Request.Create().WithPath(path).UsingGet()).RespondWith(Response.Create().WithStatusCode(200).WithHeader("Content-Type", "application/json").WithBody(body));
+
+    /// <summary>Hands out a made-up token, whatever the app registration.</summary>
+    private sealed class FixedCredentials : IGraphCredentialFactory
+    {
+        public Result<TokenCredential> Create(GraphConnection connection) => Result.Ok<TokenCredential>(new Fixed());
+
+        private sealed class Fixed : TokenCredential
+        {
+            public override AccessToken GetToken(TokenRequestContext requestContext, CancellationToken cancellationToken) => new("example-graph-token", DateTimeOffset.UtcNow.AddHours(1));
+
+            public override ValueTask<AccessToken> GetTokenAsync(TokenRequestContext requestContext, CancellationToken cancellationToken) =>
+                ValueTask.FromResult(GetToken(requestContext, cancellationToken));
+        }
     }
 }

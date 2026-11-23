@@ -67,7 +67,7 @@ public sealed class EnvironmentLookupTests : IDisposable
 
     private static IReadOnlyDictionary<string, Secret> Secrets { get; } = new Dictionary<string, Secret> { ["client_secret"] = new("example-client-secret-value-1b8e") };
 
-    private EnvironmentLookup Lookup() => new(new TestCredentialFactory(), new RecordingWait());
+    private static EnvironmentLookup Lookup() => new(new TestCredentialFactory(), new RecordingWait());
 
     private CollectorSettings Settings() => new(new Dictionary<string, string>
     {
