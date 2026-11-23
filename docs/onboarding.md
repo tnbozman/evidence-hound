@@ -189,6 +189,15 @@ hound onboard environment --repo . --graph example-m365      # read the signals 
 The default skill `environment-capabilities` describes how to tell which product is authoritative; organisation skills that apply to the
 `environment` step extend it. Both reach a coding assistant through its skill files and `pending --json`.
 
+### Microsoft 365: which capabilities it provides
+
+Run it with `--graph <m365 collector>` to read the tenant's licences and Intune configuration kinds live, read-only, as that collector of
+`hound.yaml`. Microsoft 365 is then suggested for the mitigations they cover. An accepted suggestion is written with `evidence: collector`
+and `route: <collector>`, so the collector's checks for that capability run; a mitigation you give to another product (an application
+control or identity product, for example) is routed away from Microsoft 365, and its checks there answer not applicable, naming that
+product. See [Capabilities](collectors/m365.md#capabilities). With `--signals` (recorded answers) nothing is routed, because no collector
+read them; set `route` by hand, or `system` on the collector.
+
 ## Set up your coding assistant: hound agent setup
 
 ```console
