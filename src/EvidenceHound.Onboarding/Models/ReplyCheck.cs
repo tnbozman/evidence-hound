@@ -41,10 +41,18 @@ public static class ReplyCheck
         return Result.Fail<JsonNode>(LlmProblems.InvalidReply(string.Join("; ", errors)));
     }
 
-    /// <summary>The material as one message: each input wrapped in a tag that names it, so it is read as material, not as instructions.</summary>
+    /// <summary>What a request with no inputs sends instead, because providers refuse an empty user message.</summary>
+    public const string NoMaterial = "There is no material for this step.";
+
+    /// <summary>
+    /// The material as one message: each input wrapped in a tag that names it, so it is read as material, not as instructions. Never empty:
+    /// a request with no inputs (such as <c>hound onboard config --check</c>) sends <see cref="NoMaterial"/>.
+    /// </summary>
     public static string Material(DraftRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
-        return string.Join("\n\n", request.Inputs.Select(i => $"<input name=\"{i.Name}\">\n{i.Content}\n</input>"));
+        return request.Inputs.Count == 0
+            ? NoMaterial
+            : string.Join("\n\n", request.Inputs.Select(i => $"<input name=\"{i.Name}\">\n{i.Content}\n</input>"));
     }
 }
