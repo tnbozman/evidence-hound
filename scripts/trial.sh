@@ -247,9 +247,8 @@ replay_system() {
 }
 
 replay_audit() {
-  mkdir -p "$ws/fixtures"
-  cp "$root/examples/onboarding-tutorial/answers/office-firewall.decisions.txt" "$ws/fixtures/"
-  hound no onboard "$system" --repo . </trial/fixtures/office-firewall.decisions.txt >/dev/null
+  # Typed into hound onboard as a person would: the answers reach the container on its standard input.
+  hound no onboard "$system" --repo . <"$root/examples/onboarding-tutorial/answers/office-firewall.decisions.txt" >/dev/null
 }
 
 replay_controls() {
@@ -279,7 +278,7 @@ sophos() {
       ;;
   esac
   run_collector sophos "ISM-1501, which the firewall firmware check feeds" "reads the firewalls"
-  say "ISM-1501 also needs the Microsoft 365 collector's operating system check, so it stays not assessed until step 7 runs too."
+  say "ISM-1501 also needs the Microsoft 365 collector's operating system check, so it stays not assessed until step 10 runs too."
   say "Sophos Central is read for network devices only: endpoint protection evidence comes from the endpoints' own antivirus."
 }
 
@@ -304,7 +303,7 @@ m365() {
     unattended) say "Unattended run: stopping before Microsoft 365, which needs your tenant."; return ;;
     "added already") say "An m365 collector is already in repo/hound.yaml." ;;
     add)
-      if ! ask "Try Microsoft 365 now? Use a test tenant, never a work one (docs/tutorials/local-trial.md, section 7)."; then return 0; fi
+      if ! ask "Try Microsoft 365 now? Use a test tenant, never a work one (docs/tutorials/local-trial.md, section 10)."; then return 0; fi
       say "In the tenant's Entra admin center, register an app with the six read-only Graph application permissions in"
       say "docs/collectors/m365.md and grant admin consent. The collector signs in with a certificate."
       if [[ ! -f "$pem" ]] && command -v openssl >/dev/null && ask "Make a test certificate in ${ws#"$root"/}/inbox now?"; then
