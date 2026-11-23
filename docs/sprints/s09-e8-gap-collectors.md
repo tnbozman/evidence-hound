@@ -1031,16 +1031,18 @@ Design decisions 2 and 3.
 - `hound onboard <system> pending --json`: the undecided requirements with their text, the API summary and the skills that apply.
 - `hound onboard <system> decide <requirement> --kind <api_check|manual|not_applicable|other_system> --reasoning <text> [--source <name>]... [--other-system <name>]`: records one decision as "drafted by agent", validated as the interactive flow is.
 - `hound supplier draft` takes the supplier answers and levels as options; `--json` on `scope validate`, `scope plan` and `explain`.
-- Approvals refuse an agent: a not-applicable decision drafted with `decide` stays a draft until a person confirms it on a terminal (`hound onboard <system> approve`), and supplier approval stays the person's edit and conclusion. Without a terminal, `approve` refuses.
+- Approvals happen in VS Code, never in CISO Assistant, and refuse an agent: everything a person must approve is a draft in config until `hound approve` (in a terminal) walks the person through each pending item in turn: not-applicable decisions, environment capabilities, supplier approval, and a supplier review's conclusion (`ok`, `warning` or `blocker`, who and when, written to the third-party file and applied by `hound scope apply`). Without a terminal, `approve` refuses. Approved items record who approved them and when.
 
 **Tests first**
 - `OnboardAgentCommandTests.Pending_lists_undecided_requirements_as_json`
 - `OnboardAgentCommandTests.Decide_records_a_draft_decision`
 - `OnboardAgentCommandTests.Not_applicable_stays_a_draft_until_approved_on_a_terminal`
 - `OnboardAgentCommandTests.Approve_without_a_terminal_is_refused`
+- `ApproveCommandTests.Walks_through_every_pending_approval_in_turn`
+- `SupplierReviewTests.Conclusion_in_config_is_applied_to_ciso_assistant`
 
 **Functional check**
-- The example API onboarded with `pending` and `decide` only, then `approve` on a terminal; `hound scope validate` is valid.
+- The example API onboarded with `pending` and `decide` only, then `hound approve` on a terminal; the example supplier's review concluded in config and applied; `hound scope validate` is valid and nothing was done in CISO Assistant's UI.
 
 ### s09-38 hound agent setup: skills and agent files for Claude Code and Copilot (added 2026-11-23)
 - [ ] Done
@@ -1067,10 +1069,12 @@ Design decision 9. The person chose Claude Code and Copilot custom agents in VS 
 ### s09-39 Onboard the Sophos firewall again, driven by the agent (added 2026-11-23)
 - [ ] Done
 
-**Story:** As the maintainer, I want the Sophos XGS onboarded again by Claude Code with the hound skills, so that the agent path is proven against the s09-25 run before the built-in model goes.
+**Story:** As the maintainer, I want the whole Sophos journey done again by Claude Code with the hound skills (third parties, the system, its audit and its manual evidence), so that the agent path is proven against the s09-25 run before the built-in model goes.
+
+Needs s09-36, s09-37, s09-38, s09-41 and s09-42.
 
 **Acceptance criteria**
-- In a fresh copy of the trial repo: the agent reads the vendor documents (PDF included), the API spec and the compliance card, drafts the supplier and every decision through `pending` and `decide`, iterates a profile until `hound profile test` passes, and runs the review agent before proposing apply. The person approves.
+- In a fresh copy of the trial repo: the agent drafts Sophos and the managed service provider as third parties (reading the vendor documents, PDFs included, and the compliance card), the firewall and its audit through `pending` and `decide`, iterates a profile until `hound profile test` passes, proposes results for the manual evidence the person drops in, and runs the review agent before proposing apply. The person approves everything with `hound approve` and `hound manual approve` in the VS Code terminal, and clicks nothing in CISO Assistant.
 - Compared with s09-25 in `docs/evidence/s09/s09-39.md`: decisions per kind, API checks found, profile rounds, flags the review raised and cleared, time taken. No organisation data.
 
 **Functional check**
@@ -1079,7 +1083,7 @@ Design decision 9. The person chose Claude Code and Copilot custom agents in VS 
 ### s09-40 Remove the built-in model from hound (added 2026-11-23)
 - [ ] Done
 
-Design decision 8. Only after s09-39.
+Design decision 9. Only after s09-39.
 
 **Story:** As the maintainer, I want the language model removed from `hound`, so that there are no API keys, provider SDKs or token budgets to manage, and the agent is the one way to get model help.
 
@@ -1094,6 +1098,53 @@ Design decision 8. Only after s09-39.
 
 **Functional check**
 - `make test`, `make lint` and the example tutorial pass; `dotnet list package` shows neither SDK.
+
+
+### s09-41 Agent-driven onboarding of the organisation, environment, third parties and audits (added 2026-11-23)
+- [ ] Done
+
+Design decision 5. Uses the agent interface (s09-37) and ships with `hound agent setup` (s09-38).
+
+**Story:** As a small business owner with Claude Code or Copilot, I want my agent to onboard everything (my organisation, the environment, suppliers, resellers and managed service providers, systems and audits, including my existing audit workbook), so that I review and approve in VS Code rather than build it by hand.
+
+**Acceptance criteria**
+- Agent commands, non-interactive with `--json`, for each: `hound init` with every answer as an option; `hound onboard environment` capabilities through `pending` and `decide`; `hound supplier draft` (vendor, reseller or managed service provider, solutions, contract, levels with reasons, kept documents); `hound audit draft` (framework, groups, domain, perimeter, systems); `hound scope import <workbook>` for an existing audit (requirement, result, observation, evidence reference, approver and date), keeping each row's provenance and leaving rows without an approver as drafts.
+- A skill for each, in the one skill source: onboard the organisation, onboard the environment, onboard a third party, onboard an audit, import an audit workbook. Each tells the agent to read the person's documents itself (PDFs included), to ask the person what only they know, and never to approve.
+- Everything drafted is approved through `hound approve` (s09-37).
+
+**Tests first**
+- `InitCommandTests.Every_answer_can_be_given_as_an_option`
+- `SupplierDraftCommandTests.Reseller_and_msp_are_drafted_as_their_own_third_parties`
+- `AuditDraftCommandTests.Audit_is_drafted_for_the_named_systems`
+- `ScopeImportTests.Workbook_rows_keep_their_approver_and_row`
+- `ScopeImportTests.Row_without_an_approver_is_a_draft`
+- `AgentSkillTests.Every_onboarding_kind_has_a_skill`
+
+**Functional check**
+- A fictional audit workbook (in `examples/`) imported into a copy of the example repo by Claude Code with the skills; `hound approve` on the drafts; `hound scope validate` is valid and the plan shows each imported row with its provenance.
+
+### s09-42 Manual evidence with the agent: propose, then attest in the terminal (added 2026-11-23)
+- [ ] Done
+
+Design decision 10, and the reworded rule: no model in collection, and no evidence without a person.
+
+**Story:** As a GRC lead, I want my agent to read each manual evidence file as it arrives and propose the result, so that I attest a queue of ready proposals in the VS Code terminal instead of assessing each file from scratch.
+
+**Acceptance criteria**
+- `hound manual propose <source> <file> --result <pass|fail|partial> --observation <text> --supports <extract or location>... [--json]` records a pending proposal next to the kept file (hashed); it is not evidence and no run publishes it.
+- `hound manual approve [--source <source>]` walks through every pending proposal on a terminal: the file, the agent's result, observation and supporting extracts; the person attests (`a`), changes the result or observation, or rejects with a reason. Without a terminal it refuses.
+- `hound run` publishes attested results only, recorded as "proposed by agent, attested by <person> on <date>" with the file attached and its hash; a result the person entered without a proposal reads as today.
+- A skill, process manual evidence, tells the agent to propose only from what the file shows, quote what supports it, say what is missing, and never attest.
+- `docs/engineering.md` and the onboarding docs state the reworded rule.
+
+**Tests first**
+- `ManualProposeTests.Proposal_is_pending_and_not_published`
+- `ManualApproveTests.Walks_through_pending_proposals_and_records_the_attester`
+- `ManualApproveTests.Refuses_without_a_terminal`
+- `ManualCollectorTests.Only_attested_results_are_published`
+
+**Functional check**
+- In the trial repo: a restore-test record dropped in, a proposal recorded by the agent, attested with `hound manual approve`, and `hound run --only example-backup-restore-test` publishing it with the attestation line.
 
 ## Discovered work
 

@@ -1,6 +1,6 @@
 # Design: onboarding driven by the person's own coding agent
 
-Status: Agreed (Nov 23). Changes the [onboarding assistant design](onboarding-assistant.md): the model moves out of `hound` and into the coding agent the person already uses. The build is tasks s09-36 to s09-40 in [the s09 sprint](../sprints/s09-e8-gap-collectors.md).
+Status: Agreed (Nov 23). Changes the [onboarding assistant design](onboarding-assistant.md): the model moves out of `hound` and into the coding agent the person already uses. The build is tasks s09-36 to s09-42 in [the s09 sprint](../sprints/s09-e8-gap-collectors.md).
 
 ## Why
 
@@ -20,13 +20,15 @@ The person running the trial asked for a best-effort pass that a small business 
    - `hound onboard <system> pending --json`: what is still undecided, with requirement text, the API summary and the skills that apply.
    - `hound onboard <system> decide <requirement> --kind <api_check|manual|not_applicable|other_system> --reasoning ... --source ...`: records one decision, validated, marked "drafted by agent".
    - `hound supplier draft ...`, `hound scope import ...` and the existing `hound scope validate|plan --json`, `hound profile validate|test`, `hound explain --json`.
-3. **Approvals refuse an agent.** Not-applicable decisions, supplier approval and concluding a supplier review need a person: an interactive prompt on a terminal, or the approver's own commit. A decision drafted by an agent stays a draft until then. (In the trial, Claude Code's own permission system blocked it from approving the supplier; `hound` should enforce the same.)
+3. **Approvals refuse an agent, and happen in VS Code, never in CISO Assistant.** Everything a person must approve is written in config as a draft and approved with `hound approve` in a terminal (the VS Code one), which walks the person through every pending item in turn and refuses to run without a terminal: not-applicable decisions, a system's applicability, environment capabilities, supplier approval and the conclusion of a supplier review, and manual evidence attestations (`hound manual approve` is the same walk-through for evidence only). `hound` then writes the approved state to CISO Assistant through `scope plan` and `apply` (and `run` for evidence); the person never clicks a button there. A supplier review's conclusion (`ok`, `warning` or `blocker`, who, when) lives in the third-party file. (In the trial, Claude Code's own permission system blocked it from approving the supplier, and the review had to be concluded through CISO Assistant's API; both move into `hound approve`.)
 4. **"Met by another system" is its own state, never not applicable.** The row stays open in this audit, names the system, and closes only when that system's audit shows the requirement met. `hound scope plan` lists such rows as open dependencies.
-5. **Imported decisions keep their provenance.** An agent onboarding an existing audit workbook records each result as "imported from `<workbook>`, row `<n>`, approved by `<who>` on `<date>`" as the workbook says, never as approved by the agent. A row without an approver is imported as a draft.
-6. **Skills ship for the agents people have.** The existing skills (supplier assessment, applicability, reading an API specification, reviewing a config change, mapping) are packaged as Claude Code skills (`.claude/skills/`) and as `AGENTS.md` plus `.github/copilot-instructions.md` for Copilot, in the compliance repo template that `hound init` writes. A new skill, **import an audit workbook**, covers mapping an existing Excel audit of controls and evidence to scope files.
-7. **A stronger review before apply.** A review skill runs `hound explain --json`, compares each decision with the same ISM control under other strategies, and must clear every flag it raises (or the person accepts it) before the agent proposes `hound scope apply`.
-8. **The built-in model is frozen, then removed.** No new features use it from today. Once the agent path has onboarded the Sophos firewall again, one task removes the model calls, the Anthropic and OpenAI SDKs, `hound onboard config`, `onboarding.yaml`, the outbound guard and the token budget. Commands keep their deterministic parts (`explain` still prints the flags code finds; `onboard` still records decisions).
-9. **`hound agent setup` writes the assistant files.** It asks which assistant the person uses in VS Code and writes them into the compliance repo from one source of skills, and `hound init` offers it at the end. Re-running it updates hound's files and leaves the person's own untouched:
+5. **The agent drives every kind of onboarding,** not only systems: the organisation (`hound init`), the environment and its capability map, third parties (vendors, resellers and managed service providers, with their assurance documents, PDFs included), systems, audits (from a framework, or imported from an existing audit workbook), and manual evidence sources. Each has its skill, and the same pattern: the agent drafts through `hound` commands, `hound` validates, the person approves.
+6. **Imported decisions keep their provenance.** An agent onboarding an existing audit workbook records each result as "imported from `<workbook>`, row `<n>`, approved by `<who>` on `<date>`" as the workbook says, never as approved by the agent. A row without an approver is imported as a draft.
+7. **Skills ship for the agents people have.** The existing skills (supplier assessment, applicability, reading an API specification, reviewing a config change, mapping) are packaged as Claude Code skills (`.claude/skills/`) and as `AGENTS.md` plus `.github/copilot-instructions.md` for Copilot, in the compliance repo template that `hound init` writes. A new skill, **import an audit workbook**, covers mapping an existing Excel audit of controls and evidence to scope files.
+8. **A stronger review before apply.** A review skill runs `hound explain --json`, compares each decision with the same ISM control under other strategies, and must clear every flag it raises (or the person accepts it) before the agent proposes `hound scope apply`.
+9. **The built-in model is frozen, then removed.** No new features use it from today. Once the agent path has onboarded the Sophos firewall again, one task removes the model calls, the Anthropic and OpenAI SDKs, `hound onboard config`, `onboarding.yaml`, the outbound guard and the token budget. Commands keep their deterministic parts (`explain` still prints the flags code finds; `onboard` still records decisions).
+10. **Manual evidence: the agent proposes and records, the person attests.** When a manual source's file arrives (an export, a restore-test record, a screenshot), the agent reads it and records a proposal with `hound manual propose <source> <file> --result <pass|fail|partial> --observation <text> --supports <where in the file>`. The proposal is pending: it is not evidence and reaches no audit. `hound manual approve` walks the person through every pending proposal (the file, the agent's result, observation and supporting extract), and the person attests, changes or rejects each one. Only an attested result is published by `hound run`, recorded as "proposed by agent, attested by `<person>` on `<date>`", with the file attached and its hash.
+11. **`hound agent setup` writes the assistant files.** It asks which assistant the person uses in VS Code and writes them into the compliance repo from one source of skills, and `hound init` offers it at the end. Re-running it updates hound's files and leaves the person's own untouched:
 
    | Assistant | Files |
    | --- | --- |
@@ -38,7 +40,7 @@ The person running the trial asked for a best-effort pass that a small business 
 
 ## Rules that do not change
 
-- **No model in evidence collection.** `hound run`, `hound serve` and every collector stay model-free.
+- **No model in evidence collection, and no evidence without a person.** `hound run`, `hound serve` and every collector stay model-free. For manual evidence an agent may read the file and propose a result, but a result becomes evidence only when a person attests it with `hound manual approve` (decision 10). This rewords the rule of the [onboarding assistant design](onboarding-assistant.md), at the maintainer's request: the person attests, as before, with the agent's proposal in front of them.
 - **Nothing reaches CISO Assistant except through `hound scope plan` and `apply`.**
 - **No organisation data in this repository.** The person's workbook, evidence and outputs live only in their private compliance repo. Each skill says so first.
 
@@ -50,7 +52,9 @@ With the built-in model, `hound`'s outbound guard decided what left the machine.
 
 | Task | What |
 | --- | --- |
-| Agent interface | `pending`, `decide`, supplier draft, `--json` on validate, plan and explain; approvals refused without a person. |
+| Agent interface and approvals (s09-37) | `pending`, `decide`, supplier draft, `--json` on validate, plan and explain; `hound approve` walks through every pending approval on a terminal; supplier review conclusions in config. |
+| Agent-driven onboarding of everything (s09-41) | Organisation, environment, third parties, systems, audits and workbook import, each with a skill and agent commands. |
+| Manual evidence with the agent (s09-42) | `hound manual propose` and `hound manual approve`; attested results only. |
 | Another-system state | Its own result and plan section; environment onboarding uses it instead of not applicable; skips rows the mapping computes. |
 | Skills for agents | Package the skills for Claude Code and Copilot in the repo template; a driving skill ("onboard a system with hound") and the review skill. |
 | Import an audit workbook | A skill, plus `hound scope import` for the structured part (requirement, result, evidence reference, approver, date), with provenance. |
