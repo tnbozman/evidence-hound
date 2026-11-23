@@ -40,3 +40,7 @@ dev/ciso-assistant/db/
 # OS
 .DS_Store
 Thumbs.db
+
+# Local hound onboard config and sessions from running hound in this checkout; they belong in a compliance repo, never here.
+/onboarding.yaml
+/onboarding/*/
