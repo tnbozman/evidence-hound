@@ -65,6 +65,41 @@ public sealed class StatusCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task A_series_target_shows_the_period_open_today()
+    {
+        // s09-49: hound run publishes a series target (EX-E8) to the period open that day, and status shows that period's run.
+        var config = Path.Combine(_workDir, "hound.yaml");
+        await File.WriteAllTextAsync(config, """
+            ciso_assistant: {url: "http://localhost:8000/api/", token: "env:HOUND_CA_TOKEN"}
+            evidence: {root: ./evidence}
+            scope: scope
+            collectors:
+              - {name: example-fake, type: fake, schedule: "0 2 * * *"}
+            target: {mapping: ./mapping.yaml, compliance_assessment: EX-E8}
+            """, TestContext.Current.CancellationToken);
+        Directory.CreateDirectory(Path.Combine(_workDir, "scope", "audits"));
+        await File.WriteAllTextAsync(Path.Combine(_workDir, "scope", "setup.yaml"), "organisation:\n  root_folder: Global\n", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(_workDir, "scope", "audits", "ex-e8.yaml"), """
+            ref_id: EX-E8
+            name: Essential Eight ML2
+            framework: urn:intuitem:risk:framework:essential-eight-2023
+            domain: Example Pty Ltd
+            perimeter: Corporate IT
+            cycle: {period: quarter, starts: "2026-07-01"}
+            """, TestContext.Current.CancellationToken);
+        var history = new FileRunHistory(Path.Combine(_workDir, "evidence"));
+        await history.AppendAsync("EX-E8-Q2-2027FY", new HistoryEntry(new DateTimeOffset(2026, 11, 23, 4, 0, 0, TimeSpan.Zero), "20261123T040000Z", 0, 3, 0), TestContext.Current.CancellationToken);
+
+        var exitCode = await HoundCli.RunAsync(
+            ["status", "--config", config], TextReader.Null, _output, _error, new Dictionary<string, string?> { ["HOUND_TODAY"] = "2026-11-23" }, TestContext.Current.CancellationToken);
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var lines = _output.ToString().Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+        var header = Array.FindIndex(lines, l => l.StartsWith("AUDIT", StringComparison.Ordinal));
+        lines[header + 1].Split(' ', StringSplitOptions.RemoveEmptyEntries).ShouldBe(["EX-E8-Q2-2027FY", "2026-11-23", "04:00:00", "20261123T040000Z", "0", "3", "0"]);
+    }
+
+    [Fact]
     public async Task A_missing_config_exits_three()
     {
         var exitCode = await HoundCli.RunAsync(

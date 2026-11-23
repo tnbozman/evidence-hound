@@ -4,24 +4,31 @@ using EvidenceHound.Core.Results;
 using EvidenceHound.Runtime.Collectors;
 using EvidenceHound.Runtime.Configuration;
 using EvidenceHound.Runtime.Status;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace EvidenceHound.Cli;
 
-/// <summary><c>hound status</c>: the latest run of each configured collector, from the local evidence store.</summary>
+/// <summary>
+/// <c>hound status</c>: the latest run of each configured collector, from the local evidence store, and each target audit's last run. A target
+/// that names an audit series shows the period open today, the audit <c>hound run</c> publishes to.
+/// </summary>
 internal static class StatusCommand
 {
     private static readonly string[] Header = ["COLLECTOR", "LAST RUN (UTC)", "OUTCOME", "PASSED", "FAILED", "PUBLISHED"];
     private static readonly string[] AuditHeader = ["AUDIT", "LAST RUN (UTC)", "RUN ID", "CHANGED", "UNCHANGED", "DRIFT"];
 
-    public static Command Build(TextWriter output, ILoggerFactory loggers, CollectorRegistry registry)
+    public static Command Build(TextWriter output, ILoggerFactory loggers, IConfiguration configuration, CollectorRegistry registry)
     {
         var logger = loggers.CreateLogger("hound.status");
         var config = new Option<FileInfo>("--config") { Description = "Path to the deployment config file (YAML).", Required = true };
         var status = new Command("status", "Show the latest run of each configured collector.") { config };
         status.SetAction(async (parseResult, cancellationToken) =>
         {
-            var deployment = await ConfigCommands.LoadAsync(parseResult.GetRequiredValue(config), registry, cancellationToken);
+            var loaded = await ConfigCommands.LoadAsync(parseResult.GetRequiredValue(config), registry, cancellationToken);
+            var deployment = await loaded.Match(
+                async d => Result.Ok(await AuditSeries.ResolveAsync(d, AuditSeries.Today(configuration), cancellationToken)),
+                problems => Task.FromResult(Result.Fail<DeploymentConfig>(problems)));
             var latest = await deployment.BindAsync(d => new FileRunRecordStore(d.Evidence.Root).LatestAsync(cancellationToken));
             var history = await deployment.BindAsync(d => new FileRunHistory(d.Evidence.Root).LatestAsync(cancellationToken));
             return await deployment.Bind(d => latest.Bind(records => history.Map(entries => (Collectors: Rows(d, records), Audits: AuditRows(d, entries), Any: entries.Count > 0)))).Match(
