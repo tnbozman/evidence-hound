@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>iac-dev</AssemblyName>
+    <RootNamespace>EvidenceHound.IacDevServer</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <Description>A fictional Example Pty Ltd IaC pipeline that answers the terraform-tests and terraform-drift profiles offline, for the trial and for developing profiles.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="WireMock.Net" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\EvidenceHound.Core\EvidenceHound.Core.csproj" />
+  </ItemGroup>
+</Project>

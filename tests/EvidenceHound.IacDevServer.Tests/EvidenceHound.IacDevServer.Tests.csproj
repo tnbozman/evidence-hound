@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Collectors\EvidenceHound.Collectors.Rest\EvidenceHound.Collectors.Rest.csproj" />
+    <ProjectReference Include="..\..\src\EvidenceHound.IacDevServer\EvidenceHound.IacDevServer.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\profiles\terraform-tests.yaml" Link="profiles\terraform-tests.yaml" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\profiles\terraform-drift.yaml" Link="profiles\terraform-drift.yaml" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\examples\onboarding-tutorial\profiles\grc-infra-controls.yaml" Link="profiles\grc-infra-controls.yaml" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\examples\onboarding-tutorial\infra\oci\tests\controls.tftest.hcl" Link="infra\controls.tftest.hcl" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
