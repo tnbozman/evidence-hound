@@ -7,6 +7,50 @@
       "displayName": "Windows baseline restrictions",
       "passwordRequired": true,
       "assignments": [ { "id": "dc01-a1", "target": { "@odata.type": "#microsoft.graph.allDevicesAssignmentTarget" } } ]
+    },
+    {
+      "@odata.type": "#microsoft.graph.windows10CustomConfiguration",
+      "id": "00000000-0000-4000-8000-00000000dc02",
+      "displayName": "AppLocker - finance kiosks",
+      "omaSettings": [
+        {
+          "@odata.type": "#microsoft.graph.omaSettingString",
+          "displayName": "AppLocker EXE",
+          "omaUri": "./Vendor/MSFT/AppLocker/ApplicationLaunchRestrictions/ExampleApps/EXE/Policy",
+          "isEncrypted": false,
+          "value": "<RuleCollection Type=\"Exe\" EnforcementMode=\"Enabled\"><FilePathRule Id=\"00000000-0000-4000-8000-0000000a1301\" Name=\"Windows folder\" UserOrGroupSid=\"S-1-1-0\" Action=\"Allow\"><Conditions><FilePathCondition Path=\"%WINDIR%\\*\" /></Conditions></FilePathRule></RuleCollection>"
+        },
+        {
+          "@odata.type": "#microsoft.graph.omaSettingString",
+          "displayName": "AppLocker DLL",
+          "omaUri": "./Vendor/MSFT/AppLocker/ApplicationLaunchRestrictions/ExampleApps/DLL/Policy",
+          "isEncrypted": false,
+          "value": "<RuleCollection Type=\"Dll\" EnforcementMode=\"Enabled\"><FilePathRule Id=\"00000000-0000-4000-8000-0000000a1301\" Name=\"Windows folder\" UserOrGroupSid=\"S-1-1-0\" Action=\"Allow\"><Conditions><FilePathCondition Path=\"%WINDIR%\\*\" /></Conditions></FilePathRule></RuleCollection>"
+        },
+        {
+          "@odata.type": "#microsoft.graph.omaSettingString",
+          "displayName": "AppLocker Script",
+          "omaUri": "./Vendor/MSFT/AppLocker/ApplicationLaunchRestrictions/ExampleApps/Script/Policy",
+          "isEncrypted": false,
+          "value": "<RuleCollection Type=\"Script\" EnforcementMode=\"Enabled\"><FilePathRule Id=\"00000000-0000-4000-8000-0000000a1601\" Name=\"Windows folder\" UserOrGroupSid=\"S-1-1-0\" Action=\"Allow\"><Conditions><FilePathCondition Path=\"%WINDIR%\\*\" /></Conditions></FilePathRule></RuleCollection>"
+        },
+        {
+          "@odata.type": "#microsoft.graph.omaSettingString",
+          "displayName": "AppLocker MSI",
+          "omaUri": "./Vendor/MSFT/AppLocker/ApplicationLaunchRestrictions/ExampleApps/MSI/Policy",
+          "isEncrypted": false,
+          "value": "<RuleCollection Type=\"Msi\" EnforcementMode=\"Enabled\"><FilePathRule Id=\"00000000-0000-4000-8000-0000000a1301\" Name=\"Windows folder\" UserOrGroupSid=\"S-1-1-0\" Action=\"Allow\"><Conditions><FilePathCondition Path=\"%WINDIR%\\*\" /></Conditions></FilePathRule></RuleCollection>"
+        }
+      ],
+      "assignments": [
+        {
+          "id": "dc02-a1",
+          "target": {
+            "@odata.type": "#microsoft.graph.groupAssignmentTarget",
+            "groupId": "00000000-0000-4000-8000-0000000000f2"
+          }
+        }
+      ]
     }
   ]
 }

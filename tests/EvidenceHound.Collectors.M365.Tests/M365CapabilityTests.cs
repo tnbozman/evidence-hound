@@ -45,7 +45,7 @@ public sealed class M365CapabilityTests : IDisposable
     {
         var checks = (await CollectAsync(CollectorCapabilities.All)).Value().Checks;
 
-        checks.Count.ShouldBe(11);
+        checks.Count.ShouldBe(13);
         checks.ShouldAllBe(c => c.Outcome == CheckOutcome.Pass);
     }
 
@@ -55,7 +55,7 @@ public sealed class M365CapabilityTests : IDisposable
         string[] capabilities = ["ac", "pa", "rmom", "uah", "rap", "pos", "mfa", "rb", "edr"];
 
         M365Checks.All.ShouldAllBe(c => c.Capabilities.Count > 0 && c.Capabilities.All(capabilities.Contains));
-        M365Checks.Capabilities.ShouldBe(["mfa", "rap", "pos", "rmom", "uah"]);
+        M365Checks.Capabilities.ShouldBe(["mfa", "rap", "pos", "rmom", "uah", "ac"]);
     }
 
     public void Dispose() => _tenant.Dispose();
