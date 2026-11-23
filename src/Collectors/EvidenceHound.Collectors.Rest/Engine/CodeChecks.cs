@@ -5,7 +5,14 @@ using EvidenceHound.Core.Checks;
 namespace EvidenceHound.Collectors.Rest.Engine;
 
 /// <summary>What a code check reads: the rows of each source it names, in the order of its <c>over</c>, its <c>with</c> settings (parameters filled in) and the run's clock.</summary>
-public sealed record CodeCheckInput(IReadOnlyList<JsonArray> Over, IReadOnlyDictionary<string, string> With, DateTimeOffset Now);
+public sealed record CodeCheckInput(IReadOnlyList<JsonArray> Over, IReadOnlyDictionary<string, string> With, DateTimeOffset Now)
+{
+    /// <summary>The items of the check's <c>history</c> query in each earlier run that kept its evidence, oldest first; empty without history.</summary>
+    public IReadOnlyList<EarlierRows> Earlier { get; init; } = [];
+}
+
+/// <summary>A query's items as an earlier run saved them, and when that run collected them.</summary>
+public sealed record EarlierRows(DateTimeOffset CollectedAt, JsonArray Items);
 
 /// <summary>A code check: a pure function from its input to a finding.</summary>
 public delegate Finding CodeCheck(CodeCheckInput input);
@@ -18,6 +25,7 @@ public static class CodeChecks
 {
     public static IReadOnlyDictionary<string, CodeCheck> All { get; } = new Dictionary<string, CodeCheck>(StringComparer.Ordinal)
     {
+        ["sophos.firmware_upgrade_age"] = FirmwareUpgradeAge,
         ["sophos.super_admin_count"] = SuperAdminCount,
         ["terraform.no_drift"] = TerraformNoDrift,
         ["terraform.tests_pass"] = TerraformTestsPass,
@@ -52,6 +60,80 @@ public static class CodeChecks
         var observation = string.Create(CultureInfo.InvariantCulture, $"{count} of {admins.Count} Sophos Central admins {holds} Super Admin; at most {max} allowed.");
         return new(count <= max ? CheckOutcome.Pass : CheckOutcome.Fail, observation);
     }
+
+    /// <summary>
+    /// No Sophos Central firewall has had a firmware upgrade outstanding for more than <c>with.days</c> days. Reads
+    /// <c>over: [firewalls, firmware_upgrades]</c> with <c>history: firmware_upgrades</c>: the upgrade check's answers in this and earlier
+    /// runs. Sophos Central gives no release date, so an offer's age counts from the first run of the unbroken series of runs that saw
+    /// one for that firewall; counting starts with the first run that keeps evidence. A firewall the upgrade check did not answer for
+    /// cannot be assessed.
+    /// </summary>
+    public static Finding FirmwareUpgradeAge(CodeCheckInput input)
+    {
+        ArgumentNullException.ThrowIfNull(input);
+        if (input.Over is not [var firewalls, var upgrades] || !int.TryParse(input.With.GetValueOrDefault("days"), NumberStyles.None, CultureInfo.InvariantCulture, out var days))
+        {
+            return new(CheckOutcome.Error, "Unable to assess: sophos.firmware_upgrade_age reads over: [firewalls, firmware_upgrades] with: { days: <number> }.");
+        }
+
+        var ids = firewalls.OfType<JsonObject>().Select(f => Text(f["id"])).OfType<string>().ToArray();
+        if (ids.Length == 0)
+        {
+            return new(CheckOutcome.NotApplicable, "Sophos Central manages no firewalls.");
+        }
+
+        var now = Offered(upgrades);
+        var unanswered = ids.Count(id => !now.ContainsKey(id));
+        if (unanswered > 0)
+        {
+            return new(CheckOutcome.Error, string.Create(CultureInfo.InvariantCulture, $"Unable to assess: the firmware upgrade check gave no answer for {unanswered} of {ids.Length} firewalls."));
+        }
+
+        var earlier = input.Earlier.Select(e => (e.CollectedAt, Offers: Offered(e.Items))).ToArray();
+        var ages = ids.Where(id => now[id]).Select(id => (input.Now - Since(id, earlier, input.Now)).Days).ToArray();
+        var counting = earlier.Length == 0
+            ? "Ages count from the first run that saw an offer; this is the first run, so counting starts today."
+            : string.Create(CultureInfo.InvariantCulture, $"Ages count from the first run that saw an offer; the earliest run kept is {earlier[0].CollectedAt.UtcDateTime:yyyy-MM-dd}.");
+        if (ages.Length == 0)
+        {
+            return new(CheckOutcome.Pass, string.Create(CultureInfo.InvariantCulture, $"No firewall has a firmware upgrade outstanding ({Count(ids.Length, "firewall")})."));
+        }
+
+        var overdue = ages.Count(a => a > days);
+        var longest = string.Create(CultureInfo.InvariantCulture, $"the longest {ages.Max()} days");
+        return overdue == 0
+            ? new(CheckOutcome.Pass, string.Create(CultureInfo.InvariantCulture, $"{ages.Length} of {ids.Length} firewalls {Has(ages.Length)} a firmware upgrade offered, none for more than {days} days ({longest}). {counting}"))
+            : new(CheckOutcome.Fail, string.Create(CultureInfo.InvariantCulture, $"{overdue} of {ids.Length} firewalls {Has(overdue)} had a firmware upgrade outstanding for more than {days} days ({longest}); {ages.Length - overdue} more {Has(ages.Length - overdue)} one offered within the window. {counting}"));
+    }
+
+    /// <summary>Whether each firewall the upgrade check answered for has any upgrade offered, by firewall ID.</summary>
+    private static Dictionary<string, bool> Offered(JsonArray answers) =>
+        answers.OfType<JsonObject>()
+            .Select(a => (Id: Text(a["id"]), Offered: (a["upgradeToVersion"] as JsonArray ?? []).Count > 0))
+            .Where(a => a.Id is not null)
+            .GroupBy(a => a.Id!, StringComparer.Ordinal)
+            .ToDictionary(g => g.Key, g => g.Any(a => a.Offered), StringComparer.Ordinal);
+
+    /// <summary>When the firewall's current, unbroken run of offers began: walking back from the newest earlier run while each one saw an offer.</summary>
+    private static DateTimeOffset Since(string id, (DateTimeOffset CollectedAt, Dictionary<string, bool> Offers)[] earlier, DateTimeOffset now)
+    {
+        var since = now;
+        foreach (var run in earlier.Where(e => e.CollectedAt < now).OrderByDescending(e => e.CollectedAt))
+        {
+            if (!run.Offers.GetValueOrDefault(id))
+            {
+                break;
+            }
+
+            since = run.CollectedAt;
+        }
+
+        return since;
+    }
+
+    private static string Has(int count) => count == 1 ? "has" : "have";
+
+    private static string Count(int count, string noun) => string.Create(CultureInfo.InvariantCulture, $"{count} {noun}{(count == 1 ? "" : "s")}");
 
     /// <summary>
     /// The infrastructure matches its code: the plan JSON an IaC pipeline published (<c>terraform plan -refresh-only -json</c> or a

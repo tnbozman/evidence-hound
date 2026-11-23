@@ -120,7 +120,7 @@ public sealed class CheckHistoryTests
     [Fact]
     public void History_of_a_query_the_check_is_not_over_is_refused()
     {
-        Codes(Yaml("history: devices")).ShouldContain("profile.history_invalid");
+        Codes(Yaml("history: firmware")).ShouldContain("profile.history_invalid");
     }
 
     [Fact]

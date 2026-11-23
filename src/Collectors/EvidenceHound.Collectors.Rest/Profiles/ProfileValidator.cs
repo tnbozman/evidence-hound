@@ -269,6 +269,11 @@ public static class ProfileValidator
                 yield return new Problem("profile.check_id_invalid", failed.Errors[0].Message);
             }
 
+            if (check.History is { } history && (check.Code is null || !check.Over.Contains(history, StringComparer.Ordinal) || profile.Queries.All(q => q.Name != history)))
+            {
+                yield return new Problem("profile.history_invalid", $"Check '{check.Id}': history '{history}' must name a query the check is over, and only a code check reads history.");
+            }
+
             if (check.Code is { } code)
             {
                 if (!context.CodeChecks.Contains(code, StringComparer.Ordinal))
