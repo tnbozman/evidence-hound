@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=../../../schemas/scope.schema.json
+# How each control's evidence arrives, from whom and how often (docs/manual-evidence.md). Manual rows become recurring
+# CISO Assistant tasks: the owner is emailed the runbook before each due date and sends the evidence to the GRC team,
+# who record it in CISO Assistant. Owners need no login.
+grc_team: IT team
+evidence:
+  # A collector gathers this every night; nobody is reminded.
+  - ref_id: EV-MFA
+    control: AC-MFA
+    method: automated
+    collector: example-m365
+
+  # The backup service's owners run a restore each quarter and send the result. They are an owner contact in access.yaml.
+  - ref_id: EV-BACKUP-RESTORE
+    control: AC-BACKUP
+    method: manual
+    collector: example-backup-restore-test
+    owner: Backup owners
+    every: 3 months
+    runbook: manual-sources/backup-restore-test.md
+
+  # Once a year the IT team lists every account allowed to sign in without MFA, and why.
+  - ref_id: EV-MFA-EXCEPTIONS
+    control: AC-MFA
+    method: manual
+    owner: IT team
+    every: 12 months
+    runbook: manual-sources/mfa-exceptions-review.md

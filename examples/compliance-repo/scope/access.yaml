@@ -24,6 +24,11 @@ teams:
     description: Runs the systems and the evidence collection.
     domain: Example Pty Ltd
     leader: it@example.com
+  # An owner contact: a team email and no people, so CISO Assistant emails it evidence reminders and it has no login
+  # (docs/manual-evidence.md). It holds no role.
+  - name: Backup owners
+    description: Run the backup service and its quarterly restore test.
+    email: backup-owners@example.com
 
 roles:
   - role: administrator
