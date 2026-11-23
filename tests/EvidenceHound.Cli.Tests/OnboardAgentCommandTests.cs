@@ -121,6 +121,20 @@ public sealed class OnboardAgentCommandTests : IDisposable
         error.ShouldContain("EX-9 is not a requirement in scope for EXAMPLE-ASSETS");
         Session()["decisions"]!.AsArray().Count.ShouldBe(1);
 
+        // A ref_id that several requirements share is refused, naming each by the key pending lists.
+        var framework = Path.Combine(Repo, "frameworks", "example-framework.json");
+        await File.WriteAllTextAsync(framework, OnboardSystemCommandTests.Framework.Replace("\"ref_id\": \"EX-3\"", "\"ref_id\": \"EX-2\"", StringComparison.Ordinal), _ct);
+        var shared = Path.Combine(_root, "shared");
+        TestFiles.CopyDirectory(Repo, shared);
+        File.Delete(Path.Combine(shared, "onboarding", System, "session.json"));
+        string[] start = ["--framework", Path.Combine(shared, "frameworks", "example-framework.json"), "--group", "2", "--owner", "alex@example.com", "--product", "Example Asset API", "--solution", "SOL-EXAMPLE-ASSETS"];
+        (await RunAsync(["onboard", System, "pending", "--json", "--repo", shared, .. start])).Exit.ShouldBe(ExitCodes.Ok);
+        (exit, _, error) = await RunAsync(["onboard", System, "decide", "EX-2", "--repo", shared, "--kind", "manual", "--reasoning", "Which one?"]);
+        exit.ShouldBe(ExitCodes.Configuration);
+        error.ShouldContain("EX-2 names 2 requirements");
+        error.ShouldContain("urn:example:req:b, urn:example:req:c");
+        await File.WriteAllTextAsync(framework, OnboardSystemCommandTests.Framework, _ct);
+
         // Deciding again replaces the draft.
         (await DecideAsync("EX-3", "--kind", "manual", "--reasoning", "The owner exports the backup report.")).Exit.ShouldBe(ExitCodes.Ok);
         Session()["decisions"]!.AsArray().ShouldHaveSingleItem()!["kind"]!.GetValue<string>().ShouldBe("manual");

@@ -199,7 +199,7 @@ internal static class OnboardAgentCommand
             ["decided"] = session.Decisions.Count,
             ["awaiting_approval"] = new JsonArray([.. session.Drafts.Select(d => JsonValue.Create(d.Key))]),
             ["written"] = session.Written.Count > 0,
-            ["pending"] = new JsonArray([.. session.Pending.Select(p => new JsonObject { ["requirement"] = p.Key, ["urn"] = p.Urn, ["text"] = p.Title })]),
+            ["pending"] = new JsonArray([.. session.Pending.Select(p => new JsonObject { ["requirement"] = p.Key, ["ref_id"] = p.RefId, ["urn"] = p.Urn, ["text"] = p.Title })]),
         });
     }
 
@@ -270,8 +270,16 @@ internal static class OnboardAgentCommand
             return Result.Fail<(OnboardSession, Decision)>(new Problem("onboard.already_written", $"{session.System} is onboarded and its files are written; change its audit in a pull request."));
         }
 
-        var proposal = session.Proposals.FirstOrDefault(p => p.Key == requirement) ?? session.Proposals.FirstOrDefault(p => p.RefId == requirement || p.Urn == requirement);
-        if (proposal is null)
+        var named = session.Proposals.Where(p => p.Key == requirement).ToArray() is { Length: > 0 } byKey
+            ? byKey
+            : [.. session.Proposals.Where(p => p.RefId == requirement || p.Urn == requirement)];
+        if (named.Length > 1)
+        {
+            return Result.Fail<(OnboardSession, Decision)>(new Problem(
+                "onboard.requirement_ambiguous", $"{requirement} names {named.Length} requirements in scope for {session.System}. Use the one you mean as 'pending' lists it: {string.Join(", ", named.Select(p => p.Key))}."));
+        }
+
+        if (named is not [var proposal])
         {
             return Result.Fail<(OnboardSession, Decision)>(new Problem(
                 "onboard.requirement_unknown", $"{requirement} is not a requirement in scope for {session.System}. List them with 'hound onboard {session.System} pending'."));
