@@ -304,6 +304,57 @@ public sealed partial class ExampleRepoTests : IDisposable
         compose.ShouldContain("iac_actions_token");
     }
 
+    /// <summary>s09-49: each per-control check in the tutorial's copy of terraform-tests names a run block of the control tests.</summary>
+    [Fact]
+    public async Task Grc_infra_control_checks_name_tests_that_exist()
+    {
+        var profile = await File.ReadAllTextAsync(Path.Combine(Tutorial, "profiles", "grc-infra-controls.yaml"), _ct);
+        var tests = await File.ReadAllTextAsync(Path.Combine(Tutorial, "infra", "oci", "tests", "controls.tftest.hcl"), _ct);
+        var runs = RunBlock().Matches(tests).Select(m => m.Groups["name"].Value).ToHashSet(StringComparer.Ordinal);
+        var named = TestSetting().Matches(profile).Select(m => m.Groups["name"].Value).ToArray();
+
+        named.ShouldNotBeEmpty();
+        named.Where(n => !runs.Contains(n)).ShouldBeEmpty("every check names a run block in controls.tftest.hcl");
+        (await Hound("profile", "test", "grc-infra-controls", "--profiles", Path.Combine(Tutorial, "profiles"))).ShouldBe(ExitCodes.Ok, _error.ToString());
+    }
+
+    /// <summary>s09-49: a backup row the bucket's settings answer passes only when its control test and the drift check both pass.</summary>
+    [Fact]
+    public async Task Grc_platform_backup_rows_need_the_control_test_and_no_drift()
+    {
+        var path = Path.Combine(Tutorial, "mappings", "grc-platform-essential-eight-2023.yaml");
+        (await Hound("mapping", "validate", path)).ShouldBe(ExitCodes.Ok, _error.ToString());
+        var mapping = await File.ReadAllTextAsync(path, _ct);
+        foreach (var refId in new[] { "ISM-1811", "ISM-1814", "ISM-1707", "ISM-1812", "ISM-1705" })
+        {
+            var row = Regex.Match(mapping, $@"- ref: {refId}\n(?<body>(?:    .*\n)+)").Groups["body"].Value;
+            row.ShouldContain("rule: all_pass", customMessage: refId);
+            row.ShouldContain("infrastructure.drift.none", customMessage: refId);
+            row.ShouldMatch(@"infrastructure\.controls\.\w+", customMessage: refId);
+        }
+
+        var config = await File.ReadAllTextAsync(Path.Combine(Tutorial, "hound.yaml"), _ct);
+        config.ShouldContain("profile: grc-infra-controls");
+        config.ShouldContain("compliance_assessment: GRC-PLATFORM-ESSENTIAL-EIGHT-2023");
+        var repo = TutorialRepo();
+        try
+        {
+            var platform = (await ScopeAsync(repo)).Audits.Single(a => a.RefId == "GRC-PLATFORM-ESSENTIAL-EIGHT-2023").Assessments.Select(r => r.Requirement.Key.Value).ToArray();
+            platform.ShouldNotContain("ISM-1811", "the bucket's settings come from the control tests and the drift check");
+            platform.ShouldContain("ISM-1515", "the restore test stays manual evidence");
+        }
+        finally
+        {
+            Directory.Delete(repo, recursive: true);
+        }
+    }
+
+    [GeneratedRegex(@"^run ""(?<name>\w+)""", RegexOptions.Multiline)]
+    private static partial Regex RunBlock();
+
+    [GeneratedRegex(@"test: ""?(?<name>\w+)""?")]
+    private static partial Regex TestSetting();
+
     public void Dispose()
     {
         _output.Dispose();

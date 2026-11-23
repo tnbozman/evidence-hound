@@ -1334,8 +1334,9 @@ commit it was proven on, without `hound` running Terraform or holding cloud cred
   the backup bucket in another region with a retention rule and the volume backup policy), fictional values and documentation
   ranges only.
 - `infra/oci/tests/controls.tftest.hcl` uses `mock_provider "oci"` and has one `run` block per control, named after it
-  (for example `vm_has_no_public_ip`), each asserting on the planned configuration with a message that names the control. A
-  negative test per control (an `expect_failures` run over a variable or check) shows the assertion can fail.
+  (for example `vm_has_no_public_ip`), each asserting on the planned configuration with a message that names the control. Where
+  the code guards a control itself (the office range may not be the internet, backups kept at least 35 days), a run with
+  `expect_failures` shows the guard refuses a bad value.
 - An example pipeline (`infra/oci/.github/workflows/controls.yml`) runs `terraform test -junit-xml=controls.xml` and uploads it
   as the `control-tests` artefact. No cloud credentials are used by that job.
 - A library profile `terraform-tests` reads the newest completed run of a named workflow, its artefact and the JUnit member
