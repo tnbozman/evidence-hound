@@ -65,9 +65,9 @@ public sealed class OnboardFunctionalTests(CisoAssistantFixture ciso) : IDisposa
         var review = (await SendAsync(HttpMethod.Get, "entity-assessments/?ref_id=EA-FT-ASSETS", null, ct))["results"]!.AsArray().ShouldHaveSingleItem()!;
         await SendAsync(HttpMethod.Patch, $"entity-assessments/{review["id"]!.GetValue<string>()}/", new JsonObject { ["conclusion"] = "ok" }, ct);
 
-        // Who and what, the supplier (already approved), then: the first of the 107 ML2 requirements not applicable, the other 106 manual,
+        // Who and what (the owner as a CISO Assistant user's email), the supplier (already approved), then: the first of the 107 ML2 requirements not applicable, the other 106 manual,
         // and the default domain and perimeter for the system's audit.
-        var answers = "Alex Example\nAlex Example\nExample Asset API\nSUP-FT-ASSETS\nExample Assets Ltd\nSOL-FT-ASSETS\nAsset inventory\nCTR-FT-ASSETS\nAsset inventory subscription\n"
+        var answers = "Alex Example\nit@example.com\nExample Asset API\nSUP-FT-ASSETS\nExample Assets Ltd\nSOL-FT-ASSETS\nAsset inventory\nCTR-FT-ASSETS\nAsset inventory subscription\n"
             + "n\nNo internet-facing services.\nThe asset inventory is not internet-facing.\nSam Example\n"
             + string.Concat(Enumerable.Repeat("m\nThe owner exports it monthly.\n", 106))
             + "\n\n";
