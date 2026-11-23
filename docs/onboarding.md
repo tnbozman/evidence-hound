@@ -74,6 +74,31 @@ carry on where it stopped; the model is never asked again for what it already an
 
 `--no-model` runs the same steps with empty proposals, for teams without a key. `--show-requests` prints each request before it is sent.
 
+## Draft, sample and test the profile
+
+Once applicability is decided, the model drafts the profile for the requirements you accepted as API checks:
+
+```sh
+hound onboard profile EXAMPLE-ASSETS --name example-assets \
+  --set client_id=00000000-0000-4000-8000-000000000001 --set base_url=https://api.example.com/ \
+  --secret client_secret=env:EXAMPLE_ASSETS_SECRET
+```
+
+- **Drafted, then checked.** The model writes `profiles/<name>.yaml` (`--profiles`, `--name`; by default the system's name in lower case)
+  from the API summary of the session's `--spec` files and the accepted checks, guided by the `profile` skills. Every draft is loaded and
+  validated as `hound profile validate` does.
+- **Sampled once, with your go-ahead.** It asks before it calls the API (`--sample` answers yes). The draft's queries run once, read-only,
+  with the instance settings (`--set name=value`) and secrets (`--secret name=env:VAR` or `file:/path`) you give. A query that fails is a
+  problem for the next draft, such as a wrong path. Each answer is kept as a recording with the profile's `identities` fields hashed,
+  tokens replaced and the API's address as `{{api}}`; an answer still holding a secret is refused. Only the answers' shapes (field names,
+  types, counts and short setting-like values; never identities, IDs or dates) go to the model.
+- **You confirm each result.** Each check's result on the sample is shown; type `y` if it is right, or the result it should give. Your
+  answers and the recordings are saved as the profile test `profiles/<name>.tests/onboarding.yaml`, and the test runs.
+- **A few rounds.** Validation, sample and test problems go back to the model with its previous draft, for at most `llm.max_rounds`
+  drafts (default 3; `--rounds` for one run). What is still wrong is listed, and the command exits 1, as a failing `hound profile test` does.
+- **Nothing is scheduled.** Review the profile and its test in a pull request, run `hound profile validate <name>` and
+  `hound profile test <name>`, then add a `rest` collector instance for it to `hound.yaml`.
+
 ## Onboard the environment first: which system provides each mitigation
 
 Before onboarding systems one by one, decide once, for each mitigation of the framework, which product actually provides it. Then `hound`
@@ -145,6 +170,7 @@ Separate from `hound.yaml`; only `hound onboard` reads it.
 | `llm.api_key` | Required. A reference, `env:NAME` or `file:/path`. A key written here is refused (`onboarding.api_key_literal`). |
 | `llm.effort` | Optional: `low`, `medium`, `high` or `max`. How hard the model thinks. |
 | `llm.max_tokens_per_session` | Optional, default 2,000,000. A session stops asking the model once it has used this many tokens (`llm.budget_reached`). |
+| `llm.max_rounds` | Optional, default 3. The most drafts the model makes of a profile in `hound onboard profile`, each checked and its problems sent back. |
 | `llm.deny_terms_file` | Optional. A text file of terms, one per line, that must never be sent: your organisation's name, domains, project names. |
 | `skills_path` | The organisation's own skills. Default `/config/skills`. |
 | `profiles_path` | The organisation's profiles folder. Default `/config/profiles`. |

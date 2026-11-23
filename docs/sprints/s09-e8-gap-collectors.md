@@ -481,7 +481,7 @@ All 107 requirements decided: 53 API check(s), 53 manual, 1 not applicable, 0 fo
 Requests saved: `001-supplier`, `002`-`004-applicability` (107 requirements in batches of 40); the resumed runs sent nothing new. The not-applicable decision keeps its proposal (`api_check`), justification and approver. The test key appears in no file in the repo and in no output.
 
 ### s09-23 Draft, sample and test the profile
-- [ ] Done
+- [x] Done
 
 **Story:** As a GRC team member, I want the profile for the accepted API checks drafted, proven against the real system and tested, so that I only review a profile that already works.
 
@@ -498,6 +498,13 @@ Requests saved: `001-supplier`, `002`-`004-applicability` (107 requirements in b
 
 **Functional check**
 - Against the recorded example API, a fake model's first draft with a wrong path is fixed in the second round, and `hound profile test` passes.
+
+**As built**
+- `ProfileDraft` (Onboarding): the request (system, API summary, accepted checks, shapes; on later rounds the previous draft and its problems), the reply schema (`profile_yaml`, `notes`), and the loop that checks each draft and sends problems back for at most `llm.max_rounds` (new key, default 3) drafts. `ShapeInputs` sends only `ResponseShape` shapes; dates now count as data, so their values are never sent.
+- `SampleRun` (rest collector): runs a profile's queries once through a recording handler; identities hashed with the evidence hash, `access_token`/`refresh_token`/`id_token` replaced, the API's address as `{{api}}`; a failed query or an answer holding a secret keeps nothing. `WriteTestCase` writes the test case with placeholder secrets and the confirmed results.
+- `hound onboard profile <system>` (`--name`, `--profiles`, `--set`, `--secret`, `--sample`, `--rounds`, `--show-requests`): validate, then (with the go-ahead) sample, ask the reviewer to confirm each check's result, save `profiles/<name>.tests/onboarding.yaml` and run the test, every round. Exit 1 when problems remain.
+
+**Functional check (recorded):** `OnboardProfileTests.A_wrong_path_is_fixed_in_the_second_round_and_the_confirmed_results_become_a_passing_test`: a fake Anthropic model's first draft reads `devcies`; the sample run against the recorded Example Asset API fails with `profile.sample_failed`, which goes back in round 2; the corrected draft samples, the four confirmed results are saved with hashed recordings (no `alex@example.com`, no secret), and `hound profile test example` then exits 0. Without the go-ahead the API is never called.
 
 ### s09-24 Write the onboarding output
 - [x] Done

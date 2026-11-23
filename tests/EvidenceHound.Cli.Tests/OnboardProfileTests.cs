@@ -14,7 +14,7 @@ namespace EvidenceHound.Cli.Tests;
 /// </summary>
 public sealed class OnboardProfileTests : IDisposable
 {
-    private const string Secret = "example-api-client-secret-2d7e";
+    internal const string Secret = "example-api-client-secret-2d7e";
 
     private static readonly string Library = Path.Combine(AppContext.BaseDirectory, "files", "profiles");
 
