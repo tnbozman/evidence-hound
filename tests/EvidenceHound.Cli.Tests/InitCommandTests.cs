@@ -25,6 +25,19 @@ public sealed class InitCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Compliance_owner_defaults_to_the_accountable_executive()
+    {
+        // s09-43: compliance is owned by the accountable executive, not the IT person who owns systems.
+        var asked = await Run("\n\n\n\n\n\n\n", "init", Path.Combine(_root, "asked"));
+        var defaulted = await Run("", "init", Repo, "--yes");
+
+        asked.ShouldBe(ExitCodes.Ok, _error.ToString());
+        defaulted.ShouldBe(ExitCodes.Ok, _error.ToString());
+        _error.ToString().ShouldContain("Compliance owner's email, as a CISO Assistant user [ceo@example.com]");
+        (await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "controls.yaml"), TestContext.Current.CancellationToken)).ShouldContain("owner: ceo@example.com");
+    }
+
+    [Fact]
     public async Task Every_answer_can_be_given_as_an_option()
     {
         // s09-41: an agent gives every answer as an option, so nothing is asked even without --yes, and reads the result as JSON.

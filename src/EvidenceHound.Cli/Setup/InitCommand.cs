@@ -14,7 +14,7 @@ internal static class InitCommand
     private static readonly string DefaultName = "Example Pty Ltd";
     private static readonly string DefaultUrl = "https://ciso.example.com/api/";
     private static readonly string DefaultTimeZone = "Australia/Sydney";
-    private static readonly string DefaultOwner = "it@example.com";
+    private static readonly string DefaultOwner = "ceo@example.com";
     private static readonly string DefaultEvidenceRoot = "/var/lib/evidence-hound/evidence";
 
     public static Command Build(Terminal terminal, ILoggerFactory loggers, IConfiguration configuration, CollectorRegistry registry)

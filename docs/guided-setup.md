@@ -22,7 +22,7 @@ Writes a new compliance repo into the folder, which must be missing or empty:
 | Time zone schedules run in | `--time-zone` | Australia/Sydney |
 | Essential Eight maturity level to assess, 1 to 3 | `--level` | 2 |
 | Audit due date | `--due` | 30 June next year |
-| Compliance owner's email | `--owner` | it@example.com |
+| Compliance owner's email | `--owner` | ceo@example.com |
 
 `--evidence-root` sets where the runner keeps evidence (default `/var/lib/evidence-hound/evidence`, outside the repo).
 

@@ -570,7 +570,7 @@ The first run found that a single-system audit needs `unlisted:` and that a requ
 
 **As built so far (2026-11-23).** The docs part is done: `OnboardingDocsTests` checks that every option of `hound onboard`, `onboard config`, `onboard environment` and `onboard profile` is in `docs/onboarding.md`, that its relative links resolve, and that it has a tutorial on the example API. The tutorial ("Tutorial: onboard the example API") was followed as written against a copy of `examples/compliance-repo` with `--no-model` and `--group 1`: the supplier stop, then 48 decisions (1 API check, 47 manual), the audit, `scope/setup.yaml` and the record written, `hound scope validate scope` valid, and `hound profile test example` passing both cases. Still open: the person's own Sophos firewall run, and the discovered work it shows.
 
-### s09-43 Representative Microsoft 365 dev server (added 2026-11-23)
+### s09-44 Representative Microsoft 365 dev server (added 2026-11-23)
 - [ ] Done
 
 Added at the maintainer's request (2026-11-23): s09-01 to s09-04 and the Microsoft 365 checks should not wait on a test tenant (s09-18).
@@ -1209,9 +1209,30 @@ Design decision 10, and the reworded rule: no model in collection, and no eviden
 - As built: `Proposal` (`<file>.proposal.yaml`: `proposed_by`, `proposed`, `file_sha256`, `outcomes`, `observation`, `supports`, and `rejected_by`, `rejected`, `rejection_reason` once rejected) beside `Attestation`, which gains `proposed_by` and `file_sha256`; `ManualSource.Accepts` leaves proposals out, so a run neither stores nor publishes one; `ManualAssessment` writes "Proposed by agent, attested <outcome> by <person> on <date>: <file> (sha256 <12>)." and reports `partial` when the file's hash no longer matches its attestation. `hound manual propose` and `hound manual approve` are in `ManualProposalCommands`. Skill `process-manual-evidence` in `agent/skills/`, listed on the onboarding agent; the shared rules now name `hound manual approve` and `.attest.yaml`.
 - Deviations: `--check <check id>=<result>` gives one check a different result from `--result` (a source can have several checks). `hound manual approve` takes `--config`, as `hound manual upload` does, and has a stop answer (`s`). A proposal is refused when the file is already attested, and is skipped in the walk when the file changed after it was proposed. Extra tests: `AgentSkillTests.Manual_evidence_skill_proposes_from_the_file_and_never_attests`.
 
+### s09-43 hound init's compliance owner defaults to the accountable executive (added 2026-11-23)
+- [x] Done
+
+Found while resetting the trial for s09-34 to s09-42. The compliance owner default was `it@example.com`, the fictional IT person who owns systems. Compliance is owned by the accountable executive, `ceo@example.com` in the fictional organisation (the dev seed creates both users).
+
+**Story:** As a GRC lead trying hound, I want `hound init`'s compliance owner to default to the accountable executive, so that pressing Enter gives the health control the right owner and not the IT person.
+
+**Acceptance criteria**
+- `hound init` asks "Compliance owner's email, as a CISO Assistant user [ceo@example.com]"; `--yes` without `--owner` writes `owner: ceo@example.com` on the health control.
+- `--owner` and the `--help` text say the same default; `docs/guided-setup.md` lists it.
+
+**Tests first**
+- `InitCommandTests.Compliance_owner_defaults_to_the_accountable_executive`
+
+**Functional check**
+- `make run ARGS="init <temp folder> --yes"`, then `scope/controls.yaml` shows `owner: ceo@example.com` and `hound scope validate` passes.
+- Result (2026-11-23): `make run ARGS="init <scratch>/init-check --yes"` wrote 8 files and audit EX-E8-2027; `scope/controls.yaml` has `owner: ceo@example.com`; `hound scope validate` answered "scope valid: 1 domain(s), 1 control(s), 1 audit(s)" (exit 0); `hound init --help` says "Default: ceo@example.com." for `--owner`.
+- As built: `DefaultOwner` in `InitCommand` and the table in `docs/guided-setup.md`. The trial's own `hound add` steps still name `it@example.com` as the system and control owner, which is right for those.
+
 ## Discovered work
 
-- s09-43: Essential Eight evidence from the endpoint itself (registry, services, AppLocker effective policy, Office macro settings), as an MIT PowerShell checklist does, is outside every current collector. Consider it with ASD's example assessment test plan, which names endpoint tests, when planning release 2.
+- s09-43: in the dev container, `make test` has one failure, `PublishCommandTests.Without_a_url_exits_three`, because the container sets `HOUND_CA_URL` and the test reads the process environment; it passes with `env -u HOUND_CA_URL make test`. Have the test (or `Publish`) not see the ambient variable.
+- s09-43: in the dev container, `make ca-up` seeds the `make ca-up` instance but `scripts/ca-apply-scope.sh` applies the scope to `http://backend:8000/api/` (the container's `HOUND_CA_URL` overrides the env file's URL) with the other instance's token, so the seed ends with HTTP 401. Have `ca-seed.sh` pass the URL it wrote.
+- s09-44: Essential Eight evidence from the endpoint itself (registry, services, AppLocker effective policy, Office macro settings), as an MIT PowerShell checklist does, is outside every current collector. Consider it with ASD's example assessment test plan, which names endpoint tests, when planning release 2.
 
 - s09-42: an agent finds files waiting for a proposal by listing the drop folder. Add `hound manual pending --json` (files with neither an attestation nor a proposal, per source, with what each check asks for).
 - s09-42: `hound manual upload` writes an attestation without the file's hash, so a file changed after a person attested it unaided is not noticed. Record `file_sha256` there too.
