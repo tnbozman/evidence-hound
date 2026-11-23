@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/tnbozman/evidence-hound/schemas/scope.schema.json",
   "title": "Evidence Hound scope file",
-  "description": "One file of a compliance repo's scope: setup.yaml (organisation, frameworks, domains), controls.yaml (applied controls), audits/<audit>.yaml (one compliance assessment), access.yaml (users, teams and role assignments), settings.yaml (feature flags and general settings), third-parties/<entity>.yaml (one supplier or other third party), or capabilities.yaml (which system provides each mitigation). Guide: docs/scope.md.",
+  "description": "One file of a compliance repo's scope: setup.yaml (organisation, frameworks, domains), controls.yaml (applied controls), audits/<audit>.yaml (one compliance assessment), access.yaml (users, teams and role assignments), settings.yaml (feature flags and general settings), third-parties/<entity>.yaml (one supplier or other third party), capabilities.yaml (which system provides each mitigation), or evidence-plan.yaml (how each control's evidence arrives, from whom and how often). Guide: docs/scope.md.",
   "oneOf": [
     {
       "$ref": "#/$defs/setup"
@@ -24,6 +24,9 @@
     },
     {
       "$ref": "#/$defs/capabilities"
+    },
+    {
+      "$ref": "#/$defs/evidencePlan"
     }
   ],
   "$defs": {
@@ -709,6 +712,10 @@
           "items": {
             "$ref": "#/$defs/email"
           }
+        },
+        "email": {
+          "description": "CISO Assistant's team email, which receives the team's task reminders. A team with an email and no leader or members is an owner contact: it is reminded and has no login, so it holds no role.",
+          "$ref": "#/$defs/email"
         }
       }
     },
@@ -1294,6 +1301,113 @@
                 "description": "Signals that pre-filled the answer, each naming its source. A record, never the decision."
               }
             }
+          }
+        }
+      }
+    },
+    "evidencePlan": {
+      "description": "scope/evidence-plan.yaml: one row per control (or some of its requirements), saying how its evidence arrives, who provides it and how often. Manual and hybrid rows become recurring CISO Assistant tasks that remind the owner with the runbook.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidence"
+      ],
+      "properties": {
+        "grc_team": {
+          "$ref": "#/$defs/text",
+          "description": "The GRC team (a team in access.yaml) that receives and reviews evidence, for rows that do not name their own."
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "ref_id",
+              "control",
+              "method"
+            ],
+            "properties": {
+              "ref_id": {
+                "$ref": "#/$defs/text"
+              },
+              "control": {
+                "$ref": "#/$defs/text",
+                "description": "An applied control's ref_id from controls.yaml."
+              },
+              "requirements": {
+                "$ref": "#/$defs/names",
+                "description": "The requirements (ref or URN) the evidence supports; all the control's when left out."
+              },
+              "method": {
+                "enum": [
+                  "automated",
+                  "manual",
+                  "hybrid"
+                ]
+              },
+              "collector": {
+                "$ref": "#/$defs/text",
+                "description": "A collector instance's name from hound.yaml, for automated and hybrid rows."
+              },
+              "owner": {
+                "$ref": "#/$defs/text",
+                "description": "The team (in access.yaml) that provides the evidence, for manual and hybrid rows."
+              },
+              "grc_team": {
+                "$ref": "#/$defs/text",
+                "description": "This row's GRC team, if not the file's."
+              },
+              "every": {
+                "enum": [
+                  "3 months",
+                  "6 months",
+                  "12 months"
+                ]
+              },
+              "runbook": {
+                "$ref": "#/$defs/text",
+                "description": "A Markdown file in the compliance repo: what to export, from where, and how to send it to the GRC team."
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "method": {
+                      "enum": [
+                        "manual",
+                        "hybrid"
+                      ]
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "owner",
+                    "every",
+                    "runbook"
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "method": {
+                      "enum": [
+                        "automated",
+                        "hybrid"
+                      ]
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "collector"
+                  ]
+                }
+              }
+            ]
           }
         }
       }
