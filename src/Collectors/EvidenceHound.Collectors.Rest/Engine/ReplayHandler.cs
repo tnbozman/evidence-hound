@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Net;
 using System.Text;
 
@@ -28,9 +29,33 @@ internal sealed class ReplayHandler(IReadOnlyList<RecordedResponse> responses, s
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound) { Content = new StringContent("""{"error":"no recording"}""", Encoding.UTF8, "application/json") });
         }
 
+        if (recording.File is { } archive && Directory.Exists(Path.Combine(folder, archive)))
+        {
+            return Task.FromResult(new HttpResponseMessage((HttpStatusCode)recording.Status) { Content = Zipped(Path.Combine(folder, archive)) });
+        }
+
         var body = (recording.File is { } file ? File.ReadAllText(Path.Combine(folder, file)) : recording.Body ?? "")
             .Replace("{{api}}", url.GetLeftPart(UriPartial.Authority), StringComparison.Ordinal);
         return Task.FromResult(new HttpResponseMessage((HttpStatusCode)recording.Status) { Content = new StringContent(body, Encoding.UTF8, MediaType(recording.File)) });
+    }
+
+    /// <summary>A recording that is a folder (such as <c>recordings/plan.zip/</c>) is answered as a zip of its files, so recorded artefacts stay readable in review.</summary>
+    private static ByteArrayContent Zipped(string directory)
+    {
+        using var stream = new MemoryStream();
+        using (var zip = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen: true))
+        {
+            foreach (var path in Directory.GetFiles(directory, "*", SearchOption.AllDirectories).Order(StringComparer.Ordinal))
+            {
+                using var entry = zip.CreateEntry(Path.GetRelativePath(directory, path).Replace('\\', '/'), CompressionLevel.Optimal).Open();
+                using var source = File.OpenRead(path);
+                source.CopyTo(entry);
+            }
+        }
+
+        var content = new ByteArrayContent(stream.ToArray());
+        content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/zip");
+        return content;
     }
 
     private static string MediaType(string? file) => Path.GetExtension(file ?? "").ToUpperInvariant() switch

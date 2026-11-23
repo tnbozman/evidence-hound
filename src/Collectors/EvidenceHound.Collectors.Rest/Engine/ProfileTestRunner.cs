@@ -80,7 +80,7 @@ public static class ProfileTestRunner
         var ids = profile.Checks.Select(c => c.Id).ToHashSet(StringComparer.Ordinal);
         var problems = testCase.Expect.Keys.Where(id => !ids.Contains(id))
             .Select(id => $"expect names '{id}', which is not a check of profile '{profile.Name}'.")
-            .Concat(testCase.Responses.Where(r => r.File is { } f && !File.Exists(Path.Combine(folder, f))).Select(r => $"the recording '{r.File}' does not exist."))
+            .Concat(testCase.Responses.Where(r => r.File is { } f && !Path.Exists(Path.Combine(folder, f))).Select(r => $"the recording '{r.File}' does not exist."))
             .ToArray();
         return problems.Length == 0
             ? Result.Ok(testCase)

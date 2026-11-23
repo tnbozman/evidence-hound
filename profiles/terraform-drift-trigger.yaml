@@ -1,0 +1,80 @@
+# Infrastructure drift, from a GitHub Actions run that hound starts first, then the plan it publishes (s09-33).
+# The one write any library profile makes: it runs only when the collector instance sets allow_writes: true.
+# Token: a fine-grained token on the IaC repository only, with Actions: read and write (write starts the workflow). Nothing else.
+# The workflow must accept workflow_dispatch. Otherwise the same as terraform-drift.
+profile: terraform-drift-trigger
+version: "1.0.0"
+source: evidence-hound/profiles/terraform-drift-trigger.yaml
+description: Starts the IaC drift workflow (opt-in write), waits for it, then reads the plan JSON it published.
+requires:
+  hound: ">=0.1"
+
+parameters:
+  repository:
+    type: string
+    required: true
+    description: The IaC repository, as owner/name.
+  workflow:
+    type: string
+    required: true
+    description: The workflow file that makes the plan, for example drift.yml.
+  branch:
+    type: string
+    default: main
+    description: The branch the workflow runs on.
+  artifact:
+    type: string
+    default: drift-plan
+    description: The artefact holding plan.json.
+  max_age:
+    type: duration
+    default: P2D
+    description: The oldest plan still trusted, as an ISO 8601 duration. Older is unable to assess.
+  api_url:
+    type: url
+    default: https://api.github.com/
+    description: The GitHub API (GitHub Enterprise Server has its own).
+
+secrets:
+  token:
+    required: true
+    description: A fine-grained token on the IaC repository with Actions read and write, to start the workflow.
+
+connection:
+  base_url: ${api_url}
+  allowed_hosts: ["${api_url}"]
+  auth: { type: bearer, token: "${secrets.token}" }
+  rate_limit:
+    per_second: 2
+    max_retries: 3
+
+queries:
+  dispatch:
+    post: repos/${repository}/actions/workflows/${workflow}/dispatches
+    body: { ref: "${branch}", return_run_details: true }
+    write: true
+    async: { status_url: $.run_url, done: { field: $.status, equals: completed }, result_url: $.artifacts_url, poll_seconds: 30, timeout_seconds: 1800 }
+    items: $.artifacts
+    keep: [id, name, workflow_run]
+    vars: { run_id: "$.artifacts[0].workflow_run.id" }
+  run:
+    get: repos/${repository}/actions/runs/${run_id}
+    keep: [id, run_number, head_sha, head_branch, event, status, conclusion, created_at, updated_at, html_url]
+  artifacts:
+    get: repos/${repository}/actions/runs/${run_id}/artifacts
+    query: { name: "${artifact}" }
+    items: $.artifacts
+    vars: { artifact_id: "$.artifacts[0].id" }
+  plan:
+    get: repos/${repository}/actions/artifacts/${artifact_id}/zip
+    format: zip
+    member: plan.json
+    redirect_hosts: ["*.actions.githubusercontent.com", "*.blob.core.windows.net"]
+    keep: [format_version, terraform_version, resource_drift, resource_changes]
+
+checks:
+  - id: infrastructure.drift.none
+    title: The cloud infrastructure matches its reviewed code
+    over: [run, plan]
+    code: terraform.no_drift
+    with: { max_age: "${max_age}", repository: "${repository}" }

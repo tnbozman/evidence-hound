@@ -33,7 +33,7 @@ public sealed class CollectorsCommandTests : IDisposable
               secrets: none
             rest 1.0.0
               checks: set per instance by its settings
-              settings: profile (required), profiles_path (optional), include_identities (optional), require_profile_tests (optional)
+              settings: profile (required), profiles_path (optional), include_identities (optional), allow_writes (optional), require_profile_tests (optional)
               secrets: none
             widget 0.1.0
               checks: widget.patched

@@ -1,0 +1,77 @@
+# Infrastructure drift, read from the plan an IaC pipeline published as a GitHub Actions artefact (s09-33).
+# hound never runs Terraform, never reads state and holds no cloud credentials: the pipeline runs
+#   terraform plan -refresh-only -json   (or a normal plan, saved with terraform show -json)
+# and uploads the JSON as plan.json in an artefact. This profile only reads: the newest completed run of that workflow, its artefact
+# and the plan. To start the workflow first, use terraform-drift-trigger instead.
+# Token: a fine-grained token on the IaC repository only, with Actions: read. Nothing else.
+profile: terraform-drift
+version: "1.0.0"
+source: evidence-hound/profiles/terraform-drift.yaml
+description: Infrastructure drift from the plan JSON an IaC pipeline published as a GitHub Actions artefact; read only.
+requires:
+  hound: ">=0.1"
+
+parameters:
+  repository:
+    type: string
+    required: true
+    description: The IaC repository, as owner/name.
+  workflow:
+    type: string
+    required: true
+    description: The workflow file that makes the plan, for example drift.yml.
+  branch:
+    type: string
+    default: main
+    description: The branch whose runs are read.
+  artifact:
+    type: string
+    default: drift-plan
+    description: The artefact holding plan.json.
+  max_age:
+    type: duration
+    default: P2D
+    description: The oldest plan still trusted, as an ISO 8601 duration. Older is unable to assess.
+  api_url:
+    type: url
+    default: https://api.github.com/
+    description: The GitHub API (GitHub Enterprise Server has its own).
+
+secrets:
+  token:
+    required: true
+    description: A fine-grained token on the IaC repository with Actions read only.
+
+connection:
+  base_url: ${api_url}
+  allowed_hosts: ["${api_url}"]
+  auth: { type: bearer, token: "${secrets.token}" }
+  rate_limit:
+    per_second: 2
+    max_retries: 3
+
+queries:
+  run:
+    get: repos/${repository}/actions/workflows/${workflow}/runs
+    query: { branch: "${branch}", status: completed, per_page: "1" }
+    items: $.workflow_runs
+    keep: [id, run_number, head_sha, head_branch, event, status, conclusion, created_at, updated_at, html_url]
+    vars: { run_id: "$.workflow_runs[0].id" }
+  artifacts:
+    get: repos/${repository}/actions/runs/${run_id}/artifacts
+    query: { name: "${artifact}" }
+    items: $.artifacts
+    vars: { artifact_id: "$.artifacts[0].id" }
+  plan:
+    get: repos/${repository}/actions/artifacts/${artifact_id}/zip
+    format: zip
+    member: plan.json
+    redirect_hosts: ["*.actions.githubusercontent.com", "*.blob.core.windows.net"]
+    keep: [format_version, terraform_version, resource_drift, resource_changes]
+
+checks:
+  - id: infrastructure.drift.none
+    title: The cloud infrastructure matches its reviewed code
+    over: [run, plan]
+    code: terraform.no_drift
+    with: { max_age: "${max_age}", repository: "${repository}" }

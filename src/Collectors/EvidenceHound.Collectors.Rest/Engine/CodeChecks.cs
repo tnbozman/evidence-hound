@@ -19,6 +19,7 @@ public static class CodeChecks
     public static IReadOnlyDictionary<string, CodeCheck> All { get; } = new Dictionary<string, CodeCheck>(StringComparer.Ordinal)
     {
         ["sophos.super_admin_count"] = SuperAdminCount,
+        ["terraform.no_drift"] = TerraformNoDrift,
     };
 
     public static IReadOnlyList<string> Names { get; } = [.. All.Keys.Order(StringComparer.Ordinal)];
@@ -50,6 +51,60 @@ public static class CodeChecks
         var observation = string.Create(CultureInfo.InvariantCulture, $"{count} of {admins.Count} Sophos Central admins {holds} Super Admin; at most {max} allowed.");
         return new(count <= max ? CheckOutcome.Pass : CheckOutcome.Fail, observation);
     }
+
+    /// <summary>
+    /// The infrastructure matches its code: the plan JSON an IaC pipeline published (<c>terraform plan -refresh-only -json</c> or a
+    /// normal plan) lists no drift and no change. Reads <c>over: [run, plan]</c>, the pipeline run and its plan, with
+    /// <c>with: { max_age: &lt;ISO 8601 duration&gt;, repository: &lt;owner/name&gt; }</c>. No run, a run that did not succeed, a plan older
+    /// than <c>max_age</c> or no plan cannot be assessed. The finding names the repository, commit and run it was made from, read from the run.
+    /// </summary>
+    public static Finding TerraformNoDrift(CodeCheckInput input)
+    {
+        ArgumentNullException.ThrowIfNull(input);
+        if (input.Over is not [var runs, var plans] || !Profiles.Durations.TryParse(input.With.GetValueOrDefault("max_age") ?? "", out var maxAge))
+        {
+            return new(CheckOutcome.Error, "Unable to assess: terraform.no_drift reads over: [run, plan] with: { max_age: <duration such as P2D>, repository: <owner/name> }.");
+        }
+
+        if (runs.FirstOrDefault() is not JsonObject run)
+        {
+            return new(CheckOutcome.Error, "Unable to assess: the pipeline has no completed run, so there is no plan to read.");
+        }
+
+        var from = string.Create(
+            CultureInfo.InvariantCulture,
+            $"Plan from {input.With.GetValueOrDefault("repository") ?? "the IaC repository"} at commit {Text(run["head_sha"]) ?? "unknown"}, run {Scalar(run["id"]) ?? "unknown"}.");
+        if (Text(run["conclusion"]) is var conclusion && conclusion != "success")
+        {
+            return new(CheckOutcome.Error, $"Unable to assess: the newest run ended {conclusion ?? "without a conclusion"}, so its plan is not trusted. {from}");
+        }
+
+        if (!DateTimeOffset.TryParse(Text(run["updated_at"]), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var updated) || input.Now - updated > maxAge)
+        {
+            return new(CheckOutcome.Error, $"Unable to assess: the newest plan is older than {input.With["max_age"]}; run the pipeline again. {from}");
+        }
+
+        if (plans.FirstOrDefault() is not JsonObject plan)
+        {
+            return new(CheckOutcome.Error, $"Unable to assess: the run published no plan. {from}");
+        }
+
+        var changed = Changes(plan["resource_drift"]).Concat(Changes(plan["resource_changes"]))
+            .GroupBy(c => c.Address, StringComparer.Ordinal)
+            .Select(g => $"{g.Key} ({string.Join(", ", g.First().Actions)})")
+            .ToArray();
+        return changed.Length == 0
+            ? new(CheckOutcome.Pass, $"No drift: the infrastructure matches its code. {from}")
+            : new(CheckOutcome.Fail, string.Create(CultureInfo.InvariantCulture, $"{changed.Length} {(changed.Length == 1 ? "resource differs" : "resources differ")} from the infrastructure code: {string.Join("; ", changed)}. {from}"));
+    }
+
+    /// <summary>Resource changes whose actions are more than no-op or read.</summary>
+    private static IEnumerable<(string Address, string[] Actions)> Changes(JsonNode? list) =>
+        (list as JsonArray ?? []).OfType<JsonObject>()
+            .Select(c => (Address: Text(c["address"]) ?? "unknown", Actions: (c["change"]?["actions"] as JsonArray ?? []).Select(Text).OfType<string>().ToArray()))
+            .Where(c => c.Actions.Any(a => a is not ("no-op" or "read")));
+
+    private static string? Scalar(JsonNode? node) => node is JsonValue value ? value.ToString() : null;
 
     private static bool IsSuperAdminName(string name) =>
         string.Equals(name.Replace(" ", string.Empty, StringComparison.Ordinal).Replace("-", string.Empty, StringComparison.Ordinal), "superadmin", StringComparison.OrdinalIgnoreCase);

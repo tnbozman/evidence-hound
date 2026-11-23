@@ -10,7 +10,7 @@ namespace EvidenceHound.Collectors.Rest.Tests;
 /// </summary>
 public sealed class TerraformDriftProfileTests
 {
-    private const string DriftCheck = "infrastructure.drift.none";
+    internal const string DriftCheck = "infrastructure.drift.none";
 
     private static readonly DateTimeOffset Now = new(2026, 11, 23, 2, 0, 0, TimeSpan.Zero);
 
@@ -77,11 +77,11 @@ public sealed class TerraformDriftProfileTests
             var actual = cases.ToDictionary(c => c.Name, c => c.Checks.Single(k => k.CheckId == DriftCheck).Actual);
             if (name == "terraform-drift")
             {
-                actual.ShouldBe(new Dictionary<string, string> { ["no-drift"] = "pass", ["drift"] = "fail", ["missing-artefact"] = "unable to assess" }, ignoreOrder: true);
+                actual.ShouldBe(new Dictionary<string, string> { ["no-drift"] = "pass", ["drift"] = "fail", ["missing-artefact"] = "unable_to_assess" }, ignoreOrder: true);
             }
             else
             {
-                actual.ShouldBe(new Dictionary<string, string> { ["triggered"] = "fail", ["writes-off"] = "unable to assess" }, ignoreOrder: true);
+                actual.ShouldBe(new Dictionary<string, string> { ["triggered"] = "fail", ["writes-off"] = "unable_to_assess" }, ignoreOrder: true);
             }
         }
     }
