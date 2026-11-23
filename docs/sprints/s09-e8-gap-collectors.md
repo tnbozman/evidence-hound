@@ -871,7 +871,7 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 - With a fake Anthropic server, `hound skill draft --repo <copy of the example repo> --skills <temp> --show-requests` (answers piped in) wrote four skills at version 1; the fake reply's `10.20.30.40` was written as `[ip]`; `hound skill validate --skills <temp>` printed "11 skills valid (4 from ...), 0 warnings." and exited 0. The requests shown hold only the example repo's `example.com` addresses.
 
 ### s09-32 Onboarding tutorial: Example Pty Ltd's privately hosted GRC platform (added 2026-11-23, refined the same day)
-- [ ] Done
+- [x] Done
 
 **Story:** As a GRC team member learning hound, I want a complete onboarding tutorial for Example Pty Ltd, whose CISO Assistant and Evidence Hound run privately in the cloud and reach the office's Sophos XGS firewall over a site-to-site VPN, so that I can follow one realistic stack end to end and remember that the compliance platform is itself in scope.
 
@@ -900,12 +900,12 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 
 **Deviation:** the files the tutorial writes are in `examples/onboarding-tutorial/` (same paths as a config repo, with `answers/` to replay each run), not inside `examples/compliance-repo`. The template is what a new repo copies and what the functional tests and `make ca-up` apply in one go; systems behind the supplier gate are refused until their suppliers' reviews are concluded, so in the template they would block every first apply. `ExampleRepoTests.The_template_holds_none_of_the_tutorials_systems` keeps it that way.
 
-Functional check, run 2026-11-23 with `--no-model` (the answers files stand in for the fake model): following the tutorial on a fresh copy of the template reproduces `scope/setup.yaml`, both audits and both onboarding records exactly (apart from the schema comment line), `hound config validate` and `hound scope validate scope --config hound.yaml` pass (4 third parties, 5 audits), and `hound profile test` passes for `sophos-central` and `terraform-drift`. `TutorialTests.Onboarding_tutorial_answers_reproduce_the_committed_files` repeats this in the unit suite. The plan against CISO Assistant is `OnboardingTutorialFunctionalTests` (suppliers applied, reviews concluded ok, then the plan creates both systems and audits), run in CI.
+Functional check, run 2026-11-23 with `--no-model` (the answers files stand in for the fake model): following the tutorial on a fresh copy of the template reproduces `scope/setup.yaml`, both audits and both onboarding records exactly (apart from the schema comment line), `hound config validate` and `hound scope validate scope --config hound.yaml` pass (4 third parties, 5 audits), and `hound profile test` passes for `sophos-central` and `terraform-drift`. `TutorialTests.Onboarding_tutorial_answers_reproduce_the_committed_files` repeats this in the unit suite. The plan against CISO Assistant is `OnboardingTutorialFunctionalTests` (suppliers applied, reviews concluded ok, then the plan creates both systems and audits), run in CI: passed in CI run 45121842725 (2026-11-23, head 6648e42), with the whole functional suite.
 
 **Order:** after the hands-on Sophos path (s09-25).
 
 ### s09-33 Infrastructure drift from the IaC pipeline's plan artefact, without a Terraform dependency (added 2026-11-23)
-- [ ] Done
+- [x] Done
 
 **Story:** As a GRC team member, I want `hound` to tell me whether the cloud hosting our GRC platform still matches its reviewed infrastructure code, without `hound` running Terraform or holding cloud credentials or state, so that drift is evidence like any other check.
 
