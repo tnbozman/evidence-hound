@@ -170,9 +170,10 @@ task_read="$( [[ -n "$task_id" ]] && call GET "task-templates/$task_id/" || echo
 answer task_templates "$(jq -n \
   --argjson paths "$(paths_like '^/api/task-(templates|nodes)/')" \
   --argjson tt "$(props TaskTemplate)" --argjson groups "$(props UserGroup)" --argjson ev "$(props Evidence)" \
+  --argjson teams "$(props Team)" --argjson actors "$(props Actor)" --argjson team_paths "$(paths_like '^/api/(teams|actors)/')" \
   --argjson enums "$(jq '[.components.schemas | to_entries[] | select(.key | test("Frequency|Schedule|Recurr|TaskNode.*Status|Status.*Enum")) | {(.key): (.value.enum // .value.properties // .value)}] | add // {}' "$schema")" \
   --arg cs "$(status_of "$task_probe")" --arg cb "$(body_of "$task_probe" | head -c 1500)" --arg rb "$(body_of "$task_read" | head -c 2500)" \
-  '{paths: $paths, task_template_fields: $tt, user_group_fields: $groups, evidence_fields: $ev, enums: $enums, create_status: $cs, create_body: $cb, read_body: $rb}')"
+  '{paths: $paths, task_template_fields: $tt, user_group_fields: $groups, evidence_fields: $ev, team_fields: $teams, actor_fields: $actors, team_paths: $team_paths, enums: $enums, create_status: $cs, create_body: $cb, read_body: $rb}')"
 [[ -n "$task_id" ]] && call DELETE "task-templates/$task_id/" > /dev/null
 
 # --- Clean up ------------------------------------------------------------------------------------
