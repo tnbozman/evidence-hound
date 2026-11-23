@@ -1,6 +1,6 @@
 # Design: onboarding driven by the person's own coding agent
 
-Status: Proposed (Nov 23), for the maintainer's review. Changes the [onboarding assistant design](onboarding-assistant.md): the model moves out of `hound` and into the coding agent the person already uses. Nothing here is built yet; the tasks at the end are a proposal for s09 and s10.
+Status: Agreed (Nov 23). Changes the [onboarding assistant design](onboarding-assistant.md): the model moves out of `hound` and into the coding agent the person already uses. The build is tasks s09-36 to s09-40 in [the s09 sprint](../sprints/s09-e8-gap-collectors.md).
 
 ## Why
 
@@ -25,7 +25,16 @@ The person running the trial asked for a best-effort pass that a small business 
 5. **Imported decisions keep their provenance.** An agent onboarding an existing audit workbook records each result as "imported from `<workbook>`, row `<n>`, approved by `<who>` on `<date>`" as the workbook says, never as approved by the agent. A row without an approver is imported as a draft.
 6. **Skills ship for the agents people have.** The existing skills (supplier assessment, applicability, reading an API specification, reviewing a config change, mapping) are packaged as Claude Code skills (`.claude/skills/`) and as `AGENTS.md` plus `.github/copilot-instructions.md` for Copilot, in the compliance repo template that `hound init` writes. A new skill, **import an audit workbook**, covers mapping an existing Excel audit of controls and evidence to scope files.
 7. **A stronger review before apply.** A review skill runs `hound explain --json`, compares each decision with the same ISM control under other strategies, and must clear every flag it raises (or the person accepts it) before the agent proposes `hound scope apply`.
-8. **The built-in model becomes optional.** `hound onboard` without an agent keeps working with `--no-model`; the built-in model stays for teams without an agent until the agent path has proved itself, then is reviewed for removal.
+8. **The built-in model is frozen, then removed.** No new features use it from today. Once the agent path has onboarded the Sophos firewall again, one task removes the model calls, the Anthropic and OpenAI SDKs, `hound onboard config`, `onboarding.yaml`, the outbound guard and the token budget. Commands keep their deterministic parts (`explain` still prints the flags code finds; `onboard` still records decisions).
+9. **`hound agent setup` writes the assistant files.** It asks which assistant the person uses in VS Code and writes them into the compliance repo from one source of skills, and `hound init` offers it at the end. Re-running it updates hound's files and leaves the person's own untouched:
+
+   | Assistant | Files |
+   | --- | --- |
+   | Claude Code | `CLAUDE.md`; `.claude/skills/<skill>/SKILL.md` for each skill; `.claude/agents/<agent>.md` for the onboarding and review agents |
+   | GitHub Copilot in VS Code | Custom agents `.github/agents/<agent>.agent.md` (frontmatter `name`, `description`, `tools`, `skills`; tools by alias: `read`, `search`, `edit`, `execute`), and `.github/copilot-instructions.md` for the rules every agent follows |
+   | Both | All of the above, from the same skill text |
+
+   Agents get only the tools their job needs: the review agent has `read`, `search` and `execute` (to run `hound`) but not `edit`, because VS Code warns that an instruction not to edit is no permission boundary. Approvals are enforced by `hound`, not by the agent files.
 
 ## Rules that do not change
 
@@ -51,6 +60,4 @@ With the built-in model, `hound`'s outbound guard decided what left the machine.
 
 ## Open questions
 
-- Which agents to support first: Claude Code and GitHub Copilot, or also others that read `AGENTS.md`?
-- Does the built-in model stay as a fallback, and for how long?
 - Can a person's approval be proved by a signed commit alone, or does `hound` also need an interactive confirmation?
