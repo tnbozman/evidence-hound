@@ -916,6 +916,7 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 
 ### s09-32 Onboarding tutorial: Example Pty Ltd's privately hosted GRC platform (added 2026-11-23, refined the same day)
 - [x] Done
+- Rechecked 2026-11-23 after s09-37, s09-40 and s09-55: the model and its questions are gone already; step 6 has the OCI Terraform control tests. Updated: suppliers are approved and their reviews concluded with `hound approve` (step 3) and the conclusions applied with the plan (step 7), instead of concluding them in CISO Assistant; the intro points to `make trial`, which now walks this deployment (s09-57).
 
 **Story:** As a GRC team member learning hound, I want a complete onboarding tutorial for Example Pty Ltd, whose CISO Assistant and Evidence Hound run privately in the cloud and reach the office's Sophos XGS firewall over a site-to-site VPN, so that I can follow one realistic stack end to end and remember that the compliance platform is itself in scope.
 
