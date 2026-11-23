@@ -1355,6 +1355,31 @@ At the maintainer's request (2026-11-23): the example audits (`EX-E8-2026`, `EX-
 - Result (2026-11-23): through the API, the Example Pty Ltd domain folder, the evidence in Global and the example-only libraries (example baseline, loaded and stored; ASD Essentials, loaded) were removed. `HOUND_TRIAL_YES=1 make trial` applied the trial's scope again and the Sophos run published 3 items, 0 failed, to `EX-E8-Q2-2027FY`. CISO Assistant then held one audit (`EX-E8-Q2-2027FY`, "Essential Eight ML2 Q2-2027FY", in progress), one applied control (AC-AUTO-EVIDENCE), no assets, and the four Sophos evidence items. `bats scripts/tests` all ok.
 - As built: `postStartCommand` runs `scripts/dev-ca-env.sh` only; `README.md` says to run `scripts/ca-apply-scope.sh` for the example. The change takes effect the next time the dev container starts.
 
+### s09-52 Sophos Central dev server, and a trial with no API keys (added 2026-11-23)
+- [ ] Done
+
+Added at the maintainer's request (2026-11-23): an example of IT to audit, so the trial for Example Pty Ltd tests the configuration and continual evidence collection self-contained, with no API keys. Follows the Microsoft 365 dev server (s09-44). The XGS firewall's own API waits on its specification (s09-15/16), so it is not mocked here.
+
+**Story:** As someone trying Evidence Hound, I want `make trial` to collect from a fictional Sophos Central tenant on my machine, so that I can see configuration, collection, publishing and a changed result in CISO Assistant without a vendor account or a credential.
+
+**Acceptance criteria**
+- A fictional Example Pty Ltd Sophos Central tenant described once (firewalls, admins, roles), from which every answer the `sophos-central` profile reads is generated with the same IDs everywhere: `whoami`, firewalls, admins and roles, paged by page number as Sophos Central pages them. Variants `compliant` (every check passes) and `gaps` (named deviations, each failing a named check).
+- No sign-in logic: the token address answers one fixed response, as the profile's own recorded tests do, and checks no credential.
+- `make sophos-dev` serves it on a local port (`--variant`, `--deviation`, `--port`, and `--public-url` for the address the runner container reaches it at).
+- `make trial`, step 6, uses the dev server by default: it starts it, adds the `sophos` rest collector with the dev server's addresses and a placeholder secret (no question asks for a credential), runs it dry, publishes, then offers to switch on a deviation and run again so the result in CISO Assistant changes. A person's own Sophos Central tenant stays an option. An unattended run (`HOUND_TRIAL_YES=1`) goes through step 6 too.
+- `docs/tutorials/sophos-dev-server.md` and the trial guide say what the tenant holds, the variants, and what it cannot show.
+
+**Tests first**
+- `SophosDevTenantTests.Every_query_the_profile_reads_is_served`
+- `SophosDevTenantTests.Ids_are_the_same_across_answers`
+- `SophosDevTenantTests.Compliant_tenant_passes_every_check`
+- `SophosDevTenantTests.Each_deviation_fails_its_named_check`
+- `SophosDevTenantTests.The_token_address_checks_no_credential`
+- `trial.bats`: the dev server's address for each CISO Assistant case, and the collector settings the trial writes for it.
+
+**Functional check**
+- `make sophos-dev`, then `hound run --only sophos --dry-run` against it; `HOUND_TRIAL_YES=1 make trial` in the dev container goes through step 6 with no credential.
+
 ## Discovered work
 
 - s09-47: move the fictional example repo's audits to series (`EX-E8`, `EX-ESSENTIALS`, `EX-BASELINE` with cycles), with its config targets, the example run and the tests that use `EX-E8-2026` as a fixture.
