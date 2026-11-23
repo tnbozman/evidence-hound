@@ -46,7 +46,7 @@ public static partial class OnboardOutput
             text.Append(CultureInfo.InvariantCulture, $"groups: [{string.Join(", ", session.Groups.Select(Quote))}]\n");
         }
 
-        text.Append(CultureInfo.InvariantCulture, $"domain: {Quote(place.Domain)}\nperimeter: {Quote(place.Perimeter)}\n");
+        text.Append(CultureInfo.InvariantCulture, $"domain: {Quote(place.Domain)}\nperimeter: {Quote(place.Perimeter)}\nsystems: [{Quote(session.System)}]\n");
         text.Append("# Requirements not listed below are checked through the API; they stay not assessed until the collector's results are published.\n");
         text.Append("unlisted:\n  result: not_assessed\n");
         var accepted = string.Create(CultureInfo.InvariantCulture, $"when onboarding {session.System} on {today:yyyy-MM-dd} ({record}).");

@@ -6,6 +6,7 @@ using System.Text.Json.Nodes;
 using EvidenceHound.Core.Results;
 using EvidenceHound.Core.Scope;
 using EvidenceHound.Onboarding.Models;
+using EvidenceHound.Onboarding.Output;
 using EvidenceHound.Onboarding.Skills;
 
 namespace EvidenceHound.Onboarding.Suppliers;
@@ -190,7 +191,7 @@ public static class SupplierFile
         return $"{choice.EntityRef.ToLowerInvariant()}.yaml";
     }
 
-    public static string Write(SupplierChoice choice, IReadOnlyList<LevelProposal> levels, string system, DateOnly today, Output.AuditPlace? place = null)
+    public static string Write(SupplierChoice choice, IReadOnlyList<LevelProposal> levels, string system, DateOnly today, AuditPlace? place = null)
     {
         ArgumentNullException.ThrowIfNull(choice);
         ArgumentNullException.ThrowIfNull(levels);
@@ -198,6 +199,11 @@ public static class SupplierFile
         text.Append(CultureInfo.InvariantCulture, $"# Drafted by hound onboard for {system} on {today:yyyy-MM-dd}. Review each level and its reason.\n");
         text.Append("# Once the supplier is approved, make the contract active and run hound onboard again.\n");
         text.Append(CultureInfo.InvariantCulture, $"ref_id: {Quote(choice.EntityRef)}\nname: {Quote(choice.EntityName)}\n");
+        if (place is not null)
+        {
+            text.Append(CultureInfo.InvariantCulture, $"domain: {Quote(place.Domain)}\n");
+        }
+
         foreach (var (name, low, high) in SupplierProposal.Scales.Where(s => s.Name != "criticality"))
         {
             Level(text, "", name, low, high, levels);
@@ -207,6 +213,16 @@ public static class SupplierFile
         Level(text, "    ", "criticality", 1, 4, levels);
         text.Append(CultureInfo.InvariantCulture, $"contracts:\n  - ref_id: {Quote(choice.ContractRef)}\n    name: {Quote(choice.ContractName)}\n    status: draft\n");
         text.Append(CultureInfo.InvariantCulture, $"    solutions: [{Quote(choice.SolutionRef)}]\n");
+        if (place is null)
+        {
+            text.Append("# assessments: add a review (ref_id, name, solutions, perimeter, due_date, review_every) for the GRC team to conclude in CISO Assistant.\n");
+            return text.ToString();
+        }
+
+        text.Append("# The supplier's review: the GRC team concludes it in CISO Assistant, and a system it supplies is registered only once it is concluded ok.\n");
+        text.Append(CultureInfo.InvariantCulture, $"assessments:\n  - ref_id: {Quote($"EA-{choice.EntityRef}")}\n    name: {Quote($"{choice.EntityName} review")}\n");
+        text.Append(CultureInfo.InvariantCulture, $"    solutions: [{Quote(choice.SolutionRef)}]\n    perimeter: {Quote(place.Perimeter)}\n");
+        text.Append(CultureInfo.InvariantCulture, $"    due_date: \"{today.AddMonths(1):yyyy-MM-dd}\"\n    review_every: 12 months\n");
         return text.ToString();
     }
 

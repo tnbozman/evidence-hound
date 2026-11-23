@@ -43,7 +43,10 @@ carry on where it stopped; the model is never asked again for what it already an
    model reads only the text ones. Its summary of them stays in the session as a draft, never as evidence. The contract is drafted as
    `status: draft`, and the session stops: **a system is onboarded only once its supplier is approved.** Onboarding checks the scope
    files for an active contract covering the solution; `hound scope plan` then checks approval in CISO Assistant, where the GRC team
-   concludes the supplier's assessment (see [Supplier approval](scope.md#supplier-approval)).
+   concludes the supplier's assessment (see [Supplier approval](scope.md#supplier-approval)). A drafted supplier file includes that
+   review (`EA-<supplier>`, due a month from today, then every 12 months, in the first domain and perimeter of `scope/setup.yaml`). So the
+   order is: approve the contract in the file, apply the supplier, conclude its review as ok in CISO Assistant, then finish onboarding
+   and apply the system.
 3. **What the API offers.** Each `--spec` (an OpenAPI 3 document, JSON or YAML) is read into a short summary: the endpoints that read,
    sign-in and paging. Only that summary is sent, never the specification.
 4. **Applicability.** Every requirement in the `--group` implementation groups (all of them without `--group`) gets one proposal. Give the
@@ -56,7 +59,10 @@ carry on where it stopped; the model is never asked again for what it already an
    `scope/setup.yaml` by default) and writes, into the working copy only:
    - `scope/audits/<system>-<framework>.yaml`: the system's own audit. Not applicable rows are done with result `not_applicable` and the
      justification and approver in the observation; rows another system meets say which system; manual rows are to do. Rows checked
-     through the API are left to the collector (`unlisted: not_assessed` until its results are published).
+     through the API are left to the collector (`unlisted: not_assessed` until its results are published). The audit lists the system.
+   - `scope/setup.yaml`: the system is declared in the audit's domain with `solution:` set to the supplier's solution, or, if it is already
+     declared, `solution:` is added to it (a different solution already there stops the write). That is what lets `hound scope plan` hold
+     the system back until its supplier is [approved in CISO Assistant](scope.md#supplier-approval).
    - `mappings/<framework>.yaml`: manual requirements the mapping does not name yet are added to `manual_only`, with your reasoning as the
      suggested source. Existing lines are never changed.
    - `onboarding/<system>-<framework>-<date>.md`: the record for auditors: the system, the supplier and its levels, the documents kept

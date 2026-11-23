@@ -67,8 +67,17 @@ internal static partial class YamlEdit
     }
 
     /// <summary>Sets the scalar at <paramref name="path"/> when it is missing; an equal value is left alone and a different one is refused.</summary>
-    public static Result<string> SetScalar(string yaml, string path, string value) =>
-        Result.Fail<string>(new Problem("setup.not_implemented", $"'{path}' cannot be set yet."));
+    public static Result<string> SetScalar(string yaml, string path, string value)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        return Locate(yaml, path).Bind(found => found.Value switch
+        {
+            null => Result.Ok(found.Lines.Insert(LastLine(found.Parent), [$"{Indent(found.KeyIndent)}{found.Key}: {Scalar(value)}"])),
+            YamlScalarNode { Value: var held } when held == value => Result.Ok(yaml),
+            YamlScalarNode { Value: var held } => Result.Fail<string>(new Problem("setup.value_differs", $"'{path}' is already '{held}', not '{value}'; change it by hand if '{value}' is right.")),
+            _ => Result.Fail<string>(new Problem("setup.not_a_value", $"'{path}' is not a single value; change it by hand.")),
+        });
+    }
 
     /// <summary>The item as block lines, its dash at <paramref name="indent"/>.</summary>
     private static IEnumerable<string> Item(YamlMap item, int indent) =>

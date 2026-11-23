@@ -1,7 +1,9 @@
 using System.CommandLine;
 using System.Globalization;
+using EvidenceHound.Cli.Setup;
 using EvidenceHound.Core.Frameworks;
 using EvidenceHound.Core.Results;
+using EvidenceHound.Core.Scope;
 using EvidenceHound.Core.Secrets;
 using EvidenceHound.Core.Yaml;
 using EvidenceHound.Onboarding.Configuration;
@@ -269,8 +271,9 @@ internal static class OnboardSystemCommand
         }
 
         Directory.CreateDirectory(Path.GetDirectoryName(file)!);
-        await File.WriteAllTextAsync(file, SupplierFile.Write(choice, levels, settings.System, DateOnly.FromDateTime(DateTime.Today)), cancellationToken);
-        await terminal.Error.WriteLineAsync($"Drafted {file} with a draft contract.".AsMemory(), cancellationToken);
+        var place = (await DomainsAsync(settings, cancellationToken)) is [{ Perimeters: [var perimeter, ..] } domain, ..] ? new AuditPlace(domain.Name, perimeter.Name) : null;
+        await File.WriteAllTextAsync(file, SupplierFile.Write(choice, levels, settings.System, DateOnly.FromDateTime(DateTime.Today), place), cancellationToken);
+        await terminal.Error.WriteLineAsync($"Drafted {file} with a draft contract{(place is null ? "" : " and a review for the GRC team to conclude in CISO Assistant")}.".AsMemory(), cancellationToken);
         return Result.Ok((session with { SupplierLevels = levels, SupplierSummary = summary, Documents = [.. session.Documents, .. kept.Select(k => k.Document)] }).Advance(SupplierStatus.NotApproved));
     }
 
@@ -419,15 +422,24 @@ internal static class OnboardSystemCommand
         }
 
         var setupPath = Path.Combine(settings.Repo, "scope", "setup.yaml");
-        var domains = File.Exists(setupPath)
-            ? ScopeLoader.Parse(new ScopeSource(setupPath, await File.ReadAllTextAsync(setupPath, cancellationToken)), null, []).Scope.Setup.Domains
-            : [];
+        var domains = await DomainsAsync(settings, cancellationToken);
         var domain = await prompt.AskWithDefaultAsync("Domain for the system's audit", (domains is [var first, ..] ? first.Name : ""), cancellationToken);
         var perimeter = await prompt.AskWithDefaultAsync(
             "Perimeter", (domains.FirstOrDefault(d => d.Name == domain)?.Perimeters is [var firstPerimeter, ..] ? firstPerimeter.Name : ""), cancellationToken);
         var today = DateOnly.FromDateTime(DateTime.Today);
         var snapshot = ((Result<FrameworkSnapshot>.Ok)framework).Value;
+        var declared = await DeclareSystemAsync(setupPath, domains, domain, session, cancellationToken);
+        if (declared is Result<bool>.Fail { Errors: var declareProblems })
+        {
+            return Result.Fail<OnboardSession>(declareProblems);
+        }
+
         var written = new List<string> { auditFile };
+        if (((Result<bool>.Ok)declared).Value)
+        {
+            written.Add("scope/setup.yaml");
+        }
+
         await WriteFileAsync(settings.Repo, auditFile, OnboardOutput.Audit(session, snapshot.FrameworkUrn, settings.FrameworkName, new AuditPlace(domain, perimeter), today), cancellationToken);
 
         var mappingFile = Path.Combine("mappings", $"{settings.FrameworkName}.yaml").Replace('\\', '/');
@@ -448,10 +460,69 @@ internal static class OnboardSystemCommand
         written.Add(recordFile);
         session = session with { Written = written };
         await SaveAsync(settings, session, cancellationToken);
+        var review = session.Supplier is { } supplier
+            ? (await ThirdPartiesAsync(settings.Repo, cancellationToken)).FirstOrDefault(e => e.RefId == supplier.EntityRef)?.Assessments.Select(a => a.RefId).FirstOrDefault()
+            : null;
+        var gate = session.Supplier is { } named
+            ? $"\n{settings.System} is registered only once {named.EntityRef} is approved in CISO Assistant: apply the supplier first, then {(review is null ? $"add a review to {named.EntityRef}'s file and conclude it" : $"conclude {review}")} as ok in CISO Assistant before 'hound scope plan'."
+            : "";
         await terminal.Output.WriteLineAsync(
-            $"Wrote {string.Join(", ", written)}. {mappingNote}\nNext: review the changes in a pull request, then run 'hound scope validate scope', 'hound scope plan scope' and 'hound scope apply scope'.".AsMemory(),
+            $"Wrote {string.Join(", ", written)}. {mappingNote}{gate}\nNext: review the changes in a pull request, then run 'hound scope validate scope', 'hound scope plan scope' and 'hound scope apply scope'.".AsMemory(),
             cancellationToken);
         return Result.Ok(session);
+    }
+
+    private static async Task<IReadOnlyList<ScopeDomain>> DomainsAsync(Settings settings, CancellationToken cancellationToken)
+    {
+        var setupPath = Path.Combine(settings.Repo, "scope", "setup.yaml");
+        return File.Exists(setupPath)
+            ? ScopeLoader.Parse(new ScopeSource(setupPath, await File.ReadAllTextAsync(setupPath, cancellationToken)), null, []).Scope.Setup.Domains
+            : [];
+    }
+
+    /// <summary>
+    /// Declares the system in <paramref name="domain"/> of <c>scope/setup.yaml</c> with the solution it is, or adds the solution to the system
+    /// already declared, so the supplier gate in <c>scope plan</c> covers it. True when the file changed.
+    /// </summary>
+    private static async Task<Result<bool>> DeclareSystemAsync(string setupPath, IReadOnlyList<ScopeDomain> domains, string domain, OnboardSession session, CancellationToken cancellationToken)
+    {
+        if (!File.Exists(setupPath))
+        {
+            return Result.Ok(false);
+        }
+
+        var yaml = await File.ReadAllTextAsync(setupPath, cancellationToken);
+        var existing = domains.SelectMany(d => d.Systems.Select(s => (Domain: d.Name, System: s))).FirstOrDefault(x => x.System.Name == session.System);
+        Result<string> edited;
+        if (existing.System is not null)
+        {
+            edited = session.Supplier is { } supplier
+                ? YamlEdit.SetScalar(yaml, $"domains[name={existing.Domain}].systems[name={session.System}].solution", supplier.SolutionRef)
+                : Result.Ok(yaml);
+        }
+        else
+        {
+            var description = session.Supplier is { } from ? $"{session.Product}, from {from.EntityName}." : session.Product ?? "";
+            edited = YamlEdit.AppendItem(yaml, $"domains[name={domain}].systems", YamlMap.Of(
+                ("name", new YamlText(session.System)),
+                ("type", new YamlText("primary")),
+                ("description", new YamlText(description)),
+                ("owner", session.Owner is { } owner && owner.Contains('@', StringComparison.Ordinal) ? new YamlText(owner) : null),
+                ("solution", session.Supplier is { } chosen ? new YamlText(chosen.SolutionRef) : null)));
+        }
+
+        return await edited.Match(
+            async text =>
+            {
+                if (text == yaml)
+                {
+                    return Result.Ok(false);
+                }
+
+                await File.WriteAllTextAsync(setupPath, text, cancellationToken);
+                return Result.Ok(true);
+            },
+            problems => Task.FromResult(Result.Fail<bool>([.. problems.Select(p => new Problem(p.Code, $"scope/setup.yaml: {p.Message} The system's audit was not written."))])));
     }
 
     private static async Task WriteFileAsync(string repo, string relative, string text, CancellationToken cancellationToken)

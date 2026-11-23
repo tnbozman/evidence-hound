@@ -887,7 +887,7 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 
 - An Essential Eight audit that declares `groups: ["2"]` is stored by CISO Assistant as groups 1 and 2, so `hound scope plan` shows it as changed after every apply. `hound scope validate` should warn, or the planner compare the groups CISO Assistant keeps; until then declare ML2 as `["1", "2"]` (found in s09-24's functional test).
 
-- `hound onboard` does not yet write the system's `solution` (or `supplied_through`) into `scope/setup.yaml`, so the supplier gate in `scope plan` applies only to systems whose files name them. Writing it, and attaching kept vendor documents to the supplier assessment as evidence, is the next step for onboarding (found in s09-20).
+- `hound onboard` now declares the system in `scope/setup.yaml` with its `solution`, and a drafted supplier file includes a yearly review (fixed after s09-20, at the person's request). Still open: `supplied_through` for a reseller is not asked, and kept vendor documents are not yet attached to the supplier assessment as evidence (found in s09-20).
 
 - `hound scope export` does not write supplier assessments or forced tiers (found in s09-20).
 
