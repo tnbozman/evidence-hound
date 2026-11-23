@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Collectors\EvidenceHound.Collectors.VulnScan\EvidenceHound.Collectors.VulnScan.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\fixtures\vuln-scan\*" Link="vuln-scan\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

@@ -17,6 +17,7 @@
   <Folder Name="/src/Collectors/">
     <Project Path="src/Collectors/EvidenceHound.Collectors.M365/EvidenceHound.Collectors.M365.csproj" />
     <Project Path="src/Collectors/EvidenceHound.Collectors.Rest/EvidenceHound.Collectors.Rest.csproj" />
+    <Project Path="src/Collectors/EvidenceHound.Collectors.VulnScan/EvidenceHound.Collectors.VulnScan.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/EvidenceHound.CisoAssistant.Tests/EvidenceHound.CisoAssistant.Tests.csproj" />
@@ -25,6 +26,7 @@
     <Project Path="tests/EvidenceHound.Collectors.Manual.Tests/EvidenceHound.Collectors.Manual.Tests.csproj" />
     <Project Path="tests/EvidenceHound.Collectors.Rest.Tests/EvidenceHound.Collectors.Rest.Tests.csproj" />
     <Project Path="tests/EvidenceHound.Collectors.Testing.Tests/EvidenceHound.Collectors.Testing.Tests.csproj" />
+    <Project Path="tests/EvidenceHound.Collectors.VulnScan.Tests/EvidenceHound.Collectors.VulnScan.Tests.csproj" />
     <Project Path="tests/EvidenceHound.Core.Tests/EvidenceHound.Core.Tests.csproj" />
     <Project Path="tests/EvidenceHound.Core.Yaml.Tests/EvidenceHound.Core.Yaml.Tests.csproj" />
     <Project Path="tests/EvidenceHound.Functional.Tests/EvidenceHound.Functional.Tests.csproj" />

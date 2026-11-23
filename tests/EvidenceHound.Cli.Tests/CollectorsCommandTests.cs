@@ -35,6 +35,10 @@ public sealed class CollectorsCommandTests : IDisposable
               checks: set per instance by its settings
               settings: profile (required), profiles_path (optional), include_identities (optional), allow_writes (optional), require_profile_tests (optional)
               secrets: none
+            vuln-scan 1.0.0
+              checks: set per instance by its settings
+              settings: drop_folder (required), format (required), scope (required), owner (required), column_host (optional), column_finding_id (optional), column_severity (optional), column_name (optional), column_cve (optional), column_first_seen (optional), column_patch_published (optional), column_exploit_available (optional), column_unsupported (optional), column_scan_date (optional)
+              secrets: none
             widget 0.1.0
               checks: widget.patched
               settings: site (required)

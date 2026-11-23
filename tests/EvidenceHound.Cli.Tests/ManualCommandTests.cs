@@ -13,6 +13,8 @@ public sealed class ManualCommandTests : IDisposable
 
     private string Drop => Path.Combine(_workDir, "manual", "firewall");
 
+    private string ScanDrop => Path.Combine(_workDir, "scans", "internet-facing");
+
     [Fact]
     public async Task Upload_with_attestation_copies_the_file_and_writes_its_sidecar()
     {
@@ -55,6 +57,22 @@ public sealed class ManualCommandTests : IDisposable
         exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
         Directory.GetFiles(Drop).Select(Path.GetFileName).ShouldBe(["firewall-export.txt"]);
         _logs.Entries.ShouldContain(e => e.Message.Contains("already uploaded", StringComparison.Ordinal) && e.Message.Contains("firewall-export.txt", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Upload_to_a_scan_source_copies_the_export_without_asking_to_attest()
+    {
+        var config = await ConfigAsync();
+        var export = await ExportAsync("internet-facing-2026-11-16.nessus", "<NessusClientData_v2/>");
+        var notes = await ExportAsync("notes.txt", "not a scan");
+
+        var exitCode = await Run("", "manual", "upload", "--config", config, "--source", "example-vuln-scan", export);
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        Directory.GetFiles(ScanDrop).Select(Path.GetFileName).ShouldBe(["internet-facing-2026-11-16.nessus"]);
+        _error.ToString().ShouldNotContain("Attest");
+        (await Run("", "manual", "upload", "--config", config, "--source", "example-vuln-scan", notes)).ShouldBe(ExitCodes.Configuration);
+        _error.ToString().ShouldContain("*.nessus");
     }
 
     [Fact]
@@ -126,6 +144,14 @@ public sealed class ManualCommandTests : IDisposable
                   checks: network.firewall.rules_reviewed, network.firewall.config_exported
                   due_days: 30
                   owner: Alex Example
+              - name: example-vuln-scan
+                type: vuln-scan
+                schedule: "0 7 * * *"
+                settings:
+                  drop_folder: ./scans/internet-facing
+                  format: nessus
+                  scope: internet_facing
+                  owner: Sam Example
             target: {mapping: ./mapping.yaml, compliance_assessment: EXAMPLE-1}
             """, TestContext.Current.CancellationToken);
         return path;
