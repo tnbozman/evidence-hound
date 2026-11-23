@@ -19,12 +19,13 @@ The server prints the collector settings for the tenant (`tenant_id`, `client_id
 | Devices | Eight Windows laptops on 10.0.26100 or 10.0.22631, all compliant, and one iPhone. |
 | Conditional Access | "USR - G - Require strong auth" (phishing-resistant MFA for all users and apps) and "USR - B - Block access via legacy auth", each excluding only the break-glass accounts. |
 | Intune | "ASD Office Hardening Guidelines" (macros from the internet blocked, among 82 settings) and "ASD Windows Hardening Guidelines - Attack Surface Reduction" (19 rules in block mode), both assigned to all users; one Windows device restriction profile; an invented AppLocker custom profile enforcing the EXE, DLL, Script and MSI rule collections on all devices. |
+| Defender for Endpoint | All eight laptops onboarded. Advanced hunting (`POST v1.0/security/runHuntingQuery`) answers the collector's three queries, told apart by their `// evidence-hound: <name>` first line, with application control events from three laptops (blocked and audited) and two blocked files. Any other query gets 404. |
 
 The same IDs appear in every collection, so a role holder is a user, a device's owner is a user, and a policy's exclusions are users. Every collection the m365 collector reads is served, in pages of five with `@odata.nextLink`, as Graph pages them. A path the server does not know gets 404.
 
 ## The two variants
 
-The compliant tenant passes all thirteen m365 checks. The `gaps` tenant applies every deviation below, each expected to fail the checks it names and no other.
+The compliant tenant passes all fourteen m365 checks. The `gaps` tenant applies every deviation below, each expected to fail the checks it names and no other.
 
 | Deviation | What changes | Check and expected outcome |
 | --- | --- | --- |
@@ -39,6 +40,7 @@ The compliant tenant passes all thirteen m365 checks. The `gaps` tenant applies 
 | `asr-office-rule-in-audit` | "Block Win32 API calls from Office macros" in audit mode. | `endpoint.asr.office_rules_enabled`: partial |
 | `applocker-for-one-group` | The AppLocker profile is assigned to one group of kiosks, not all devices. | `endpoint.application_control.enforced`: partial |
 | `applocker-dll-rules-in-audit` | The AppLocker DLL rule collection is in audit mode. | `endpoint.application_control.file_types_covered`: fail |
+| `defender-missing-on-two-laptops` | Two of the eight laptops are not onboarded to Defender for Endpoint (75 %). | `endpoint.application_control.events_centrally_logged`: partial |
 
 `M365DevTenantTests` runs the m365 collector against each variant and each deviation, so the table and the tenant cannot drift apart.
 
