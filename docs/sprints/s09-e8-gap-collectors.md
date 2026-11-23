@@ -239,7 +239,7 @@ $ hound scope apply scope --config hound.yaml          # written: 1
 The first CI run found that CISO Assistant returns an entity's legal identifiers as display text ("LEI: …"), so the re-plan showed an update; fixed in the same task.
 
 ### s09-20 Supplier assessments, tiers and approval (was s10-02)
-- [ ] Done
+- [x] Done
 
 **Story:** As a supplier owner, I want each supplier's assessment set up from the repo on a review cycle, so that reviews start on time and nobody sets them up by hand.
 
@@ -264,6 +264,14 @@ The first CI run found that CISO Assistant returns an entity's legal identifiers
 **Functional check**
 - With a fixed clock past a review date, `scope apply` opens the next fictional supplier assessment in the local CISO Assistant with its questionnaire.
 - A fictional system whose supplier has no concluded assessment is refused by `scope plan`; concluding the assessment in CISO Assistant lets it through.
+
+**As built**
+- Scope files: `forced_tier: {tier, reason}` and `assessments:` on a third party; `solution` and `supplied_through` on a system ([scope.md](../scope.md#supplier-reviews-and-tiers)). CISO Assistant v4.3.4's field is `conclusion` (`blocker`, `warning`, `ok`, `not_applicable`) with an `expiry_date`; approval needs `ok`, unexpired, no overdue later review, and an active contract.
+- Reviews with `review_every` are keyed `<ref_id>-<yyyy-MM>` by due date (CISO Assistant has no assessment revisions); the next opens once today reaches the previous due date. A review created with a questionnaire sends `create_audit`, so CISO Assistant makes the questionnaire's audit itself.
+- `SupplierReview.Check` (pure, in Core) runs in `scope plan`, `scope apply` and the saved-plan apply. A refusal stops before planning, so the order is: apply the supplier and its review, conclude it in CISO Assistant, then add the system. Lapsed approvals and differing tiers appear under **Suppliers** in the Markdown plan and as `suppliers` in JSON.
+- Extra tests: `SupplierClientTests.Reads_supplier_assessments_with_their_conclusion_and_each_suppliers_tier_as_observed`, `SupplierClientTests.Creates_a_supplier_assessment_with_its_questionnaire_audit_and_never_sends_a_conclusion`, and three `ScopePlanCommandTests` for refusal and the Suppliers section.
+
+**Functional check:** `SupplierGateFunctionalTests` (CI, local CISO Assistant, `HOUND_TODAY=2026-07-15`): applying a fictional supplier with a yearly review due 2026-06-30 creates `EA-FT-GATE-2026-06` and opens `EA-FT-GATE-2027-06`, each with a questionnaire audit; a system it supplies is refused with `system.supplier_not_approved`; after the first review is concluded `ok` through the API, the system plans, applies and re-plans to no changes.
 
 ### Onboarding assistant (s09-21 to s09-26)
 
@@ -878,6 +886,10 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 - Vendor documents kept during `hound onboard` are saved with their SHA-256, source and retrieval date, but are attached to the supplier assessment as evidence only once supplier assessments exist (s09-20). The model reads only text documents (HTML, text, Markdown); PDFs are kept but not read (found in s09-22).
 
 - An Essential Eight audit that declares `groups: ["2"]` is stored by CISO Assistant as groups 1 and 2, so `hound scope plan` shows it as changed after every apply. `hound scope validate` should warn, or the planner compare the groups CISO Assistant keeps; until then declare ML2 as `["1", "2"]` (found in s09-24's functional test).
+
+- `hound onboard` does not yet write the system's `solution` (or `supplied_through`) into `scope/setup.yaml`, so the supplier gate in `scope plan` applies only to systems whose files name them. Writing it, and attaching kept vendor documents to the supplier assessment as evidence, is the next step for onboarding (found in s09-20).
+
+- `hound scope export` does not write supplier assessments or forced tiers (found in s09-20).
 
 - `hound onboard` reads OpenAPI 3 files only. Other API specifications, documentation saved as text, and specifications fetched from allowed URLs need further readers; Sophos Firewall's XML API (s09-15) is the first that will need one (found in s09-22).
 

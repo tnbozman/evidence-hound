@@ -36,7 +36,7 @@ The local CISO Assistant (`make ca-up`, the dev container and the functional tes
 | `libraries` | Other libraries to load by URN, such as the mapping set between the Essential Eight and the Essentials. |
 | `domains` | Folders. Each has a `name`, a `description`, its `perimeters` (or a single `perimeter`) and its `systems`. |
 | perimeter | `name`, optional `ref_id` and `description`. |
-| system | `name`, `type` (`primary` or `supporting`), optional `ref_id`, `description`, `owner`, `parents` (other systems by name) and `tags` (per-framework labels such as `essentials_domain: identity` or `cui: "true"`). |
+| system | `name`, `type` (`primary` or `supporting`), optional `ref_id`, `description`, `owner`, `parents` (other systems by name), `tags` (per-framework labels such as `essentials_domain: identity` or `cui: "true"`), `solution` (the third-party solution that provides it, by `ref_id`) and `supplied_through` (a reseller or managed service provider, by the third party's `ref_id`). A system with either is registered only once those suppliers are approved: see [Supplier approval](#supplier-approval). |
 
 ## controls.yaml
 
@@ -121,6 +121,39 @@ representatives:
 Validation reports a country or currency code CISO Assistant does not accept (`supplier.country_invalid`, `supplier.currency_invalid`; the lists come from the pinned release), a level outside its range (`supplier.level_invalid`), a contract that ends before it starts (`supplier.contract_dates_invalid`), a contract covering a solution the entity does not provide (`supplier.solution_unknown`), a repeated `ref_id` or email, an unknown `parent` or `domain`, and an `active` contract whose end date has passed (`supplier.contract_lapsed`): renew it and record the new end date, or set it to `expired` or `terminated`. Turning off the `tprm` or `contracts` feature flag in settings.yaml while third parties or contracts are declared is an error. CISO Assistant ships with `contracts` off, so set `contracts: true` in settings.yaml to see contracts in its interface.
 
 Objects are matched by `ref_id` (representatives by email), and the organisation's own entity, which CISO Assistant makes itself, is never touched. `scope plan` shows a renewed contract's new end date as a one-field update.
+
+### Supplier reviews and tiers
+
+```yaml
+forced_tier:                 # optional: the tier the organisation decides, whatever CISO Assistant computes
+  tier: critical             # critical, important, standard or low-impact
+  reason: Holds staff personal data.
+assessments:
+  - ref_id: EA-EXCLOUD
+    name: Example Cloud review
+    solutions: [SOL-EXCLOUD-HOST]
+    perimeter: Corporate IT    # a perimeter of setup.yaml, in the assessment's domain
+    domain: Example Pty Ltd    # default: the entity's domain
+    due_date: "2026-06-30"
+    criticality: 3             # 1-4
+    questionnaire: urn:example:risk:framework:example-baseline   # a framework of setup.yaml
+    groups: ["1"]              # the questionnaire's implementation groups
+    review_every: 12 months    # optional: "N months" or "N years"
+```
+
+- `assessments` are CISO Assistant's entity assessments: `hound` sets up the review (its name, solutions, perimeter, due date and criticality) and, when it creates one with a `questionnaire`, CISO Assistant creates the questionnaire's audit with it. Answers, the **conclusion**, the expiry date and the tier stay CISO Assistant's: the GRC team works the review there, and `hound` only reads them.
+- With `review_every`, each review is keyed `<ref_id>-<yyyy-MM>` by its due date, and once today reaches a review's due date the plan opens the next one, a cycle later. Without it, the review is the one object `<ref_id>`.
+- `forced_tier` needs a `reason`. `hound` never writes the tier; the plan lists a tier in CISO Assistant that differs from the forced one.
+
+Validation reports an assessment naming a solution the entity does not provide (`supplier.solution_unknown`), an unknown perimeter, domain or questionnaire, a criticality outside 1 to 4, `review_every` without a `due_date` (`supplier.review_without_due_date`) and a forced tier without a reason (`supplier.forced_tier_reason_missing`).
+
+### Supplier approval
+
+A supplier is **approved** when, in CISO Assistant, its latest concluded assessment is concluded `ok`, that conclusion has not expired, no later review is past its due date without a conclusion, and it has an `active` contract. `scope plan` and `scope apply` read this before planning:
+
+- A system not yet registered whose supplier (its `solution`'s entity, or `supplied_through`) is not approved is refused with `system.supplier_not_approved` and the reason, such as "no concluded assessment", and nothing is applied. Apply the supplier and its review first, conclude the review in CISO Assistant, then add the system.
+- A registered system whose supplier is no longer approved stays registered; the plan lists it under **Suppliers** as `supplier.approval_lapsed`, for the security committee.
+- A tier that differs from `forced_tier` is listed under **Suppliers** as `supplier.tier_differs`. The JSON plan has both as `suppliers`.
 
 ## audits/&lt;audit&gt;.yaml
 
@@ -231,6 +264,7 @@ The plan validates the scope first and stops, reading nothing, when there are pr
 - **Create**: objects the scope declares that CISO Assistant does not hold, with their fields.
 - **Update**: objects whose fields differ, field by field (old → new). An object that exists but was not made by `hound` is taken over: "mark as managed".
 - **Delete**, only with `--prune`: objects `hound` manages that the scope no longer declares. Objects made by hand are never deleted.
+- **Suppliers**: lapsed supplier approvals and tiers that differ from the forced one (see [Supplier approval](#supplier-approval)). A system whose supplier is not approved stops the plan.
 - **Drift**: objects changed in CISO Assistant since `hound` last wrote them (they are written back), objects under the root folder that the scope does not declare, an audit that is locked in CISO Assistant (it and its rows are never changed), and a framework whose loaded library is older than the snapshot's (it is reported, not upgraded).
 
 ### Changes to compliance

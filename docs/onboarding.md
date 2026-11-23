@@ -41,8 +41,9 @@ carry on where it stopped; the model is never asked again for what it already an
    maturity and trust, and the solution's criticality, each with its reason and sources, and you accept each or type your own. Vendor
    documents you keep (an https URL or a file) are saved under `documents/suppliers/<supplier>/` with their SHA-256 and retrieval date; the
    model reads only the text ones. Its summary of them stays in the session as a draft, never as evidence. The contract is drafted as
-   `status: draft`, and the session stops: **a system is onboarded only once its supplier is approved.** Until supplier assessments arrive
-   (s09-20), approved means an active contract covering the solution.
+   `status: draft`, and the session stops: **a system is onboarded only once its supplier is approved.** Onboarding checks the scope
+   files for an active contract covering the solution; `hound scope plan` then checks approval in CISO Assistant, where the GRC team
+   concludes the supplier's assessment (see [Supplier approval](scope.md#supplier-approval)).
 3. **What the API offers.** Each `--spec` (an OpenAPI 3 document, JSON or YAML) is read into a short summary: the endpoints that read,
    sign-in and paging. Only that summary is sent, never the specification.
 4. **Applicability.** Every requirement in the `--group` implementation groups (all of them without `--group`) gets one proposal. Give the
