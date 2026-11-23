@@ -8,7 +8,7 @@ Supplier: Sophos (SUP-SOPHOS), solution Sophos XGS firewall and Sophos Central, 
 
 ## Decisions
 
-107 requirements: 2 API check(s), 40 manual, 61 not applicable, 4 for another system.
+107 requirements: 3 API check(s), 39 manual, 61 not applicable, 4 for another system.
 
 | Requirement | Proposed | Decided | Reasoning | Accepted by | Justification, approver or system |
 | --- | --- | --- | --- | --- | --- |

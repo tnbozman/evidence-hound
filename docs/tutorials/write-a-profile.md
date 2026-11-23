@@ -171,6 +171,8 @@ $ hound profile test example-devices --profiles my-profiles
 
 Both cases pass. When a case fails, `hound profile test` prints the check, the result it expected, the result it got, and the observation, which names the devices that failed; a request with no recording is listed as `no recording for ...`.
 
+A case for a check with `history` (a code check given a query's earlier evidence) lists the earlier runs it stands in for under `history`, each the evidence file an earlier run saved: `- { at: 2026-11-12T02:00:00Z, evidence: firmware_upgrades.json, file: recordings/history/firmware_upgrades-2026-11-12.json }`. The `sophos-central` tests use it for firmware age.
+
 ## 5. Use it
 
 Copy `example-devices.yaml` and `example-devices.tests/` into your organisation's profiles folder, then add a collector for it, which asks for the client ID, the supported versions and the client secret:
