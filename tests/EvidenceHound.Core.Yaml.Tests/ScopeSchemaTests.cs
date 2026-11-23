@@ -32,6 +32,7 @@ public class ScopeSchemaTests
         Errors(SettingsScopeTests.Settings).ShouldBeEmpty();
         Errors(SupplierScopeTests.Supplier).ShouldBeEmpty();
         Errors(SupplierScopeTests.OrganisationSetup).ShouldBeEmpty();
+        Errors(CapabilityLoaderTests.Capabilities).ShouldBeEmpty();
     }
 
     [Fact]
@@ -63,6 +64,8 @@ public class ScopeSchemaTests
     [InlineData("organisation:\n  entity:\n    description: No name.\n")]
     [InlineData("ref_id: SUP-1\nname: N\ncontracts:\n  - {ref_id: C-1, name: N, status: signed}\n")]
     [InlineData("ref_id: SUP-1\nname: N\nrepresentatives:\n  - {email: sam@example.com, password: not-a-real-secret}\n")]
+    [InlineData("framework: urn:x\nmitigations:\n  - {mitigation: ac, provided_by: hope, approved_by: GRC lead}\n")]
+    [InlineData("framework: urn:x\nmitigations:\n  - {mitigation: ac, provided_by: gap, colour: blue}\n")]
     public void Invalid_scope_files_fail_the_schema(string yaml)
     {
         Errors(yaml).ShouldNotBeEmpty();

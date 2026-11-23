@@ -22,9 +22,138 @@ public sealed record CapabilityRows(IReadOnlyList<AuditCapabilityRows> Audits, I
 /// </summary>
 public static class CapabilityMap
 {
-    public static IReadOnlyList<Mitigation> Mitigations(FrameworkSnapshot snapshot) => throw new NotImplementedException();
+    public const string FileName = "scope/capabilities.yaml";
 
-    public static IReadOnlyList<ScopeProblem> Validate(ScopeDocument scope, IReadOnlyDictionary<string, FrameworkSnapshot> snapshots) => [];
+    /// <summary>The framework's mitigations: its assessable requirements grouped by their parent node, in the framework's order.</summary>
+    public static IReadOnlyList<Mitigation> Mitigations(FrameworkSnapshot snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        return [.. snapshot.Nodes.Where(n => n.ParentUrn is not null)
+            .GroupBy(n => n.ParentUrn!, StringComparer.Ordinal)
+            .Select(g => new Mitigation(g.Key[(g.Key.LastIndexOf(':') + 1)..], [.. g]))];
+    }
 
-    public static CapabilityRows Rows(ScopeDocument scope, FrameworkSnapshot snapshot) => new([], []);
+    /// <summary>
+    /// Every problem with the map: a framework the scope does not load, a mitigation decided twice, unknown or not at all, a decision without
+    /// an approver, a system decision naming no system, and systems or suppliers the scope does not declare.
+    /// </summary>
+    public static IReadOnlyList<ScopeProblem> Validate(ScopeDocument scope, IReadOnlyDictionary<string, FrameworkSnapshot> snapshots)
+    {
+        ArgumentNullException.ThrowIfNull(scope);
+        ArgumentNullException.ThrowIfNull(snapshots);
+        if (scope.Capabilities is not { } map)
+        {
+            return [];
+        }
+
+        if (!scope.Setup.Frameworks.Any(f => f.Urn == map.Framework.Value) || !snapshots.TryGetValue(map.Framework.Value, out var snapshot))
+        {
+            return [new ScopeProblem(
+                "capability.framework_unknown", map.Framework.At, $"framework '{map.Framework.Value}' is not a framework of scope/setup.yaml with a snapshot.",
+                "Map a framework that scope/setup.yaml loads, with its snapshot.")];
+        }
+
+        var codes = Mitigations(snapshot).Select(m => m.Code).ToArray();
+        var systems = scope.Setup.Domains.SelectMany(d => d.Systems).Select(s => s.Name).ToHashSet(StringComparer.Ordinal);
+        var suppliers = scope.ThirdParties.Select(e => e.RefId).ToHashSet(StringComparer.Ordinal);
+        var problems = new List<ScopeProblem>();
+        foreach (var repeated in map.Mitigations.GroupBy(m => m.Mitigation, StringComparer.Ordinal).Where(g => g.Count() > 1))
+        {
+            problems.AddRange(repeated.Skip(1).Select(m => new ScopeProblem(
+                "scope.duplicate", m.At, $"mitigation '{m.Mitigation}' is decided more than once.", "Keep one decision for each mitigation.")));
+        }
+
+        foreach (var decision in map.Mitigations)
+        {
+            if (!codes.Contains(decision.Mitigation, StringComparer.Ordinal))
+            {
+                problems.Add(new ScopeProblem(
+                    "capability.mitigation_unknown", decision.At, $"mitigation '{decision.Mitigation}' is not in {map.Framework.Value}.", $"Use one of: {string.Join(", ", codes)}."));
+            }
+
+            if (string.IsNullOrWhiteSpace(decision.ApprovedBy))
+            {
+                problems.Add(new ScopeProblem(
+                    "capability.approver_missing", decision.At, $"mitigation '{decision.Mitigation}' has no approved_by.", "Name the role that approved this decision."));
+            }
+
+            if (decision.ProvidedBy == CapabilityProvision.System && decision.Systems.Count == 0)
+            {
+                problems.Add(new ScopeProblem(
+                    "capability.systems_missing", decision.At, $"mitigation '{decision.Mitigation}' is provided by a system but names none.", "List the systems under 'systems', or use provided_by: manual or gap."));
+            }
+
+            problems.AddRange(decision.Systems.Where(s => !systems.Contains(s.Value)).Select(s => new ScopeProblem(
+                "scope.reference_unknown", s.At, $"system '{s.Value}' is not declared in scope/setup.yaml.", "Declare it under a domain's systems, or onboard it first.")));
+            if (decision.Supplier is { } supplier && !suppliers.Contains(supplier.Value))
+            {
+                problems.Add(new ScopeProblem(
+                    "scope.reference_unknown", supplier.At, $"supplier '{supplier.Value}' is not declared in scope/third-parties/.", "Add the supplier's file first."));
+            }
+        }
+
+        var decided = map.Mitigations.Select(m => m.Mitigation).ToHashSet(StringComparer.Ordinal);
+        problems.AddRange(codes.Where(c => !decided.Contains(c)).Select(c => new ScopeProblem(
+            "capability.decision_missing", map.At, $"mitigation '{c}' has no decision in {FileName}.", "Decide it: provided_by system (with its systems), manual or gap.")));
+        return problems;
+    }
+
+    /// <summary>
+    /// For each system's own audit of the map's framework, the requirements another system provides, as not-applicable rows naming that
+    /// system and its audit; rows the audit already writes by hand, and requirements outside its groups, are left alone. Gaps are listed
+    /// apart: no audit answers them, and none fails for them.
+    /// </summary>
+    public static CapabilityRows Rows(ScopeDocument scope, FrameworkSnapshot snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(scope);
+        ArgumentNullException.ThrowIfNull(snapshot);
+        if (scope.Capabilities is not { } map || map.Framework.Value != snapshot.FrameworkUrn)
+        {
+            return new([], []);
+        }
+
+        var mitigations = Mitigations(snapshot);
+        var decisions = map.Mitigations.GroupBy(m => m.Mitigation, StringComparer.Ordinal).ToDictionary(g => g.Key, g => g.First(), StringComparer.Ordinal);
+        var refCounts = snapshot.Nodes.Where(n => n.RefId is not null).GroupBy(n => n.RefId!, StringComparer.Ordinal).ToDictionary(g => g.Key, g => g.Count(), StringComparer.Ordinal);
+        var audits = scope.Audits.Where(a => a.Framework.Value == map.Framework.Value && a.Systems.Count > 0).ToArray();
+        string Provider(string system) =>
+            audits.FirstOrDefault(a => a.Systems.Any(s => s.Value == system)) is { } audit
+                ? $"{system} (audit {audit.RefId})"
+                : $"{system} (no audit yet; onboard it with 'hound onboard {system}')";
+
+        var perAudit = new List<AuditCapabilityRows>();
+        foreach (var audit in audits)
+        {
+            var own = audit.Systems.Select(s => s.Value).ToHashSet(StringComparer.Ordinal);
+            var groups = audit.Groups.Select(g => g.Value).ToHashSet(StringComparer.Ordinal);
+            var rows = new List<CapabilityRow>();
+            foreach (var mitigation in mitigations)
+            {
+                if (decisions.GetValueOrDefault(mitigation.Code) is not { ProvidedBy: CapabilityProvision.System } decision
+                    || decision.Systems.Count == 0 || decision.Systems.Any(s => own.Contains(s.Value)))
+                {
+                    continue;
+                }
+
+                var approved = decision.ApprovedOn is null ? $"approved by {decision.ApprovedBy}" : $"approved by {decision.ApprovedBy} on {decision.ApprovedOn}";
+                var observation = $"Provided by {string.Join(" and ", decision.Systems.Select(s => Provider(s.Value)))}, as recorded in {FileName} ({approved}).";
+                rows.AddRange(mitigation.Requirements
+                    .Where(n => groups.Count == 0 || n.Groups.Any(groups.Contains))
+                    .Where(n => !audit.Assessments.Any(a => a.Requirement.Key.Value == n.Urn || a.Requirement.Key.Value == n.RefId))
+                    .Select(n => n.RefId is { } refId && refCounts.GetValueOrDefault(refId) == 1
+                        ? new CapabilityRow("ref", refId, observation)
+                        : new CapabilityRow("urn", n.Urn, observation)));
+            }
+
+            if (rows.Count > 0)
+            {
+                perAudit.Add(new AuditCapabilityRows(audit.RefId, audit.At.File, rows));
+            }
+        }
+
+        var gaps = mitigations
+            .Where(m => decisions.GetValueOrDefault(m.Code)?.ProvidedBy == CapabilityProvision.Gap)
+            .Select(m => new CapabilityGap(m.Code, [.. m.Requirements.Select(n => n.RefId ?? n.Urn)]));
+        return new(perAudit, [.. gaps]);
+    }
 }

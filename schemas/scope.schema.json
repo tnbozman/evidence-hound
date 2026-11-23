@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/tnbozman/evidence-hound/schemas/scope.schema.json",
   "title": "Evidence Hound scope file",
-  "description": "One file of a compliance repo's scope: setup.yaml (organisation, frameworks, domains), controls.yaml (applied controls), audits/<audit>.yaml (one compliance assessment), access.yaml (users, teams and role assignments), settings.yaml (feature flags and general settings), or third-parties/<entity>.yaml (one supplier or other third party). Guide: docs/scope.md.",
+  "description": "One file of a compliance repo's scope: setup.yaml (organisation, frameworks, domains), controls.yaml (applied controls), audits/<audit>.yaml (one compliance assessment), access.yaml (users, teams and role assignments), settings.yaml (feature flags and general settings), third-parties/<entity>.yaml (one supplier or other third party), or capabilities.yaml (which system provides each mitigation). Guide: docs/scope.md.",
   "oneOf": [
     {
       "$ref": "#/$defs/setup"
@@ -21,6 +21,9 @@
     },
     {
       "$ref": "#/$defs/thirdParty"
+    },
+    {
+      "$ref": "#/$defs/capabilities"
     }
   ],
   "$defs": {
@@ -1157,6 +1160,91 @@
             }
           },
           "description": "Assessments of this third party. Answers, the conclusion and the tier are CISO Assistant's; hound never writes them."
+        }
+      }
+    },
+    "capabilities": {
+      "description": "scope/capabilities.yaml: for one framework, which system in scope provides each mitigation, decided before systems are onboarded. Results stay in each system's own audit.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "framework",
+        "mitigations"
+      ],
+      "properties": {
+        "framework": {
+          "$ref": "#/$defs/text",
+          "description": "The framework URN, one of setup.yaml's frameworks."
+        },
+        "mitigations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "mitigation",
+              "provided_by"
+            ],
+            "properties": {
+              "mitigation": {
+                "$ref": "#/$defs/text",
+                "description": "The mitigation's code: the last part of its parent node's URN, such as ac for application control."
+              },
+              "name": {
+                "$ref": "#/$defs/text"
+              },
+              "provided_by": {
+                "enum": [
+                  "system",
+                  "manual",
+                  "gap"
+                ],
+                "description": "system (named under systems), manual evidence, or gap (nothing provides it yet)."
+              },
+              "systems": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/text"
+                },
+                "description": "Systems of setup.yaml that provide it."
+              },
+              "supplier": {
+                "$ref": "#/$defs/text",
+                "description": "The third party that supplies it, by ref_id."
+              },
+              "owner": {
+                "$ref": "#/$defs/text"
+              },
+              "evidence": {
+                "enum": [
+                  "collector",
+                  "profile",
+                  "manual"
+                ]
+              },
+              "route": {
+                "$ref": "#/$defs/text",
+                "description": "The collector or profile the evidence comes through."
+              },
+              "approved_by": {
+                "$ref": "#/$defs/text",
+                "description": "The role that approved the decision. Required by validation."
+              },
+              "approved_on": {
+                "$ref": "#/$defs/text"
+              },
+              "reason": {
+                "$ref": "#/$defs/text"
+              },
+              "signals": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/text"
+                },
+                "description": "Signals that pre-filled the answer, each naming its source. A record, never the decision."
+              }
+            }
+          }
         }
       }
     }

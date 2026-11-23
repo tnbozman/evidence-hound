@@ -79,12 +79,14 @@ public static partial class ScopeLoader
         var parsedSettings = settingsFile?.Root() is { } settingsRoot ? ReadSettings(settingsRoot, settingsFile) : ScopeSettings.None;
         var thirdPartyFiles = (thirdParties ?? []).Select(t => new FileReader(t)).ToArray();
         var parsedThirdParties = thirdPartyFiles.Select(file => file.Root() is { } root ? ReadEntity(root, file) : null).OfType<ScopeEntity>().ToArray();
+        var capabilitiesFile = capabilities is null ? null : new FileReader(capabilities);
+        var parsedCapabilities = capabilitiesFile?.Root() is { } capabilitiesRoot ? ReadCapabilities(capabilitiesRoot, capabilitiesFile) : null;
 
         return new ScopeParse(
-            new ScopeDocument(parsedSetup, parsedControls, parsedAudits) { Access = parsedAccess, Settings = parsedSettings, ThirdParties = parsedThirdParties },
+            new ScopeDocument(parsedSetup, parsedControls, parsedAudits) { Access = parsedAccess, Settings = parsedSettings, ThirdParties = parsedThirdParties, Capabilities = parsedCapabilities },
             [
                 .. setupFile.Problems, .. controlsFile?.Problems ?? [], .. auditFiles.SelectMany(f => f.Problems), .. accessFile?.Problems ?? [],
-                .. settingsFile?.Problems ?? [], .. thirdPartyFiles.SelectMany(f => f.Problems),
+                .. settingsFile?.Problems ?? [], .. thirdPartyFiles.SelectMany(f => f.Problems), .. capabilitiesFile?.Problems ?? [],
             ]);
     }
 

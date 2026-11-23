@@ -37,6 +37,7 @@ public static class ScopeValidator
             .. AccessValidator.Validate(scope),
             .. SettingsValidator.Validate(scope, CisoAssistantSettings.Current),
             .. SupplierValidator.References(scope),
+            .. CapabilityMap.Validate(scope, snapshots),
         ];
     }
 
