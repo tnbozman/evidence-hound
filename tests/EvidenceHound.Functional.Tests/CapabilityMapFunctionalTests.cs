@@ -5,7 +5,8 @@ namespace EvidenceHound.Functional.Tests;
 /// <summary>
 /// s09-28: on a copy of the example repo, with recorded Microsoft Graph answers and no model, <c>hound onboard environment</c> records
 /// application control as provided by a third-party product and patch applications as a gap; <c>hound scope plan</c> against the local CISO
-/// Assistant then shows the Microsoft 365 audit's application control rows as not applicable, provided by that product, and lists the gap.
+/// Assistant then shows the Microsoft 365 audit's application control rows as open, met by that product (s09-36), lists them as open
+/// dependencies, and lists the gap.
 /// Outputs land in <c>test-results/capability-map/</c>.
 /// </summary>
 [Trait("Category", "Functional")]
@@ -23,7 +24,7 @@ public sealed class CapabilityMapFunctionalTests(CisoAssistantFixture ciso) : ID
     private readonly string _results = Directory.CreateDirectory(Path.Combine(CisoAssistantFixture.RepoRoot, "test-results", "capability-map")).FullName;
 
     [Fact]
-    public async Task Application_control_from_a_third_party_is_not_applicable_on_microsoft_365_and_the_gap_is_listed()
+    public async Task Application_control_from_a_third_party_stays_open_on_microsoft_365_as_a_dependency_and_the_gap_is_listed()
     {
         var ct = TestContext.Current.CancellationToken;
         var example = Path.Combine(CisoAssistantFixture.RepoRoot, "examples", "compliance-repo");
@@ -47,7 +48,10 @@ public sealed class CapabilityMapFunctionalTests(CisoAssistantFixture ciso) : ID
         planExit.ShouldBe(ExitCodes.Ok, plan);
         plan.ShouldContain("### Capability gaps");
         plan.ShouldContain("| pa |");
-        plan.ShouldContain("Provided by Example app control");
+        // s09-36: rows another system meets stay open, naming it, and the plan lists them as open dependencies.
+        plan.ShouldContain("Met by Example app control");
+        plan.ShouldContain("### Open dependencies");
+        plan.ShouldContain("| Example app control | (none) | no audit yet |");
     }
 
     public void Dispose() => Directory.Delete(_repo, recursive: true);
