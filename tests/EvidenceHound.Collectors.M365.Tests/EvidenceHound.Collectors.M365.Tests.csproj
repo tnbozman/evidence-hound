@@ -2,9 +2,11 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Collectors\EvidenceHound.Collectors.M365\EvidenceHound.Collectors.M365.csproj" />
     <ProjectReference Include="..\..\src\EvidenceHound.Collectors.Testing\EvidenceHound.Collectors.Testing.csproj" />
+    <ProjectReference Include="..\..\src\EvidenceHound.M365DevServer\EvidenceHound.M365DevServer.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\fixtures\m365\*.json" Link="m365\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\docs\collectors\m365.md" Link="docs\m365.md" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\docs\tutorials\m365-dev-server.md" Link="docs\m365-dev-server.md" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

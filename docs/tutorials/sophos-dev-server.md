@@ -42,7 +42,7 @@ The compliant tenant passes both checks of the `sophos-central` profile. The `ga
 
 ## In the trial
 
-`make trial`, step 6, starts the server, adds the `sophos` collector pointed at it with a placeholder secret, runs it dry, publishes, and then offers to restart the server with `unsupported-firmware` and collect again, so you can watch the result change in CISO Assistant. See [the trial guide](local-trial.md#6-sophos-central-the-dev-server-or-your-own-tenant).
+`make trial`, step 9, starts the server, adds the `sophos` collector pointed at it with a placeholder secret, runs it dry, publishes, and then offers to restart the server with `unsupported-firmware` and collect again, so you can watch the result change in CISO Assistant. See [the trial guide](local-trial.md#9-evidence-collectors-sophos-central-a-fictional-tenant-on-this-machine-or-your-own).
 
 ## Adding a firewall, an admin or a deviation
 
