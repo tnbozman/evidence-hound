@@ -4,6 +4,7 @@ using EvidenceHound.Core.Checks;
 using EvidenceHound.Core.Packaging;
 using EvidenceHound.Core.Planning;
 using EvidenceHound.Core.Results;
+using EvidenceHound.Core.Scope;
 using EvidenceHound.Core.Secrets;
 using EvidenceHound.Runtime.Configuration;
 using Microsoft.Extensions.Logging;
@@ -11,7 +12,10 @@ using Microsoft.Extensions.Logging;
 namespace EvidenceHound.Runtime;
 
 /// <summary>A collector's result with its evidence read into memory, as stored.</summary>
-public sealed record CollectorOutput(IReadOnlyList<CheckResult> Checks, IReadOnlyList<CollectedFile> Files, IReadOnlyList<ControlStatus> ControlStatuses);
+public sealed record CollectorOutput(IReadOnlyList<CheckResult> Checks, IReadOnlyList<CollectedFile> Files, IReadOnlyList<ControlStatus> ControlStatuses)
+{
+    public IReadOnlyList<ManifestProfile> Profiles { get; init; } = [];
+}
 
 /// <summary>What the runner hands every collector besides its own config: loggers and HTTP clients.</summary>
 public sealed record CollectorServices(ILoggerFactory Loggers, IHttpClientFactory HttpClients);
@@ -27,6 +31,9 @@ public sealed class CollectStep(ISecretProvider secrets, IEvidenceStore store, I
 
     public int PeriodRetentionYears { get; init; } = 7;
 
+    /// <summary>The scope, read for its capability map: each collector is told which capabilities another product provides. Null: none.</summary>
+    public ScopeDocument? Scope { get; init; }
+
     public Task<Result<CollectedRun>> RunAsync(CollectorInstance instance, ICollector collector, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(instance);
@@ -36,7 +43,7 @@ public sealed class CollectStep(ISecretProvider secrets, IEvidenceStore store, I
         return Resolve(instance)
             .BindAsync(resolved => collector.CollectAsync(Context(instance, resolved), cancellationToken))
             .BindAsync(async result => Result.Ok(await ReadAsync(result, cancellationToken)))
-            .BindAsync(output => Manifests.Build(instance.Name, collector.Version, now, output.Files)
+            .BindAsync(output => Manifests.Build(instance.Name, collector.Version, now, output.Files, output.Profiles)
                 .BindAsync(manifest => StoreAsync(instance, output, manifest, cancellationToken)));
     }
 
@@ -61,7 +68,29 @@ public sealed class CollectStep(ISecretProvider secrets, IEvidenceStore store, I
         resolved,
         clock,
         services.Loggers.CreateLogger($"hound.collector.{instance.Type}"),
-        services.HttpClients);
+        services.HttpClients)
+    {
+        Capabilities = new CollectorCapabilities(CapabilityRouting.For(Scope, instance.Name, instance.Settings.GetValueOrDefault("system"))),
+        History = new StoreHistory(store, instance.Name),
+    };
+
+    /// <summary>The instance's earlier complete runs in the store, read only when a collector asks.</summary>
+    private sealed class StoreHistory(IEvidenceStore store, string collector) : IEvidenceHistory
+    {
+        public async Task<IReadOnlyList<EarlierFile>> EarlierAsync(string fileName, CancellationToken cancellationToken)
+        {
+            var earlier = new List<EarlierFile>();
+            foreach (var run in (await store.ListRunsAsync(collector, cancellationToken)).Where(r => r.Complete))
+            {
+                if (await store.ReadFileAsync(run, fileName, cancellationToken) is { } content)
+                {
+                    earlier.Add(new EarlierFile(run.StartedAt, content));
+                }
+            }
+
+            return earlier;
+        }
+    }
 
     private static async Task<CollectorOutput> ReadAsync(CollectionResult result, CancellationToken cancellationToken)
     {
@@ -71,7 +100,7 @@ public sealed class CollectStep(ISecretProvider secrets, IEvidenceStore store, I
             files.Add(await file.ReadAsync(cancellationToken));
         }
 
-        return new CollectorOutput(result.Checks, files, result.ControlStatuses);
+        return new CollectorOutput(result.Checks, files, result.ControlStatuses) { Profiles = result.Profiles };
     }
 
     private Result<IReadOnlyDictionary<string, Secret>> Resolve(CollectorInstance instance) =>

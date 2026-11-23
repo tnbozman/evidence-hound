@@ -1,0 +1,13 @@
+{
+  "id": 7001,
+  "run_number": 42,
+  "head_branch": "main",
+  "head_sha": "0123456789abcdef0123456789abcdef01234567",
+  "event": "workflow_dispatch",
+  "status": "completed",
+  "conclusion": "success",
+  "created_at": "2026-11-23T01:50:00Z",
+  "updated_at": "2026-11-23T01:58:00Z",
+  "html_url": "https://github.com/example/grc-infra/actions/runs/7001",
+  "artifacts_url": "{{api}}/repos/example/grc-infra/actions/runs/7001/artifacts"
+}

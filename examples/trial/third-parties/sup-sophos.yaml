@@ -1,0 +1,37 @@
+# Fictional. The unattended trial (HOUND_TRIAL_YES=1, CI) copies this file over the agent's draft: it is the draft as hound approve
+# leaves it once a person approves the supplier (the contract active) and concludes its review ok. Interactively, you approve.
+ref_id: "SUP-SOPHOS"
+name: "Sophos"
+domain: "Example Pty Ltd"
+# dependency: The office firewall carries all office traffic and the site-to-site VPN to the GRC platform. (agent)
+dependency: 3
+# penetration: Sophos Central manages the firewall remotely. (agent)
+penetration: 2
+# maturity: Publishes a security advisory programme. (agent)
+maturity: 3
+# trust: Long-standing vendor. (agent)
+trust: 3
+solutions:
+  - ref_id: "SOL-SOPHOS-FIREWALL"
+    name: "Sophos XGS 88W firewall and Sophos Central"
+    # criticality: to decide (1 to 4)
+contracts:
+  - ref_id: "CTR-SOPHOS-2026"
+    name: "Sophos XGS subscription 2026"
+    status: active
+    approved_by: Sam Example
+    approved_on: "2026-11-23"
+    solutions: ["SOL-SOPHOS-FIREWALL"]
+# The supplier's review: a person concludes it with hound approve, and a system it supplies is registered only once it is concluded ok.
+assessments:
+  - ref_id: "EA-SUP-SOPHOS"
+    name: "Sophos review"
+    solutions: ["SOL-SOPHOS-FIREWALL"]
+    perimeter: "Corporate IT"
+    due_date: "2026-12-23"
+    review_every: 12 months
+    conclusions:
+      - review: EA-SUP-SOPHOS-2026-12
+        result: ok
+        by: Sam Example
+        on: "2026-11-23"

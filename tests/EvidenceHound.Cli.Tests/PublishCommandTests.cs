@@ -74,7 +74,7 @@ public sealed class PublishCommandTests : IDisposable
                 TestContext.Current.CancellationToken);
 
             exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
-            _output.ToString().ShouldContain("EXAMPLE-BASELINE-2026Q4");
+            _output.ToString().ShouldContain("EXAMPLE-BASELINE-Q2-2027FY");
         }
         finally
         {

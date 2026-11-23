@@ -33,6 +33,7 @@ internal static class CollectorsCommand
 
     private static string Checks(CollectorDescription description) => (description.Checks.Count, description.ChecksSetting) switch
     {
+        (0, null) when description.ChecksFrom is not null => "set per instance by its settings",
         (0, { } setting) => $"set per instance by setting '{setting}'",
         (_, { } setting) => $"{Names(description.Checks.Order(StringComparer.Ordinal))}, plus those in setting '{setting}'",
         _ => Names(description.Checks.Order(StringComparer.Ordinal)),

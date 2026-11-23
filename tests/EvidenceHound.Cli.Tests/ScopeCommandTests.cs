@@ -75,6 +75,21 @@ public sealed class ScopeCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Json_flag_gives_an_empty_list_for_a_valid_scope_and_the_problems_otherwise()
+    {
+        await WriteScopeAsync();
+
+        // s09-37: --json on every command an agent reads, the same output as --format json.
+        (await Run("scope", "validate", ScopeDir, "--json")).ShouldBe(ExitCodes.Ok);
+        JsonNode.Parse(_output.ToString())!.AsArray().ShouldBeEmpty();
+
+        _output.GetStringBuilder().Clear();
+        await WriteScopeAsync(audit: Audit.Replace("systems: [Example 365]", "systems: [Example tablets]", StringComparison.Ordinal));
+        (await Run("scope", "validate", ScopeDir, "--json")).ShouldBe(ExitCodes.Configuration);
+        JsonNode.Parse(_output.ToString())!.AsArray().ShouldHaveSingleItem()!["code"]!.GetValue<string>().ShouldBe("scope.reference_unknown");
+    }
+
+    [Fact]
     public async Task Json_output_has_code_file_line_and_hint()
     {
         await WriteScopeAsync(audit: Audit.Replace("systems: [Example 365]", "systems: [Example tablets]", StringComparison.Ordinal));

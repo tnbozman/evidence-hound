@@ -38,9 +38,12 @@ public static class ScopePeriods
         [
             .. declared
                 .Where(o => o.Kind == ScopeKind.Audit && o.Fields.ContainsKey("status"))
-                .Select(o => Note(o, moved.GetValueOrDefault(o.Key)))
-                .OfType<PeriodNote>()
-                .OrderBy(n => n.Audit, StringComparer.Ordinal),
+                .Select(o => (Note: Note(o, moved.GetValueOrDefault(o.Key)), Ends: o.Fields.GetValueOrDefault("eta")))
+                .Where(n => n.Note is not null)
+                // In date order: a period's ref ID leads with its quarter or month, so Q1-2027FY sorts before Q4-2026FY as text.
+                .OrderBy(n => n.Ends, StringComparer.Ordinal)
+                .ThenBy(n => n.Note!.Audit, StringComparer.Ordinal)
+                .Select(n => n.Note!),
         ];
     }
 

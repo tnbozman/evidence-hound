@@ -1,0 +1,14 @@
+{
+  "@odata.context": "{{graph}}v1.0/$metadata#microsoft.graph.security.huntingQueryResults",
+  "schema": [
+    { "name": "DeviceId", "type": "String" },
+    { "name": "ActionType", "type": "String" },
+    { "name": "Events", "type": "Int64" },
+    { "name": "LastSeen", "type": "DateTime" }
+  ],
+  "results": [
+    { "DeviceId": "0000000000000000000000000000000000ed0001", "ActionType": "AppControlCodeIntegrityPolicyBlocked", "Events": 3, "LastSeen": "2026-11-20T23:14:05Z" },
+    { "DeviceId": "0000000000000000000000000000000000ed0002", "ActionType": "AppLockerBlockExecutable", "Events": 1, "LastSeen": "2026-11-18T04:51:40Z" },
+    { "DeviceId": "0000000000000000000000000000000000ed0003", "ActionType": "AppControlCodeIntegrityPolicyAudited", "Events": 12, "LastSeen": "2026-11-21T09:02:11Z" }
+  ]
+}

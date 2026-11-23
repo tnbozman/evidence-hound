@@ -1667,10 +1667,11 @@
           "YamlDotNet": "[18.1.0, )"
         }
       },
-      "evidencehound.collectors.sophos": {
+      "evidencehound.collectors.rest": {
         "type": "Project",
         "dependencies": {
-          "EvidenceHound.Collectors.Abstractions": "[0.1.0, )"
+          "EvidenceHound.Collectors.Abstractions": "[0.1.0, )",
+          "YamlDotNet": "[18.1.0, )"
         }
       },
       "evidencehound.collectors.testing": {
@@ -1682,10 +1683,23 @@
           "xunit.v3.extensibility.core": "[4.0.2, )"
         }
       },
+      "evidencehound.collectors.vulnscan": {
+        "type": "Project",
+        "dependencies": {
+          "EvidenceHound.Collectors.Abstractions": "[0.1.0, )"
+        }
+      },
       "evidencehound.core": {
         "type": "Project"
       },
       "evidencehound.core.yaml": {
+        "type": "Project",
+        "dependencies": {
+          "EvidenceHound.Core": "[0.1.0, )",
+          "YamlDotNet": "[18.1.0, )"
+        }
+      },
+      "evidencehound.onboarding": {
         "type": "Project",
         "dependencies": {
           "EvidenceHound.Core": "[0.1.0, )",
@@ -1699,7 +1713,8 @@
           "EvidenceHound.Collectors.Abstractions": "[0.1.0, )",
           "EvidenceHound.Collectors.M365": "[0.1.0, )",
           "EvidenceHound.Collectors.Manual": "[0.1.0, )",
-          "EvidenceHound.Collectors.Sophos": "[0.1.0, )",
+          "EvidenceHound.Collectors.Rest": "[0.1.0, )",
+          "EvidenceHound.Collectors.VulnScan": "[0.1.0, )",
           "EvidenceHound.Core": "[0.1.0, )",
           "EvidenceHound.Core.Yaml": "[0.1.0, )",
           "YamlDotNet": "[18.1.0, )"
@@ -1718,6 +1733,7 @@
           "EvidenceHound.CisoAssistant": "[0.1.0, )",
           "EvidenceHound.Core": "[0.1.0, )",
           "EvidenceHound.Core.Yaml": "[0.1.0, )",
+          "EvidenceHound.Onboarding": "[0.1.0, )",
           "EvidenceHound.Runtime": "[0.1.0, )",
           "EvidenceHound.Transport.Kafka": "[0.1.0, )",
           "Microsoft.Extensions.Hosting": "[10.0.14, )",

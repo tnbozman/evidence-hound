@@ -1,0 +1,25 @@
+# The run published no control-tests artefact, so there is no report to read.
+description: The newest run has no test report.
+now: 2026-11-23T02:00:00Z
+settings:
+  repository: example/grc-infra
+  workflow: controls.yml
+secrets:
+  token: example-test-token
+responses:
+  - { get: /repos/example/grc-infra/actions/workflows/controls.yml/runs, file: recordings/runs.json }
+  - { get: /repos/example/grc-infra/actions/runs/7101/artifacts, file: recordings/artifacts-none.json }
+expect:
+  infrastructure.tests.pass: unable_to_assess
+  infrastructure.controls.vm_has_no_public_ip: unable_to_assess
+  infrastructure.controls.https_only_from_the_office: unable_to_assess
+  infrastructure.controls.office_range_is_not_the_internet: unable_to_assess
+  infrastructure.controls.no_ssh_from_the_internet: unable_to_assess
+  infrastructure.controls.vpn_routes_only_the_office: unable_to_assess
+  infrastructure.controls.storage_encrypted: unable_to_assess
+  infrastructure.controls.vm_metadata_v2_only: unable_to_assess
+  infrastructure.controls.backups_private_and_in_another_region: unable_to_assess
+  infrastructure.controls.backups_retention_locked: unable_to_assess
+  infrastructure.controls.backup_retention_cannot_be_shortened: unable_to_assess
+  infrastructure.controls.only_backup_admins_reach_backups: unable_to_assess
+  infrastructure.controls.volume_backed_up_weekly: unable_to_assess

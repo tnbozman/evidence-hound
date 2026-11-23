@@ -1,0 +1,5 @@
+{
+  "items": [
+    { "id": "dev-0003", "hostname": "desktop-01.example.com", "serial": "EX-SERIAL-0003", "owner": "jo@example.com", "os": { "name": "ExampleOS", "version": "15.0" }, "lastSeen": "2026-11-22T01:15:00Z" }
+  ]
+}

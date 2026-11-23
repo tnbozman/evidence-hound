@@ -1,0 +1,7 @@
+{
+  "query": "firmware_upgrades",
+  "item_count": 1,
+  "items": [
+    { "id": "00000000-0000-4000-8000-00000000f001", "firmwareVersion": "SFOS 21.0.1 MR-1-Build237", "upgradeToVersion": ["21.5.0 GA-Build171"] }
+  ]
+}

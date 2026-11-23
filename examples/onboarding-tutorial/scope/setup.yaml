@@ -1,0 +1,57 @@
+# yaml-language-server: $schema=../../../schemas/scope.schema.json
+# The fictional Example Pty Ltd's structure in CISO Assistant. Everything here is made up.
+# Guide: docs/scope.md. Check it with: hound scope validate examples/compliance-repo/scope
+organisation:
+  root_folder: Global
+frameworks:
+  - urn: urn:intuitem:risk:framework:essential-eight-2023
+    library: urn:intuitem:risk:library:essential-eight-2023
+    snapshot: ../frameworks/essential-eight-2023.json
+  - urn: urn:intuitem:risk:framework:asd-essentials-enterprise-it
+    library: urn:intuitem:risk:library:asd-essentials-enterprise-it
+    snapshot: ../frameworks/asd-essentials-enterprise-it.json
+  # A custom library: uploaded from the file, then loaded.
+  - urn: urn:example:risk:framework:example-baseline
+    library: urn:example:risk:library:example-baseline
+    file: ../frameworks/example-baseline.yaml
+# Other libraries to load, such as the mapping between the Essential Eight and the Essentials.
+libraries:
+  - urn:intuitem:risk:library:mapping-essential-eight-2023-and-asd-essentials-enterprise-it
+domains:
+  - name: Example Pty Ltd
+    description: The whole company, one office and its cloud services.
+    perimeter:
+      name: Corporate IT
+      ref_id: PER-CORP
+      description: Everything staff use to do their work.
+    systems:
+      - name: Example 365
+        ref_id: SYS-365
+        type: primary
+        description: Mail, files, identity and device management.
+        owner: it@example.com
+        tags:
+          essentials_domain: identity
+      - name: Example laptops
+        ref_id: SYS-LAPTOPS
+        type: supporting
+        description: Staff Windows laptops, managed by Intune.
+        owner: it@example.com
+        parents: [Example 365]
+      - name: Example backup service
+        ref_id: SYS-BACKUP
+        type: supporting
+        description: Daily backups of Example 365 and the laptops.
+        owner: it@example.com
+      - name: GRC-PLATFORM
+        ref_id: SYS-GRC-PLATFORM
+        type: primary
+        description: "CISO Assistant and Evidence Hound on an OCI Compute VM, from Oracle Cloud Infrastructure."
+        owner: it@example.com
+        solution: SOL-OCI-HOSTING
+      - name: OFFICE-FIREWALL
+        ref_id: SYS-OFFICE-FIREWALL
+        type: primary
+        description: "Sophos Firewall on an XGS appliance, managed in Sophos Central, from Sophos."
+        owner: it@example.com
+        solution: SOL-SOPHOS-FIREWALL

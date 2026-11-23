@@ -14,6 +14,13 @@ public class NamesTests
     }
 
     [Fact]
+    public void Outcomes_read_as_words_in_observations()
+    {
+        // "error" stays the file name of the outcome; people read "unable to assess".
+        Enum.GetValues<CheckOutcome>().Select(Names.Display).ShouldBe(["pass", "fail", "partial", "not applicable", "unable to assess"]);
+    }
+
+    [Fact]
     public void Undefined_values_are_bugs()
     {
         Should.Throw<ArgumentOutOfRangeException>(() => Names.Of((CheckOutcome)99));

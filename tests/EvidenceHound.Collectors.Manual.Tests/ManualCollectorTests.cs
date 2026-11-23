@@ -35,6 +35,35 @@ public sealed class ManualCollectorTests : IDisposable
     }
 
     [Fact]
+    public async Task Only_attested_results_are_published()
+    {
+        // s09-42: an agent's proposal beside the file is pending. It is not evidence, and no run publishes it or what it says.
+        const string content = "rule 1: allow https from any to web-01.example.com";
+        _drop.Add(Export, content, Now.AddDays(-2));
+        var hash = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(Path.Combine(_drop.Path, Export))));
+        File.WriteAllText(Path.Combine(_drop.Path, Export + ".proposal.yaml"), $"proposed_by: agent\nfile_sha256: {hash}\nobservation: The agent read 14 rules.\noutcomes:\n  {Reviewed}: pass\n");
+
+        var pending = (await _drop.CollectAsync()).Value();
+
+        pending.Checks.ShouldAllBe(c => c.Outcome == CheckOutcome.Partial && c.Observation.Contains("not attested", StringComparison.Ordinal) && !c.Observation.Contains("14 rules", StringComparison.Ordinal));
+        pending.Files.ShouldHaveSingleItem().FileName.ShouldBe(Export);
+
+        // Attested by a person from the proposal: published, and it says who proposed and who attested, with the file's hash.
+        _drop.Attest(Export, Attested.Replace("who: Alex Example", $"who: Sam Example\nproposed_by: agent\nfile_sha256: {hash}", StringComparison.Ordinal));
+        var attested = (await _drop.CollectAsync()).Value();
+
+        attested.Checks.ShouldAllBe(c => c.Outcome == CheckOutcome.Pass);
+        attested.Checks[0].Observation.ShouldStartWith($"Proposed by agent, attested pass by Sam Example on 2026-11-20: {Export} (sha256 {hash[..12]}).", Case.Sensitive);
+        attested.Checks[0].EvidenceRefs.ShouldBe([Export, Attestation.SidecarFor(Export)]);
+        attested.Files.Select(f => f.FileName).ShouldBe([Export, Attestation.SidecarFor(Export)], ignoreOrder: true);
+
+        // A file changed after it was attested is no longer the file the person attested.
+        _drop.Add(Export, content + "\nrule 2: allow any from any to any", Now.AddDays(-1));
+        var changed = (await _drop.CollectAsync()).Value();
+        changed.Checks.ShouldAllBe(c => c.Outcome == CheckOutcome.Partial && c.Observation.Contains("changed since it was attested", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task File_without_attestation_is_partial()
     {
         _drop.Add(Export, "rule 1: allow https", Now.AddDays(-2));

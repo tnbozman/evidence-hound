@@ -1,0 +1,11 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.9.8",
+  "resource_drift": [
+    { "address": "oci_core_instance.grc", "type": "oci_core_instance", "change": { "actions": ["update"] } }
+  ],
+  "resource_changes": [
+    { "address": "oci_core_instance.grc", "type": "oci_core_instance", "change": { "actions": ["no-op"] } },
+    { "address": "oci_core_vcn.grc", "type": "oci_core_vcn", "change": { "actions": ["no-op"] } }
+  ]
+}

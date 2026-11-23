@@ -1,6 +1,6 @@
 # Design: an assistant for onboarding a system
 
-Status: Agreed (Nov 22). Builds on the agreed [REST collector design](rest-collector.md). The build is tasks s09-19 and s09-20 (suppliers, moved from s10) and s09-21 to s09-26 in [the s09 sprint](../sprints/s09-e8-gap-collectors.md).
+Status: Superseded (Nov 23) by the [agent-driven onboarding design](agent-driven-onboarding.md): `hound` no longer calls a language model itself (s09-40). The model port, provider adapters, `hound onboard config`, `onboarding.yaml`, the outbound guard, deny terms, token budget and request record described below were removed; the supplier gate, the applicability decisions, skills and the written files remain. Kept for the record. Was: Agreed (Nov 22). Builds on the agreed [REST collector design](rest-collector.md). The build is tasks s09-19 and s09-20 (suppliers, moved from s10) and s09-21 to s09-26 in [the s09 sprint](../sprints/s09-e8-gap-collectors.md).
 
 ## The problem
 

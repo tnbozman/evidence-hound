@@ -2,6 +2,7 @@ using System.CommandLine;
 using System.Security.Cryptography;
 using EvidenceHound.Collectors;
 using EvidenceHound.Collectors.Manual;
+using EvidenceHound.Collectors.VulnScan;
 using EvidenceHound.Core;
 using EvidenceHound.Core.Checks;
 using EvidenceHound.Core.Results;
@@ -31,15 +32,22 @@ internal static class ManualCommand
                 problems => Task.FromResult(Log.Problems(logger, problems)));
         });
 
-        return new Command("manual", "Work with manual-upload sources.") { upload };
+        return new Command("manual", "Work with manual-upload sources: upload a file, propose a result as an agent, attest proposals as a person.")
+        {
+            upload,
+            ManualProposalCommands.BuildPropose(terminal, logger, registry, clock),
+            ManualProposalCommands.BuildApprove(terminal, logger, registry, clock),
+        };
     }
 
-    private static Result<ManualSource> Find(DeploymentConfig deployment, string name) =>
+    internal static Result<ManualSource> Find(DeploymentConfig deployment, string name) =>
         deployment.Collectors.FirstOrDefault(c => c.Name == name) switch
         {
             null => Result.Fail<ManualSource>(new Problem(
                 "manual.source_unknown",
-                $"No collector named '{name}' in the config. Manual sources: {Names(deployment.Collectors.Where(c => c.Type == ManualCollector.TypeName))}.")),
+                $"No collector named '{name}' in the config. Manual sources: {Names(deployment.Collectors.Where(c => c.Type is ManualCollector.TypeName or VulnScanCollector.TypeName))}.")),
+            { Type: VulnScanCollector.TypeName } scans => VulnScanSource.FromSettings(new CollectorSettings(scans.Settings))
+                .Map(scan => new ManualSource(scan.DropFolder, [scan.Pattern], [], 1, scan.Owner)),
             { Type: not ManualCollector.TypeName } other => Result.Fail<ManualSource>(new Problem(
                 "manual.source_not_manual", $"Collector '{name}' has type '{other.Type}'; it is not a manual source.")),
             var manual => ManualSource.FromSettings(new CollectorSettings(manual.Settings)),
@@ -70,7 +78,8 @@ internal static class ManualCommand
             return Log.Problems(logger, [new Problem("manual.file_exists", $"A different '{file.Name}' is already in {source.DropFolder}. Rename the new export and upload it again.")]);
         }
 
-        var answer = await AskAsync(terminal, source, clock, cancellationToken);
+        // A scan source's export is the evidence itself, with no checks to attest.
+        var answer = source.Checks.Count == 0 ? Result.Ok(new Answer(null)) : await AskAsync(terminal, source, clock, cancellationToken);
         if (answer is Result<Answer>.Fail failed)
         {
             foreach (var problem in failed.Errors)

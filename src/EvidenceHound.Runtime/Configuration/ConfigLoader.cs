@@ -61,6 +61,12 @@ public static partial class ConfigLoader
 
     private static Result<DeploymentConfig> ParseRoot(YamlMappingNode root, Locator at, IReadOnlyDictionary<string, CollectorDescription> knownTypes)
     {
+        var llm = LlmInRunner(root, at).ToArray();
+        if (llm.Length > 0)
+        {
+            return Result.Fail<DeploymentConfig>(llm);
+        }
+
         var unknown = UnknownKeys(root, TopKeys, at);
         var ca = Section(root, "ciso_assistant", at).Bind(map => ParseCisoAssistant(map, at));
         var evidence = Section(root, "evidence", at).Bind(map => ParseEvidence(map, at));
@@ -184,6 +190,14 @@ public static partial class ConfigLoader
         return problems.Length > 0 ? Result.Fail<IReadOnlyList<CollectorInstance>>(problems) : parsed;
     }
 
+    /// <summary>Collector types hound no longer has, with what to write instead.</summary>
+    private static readonly Dictionary<string, string> RetiredTypes = new(StringComparer.Ordinal)
+    {
+        ["sophos"] = "use `type: rest` with the setting `profile: sophos-central` (and `profiles_path` if the profiles folder is not the default). "
+            + "client_id, supported_firewall_firmware, super_admin_max and the client_secret secret keep their names; tenant_id is not used, "
+            + "as the profile needs a tenant credential. See docs/collectors/sophos.md.",
+    };
+
     private static Result<CollectorInstance> ParseCollector(YamlNode item, Locator at, IReadOnlyDictionary<string, CollectorDescription> knownTypes)
     {
         if (item is not YamlMappingNode map)
@@ -196,7 +210,9 @@ public static partial class ConfigLoader
             : Result.Fail<string>(at.Problem(node.Start, "config.collector_name_invalid", "'name' must be lowercase letters, digits and hyphens, starting with a letter or digit.")));
         var type = Scalar(map, "type", at).Bind(node => knownTypes.ContainsKey(node.Value!)
             ? Result.Ok(node.Value!)
-            : Result.Fail<string>(at.Problem(node.Start, "config.collector_type_unknown", $"unknown collector type '{node.Value}'; known types: {string.Join(", ", knownTypes.Keys.Order(StringComparer.Ordinal))}.")));
+            : RetiredTypes.TryGetValue(node.Value!, out var replacement)
+                ? Result.Fail<string>(at.Problem(node.Start, "config.collector_type_retired", $"collector type '{node.Value}' was replaced: {replacement}"))
+                : Result.Fail<string>(at.Problem(node.Start, "config.collector_type_unknown", $"unknown collector type '{node.Value}'; known types: {string.Join(", ", knownTypes.Keys.Order(StringComparer.Ordinal))}.")));
         var schedule = Scalar(map, "schedule", at).Bind(node => IsCron(node.Value!)
             ? Result.Ok(node.Value!)
             : Result.Fail<string>(at.Problem(node.Start, "config.schedule_invalid", "'schedule' must be a five-field cron expression, for example \"0 2 * * *\".")));
@@ -277,9 +293,17 @@ public static partial class ConfigLoader
             _ => Result.Fail<SecretReference>(at.Problem(
                 node.Start, "config.secret_inline", $"'{key}' must be a secret reference (env:NAME or file:/path), never the secret itself.")));
 
-    /// <summary>A setting is a secret when its name says so, when it holds a private key, or when it holds a long unbroken run of letters and digits.</summary>
+    /// <summary>
+    /// A setting is a secret when its name says so, when it holds a private key, or when it holds a long unbroken run of letters and
+    /// digits. A setting named as an address or path (<c>token_url</c>, <c>secrets_path</c>) is judged by its name only when its value
+    /// is not an address or an absolute path.
+    /// </summary>
     private static bool LooksLikeSecret(string key, string value) =>
-        SecretName().IsMatch(key) || value.Contains("PRIVATE KEY", StringComparison.Ordinal) || TokenLike().Matches(value).Any(m => m.Value.Any(char.IsLetter) && m.Value.Any(char.IsDigit));
+        (SecretName().IsMatch(key) && !IsAddress(key, value)) || value.Contains("PRIVATE KEY", StringComparison.Ordinal) || TokenLike().Matches(value).Any(m => m.Value.Any(char.IsLetter) && m.Value.Any(char.IsDigit));
+
+    private static bool IsAddress(string key, string value) =>
+        (key.EndsWith("_url", StringComparison.OrdinalIgnoreCase) && Uri.TryCreate(value, UriKind.Absolute, out var url) && url.Scheme is "https" or "http")
+        || (key.EndsWith("_path", StringComparison.OrdinalIgnoreCase) && value.StartsWith('/'));
 
     private static bool IsCron(string value)
     {
@@ -311,6 +335,24 @@ public static partial class ConfigLoader
     /// <summary>The text under <paramref name="key"/>, or an empty scalar when the key is absent.</summary>
     private static Result<YamlScalarNode> OptionalScalar(YamlMappingNode map, string key, Locator at) =>
         Child(map, key) is null ? Result.Ok(new YamlScalarNode("")) : Scalar(map, key, at);
+
+    /// <summary>
+    /// No model in evidence collection: an <c>llm</c> section, or any value naming the onboarding key, is refused, so the runner never holds a
+    /// model key. The model belongs in onboarding.yaml, which only <c>hound onboard</c> reads.
+    /// </summary>
+    private static IEnumerable<Problem> LlmInRunner(YamlMappingNode root, Locator at)
+    {
+        const string Hint = "hound never uses a language model, in a run or anywhere else. For model help, set up your coding assistant with 'hound agent setup'.";
+        if (root.Children.Keys.OfType<YamlScalarNode>().FirstOrDefault(k => k.Value == "llm") is { } section)
+        {
+            yield return at.Problem(section.Start, "config.llm_in_runner", $"'llm' is not allowed here: {Hint}");
+        }
+
+        foreach (var value in root.AllNodes.OfType<YamlScalarNode>().Where(n => n.Value?.Contains("llm_api_key", StringComparison.OrdinalIgnoreCase) == true))
+        {
+            yield return at.Problem(value.Start, "config.llm_in_runner", $"this refers to a model key: {Hint}");
+        }
+    }
 
     private static IEnumerable<Problem> UnknownKeys(YamlMappingNode map, string[] allowed, Locator at) =>
         map.Children.Keys

@@ -1,0 +1,37 @@
+# Fictional. The unattended trial (HOUND_TRIAL_YES=1, CI) copies this file over the agent's draft: it is the draft as hound approve
+# leaves it once a person approves the supplier (the contract active) and concludes its review ok. Interactively, you approve.
+ref_id: "SUP-CISO-ASSISTANT"
+name: "CISO Assistant (open-source project)"
+domain: "Example Pty Ltd"
+# dependency: It is our system of record for compliance. (agent)
+dependency: 3
+# penetration: It runs in our VM; the project has no access to it. (agent)
+penetration: 1
+# maturity: An active project with a security policy; no attestation. (agent)
+maturity: 2
+# trust: Images pinned by version and updated through a reviewed pull request. (agent)
+trust: 3
+solutions:
+  - ref_id: "SOL-CISO-ASSISTANT"
+    name: "CISO Assistant community edition"
+    # criticality: to decide (1 to 4)
+contracts:
+  - ref_id: "CTR-CISO-ASSISTANT-LICENCE"
+    name: "AGPL-3.0 licence"
+    status: active
+    approved_by: Sam Example
+    approved_on: "2026-11-23"
+    solutions: ["SOL-CISO-ASSISTANT"]
+# The supplier's review: a person concludes it with hound approve, and a system it supplies is registered only once it is concluded ok.
+assessments:
+  - ref_id: "EA-SUP-CISO-ASSISTANT"
+    name: "CISO Assistant (open-source project) review"
+    solutions: ["SOL-CISO-ASSISTANT"]
+    perimeter: "Corporate IT"
+    due_date: "2026-12-23"
+    review_every: 12 months
+    conclusions:
+      - review: EA-SUP-CISO-ASSISTANT-2026-12
+        result: ok
+        by: Sam Example
+        on: "2026-11-23"

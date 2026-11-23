@@ -2,21 +2,32 @@ using System.Globalization;
 
 namespace EvidenceHound.Core.Scope;
 
-/// <summary>One period of an audit series: its own audit, <c>&lt;series&gt;-&lt;label&gt;</c>, from <see cref="Start"/> to <see cref="End"/> inclusive.</summary>
+/// <summary>
+/// One period of an audit series: its own audit, from <see cref="Start"/> to <see cref="End"/> inclusive. A series is
+/// <c>&lt;ORG&gt;-&lt;FRAMEWORK&gt;[-&lt;SYSTEM&gt;]</c>, and the period's label goes after the organisation and framework:
+/// <c>EX-E8-SOPHOS-NETWORK</c> gives <c>EX-E8-Q1-2027FY-SOPHOS-NETWORK</c>.
+/// </summary>
 public sealed record AuditPeriod(string Series, string Label, DateOnly Start, DateOnly End)
 {
-    public string RefId => $"{Series}-{Label}";
+    public string RefId => Series.Split('-', 3) is [var org, var framework, var system] ? $"{org}-{framework}-{Label}-{system}" : $"{Series}-{Label}";
 }
 
 /// <summary>
 /// The periods of an audit that runs in a cycle. Pure. Periods follow on from the cycle's first day, one after another, and each is labelled by
-/// the calendar month, quarter, half or year its first day falls in (<c>2026M02</c>, <c>2026Q4</c>, <c>2027H1</c>, <c>2026</c>), or
-/// <c>FY2026</c> for a year that does not start in January. A period is as long as the calendar unit that labels it, so labels never repeat.
+/// the financial year its first day falls in, 1 July to 30 June, named by the year it ends: a quarter of that year (<c>Q1-2027FY</c> is July
+/// to September 2026) or a calendar month (<c>M07-2027FY</c> is July 2026). A period is as long as the unit that labels it, so labels never repeat.
 /// </summary>
 public static class AuditPeriods
 {
     /// <summary>The period lengths a cycle can have.</summary>
-    public static IReadOnlyList<string> Lengths { get; } = ["month", "quarter", "half_year", "year"];
+    public static IReadOnlyList<string> Lengths { get; } = ["month", "quarter"];
+
+    /// <summary>The month a financial year starts in: July.</summary>
+    public const int FinancialYearStart = 7;
+
+    /// <summary>Whether a cycle of this length may start on this day: a month cycle on the first of any month, a quarter cycle on the first day of a financial-year quarter.</summary>
+    public static bool StartsOnItsUnit(string length, DateOnly first) =>
+        first.Day == 1 && (length != "quarter" || (first.Month - FinancialYearStart + 12) % 3 == 0);
 
     /// <summary>The period that holds <paramref name="date"/>.</summary>
     public static AuditPeriod On(string series, AuditCycle cycle, DateOnly date)
@@ -27,7 +38,7 @@ public static class AuditPeriods
         var elapsed = ((date.Year - first.Year) * 12) + date.Month - first.Month - (date.Day < first.Day ? 1 : 0);
         var index = (int)Math.Floor(elapsed / (double)months);
         var start = first.AddMonths(index * months);
-        return new AuditPeriod(series, Label(cycle.Period, start, first), start, first.AddMonths((index + 1) * months).AddDays(-1));
+        return new AuditPeriod(series, Label(cycle.Period, start), start, first.AddMonths((index + 1) * months).AddDays(-1));
     }
 
     /// <summary>Every period from the cycle's first up to the one that holds <paramref name="date"/>; none before the cycle starts.</summary>
@@ -61,16 +72,15 @@ public static class AuditPeriods
     {
         "month" => 1,
         "quarter" => 3,
-        "half_year" => 6,
-        "year" => 12,
-        _ => throw new ArgumentOutOfRangeException(nameof(length), length, "A cycle's period is month, quarter, half_year or year."),
+        _ => throw new ArgumentOutOfRangeException(nameof(length), length, "A cycle's period is month or quarter."),
     };
 
-    private static string Label(string length, DateOnly start, DateOnly first) => length switch
+    private static string Label(string length, DateOnly start)
     {
-        "month" => string.Create(CultureInfo.InvariantCulture, $"{start.Year}M{start.Month:00}"),
-        "quarter" => string.Create(CultureInfo.InvariantCulture, $"{start.Year}Q{((start.Month - 1) / 3) + 1}"),
-        "half_year" => string.Create(CultureInfo.InvariantCulture, $"{start.Year}H{((start.Month - 1) / 6) + 1}"),
-        _ => first.Month == 1 ? start.Year.ToString(CultureInfo.InvariantCulture) : string.Create(CultureInfo.InvariantCulture, $"FY{start.Year}"),
-    };
+        var monthOfYear = (start.Month - FinancialYearStart + 12) % 12;
+        var endYear = start.Month >= FinancialYearStart ? start.Year + 1 : start.Year;
+        return length == "quarter"
+            ? string.Create(CultureInfo.InvariantCulture, $"Q{(monthOfYear / 3) + 1}-{endYear}FY")
+            : string.Create(CultureInfo.InvariantCulture, $"M{start.Month:00}-{endYear}FY");
+    }
 }

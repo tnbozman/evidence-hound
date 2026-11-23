@@ -10,8 +10,11 @@ public class ScopeSchemaTests
 {
     private static readonly JsonSchema Schema = JsonSchema.FromText(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "files", "schemas", "scope.schema.json")));
 
+    private static readonly string[] ExampleRepos = ["compliance-repo", "onboarding-tutorial"];
+
     public static TheoryData<string> ExampleFiles() =>
-        [.. Directory.GetFiles(Path.Combine(AppContext.BaseDirectory, "files", "compliance-repo", "scope"), "*.yaml", SearchOption.AllDirectories)
+        [.. ExampleRepos
+            .SelectMany(repo => Directory.GetFiles(Path.Combine(AppContext.BaseDirectory, "files", repo, "scope"), "*.yaml", SearchOption.AllDirectories))
             .Select(f => Path.GetRelativePath(AppContext.BaseDirectory, f))];
 
     [Theory]
@@ -30,6 +33,10 @@ public class ScopeSchemaTests
         Errors(AccessScopeTests.Access).ShouldBeEmpty();
         Errors("custom_roles: [Evidence reviewer]\n" + AccessScopeTests.Access).ShouldBeEmpty();
         Errors(SettingsScopeTests.Settings).ShouldBeEmpty();
+        Errors(SupplierScopeTests.Supplier).ShouldBeEmpty();
+        Errors(SupplierScopeTests.OrganisationSetup).ShouldBeEmpty();
+        Errors(CapabilityLoaderTests.Capabilities).ShouldBeEmpty();
+        Errors(OpenDependencyTests.WaitingAudit).ShouldBeEmpty();
     }
 
     [Fact]
@@ -56,6 +63,13 @@ public class ScopeSchemaTests
     [InlineData("general:\n  openai_api_key: not-a-real-secret\n")]
     [InlineData("general:\n  colour: blue\n")]
     [InlineData("feature_flags: {tprm: true}\nusers: []\n")]
+    [InlineData("ref_id: SUP-1\nname: N\ncountry: Australia\n")]
+    [InlineData("organisation:\n  entity:\n    name: N\n    trust: 3\n")]
+    [InlineData("organisation:\n  entity:\n    description: No name.\n")]
+    [InlineData("ref_id: SUP-1\nname: N\ncontracts:\n  - {ref_id: C-1, name: N, status: signed}\n")]
+    [InlineData("ref_id: SUP-1\nname: N\nrepresentatives:\n  - {email: sam@example.com, password: not-a-real-secret}\n")]
+    [InlineData("framework: urn:x\nmitigations:\n  - {mitigation: ac, provided_by: hope, approved_by: GRC lead}\n")]
+    [InlineData("framework: urn:x\nmitigations:\n  - {mitigation: ac, provided_by: gap, colour: blue}\n")]
     public void Invalid_scope_files_fail_the_schema(string yaml)
     {
         Errors(yaml).ShouldNotBeEmpty();

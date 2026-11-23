@@ -51,8 +51,98 @@ public static class ScopeDesired
             }),
             .. scope.Audits.SelectMany(a => Rows(scope, a, inputs)),
             .. Access(scope.Access, setup.RootFolder),
+            .. setup.Organisation is { } organisation ? [Organisation(organisation)] : Array.Empty<ScopeObject>(),
+            .. scope.ThirdParties.SelectMany(ThirdParty),
+            .. Reviews(scope, inputs.Today),
         ];
     }
+
+    /// <summary>Every supplier review the scope declares on <paramref name="today"/>, each with its conclusion when the scope records one.</summary>
+    public static IReadOnlyList<ScopeObject> Reviews(ScopeDocument scope, DateOnly? today)
+    {
+        ArgumentNullException.ThrowIfNull(scope);
+        return [.. scope.ThirdParties.SelectMany(e => e.Assessments.SelectMany(a => Reviews(e, a, today)))];
+    }
+
+    /// <summary>The key of the organisation's own entity, which CISO Assistant holds as its builtin main entity.</summary>
+    public const string OrganisationKey = "organisation";
+
+    private static ScopeObject Organisation(ScopeEntity entity) =>
+        new(ScopeKind.MainEntity, OrganisationKey, Fields(
+            ("name", entity.Name), ("description", entity.Description), ("mission", entity.Mission), ("country", entity.Country), ("currency", entity.Currency),
+            ("identifiers", Identifiers(entity.Identifiers))));
+
+    /// <summary>
+    /// A third party as CISO Assistant holds it: the entity, then its solutions, contracts and representatives, each naming the entity by
+    /// <c>ref_id</c>. A contract sits in the entity's domain. Identifiers are one JSON field, with sorted keys.
+    /// </summary>
+    private static IEnumerable<ScopeObject> ThirdParty(ScopeEntity entity) =>
+    [
+        new(ScopeKind.Entity, entity.RefId, Fields(
+            ("name", entity.Name), ("description", entity.Description), ("mission", entity.Mission), ("country", entity.Country), ("currency", entity.Currency),
+            ("parent", entity.Parent?.Value), ("domain", entity.Domain?.Value), ("dependency", Whole(entity.Dependency)), ("penetration", Whole(entity.Penetration)),
+            ("maturity", Whole(entity.Maturity)), ("trust", Whole(entity.Trust)), ("identifiers", Identifiers(entity.Identifiers)))),
+        .. entity.Solutions.Select(s => new ScopeObject(ScopeKind.Solution, s.RefId, Fields(
+            ("name", s.Name), ("description", s.Description), ("entity", entity.RefId), ("criticality", Whole(s.Criticality))))),
+        .. entity.Contracts.Select(c => new ScopeObject(ScopeKind.Contract, c.RefId, Fields(
+            ("name", c.Name), ("description", c.Description), ("entity", entity.RefId), ("domain", entity.Domain?.Value), ("status", c.Status),
+            ("start_date", c.Start), ("end_date", c.End), ("annual_expense", Amount(c.AnnualExpense)), ("currency", c.Currency),
+            ("solutions", Joined(c.Solutions.Select(s => s.Value)))))),
+        .. entity.Representatives.Select(r => new ScopeObject(ScopeKind.Representative, r.Email, Fields(
+            ("entity", entity.RefId), ("first_name", r.FirstName), ("last_name", r.LastName), ("role", r.Role), ("phone", r.Phone)))),
+    ];
+
+    /// <summary>
+    /// A supplier assessment as CISO Assistant holds it. With a review cycle, each review is its own assessment, <c>&lt;ref_id&gt;-yyyy-MM</c> by
+    /// its due date: the first is due on <c>due_date</c>, and once a review falls due on <paramref name="today"/> the next is opened, a cycle
+    /// later. The questionnaire is set up only when an assessment is created; answers and the tier are never declared. A review carries a
+    /// conclusion only when a person recorded one for it in the file with <c>hound approve</c>.
+    /// </summary>
+    private static IEnumerable<ScopeObject> Reviews(ScopeEntity entity, ScopeEntityAssessment assessment, DateOnly? today)
+    {
+        var initial = Fields(("questionnaire", assessment.Questionnaire?.Value), ("groups", Joined(assessment.Groups)));
+        ScopeObject Review(string key, string name, string? due) => new(ScopeKind.EntityAssessment, key, Fields(
+            ("name", name), ("entity", entity.RefId), ("solutions", Joined(assessment.Solutions.Select(s => s.Value))),
+            ("domain", assessment.Domain?.Value ?? entity.Domain?.Value), ("perimeter", assessment.Perimeter.Value), ("due_date", due),
+            ("criticality", Whole(assessment.Criticality)), ("conclusion", assessment.Conclusions.LastOrDefault(c => c.Review == key)?.Result)))
+        {
+            Initial = initial,
+        };
+
+        if (assessment.ReviewMonths is not { } months || !DateOnly.TryParseExact(assessment.DueDate, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var first))
+        {
+            yield return Review(assessment.RefId, assessment.Name, assessment.DueDate);
+            yield break;
+        }
+
+        for (var due = first; ; due = due.AddMonths(months))
+        {
+            var label = due.ToString("yyyy-MM", CultureInfo.InvariantCulture);
+            yield return Review($"{assessment.RefId}-{label}", $"{assessment.Name} {label}", due.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+            if (today is not { } day || day < due)
+            {
+                yield break;
+            }
+        }
+    }
+
+    /// <summary>Legal identifiers as one JSON object with sorted keys, or null when there are none.</summary>
+    public static string? Identifiers(IReadOnlyDictionary<string, string> identifiers)
+    {
+        ArgumentNullException.ThrowIfNull(identifiers);
+        return identifiers.Count == 0
+            ? null
+            : new System.Text.Json.Nodes.JsonObject(identifiers.OrderBy(i => i.Key, StringComparer.Ordinal)
+                .Select(i => KeyValuePair.Create(i.Key, (System.Text.Json.Nodes.JsonNode?)System.Text.Json.Nodes.JsonValue.Create(i.Value)))).ToJsonString();
+    }
+
+    /// <summary>An amount as plain text without trailing zeros, so 12000, 12000.0 and 12000.00 compare equal.</summary>
+    public static string? Amount(string? amount) =>
+        decimal.TryParse(amount, NumberStyles.Number & ~NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out var value)
+            ? value.ToString("0.############", CultureInfo.InvariantCulture)
+            : amount;
+
+    private static string? Whole(int? value) => value?.ToString(CultureInfo.InvariantCulture);
 
     /// <summary>
     /// Users by email, each with the roles they hold (directly and through teams) as <c>roles</c>, such as

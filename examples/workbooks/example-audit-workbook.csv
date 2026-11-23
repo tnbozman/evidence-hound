@@ -1,0 +1,6 @@
+Requirement,Result,Observation,Evidence,Approved by,Approved on
+ISM-1807,Compliant,"Asset discovery runs daily, and its run history is kept for a year.",Asset discovery run history export,Sam Example,2026-05-01
+ISM-1808,Partially compliant,The vulnerability scanner's database updates weekly rather than daily.,Scanner configuration screenshot,Sam Example,2026-05-01
+ISM-1507,Compliant,The system owner validates each request for privileged access when it is first made.,Access request register export,,
+ISM-1699,Not assessed,,,,
+EX-0001,Compliant,An internal control that is not an Essential Eight requirement.,,Sam Example,2026-05-01

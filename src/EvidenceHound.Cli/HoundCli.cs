@@ -1,4 +1,5 @@
 using System.CommandLine;
+using EvidenceHound.Collectors.M365;
 using EvidenceHound.Runtime;
 using EvidenceHound.Runtime.Collectors;
 using Microsoft.Extensions.Configuration;
@@ -31,6 +32,31 @@ public static class HoundCli
         Action<ILoggingBuilder>? configureLogging = null,
         CancellationToken cancellationToken = default) =>
         RunAsync(args, input, output, error, configureLogging, [], new Dictionary<string, string?>(), null, cancellationToken);
+
+    /// <summary>Runs from the process's own streams. A person is at a terminal only when neither the input nor the output is redirected.</summary>
+    internal static Task<int> RunFromConsoleAsync(string[] args) =>
+        RunAsync(args, Console.In, Console.Out, Console.Error, null, [], new Dictionary<string, string?>(), null, CancellationToken.None, !Console.IsInputRedirected && !Console.IsOutputRedirected);
+
+    /// <summary>Runs with <paramref name="input"/> for prompts and extra configuration settings on top of the environment.</summary>
+    internal static Task<int> RunAsync(
+        string[] args,
+        TextReader input,
+        TextWriter output,
+        TextWriter error,
+        IReadOnlyDictionary<string, string?> settings,
+        CancellationToken cancellationToken) =>
+        RunAsync(args, input, output, error, null, [], settings, null, cancellationToken);
+
+    /// <summary>Runs as from a terminal or not: <paramref name="terminal"/> is true only when a person is typing the answers.</summary>
+    internal static Task<int> RunAsync(
+        string[] args,
+        TextReader input,
+        TextWriter output,
+        TextWriter error,
+        IReadOnlyDictionary<string, string?> settings,
+        bool terminal,
+        CancellationToken cancellationToken) =>
+        RunAsync(args, input, output, error, null, [], settings, null, cancellationToken, terminal);
 
     /// <summary>Runs with extra configuration settings (for example <c>HOUND_CA_TOKEN</c>) on top of the environment.</summary>
     internal static Task<int> RunAsync(
@@ -82,7 +108,7 @@ public static class HoundCli
         CancellationToken cancellationToken) =>
         RunAsync(args, TextReader.Null, output, error, configureLogging, extraCommands, settings, null, cancellationToken);
 
-    private static async Task<int> RunAsync(
+    internal static async Task<int> RunAsync(
         string[] args,
         TextReader input,
         TextWriter output,
@@ -91,7 +117,8 @@ public static class HoundCli
         IReadOnlyList<Command> extraCommands,
         IReadOnlyDictionary<string, string?> settings,
         Action<IServiceCollection>? configureServices,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool terminal = false)
     {
         ArgumentNullException.ThrowIfNull(error);
 
@@ -100,24 +127,24 @@ public static class HoundCli
         var logger = loggers.CreateLogger("hound");
 
         return await CollectorRegistry.FromServices(host.Services).Match(
-            registry => InvokeAsync(args, input, output, error, extraCommands, host.Services, registry, loggers, cancellationToken),
+            registry => InvokeAsync(args, new Terminal(input, output, error, terminal), extraCommands, host.Services, registry, loggers, cancellationToken),
             problems => Task.FromResult(Log.Problems(logger, problems)));
     }
 
     private static async Task<int> InvokeAsync(
         string[] args,
-        TextReader input,
-        TextWriter output,
-        TextWriter error,
+        Terminal terminal,
         IReadOnlyList<Command> extraCommands,
         IServiceProvider services,
         CollectorRegistry registry,
         ILoggerFactory loggers,
         CancellationToken cancellationToken)
     {
+        var (output, error) = (terminal.Output, terminal.Error);
         var logger = loggers.CreateLogger("hound");
         var collectorServices = new CollectorServices(loggers, services.GetRequiredService<IHttpClientFactory>());
-        var root = BuildRootCommand(new Terminal(input, output, error), loggers, services.GetRequiredService<IConfiguration>(), registry, collectorServices);
+        var root = BuildRootCommand(
+            terminal, loggers, services.GetRequiredService<IConfiguration>(), registry, collectorServices, services.GetRequiredService<EnvironmentLookup>());
         foreach (var command in extraCommands)
         {
             root.Subcommands.Add(command);
@@ -157,7 +184,7 @@ public static class HoundCli
     }
 
     private static RootCommand BuildRootCommand(
-        Terminal terminal, ILoggerFactory loggers, IConfiguration configuration, CollectorRegistry registry, CollectorServices collectorServices)
+        Terminal terminal, ILoggerFactory loggers, IConfiguration configuration, CollectorRegistry registry, CollectorServices collectorServices, EnvironmentLookup lookup)
     {
         var output = terminal.Output;
         return new("Evidence Hound: collects compliance evidence and publishes it to CISO Assistant.")
@@ -168,14 +195,22 @@ public static class HoundCli
             FrameworkCommands.Build(output, loggers),
             Setup.InitCommand.Build(terminal, loggers, configuration, registry),
             Setup.AddCommands.Build(terminal, loggers, configuration, registry),
+            ExplainCommand.Build(terminal, loggers),
+            OnboardCommands.Build(terminal, loggers, configuration, new GraphAccess(registry.Descriptions, collectorServices.HttpClients, lookup, configuration)),
             ManualCommand.Build(terminal, loggers, registry, new SystemClock()),
             MappingCommands.Build(output, loggers),
             ScopeCommands.Build(output, loggers, configuration, registry),
+            SkillCommands.Build(terminal, loggers, configuration),
+            SupplierCommands.Build(terminal, loggers, configuration),
+            ApproveCommand.Build(terminal, loggers, configuration),
+            AgentCommands.Build(terminal, loggers),
+            AuditCommands.Build(terminal, loggers, configuration),
             PlanCommand.Build(output, loggers, configuration, registry),
+            ProfileCommands.Build(output, loggers, configuration),
             PublishCommand.Build(output, loggers, configuration, registry),
             RunCommand.Build(output, loggers, configuration, registry, collectorServices),
             ServeCommand.Build(output, loggers, configuration, registry, collectorServices),
-            StatusCommand.Build(output, loggers, registry),
+            StatusCommand.Build(output, loggers, configuration, registry),
         };
     }
 

@@ -1,0 +1,13 @@
+# The run published no drift-plan artefact, so there is no plan to read.
+description: The newest run has no plan artefact.
+now: 2026-11-23T02:00:00Z
+settings:
+  repository: example/grc-infra
+  workflow: drift.yml
+secrets:
+  token: example-test-token
+responses:
+  - { get: /repos/example/grc-infra/actions/workflows/drift.yml/runs, file: recordings/runs.json }
+  - { get: /repos/example/grc-infra/actions/runs/7001/artifacts, file: recordings/artifacts-none.json }
+expect:
+  infrastructure.drift.none: unable_to_assess

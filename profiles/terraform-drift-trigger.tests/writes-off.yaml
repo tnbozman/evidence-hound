@@ -1,0 +1,12 @@
+# The same recordings, but the instance does not set allow_writes, so the workflow is never started and nothing is sent.
+description: Without allow_writes the trigger is refused.
+now: 2026-11-23T02:00:00Z
+settings:
+  repository: example/grc-infra
+  workflow: drift.yml
+secrets:
+  token: example-test-token
+responses:
+  - { post: /repos/example/grc-infra/actions/workflows/drift.yml/dispatches, file: recordings/dispatch.json }
+expect:
+  infrastructure.drift.none: unable_to_assess

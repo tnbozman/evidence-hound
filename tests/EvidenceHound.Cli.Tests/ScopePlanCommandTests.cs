@@ -25,6 +25,8 @@ public sealed class ScopePlanCommandTests : IDisposable
     private readonly string _workDir = Directory.CreateTempSubdirectory("hound-scope-plan-tests-").FullName;
     private readonly CancellationToken _ct = TestContext.Current.CancellationToken;
 
+    private static string Mapping => Path.Combine(AppContext.BaseDirectory, "files", "mappings", "example.yaml");
+
     private string ScopeDir => Path.Combine(_workDir, "scope");
 
     [Fact]
@@ -145,6 +147,19 @@ public sealed class ScopePlanCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Json_flag_gives_the_plan_as_json()
+    {
+        await WriteScopeAsync();
+        EmptyInstance();
+
+        // s09-37: --json on every command an agent reads, the same output as --format json.
+        var exitCode = await Plan("--json");
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        JsonNode.Parse(_output.ToString())!["changes"]!.AsArray().ShouldContain(c => c!["kind"]!.GetValue<string>() == "system");
+    }
+
+    [Fact]
     public async Task Plan_on_the_day_given_opens_the_periods_of_an_audit_with_a_cycle_and_lists_them()
     {
         await WriteScopeAsync(ScopeCommandTests.Audit.Replace("EXAMPLE-BASELINE-2026", "EXAMPLE-BASELINE", StringComparison.Ordinal) + "\ncycle: {period: quarter, starts: \"2026-07-01\"}\n");
@@ -155,15 +170,15 @@ public sealed class ScopePlanCommandTests : IDisposable
 
         exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
         var markdown = _output.ToString();
-        markdown.ShouldContain("| Create | audit | EXAMPLE-BASELINE-2026Q3 |");
+        markdown.ShouldContain("| Create | audit | EXAMPLE-BASELINE-Q1-2027FY |");
         markdown.ShouldContain("### Audit periods");
-        markdown.ShouldContain("| EXAMPLE-BASELINE-2026Q3 | closes: in review, awaiting sign-off |");
-        markdown.ShouldContain("| EXAMPLE-BASELINE-2026Q4 | opens, from EXAMPLE-BASELINE-2026Q3 |");
+        markdown.ShouldContain("| EXAMPLE-BASELINE-Q1-2027FY | closes: in review, awaiting sign-off |");
+        markdown.ShouldContain("| EXAMPLE-BASELINE-Q2-2027FY | opens, from EXAMPLE-BASELINE-Q1-2027FY |");
         _output.GetStringBuilder().Clear();
 
         (await Plan(settings, "--format", "json")).ShouldBe(ExitCodes.Ok, _error.ToString());
         JsonNode.Parse(_output.ToString())!["periods"]!.AsArray().Select(p => (p!["audit"]!.GetValue<string>(), p["event"]!.GetValue<string>(), (string?)p["baseline"]))
-            .ShouldBe([("EXAMPLE-BASELINE-2026Q3", "closes", (string?)null), ("EXAMPLE-BASELINE-2026Q4", "opens", "EXAMPLE-BASELINE-2026Q3")]);
+            .ShouldBe([("EXAMPLE-BASELINE-Q1-2027FY", "closes", (string?)null), ("EXAMPLE-BASELINE-Q2-2027FY", "opens", "EXAMPLE-BASELINE-Q1-2027FY")]);
     }
 
     [Fact]
@@ -176,6 +191,45 @@ public sealed class ScopePlanCommandTests : IDisposable
         exitCode.ShouldBe(ExitCodes.Configuration);
         _logs.Messages.ShouldContain(m => m.Contains("scope.reference_unknown", StringComparison.Ordinal));
         _ca.LogEntries.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task Plan_with_a_config_reads_the_ciso_assistant_address_and_token_from_it()
+    {
+        await WriteScopeAsync();
+        EmptyInstance();
+        var config = Path.Combine(_workDir, "hound.yaml");
+        await File.WriteAllTextAsync(config, $$"""
+            ciso_assistant: {url: "{{_ca.Url}}/api/", token: "env:EXAMPLE_CA_TOKEN"}
+            evidence: {root: ./evidence}
+            collectors: []
+            target: {mapping: "{{Mapping}}", compliance_assessment: EXAMPLE-BASELINE-2026}
+            """, _ct);
+
+        var exitCode = await Plan(settings: new() { ["EXAMPLE_CA_TOKEN"] = Token }, "--config", config);
+
+        exitCode.ShouldBe(ExitCodes.Ok, string.Join("\n", _logs.Messages));
+        _ca.LogEntries.ShouldNotBeEmpty();
+        _ca.LogEntries.ShouldAllBe(e => e.RequestMessage!.Headers!["Authorization"].Single() == $"Token {Token}");
+    }
+
+    [Fact]
+    public async Task The_environment_overrides_the_configs_ciso_assistant_address()
+    {
+        await WriteScopeAsync();
+        EmptyInstance();
+        var config = Path.Combine(_workDir, "hound.yaml");
+        await File.WriteAllTextAsync(config, $$"""
+            ciso_assistant: {url: "https://ciso.example.com/api/", token: "env:EXAMPLE_CA_TOKEN"}
+            evidence: {root: ./evidence}
+            collectors: []
+            target: {mapping: "{{Mapping}}", compliance_assessment: EXAMPLE-BASELINE-2026}
+            """, _ct);
+
+        var exitCode = await Plan(settings: new() { ["HOUND_CA_URL"] = $"{_ca.Url}/api/", ["EXAMPLE_CA_TOKEN"] = Token }, "--config", config);
+
+        exitCode.ShouldBe(ExitCodes.Ok, string.Join("\n", _logs.Messages));
+        _ca.LogEntries.ShouldNotBeEmpty();
     }
 
     [Fact]
@@ -453,6 +507,71 @@ public sealed class ScopePlanCommandTests : IDisposable
         _ca.LogEntries.ShouldBeEmpty();
     }
 
+    [Fact]
+    public async Task Plan_refuses_a_system_whose_supplier_has_no_concluded_assessment_and_writes_nothing()
+    {
+        await WriteScopeAsync();
+        await WriteSupplierAsync();
+        EmptyInstance();
+        SupplierRecords();
+
+        var exitCode = await Plan();
+
+        exitCode.ShouldBe(ExitCodes.Configuration);
+        _logs.Messages.ShouldContain(m => m.Contains("system.supplier_not_approved", StringComparison.Ordinal) && m.Contains("SUP-EX", StringComparison.Ordinal) && m.Contains("no concluded assessment", StringComparison.Ordinal));
+        _output.ToString().ShouldNotContain("## Scope plan");
+        _ca.LogEntries.ShouldAllBe(e => e.RequestMessage!.Method == "GET");
+    }
+
+    [Fact]
+    public async Task Apply_refuses_a_system_whose_supplier_is_not_approved_and_writes_nothing()
+    {
+        await WriteScopeAsync();
+        await WriteSupplierAsync();
+        EmptyInstance();
+        SupplierRecords();
+
+        var exitCode = await Run("apply");
+
+        exitCode.ShouldBe(ExitCodes.Configuration);
+        _logs.Messages.ShouldContain(m => m.Contains("system.supplier_not_approved", StringComparison.Ordinal));
+        _ca.LogEntries.ShouldAllBe(e => e.RequestMessage!.Method == "GET");
+    }
+
+    [Fact]
+    public async Task Plan_lists_a_lapsed_supplier_approval_and_a_tier_that_differs_from_the_forced_one()
+    {
+        await WriteScopeAsync();
+        await WriteSupplierAsync();
+        HeldStructure();
+        SupplierRecords(new JsonObject
+        {
+            ["id"] = "ea-1",
+            ["ref_id"] = "EA-EX-2025-06",
+            ["name"] = "Example Cloud review 2025",
+            ["entity"] = new JsonObject { ["id"] = "e-1", ["str"] = "Example Cloud Pty Ltd" },
+            ["folder"] = new JsonObject { ["id"] = "f-ex", ["str"] = "Example Pty Ltd" },
+            ["due_date"] = "2025-06-30",
+            ["conclusion"] = "ok",
+            ["expiry_date"] = "2026-06-30",
+        });
+        var settings = new Dictionary<string, string?> { ["HOUND_CA_URL"] = $"{_ca.Url}/api/", ["HOUND_CA_TOKEN"] = Token, ["HOUND_TODAY"] = "2026-11-21" };
+
+        var exitCode = await Plan(settings);
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var markdown = _output.ToString();
+        markdown.ShouldContain("### Suppliers");
+        markdown.ShouldContain("| SUP-EX | Example 365 | SUP-EX is no longer approved: EA-EX-2025-06's conclusion expired on 2026-06-30.");
+        markdown.ShouldContain("[supplier.approval_lapsed]");
+        markdown.ShouldContain("| SUP-EX |  | CISO Assistant holds SUP-EX at tier critical; the scope forces important: Hosts the customer portal. [supplier.tier_differs] |");
+        _output.GetStringBuilder().Clear();
+
+        (await Plan(settings, "--format", "json")).ShouldBe(ExitCodes.Ok, _error.ToString());
+        JsonNode.Parse(_output.ToString())!["suppliers"]!.AsArray().Select(n => (n!["code"]!.GetValue<string>(), n["supplier"]!.GetValue<string>(), (string?)n["system"]))
+            .ShouldBe([("supplier.approval_lapsed", "SUP-EX", (string?)"Example 365"), ("supplier.tier_differs", "SUP-EX", (string?)null)]);
+    }
+
     public void Dispose()
     {
         _output.Dispose();
@@ -646,6 +765,66 @@ public sealed class ScopePlanCommandTests : IDisposable
         {
             List(resource);
         }
+    }
+
+    /// <summary>The scope's system supplied through SUP-EX's hosting, which the organisation forces to the important tier.</summary>
+    private async Task WriteSupplierAsync()
+    {
+        await File.WriteAllTextAsync(Path.Combine(ScopeDir, "setup.yaml"), ScopeCommandTests.Setup.Replace("type: primary", "type: primary\n        solution: SOL-EX-HOST", StringComparison.Ordinal), _ct);
+        Directory.CreateDirectory(Path.Combine(ScopeDir, "third-parties"));
+        await File.WriteAllTextAsync(Path.Combine(ScopeDir, "third-parties", "sup-ex.yaml"), """
+            ref_id: SUP-EX
+            name: Example Cloud Pty Ltd
+            domain: Example Pty Ltd
+            dependency: 3
+            penetration: 2
+            maturity: 3
+            trust: 3
+            forced_tier:
+              tier: important
+              reason: Hosts the customer portal.
+            solutions:
+              - ref_id: SOL-EX-HOST
+                name: Managed hosting
+                criticality: 3
+            contracts:
+              - ref_id: CTR-EX-HOST
+                name: Hosting agreement
+                status: active
+                solutions: [SOL-EX-HOST]
+            """, _ct);
+    }
+
+    /// <summary>
+    /// CISO Assistant's third-party records: with <paramref name="assessments"/>, SUP-EX held at the critical tier with its hosting and active
+    /// contract and those assessments; without, no third parties at all.
+    /// </summary>
+    private void SupplierRecords(params JsonObject[] assessments)
+    {
+        static JsonObject Ref(string id, string text) => new() { ["id"] = id, ["str"] = text };
+        List("tiers", new JsonObject { ["id"] = "t-1", ["key"] = "critical" }, new JsonObject { ["id"] = "t-2", ["key"] = "important" });
+        List("representatives");
+        List("entity-assessments", assessments);
+        if (assessments.Length == 0)
+        {
+            List("entities");
+            List("solutions");
+            List("contracts");
+            return;
+        }
+
+        List("entities", new JsonObject { ["id"] = "e-1", ["ref_id"] = "SUP-EX", ["name"] = "Example Cloud Pty Ltd", ["folder"] = Ref("f-ex", "Example Pty Ltd"), ["tier"] = Ref("t-1", "Critical"), ["builtin"] = false });
+        List("solutions", new JsonObject { ["id"] = "s-1", ["ref_id"] = "SOL-EX-HOST", ["name"] = "Managed hosting", ["provider_entity"] = Ref("e-1", "Example Cloud Pty Ltd"), ["criticality"] = 3 });
+        List("contracts", new JsonObject
+        {
+            ["id"] = "c-1",
+            ["ref_id"] = "CTR-EX-HOST",
+            ["name"] = "Hosting agreement",
+            ["status"] = "active",
+            ["folder"] = Ref("f-ex", "Example Pty Ltd"),
+            ["provider_entity"] = Ref("e-1", "Example Cloud Pty Ltd"),
+            ["solutions"] = new JsonArray(Ref("s-1", "Managed hosting")),
+        });
     }
 
     private void List(string resource, params JsonObject[] items) =>

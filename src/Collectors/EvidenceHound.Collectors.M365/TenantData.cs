@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using EvidenceHound.Core.Results;
 
 namespace EvidenceHound.Collectors.M365;
 
@@ -12,10 +13,23 @@ internal sealed record TenantData(
     IReadOnlyList<RoleGrant>? Instances,
     IReadOnlyList<ManagedDevice> Devices,
     IReadOnlyList<IntunePolicy> ConfigurationPolicies,
-    IReadOnlyList<IntunePolicy> DeviceConfigurations)
+    IReadOnlyList<IntunePolicy> DeviceConfigurations,
+    IReadOnlyList<AppControlPolicy> AppControl)
 {
     /// <summary>Whether the tenant has Privileged Identity Management, that is whether its eligibility and schedule collections could be read.</summary>
     public bool HasPim => Eligibilities is not null && Instances is not null;
+
+    /// <summary>Application control events in Defender for Endpoint, counted per device and action type.</summary>
+    public IReadOnlyList<ControlEvents> AppControlEvents { get; init; } = [];
+
+    /// <summary>The files application control blocked most often.</summary>
+    public IReadOnlyList<BlockedFile> BlockedFiles { get; init; } = [];
+
+    /// <summary>Windows devices in Defender for Endpoint, counted by onboarding status.</summary>
+    public IReadOnlyDictionary<string, int> DefenderOnboarding { get; init; } = new Dictionary<string, int>();
+
+    /// <summary>Sources the tenant refused (no licence, no permission), with the reason; their checks say why.</summary>
+    public IReadOnlyDictionary<string, Problem> Unavailable { get; init; } = new Dictionary<string, Problem>();
 
     public static TenantData Parse(IReadOnlyDictionary<string, JsonArray?> collections)
     {
@@ -29,7 +43,18 @@ internal sealed record TenantData(
             Optional(collections, GraphSources.RoleInstances)?.Select(RoleGrant.From).ToArray(),
             Items(collections, GraphSources.ManagedDevices).Select(ManagedDevice.From).ToArray(),
             Items(collections, GraphSources.ConfigurationPolicies).Select(IntunePolicy.FromSettingsCatalog).ToArray(),
-            Items(collections, GraphSources.DeviceConfigurations).Select(IntunePolicy.FromDeviceConfiguration).ToArray());
+            Items(collections, GraphSources.DeviceConfigurations).Select(IntunePolicy.FromDeviceConfiguration).ToArray(),
+            [
+                .. Items(collections, GraphSources.ConfigurationPolicies).SelectMany(AppControlPolicy.FromSettingsCatalog),
+                .. Items(collections, GraphSources.DeviceConfigurations).SelectMany(AppControlPolicy.FromDeviceConfiguration),
+            ])
+        {
+            AppControlEvents = [.. Items(collections, GraphSources.AppControlEvents).Select(ControlEvents.From)],
+            BlockedFiles = [.. Items(collections, GraphSources.BlockedFiles).Select(BlockedFile.From)],
+            DefenderOnboarding = Items(collections, GraphSources.DefenderOnboarding)
+                .GroupBy(r => Json.Text(r, "OnboardingStatus"), StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.Sum(r => Json.Number(r, "Devices")), StringComparer.OrdinalIgnoreCase),
+        };
     }
 
     internal static IEnumerable<JsonObject> Items(IReadOnlyDictionary<string, JsonArray?> collections, string name) =>
@@ -37,6 +62,23 @@ internal sealed record TenantData(
 
     private static IEnumerable<JsonObject>? Optional(IReadOnlyDictionary<string, JsonArray?> collections, string name) =>
         collections.GetValueOrDefault(name)?.OfType<JsonObject>();
+}
+
+/// <summary>One row of the application control events query: a device, an action type such as <c>AppControlCodeIntegrityPolicyBlocked</c>, and how many.</summary>
+internal sealed record ControlEvents(string DeviceId, string ActionType, int Events)
+{
+    public bool Blocked => ActionType.Contains("Block", StringComparison.OrdinalIgnoreCase);
+
+    public bool Audited => ActionType.Contains("Audit", StringComparison.OrdinalIgnoreCase);
+
+    public static ControlEvents From(JsonObject row) => new(Json.Text(row, "DeviceId"), Json.Text(row, "ActionType"), Json.Number(row, "Events"));
+}
+
+/// <summary>A file application control blocked: its name, hash, publisher (empty when unsigned or not reported), and how often.</summary>
+internal sealed record BlockedFile(string FileName, string Sha256, string Publisher, int Blocks)
+{
+    public static BlockedFile From(JsonObject row) =>
+        new(Json.Text(row, "FileName"), Json.Text(row, "SHA256"), Json.Text(row, "Publisher"), Json.Number(row, "Blocks"));
 }
 
 internal sealed record DirectoryUser(string Id, bool Enabled, bool IsMember, bool Synced)
@@ -184,6 +226,15 @@ internal static class Json
 
     public static bool Flag(JsonNode? node, string name) =>
         node?[name] is JsonValue value && value.TryGetValue<bool>(out var flag) && flag;
+
+    /// <summary>A whole number, as advanced hunting returns counts: a JSON number, or a number in text. Anything else is 0.</summary>
+    public static int Number(JsonNode? node, string name) => node?[name] switch
+    {
+        JsonValue value when value.TryGetValue<int>(out var small) => small,
+        JsonValue value when value.TryGetValue<long>(out var number) => (int)Math.Min(number, int.MaxValue),
+        JsonValue value when value.TryGetValue<string>(out var text) && int.TryParse(text, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var parsed) => parsed,
+        _ => 0,
+    };
 
     public static IReadOnlyList<string> Texts(JsonNode? node, string name) =>
         node?[name] is JsonArray array ? [.. array.OfType<JsonValue>().Select(v => v.TryGetValue<string>(out var t) ? t : null).OfType<string>()] : [];

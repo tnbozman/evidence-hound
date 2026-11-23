@@ -5,7 +5,7 @@ using EvidenceHound.Cli;
 namespace EvidenceHound.Functional.Tests;
 
 /// <summary>
-/// s06-10: an audit with a quarterly cycle, run across the 2026Q3 to 2026Q4 boundary with a fixed clock (<c>HOUND_TODAY</c>). The old period
+/// s06-10: an audit with a quarterly cycle, run across the Q1-2027FY to Q2-2027FY boundary with a fixed clock (<c>HOUND_TODAY</c>). The old period
 /// goes to in review with its final results, the new one opens from it as baseline, the next publish writes only to the new one, and a sign-off
 /// in the audit file locks the old one on the next <c>scope apply</c>. Each step's output lands in <c>test-results/audit-periods/</c>.
 /// </summary>
@@ -41,27 +41,27 @@ public sealed class AuditPeriodsFunctionalTests(CisoAssistantFixture ciso) : IDi
 
         await StepAsync("1-apply-2026-09-30", ["scope", "apply", Scope], "2026-09-30", ct);
         await StepAsync("2-publish-2026-09-30", Publish, "2026-09-30", ct);
-        var q3Rows = await RowsAsync("EX-PERIOD-2026Q3", ct);
+        var q3Rows = await RowsAsync("EX-PERIOD-Q1-2027FY", ct);
         q3Rows["EX-1.1"].Result.ShouldBe("non_compliant");
 
         var plan = await StepAsync("3-plan-2026-10-01", ["scope", "plan", Scope], "2026-10-01", ct);
-        plan.ShouldContain("| EX-PERIOD-2026Q3 | closes: in review, awaiting sign-off |");
-        plan.ShouldContain("| EX-PERIOD-2026Q4 | opens, from EX-PERIOD-2026Q3 |");
+        plan.ShouldContain("| EX-PERIOD-Q1-2027FY | closes: in review, awaiting sign-off |");
+        plan.ShouldContain("| EX-PERIOD-Q2-2027FY | opens, from EX-PERIOD-Q1-2027FY |");
         await StepAsync("4-apply-2026-10-01", ["scope", "apply", Scope], "2026-10-01", ct);
-        (await AuditAsync("EX-PERIOD-2026Q3", ct)).ShouldBe(("in_review", false));
-        (await AuditAsync("EX-PERIOD-2026Q4", ct)).ShouldBe(("in_progress", false));
-        (await RowsAsync("EX-PERIOD-2026Q4", ct))["EX-1.1"].Result.ShouldBe("non_compliant", "the new period carries the old one's results over");
+        (await AuditAsync("EX-PERIOD-Q1-2027FY", ct)).ShouldBe(("in_review", false));
+        (await AuditAsync("EX-PERIOD-Q2-2027FY", ct)).ShouldBe(("in_progress", false));
+        (await RowsAsync("EX-PERIOD-Q2-2027FY", ct))["EX-1.1"].Result.ShouldBe("non_compliant", "the new period carries the old one's results over");
 
         var published = JsonNode.Parse(await StepAsync("5-publish-2026-10-01", Publish, "2026-10-01", ct))!;
-        published["audits"]!.AsArray().Select(a => a!["compliance_assessment"]!.GetValue<string>()).ShouldBe(["EX-PERIOD-2026Q4"]);
-        (await RowsAsync("EX-PERIOD-2026Q3", ct)).ShouldBe(q3Rows, "the closed period is not written again");
+        published["audits"]!.AsArray().Select(a => a!["compliance_assessment"]!.GetValue<string>()).ShouldBe(["EX-PERIOD-Q2-2027FY"]);
+        (await RowsAsync("EX-PERIOD-Q1-2027FY", ct)).ShouldBe(q3Rows, "the closed period is not written again");
 
         await File.AppendAllTextAsync(
-            Path.Combine(Scope, "audits", "ex-period.yaml"), "sign_offs:\n  - {period: 2026Q3, by: ceo@example.com, date: \"2026-10-14\"}\n", ct);
+            Path.Combine(Scope, "audits", "ex-period.yaml"), "sign_offs:\n  - {period: Q1-2027FY, by: ceo@example.com, date: \"2026-10-14\"}\n", ct);
         await StepAsync("6-apply-2026-10-15", ["scope", "apply", Scope], "2026-10-15", ct);
-        (await AuditAsync("EX-PERIOD-2026Q3", ct)).ShouldBe(("done", true));
-        (await AuditAsync("EX-PERIOD-2026Q4", ct)).ShouldBe(("in_progress", false));
-        (await RowsAsync("EX-PERIOD-2026Q3", ct)).ShouldBe(q3Rows);
+        (await AuditAsync("EX-PERIOD-Q1-2027FY", ct)).ShouldBe(("done", true));
+        (await AuditAsync("EX-PERIOD-Q2-2027FY", ct)).ShouldBe(("in_progress", false));
+        (await RowsAsync("EX-PERIOD-Q1-2027FY", ct)).ShouldBe(q3Rows);
     }
 
     public void Dispose() => Directory.Delete(_repo, recursive: true);

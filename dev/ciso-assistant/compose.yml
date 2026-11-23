@@ -29,7 +29,7 @@ services:
       interval: 10s
       timeout: 10s
       retries: 30
-      start_period: 180s
+      start_period: 420s
 
   frontend:
     image: ghcr.io/intuitem/ciso-assistant-community/frontend:v4.3.4

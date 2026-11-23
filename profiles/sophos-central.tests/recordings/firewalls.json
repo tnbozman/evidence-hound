@@ -1,0 +1,39 @@
+{
+  "items": [
+    {
+      "id": "00000000-0000-4000-8000-00000000f001",
+      "cluster": null,
+      "tenant": {
+        "id": "00000000-0000-4000-8000-0000000050a1"
+      },
+      "serialNumber": "X0000EXAMPLE01",
+      "group": null,
+      "hostname": "fw.example.com",
+      "name": "Example office firewall",
+      "externalIpv4Addresses": [
+        "198.51.100.1"
+      ],
+      "firmwareVersion": "SFOS 21.0.1 MR-1-Build237",
+      "model": "XGS108w",
+      "status": {
+        "managing": "approved",
+        "reporting": "approved",
+        "connected": true,
+        "suspended": false
+      },
+      "stateChangedAt": "2026-11-01T03:12:00.000Z",
+      "capabilities": [
+        "firmwareUpgrade",
+        "managing",
+        "reporting"
+      ]
+    }
+  ],
+  "pages": {
+    "current": 1,
+    "size": 100,
+    "total": 1,
+    "items": 1,
+    "maxSize": 100
+  }
+}

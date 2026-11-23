@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=../../../../schemas/scope.schema.json
+# Drafted by hound onboard for OFFICE-FIREWALL on 2026-11-23. Review each level and its reason.
+# Once the supplier is approved, make the contract active and run hound onboard again.
+# Reviewed by Sam Example: levels decided, contract made active once the review EA-SUP-SOPHOS was concluded ok.
+ref_id: "SUP-SOPHOS"
+name: "Sophos"
+domain: "Example Pty Ltd"
+currency: AUD
+dependency: 3     # the office reaches the internet and the GRC platform only through its firewall
+penetration: 3    # Sophos Central can change the firewall's rules and firmware
+maturity: 3       # its security attestations are current; read at the review
+trust: 3          # a security vendor with a published vulnerability disclosure process
+solutions:
+  - ref_id: "SOL-SOPHOS-FIREWALL"
+    name: "Sophos XGS firewall and Sophos Central"
+    criticality: 4    # the office's only way to the internet and to the GRC platform
+contracts:
+  - ref_id: "CTR-SOPHOS-2026"
+    name: "Sophos XGS subscription 2026"
+    status: active
+    start: "2026-11-01"
+    end: "2029-10-31"
+    annual_expense: 1200
+    currency: AUD
+    solutions: ["SOL-SOPHOS-FIREWALL"]
+# The supplier's review: the GRC team concludes it in CISO Assistant, and a system it supplies is registered only once it is concluded ok.
+assessments:
+  - ref_id: "EA-SUP-SOPHOS"
+    name: "Sophos review"
+    solutions: ["SOL-SOPHOS-FIREWALL"]
+    perimeter: "Corporate IT"
+    due_date: "2026-12-23"
+    review_every: 12 months

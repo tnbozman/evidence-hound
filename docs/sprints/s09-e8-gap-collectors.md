@@ -1,6 +1,6 @@
 # s09 Essential Eight gap collectors
 
-Status: Planned
+Status: Done
 
 **Goal:** close the largest Essential Eight ML2 gaps left after the Microsoft 365, Sophos and Veeam collectors: application control evidenced from Intune and Microsoft Defender for Endpoint, patching evidenced from imported vulnerability scans, and a ready-made manual-upload template for every requirement that stays manual. After this sprint every ML1 and ML2 row in the example Essential Eight audit gets a result from a check or an attested manual source.
 
@@ -10,10 +10,10 @@ The patch windows and scan intervals below are settings, not constants, so the c
 
 ### REST collector (s09-09 to s09-14)
 
-These tasks come first in this sprint, before s09-01, so the Microsoft 365 application control checks and the Veeam tasks can be written as profile checks instead of new code. They build the generic `rest` collector agreed in [`docs/design/rest-collector.md`](../design/rest-collector.md): every query is called once per run, evidence datasets are extracted from one or more responses, and checks test dataset fields, giving pass, fail or unable to assess. Profiles are YAML loaded only from the organisation's profiles folder; this repo keeps a tested public library in `profiles/` to copy from. There are no runtime code plugins. Where the Veeam tasks (s09-07, s09-08) and s09-01/02 say "collector", read "profile in the library" once these tasks are done.
+These tasks come first in this sprint, before s09-01, so the Microsoft 365 application control checks and the Veeam tasks (since dropped) could be written as profile checks instead of new code. They build the generic `rest` collector agreed in [`docs/design/rest-collector.md`](../design/rest-collector.md): every query is called once per run, evidence datasets are extracted from one or more responses, and checks test dataset fields, giving pass, fail or unable to assess. Profiles are YAML loaded only from the organisation's profiles folder; this repo keeps a tested public library in `profiles/` to copy from. There are no runtime code plugins. Where the Veeam tasks (s09-07, s09-08) and s09-01/02 say "collector", read "profile in the library" once these tasks are done.
 
 ### s09-09 Profile model and validation
-- [ ] Done
+- [x] Done
 
 **Story:** As an operator, I want a profile checked before anything is called, so that a typo or a wrong reference fails clearly instead of producing misleading results.
 
@@ -35,8 +35,23 @@ These tasks come first in this sprint, before s09-01, so the Microsoft 365 appli
 **Functional check**
 - `hound profile validate example` passes for `profiles/example.yaml`, and a broken copy lists each problem with its code.
 
+**Functional check result (2026-11-22)**
+
+```
+$ hound profile validate example --profiles profiles
+example 1.0.0: valid (3 queries, 1 dataset, 4 checks)
+$ hound profile validate example --profiles /tmp/broken    # over: people, and a bad path
+error: profile.path_invalid: check 'example.identity.mfa_users': '$.mfa[' is not a path; use $, .name, ['name'], [0] or [*], for example $.items[*].id.
+error: profile.reference_unknown: Check 'example.identity.mfa_users' is over 'people', which names nothing; queries and datasets: devices, roles, user_roles, users.
+error: profile.reference_unknown: Check 'example.identity.owner_count' is over 'people', which names nothing; queries and datasets: devices, roles, user_roles, users.
+$ echo $?
+3
+```
+
+`hound plan` and `hound config validate` log each problem of a rest instance's profile as a warning naming the instance, and carry on (`ProfileCommandTests.Plan_warns_about_an_invalid_rest_profile_and_carries_on`); at run time that instance's checks are unable to assess (`RestCollectorTests.Invalid_profile_reports_its_checks_unable_to_assess`).
+
 ### s09-10 Query engine
-- [ ] Done
+- [x] Done
 
 **Story:** As an operator, I want every endpoint read once per run, with sign-in, paging and rate limits handled for me, so that a new system needs a profile, not code.
 
@@ -64,9 +79,10 @@ These tasks come first in this sprint, before s09-01, so the Microsoft 365 appli
 
 **Functional check**
 - `hound run --only rest-example --dry-run` against the recorded example API lists every query with its page and item counts and its evidence file.
+- Result (2026-11-22): `hound run --config hound.yaml --only rest-example --dry-run` with an instance of `profiles/example.yaml` pointed at a local stand-in serving `tests/fixtures/rest/example`. Succeeded with no problems and nothing sent: token, then `whoami` (bootstrap, no file), then `devices.json` (2 pages by cursor, 3 items, identities hashed), `users.json` (2 pages by offset, 3 items, identities hashed) and `roles.json` (1 page, 2 items). No host name or client secret in any evidence file. The run first failed config validation because `token_url` was read as an inline secret by its name; fixed in this task (address and path settings are judged by value). Unit suite green, lint clean.
 
 ### s09-11 Datasets and declarative checks
-- [ ] Done
+- [x] Done
 
 **Story:** As a compliance owner, I want evidence from several API calls combined into one dataset and tested field by field, so that a control is judged on exactly the evidence it needs and a broken query never shows as a failure.
 
@@ -91,9 +107,10 @@ These tasks come first in this sprint, before s09-01, so the Microsoft 365 appli
 
 **Functional check**
 - `hound run --only rest-example --dry-run` shows each check's result and dataset evidence; breaking one recorded query makes only its checks unable to assess.
+- Result (2026-11-22): `hound run --config hound.yaml --only rest-example --dry-run` against the local stand-in for the recorded example API. Evidence: `devices.json`, `users.json`, `roles.json` and `dataset.user_roles.json` (2 rows, 0 unmatched, sources `users.json` and `roles.json` with SHA-256 values equal to the run manifest's). Status record: 4 checks passed, 0 failed. With `/v1/orgs/org-0001/roles` answering 500: `roles.json` and the dataset file are not saved, the two device checks still pass and the two checks over `user_roles` are unable to assess (status record: 2 passed, 2 other), and the run still succeeds. Observations (counts, offending rows capped at 20, the evidence file cited, and the failed query named) are covered by `RestCollectorTests` and `CheckEvaluatorTests`, because `hound run` does not print them (see discovered work). Unit suite green, lint clean.
 
 ### s09-12 Code checks, profiles folder and profile tests
-- [ ] Done
+- [x] Done
 
 **Story:** As a profile author, I want to test a profile against recorded responses before it is trusted, and to use a built-in code check when the operators are not enough.
 
@@ -113,9 +130,10 @@ These tasks come first in this sprint, before s09-01, so the Microsoft 365 appli
 
 **Functional check**
 - Copy `profiles/example.yaml` into a scratch profiles folder, run `hound profile test example`, change an expected result, and see the test fail naming the check.
+- Result (2026-11-22): copied `profiles/example.yaml` and `profiles/example.tests/` into a scratch folder. `hound profile test example --profiles <scratch>` printed `example/all-pass: passed (4 checks)` and `example/roles-unreadable: passed (4 checks)`, exit 0. After changing `example.identity.owner_count: pass` to `fail` in `all-pass.yaml`: `example/all-pass: FAILED` and `example.identity.owner_count: expected fail, got pass. 1 of 2 active users hold the Owner role; at most 2 allowed. Evidence: dataset.user_roles.json.`, exit 1. `make test-profiles` (new, also in CI) passes. Unit suite green, lint clean. Decisions made here: profile tests are folders of case files (`<profile>.tests/<case>.yaml` with `recordings/`); `require_profile_tests` is a per-instance rest setting rather than a deployment setting; `hound profile diff` takes `--library <evidence-hound checkout>` (or `HOUND_LIBRARY_PATH`) and resolves `source` inside it; the code-check library starts with `sophos.super_admin_count` (moved from the Sophos collector for s09-13).
 
 ### s09-13 Sophos as a profile
-- [ ] Done
+- [x] Done
 
 **Story:** As an operator, I want Sophos Central read through a profile, so that changes to Sophos checks are configuration, and as the proof that the REST collector can replace a coded one.
 
@@ -133,8 +151,24 @@ These tasks come first in this sprint, before s09-01, so the Microsoft 365 appli
 **Functional check**
 - `hound run --only sophos-example --dry-run` with the profile gives the same results as before; the trial's Sophos step passes with the profile.
 
+**Result**
+- `profiles/sophos-central.yaml` (1.0.0) with three test cases (all pass, unsupported firmware, partner credential). The checks run straight over the `firewalls`, `admins` and `roles` queries (the Super Admin count is the `sophos.super_admin_count` code check over admins and roles), so the `admin_accounts` and `firewall_firmware` datasets were not needed and were not added.
+- `SophosProfileParityTests` passed on six recordings (as recorded, unsupported firmware, no firmware, no firewalls, every admin a super admin, no super admin role): same check IDs, outcomes and items in `firewalls.json`, `admins.json` and `roles.json`. The profile hashes `geoLocation`, which the coded collector dropped. The test was removed with the coded collector, since it needs both.
+- Removed: the coded collector, its tests, its contract test and its registration. `RecordedSophos` moved to the functional tests, which now run the profile. `type: sophos` fails with `config.collector_type_retired` and the `type: rest`, `profile: sophos-central` replacement.
+- One behaviour change: partner and organisation credentials (`tenant_id`) are not supported by the profile; a tenant credential is. The guide says so.
+- `hound add collector rest --set profile=<name>` now asks for the profile's required parameters and takes its secrets (`CollectorDescription.SettingsFrom`). The trial copies the profile and its tests into `.dev/trial/profiles` and adds the collector by name; `trial_collector_step` matches by name.
+
+**Functional check (run)**
+```console
+$ hound config validate hound.yaml --check-secrets      # type: rest, profile: sophos-central, stand-in API on 127.0.0.1 serving tests/fixtures/sophos
+valid
+$ hound run --config hound.yaml --only sophos-example --dry-run
+outcome succeeded, checks_passed 2, checks_failed 0, publish planned 4, sent 0; firewalls.json, admins.json, roles.json; manifest names sophos-central 1.0.0
+```
+The coded collector gave the same two passes on the same recording (the parity test above). `make test-profiles`: sophos-central all-pass, firmware-unsupported and partner-credential pass. The trial's Sophos step needs a real credential, so it is left for s09-17 (the person's trial); its unattended run and `bats scripts/tests` pass.
+
 ### s09-14 REST collector documentation
-- [ ] Done
+- [x] Done
 
 **Acceptance criteria**
 - `docs/collectors/rest.md`: profile reference (connection, auth, paging, queries, datasets, checks, operators, results, limits), the profiles folder, the library and how to copy from it, and security notes (`allowed_hosts`, secrets, identities).
@@ -148,12 +182,28 @@ These tasks come first in this sprint, before s09-01, so the Microsoft 365 appli
 **Functional check**
 - Following the tutorial verbatim produces a passing profile.
 
+**Result**
+- `docs/collectors/rest.md`: the reference (profiles folder and library, `hound profile` commands, every key, auth type, paging style, operator, `require` mode and result, limits, security and run problems). `RestDocsTests` fails if an operator, result, auth type, paging style or parameter type is missing, or a relative link is broken.
+- `docs/tutorials/write-a-profile.md`: `example-devices` written test-first from the example recordings. `RestDocsTests.Tutorial_followed_as_written_gives_a_passing_profile` writes the tutorial's files and runs its tests.
+- `docs/design/rest-collector.md`: Status Implemented, with an "As built" section. `docs/configuration.md` lists the `rest` type.
+
+**Functional check (run)** The tutorial followed by hand with the built CLI, in a scratch folder:
+```console
+$ hound profile test example-devices --profiles my-profiles     # after step 2
+error: profile.not_found: No profile 'example-devices' in the profiles folder .../my-profiles. ...
+$ hound profile validate example-devices --profiles my-profiles # after step 3
+example-devices 0.1.0: valid (1 query, 0 datasets, 1 check)
+$ hound profile test example-devices --profiles my-profiles     # after step 4
+example-devices/all-supported: passed (1 check)
+example-devices/old-version: passed (1 check)
+```
+
 ### Suppliers before systems (s09-19, s09-20, moved from s10)
 
 A system is registered only once its supplier is approved, so the supplier register comes before onboarding. s10-01 and s10-02 moved here unchanged except for the supplier approval gate; s10-03 (documentation and example repo) and s10-04 (evidence plan tasks, including the recurring supplier review task) stay in s10.
 
 ### s09-19 Suppliers, solutions and contracts (was s10-01)
-- [ ] Done
+- [x] Done
 
 **Story:** As a supplier owner, I want our suppliers, what they provide and our contracts with them declared in the repo, so that the supplier register is reviewed and complete.
 
@@ -173,8 +223,23 @@ A system is registered only once its supplier is approved, so the supplier regis
 **Functional check**
 - Apply two fictional suppliers to the local CISO Assistant; re-applying writes nothing; a changed contract end date is a one-field update.
 
+Run 2026-11-22 in CI (run 280, functional job, CISO Assistant v4.3.4) by `SupplierScopeFunctionalTests`, from a copy of `examples/compliance-repo` with the organisation's own entity and two fictional suppliers (Example Cloud Pty Ltd with an LEI, Example Backup Ltd):
+
+```console
+$ hound scope apply scope --config hound.yaml          # failed: 0
+$ hound scope plan scope --config hound.yaml
+0 to create, 0 to update, 0 to delete.
+$ # end: "2027-12-31" -> "2028-06-30" in example-cloud.yaml
+$ hound scope plan scope --config hound.yaml
+0 to create, 1 to update, 0 to delete.
+| Update | contract | CTR-FT-HOST | end_date: 2027-12-31 → 2028-06-30 |
+$ hound scope apply scope --config hound.yaml          # written: 1
+```
+
+The first CI run found that CISO Assistant returns an entity's legal identifiers as display text ("LEI: …"), so the re-plan showed an update; fixed in the same task.
+
 ### s09-20 Supplier assessments, tiers and approval (was s10-02)
-- [ ] Done
+- [x] Done
 
 **Story:** As a supplier owner, I want each supplier's assessment set up from the repo on a review cycle, so that reviews start on time and nobody sets them up by hand.
 
@@ -200,12 +265,21 @@ A system is registered only once its supplier is approved, so the supplier regis
 - With a fixed clock past a review date, `scope apply` opens the next fictional supplier assessment in the local CISO Assistant with its questionnaire.
 - A fictional system whose supplier has no concluded assessment is refused by `scope plan`; concluding the assessment in CISO Assistant lets it through.
 
+**As built**
+- Scope files: `forced_tier: {tier, reason}` and `assessments:` on a third party; `solution` and `supplied_through` on a system ([scope.md](../scope.md#supplier-reviews-and-tiers)). CISO Assistant v4.3.4's field is `conclusion` (`blocker`, `warning`, `ok`, `not_applicable`) with an `expiry_date`; approval needs `ok`, unexpired, no overdue later review, and an active contract.
+- Reviews with `review_every` are keyed `<ref_id>-<yyyy-MM>` by due date (CISO Assistant has no assessment revisions); the next opens once today reaches the previous due date. A review created with a questionnaire sends `create_audit`, so CISO Assistant makes the questionnaire's audit itself.
+- `SupplierReview.Check` (pure, in Core) runs in `scope plan`, `scope apply` and the saved-plan apply. A refusal stops before planning, so the order is: apply the supplier and its review, conclude it in CISO Assistant, then add the system. Lapsed approvals and differing tiers appear under **Suppliers** in the Markdown plan and as `suppliers` in JSON.
+- Extra tests: `SupplierClientTests.Reads_supplier_assessments_with_their_conclusion_and_each_suppliers_tier_as_observed`, `SupplierClientTests.Creates_a_supplier_assessment_with_its_questionnaire_audit_and_never_sends_a_conclusion`, and three `ScopePlanCommandTests` for refusal and the Suppliers section.
+
+**Functional check:** `SupplierGateFunctionalTests` (CI, local CISO Assistant, `HOUND_TODAY=2026-07-15`): applying a fictional supplier with a yearly review due 2026-06-30 creates `EA-FT-GATE-2026-06` and opens `EA-FT-GATE-2027-06`, each with a questionnaire audit; a system it supplies is refused with `system.supplier_not_approved`; after the first review is concluded `ok` through the API, the system plans, applies and re-plans to no changes.
+
 ### Onboarding assistant (s09-21 to s09-26)
 
 These tasks come after s09-14, because they draft REST profiles, and after s09-20, because onboarding starts with the supplier. They build `hound onboard` from [`docs/design/onboarding-assistant.md`](../design/onboarding-assistant.md): a guided session in which a language model proposes how a system fits a framework and drafts its profile, and a person accepts or edits every decision. Nothing is applied to CISO Assistant by the session; the output is files for a pull request in the organisation's config repo. Tests use a fake model with recorded replies; no test or CI job calls a live model.
 
 ### s09-21 Model port, Anthropic and OpenAI adapters, onboarding config and outbound guard
-- [ ] Done
+- [x] Done
+- Superseded (2026-11-23): s09-40 removed the model port, the adapters, the onboarding config and the outbound guard. Kept here as a record.
 
 **Story:** As an operator, I want `hound` to use a language model I choose, with my key kept as a secret and nothing sensitive sent, so that I can use the assistant without leaking organisation data.
 
@@ -234,8 +308,27 @@ These tasks come after s09-14, because they draft REST profiles, and after s09-2
 **Functional check**
 - With a fake model, `hound onboard --show-requests` on the example system prints requests containing no recorded host names, IDs or secrets.
 
+**Functional check, run 2026-11-22** (the command that onboards a system arrives with s09-22, so its `--show-requests` run is recorded there; the gate it goes through is built and tested here):
+
+```console
+$ echo "$KEY" | XDG_CONFIG_HOME=/tmp/fc21/home hound onboard config --yes --provider anthropic --config /tmp/fc21/onboarding.yaml
+API key for anthropic (not shown): Wrote /tmp/fc21/onboarding.yaml; the key is in /tmp/fc21/home/hound/secrets/llm_api_key, readable only by you.
+$ cat /tmp/fc21/onboarding.yaml
+llm:
+  provider: anthropic
+  model: ""
+  api_key: file:/tmp/fc21/home/hound/secrets/llm_api_key
+$ stat -c '%a %n' /tmp/fc21/home/hound/secrets /tmp/fc21/home/hound/secrets/llm_api_key
+700 /tmp/fc21/home/hound/secrets
+600 /tmp/fc21/home/hound/secrets/llm_api_key
+$ hound config validate /tmp/fc21/hound.yaml      # a deployment config with an llm section
+error: /tmp/fc21/hound.yaml line 2: 'llm' is not allowed here: the runner never uses a language model; ...
+```
+
+`--check` against a stand-in provider (`OnboardConfigCommandTests`) makes one request and prints `anthropic claude-opus-5-5: the key works.` without the key. Both adapters pass the shared contract suite on recorded replies. OpenAI's top model was confirmed as `gpt-6.2-astra` from its published model list.
+
 ### s09-26 Onboarding skills
-- [ ] Done
+- [x] Done
 
 Built straight after s09-21, before s09-22, because every later onboarding step reads its guidance from skills.
 
@@ -263,8 +356,95 @@ Built straight after s09-21, before s09-22, because every later onboarding step 
 **Functional check**
 - `hound skill new example-check`, edit it, `hound skill add` it, and `hound skill list` shows it beside the defaults; an onboarding run with a fake model records it.
 
-### s09-22 Understand the system and decide applicability
+**Functional check, run 2026-11-22** (the onboarding run that records skills comes with s09-22's command; `SessionRecord.SaveSkillsAsync` writes the list and is tested by `OnboardRecordTests`):
+
+```console
+$ hound skill new example-check --skills /tmp/fc21/sk/drafts
+Wrote /tmp/fc21/sk/drafts/example-check.md. Edit it, then 'hound skill add /tmp/fc21/sk/drafts/example-check.md'.
+$ hound skill add /tmp/fc21/sk/drafts/example-check.md --skills /tmp/fc21/sk/skills
+Added example-check 0.1.0 to /tmp/fc21/sk/skills.
+$ hound skill list --skills /tmp/fc21/sk/skills
+| Skill | Source | Version | SHA-256 | Steps | Overrides |
+| applicability | default | 1.0.0 | f0511f73c6a7 | applicability, system |  |
+| essential-eight-ml2-mapping | default | 1.0.0 | c8cb33f4728a | applicability, mapping |  |
+| profile-authoring | default | 1.0.0 | 495eea9ed2c2 | profile |  |
+| reading-an-api-specification | default | 1.0.0 | d5df70328689 | system, applicability, profile |  |
+| supplier-assessment | default | 1.0.0 | cc5960da8145 | supplier |  |
+| supplier-assurance-documents | default | 1.0.0 | c033e2ac0c0d | supplier |  |
+| example-check | organisation | 0.1.0 | e2cb76e71ca5 | applicability |  |
+$ hound skill validate --skills /tmp/fc21/sk/skills
+7 skills valid (1 from /tmp/fc21/sk/skills), 0 warnings.
+```
+
+### s09-28 Onboard the corporate environment: the capability map (added 2026-11-22)
+- [x] Done
+
+**Story:** As a GRC team member, I want to record, for each control, which product in our environment actually provides it, before any system is onboarded, so that `hound` only judges a control on the system that provides it and we never fail an audit because of bad data.
+
+**Acceptance criteria**
+- `hound onboard environment --framework <framework file>` walks each mitigation of the framework (Essential Eight ML2 first; NIST SP 800-171 families later) and records, for each, the authoritative product or products: a system in scope (for example Microsoft 365 with Intune, Defender for Endpoint, Airlock Digital, ThreatLocker, Sophos, Veeam), manual evidence, or a gap.
+- The result is `scope/capabilities.yaml` in the organisation's config repo: mitigation, the system that provides it, its supplier, the owner, the evidence route (collector, profile or manual) and who approved the entry. A schema and `hound config validate` check it.
+- **No blob.** The map only decides which system answers each requirement. Results stay in CISO Assistant's existing structure: one audit per system (scope/audits, as today), each with its own owner. In each system's audit, a requirement another system provides is not applicable with the reason "Provided by <system> (audit <ref>)"; nothing is merged into a combined audit. The map writes those decisions into the existing per-system audit files for review, and `hound scope plan` shows them before anything is applied.
+- Signals pre-fill answers that the person confirms, never decide them: read-only Microsoft Graph lookups (subscribed licences, Intune compliance and app control policies present, devices onboarded to Defender) and the systems already in scope. Each pre-filled answer shows the signal it came from.
+- The map drives the rest. A system named for a mitigation goes through `hound onboard <system>` (s09-22), and its supplier goes through the supplier gate (s09-19/20). Checks for a mitigation run only on the system the map names.
+- A mitigation with no product is a gap: `hound plan` and reports list it as a requirement no system's audit answers, never as a fail on some system.
+- A check for a capability that is not in use cannot give pass or fail on that system's audit row; the row is not applicable with the reason naming the providing system.
+- Default skill `environment-capabilities` (s09-26): how to tell which product is authoritative per mitigation, common third-party products, and what evidence each gives. Organisation skills can extend it.
+- `--no-model` runs the same steps with only the signals and the person's answers.
+
+**Tests first**
+- `CapabilityMapTests.Every_mitigation_gets_one_decision_with_an_approver`
+- `CapabilityMapTests.Gap_is_reported_as_a_gap_not_a_fail`
+- `CapabilitySignalsTests.Signals_prefill_but_never_decide`
+- `CapabilityScopeTests.Check_for_an_unused_capability_is_not_applicable_with_the_reason`
+- `CapabilityScopeTests.Decisions_land_in_each_systems_own_audit_not_a_combined_one`
+- `OnboardEnvironmentTests.Named_system_and_supplier_are_queued_for_onboarding`
+
+**Functional check**
+- With a fake model and recorded Graph answers, `hound onboard environment` for Example Pty Ltd records application control as provided by a third-party product, and a following `hound plan --dry-run` shows the application control rows of the Microsoft 365 audit as not applicable, provided by that product, while the third-party product's own audit holds the application control requirements.
+
+**As built so far**
+- `scope/capabilities.yaml` (loader, schema, `hound scope validate`), `CapabilityMap` (Core, pure): mitigations are the framework's requirement groups by parent node; every mitigation decided once with an approver; per-system not-applicable rows "Provided by <system> (audit <ref>)", skipping hand-written rows and groups the audit leaves out; gaps listed apart. A system named before it is onboarded is pending, not an error, so the map can be written first.
+- `CapabilitySignals` (Onboarding, pure): Microsoft licences and Intune configuration kinds suggest the Microsoft 365 system; systems tagged `capabilities: ac, rb` are suggested first. `CapabilityAnswers` turns a proposal and the person's answer into a decision; a proposal never decides.
+- `hound onboard environment --signals <recorded Graph answers> --no-model` decides each mitigation, writes `scope/capabilities.yaml` after each, appends the rows to each audit with the YAML editor (comments kept), and lists systems to onboard with their supplier and the gaps. Default skill `environment-capabilities`.
+- Live read-only Graph lookups: `--graph <collector>` signs in as that `m365` collector of `hound.yaml` (its settings and secrets) through `EnvironmentLookup` in the M365 collector project, reading `v1.0/subscribedSkus` (enabled or warning SKUs; `Organization.Read.All`, onboarding only) and the `@odata.type` of `v1.0/deviceManagement/deviceConfigurations` (none without Intune). `--graph` and `--signals` together are refused. Tests: `EnvironmentLookupTests` (WireMock), `OnboardEnvironmentTests.Graph_signals_come_from_the_m365_collector_in_hound_yaml`.
+- Model proposals: `CapabilityProposals` (Onboarding) sends one request through the gate with the mitigations, systems and signals, guided by the `environment` skills; a reply about an unknown mitigation or one twice is refused; a system proposal without systems is no suggestion; mitigations it leaves out keep the signals' suggestion. Accepting records "from the model's proposal: <reasoning>". `--config` is the onboarding config, as in `hound onboard <system>`; the deployment config for `--graph` is `--deployment`.
+- `hound scope plan` lists the map's gaps ("Capability gaps", JSON `gaps`) through `CapabilityMap.Gaps`.
+- Capability files keep apostrophes readable (relaxed JSON escaping in the quoted YAML).
+- Not done here, noted under Discovered work: Defender for Endpoint onboarded devices as a signal.
+- Functional test: `CapabilityMapFunctionalTests` (recorded signals, no model, then `hound scope plan` against the local CISO Assistant).
+
+**Functional check (so far):** on a copy of the example repo with recorded answers (`SPE_E3`), `hound onboard environment --no-model` wrote `scope/capabilities.yaml` and 14 application control rows in `ex-e8-2026.yaml` as "Provided by Example app control (no audit yet; …)", listed the app control product to onboard and patch applications as a gap; `hound scope validate` passed.
+
+**Functional check (CI run 311, 2026-11-23):** `CapabilityMapFunctionalTests` against the local CISO Assistant: on a copy of the example repo with recorded `SPE_E3` signals and no model, `hound onboard environment` recorded application control as provided by Example app control and patch applications as a gap; `hound scope plan scope --config hound.yaml` then exited 0 with the not-applicable rows "Provided by Example app control" and patch applications under "Capability gaps". The first CI run found that rows for requirements the audit's mapping computes conflicted with it (`scope.result_conflict`); those are now left to the mapping and listed, and `hound scope validate --config hound.yaml` passes after onboarding.
+
+### s09-29 Microsoft 365 checks follow the capability map (added 2026-11-22)
 - [ ] Done
+
+**Story:** As a compliance owner, I want the Microsoft 365 collector to assess only the capabilities we use from Microsoft 365, so that a third-party product (for example ThreatLocker for application control) is not reported as a Microsoft 365 failure.
+
+**Acceptance criteria**
+- The m365 collector's checks are grouped by capability (application control, patching, macros, user application hardening, admin privileges, MFA, backups, endpoint detection). Each instance gets the capabilities it provides from `scope/capabilities.yaml`; the others return not applicable naming the providing system.
+- `hound onboard m365` is the Microsoft 365 path of s09-22: it reads licences and policies (read-only), proposes which capabilities Microsoft 365 provides, and the person confirms before any check is enabled.
+- The tutorial's Microsoft 365 section and `docs/collectors/m365.md` explain the capability choice.
+
+**Tests first**
+- `M365CapabilityTests.Unused_capability_is_not_applicable_naming_the_provider`
+- `M365CapabilityTests.Default_without_a_map_keeps_todays_checks`
+- `OnboardM365Tests.Licences_and_policies_prefill_capabilities`
+
+**Functional check**
+- Against the recorded tenant (s09-27 when ready, the existing recorded `example.com` tenant before), an instance without application control reports those checks as not applicable, provided by the named product.
+
+- Result (2026-11-23): against the recorded `example.com` tenant (`RecordedTenant`, the one the collector's tests replay; s09-27's recording is not ready), `M365CapabilityTests.Unused_capability_is_not_applicable_naming_the_provider` routes MFA and Office macros to other products: the four MFA checks and the macro check answer `not_applicable` with "Not judged on Microsoft 365: scope/capabilities.yaml records mfa as provided by Example identity provider (audit EX-IDP-E8-2026)", with no evidence, while the ASR check (macros and user application hardening) and the rest pass as before. With no map, all 11 checks pass as before. The full unit suite passed (1301 tests) and lint is clean. **Still to do:** a run against the maintainer's own tenant, after `hound onboard environment --graph`; the task stays unticked until then.
+- As built: `CollectorCapabilities` on the collector context (Abstractions) lists the capabilities another product provides, by mitigation code, with its name; `CapabilityRouting.For` (Core, pure) works them out from the map for one instance: its own when the route names it or its `system` setting is among the decision's systems; manual evidence and gaps are never a collector's. `CollectStep.Scope` is the scope with its map, read by `hound run`, `collect` and `serve` when `hound.yaml` names a scope folder holding `capabilities.yaml`. Each m365 check names its capabilities (`mfa`, `rap`, `pos`, `rmom`, `uah`), and a check whose every capability is elsewhere is not applicable, naming the provider. The m365 collector has a new optional `system` setting. `hound onboard environment --graph <collector>` records `evidence: collector` and `route: <collector>` on an accepted Microsoft 365 suggestion.
+- Deviations: the maintainer chose (2026-11-23) that these rows answer not applicable naming the provider, as this task was written, rather than staying open with `provided_by` as s09-36 does for hand-written rows; the mapping's own results are what reach the audit, so `scope.other_system_as_not_applicable` (hand-written rows only) does not apply to them. `hound onboard m365` is not a separate command: `hound onboard environment --graph <m365 collector>` is that path, since it already reads the licences and policies and the person confirms each mitigation; the test is `OnboardM365Tests` in the onboarding project. The capability codes are the Essential Eight mitigation codes the map uses; a map for another framework routes nothing until its codes are mapped. The m365 collector has no application control, backup or endpoint detection checks today, so those groups are empty. The tutorial has no Microsoft 365 section; the choice is explained in `docs/collectors/m365.md` and `docs/onboarding.md`. A broken `capabilities.yaml` is reported by `hound scope validate`; a run uses what parses.
+- CI (2026-11-23): run 341, started by hand on 2f82ad6 with the functional tests, passed (unit, functional, lint, CodeQL).
+
+**Order:** environment onboarding (s09-28) after s09-21 and s09-26 and before s09-22; the Sophos firewall (s09-25) stays the first system onboarded; s09-29 after s09-25.
+
+### s09-22 Understand the system and decide applicability
+- [x] Done
 
 **Story:** As a GRC team member, I want `hound` to read a system's API documentation and the target framework and propose, for each requirement, whether it is an API check, manual, not applicable or for another system, so that I decide applicability quickly and with reasons.
 
@@ -289,8 +469,28 @@ Built straight after s09-21, before s09-22, because every later onboarding step 
 **Functional check**
 - Onboard the fictional example API against the example framework with a fake model; the decision list covers every requirement and resumes after a stop.
 
+Run 2026-11-22 against a copy of `examples/compliance-repo`, with a local fake of the Anthropic Messages API (`HOUND_ANTHROPIC_BASE_URL`) that proposes `api_check` or `manual` for every requirement it is sent. It also records s09-21's `--show-requests` check.
+
+```console
+$ hound onboard config --provider anthropic --model "" --config repo/onboarding.yaml     # a test key
+$ hound onboard EXAMPLE-ASSETS --repo repo --group 2 --spec examples/apis/example-asset-api.openapi.yaml --show-requests
+--- request 1 (supplier) ---  (the skills supplier-assessment and supplier-assurance-documents in the instructions; no key, address or deny term)
+SUP-EXAMPLE is not approved yet. Review scope/third-parties/sup-example.yaml; once the supplier is approved, make contract CTR-EXAMPLE-ASSETS active and run 'hound onboard EXAMPLE-ASSETS' again to decide applicability.
+$ sed -i 's/status: draft/status: active/' repo/scope/third-parties/sup-example.yaml
+$ hound onboard EXAMPLE-ASSETS --repo repo --group 2 --spec ...     # n, reasoning, justification, approver, then s
+[1/107] ISM-1807: An automated method of asset discovery is used at least fortnightly to support…
+  Proposed: api_check. Fake model proposal.
+Saved: 1 of 107 requirements decided. Run the same command to carry on.
+$ hound onboard EXAMPLE-ASSETS --repo repo --group 2 --spec ...     # l
+[2/107] ...
+All 107 requirements decided: 53 API check(s), 53 manual, 1 not applicable, 0 for another system. The session is in onboarding/EXAMPLE-ASSETS/session.json.
+```
+
+Requests saved: `001-supplier`, `002`-`004-applicability` (107 requirements in batches of 40); the resumed runs sent nothing new. The not-applicable decision keeps its proposal (`api_check`), justification and approver. The test key appears in no file in the repo and in no output.
+
 ### s09-23 Draft, sample and test the profile
-- [ ] Done
+- [x] Done
+- Superseded (2026-11-23): s09-40 removed the model-drafted profile; `hound onboard profile` now checks a profile a person or their agent wrote. Kept here as a record.
 
 **Story:** As a GRC team member, I want the profile for the accepted API checks drafted, proven against the real system and tested, so that I only review a profile that already works.
 
@@ -308,8 +508,15 @@ Built straight after s09-21, before s09-22, because every later onboarding step 
 **Functional check**
 - Against the recorded example API, a fake model's first draft with a wrong path is fixed in the second round, and `hound profile test` passes.
 
+**As built**
+- `ProfileDraft` (Onboarding): the request (system, API summary, accepted checks, shapes; on later rounds the previous draft and its problems), the reply schema (`profile_yaml`, `notes`), and the loop that checks each draft and sends problems back for at most `llm.max_rounds` (new key, default 3) drafts. `ShapeInputs` sends only `ResponseShape` shapes; dates now count as data, so their values are never sent.
+- `SampleRun` (rest collector): runs a profile's queries once through a recording handler; identities hashed with the evidence hash, `access_token`/`refresh_token`/`id_token` replaced, the API's address as `{{api}}`; a failed query or an answer holding a secret keeps nothing. `WriteTestCase` writes the test case with placeholder secrets and the confirmed results.
+- `hound onboard profile <system>` (`--name`, `--profiles`, `--set`, `--secret`, `--sample`, `--rounds`, `--show-requests`): validate, then (with the go-ahead) sample, ask the reviewer to confirm each check's result, save `profiles/<name>.tests/onboarding.yaml` and run the test, every round. Exit 1 when problems remain.
+
+**Functional check (recorded):** `OnboardProfileTests.A_wrong_path_is_fixed_in_the_second_round_and_the_confirmed_results_become_a_passing_test`: a fake Anthropic model's first draft reads `devcies`; the sample run against the recorded Example Asset API fails with `profile.sample_failed`, which goes back in round 2; the corrected draft samples, the four confirmed results are saved with hashed recordings (no `alex@example.com`, no secret), and `hound profile test example` then exits 0. Without the go-ahead the API is never called.
+
 ### s09-24 Write the onboarding output
-- [ ] Done
+- [x] Done
 
 **Story:** As a GRC team member, I want the session to write the profile, mappings, applicability and a record of how it was decided into my config repo, so that I can review it in a pull request and show auditors how applicability was decided.
 
@@ -328,8 +535,25 @@ Built straight after s09-21, before s09-22, because every later onboarding step 
 **Functional check**
 - After onboarding the example system, `hound scope plan` shows the not-applicable rows with their justifications and `hound plan --dry-run` shows the new checks.
 
+As built (2026-11-22): the system's audit, manual rows added to the mapping's `manual_only`, and the record. The profile and its tests come from s09-23 (for Sophos, the library `sophos-central` profile is used as it is), so `hound plan --dry-run` has no new checks to show yet; manual source stubs and `--update` move to s09-23.
+
+Run locally against a copy of `examples/compliance-repo` with the fake model of s09-22 (one requirement not applicable, one for another system, the rest accepted):
+
+```console
+$ hound onboard EXAMPLE-ASSETS --repo repo --group 2 --spec examples/apis/example-asset-api.openapi.yaml
+All 107 requirements decided: 53 API check(s), 52 manual, 1 not applicable, 1 for another system. The session is in onboarding/EXAMPLE-ASSETS/session.json.
+Wrote scope/audits/example-assets-essential-eight-2023.yaml, onboarding/example-assets-essential-eight-2023-2026-11-22.md. mappings/essential-eight-2023.yaml already names every manual requirement.
+Next: review the changes in a pull request, then run 'hound scope validate scope', 'hound scope plan scope' and 'hound scope apply scope'.
+$ hound scope validate repo/scope --config repo/hound.yaml
+scope valid: 1 domain(s), 3 control(s), 4 audit(s), 1 third party(ies)
+$ hound onboard EXAMPLE-ASSETS --repo repo ...
+EXAMPLE-ASSETS is onboarded and its files are already written: ... Move onboarding/EXAMPLE-ASSETS/session.json aside to onboard it again.
+```
+
+The first run found that a single-system audit needs `unlisted:` and that a requirement keyed by URN is already covered when the mapping names its ref_id; both fixed. Plan, apply and re-plan against CISO Assistant run in CI as `OnboardFunctionalTests`.
+
 ### s09-25 Onboard the Sophos firewall, and documentation
-- [ ] Done
+- Not applicable (2026-11-23): it waits on a model-drafted profile, and s09-40 removed hound's built-in model. The agent-driven Sophos onboarding (s09-39) replaces it. Kept here as a record.
 
 **Story:** As the person running this project, I want to onboard my own Sophos firewall with `hound onboard`, so that the assistant is proven on a real system and real requirements.
 
@@ -344,6 +568,47 @@ Built straight after s09-21, before s09-22, because every later onboarding step 
 
 **Functional check**
 - The person's onboarding run produces a profile that passes `hound profile test`, and the firewall's checks appear in a `hound plan --dry-run`.
+
+**Sophos firewall run (2026-11-23):** onboarded end to end on the person's tenant; see [`docs/evidence/s09/s09-25.md`](../evidence/s09/s09-25.md). The functional check is met with the shipped `sophos-central` profile (3 of 3 cases pass, both checks pass on the tenant); the model-drafted profile did not validate (discovered work), so the task stays open until drafting produces a passing profile.
+
+**As built so far (2026-11-23).** The docs part is done: `OnboardingDocsTests` checks that every option of `hound onboard`, `onboard config`, `onboard environment` and `onboard profile` is in `docs/onboarding.md`, that its relative links resolve, and that it has a tutorial on the example API. The tutorial ("Tutorial: onboard the example API") was followed as written against a copy of `examples/compliance-repo` with `--no-model` and `--group 1`: the supplier stop, then 48 decisions (1 API check, 47 manual), the audit, `scope/setup.yaml` and the record written, `hound scope validate scope` valid, and `hound profile test example` passing both cases. Still open: the person's own Sophos firewall run, and the discovered work it shows.
+
+### s09-44 Representative Microsoft 365 dev server (added 2026-11-23)
+- [x] Done
+
+Added at the maintainer's request (2026-11-23): s09-01 to s09-04 and the Microsoft 365 checks should not wait on a test tenant (s09-18).
+
+**Story:** As the maintainer without a test tenant, I want a fictional Example Pty Ltd tenant that answers Microsoft Graph offline with realistic, internally consistent data, so that Microsoft 365 controls and their automated evidence can be built and tested against representative configurations.
+
+**Acceptance criteria**
+- One fictional tenant described once (users, groups, licences, devices, Conditional Access, role assignments, Intune policies), from which every Graph collection the m365 collector reads is generated with the same IDs everywhere, so joins between collections hold. Two variants: `compliant` and `gaps`, the second a short list of named deviations, each expected to fail a named check.
+- Intune and Conditional Access settings for `compliant` come from the ASD Blueprint for Secure Cloud's published configurations (`static/content/files`: the Intune policy exports and Microsoft365DSC configurations), pinned to a commit and kept with their attribution (CC BY 4.0, Commonwealth of Australia); a third-party file under another licence is used only under its own terms, or not at all.
+- Response shapes, paging (`@odata.nextLink`) and errors (403 for a missing licence or permission, 429 with `Retry-After`) follow Microsoft's Graph documentation and the public Dev Proxy Graph mocks (MIT), credited.
+- Served by the existing test server in unit tests, and on a local port in the dev container (`make m365-dev`), so `hound collect --dry-run` with the instance's `graph_url` pointed at it runs end to end. No sign-in leaves the machine.
+- `docs/tutorials/m365-dev-server.md`: what the tenant holds, the two variants, how to add a setting or a deviation, and what it cannot show (throttling patterns, licence quirks and results of a real tenant), which s09-18 and s09-27 still check.
+
+**Sources read (2026-11-23)**
+- ASD Blueprint `intune-config-policies`: six Graph beta `configurationPolicies` exports (Office hardening, both macro variants, Windows hardening, user rights, Edge), the same shape the collector already reads, so they can be served as they are. Their setting IDs differ from our hand-written fixture in one place (Excel: `l_exceloptions` in the export, `l_excel_options` in `configuration-policies.json`); the dev tenant takes the export's spelling.
+- ASD Blueprint `automation/dsc`: Microsoft365DSC configurations (15 Conditional Access policies, ASR rules, antivirus, compliance policies). They are not Graph responses, so they are translated into Graph shapes by hand, each citing the DSC resource it came from.
+- An Essential Eight PowerShell checklist (MIT) checks a single Windows endpoint locally (registry, services, AppLocker). It reads nothing from Graph, so it does not feed this tenant; noted under Discovered work as a reference for endpoint evidence.
+- ASD's example ML3 assessment test plan: to be read for which tests each check answers once a copy is available (the site could not be reached from the cloud session).
+- The WA Government's Essential Eight assessment process guide (soc.cyber.wa.gov.au, source in the public `wagov/wasocshared` repository; no licence stated, so cited, not copied): its ML2 tests are almost all endpoint, Active Directory or documentary. It names six attack surface reduction rules for user application hardening and VBA notification and Trust Center logging for macros; see Discovered work.
+
+**Tests first**
+- `M365DevTenantTests.Every_collection_the_collector_reads_is_served`
+- `M365DevTenantTests.Ids_are_the_same_across_collections`
+- `M365DevTenantTests.Compliant_tenant_passes_every_check`
+- `M365DevTenantTests.Each_deviation_fails_its_named_check`
+- `M365DevTenantTests.Blueprint_settings_keep_their_source_and_attribution`
+
+**Functional check**
+- `make m365-dev`, then `hound collect --dry-run` for `example-m365` against each variant: every check as the variant expects.
+- Result (2026-11-23): `make m365-dev ARGS="--variant gaps --port 5366"` printed the tenant, its nine deviations and the collector settings; `curl http://localhost:5366/v1.0/users` gave 5 users and an `@odata.nextLink` with `$skiptoken=2`, page 3 gave the last 4 and no link; `/v1.0/groups` gave 404; `--variant partly` exited 2 with "--variant is compliant or gaps, not 'partly'." `M365DevTenantTests` (7) run the m365 collector over HTTP against the compliant tenant (11 of 11 pass), each of the 9 deviations alone (each fails only its named checks, with the named outcome) and the gaps tenant. Whole unit suite: 1316 passed; the 27 failures are the Docker-only functional tests.
+- `hound collect --dry-run` against the server is not part of the check: the maintainer decided (2026-11-23) that the dev server has no sign-in logic. The tests run the whole m365 collector over HTTP with a stand-in credential, as its own tests do, and that run is the check. An end-to-end `hound` run comes when Microsoft 365 moves to a REST profile, whose offline tests replay recordings without signing in.
+- As built: `src/EvidenceHound.M365DevServer` (`m365-dev`, not in the runner image): `DevTenant` describes the tenant once as records (people, role holdings, devices, Conditional Access, Office hardening assignment, attack surface reduction rules) with `Compliant`, `Deviations` and `For(variant)`; `GraphCollections.Render` (pure) turns it into the nine Graph collections; `DevGraphServer` serves them with WireMock in pages of 5; `DevServerOptions` parses `--variant`, `--deviation` and `--port`; `Blueprint` embeds `OfficeHardening.txt` unchanged with `NOTICE.md` (source, commit, licence, attribution, every change). Tutorial: `docs/tutorials/m365-dev-server.md`.
+- Deviations from the Blueprint, recorded in `NOTICE.md`: the Conditional Access policies are on (the Blueprint ships them report-only), and the excluded group `$ConditionalExclude` is replaced by the two break-glass accounts, because the collector treats any excluded group as undocumented. The existing fixture's Excel setting ID was corrected to the spelling Intune exports (`l_exceloptions`).
+
+**Order:** before s09-01, which adds its application control collections to this tenant. s09-27 then checks the tenant against a real recording instead of being its only source.
 
 ### s09-01 Application control policies from Intune
 - [ ] Done
@@ -368,9 +633,15 @@ Built straight after s09-21, before s09-22, because every later onboarding step 
 
 **Notes**
 - Confirm the settings catalog template and setting IDs against a recorded response in the first test, and record them in the docs.
+- As built (2026-11-23): `AppControlPolicy` reads App Control for Business policies from settings catalog policies by `templateReference.templateFamily` `endpointSecurityApplicationControl` (audit when the built-in controls choice `device_vendor_msft_policy_config_applicationcontrol_built_in_controls_enable_app_control` ends `_1`, or uploaded XML carries `Enabled:Audit Mode`; it covers all four file types) and AppLocker from `windows10CustomConfiguration` profiles' `omaSettings` (`./Vendor/MSFT/AppLocker/ApplicationLaunchRestrictions/{Grouping}/{EXE|DLL|Script|MSI}/Policy`, `EnforcementMode` `Enabled` or `AuditOnly`; an encrypted value is mode unknown, which is partial). New optional setting `application_control_groups`. Capability `ac`. The E8 mapping moves ISM-0843 (enforced) and ISM-1657 (enforced and file types) from manual to the checks. The M365 dev tenant has an invented AppLocker profile on all devices and two deviations, `applocker-for-one-group` and `applocker-dll-rules-in-audit`.
+- Still open, so the task stays unticked: the template family and the built-in controls setting ID and values are from Microsoft's documentation, not a recorded export. The maintainer was asked (2026-11-23) for one App Control for Business policy exported from Graph (`beta/deviceManagement/configurationPolicies/{id}?$expand=settings`), and one AppLocker custom profile, to confirm them and add them as recordings.
+
+**Functional check result (2026-11-23)**
+- Unit: `AppControlChecksTests` (11) pass; `M365DevTenantTests` run the collector over HTTP against the compliant tenant (13 of 13 pass), each of the 11 deviations alone and the gaps tenant. Whole unit suite green apart from the 27 Docker-only functional tests.
+- End to end with the built `hound` and `sign_in: none`: `m365-dev --variant gaps --port 5367`, then `hound run --config hound.yaml --only m365-example --no-publish` succeeded with 0 passed, 9 failed and 4 other (partial), as the deviations name (`endpoint.application_control.enforced` partial, `endpoint.application_control.file_types_covered` fail). The compliant tenant gave 13 passed. The trial's Microsoft 365 step runs the same collector against the dev server, so the two checks reach the trial's Essential Eight audit through ISM-0843 and ISM-1657 with no trial change.
 
 ### s09-02 Application control events from Defender for Endpoint
-- [ ] Done
+- [x] Done
 
 **Story:** As a compliance owner, I want proof that allowed and blocked application control events reach a central log, so that the logging requirement is evidenced and blocked files are visible to the committee.
 
@@ -392,8 +663,18 @@ Built straight after s09-21, before s09-22, because every later onboarding step 
 **Notes**
 - Confirm which licences include advanced hunting through Graph, and record it in `docs/collectors/m365.md`.
 
+**As built (2026-11-23)**
+- Three advanced hunting queries, not two: application control events by device and action type, the 20 most-blocked files (file name, SHA-256, publisher, block and device counts) and Windows onboarding status. Each is a `POST` whose KQL starts with `// evidence-hound: <name>`, so the tenant's audit log and the dev server can tell them apart. Evidence: `hunting-app-control-events.json`, `hunting-app-control-blocked-files.json`, `hunting-defender-onboarding.json`; no user or device names are queried.
+- `GraphRequest` gained a body and an items property (`results`); a source marked `MayBeRefused` that Graph refuses (licence or permission) no longer fails the run: `TenantData.Unavailable` keeps the problem and only this check reports it (`not_applicable` for the licence, `error` for the permission). Settings `application_control_window_days` (1 to 30, default 30) and `defender_onboarded_percent` (default 95).
+- Mapped to ISM-1660 (allowed and blocked application control events are centrally logged), removed from `manual_only`. Events sent only to a SIEM or Windows Event Forwarding are not seen, so the manual event log template from s09-05 remains the route for those.
+- M365 dev server: all eight laptops onboarded, three event rows and two blocked files; new deviation `defender-missing-on-two-laptops` (6 of 8, partial).
+- Still open: the licence list in `docs/collectors/m365.md` (Defender for Endpoint Plan 2, Microsoft 365 E5, Defender for Business) and the `ActionType` prefixes come from Microsoft's documentation, not a real tenant; confirm with a recording (s09-27).
+
+**Functional result (2026-11-23)**
+- Built `hound`, `sign_in: none`, `graph_url: http://localhost:5367/`: `m365-dev --variant gaps --port 5367`, then `HOUND_TODAY=2026-11-23 hound run --config hound.yaml --only m365-example --no-publish` succeeded with 0 passed, 9 failed and 5 other (one more partial than s09-01: the events check); `hunting-defender-onboarding.json` held `{"OnboardingStatus": "Onboarded", "Devices": 6}` and the run wrote the three hunting files. The compliant tenant gave 14 passed. `M365DevTenantTests` hold each deviation to its named outcome over HTTP. Unit suite 1397 passed; the 27 failures are the Docker-only functional tests. Lint clean.
+
 ### s09-03 Vulnerability scan import
-- [ ] Done
+- [x] Done
 
 **Story:** As an operator, I want scanner exports dropped in a folder and read as structured findings, so that any scanner the organisation already uses can feed patching evidence.
 
@@ -413,8 +694,19 @@ Built straight after s09-21, before s09-22, because every later onboarding step 
 **Functional check**
 - Drop a fictional `.nessus` export with `hound manual upload --source vuln-example`; `hound run --only vuln-example --dry-run` lists the parsed scan.
 
+**As built (2026-11-23)**
+- New project `EvidenceHound.Collectors.VulnScan`, registered as built-in type `vuln-scan`. Pure `NessusParser` and `CsvScanParser` both give a `ScanRun` (file, scan date, hosts, findings) of `ScanFinding` records (host, finding ID, name, severity, CVEs, first seen, patch published, exploit available, unsupported). `ScanFolder` reads each distinct content once (newest name wins), takes the export whose scan ran last (the date inside the export, not the file's) as current, and fails the whole folder on one bad export.
+- The column map is one setting per field (`column_host`, `column_finding_id`, `column_severity` required for csv; `column_name`, `column_cve`, `column_first_seen`, `column_patch_published`, `column_exploit_available`, `column_unsupported`, `column_scan_date` optional), so `hound add collector` can ask for each. `column_name` was added for the finding's title.
+- Evidence: the current export unchanged, `scan.json` (the parsed scan) and `scan-history.json` (every export read: file, SHA-256, scan date, counts). Older exports stay in the drop folder.
+- Nessus: severity 0 items are left out; unsupported is `unsupported_by_vendor` or "Unsupported"/"SEoL" in the plugin name; scan date from `HOST_END_TIMESTAMP`, else `HOST_END`; DTDs are refused. A `.nessus` file has no first-seen date, so s09-04 counts from patch publication, else from the earliest export in the history that shows the finding.
+- `hound manual upload --source` accepts a vuln-scan source: same-content refusal as for manual sources, only the format's files, no attestation prompt. The CSV row reader moved from the rest engine to `EvidenceHound.Collectors.CsvRows` so both use it.
+- No checks yet (`ChecksFrom` gives none); s09-04 adds them per scope.
+
+**Functional result (2026-11-23)**
+- Scratch config with `vuln-example` (`format: nessus`, `scope: internet_facing`): `hound config validate` valid; `hound manual upload --source vuln-example internet-facing-2026-11-16.nessus` copied it (no attestation prompt), a second upload said "already uploaded … nothing copied", and the Defender CSV was refused ("does not match this source's patterns: *.nessus"). `HOUND_TODAY=2026-11-23 hound run --config hound.yaml --only vuln-example --no-publish` succeeded and stored the export, `scan.json` (scan date 2026-11-16T10:25:00+00:00, 3 hosts, 3 findings: web-01 900101 high with exploit, web-01 900102 medium, vpn 900103 critical unsupported) and `scan-history.json`. With a truncated `broken.nessus` added, the run exited 1 with `vuln_scan.export_invalid`: "broken.nessus line 3: not well-formed XML (…)". Unit suite 1430 passed; the 27 failures are the Docker-only functional tests. Lint clean.
+
 ### s09-04 Patching checks from scans
-- [ ] Done
+- [x] Done
 
 **Story:** As a compliance owner, I want scan frequency, patch timeliness and unsupported software measured from scans, so that the patch applications and patch operating systems strategies have evidence.
 
@@ -434,8 +726,17 @@ Built straight after s09-21, before s09-22, because every later onboarding step 
 **Functional check**
 - `hound run` with fictional exports for two scopes updates the example Essential Eight audit's patching rows in the local CISO Assistant.
 
+**As built (2026-11-23)**
+- `PatchPolicy.For(scope)` gives the maturity level 2 defaults (internet_facing 1 day, 14 days, 48 hours; common_apps 7, 14, 336 hours; other_apps and operating_systems 14, 30, 720 hours); `scan_interval_days`, `patch_window_days` and `exploited_patch_window_hours` override them. `PatchChecks` (pure) judges the current scan: interval by calendar days to now; windows counted up to the scan date from patch publication, else first seen, else the earliest export in the history with the same host and finding ID. Evidence `patch-assessment.json` lists every overdue and unsupported finding; observations name at most 20.
+- **Eleven checks, not twelve:** `other_apps` has no `unsupported_removed`, because removing unsupported other applications is ISM-0304, maturity level 3 only, and `E8MappingTests` rightly refuses ML3 rows in the ML1/ML2 mapping. `hound collectors list` shows the eleven.
+- Mapped in both E8 mappings and removed from `manual_only`: ISM-1698, ISM-1701, ISM-1690, ISM-1876, ISM-1877, ISM-1905, ISM-1699, ISM-1691, ISM-1704, ISM-1700, ISM-1693, ISM-1702; `vuln.operating_systems.patched_in_window` joins ISM-1695 and `vuln.operating_systems.unsupported_removed` joins ISM-1501 (both `all_pass`). ISM-1807 and ISM-1808 stay manual. ISM-1694 is left to s09-15 (see Discovered work). `vuln-scan` is now a reference type in `E8MappingTests`.
+
+**Functional result (2026-11-23)**
+- Scratch config with two scan sources, `internet-facing-scans` (nessus, internet_facing) and `laptop-vulnerabilities` (csv, common_apps, the Defender column map); both exports dropped with `hound manual upload`. `HOUND_TODAY=2026-11-23 hound run --only <each> --no-publish`: internet-facing 0 passed, 3 failed (scan 7 days old against 1; web-01 900101 with an exploit 154 hours since the patch against 48; vpn 900103 unsupported); laptops 2 passed, 1 failed (laptop-01 CVE-2026-0201, 454 hours since first seen against 336). `hound collectors list` showed the eleven `vuln.*` IDs. Unit suite 1447 passed; the 27 failures are the Docker-only functional tests. Lint clean.
+- Still to do: the audit rows in a local CISO Assistant, which needs Docker; the trial step with fictional scans (s09-54) does it and runs in CI's trial job.
+
 ### s09-05 Manual-upload templates for the remaining requirements
-- [ ] Done
+- Moved to s10-04 (2026-11-23, maintainer's decision): the templates and the evidence plan describe the same thing from two ends, so they are built together. Kept here as a record.
 
 **Story:** As a system owner, I want a ready template for each Essential Eight requirement that cannot be collected, so that I know what to export, how often, and how to attest it.
 
@@ -453,12 +754,12 @@ Built straight after s09-21, before s09-22, because every later onboarding step 
 - Write a skeleton for one template, fill it in, upload a fictional export with it, and see the attested result in the example audit.
 
 ### s09-06 Documentation
-- [ ] Done
+- [x] Done
 
 **Acceptance criteria**
 - `docs/collectors/m365.md` gains the application control checks, the `ThreatHunting.Read.All` permission with its justification, licence notes and limits.
 - `docs/collectors/vuln-scan.md`: formats, column maps (including Defender's export), scopes, every check with its limits, and how to schedule exports from common scanners.
-- `docs/collectors/manual-templates.md` indexes the templates by Essential Eight strategy.
+- ~~`docs/collectors/manual-templates.md` indexes the templates by Essential Eight strategy.~~ Moved to s10-04 with s09-05.
 
 **Tests first**
 - Docs check-ID tests for the M365 and `vuln-scan` collectors.
@@ -469,8 +770,12 @@ Built straight after s09-21, before s09-22, because every later onboarding step 
 
 Moved from s08 on 2026-11-22 at the person's request (s08 focuses on Sophos). Was s08-03 and s08-04.
 
+**As built (2026-11-23).** `docs/collectors/m365.md` already carried the application control checks, `ThreatHunting.Read.All` with its reason, the licences and the limits (s09-01, s09-02). `docs/collectors/vuln-scan.md` gains "Scheduling exports from common scanners" (the scan, export and collector schedules, keeping older exports, scanner credentials staying with the export job, and Nessus, Tenable Vulnerability Management, Tenable Security Center, Defender Vulnerability Management and any CSV scanner), and names both checks ISM-1694 now needs. Tests: `VulnScan.Tests.DocsTests` (every check ID, setting, evidence file and problem code; the scheduling section; the ISM-1694 row) and `Cli.Tests.DocsLinkTests` (every relative link in `docs/` and the README points at a file that exists; there was no link check before). There is no markdown linter in the repo, so the link test stands in for "docs lint".
+
+**Functional check (2026-11-23).** Following the guide in a scratch folder: `hound init <repo> --evidence-root <evidence> --yes`, `hound add collector vuln-scan --name internet-facing-scans --set drop_folder=../scans/internet-facing --set format=nessus --set scope=internet_facing --set owner="Sam Example" --yes`, the fictional `internet-facing-2026-11-16.nessus` copied into the drop folder, `hound config validate` valid, then `hound run --only internet-facing-scans --no-publish`: succeeded with the three `internet_facing` checks, all failing as the guide says they should for a week-old export with an overdue exploited finding and an unsupported VPN appliance.
+
 ### s09-07 Veeam access
-- [ ] Done
+- Dropped (2026-11-23): the maintainer does not want Veeam collection. Kept here as a record; not built. Backup evidence stays manual (s09-05 templates).
 
 **Story:** As the collector, I want Veeam REST API access with a read-only account, so that backup jobs and restore points can be read.
 
@@ -488,7 +793,7 @@ Moved from s08 on 2026-11-22 at the person's request (s08 focuses on Sophos). Wa
 - Run against recordings: jobs and restore points in evidence.
 
 ### s09-08 Veeam checks and documentation
-- [ ] Done
+- Dropped (2026-11-23): the maintainer does not want Veeam collection. Kept here as a record; not built. Backup evidence stays manual (s09-05 templates).
 
 **Story:** As a compliance owner, I want backup success, retention and restore testing measured, so that backup requirements are evidenced.
 
@@ -517,6 +822,7 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 
 **Acceptance criteria**
 - First, confirm in the Sophos Central Firewall API v1 spec how to read available firmware upgrades and when each was released. Known so far: `POST firewall/v1/firewalls/actions/firmware-upgrade-check` with `{"firewalls": [ids]}` returns each firewall's `upgradeToVersion` list and a `firmwareVersions` list. Still to confirm: whether any field gives a release date, and whether the Service Principal Read-Only role may call it (it is a POST that changes nothing). If release dates are not exposed, the check reports an available upgrade without age, and the task says what evidence still has to be manual.
+- Confirmed 2026-11-23 from the published spec (`https://developer.sophos.com/assets/specs/firewall-v1.yaml`, OpenAPI 3.0.0, version 1.5.0): each `firmwareVersions` item has only `version`, `size`, `bugs` and `news`, so **no release date is exposed**. An upgrade's age has to come from when hound first saw it offered (kept in the collector's local state between runs), which starts counting only once the check is running; say so in the observation. Whether the read-only role may call the POST is still to confirm on the person's tenant.
 - In the `sophos-central` profile: a `firmware_upgrades` query (fan-out per firewall, or one batched call), joined into the `firewall_firmware` dataset, and `network.firewall.firmware_current`: pass when no firewall has an upgrade outstanding for more than `firmware_update_days` (default 14); fail lists the counts, not names; no firewalls is `not_applicable`.
 - Mapped to ISM-1694 for the perimeter firewall, and removed from `manual_only` only if it covers the requirement.
 
@@ -525,9 +831,16 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 
 **Functional check**
 - Dry run against the person's tenant.
+- As built (2026-11-23): `sophos-central` 1.0.0 gains the `firmware_upgrades` query (`POST ${data_region}/firewall/v1/firewalls/actions/firmware-upgrade-check`, `for_each: firewalls`, items `$.firewalls`), the `firmware_update_days` parameter (default 14) and `network.firewall.firmware_current`, the `sophos.firmware_upgrade_age` code check over `[firewalls, firmware_upgrades]`. A code check may now name `history: <query>`: it is given that query's items from the instance's earlier complete runs (`IEvidenceHistory` on the collector context, read from the evidence store by `CollectStep`; `IEvidenceStore.ReadFileAsync` is new), and the run saves them as `<query>.history.json`, which the result cites. An offer's age counts from the first run of the unbroken series of runs that saw one for that firewall. ISM-1694 maps to the check in the Essential Eight mapping (firewalls only; servers and the 48-hour window stay with s09-03/04) and in the tutorial's office firewall mapping, whose decisions now make ISM-1694 an API check. Profile test cases take `history:` entries. The Sophos dev server answers the upgrade check per firewall (matched on the body) and has the `firmware-upgrade-overdue` deviation; `SophosAnswers.EarlierUpgradeChecks` gives the evidence earlier daily runs would have kept, which the dev server tests hand to the collector.
+- Decision (maintainer, 2026-11-23, decision card): an upgrade's age comes from earlier runs' evidence, as built, rather than flagging any upgrade with no age.
+- Still open, so the task stays unticked: whether the Service Principal Read-Only role may call the upgrade check, and the dry run, both on the maintainer's tenant. The answer shape (`firewalls[].upgradeToVersion`, `firmwareVersions[]`) follows the spec as read on 2026-11-23 and is to be confirmed by a recording.
+
+**Functional check result (2026-11-23)**
+- Unit: `FirmwareUpgradeAgeTests` (8) and `CheckHistoryTests` (3); five new `sophos-central` cases (`firmware-upgrade-within-window`, `firmware-upgrade-overdue`, `firmware-upgrade-check-refused`, `no-firewalls`, and the upgrade check added to the three existing cases) pass under `LibraryProfileTests`; `FileEvidenceStoreTests` and `CollectStepTests` cover the store read and the history. Whole unit suite green apart from the Docker-only functional tests.
+- End to end with the built `hound`: `sophos-dev --deviation firmware-upgrade-overdue --port 5371`, then `hound run --only sophos --no-publish` twice: 3 passed each time (the offer is new), and the second run's `firmware_upgrades.history.json` held the first run's answer. With the first run's folder moved back 20 days (a scratch store), the next run gave 2 passed and 1 failed (`network.firewall.firmware_current`).
 
 ### s09-16 Sophos switches (was s08-14)
-- [ ] Done
+- Not applicable (2026-11-23): the maintainer has no Sophos switches, and the Sophos Central API cannot list them. Kept here as a record.
 
 **Story:** As a compliance owner with Sophos switches, I want them read like firewalls, so that non-internet-facing network devices (ISM-1501, ISM-1695) have live evidence.
 
@@ -555,7 +868,7 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 - If s09-13 has landed by then, the run uses the `sophos-central` profile.
 
 ### s09-18 Microsoft 365 trial on a test tenant (rest of s08-10)
-- [ ] Done
+- Not applicable (2026-11-23): the Microsoft 365 dev server (s09-44, with `sign_in: none` in s09-52) is the trial's test tenant now. A run against a real test tenant stays possible (trial step 14, your own tenant). Kept here as a record.
 
 **Done in s08.** The trial's Microsoft 365 step, `hound add collector --secret-file`, and the tutorial section are built and tested (CI's unattended trial stops before Sophos and Microsoft 365).
 
@@ -564,8 +877,984 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 - Record `docs/evidence/s08/s08-10.md`: date, versions, the kind of tenant, each step's and check's outcome, defects with links to their fixes. No tenant or client IDs, domains, user or device names.
 - Fix any defect test-first; correct the tutorial wherever it was wrong or unclear.
 
+### s09-27 Record a Microsoft 365 tenant with Dev Proxy and publish it scrubbed (added 2026-11-22)
+- Not applicable (2026-11-23): the Microsoft 365 dev server (s09-44) replaces a recorded and scrubbed tenant. Kept here as a record.
+
+**Story:** As a maintainer, I want my trial tenant's Microsoft Graph answers recorded once, scrubbed and published, so that `hound`'s Microsoft 365 tests and tutorial run offline against realistic, internally consistent data, and others can learn from it.
+
+**Background (checked 2026-11-22):** the public Dev Proxy Graph mocks (`waldekmastykarz/graph-mocks`, MIT, also published as the PnP "Microsoft Graph sandbox mocks" sample, updated for Dev Proxy v4) cover about 3,200 v1.0 endpoints, including conditional access, Intune `deviceManagement`, authentication method reports, directory roles and secure score. They are built from the Graph API documentation's examples, one example per endpoint, so the same users and devices do not appear across endpoints. Use them for response shapes and credit them; they do not replace a consistent recording.
+
+**Acceptance criteria**
+- `docs/tutorials/record-m365-with-dev-proxy.md`: step-by-step for a Business Premium trial tenant: install Dev Proxy v4, trust its root certificate in the dev container (`update-ca-certificates`), run it with `--ip-address 0.0.0.0` and `MockGeneratorPlugin`, point `hound` at it through `HTTPS_PROXY`, record a run, then replay offline with `MockResponsePlugin` (confirm that a generated file replays as is).
+- A scrub step (`hound recordings scrub` or a script under `tools/`): replaces tenant IDs, domains, user and device names, emails, IP addresses and serials with consistent fictional `example.com` values (the same input always gives the same output, so joins still work), and fails if anything from a denylist or the tenant's own domains remains. The `org-data` check runs on the result.
+- The scrubbed recording is committed as the Microsoft 365 test fixtures and used by at least one replay test; the tutorial's Microsoft 365 section can run against it offline.
+- Credits and licence notes for any reused public mocks.
+
+**Order:** after the Sophos onboarding (s09-25); needs the person's recording from s09-18.
+
+### s09-30 Explain a config change in plain English: `hound explain` (added 2026-11-22)
+- [x] Done
+
+**Story:** As a GRC team member reviewing a lot of new configuration, I want a plain-English summary of what a change does and what looks risky, so that I review config quickly and approve only what I understand.
+
+**Acceptance criteria**
+- `hound explain` reads a config diff (`git diff`, or two files) or the output of `hound plan` or `hound scope plan`, and writes a review summary, for example "marks 12 Essential Eight requirements not applicable on the Microsoft 365 audit because ThreatLocker provides them".
+- It flags anything risky or inconsistent for the reviewer: requirements newly marked not applicable, removed checks or controls, deletions in the plan, a system without an owner, a supplier not yet approved, a mapping that no longer matches a profile's checks.
+- Review only: it never edits config, never applies, and never runs in collection. It uses the onboarding model connection (`onboarding.yaml`, s09-21) through the same gate: the outbound guard, the deny terms, the session record and `--show-requests`.
+- The deterministic plan output stays the source of truth: the summary says so, quotes the plan's counts, and a reply that names an object the plan does not contain is reported as `llm.invalid_reply`.
+- It uses the right skill for what it explains, from the same skills system as onboarding (s09-26): a new `explain` step, with skills chosen by what the diff or plan touches (third parties: supplier assessment and assurance; not-applicable rows: applicability; profiles: profile authoring; mappings and audits: the framework's mapping skill such as Essential Eight ML2). Organisation skills are included, `--skill <name>` adds or narrows the choice, and the summary lists every skill used with its source, version and SHA-256. Default explain-oriented skills ("reviewing a config change") are added where the existing ones do not cover the review.
+
+**Tests first**
+- `ExplainTests.Summary_counts_match_the_plan`
+- `ExplainTests.Object_not_in_the_plan_is_an_invalid_reply`
+- `ExplainTests.Secrets_and_identifiers_are_never_sent`
+- `ExplainCommandTests.Reads_a_diff_or_a_saved_plan`
+- `ExplainSkillTests.Skills_follow_what_the_change_touches`
+- `ExplainSkillTests.Skill_option_overrides_the_choice_and_is_recorded`
+
+**Functional check**
+- With a fake model, `hound explain` on a scope plan of the example repo prints a summary whose counts match the plan, and `--show-requests` shows no secret or identifier.
+
+**Order:** after the first usable onboarding path (s09-21, s09-26, s09-22, s09-24).
+
+**As built (2026-11-23)**
+- `hound explain [<plan-or-diff> | <before> <after>] [--repo] [--framework] [--skill]... [--no-model] [--show-requests] [--config]`, reading a file, two versions of one file, or standard input (`git diff | hound explain`). It reads `hound scope plan` output (Markdown or JSON), `hound plan` output (JSON) and unified diffs.
+- `ChangeReader` reads counts, objects, topics and flags in code: not applicable rows, deletions, removed check or requirement lines in mappings and profiles, and supplier contracts that are not active. `Explanation` sends them through the onboarding gate (`onboarding/explain/requests/`), with object IDs, email, IP and MAC addresses, deny terms and secret values replaced first (`OutboundGuard.Redact`), and refuses a reply that names an object the plan or diff does not contain.
+- A new `explain` skill step and default skill `reviewing-a-config-change`; `ExplainSkills.Choose` adds the supplier, applicability, profile or mapping skills by what the change touches, and `--skill` chooses instead. The summary lists each skill with source, version and SHA-256.
+- Also flagged: a system created or updated without an owner (from the plan's fields), and a check a diff removes from a profile that a mapping in the repo's `mappings/` still uses.
+
+**Functional check (2026-11-23)**
+- `hound explain plan.md --repo <copy of the example repo> --show-requests` with a fake Anthropic server: prints "The plan is the source of truth: 1 to create, 0 to update, 0 to delete, 0 drifted.", the not applicable flag, the fake summary and four skills; the requests shown and saved (`001-explain.request.json`) hold no email address from the plan's access review.
+- `hound explain before.yaml scope/audits/example-assets-essential-eight-2023.yaml`: "1 file changed, 227 lines added, 1 line removed" and "Marks 2 requirement(s) not applicable".
+- `OnboardFunctionalTests` now explains the real scope plan from the local CISO Assistant with `--no-model` and checks the counts match.
+
+### s09-31 Draft organisation skills from onboarding (added 2026-11-22)
+- [x] Done
+
+**Story:** As a GRC team member, I want onboarding to help me write skills about my own organisation (its business, risk appetite, IT and AI landscape and conventions), so that later onboarding and `hound explain` give advice that fits us rather than generic advice.
+
+**Acceptance criteria**
+- `hound skill draft` (and an optional last step of environment onboarding, s09-28) asks short questions and reads what the config repo already holds (the capability map, systems, suppliers, AI systems in use, naming and approval conventions), then drafts one or more organisation skills, for example `organisation-profile`, `risk-appetite`, `it-landscape` and `ai-landscape`, each tagged with the steps it applies to (`supplier`, `system`, `applicability`, `explain`).
+- Drafts are written to the organisation skills folder in the private config repo (`/config/skills`, s09-26), never anywhere in this repo. The person reviews, edits and commits them; nothing is used until it is in that folder and passes `hound skill validate`.
+- Everything sent to the model passes the same gate as onboarding (s09-21): the outbound guard, the deny terms, the budget, the session record and `--show-requests`. A draft that holds a secret, tenant ID, host name, IP address or a person's details is refused by `hound skill validate` with `skill.sensitive_content`, and the draft step strips those before writing.
+- Each draft carries a version, starting at 1; re-drafting an existing skill shows a diff and bumps the version. Onboarding records (s09-24) and `hound explain` summaries (s09-30) already list each skill's source, version and SHA-256, so the organisation skills used are traceable.
+- `--no-model` writes the same skills as templates with the questions as headings, for teams without a model key.
+
+**Tests first**
+- `OrganisationSkillTests.Draft_reads_the_capability_map_systems_and_suppliers`
+- `OrganisationSkillTests.Sensitive_content_is_stripped_and_refused`
+- `OrganisationSkillTests.Redraft_shows_a_diff_and_bumps_the_version`
+- `SkillDraftCommandTests.Writes_only_to_the_organisation_skills_folder`
+- `SkillDraftCommandTests.No_model_writes_templates`
+
+**Functional check**
+- With a fake model, `hound skill draft --skills <temp>` on the example repo writes draft skills that pass `hound skill validate`, and `--show-requests` shows no secret or identifier.
+
+**Order:** after s09-30.
+
+**As built (2026-11-23)**
+- `hound skill draft [--skills <folder>] [--repo] [--only <name>]... [--no-model] [--show-requests] [--config]` drafts `organisation-profile` (supplier, system, applicability, explain), `risk-appetite` (supplier, applicability, explain), `it-landscape` (system, applicability, explain) and `ai-landscape` (supplier, system, explain). It asks each skill's questions, then sends the answers and the repo's `scope/setup.yaml`, `scope/third-parties/*.yaml` and `scope/capabilities.yaml` (when s09-28 adds it) through the onboarding gate, with requests in `onboarding/skills/requests/`.
+- `OrganisationSkills.Draft` strips secrets, deny terms, object IDs and email, IP and MAC addresses before writing; versions start at 1 and a re-draft prints the diff and bumps it. Drafts are parsed as skills before they are written, and only into the skills folder.
+- `hound skill validate` now refuses (exit 3, `skill.sensitive_content`) a skill holding organisation data, instead of warning.
+- Host names are not stripped (they cannot be told from public names such as a vendor's domain); the drafting instructions ask the model to leave them out, and deny terms catch the organisation's own domains. Environment onboarding (s09-28) offers the draft as its last step when it lands.
+
+**Functional check (2026-11-23)**
+- With a fake Anthropic server, `hound skill draft --repo <copy of the example repo> --skills <temp> --show-requests` (answers piped in) wrote four skills at version 1; the fake reply's `10.20.30.40` was written as `[ip]`; `hound skill validate --skills <temp>` printed "11 skills valid (4 from ...), 0 warnings." and exited 0. The requests shown hold only the example repo's `example.com` addresses.
+
+### s09-32 Onboarding tutorial: Example Pty Ltd's privately hosted GRC platform (added 2026-11-23, refined the same day)
+- [x] Done
+- Rechecked 2026-11-23 after s09-37, s09-40 and s09-55: the model and its questions are gone already; step 6 has the OCI Terraform control tests. Updated: suppliers are approved and their reviews concluded with `hound approve` (step 3) and the conclusions applied with the plan (step 7), instead of concluding them in CISO Assistant; the intro points to `make trial`, which now walks this deployment (s09-57).
+
+**Story:** As a GRC team member learning hound, I want a complete onboarding tutorial for Example Pty Ltd, whose CISO Assistant and Evidence Hound run privately in the cloud and reach the office's Sophos XGS firewall over a site-to-site VPN, so that I can follow one realistic stack end to end and remember that the compliance platform is itself in scope.
+
+**Acceptance criteria**
+- A tutorial, `docs/examples/onboarding-tutorial.md`, walks through `hound onboard` for this stack, step by step, with the commands and the answers typed:
+  - suppliers first under `scope/third-parties/`: the fictional cloud hosting provider, Sophos, and the CISO Assistant and Evidence Hound open-source projects (no contract value), each with levels and reasons;
+  - the GRC platform (CISO Assistant and the `hound` runner on one private cloud VM) as a system, with its Essential Eight ML2 applicability: for example application control and Office macros not applicable to a Linux container host with their justifications, patching and backups as manual evidence, admin MFA through the identity provider as another system;
+  - the office XGS firewall as a system, collected through the `sophos-central` profile, with its applicability;
+  - then review, `hound scope validate`, `plan` and `apply`.
+- The tutorial has a deployment diagram and the network path: a private network with no public address or inbound port, the site-to-site IPsec VPN between the cloud network and the XGS, which traffic goes where (operators to CISO Assistant over the VPN; the runner to Sophos Central's API over outbound HTTPS; the runner to CISO Assistant inside the private network), TLS through Caddy, the database and its backups, where secrets come from, the runner's schedule, and which controls cover each part.
+- The example compliance repo holds the files the tutorial produces (systems, suppliers, audits, decisions and onboarding records), as `hound onboard` writes them. Everything is fictional (Example Pty Ltd, `example.com`, documentation IP ranges) apart from the public product names; no employer detail.
+- `hound scope validate` passes on the example repo, and `docs/onboarding.md` points to the tutorial as its worked example.
+
+**Tests first**
+- `ExampleRepoTests.Tutorial_systems_and_suppliers_are_declared`
+- `ExampleRepoTests.Tutorial_audits_validate_with_justified_not_applicable_rows`
+- `TutorialTests.Onboarding_tutorial_names_only_files_that_exist`
+- `TutorialTests.Onboarding_tutorial_uses_only_documentation_addresses`
+
+**Functional check**
+- Following the tutorial with a fake model on a copy of the example repo reproduces the committed files, and `hound scope plan` against the local CISO Assistant shows them as new.
+
+- **Cloud: Oracle Cloud Infrastructure (OCI)**, at the person's suggestion, so the tutorial can be run for real; kept generic enough that another cloud needs only small changes (a short "on another cloud" note). On OCI: a VM in a private subnet with no public IP, OCI Site-to-Site VPN (IPSec) to the XGS, admin access through OCI Bastion or over the VPN only, and Oracle as a supplier in the walk-through. Use an x86 (AMD) shape, as the person prefers, sized for CISO Assistant's Compose stack; the tutorial names the shape and its approximate monthly cost, checked against Oracle's price list when written. No Arm image work. No real tenancy, OCIDs, regions tied to the person, or addresses in the public repo: documentation IP ranges and placeholders only.
+
+**As built so far (2026-11-23).** Tutorial `docs/examples/onboarding-tutorial.md`: the deployment (mermaid diagram, which traffic goes where, each part and what covers it), building it on OCI (`VM.Standard.E5.Flex`, 2 OCPUs, 16 GB, 100 GB balanced boot volume: about USD 71 per month from Oracle's price list on 2026-11-23; private subnet with no public IP, Site-to-Site VPN to the XGS, Bastion, NAT and service gateways, backups to Object Storage, Terraform in its own repository) and "On another cloud"; then suppliers first (`SUP-CISO-ASSISTANT` and `SUP-EVIDENCE-HOUND` by hand, no contract value; `SUP-ORACLE` and `SUP-SOPHOS` drafted by `hound onboard`, then reviewed), `GRC-PLATFORM` (37 manual, 61 not applicable, 9 provided by Example 365 or the Example laptops), `OFFICE-FIREWALL` (ISM-1501 and ISM-1883 as API checks through `sophos-central`, 40 manual, 61 not applicable, 4 another system), drift through `terraform-drift`, then validate, plan and apply. Addresses are documentation ranges only.
+
+**Deviation:** the files the tutorial writes are in `examples/onboarding-tutorial/` (same paths as a config repo, with `answers/` to replay each run), not inside `examples/compliance-repo`. The template is what a new repo copies and what the functional tests and `make ca-up` apply in one go; systems behind the supplier gate are refused until their suppliers' reviews are concluded, so in the template they would block every first apply. `ExampleRepoTests.The_template_holds_none_of_the_tutorials_systems` keeps it that way.
+
+Functional check, run 2026-11-23 with `--no-model` (the answers files stand in for the fake model): following the tutorial on a fresh copy of the template reproduces `scope/setup.yaml`, both audits and both onboarding records exactly (apart from the schema comment line), `hound config validate` and `hound scope validate scope --config hound.yaml` pass (4 third parties, 5 audits), and `hound profile test` passes for `sophos-central` and `terraform-drift`. `TutorialTests.Onboarding_tutorial_answers_reproduce_the_committed_files` repeats this in the unit suite. The plan against CISO Assistant is `OnboardingTutorialFunctionalTests` (suppliers applied, reviews concluded ok, then the plan creates both systems and audits), run in CI: passed in CI run 45121842725 (2026-11-23, head 6648e42), with the whole functional suite.
+
+Re-checked 2026-11-23 after the OCI Terraform mock control tests (s09-53, PR #28) merged: the tutorial's step 6 "Prove the hosting controls" names `infra/oci/tests/controls.tftest.hcl` and the `grc-infra-controls` profile, `TutorialTests` pass, and CI's `make test-terraform` job passed (run 45190409531). Nothing left to change.
+
+**Order:** after the hands-on Sophos path (s09-25).
+
+### s09-33 Infrastructure drift from the IaC pipeline's plan artefact, without a Terraform dependency (added 2026-11-23)
+- [x] Done
+
+**Story:** As a GRC team member, I want `hound` to tell me whether the cloud hosting our GRC platform still matches its reviewed infrastructure code, without `hound` running Terraform or holding cloud credentials or state, so that drift is evidence like any other check.
+
+**Acceptance criteria**
+- The organisation's IaC pipeline runs `terraform plan -refresh-only -json` (or `-detailed-exitcode` plus the JSON plan) and publishes the plan JSON as a build artefact. `hound` never runs Terraform, never reads state, and never holds cloud credentials.
+- A `terraform-drift` REST profile fetches the artefact over HTTP using the engine's existing job pattern (`async`: start, poll the status until done, then fetch the result). Profiles cover GitHub Actions first (workflow runs and artifacts); GitLab and Azure DevOps follow by profile only, with no code per vendor.
+- Two modes: read the newest existing artefact of a named workflow (the default, read only), or trigger the workflow first (`workflow_dispatch`), poll the run to completion, then download its artefact.
+- The trigger is the only write any profile makes, so it needs an opt-in flag in the profile and in the collector's settings (off by default), and the docs give the narrowest token: run that one workflow and read its artefacts, nothing else. Hosts are declared as for any profile (`profile.host_not_allowed` otherwise).
+- If the engine cannot yet read a downloaded zip (GitHub wraps artefacts in one) or a file body, that is added as a small engine extension (`format: zip` naming the member, size caps as today), not a new collector.
+- Checks: no drift (no `resource_drift` entries and no changed resources) passes; drift fails and names each changed resource address and action; a missing, failed or stale artefact (older than a `max_age` setting) is unable to assess, saying which.
+- Each piece of drift evidence records its provenance: the IaC repository, the commit SHA the plan was made from, and the pipeline run ID (read from the run, not trusted from the artefact's name), so it is clear which version was assessed when the Terraform lives in its own repository.
+- The OCI tutorial (s09-32) uses it for Example Pty Ltd's GRC platform, with a fictional workflow and a recorded artefact; no real tenancy, repository or token. It presents separate repositories as the recommended setup (the IaC repository with its pipeline, and the GRC config repository `hound` reads), and notes that a monorepo works too: the workflow and artefact are named the same way.
+
+**Tests first**
+- `TerraformDriftProfileTests.No_drift_passes`
+- `TerraformDriftProfileTests.Drift_fails_naming_each_changed_resource`
+- `TerraformDriftProfileTests.Missing_failed_or_stale_artefact_is_unable_to_assess`
+- `TerraformDriftProfileTests.Evidence_records_repository_commit_and_run`
+- `RestEngineTests.Zip_member_is_read_with_the_size_caps`
+- `RestEngineTests.Trigger_is_refused_unless_both_profile_and_settings_opt_in`
+- `RestEngineTests.Trigger_polls_the_run_then_reads_its_artefact`
+
+**Functional check**
+- Against a recorded GitHub Actions API (WireMock, fictional repository), `hound run --dry-run` with the `terraform-drift` profile reports pass for a plan with no drift and fail naming `oci_core_instance.grc` for one with drift; with triggering off, no POST is sent.
+
+**As built so far (2026-11-23).** Engine: `format: zip` with `member:` reads one file of a zip answer, the archive and the unzipped member both under `max_bytes` (`rest.zip_member_missing`, `rest.response_too_large`); `redirect_hosts:` follows a GET's redirect to signed storage with a plain, unsigned request (GitHub artefact downloads); `write: true` marks a query that changes something, and it runs only when the instance sets `allow_writes: true` (otherwise nothing is sent and the check is unable to assess). Profiles `terraform-drift` (read the newest completed run, its `drift-plan` artefact and `plan.json`) and `terraform-drift-trigger` (`workflow_dispatch` with `return_run_details`, poll the run, then read), both with check `infrastructure.drift.none` through the code check `terraform.no_drift` (over `[run, plan]`; provenance from the run). Test cases replay folder recordings as zips (`recordings/plan-drift.zip/plan.json`). Guide: `docs/collectors/terraform-drift.md`.
+
+Functional check, run 2026-11-23 against a local fake of the GitHub Actions API serving the profile's recordings (fictional `example/grc-infra`), with `hound run --no-publish` and `hound status`:
+
+```console
+$ hound run --config hound.yaml --no-publish     # plan-clean
+grc-infra-drift  ...  succeeded  1  0  -         # infrastructure.drift.none: pass
+$ hound run --config hound.yaml --no-publish     # plan-drift
+grc-infra-drift  ...  succeeded  0  1  -         # fail: "1 resource differs ...: oci_core_instance.grc (update). Plan from example/grc-infra at commit 0123..., run 7001."
+$ hound run --config trigger.yaml --no-publish   # terraform-drift-trigger, no allow_writes
+grc-infra-drift  ...  succeeded  0  0  -         # unable to assess; the fake API received no request at all
+```
+
+The OCI tutorial (s09-32) uses it for the GRC platform (`example-grc-infra-drift`), with separate repositories recommended and a monorepo noted. Still open: GitLab or Azure DevOps profiles if wanted.
+
+**Order:** after the hands-on Sophos path (s09-25), with s09-32.
+
+### s09-34 Ref ID conventions enforced at the prompt and in scope validate (added 2026-11-23)
+- [x] Done
+- Ticked 2026-11-23 at the maintainer's say-so: functional CI run 341 on 2f82ad6 (10:36 UTC) passed with s09-29, 34 and 35 in it.
+
+Added at the person's request after the s09-22 onboarding trial, where a contract ref was saved as "Renewal" because prompts only suggested the prefix.
+
+**Story:** As a GRC lead, I want every ref ID to follow one convention (SUP-, SOL-, CTR- and the rest), shown in the terminal so I only type the part after the prefix, so that the repo and CISO Assistant read the same way whoever wrote them.
+
+**Acceptance criteria**
+- One table of conventions in the core, used by every prompt and by validation: `SUP-` supplier (third party), `SOL-` solution, `CTR-` contract, `SYS-` system, `AC-` applied control, `PER-` perimeter, `EA-` entity assessment. The part after the prefix is upper case letters, digits and hyphens.
+- Every prompt for a ref ID (`hound init`, `hound add system|control`, `hound onboard <system>`) prints the prefix as part of the prompt (`Supplier ref_id: SUP-`) and takes only the rest; the answer is upper-cased, and anything else (spaces, other characters, empty) is asked again with the rule. A `--ref-id` option given in full with the right prefix is accepted as it is; with the prefix left out, the prefix is added.
+- `hound scope validate` reports a ref ID without its kind's prefix or with other characters as `scope.ref_id_convention`, naming the file, line, kind and expected prefix, with the suggested fix. Audit ref IDs keep their own form (`<CODE>-<FRAMEWORK>-<YEAR>`, as `hound init` writes) and are checked against it.
+- The example compliance repo, tutorials and `docs/scope.md` follow the conventions and document the table once.
+
+**Tests first**
+- `RefIdConventionTests.Prefix_and_allowed_characters_per_kind`
+- `OnboardSystemCommandTests.Ref_id_prompts_show_the_prefix_and_take_the_rest`
+- `AddSystemCommandTests.Ref_id_without_its_prefix_gets_it`
+- `ScopeValidatorTests.Ref_id_without_the_kinds_prefix_is_reported`
+- `ExampleRepoTests`: the example repo validates under the conventions.
+
+**Functional check**
+- `hound onboard SOPHOS-FIREWALL ... --no-model` in the trial repo: the supplier, solution and contract prompts show `SUP-`, `SOL-` and `CTR-`; typing "renewal" for the contract gives `CTR-RENEWAL`; a hand-edited `ref_id: Renewal` in `scope/third-parties/` fails `hound scope validate` with `scope.ref_id_convention`.
+- Result (2026-11-23), with the built CLI in a copy of `examples/compliance-repo` (the trial repo is on the maintainer's computer): `hound onboard EXAMPLE-ASSETS --repo <copy> --group ML2 --spec examples/apis/example-asset-api.openapi.yaml` showed `Supplier ref_id: SUP-`, `Solution ref_id (what the supplier provides): SOL-` and `Contract ref_id: CTR-`; "example assets" for the solution was asked again with the rule; "renewal" for the contract gave `CTR-RENEWAL` ("make contract CTR-RENEWAL active"). With the contract hand-edited to `ref_id: Renewal`, `hound scope validate` answered "sup-example.yaml line 15: contract ref_id 'Renewal' does not follow the convention: CTR- then upper case letters, digits and hyphens. [scope.ref_id_convention] Rename it to 'CTR-RENEWAL', here and wherever it is named." **Still to do:** the same run in the trial repo; the task stays unticked until then.
+- As built: `RefIds` (core, pure) holds the table, with `Follows`, `Complete`, `Suggest` and `Rule`; `RefIdValidator` checks every declared perimeter, system, control, third party, solution, contract, supplier assessment and audit. `RefIdPrompt` (CLI) prints the prefix and asks again until the answer fits; `hound add system|control`, `hound onboard <system>` and the options of `hound supplier draft` use it, and `hound audit draft` checks the audit's form.
+- Deviations: the scope validation test is in the existing `ScopeValidationTests` (there is no `ScopeValidatorTests`). `hound init` asks for no ref ID (it writes `PER-<code>`, `AC-` and the audit from the short code), so it has no prompt to change. An audit's form is checked as two or more parts of upper case letters and digits joined by hyphens, not as code, framework and a year, because audits with periods and the tutorial's audits name more parts. The organisation's own entity is not checked, since it is not a supplier. An answer typed in full with its prefix is also accepted at a prompt, so answer files written before this task still work. Supplier assessments in the tests were `ENA-`; they are `EA-` now, as `hound onboard` writes them.
+- CI (2026-11-23): run 341, started by hand on 2f82ad6 with the functional tests, passed (unit, functional, lint, CodeQL).
+
+### s09-35 Guidance in the terminal for hound onboard (added 2026-11-23)
+- [x] Done
+- Ticked 2026-11-23 at the maintainer's say-so: functional CI run 341 on 2f82ad6 (10:36 UTC) passed with it.
+
+Added at the person's request after the s09-22 Sophos onboarding trial, where the prompts gave too little to go on: a bare "type 0 to 4" for each supplier level, no example answers, a session written into the wrong folder, and the model's open questions shown as results rather than asked. The terminal is the place for it for now; a help page can follow.
+
+**Story:** As a GRC lead onboarding a system for the first time, I want each prompt to tell me what it means and show an example, so that I can answer well without leaving the terminal or reading the code.
+
+**Acceptance criteria**
+- **Scales explained before each level.** Before a supplier level is confirmed, the terminal prints its scale, one line per value, then the proposal and its reason. The scale text lives in one table in the onboarding project (dependency and penetration 0 to 4, maturity, trust and criticality 1 to 4, and "not yet assessed"), checked first against what CISO Assistant shows for third parties and EBIOS RM's stakeholder criteria; `docs/onboarding.md` prints the same table.
+- **An example and a reason for every opening question.** Each prompt (name, owner, product, supplier, solution, contract, what it provides, documents) shows a one-line hint and an example, such as `What does Sophos provide (the service, and what depends on it), e.g. "Perimeter firewall; all office internet traffic passes through it"`.
+- **Before the session starts,** hound says what is about to happen (supplier, then applicability, then files written) and stops with a clear message when `--repo` holds no `scope/setup.yaml` (it is not a compliance repo) or when no `--spec` is given (the model cannot propose API checks; continue only on yes).
+- **The model's open questions are asked.** When a proposal's reason asks for information ("Confirm whether there is a failover unit"), hound asks it as a question and, if answered, runs the step again with the answer added; empty skips.
+- **Plain `--help`.** `hound onboard --help` lists the steps and points to `docs/onboarding.md`.
+
+**Tests first**
+- `SupplierScalesTests.Every_level_has_a_line_per_value`
+- `OnboardSystemCommandTests.Scale_is_shown_before_each_level`
+- `OnboardSystemCommandTests.Every_opening_question_has_an_example`
+- `OnboardSystemCommandTests.Repo_without_setup_is_refused_before_writing`
+- `OnboardSystemCommandTests.Without_a_spec_it_asks_before_starting`
+- `OnboardSystemCommandTests.An_open_question_from_the_model_is_asked_and_the_step_rerun`
+
+**Functional check**
+- `hound onboard SOPHOS-FIREWALL ... --spec ../specs/sophos-firewall-v1.yaml` in the trial repo: each prompt shows its hint and example, each level its scale; run from the source checkout, it refuses before writing anything.
+- Result (2026-11-23), with the built CLI: in a copy of `examples/compliance-repo` (the trial repo is on the maintainer's computer), `hound onboard EXAMPLE-ASSETS --repo <copy> --group ML2 --spec examples/apis/example-asset-api.openapi.yaml` printed "Onboarding EXAMPLE-ASSETS in three steps" before the first question, a hint with an example above each of the eleven opening questions, and each level's scale above its question ("dependency (0 to 4): how much the system relies on this supplier to keep working." and a line per value); answering 3 and a reason wrote `dependency: 3` with the reason and "decided by Alex Example" in the supplier file, and the levels left empty stayed "to decide". Run from the source checkout, it answered "is not a compliance repo: it has no scope/setup.yaml" and wrote nothing. `hound onboard --help` lists the three steps and names `docs/onboarding.md`. **Still to do:** the same run in the trial repo with the Sophos specification; the task stays unticked until then.
+- As built: `SupplierScales` (onboarding project, pure) holds what each value of each level means; `OnboardGuide` (CLI) holds the steps, the note for a missing `--spec` and the hint for each of the eleven opening questions. `hound onboard <system>` now asks each level after printing its scale: a number and a reason, written in the supplier file as decided by the reviewer, or empty to leave it to decide. `docs/onboarding.md` prints the same tables, checked by `OnboardingDocsTests`.
+- Deviations, because the built-in model was removed first (s09-40): there is no proposal to show before a level, so the person gives the level and its reason; there are no open questions from a model to ask, so `An_open_question_from_the_model_is_asked_and_the_step_rerun` was not written (with an agent, the agent asks the person, as its skills say). Without `--spec`, hound says what is missing and carries on, and does not stop for a yes: nothing is proposed from the specification any more, and the tutorial's runs have none (`Without_a_spec_it_says_what_is_missing_before_starting`). Two tests were added: the steps are printed before the first question, and `--help` lists them. The scale text follows EBIOS Risk Manager's stakeholder criteria in plain words, with 0 added for dependency and penetration as CISO Assistant allows; it was not compared with a running CISO Assistant's screens here, and criticality's wording is hound's own.
+- CI (2026-11-23): run 341, started by hand on 2f82ad6 with the functional tests, passed (unit, functional, lint, CodeQL).
+
+**Order:** with s09-34; both before the next hands-on onboarding.
+
+### s09-36 Met by another system: an open state, never not applicable (added 2026-11-23)
+- [x] Done
+
+From the s09-25 Sophos run and the [agent-driven onboarding design](../design/agent-driven-onboarding.md) (decision 4).
+
+**Story:** As a GRC lead, I want a requirement another system provides to stay open until that system's audit shows it met, so that no gap shows as closed.
+
+**Acceptance criteria**
+- An applicability decision and an environment capability can be `other_system`, naming the system. It is written as `not_assessed` with an observation naming the system, never `not_applicable`, and needs no not-applicable approval.
+- `hound scope plan` lists open dependencies: each such row, the system it waits on, and whether that system has an audit and the requirement's result there.
+- `hound onboard environment` writes no row the audit's mapping computes, says which it skipped, and never overwrites collector evidence.
+- Existing not-applicable rows that name another system are reported by `hound scope validate` as `scope.other_system_as_not_applicable`, with the fix.
+
+**Tests first**
+- `ApplicabilityTests.Other_system_is_written_open_naming_the_system`
+- `ScopePlanTests.Open_dependencies_are_listed`
+- `OnboardEnvironmentTests.Rows_the_mapping_computes_are_skipped_and_named`
+- `ScopeValidatorTests.Not_applicable_naming_another_system_is_reported`
+
+**Functional check**
+- The trial repo: the Sophos firewall audit's other-system rows are reported, rewritten as open, and the plan lists them as dependencies.
+- Result (2026-11-23), in the trial repo against the local CISO Assistant: `hound scope validate scope --config hound.yaml` exited 3 with `scope.other_system_as_not_applicable` for 109 rows (82 in the organisation's audit from the capability map, 27 in the Sophos firewall audit, the 27 "another system" decisions). The rows were rewritten as `to_do` / `not_assessed` with `provided_by` (a one-off script in the trial workspace); validate then passed, `hound scope plan` planned 109 updates with no regressions and listed 116 rows under "Open dependencies", all "no audit yet" (7 rows wait on two systems); `hound scope apply` wrote 109, and a second plan was empty. In CISO Assistant the firewall audit shows 33 not applicable, 1 compliant and 126 not assessed, and the organisation's audit no longer shows the 82 rows as not applicable.
+- As built: assessments take `provided_by: [<system>]` (model, loader, `schemas/scope.schema.json`); both writers (a system's audit and the environment capability map) write such rows open; `OpenDependencies.Of` gives the plan's section and JSON `dependencies`, with the result as the scope declares it, "from collectors" when that audit's mapping computes it, or "no audit yet". Tests: `OnboardOutputTests.Decisions_become_scope_assessments_and_another_systems_row_stays_open`, `CapabilityScopeTests.Requirement_another_system_meets_stays_open_naming_that_system` (both renamed from the names earlier tasks list), `ScopeValidationTests.Not_applicable_naming_another_system_is_reported`, `ScopeValidationTests.Open_row_met_by_another_system_is_valid`, `OpenDependencyTests` (3), `OpenDependencyPlanTests` (3), `ScopeSchemaTests` now also over the onboarding tutorial's files. Skipping rows the mapping computes was already built in s09-28 (`OnboardEnvironmentTests.Requirements_the_mapping_computes_are_left_to_it_so_the_scope_validates_with_the_deployment`). The onboarding tutorial's two audit files were regenerated from its recorded answers.
+
+### s09-37 The agent interface (added 2026-11-23)
+- [x] Done
+
+Design decisions 2 and 3.
+
+**Story:** As a person driving `hound` from Claude Code or Copilot, I want commands an agent can run without prompts, so that it can draft a whole onboarding and `hound` checks every step.
+
+**Acceptance criteria**
+- `hound onboard <system> pending --json`: the undecided requirements with their text, the API summary and the skills that apply.
+- `hound onboard <system> decide <requirement> --kind <api_check|manual|not_applicable|other_system> --reasoning <text> [--source <name>]... [--other-system <name>]`: records one decision as "drafted by agent", validated as the interactive flow is.
+- `hound supplier draft` takes the supplier answers and levels as options; `--json` on `scope validate`, `scope plan` and `explain`.
+- Approvals happen in VS Code, never in CISO Assistant, and refuse an agent: everything a person must approve is a draft in config until `hound approve` (in a terminal) walks the person through each pending item in turn: not-applicable decisions, environment capabilities, supplier approval, and a supplier review's conclusion (`ok`, `warning` or `blocker`, who and when, written to the third-party file and applied by `hound scope apply`). Without a terminal, `approve` refuses. Approved items record who approved them and when.
+
+**Tests first**
+- `OnboardAgentCommandTests.Pending_lists_undecided_requirements_as_json`
+- `OnboardAgentCommandTests.Decide_records_a_draft_decision`
+- `OnboardAgentCommandTests.Not_applicable_stays_a_draft_until_approved_on_a_terminal`
+- `OnboardAgentCommandTests.Approve_without_a_terminal_is_refused`
+- `ApproveCommandTests.Walks_through_every_pending_approval_in_turn`
+- `SupplierReviewTests.Conclusion_in_config_is_applied_to_ciso_assistant`
+
+**Functional check**
+- The example API onboarded with `pending` and `decide` only, then `hound approve` on a terminal; the example supplier's review concluded in config and applied; `hound scope validate` is valid and nothing was done in CISO Assistant's UI.
+- Result (2026-11-23), in a copy of `examples/compliance-repo` with the built CLI and `HOUND_TODAY=2026-11-23`: `hound supplier draft ... --json` wrote `scope/third-parties/sup-example.yaml` (`"approved": false`); `hound onboard EXAMPLE-ASSETS pending --json --group 1 --spec examples/apis/example-asset-api.openapi.yaml --owner it@example.com --product "Example Asset API" --solution SOL-EXAMPLE-ASSETS` listed 48 requirements with the API summary and three skills (`applicability`, `essential-eight-ml2-mapping`, `reading-an-api-specification`); 48 `decide` calls drafted one not applicable, one API check and 46 manual. `printf '...' | hound approve` exited 2 with "hound approve needs a person at a terminal" and changed nothing. On a terminal, `hound approve` asked for the supplier, its review `EA-SUP-EXAMPLE-2026-12` (concluded `ok`), the not-applicable decision and the system, printed "Approved 4 of 4." and wrote the audit, `scope/setup.yaml` and the onboarding record; the supplier's file then held `status: active`, `approved_by`, `approved_on` and the conclusion with `by` and `on`. `hound scope validate scope --config hound.yaml` printed "scope valid: 1 domain(s), 3 control(s), 4 audit(s), 1 third party(ies)".
+- Against CISO Assistant: `AgentOnboardingFunctionalTests` runs the same steps, then one `hound scope apply` writes the supplier, the review with its conclusion and the system, reads the conclusion back from CISO Assistant as `ok`, and plans nothing more. It runs in CI (the `functional` job); outputs land in `test-results/agent-onboarding/`.
+- As built: `hound onboard <system> pending|decide` (`OnboardAgentCommand`) work on the same `session.json` as the interactive command; a decision carries `drafted_by`, `sources` and `approved_on`, and is a draft while no person has accepted it. The interactive `hound onboard` writes nothing from a session with drafts and points to `hound approve`. `hound supplier draft` takes each level as `--level <name>=<value>:<reason>`. `hound approve` (`ApproveCommand`) refuses unless the process's input and output are both a terminal, and walks capabilities, suppliers (draft contract to `active`, with `approved_by` and `approved_on`), open reviews, not-applicable drafts, then each drafted system. A review's conclusion is `conclusions:` under the assessment (`review`, `result`, `by`, `on`; in the loader, validator and `schemas/scope.schema.json`); the plan compares a review's `conclusion` only when the scope declares it, and the writer sends it only then. The supplier gate counts an active contract and a conclusion recorded in the scope before they are applied, and a conclusion in the scope wins over CISO Assistant's for the same review. `--json` on `scope validate` and `scope plan` is `--format json`; `explain --json` gives what code reads (counts, objects, flags, topics) and asks no model.
+- Deviations: `decide` takes `--justification` for not applicable (the interactive flow asks for it; the approver is still only a person, in `hound approve`). `pending` also starts the session, from `--owner`, `--product` and `--solution`, since nothing else could without prompts. Who concluded a review and when stay in the supplier's file; only the conclusion is sent to CISO Assistant.
+- Found by the first CI run of the functional test (2026-11-23): the plan after the apply still showed 2 updates, because the drafted supplier leaves `penetration`, `trust` and the solution's `criticality` to decide and CISO Assistant fills them with defaults. The planner now compares a supplier's levels and a solution's criticality only when the file declares them (`ScopePlanTests.Supplier_levels_the_scope_leaves_to_decide_are_left_as_ciso_assistant_holds_them`). The two functional tests that read a review by `ref_id` now pick it from the list themselves, since CISO Assistant does not filter entity assessments by `ref_id`.
+
+### s09-38 hound agent setup: skills and agent files for Claude Code and Copilot (added 2026-11-23)
+- [ ] Done
+
+Design decision 9. The person chose Claude Code and Copilot custom agents in VS Code (`.github/agents/`).
+
+**Story:** As a person using Claude Code or GitHub Copilot in VS Code, I want `hound` to set up my assistant in the compliance repo, so that it can onboard systems and suppliers, import my audit workbook and review a plan before apply.
+
+**Acceptance criteria**
+- `hound agent setup [--assistant claude|copilot|both]` asks when not given, and writes from one source of skills: Claude Code `CLAUDE.md`, `.claude/skills/<skill>/SKILL.md`, `.claude/agents/<agent>.md`; Copilot `.github/agents/<agent>.agent.md` (frontmatter `name`, `description`, `tools`, `skills`) and `.github/copilot-instructions.md`.
+- Skills: onboard a system with hound, assess a supplier, read an API specification, import an audit workbook, write a profile, review before apply. Agents: onboarding (`read`, `search`, `edit`, `execute`) and review (`read`, `search`, `execute`, no `edit`).
+- Every file starts with the rules: organisation data stays in this private repo; never open `secrets/`; never approve on the person's behalf; nothing reaches CISO Assistant except through `hound scope plan` and `apply`.
+- Files `hound` wrote carry a marker and its version; re-running updates them and leaves any other file alone. `hound init` offers setup at the end.
+
+**Tests first**
+- `AgentSetupTests.Claude_files_are_written_from_the_skill_source`
+- `AgentSetupTests.Copilot_agents_have_frontmatter_and_least_tools`
+- `AgentSetupTests.Rerun_updates_hounds_files_and_keeps_the_persons`
+- `AgentSetupTests.Every_file_starts_with_the_rules`
+
+**Functional check**
+- `hound agent setup --assistant both` in the trial repo; VS Code lists the hound agents in the Copilot agent picker and Claude Code lists the skills.
+- Result (2026-11-23), command part only, in an empty folder with the built CLI: `hound agent setup --repo <folder> --assistant both` wrote 12 files (`CLAUDE.md`, six `.claude/skills/<skill>/SKILL.md`, two `.claude/agents/*.md`, `.github/copilot-instructions.md`, two `.github/agents/*.agent.md`); a second run reported each `Unchanged`. **Still to do, by the maintainer in the trial repo:** confirm VS Code lists `hound-onboarding` and `hound-review` in the Copilot agent picker and Claude Code lists the six skills. The task stays unticked until then.
+- As built: the source is the repo's `agent/` folder (`rules.md`, `instructions.md`, `skills/`, `agents/`), embedded in hound; an agent skill names the default skills it carries with `includes:` (`AgentKit`, pure). The marker is an HTML comment after any frontmatter, with hound's version. Agents are named `hound-onboarding` and `hound-review`. Claude agents get `tools: Read, Grep, Glob, Edit, Write, Bash` (review: no `Edit`, `Write`). `hound init` asks at its end, or takes `--assistant`; `--yes` sets nothing up.
+- Deviations: Copilot alone also gets the skills, under `.github/skills/`, because its agents name them; with both, they are written once under `.claude/skills/` and hound removes its own copies from `.github/skills/`. "Every file starts with the rules" means straight after the frontmatter and the marker, since both assistants need the frontmatter first. An existing `CLAUDE.md` without the marker is kept, not merged. Extra test: `AgentSetupTests.Init_offers_the_setup_at_the_end`.
+
+### s09-39 Onboard the Sophos firewall again, driven by the agent (added 2026-11-23)
+- [ ] Done
+
+**Story:** As the maintainer, I want the whole Sophos journey done again by Claude Code with the hound skills (third parties, the system, its audit and its manual evidence), so that the agent path is proven against the s09-25 run before the built-in model goes.
+
+Needs s09-36, s09-37, s09-38, s09-41 and s09-42.
+
+**Acceptance criteria**
+- In a fresh copy of the trial repo: the agent drafts Sophos and the managed service provider as third parties (reading the vendor documents, PDFs included, and the compliance card), the firewall and its audit through `pending` and `decide`, iterates a profile until `hound profile test` passes, proposes results for the manual evidence the person drops in, and runs the review agent before proposing apply. The person approves everything with `hound approve` and `hound manual approve` in the VS Code terminal, and clicks nothing in CISO Assistant.
+- Compared with s09-25 in `docs/evidence/s09/s09-39.md`: decisions per kind, API checks found, profile rounds, flags the review raised and cleared, time taken. No organisation data.
+
+**Functional check**
+- The run itself, recorded as above.
+
+### s09-40 Remove the built-in model from hound (added 2026-11-23)
+- [ ] Done
+
+Design decision 9. Only after s09-39.
+
+**Story:** As the maintainer, I want the language model removed from `hound`, so that there are no API keys, provider SDKs or token budgets to manage, and the agent is the one way to get model help.
+
+**Acceptance criteria**
+- The Anthropic and OpenAI SDKs, the model port and adapters, `hound onboard config`, `onboarding.yaml`, the outbound guard, deny terms, token budget and request record are removed, with their tests and docs.
+- `hound onboard`, `onboard environment`, `onboard profile`, `explain` and `skill draft` keep their deterministic parts; options that only served the model are removed, with a message pointing to `hound agent setup`.
+- `docs/onboarding.md` describes the agent path; `docs/design/onboarding-assistant.md` is marked superseded by the agent-driven design.
+
+**Tests first**
+- `HoundCliTests.Onboard_config_points_to_agent_setup`
+- Existing onboarding tests pass with the model removed.
+
+**Functional check**
+- `make test`, `make lint` and the example tutorial pass; `dotnet list package` shows neither SDK.
+- Result (2026-11-23): `dotnet test` on the unit and contract projects passed (1265 tests; the 27 functional tests need Docker and run in the functional job or the dev container); `dotnet format --verify-no-changes --no-restore` printed nothing; `dotnet list package --include-transitive` names neither SDK, and the built CLI's folder holds neither assembly; the example tutorial's answers run through `TutorialTests` in the unit suite and pass. With the built CLI: `hound onboard config --provider anthropic` answered "hound no longer has a built-in model. For model help, set up your coding assistant with 'hound agent setup' and ask it: it drafts through hound, and you approve." and exited 2; `hound onboard --help` and `hound explain --help` list no model options. **Still to do:** ShellCheck (`make lint`'s other half) and the functional tests run in CI; the task stays unticked until those pass and the maintainer has tried it in the trial repo.
+- Result (2026-11-23), CI started by hand on the branch at commit 072ce07: every job passed, the functional tests and ShellCheck among them. Still unticked until the maintainer has tried it in the trial repo.
+- As built: `Models/`, `Guard/`, `Configuration/`, the capability and profile drafting, `onboarding/models.yaml` and the recorded model fixtures are gone from `EvidenceHound.Onboarding`, with their tests. `Retired` (CLI) keeps each removed option as a hidden option that does nothing and prints where model help now comes from. `hound onboard` asks its questions and proposes nothing: applicability starts empty and supplier levels are left "to decide". `hound onboard profile` checks a profile that already exists (validate, sample, confirm, write its test) and no longer drafts one. `hound explain` prints the facts of a plan without a summary. `hound skill draft` writes the organisation skill templates and keeps any skill file already there.
+- Deviations: started before s09-39 at the maintainer's request (2026-11-23), who will test s09-39 to s09-42 together. Options that only served the model (`--no-model`, `--show-requests`, `--config`, `--rounds`, `--deny-terms`, `--framework` and `--skill` on explain, `--repo` on skill draft) are hidden and accepted with a note, not rejected, so scripts and the tutorial's commands keep working; `hound onboard config` itself exits 2 with the message. `hound skill validate` no longer warns about sensitive content, since nothing leaves the machine. The runner still refuses an `llm` block in `hound.yaml`; its hint now points to `hound agent setup`.
+
+
+### s09-41 Agent-driven onboarding of the organisation, environment, third parties and audits (added 2026-11-23)
+- [ ] Done
+
+Design decision 5. Uses the agent interface (s09-37) and ships with `hound agent setup` (s09-38).
+
+**Story:** As a small business owner with Claude Code or Copilot, I want my agent to onboard everything (my organisation, the environment, suppliers, resellers and managed service providers, systems and audits, including my existing audit workbook), so that I review and approve in VS Code rather than build it by hand.
+
+**Acceptance criteria**
+- Agent commands, non-interactive with `--json`, for each: `hound init` with every answer as an option; `hound onboard environment` capabilities through `pending` and `decide`; `hound supplier draft` (vendor, reseller or managed service provider, solutions, contract, levels with reasons, kept documents); `hound audit draft` (framework, groups, domain, perimeter, systems); `hound scope import <workbook>` for an existing audit (requirement, result, observation, evidence reference, approver and date), keeping each row's provenance and leaving rows without an approver as drafts.
+- A skill for each, in the one skill source: onboard the organisation, onboard the environment, onboard a third party, onboard an audit, import an audit workbook. Each tells the agent to read the person's documents itself (PDFs included), to ask the person what only they know, and never to approve.
+- Everything drafted is approved through `hound approve` (s09-37).
+
+**Tests first**
+- `InitCommandTests.Every_answer_can_be_given_as_an_option`
+- `SupplierDraftCommandTests.Reseller_and_msp_are_drafted_as_their_own_third_parties`
+- `AuditDraftCommandTests.Audit_is_drafted_for_the_named_systems`
+- `ScopeImportTests.Workbook_rows_keep_their_approver_and_row`
+- `ScopeImportTests.Row_without_an_approver_is_a_draft`
+- `AgentSkillTests.Every_onboarding_kind_has_a_skill`
+
+**Functional check**
+- A fictional audit workbook (in `examples/`) imported into a copy of the example repo by Claude Code with the skills; `hound approve` on the drafts; `hound scope validate` is valid and the plan shows each imported row with its provenance.
+- Result (2026-11-23), with the built CLI in a copy of `examples/compliance-repo`: `hound scope import examples/workbooks/example-audit-workbook.csv --repo <copy> --audit EX-E8-2026` answered "2 row(s) imported with the workbook's approver, 1 drafted for 'hound approve' (1 waiting in all), 0 already in the audit, 1 not assessed and left out" and listed row 6 (`EX-0001`) as not a requirement of the framework; `hound scope validate` answered "scope valid: 1 domain(s), 3 control(s), 3 audit(s)"; the audit holds ISM-1807 and ISM-1808 ending "Imported from example-audit-workbook.csv, row 2, approved by Sam Example on 2026-05-01."; `hound approve` run from the agent's shell refused ("needs a person at a terminal"). **Still to do:** the approve step and the plan against CISO Assistant are in `WorkbookImportFunctionalTests` (functional job, started by hand or in the dev container); the task stays unticked until that passes, and until the import is driven once by Claude Code with the skills.
+- Result (2026-11-23), functional job started by hand on the branch at commit 4e64bf0: all functional tests passed, `WorkbookImportFunctionalTests` among them. Still unticked until the import is driven once by Claude Code with the skills.
+- As built: `hound onboard environment pending|decide` (`OnboardEnvironmentAgent`) write `scope/capabilities.yaml` with no approver; `hound supplier draft` takes `--kind vendor|reseller|msp`, `--for <vendor>` and `--document <path>` (recorded with its SHA-256); `hound audit draft` (`AuditCommands`) writes `onboarding/drafts/audits/<ref>.yaml`; `hound scope import` (`ScopeImportCommand`, with `Workbook` and `WorkbookImport` in `EvidenceHound.Onboarding.Workbooks`, pure) reads `.csv` and `.xlsx` without a spreadsheet library; `hound init` takes `--json`. `hound approve` now also walks drafted audits and imported rows. Skills added to `agent/skills/`: onboard-the-organisation, onboard-the-environment, onboard-a-third-party, onboard-an-audit; import-an-audit-workbook now drives `hound scope import`.
+- Deviations: an imported row's provenance (workbook, row, approver, date) is carried in the row's observation, since an audit assessment has no other field CISO Assistant keeps; the workbook's evidence reference is quoted there too, and no evidence file is imported. Rows marked not assessed are left out. The reseller or provider relation is the third party's description plus the system's existing `supplied_through`. Extra tests: `OnboardEnvironmentTests.Agent_decides_capabilities_through_pending_and_decide`, `ScopeImportTests.Columns_can_be_named_and_an_excel_workbook_is_read`.
+
+### s09-42 Manual evidence with the agent: propose, then attest in the terminal (added 2026-11-23)
+- [ ] Done
+
+Design decision 10, and the reworded rule: no model in collection, and no evidence without a person.
+
+**Story:** As a GRC lead, I want my agent to read each manual evidence file as it arrives and propose the result, so that I attest a queue of ready proposals in the VS Code terminal instead of assessing each file from scratch.
+
+**Acceptance criteria**
+- `hound manual propose <source> <file> --result <pass|fail|partial> --observation <text> --supports <extract or location>... [--json]` records a pending proposal next to the kept file (hashed); it is not evidence and no run publishes it.
+- `hound manual approve [--source <source>]` walks through every pending proposal on a terminal: the file, the agent's result, observation and supporting extracts; the person attests (`a`), changes the result or observation, or rejects with a reason. Without a terminal it refuses.
+- `hound run` publishes attested results only, recorded as "proposed by agent, attested by <person> on <date>" with the file attached and its hash; a result the person entered without a proposal reads as today.
+- A skill, process manual evidence, tells the agent to propose only from what the file shows, quote what supports it, say what is missing, and never attest.
+- `docs/engineering.md` and the onboarding docs state the reworded rule.
+
+**Tests first**
+- `ManualProposeTests.Proposal_is_pending_and_not_published`
+- `ManualApproveTests.Walks_through_pending_proposals_and_records_the_attester`
+- `ManualApproveTests.Refuses_without_a_terminal`
+- `ManualCollectorTests.Only_attested_results_are_published`
+
+**Functional check**
+- In the trial repo: a restore-test record dropped in, a proposal recorded by the agent, attested with `hound manual approve`, and `hound run --only example-backup-restore-test` publishing it with the attestation line.
+- Result (2026-11-23), with the built CLI in a copy of `examples/`: `hound manual propose example-backup-restore-test restore-test-2026-11.txt --config examples/example-essential-eight.yaml --result pass --observation "..." --supports "Restored: 3 files to a scratch folder, hashes match" --supports "Result: success, 14 minutes" --json` answered `"pending": true` with the file's SHA-256 and left `restore-test-2026-11.txt` and `restore-test-2026-11.txt.proposal.yaml` in the drop folder; `hound manual approve` run from the agent's shell refused ("needs a person at a terminal", exit 2); `hound run --only example-backup-restore-test --no-publish` stored the file alone as evidence, not the proposal. **Still to do, by a person:** attest with `hound manual approve` in a terminal and publish with `hound run` in the trial repo (part of s09-39). The task stays unticked until then; the walk itself is covered by `ManualApproveTests` with a terminal stood in.
+- As built: `Proposal` (`<file>.proposal.yaml`: `proposed_by`, `proposed`, `file_sha256`, `outcomes`, `observation`, `supports`, and `rejected_by`, `rejected`, `rejection_reason` once rejected) beside `Attestation`, which gains `proposed_by` and `file_sha256`; `ManualSource.Accepts` leaves proposals out, so a run neither stores nor publishes one; `ManualAssessment` writes "Proposed by agent, attested <outcome> by <person> on <date>: <file> (sha256 <12>)." and reports `partial` when the file's hash no longer matches its attestation. `hound manual propose` and `hound manual approve` are in `ManualProposalCommands`. Skill `process-manual-evidence` in `agent/skills/`, listed on the onboarding agent; the shared rules now name `hound manual approve` and `.attest.yaml`.
+- Deviations: `--check <check id>=<result>` gives one check a different result from `--result` (a source can have several checks). `hound manual approve` takes `--config`, as `hound manual upload` does, and has a stop answer (`s`). A proposal is refused when the file is already attested, and is skipped in the walk when the file changed after it was proposed. Extra tests: `AgentSkillTests.Manual_evidence_skill_proposes_from_the_file_and_never_attests`.
+
+### s09-43 hound init's compliance owner defaults to the accountable executive (added 2026-11-23)
+- [x] Done
+
+Found while resetting the trial for s09-34 to s09-42. The compliance owner default was `it@example.com`, the fictional IT person who owns systems. Compliance is owned by the accountable executive, `ceo@example.com` in the fictional organisation (the dev seed creates both users).
+
+**Story:** As a GRC lead trying hound, I want `hound init`'s compliance owner to default to the accountable executive, so that pressing Enter gives the health control the right owner and not the IT person.
+
+**Acceptance criteria**
+- `hound init` asks "Compliance owner's email, as a CISO Assistant user [ceo@example.com]"; `--yes` without `--owner` writes `owner: ceo@example.com` on the health control.
+- `--owner` and the `--help` text say the same default; `docs/guided-setup.md` lists it.
+
+**Tests first**
+- `InitCommandTests.Compliance_owner_defaults_to_the_accountable_executive`
+
+**Functional check**
+- `make run ARGS="init <temp folder> --yes"`, then `scope/controls.yaml` shows `owner: ceo@example.com` and `hound scope validate` passes.
+- Result (2026-11-23): `make run ARGS="init <scratch>/init-check --yes"` wrote 8 files and audit EX-E8-2027; `scope/controls.yaml` has `owner: ceo@example.com`; `hound scope validate` answered "scope valid: 1 domain(s), 1 control(s), 1 audit(s)" (exit 0); `hound init --help` says "Default: ceo@example.com." for `--owner`.
+- As built: `DefaultOwner` in `InitCommand` and the table in `docs/guided-setup.md`. The trial's own `hound add` steps still name `it@example.com` as the system and control owner, which is right for those.
+
+### s09-45 The trial hands the Sophos perimeter firewall to the agent (added 2026-11-23)
+- [x] Done
+
+Numbered s09-44 in its commits by mistake (that number is the Microsoft 365 dev server); renumbered the same day.
+
+At the maintainer's request (2026-11-23): the trial focuses on the Sophos perimeter firewall, and s09-39 has the agent onboard it. Step 5 added an example backup service, a backup control and a restore-test manual source, which the agent path does not use.
+
+**Story:** As the maintainer, I want `make trial` to set up my coding agent in the trial repo and tell me what to ask it, so that the agent onboards the Sophos perimeter firewall and the script does not do that work for it.
+
+**Acceptance criteria**
+- Step 5 no longer adds the example backup service, the AC-BACKUP control or the restore-test manual source.
+- Step 5 runs `hound agent setup --assistant both` in the trial repo and links `.dev/trial/bin/hound`, a wrapper that runs the trial's runner image in the folder it is called from inside the workspace (refusing a folder outside it), so the agent's `hound` commands reach the trial's CISO Assistant with the trial's token.
+- It prints how to start the agent in the trial repo with the wrapper on `PATH`, and what to ask: onboard the Sophos perimeter firewall (Sophos and the managed service provider as third parties, the system, its audit and its manual evidence) for the trial's audit, approving with `hound approve` and `hound manual approve` in a terminal.
+- Unattended (`HOUND_TRIAL_YES=1`) it does the same and does not stop. Steps 6 and 7 are unchanged. `docs/tutorials/local-trial.md` describes the new step.
+
+**Tests first**
+- `trial.bats`: "the agent hand-over names the Sophos perimeter firewall, the audit and approval in a terminal"
+- `trial.bats`: "hound for the agent runs in the folder it is called from, inside the trial workspace only"
+- `trial.bats`: "the trial adds no example system, control or manual source of its own"
+
+**Functional check**
+- `HOUND_TRIAL_YES=1 make trial` against the dev container's CISO Assistant: step 5 writes the agent files and the wrapper and prints the hand-over; `.dev/trial/bin/hound scope validate scope --config hound.yaml` run from `.dev/trial/repo` passes.
+- Result (2026-11-23), in a scratch trial workspace (`HOUND_TRIAL_DIR`, `ca-mode` bundled, the trial token) so the maintainer's freshly reset CISO Assistant was not written to: with `bin/hound` on `PATH`, `hound init . --yes` and `hound agent setup --assistant both` from `repo/` wrote the repo and the agent files (`CLAUDE.md`, `.claude/`, `.github/`); `hound scope validate scope --config hound.yaml` answered "scope valid: 1 domain(s), 1 control(s), 1 audit(s)" from `repo/` and from `repo/scope` (`.` with `../hound.yaml`); `hound scope plan` read the bundled CISO Assistant with the trial token (every request HTTP 200); from `/tmp` the wrapper refused with exit 2. The full unattended trial runs in CI (`trial` job). `bats scripts/tests`: 52 ok; ShellCheck clean.
+- As built: `trial_hound_argv_in`, `trial_workdir` and `trial_agent_brief` in `scripts/lib/trial.sh` (`trial_hound_argv` calls `trial_hound_argv_in /trial/repo`); `scripts/trial-hound.sh`, linked as `.dev/trial/bin/hound`, gives the container a terminal when it has one, so `hound approve` works through it. Step 5 is `agent` in `scripts/trial.sh`; the workspace gains `specs/` and `bin/`.
+- Full trial (2026-11-23), against the dev container's CISO Assistant after clearing the old trial's objects: `HOUND_TRIAL_YES=1 make trial` exit 0 through step 5 (init with owner `ceo@example.com`, scope applied, 17 agent files written, wrapper linked, hand-over printed); a second run applied 0 changes. From `.dev/trial/repo` with `bin` on `PATH`: `hound scope validate --json` answered `[]`; `hound approve` and `hound manual approve` refused without a terminal (exit 2). Step 6 with the maintainer's saved read-only Sophos Central credential, given as options (`--secret-file client_secret=…`, `--yes`): `config validate --check-secrets` valid, dry run succeeded (3 planned), run succeeded (3 sent, 2 checks passed), and `sophos/firewalls.json`, `admins.json`, `roles.json` and the health record are in CISO Assistant; ISM-1501 stays not assessed until the Microsoft 365 check runs, as the step says. Step 7 not run (no tenant; waits on s09-44). The agent's onboarding itself is s09-39, by the maintainer.
+- Deviation: the agent can only reach files under `.dev/trial`, so the hand-over asks for the specification in `specs/` and the vendor documents in `inbox/`; an absolute path outside the workspace in a `hound` argument does not resolve in the container.
+
+### s09-46 One ref ID pattern for audit periods: organisation, framework, interval, financial year, system (added 2026-11-23)
+- [x] Done
+
+At the maintainer's request (2026-11-23): every audit reads `<ORG>-<FRAMEWORK>-<INTERVAL>-<YEAR>FY[-<SYSTEM>]`, such as `EX-E8-Q1-2027FY-SOPHOS-NETWORK`. The interval is a quarter of the financial year (`Q1` is July to September) or a calendar month (`M07` is July). The year is the financial year, named by the year it ends (`2027FY` runs from 1 July 2026 to 30 June 2027). The framework part is its code only (`E8`); the maturity level stays in the audit's name and groups. The system part is the system's ref ID without `SYS-`.
+
+**Story:** As a GRC lead, I want every audit period's ref ID to say whose audit it is, of what, for which quarter or month of which financial year, and for which system, so that audits sort together and read the same way in every report.
+
+**Acceptance criteria**
+- An audit series' `ref_id` is `<ORG>-<FRAMEWORK>[-<SYSTEM>]`; each period's ref ID puts its label after the first two parts: `EX-E8` gives `EX-E8-Q1-2027FY`, `EX-E8-SOPHOS-NETWORK` gives `EX-E8-Q1-2027FY-SOPHOS-NETWORK`.
+- Quarter labels are `Q1` to `Q4` of the financial year (1 July to 30 June) with `-<end year>FY`; month labels are `M01` to `M12`, the calendar month, with the same year: July 2026 is `M07-2027FY`, February 2027 is `M02-2027FY`.
+- A cycle's `period` is `month` or `quarter`; `half_year` and `year` are refused. A quarterly cycle starts on the first day of a financial-year quarter (1 July, 1 October, 1 January or 1 April); otherwise `scope.cycle_start_invalid`.
+- Sign-offs name periods by the new labels (`{period: Q1-2027FY, …}`). `docs/scope.md` describes the pattern.
+
+**Tests first**
+- `PeriodTests.Quarter_of_date_and_period_ref_id` (new cases), `PeriodTests.System_part_follows_the_period`
+- `ScopeValidationTests.Cycle_and_sign_off_problems_are_reported` (half year, year, a quarter starting off a financial-year quarter)
+
+**Functional check**
+- `hound scope plan` on a copy of the example scope with a quarterly cycle starting 2026-07-01, as of `HOUND_TODAY=2026-11-23`, lists `EX-E8-Q1-2027FY` (closes) and `EX-E8-Q2-2027FY` (opens).
+- Result (2026-11-23): in a scratch copy of `examples/` with `ex-e8-2026.yaml` changed to `ref_id: EX-E8` and `cycle: {period: quarter, starts: "2026-07-01"}` (and the config's target to `EX-E8`), `HOUND_TODAY=2026-11-23 hound scope validate` answered "scope valid: 1 domain(s), 3 control(s), 3 audit(s)", and `hound scope plan` against the dev container's CISO Assistant listed `Create | audit | EX-E8-Q1-2027FY` (eta 2026-09-30, `in_review`) and `Create | audit | EX-E8-Q2-2027FY` (eta 2026-12-31, `in_progress`, baseline `EX-E8-Q1-2027FY`), with the target's rows under `EX-E8-Q2-2027FY/…`. Unit suite 1312 passed; lint clean.
+- As built: `AuditPeriod.RefId` splits the series into organisation, framework and the rest, and puts the label between them; `AuditPeriods.Label` counts quarters from July and names the year by its end; `AuditPeriods.Lengths` is `month, quarter`, which `ScopeLoader` and the schema use; `AuditPeriods.StartsOnItsUnit` backs `scope.cycle_start_invalid`. `docs/scope.md` (Audit periods) and `schemas/scope.schema.json` describe the pattern.
+- Deviation: `ScopePeriods.Notes` sorted periods by ref ID, which no longer sorts by date once the quarter leads (`Q1-2027FY` before `Q4-2026FY`); it now sorts by the period's end. The tests that held old labels as plain strings (client, contract, parse, plan and functional tests) were moved to the new form, so the repo shows one pattern.
+
+### s09-47 hound init writes a quarterly audit series (added 2026-11-23)
+- [x] Done
+
+**Story:** As a GRC lead starting with hound, I want `hound init` to write the organisation's audit as a quarterly series `<CODE>-E8`, so that its periods follow the s09-46 pattern from the first day.
+
+**Acceptance criteria**
+- `hound init` writes `ref_id: <CODE>-E8` with `cycle: {period: quarter, starts: <first day of the financial-year quarter holding today>}`, named `Essential Eight ML<level>` (each period's name ends with its label), and the config's target names that series. It asks for the interval (`quarter` or `month`, default `quarter`) in place of the due date; `--interval` gives it, and `--due` is accepted with a note and ignored (each period's ETA is its last day).
+- The trial, the agent skill that runs `hound init`, and the docs that describe it use the pattern.
+
+**Tests first**
+- `InitCommandTests.Writes_a_quarterly_series_starting_this_financial_year_quarter`
+- `InitCommandTests.A_monthly_series_starts_this_month`
+- `InitCommandTests.An_interval_other_than_month_or_quarter_is_refused`
+
+**Functional check**
+- `hound init <folder> --yes` as of `HOUND_TODAY=2026-11-23`, then `hound scope plan` names `EX-E8-Q2-2027FY`.
+- Result (2026-11-23): `HOUND_TODAY=2026-11-23 hound init <scratch>/s0947 --yes` wrote 8 files, "audit EX-E8"; `scope/audits/ex-e8.yaml` has `ref_id: EX-E8`, `name: Essential Eight ML2`, `cycle: {period: quarter, starts: "2026-10-01"}`, and `hound.yaml` targets `EX-E8`. `hound scope plan` against the dev container's CISO Assistant listed `Create | audit | EX-E8-Q2-2027FY` (name "Essential Eight ML2 Q2-2027FY") and, under Audit periods, `EX-E8-Q2-2027FY | opens`. Unit suite 1315 passed; script tests and lint clean.
+- As built: `NewOrganisation` carries `Interval` and `Starts` in place of `DueDate`; `AuditRef` is `<CODE>-E8`; `InitCommand.FirstDay` finds the month, or the financial-year quarter, holding today (`HOUND_TODAY` sets today). The skill `onboard-the-organisation`, `docs/guided-setup.md`, `docs/onboarding.md`, the ref ID conventions in `docs/scope.md` and the trial guide say `--interval`.
+- Deviation: the fictional example repo (`examples/compliance-repo`, audits `EX-E8-2026`, `EX-ESSENTIALS-2026`, `EXAMPLE-BASELINE-2026`) keeps audits without a cycle; moving it to series touches the example run, its mappings' targets and many tests that use those ref IDs as fixtures. Listed under Discovered work.
+
+### s09-48 hound onboard writes the system's audit as a series of the organisation's audit (added 2026-11-23)
+- [x] Done
+
+**Story:** As a GRC lead onboarding a system, I want the system's audit to be `<ORG>-<FRAMEWORK>-<SYSTEM>` on the organisation audit's cycle, so that the firewall's audit for a quarter is `EX-E8-Q1-2027FY-SOPHOS-NETWORK`, next to `EX-E8-Q1-2027FY`.
+
+**Acceptance criteria**
+- `hound onboard` writes `ref_id: <organisation series>-<system ref ID without SYS->` with the organisation series' cycle; with no series in the repo it keeps `<SYSTEM>-<FRAMEWORK>` without a cycle and says so.
+- The agent skills and onboarding docs name the pattern.
+
+**Tests first**
+- `OnboardOutputTests.System_audit_is_a_series_of_the_organisation_audit`
+
+**Functional check**
+- In a scratch copy of the trial repo, `hound onboard <system> pending` and `decide` for one requirement, then `hound scope plan` names `EX-E8-Q2-2027FY-<SYSTEM>`.
+- Result (2026-11-23): in a scratch copy of `examples/compliance-repo` with `ex-e8-2026.yaml` made the series `EX-E8` (quarterly from 2026-07-01), `hound onboard OFFICE-FIREWALL --repo <copy> --group 1 --group 2` with the tutorial's recorded answers (`examples/onboarding-tutorial/answers/office-firewall.*.txt`, the tutorial's `sup-sophos.yaml` standing in for the person's review) said "The system's audit is EX-E8-OFFICE-FIREWALL, a series of EX-E8 by quarter." and wrote `ref_id: "EX-E8-OFFICE-FIREWALL"` with `cycle: {period: quarter, starts: "2026-07-01"}`, and `ref_id: SYS-OFFICE-FIREWALL` on the system. `scope validate` passed. `scope plan` first stopped at the supplier gate (no concluded review, as it should); with a conclusion written in the copy as `hound approve` writes it, the plan against the dev container's CISO Assistant (`HOUND_TODAY=2026-11-23`) listed `EX-E8-Q1-2027FY`, `EX-E8-Q2-2027FY`, `EX-E8-Q1-2027FY-OFFICE-FIREWALL` and `EX-E8-Q2-2027FY-OFFICE-FIREWALL`, and under Audit periods the Q1 pair closing and the Q2 pair opening, each from its own Q1. Unit suite 1317 passed; lint and script tests clean.
+- As built: `AuditPlace` gains `Series` (`OrganisationSeries`: ref ID, period, start) and `SystemRefId`; `OnboardOutput.SeriesRefId` drops `SYS-`; `OnboardSystemCommand.OrganisationSeriesAsync` takes the scope's one two-part series, or the one `hound.yaml` targets. A system that onboarding declares now carries `ref_id` (`RefIds.Suggest`, as `hound add system` defaults it), so `examples/onboarding-tutorial/scope/setup.yaml` gains `SYS-GRC-PLATFORM` and `SYS-OFFICE-FIREWALL`. The skill `onboard-a-system-with-hound` and `docs/onboarding.md` describe the name.
+
+### s09-49 hound status shows the audit period a series target publishes to (added 2026-11-23)
+- [x] Done
+
+Found in the trial after s09-47: `hound run` published to `EX-E8-Q2-2027FY`, and `hound status` listed `EX-E8  never run`, looking the series up in the run history by its own ref ID.
+
+**Story:** As a GRC lead, I want `hound status` to show the open period's last run when the config targets an audit series, so that status says what the run just did.
+
+**Acceptance criteria**
+- With a target naming a series, `hound status` shows the period open today (`HOUND_TODAY` sets today) with its last run from the history, as `hound run` resolves it.
+- A target naming an audit without a cycle shows as before.
+
+**Tests first**
+- `StatusCommandTests.A_series_target_shows_the_period_open_today`
+
+**Functional check**
+- In the trial repo after a Sophos run: `hound status --config hound.yaml` lists `EX-E8-Q2-2027FY` with the run's ID.
+- Result (2026-11-23): after rebuilding the trial image, `.dev/trial/bin/hound status --config hound.yaml` from `.dev/trial/repo` listed `EX-E8-Q2-2027FY  2026-11-23 11:32:16  20261123T113216Z  0  0  0` (before the fix: `EX-E8  never run`). Unit suite 1318 passed; lint clean.
+- As built: `StatusCommand` takes the configuration and resolves the loaded config with `AuditSeries.ResolveAsync` before reading the history, as `hound run` does.
+
+Trial after s09-46 to s09-49 (2026-11-23), against the dev container's CISO Assistant cleared again of the trial's objects and with the example scope re-applied: `HOUND_TRIAL_YES=1 make trial` wrote "audit EX-E8" (`cycle: {period: quarter, starts: "2026-10-01"}`) and applied `EX-E8-Q2-2027FY` ("Essential Eight ML2 Q2-2027FY", in progress, ETA 2026-12-31); the Sophos collector with the maintainer's saved read-only credential published 3 items to `EX-E8-Q2-2027FY`, 0 failed.
+
+### s09-50 The dev container no longer applies the example scope on start (added 2026-11-23)
+- [x] Done
+
+At the maintainer's request (2026-11-23): the example audits (`EX-E8-2026`, `EX-ESSENTIALS-2026`, `EXAMPLE-BASELINE-2026`) and the example's systems, controls and documents sat in the same Example Pty Ltd domain as the trial's, and came back on every container start.
+
+**Story:** As the maintainer, I want the dev container's CISO Assistant to hold only what I apply, so that the trial's audits are the only ones I see.
+
+**Acceptance criteria**
+- The dev container's `postStartCommand` copies the token (`scripts/dev-ca-env.sh`) and no longer runs `scripts/ca-apply-scope.sh`. `make ca-up` and `scripts/check-scope-plans.sh` still apply the example scope.
+- `README.md` says the example scope is applied on demand.
+
+**Tests first**
+- `devcontainer-compose.bats`: "on start the dev container copies the token and applies no scope"
+
+**Functional check**
+- The example objects removed from the dev container's CISO Assistant, the trial's scope and Sophos run applied again; the audits list holds only `EX-E8-Q2-2027FY`.
+- Result (2026-11-23): through the API, the Example Pty Ltd domain folder, the evidence in Global and the example-only libraries (example baseline, loaded and stored; ASD Essentials, loaded) were removed. `HOUND_TRIAL_YES=1 make trial` applied the trial's scope again and the Sophos run published 3 items, 0 failed, to `EX-E8-Q2-2027FY`. CISO Assistant then held one audit (`EX-E8-Q2-2027FY`, "Essential Eight ML2 Q2-2027FY", in progress), one applied control (AC-AUTO-EVIDENCE), no assets, and the four Sophos evidence items. `bats scripts/tests` all ok.
+- As built: `postStartCommand` runs `scripts/dev-ca-env.sh` only; `README.md` says to run `scripts/ca-apply-scope.sh` for the example. The change takes effect the next time the dev container starts.
+### s09-51 The trial onboards in order: organisation, third parties, system, its audit, controls, evidence (added 2026-11-23)
+- [x] Done
+
+At the maintainer's request (2026-11-23): the trial should follow the onboarding order as a guided, interactive tutorial. Each stage says what it is, prints what to ask the coding agent (and the skill it uses), waits, checks the draft with `hound`, has the person approve in the terminal where one is needed, then validates, plans and applies, and says what to look at in CISO Assistant. Unattended (`HOUND_TRIAL_YES=1`, CI) each stage replays committed fictional answers instead, through the same commands an agent uses; a committed approved file stands in for `hound approve`, which refuses without a person at a terminal.
+
+**Story:** As a GRC lead trying hound, I want the trial to take me through the organisation, its third parties, the system, the system's audit, its controls and its evidence collectors in that order, so that I learn the onboarding as I will do it.
+
+**Acceptance criteria**
+- Stages after the workspace: 4 organisation (`hound init`, `hound agent setup`, the `bin/hound` wrapper); 5 third parties (Sophos and a fictional managed service provider; `hound approve`); 6 the system (`SOPHOS-NETWORK`: `hound onboard … pending` starts its session); 7 its audit (one decision per requirement, review, `hound approve` writes the system and `<series>-SOPHOS-NETWORK`); 8 controls (`hound add control … --audit <series>-SOPHOS-NETWORK`); 9 evidence collectors (Sophos Central, as before); 10 Microsoft 365 (as before).
+- Each agent stage prints the request and the skills, and waits until its check passes (or the person stops); a finished stage is skipped on the next run.
+- Unattended, stages 5 to 8 replay `examples/trial/` (approved third-party files) and `examples/onboarding-tutorial/answers/office-firewall.decisions.txt` and apply each stage; a second run applies nothing new. The old backup example stays out.
+- `docs/tutorials/local-trial.md` describes the stages.
+
+**Tests first**
+- `trial.bats`: "each agent stage's request names what to draft, the skills and the person's part"
+- `trial.bats`: "a stage is ready once its draft is in the repo"
+- `trial.bats`: "the unattended replay uses committed fictional files" (replaces "the trial adds no example system, control or manual source of its own", whose `add control` clause the new controls stage supersedes)
+
+**Functional check**
+- `HOUND_TRIAL_YES=1 make trial` twice against the dev container's CISO Assistant, cleared of the trial: the first run applies every stage, the second applies nothing; CISO Assistant holds `EX-E8-Q2-2027FY`, `EX-E8-Q2-2027FY-SOPHOS-NETWORK`, the two third parties and AC-EXTERNAL-SCAN.
+- Result (2026-11-23): with the trial's objects cleared from the dev container's CISO Assistant and a fresh workspace, `HOUND_TRIAL_YES=1 make trial` exit 0, then again exit 0: the second run skipped stages 5 to 8 ("Done already") and its apply wrote 0. CISO Assistant then held the audits `EX-E8-Q2-2027FY` and `EX-E8-Q2-2027FY-SOPHOS-NETWORK` (both in progress), the entities SUP-SOPHOS and SUP-EXAMPLE-MSP with their solutions, contracts and reviews (EA-SUP-SOPHOS-2026-12, EA-SUP-EXAMPLE-MSP-2026-12), the asset SYS-SOPHOS-NETWORK, and the controls AC-AUTO-EVIDENCE and AC-EXTERNAL-SCAN. `bats scripts/tests` all ok; ShellCheck clean; unit suite passed. The interactive agent path itself is s09-39, by the maintainer.
+- As built: `trial_brief` and `trial_stage_ready` in `scripts/lib/trial.sh`; in `scripts/trial.sh`, `agent_setup` (now part of step 4) and one `stage` runner with a replay per stage. `examples/trial/` holds the approved supplier files and a README; the decisions are the onboarding tutorial's. The first run found that the replay redirected the answers from a container path; they are read on the host and reach the container on standard input.
+- Deviations: the environment (which system provides each mitigation) is not a stage, as the maintainer's order leaves it out; the system and its audit are written together when the person approves the session, as `hound approve` does, so stage 6 starts the session and stage 7 applies both. Manual evidence is not a stage yet (Discovered work).
+
+### s09-52 The Microsoft 365 collector reads the dev server without signing in, on loopback only (added 2026-11-23)
+- [x] Done
+
+At the maintainer's request (2026-11-23), so the trial's Microsoft 365 step can run against the s09-44 dev server: the collector always signs in at Microsoft (Azure.Identity), and the dev server answers Graph only.
+
+**Story:** As the maintainer without a test tenant, I want the m365 collector to read the dev server with no sign-in, and never to skip sign-in for real Graph, so that the trial runs end to end offline and safely.
+
+**Acceptance criteria**
+- A setting `sign_in`: `app` (the default, the app registration's certificate or secret) or `none`, which sends a fixed placeholder token and asks for no credential.
+- `none` is accepted only when `graph_url` is `http` or `https` on `localhost`, `127.0.0.1` or `[::1]`; any other address, the default included, is refused (`m365.sign_in_not_loopback`), as is any other value.
+- Collection and the environment lookup both honour it. `docs/collectors/m365.md` and the dev server guide describe it.
+
+**Tests first**
+- `M365SignInTests.Without_sign_in_the_collector_reads_the_dev_server_and_asks_for_no_credential`
+- `M365SignInTests.Without_sign_in_is_refused_for_an_address_that_is_not_loopback`
+- `M365SignInTests.Sign_in_is_app_or_none`
+
+**Functional check**
+- `make m365-dev` in one terminal; a config with the server's printed settings, `graph_url: http://localhost:5365/` and `sign_in: none`; `hound run --only m365 --no-publish` reports 11 checks passed.
+- Result (2026-11-23): `make m365-dev` (compliant) printed the tenant's settings; in a scratch `hound init` repo, `hound add collector m365 --yes` with those settings, `graph_url=http://localhost:5365/` and `sign_in=none` (no certificate or secret), then `HOUND_TODAY=2026-11-23 hound run --config hound.yaml --only m365 --no-publish`: m365 succeeded, `hound status` "11 passed, 0 failed". With `graph_url` changed to `https://graph.microsoft.com/`, the run failed before any request with `m365.sign_in_not_loopback`. Unit suite 1341 passed; lint clean.
+- As built: `M365Settings.SignIn` and `M365Options.SignIn` (`app` or `none`, loopback rule in `FromSettings`); `GraphSignIn.For` chooses the app registration's credential or a placeholder token, for both `M365Collector` and `EnvironmentLookup`. The collector description lists `sign_in`, so `hound collectors` and `hound add collector` show it (`CollectorsCommandTests` lists it too).
+
+### s09-53 The trial's Microsoft 365 step runs against the dev server (added 2026-11-23)
+- [x] Done
+
+**Story:** As a GRC lead trying hound without a Microsoft 365 tenant, I want the trial's step 10 to start the fictional tenant and collect from it, so that I see Microsoft 365 checks reach CISO Assistant, with a real test tenant as the option.
+
+**Acceptance criteria**
+- Step 10 offers the dev server first (`compliant` or `gaps`); it starts `make m365-dev` in the background, adds the m365 collector with the server's settings, `graph_url` and `sign_in: none`, dry-runs and, after asking, publishes, then stops the server. A real test tenant stays the other choice, as before.
+- Unattended, step 10 runs against the `compliant` tenant and publishes; a second run publishes again without adding the collector twice.
+- `docs/tutorials/local-trial.md` section 10 describes both.
+
+**Tests first**
+- `trial.bats`: "the dev server collector is added with its settings and no sign-in"
+
+**Functional check**
+- `HOUND_TRIAL_YES=1 make trial` against the dev container's CISO Assistant: step 10 publishes 11 Microsoft 365 checks to `EX-E8-Q2-2027FY`.
+- Result (2026-11-23): `HOUND_TRIAL_YES=1 make trial` against the dev container's CISO Assistant: step 10 started the dev server (compliant), added the m365 collector with its settings, `graph_url: http://localhost:5365/` and `sign_in: none`, `config validate --check-secrets` valid, dry run and run succeeded, `hound status` "m365 … 11 passed, 0 failed, 18 sent, 0 skipped, 0 failed" and `EX-E8-Q2-2027FY` 9 changed; the server was stopped (nothing listening on 5365). The run after it found the collector already there and ran it again. `bats scripts/tests` all ok; ShellCheck clean.
+- As built: `trial_m365_dev_args` (the server's printed settings as `--set` options, plus `sign_in=none`) and `trial_host_mode` in `scripts/lib/trial.sh`; `m365_dev` in `scripts/trial.sh` starts the server in its own process group with an exit trap, and runs the collector with `host_mode` set, so hound's container is on the host network (a `make ca-up` stack is then reached on its published port).
+- Found on the way: the first run failed with "needs the secret client_certificate" because the trial image was older than s09-52 (see the s09-43 note on stale images); rebuilt. It also left the dev server running when the step failed, hence the exit trap.
+
+### s09-54 Sophos Central dev server, and a trial with no API keys (added 2026-11-23)
+- [ ] Done
+
+Added at the maintainer's request (2026-11-23; built as s09-52, renumbered on merge because the sprint branch had taken s09-52 and s09-53): an example of IT to audit, so the trial for Example Pty Ltd tests the configuration and continual evidence collection self-contained, with no API keys. Follows the Microsoft 365 dev server (s09-44). The XGS firewall's own API waits on its specification (s09-15/16), so it is not mocked here.
+
+**Story:** As someone trying Evidence Hound, I want `make trial` to collect from a fictional Sophos Central tenant on my machine, so that I can see configuration, collection, publishing and a changed result in CISO Assistant without a vendor account or a credential.
+
+**Acceptance criteria**
+- A fictional Example Pty Ltd Sophos Central tenant described once (firewalls, admins, roles), from which every answer the `sophos-central` profile reads is generated with the same IDs everywhere: `whoami`, firewalls, admins and roles, paged by page number as Sophos Central pages them. Variants `compliant` (every check passes) and `gaps` (named deviations, each failing a named check).
+- No sign-in logic: the token address answers one fixed response, as the profile's own recorded tests do, and checks no credential.
+- `make sophos-dev` serves it on a local port (`--variant`, `--deviation`, `--port`, and `--public-url` for the address the runner container reaches it at).
+- `make trial`, step 9, uses the dev server by default: it starts it, adds the `sophos` rest collector with the dev server's addresses and a placeholder secret (no question asks for a credential), runs it dry, publishes, then offers to switch on a deviation and run again so the result in CISO Assistant changes. A person's own Sophos Central tenant stays an option. An unattended run (`HOUND_TRIAL_YES=1`) goes through step 9 too.
+- `docs/tutorials/sophos-dev-server.md` and the trial guide say what the tenant holds, the variants, and what it cannot show.
+
+**Tests first**
+- `SophosDevTenantTests.Every_query_the_profile_reads_is_served`
+- `SophosDevTenantTests.Ids_are_the_same_across_answers`
+- `SophosDevTenantTests.Compliant_tenant_passes_every_check`
+- `SophosDevTenantTests.Each_deviation_fails_its_named_check`
+- `SophosDevTenantTests.The_token_address_checks_no_credential`
+- `trial.bats`: the dev server's address for each CISO Assistant case, and the collector settings the trial writes for it.
+
+**Functional check**
+- `make sophos-dev`, then `hound run --only sophos --dry-run` against it; `HOUND_TRIAL_YES=1 make trial` in the dev container goes through step 9 with no credential.
+- Result (2026-11-23, cloud session, no Docker): `make sophos-dev ARGS="--variant gaps --port 5372"` printed the tenant and the collector settings. With a config holding only that `sophos` collector (placeholder secret in a file), `hound config validate --check-secrets` answered "valid", `hound collect` wrote `firewalls.json`, `admins.json` (5 admins over 3 pages) and `roles.json`, and `hound run --only sophos --dry-run` ended `succeeded` with no problems. `SophosDevTenantTests` (7) run the rest collector with the library profile against the compliant tenant (both checks pass), each deviation alone (each fails only its named check) and the gaps tenant (both fail); the token address answers with or without a credential. `SophosDevServerOptionsTests` (7) pass; `bats scripts/tests` and shellcheck are clean; whole unit suite green apart from the Docker-only functional tests.
+- In CI (2026-11-23): the `trial` job runs `HOUND_TRIAL_YES=1 make trial` with the Sophos Central dev server and passed in runs 45177384299, 45199442036 and 45255592675 (the last two with the scan stage too).
+- Still for the maintainer: `HOUND_TRIAL_YES=1 make trial` needs Docker and a CISO Assistant, which the cloud session does not have. Ticking waits on the maintainer running it (and `make trial` by hand) in the dev container.
+- As built: `src/EvidenceHound.SophosDevServer` (`sophos-dev`, not in the runner image): `SophosDevTenant` (firewalls, admins, predefined roles, `Compliant`, `Deviations`, `For`, `Settings(url)`), `SophosAnswers` (pure: `whoami`, the token answer, the three lists), `DevSophosServer` (WireMock, pages of 2 by `page`, every interface when a port is given, `--public-url` named in `whoami`), `DevServerOptions`. Trial: `trial_network_args` adds `--add-host host.docker.internal:host-gateway` on a `make ca-up` network; `trial_dev_url`, `trial_sophos_dev_sets` and `trial_uses_dev_server` in `scripts/lib/trial.sh`; step 9 starts the server in the background (stopped when the trial ends), adds the collector with `--yes`, and offers a second run with `unsupported-firmware`. Docs: `docs/tutorials/sophos-dev-server.md` and section 9 of `docs/tutorials/local-trial.md`.
+- The token address answers one fixed response and checks nothing, as the profile's recorded tests do. It is not sign-in logic, but say so if the maintainer would rather the profile skip auth for a dev server instead.
+### s09-55 Hosting controls proven by Terraform tests with mock providers, read from the IaC pipeline (added 2026-11-23)
+- [x] Done
+
+Numbered s09-49 and then s09-51 in its commits by mistake (those numbers are other tasks); renumbered s09-53 the same day, and s09-55 when merged, because the sprint branch had taken s09-53 for the trial's Microsoft 365 step.
+
+At the maintainer's request (2026-11-23), instead of an AWS variant on LocalStack: the goal is to detail the GRC platform's hosting
+controls and collect evidence for them, not to prove the VPN connects. LocalStack emulates AWS only, its free Hobby plan is for
+non-commercial use, needs an account, and mocks EC2 and VPN resources as records only; `terraform test` with `mock_provider`
+(Terraform 1.7 and later) runs the real OCI code with no cloud account, Docker or licence, so the Oracle tutorial stays as it is.
+
+**Story:** As a GRC team member, I want the GRC platform's hosting controls (no public address, HTTPS only from the office, no SSH
+from the internet, encrypted storage, backups private, in another region and locked by a retention rule) written as Terraform tests
+that the IaC pipeline runs on every change, and `hound` to read their report, so that each control has dated evidence naming the
+commit it was proven on, without `hound` running Terraform or holding cloud credentials.
+
+**Acceptance criteria**
+- `examples/onboarding-tutorial/infra/oci/` holds the tutorial's infrastructure as Terraform (VCN, private subnet, security list,
+  VM with no public IP, DRG, CPE and IPSec connection with a static route to the office only, Bastion, NAT and service gateways,
+  the backup bucket in another region with a retention rule and the volume backup policy), fictional values and documentation
+  ranges only.
+- `infra/oci/tests/controls.tftest.hcl` uses `mock_provider "oci"` and has one `run` block per control, named after it
+  (for example `vm_has_no_public_ip`), each asserting on the planned configuration with a message that names the control. Where
+  the code guards a control itself (the office range may not be the internet, backups kept at least 35 days), a run with
+  `expect_failures` shows the guard refuses a bad value.
+- An example pipeline (`infra/oci/.github/workflows/controls.yml`) runs `terraform test -junit-xml=controls.xml` and uploads it
+  as the `control-tests` artefact. No cloud credentials are used by that job.
+- A library profile `terraform-tests` reads the newest completed run of a named workflow, its artefact and the JUnit member
+  (`format: zip`, XML), with check `infrastructure.tests.pass` through a code check `terraform.tests_pass`: every test passed
+  passes; a failed or errored test fails, naming it and its message; no run, a failed run, a stale report (`max_age`) or no
+  report is unable to assess; `with.test` narrows the check to one named test, and a named test absent from the report is
+  unable to assess. Each finding names the repository, commit and run, read from the run, as `terraform.no_drift` does.
+- The tutorial's config repo copies the profile as `profiles/grc-infra-controls.yaml` with one check per control test, and a
+  mapping `mappings/grc-platform-essential-eight-2023.yaml` maps the backup rows whose evidence was "captured quarterly"
+  (ISM-1811, ISM-1814, ISM-1707, ISM-1812, ISM-1705) to their control test and to `infrastructure.drift.none` together
+  (`all_pass`): the code proves the control and the drift check proves the live cloud still matches the code. The audit's
+  observations for those rows say so. Network controls with no Essential Eight requirement are evidence kept with each run, as
+  drift is, and the tutorial says which later framework rows they serve.
+- The tutorial (s09-32) gains a "Prove the hosting controls" step and the controls table names each test. A guide,
+  `docs/collectors/terraform-tests.md`, explains the pattern for any provider, and what a mock does not prove.
+- CI runs `terraform test` on the example (no credentials).
+
+**Tests first**
+- `TerraformTestsProfileTests.All_tests_passing_passes`
+- `TerraformTestsProfileTests.A_failed_test_fails_naming_it_and_its_message`
+- `TerraformTestsProfileTests.Missing_failed_or_stale_report_is_unable_to_assess`
+- `TerraformTestsProfileTests.A_named_test_is_checked_alone_and_absent_is_unable_to_assess`
+- `TerraformTestsProfileTests.Library_profile_replays_each_case`
+- `ExampleRepoTests.Grc_infra_control_checks_name_tests_that_exist`
+- `ExampleRepoTests.Grc_platform_backup_rows_need_the_control_test_and_no_drift`
+- `terraform test` in `examples/onboarding-tutorial/infra/oci` (the control tests themselves, written before the resources)
+
+**Functional check**
+- `terraform test -junit-xml=controls.xml` in `infra/oci` passes; breaking one control in a scratch copy fails its test. That
+  report, zipped as the pipeline uploads it, replayed by `hound profile test grc-infra-controls`, gives pass for each control,
+  and fail naming the broken one.
+
+- Result (2026-11-23), Terraform 1.13.4 with the OCI provider 9.14.0 from a local mirror (the cloud session cannot reach the registry;
+  CI and the dev container can): `make test-terraform` gave "Success! 12 passed, 0 failed." In a scratch copy with
+  `assign_public_ip = "true"`, `terraform test -junit-xml` gave "Failure! 11 passed, 1 failed." with `vm_has_no_public_ip`'s message.
+  Both reports, put in a scratch copy of `grc-infra-controls.tests` as the zipped artefact, replayed by
+  `hound profile test grc-infra-controls`: all-pass, missing-report and one-fails passed (13 checks each), the broken report giving
+  fail for `infrastructure.controls.vm_has_no_public_ip` and `infrastructure.tests.pass` and pass for the other eleven. Unit suite
+  1327 passed; `dotnet format` clean; `scripts/test-profiles.sh` passes for `terraform-tests`.
+- As built: code check `terraform.tests_pass` in `CodeChecks` (shares `Provenance` and `Stale` with `terraform.no_drift`); a failed
+  run counts, because a failing test fails it; skipped tests are unable to assess. Library profile `profiles/terraform-tests.yaml`
+  (`format: zip`, member `controls.xml`, `arrays:` so one suite or test reads as a list; `max_age` P8D for a weekly schedule) with
+  recordings from real `terraform test` reports. The tutorial: `infra/oci/` (`main.tf`, `variables.tf`, `versions.tf`, lock hashes for
+  five platforms, `tests/controls.tftest.hcl` with 12 runs, two of them `expect_failures` on validations,
+  `.github/workflows/controls.yml`), `profiles/grc-infra-controls.yaml` (12 per-control checks), `mappings/grc-platform-essential-eight-2023.yaml`,
+  the answers for the five backup rows changed from `m` to `c` and the audit and onboarding record written again from them
+  (5 API checks, 32 manual). `hound.yaml` gains `example-grc-infra-controls` and the platform's target. Step 6 "Prove the hosting
+  controls" in the tutorial (review is step 7), and `docs/collectors/terraform-tests.md`. CI job `terraform` (Terraform by checksum,
+  no credentials), `make test-terraform`, and the dev container's Terraform feature.
+- Deviation: a negative run per control was dropped; only the two controls the code guards itself (office range, retention) have
+  one, since a toggle to turn a control off would be worse code. Breaking a control by hand is the functional check instead.
+
+### s09-56 IaC pipeline dev server: the GitHub Actions answers the Terraform profiles read (added 2026-11-23)
+- [x] Done
+
+At the maintainer's request (2026-11-23), so the trial's GRC platform collects its hosting evidence with no GitHub account or token. Follows the Sophos Central (s09-54) and Microsoft 365 (s09-44) dev servers: no sign-in logic.
+
+**Story:** As someone trying Evidence Hound, I want the `terraform-tests` and `terraform-drift` profiles to read a fictional IaC repository's pipeline on my machine, so that the GRC platform's control tests and drift check publish to CISO Assistant with no GitHub account, no token and no cloud account.
+
+**Acceptance criteria**
+- `make iac-dev` serves the fictional repository `example/grc-infra`: its workflows `controls.yml` (artefact `control-tests`, member `controls.xml`) and `drift.yml` (artefact `drift-plan`, member `plan.json`), each with one completed, successful run on `main` dated a minute before the server started, the run's artefacts by name and each artefact's zip. The bearer token is accepted without being checked.
+- The control-test report is, by default, a JUnit report of the tutorial's `controls.tftest.hcl` with every run passing; `--controls-report FILE` serves a report you made (`terraform test -junit-xml`) instead. The drift plan is a refresh-only plan with no drift.
+- Deviations: `public-ip` (the report's `vm_has_no_public_ip` fails), `drift` (the plan has resource drift on the backup bucket). `--variant gaps` applies both.
+- `--port` (default 5380) and `--public-url`, as `make sophos-dev` has.
+
+**Tests first**
+- `IacDevServerTests.Compliant_pipeline_passes_both_profiles` (the library `terraform-tests` and `terraform-drift` profiles, and the tutorial's `grc-infra-controls`, run against the server)
+- `IacDevServerTests.Each_deviation_fails_its_named_check`
+- `IacDevServerTests.A_given_report_is_served_as_the_artefact`
+- `IacDevServerTests.Runs_are_dated_from_the_clock` (the run is never older than `max_age`)
+- `IacDevServerOptionsTests` (port, public URL, variant, deviation, report file)
+
+**Functional check**
+- `make iac-dev`; a config with `terraform-tests` and `terraform-drift` pointed at it (`api_url`); `hound run --only <both> --dry-run` succeeds and both checks pass. With `--deviation public-ip`, `vm_has_no_public_ip` fails.
+- Result (2026-11-23, cloud session, no Docker, no Terraform): `make iac-dev ARGS="--port 5382"` printed the pipeline and the settings for both profiles. A scratch config with two rest collectors, `grc-infra-controls` (the tutorial's copy of `terraform-tests`) and `terraform-drift`, both on `api_url: http://localhost:5382/` with a placeholder token file and the GRC platform's mapping as target: `hound config validate --check-secrets` valid; `hound run --no-publish` succeeded; `hound status` showed grc-infra-controls 13 passed, 0 failed and grc-infra-drift 1 passed. Restarted with `--variant gaps`: grc-infra-controls 11 passed, 2 failed (`vm_has_no_public_ip` and `infrastructure.tests.pass`), grc-infra-drift 0 passed, 1 failed. `IacDevServerTests` (5) and `IacDevServerOptionsTests` (9) pass; whole unit suite green apart from the Docker-only functional tests.
+- Not yet: serving a report from a real `terraform test -junit-xml` run, as Terraform is not installed in the cloud session; the trial (s09-57) does it in the dev container, which has Terraform.
+- As built: `src/EvidenceHound.IacDevServer` (`iac-dev`, `make iac-dev`, not in the runner image): `IacDevPipeline` (repository, head commit, control tests, drift, an optional given report; `Compliant`, `Deviations`, `For`, `Settings(url, profile)`, `WithReport`), `IacAnswers` (pure: runs, artefacts, JUnit report, plan, zip), `DevIacServer` (WireMock, runs dated from the start time), `DevServerOptions` (`--controls-report` read by `Program`). Guide: `docs/tutorials/iac-dev-server.md`.
+
+### s09-57 The trial is the private-hosting use case: CISO Assistant and Evidence Hound on Oracle Cloud, the office on an XGS 88W (added 2026-11-23)
+- [ ] Done
+
+At the maintainer's request (2026-11-23): "we are self-hosting CISO Assistant and Evidence Hound. We are going to privately host in Oracle Cloud with a site-to-site vpn to an SOPHOS XGS 88W firewall. we want to audit controls and evidence to E8ML2 in CISO assistant. We need to follow our process with 3rd parties, systems, controls, audits and the like. The trial is used to allow someone to explore ciso assistant and evidence hound with low fuss ... I would like the evidence where possible auto collecting with collectors." The onboarding tutorial (s09-32) already describes this deployment; the trial now walks it.
+
+**Story:** As someone exploring CISO Assistant and Evidence Hound, I want `make trial` to set the scene of Example Pty Ltd's private deployment (the GRC platform on one private OCI VM, the office reaching it over a site-to-site VPN through a Sophos XGS 88W, sign-in through Microsoft 365) and onboard it in our order, so that I see third parties, systems, their Essential Eight ML2 audits, controls and automatically collected evidence in CISO Assistant with no account, key or cloud.
+
+**Acceptance criteria**
+- The trial opens with the scene: the deployment diagram's parts in a few lines and a link to the tutorial's diagram.
+- Third parties, as the tutorial has them: Oracle (cloud), Sophos (firewall and Sophos Central), and the open-source CISO Assistant and Evidence Hound projects, each with its solution, contract and review. The Example Pty Ltd managed service provider is dropped: the use case has none.
+- Systems, each with its own E8 ML2 audit: `GRC-PLATFORM` (the tutorial's decisions) and `OFFICE-FIREWALL` (the XGS 88W; the tutorial's decisions), replacing `SOPHOS-NETWORK`. Their controls as the tutorial adds them.
+- Collectors, all against fictional tenants on the machine: Sophos Central (s09-54) for `OFFICE-FIREWALL`, Microsoft 365 (s09-53) for the identity rows, and the IaC pipeline (s09-56) for `GRC-PLATFORM`'s hosting controls and drift. Where Terraform is installed, the trial runs the tutorial's `terraform test` first and the dev server serves that real report.
+- The rows no collector can answer stay manual, and the trial says which and who submits them.
+- Unattended (`HOUND_TRIAL_YES=1`) runs every step with no credential; a second run applies nothing new. `docs/tutorials/local-trial.md` follows the new order.
+
+**Tests first**
+- `trial.bats`: the scene names each part; the stages use the tutorial's systems; the IaC collectors get the dev server's address; a report from `terraform test` is passed to the dev server when Terraform is there.
+- `trial.bats`: the replay's approved supplier files and the tutorial's answers for both systems are committed; a system's audit becomes a target in the config, once.
+
+**Functional check**
+- `HOUND_TRIAL_YES=1 make trial` against the dev container's CISO Assistant, twice (the second applies nothing new); then `make trial` by hand.
+- Result so far (2026-11-23, cloud session, no Docker, so no CISO Assistant and no trial container): the replay's commands, run with the built `hound` in a scratch folder, in the trial's order: `hound init --yes`; the four `hound supplier draft` calls, then the approved copies; for each system `hound onboard <system> pending` and the tutorial's decisions typed into `hound onboard` ("The system's audit is EX-E8-GRC-PLATFORM", "… EX-E8-OFFICE-FIREWALL"); the three `hound add control` calls. `trial_stage_ready` saw every stage ready; `hound scope validate` answered "scope valid: 1 domain(s), 4 control(s), 3 audit(s), 4 third party(ies)". Then both mappings copied with `trial_add_target`, the `sophos` and two IaC collectors added with the trial's settings (`hound add collector rest … --yes`): `hound config validate --check-secrets` valid; with `make sophos-dev` and `make iac-dev` running, `hound run --no-publish` succeeded for all three, `hound status` sophos 2 passed, grc-infra-controls 13 passed, grc-infra-drift 1 passed. `bats scripts/tests` (64) and ShellCheck clean.
+- CI run 45177384299 (2026-11-23, head c3640ea, dispatched): the `trial` job ran `HOUND_TRIAL_YES=1 make trial` against CISO Assistant in CI and passed, with the functional suite.
+- Not yet: plan and apply against CISO Assistant, publishing, and Terraform's real report, which need Docker and Terraform. Ticking waits on the maintainer running `HOUND_TRIAL_YES=1 make trial` twice and `make trial` in the dev container.
+- As built: `scripts/lib/trial.sh` gains `trial_scene`, `trial_systems`, `trial_system_product`, `trial_system_solution`, `trial_add_target` (a single `target:` becomes `targets:`; a target is added once, inside the block), `trial_iac_dev_sets`, `trial_controls_report_args`; `trial_brief` and `trial_stage_ready` take the system (four third parties; a control naming the system). `scripts/trial.sh`: the scene after the workspace; stage 5 the four third parties; `onboard_system` runs stages 6 to 8 for `GRC-PLATFORM` and 9 to 11 for `OFFICE-FIREWALL`; `wire_audit` copies the tutorial's system mapping and adds its target; step 12 runs `terraform test` when Terraform is there, starts `make iac-dev` with that report, adds `grc-infra-controls` and `grc-infra-drift`, and offers a `drift` run; step 13 Sophos Central for `OFFICE-FIREWALL`; step 14 Microsoft 365. `examples/trial/third-parties`: Oracle, Sophos, CISO Assistant and Evidence Hound; the managed service provider is removed. `docs/tutorials/local-trial.md` follows the new order.
+
+### s09-58 Fictional scan exports for the trial (`make scan-dev`)
+- [x] Done
+
+Added at the maintainer's request (2026-11-23): s09-03 and s09-04 need a testbed, as the Microsoft 365 and Sophos dev servers are for theirs.
+
+**Story:** As a developer or someone trying Evidence Hound, I want fictional vulnerability scan exports dated from today, so that the scan checks can be tried in the trial and changed without a scanner.
+
+**Acceptance criteria**
+- `make scan-dev` (project `EvidenceHound.ScanDev`, `scan-dev`) writes one export per scope for an invented Example Pty Ltd estate, dated from `--today` (default today, UTC): Nessus for internet-facing services, other applications and operating systems, and a Microsoft Defender vulnerability management CSV for the laptops' common applications. Writing again replaces that scope's exports.
+- `--variant compliant|gaps` and `--deviation <name>`: the compliant estate passes all eleven `vuln.*` checks; each deviation fails only the checks it names; gaps applies them all.
+- It prints the four `vuln-scan` sources' settings, and `make trial` adds them, writes the compliant exports, runs and publishes, then offers to write a deviation and collect again.
+- `docs/tutorials/scan-dev.md` lists every deviation.
+
+**Tests first**
+- `ScanDevEstateTests.Compliant_estate_passes_all_eleven_checks`
+- `ScanDevEstateTests.Each_deviation_fails_only_its_named_checks`
+- `ScanDevEstateTests.Writing_again_replaces_the_exports_so_the_latest_estate_is_current`
+- `ScanDevEstateTests.Tutorial_lists_every_deviation`
+- A bats test for the trial step's helper.
+
+**Functional check**
+- `make scan-dev ARGS="--variant gaps --out <dir>"`, then `hound run --no-publish` for the four sources: each fails what the tutorial table says. CI's trial job publishes the compliant estate to the local CISO Assistant.
+
+**As built (2026-11-23)**
+- `src/EvidenceHound.ScanDev` (`scan-dev`, not in the runner image): `ScanDevEstate` describes the estate once (four scans with hosts and findings dated in days before today, six deviations), `ScanExports` renders Nessus XML and the Defender CSV, `ScanDevWriter` replaces each scope folder's exports, `ScanDevOptions` parses `--variant`, `--deviation`, `--out` and `--today`. Owner `it@example.com`, hosts `*.example.com`, documentation addresses.
+- Deviations: `internet-facing-scan-stale`, `exploited-web-flaw-unpatched`, `unsupported-vpn-appliance`, `browser-patch-overdue`, `os-update-overdue`, `unsupported-laptop-os`. The gaps estate fails six of the eleven checks (other applications stay compliant).
+- Trial step 15 (`scans` in `scripts/trial.sh`), with `trial_scan_source_names` and `trial_scan_source_args` in `scripts/lib/trial.sh`. The bats test was written alongside the helpers rather than before them.
+
+**Functional result (2026-11-23)**
+- In a scratch repo: `scan-dev --variant compliant --out ../scans`, the four sources added with `hound add collector vuln-scan --yes` from the printed settings through the trial helpers, `hound config validate` valid, `hound run --only <each> --no-publish`: 3, 3, 2 and 3 passed, none failed. Then `--variant gaps` and the same runs: internet-facing 0 passed 3 failed, laptops 2 and 1, other apps 2 and 0, operating systems 1 and 2, as the tutorial table says; each folder held only the new export. `ScanDevEstateTests` (8) pass; `bats scripts/tests` all ok; ShellCheck clean. Publishing to CISO Assistant runs in CI's trial job (dispatched on this branch).
+- CI run 45199442036 (2026-11-23, head 667708c, dispatched): the `trial` job ran step 15 against CISO Assistant and published all four scan sources, after two fixes the first trial run (45194527491) found: CISO Assistant refuses a `.nessus` attachment, so the collector stores and cites `<name>.nessus.xml` (s09-03, s09-04); and the example workbook's unapproved row moved from ISM-1698, which the scan checks now compute, to ISM-1507 (`WorkbookImportFunctionalTests`). The functional suite passed in the same run.
+
+### s09-59 Fixes from an agent onboarding dry run (added 2026-11-23)
+- [x] Done
+
+Added while the maintainer is away (2026-11-23): before they onboard their own firewall with an agent, an agent was given only what `hound init` and `hound agent setup` write into a scratch compliance repo, with the Sophos Central dev server running, and asked to onboard the firewall. What blocked it is fixed here; the rest is under Discovered work.
+
+**Story:** As a person whose agent drives onboarding, I want the agent to find the profile library and to reach CISO Assistant with the address in `hound.yaml`, so that it does not stop on things the repo already says.
+
+**Acceptance criteria**
+- `hound scope plan` and `hound scope apply` with `--config` use the config's `ciso_assistant` address and token (resolving `env:` and `file:` references); `HOUND_CA_URL` and `HOUND_CA_TOKEN` still override them. Without `--config` both variables are still needed.
+- The `write-a-profile` skill `hound agent setup` writes names the public guide and profile library by URL (neither is in a compliance repo), says to copy a library profile with its tests into `profiles/` rather than write a new one, and names `profiles_path`.
+
+**Tests first**
+- `ScopePlanCommandTests.Plan_with_a_config_reads_the_ciso_assistant_address_and_token_from_it`
+- `ScopePlanCommandTests.The_environment_overrides_the_configs_ciso_assistant_address`
+- `AgentSetupTests.The_profile_skill_says_where_the_library_and_the_guide_are_since_neither_is_in_the_compliance_repo`
+
+**Functional check**
+- The dry run itself: in the scratch repo the agent's `hound scope plan --config hound.yaml` stopped on "HOUND_CA_URL is not set" although `hound.yaml` named the address; after the fix the same command with only the token variable set reaches CISO Assistant (WireMock in the tests; the trial's own CISO Assistant is the maintainer's to run). The cited skill now resolves for an agent with only the repo.
+
+**As built (2026-11-23)**
+- `PublishCommand.ConnectionAsync` loads the config only when `--config` is given and either variable is missing; `ScopeCommands` plan and apply (not a saved plan, which carries its own target) use it. Help texts and `docs/scope.md` say so.
+- `skills/profile-authoring.md` 1.1.0.
+- `docs/collectors/rest.md` gave the `profiles_path` default as `/etc/evidence-hound/profiles`; the code's default is `/config/profiles` (`ProfileFolder.DefaultPath`), and the guide now says so.
+
+### s09-60 Rehearsal of the trial's agent stages before the maintainer tries them (added 2026-11-23)
+- [x] Done
+
+Added at the maintainer's request (2026-11-23): "run a trial yourself and an onboard to find any errors before I try".
+
+**Story:** As the person about to run the trial with my own agent, I want the agent's requests to be answerable from what the trial gives it, so that the onboarding does not stall on empty folders or misleading help.
+
+**Acceptance criteria**
+- The trial's workspace step puts fictional notes on each of its four suppliers in `inbox/` and a fictional description of the Sophos Central API calls the dev server answers in `specs/`, as the agent's requests say; a file already there is kept.
+- `hound onboard --help` says the supplier gate holds at a terminal, while an agent's `pending` and `decide` go on and `hound approve` takes the supplier first.
+- The onboard-a-system-with-hound skill names the environment stage (and asks the person when there is none), the public profile library, how a library path such as `${data_region}/...` is written as a source, and an audit name example without a SYS- prefix.
+
+**Tests first**
+- `trial.bats`: "the agent finds the vendor notes and the API specification the stage requests name"
+- `OnboardSystemCommandTests.The_steps_say_where_the_supplier_gate_holds_for_a_person_and_for_an_agent`
+- `AgentSetupTests.The_onboarding_skill_names_the_environment_stage_the_profile_library_and_how_a_source_is_written`
+
+**Functional check (2026-11-23)**
+- A rehearsal workspace like the trial's (built CLI, `hound init repo --yes`, `hound agent setup --assistant claude`, Sophos dev server on 5370, no CISO Assistant), with an agent given only the repo and the trial's requests for the third parties and OFFICE-FIREWALL. It drafted the four suppliers (`hound supplier draft`, scope valid), started the session (107 pending for groups 1 and 2), and after the trial's approved supplier copies stood in for `hound approve`, decided all 107 (3 API checks from the sophos-central profile, 64 manual, 36 not applicable, 4 other system) in about a minute; scope still valid. `hound approve` was not run: it needs a person at a terminal. The stages after approval (controls, collectors, publishing) are the unattended trial's, run in CI with CISO Assistant.
+- The inbox and specs were empty, which the agent hit first: fixed here. The rest is under Discovered work.
+- CI run 45279834828 (head 7503960, dispatched): every job green, the trial job (unattended, seeding the new inbox and specs) and the functional suite included.
+
 ## Discovered work
+
+- s09-58: the trial's first CI run (45194527491) found that CISO Assistant refuses a `.nessus` attachment (it allows jpg, jpeg, png, doc, docx, odt, ppt, pptx, txt, xls, xlsx, ods, csv, md, pdf, json, yaml, yml, toml, xml, msg, eml, zip, 7z, tar, gz, log, svg, mp4, mov, gif, webp). Fixed in vuln-scan by storing `<name>.nessus.xml`. Other collectors can still hand it a file it refuses: the manual collector's `patterns` (for example `*.html`) are not checked. Have `hound config validate` warn on a pattern whose extension CISO Assistant refuses, or store such files zipped.
+- s09-04 follow-up (2026-11-23): done when s09-15 merged: ISM-1694 needs both `network.firewall.firmware_current` and `vuln.internet_facing.patched_in_window` (`all_pass`), in both E8 mappings. Still to do: map `vuln.other_apps.unsupported_removed` (ISM-0304) when an ML3 mapping is written. Consider a `min_severity` setting if owners want low findings out of the windows.
+
+- s09-01 follow-ups (2026-11-23): read AppLocker values Graph returns encrypted through `getOmaSettingPlainTextValue`; read App Control for Business set through the ApplicationControl CSP in custom profiles (a binary policy); cover compiled HTML, HTML applications and control panel applets (ISM-1657); suggest `ac` for the Intune and Microsoft 365 E3/E5 licences in `CapabilitySignals`.
+
+- s09-52: `hound config validate` passed a config with `sign_in: none` and the real Graph address; the refusal comes at `hound run`. Have `config validate` run each collector's option checks.
+- s09-54: the Microsoft 365 (s09-44) and Sophos Central dev servers each have their own small serving code (paging, request log). Once both are merged, move it into one shared helper.
+- s09-57: no hound command adds a system's mapping and target, so the trial copies the tutorial's mapping and edits `hound.yaml` (`trial_add_target`). Add `hound mapping add-check` (s09-51 item) and a `hound add target --mapping <file> --audit <series>`.
+- s09-57: the Example 365 identity rows on `GRC-PLATFORM` are "met by another system"; the m365 collector publishes to the organisation's audit only. Consider a Microsoft supplier and an `SYS-365` system with its own audit in the trial.
+- s09-54: scheduled collection after the trial needs the Sophos Central dev server running; the trial stops it when it ends. Consider a compose service for it beside the runner, if the trial grows a scheduler step.
+- s09-51: a manual evidence source needs its check mapped to a requirement, and the requirement taken out of `manual_only`; no command does it, so an agent edits the mapping by hand and the trial has no manual evidence stage. Add `hound mapping add-check --mapping <file> --requirement <ref> --check <id>` (asks nothing, `--json`), then a manual evidence stage in the trial (drop a scan report, `hound manual propose` by the agent, `hound manual approve` by the person).
+- s09-55: a Terraform plan or state JSON holds sensitive values in plain text (for example an IPSec tunnel's shared secret), and
+  `terraform-drift` keeps `resource_drift` and `resource_changes` whole, so a drift on such a resource would store the secret as
+  evidence. Keep only `address` and `change.actions` in the profile, or have the pipeline redact values marked in
+  `sensitive_values` before upload. The JUnit report of `terraform-tests` holds only test names and messages.
+- s09-55: `hound profile test` prints each case's outcome, not the observation; showing it with an option would make a functional
+  check read like the finding in CISO Assistant.
+
+- s09-47: move the fictional example repo's audits to series (`EX-E8`, `EX-ESSENTIALS`, `EX-BASELINE` with cycles), with its config targets, the example run and the tests that use `EX-E8-2026` as a fixture.
+
+- s09-45: the trial's `apply_scope` redirects `hound scope apply` to `.dev/trial/scope-apply.json`, and the `$ hound …` line the trial prints goes there too, so the report is not valid JSON. Print the command line to stderr.
+- s09-45: `examples/compliance-repo/frameworks/example-baseline.yaml` gained EX-4 and EX-4.1 without its `version: 1` changing, so a CISO Assistant that stored the library before keeps the old copy and `scope apply` fails on EX-4.1's result. Bump the version (and have `hound scope validate` warn when a stored library of the same version differs, if CISO Assistant shows its content).
+- s09-45: the dev container's CISO Assistant runs on the host's Docker, so it is reset only from the host (`docker compose -p evidence-hound-dev down -v`). For the trial it was cleared through the API instead: delete the Example Pty Ltd domain folder, the evidence in Global, and the example library (loaded and stored), then `scripts/ca-apply-scope.sh`. Consider a `make ca-reset` that does this.
+
+- s09-43: in the dev container, `make test` has one failure, `PublishCommandTests.Without_a_url_exits_three`, because the container sets `HOUND_CA_URL` and the test reads the process environment; it passes with `env -u HOUND_CA_URL make test`. Have the test (or `Publish`) not see the ambient variable.
+- s09-43: `make trial` keeps the runner image it built first (`state/image.done`), so a fix committed after that is not in the trial until `make image HOUND_IMAGE=evidence-hound-runner:trial`. Rebuild when the checkout's commit differs from the image's (label the image with it).
+- s09-43: in the dev container, `make ca-up` seeds the `make ca-up` instance but `scripts/ca-apply-scope.sh` applies the scope to `http://backend:8000/api/` (the container's `HOUND_CA_URL` overrides the env file's URL) with the other instance's token, so the seed ends with HTTP 401. Have `ca-seed.sh` pass the URL it wrote.
+- s09-44: the ASD Blueprint excludes a break-glass group from its Conditional Access policies, and the m365 collector fails any excluded group as undocumented. Add a `break_glass_groups` setting (group IDs whose members are the documented break-glass accounts), so a tenant built from the Blueprint passes without editing its policies.
+- s09-44: the m365 collector is still coded (`type: m365`, signing in through Azure.Identity). The agreed REST design (docs/design/rest-collector.md) moves it to a `microsoft-graph` profile after Sophos, with Conditional Access and PIM as code checks; the dev server can then produce that profile's offline test recordings.
+- s09-44: the WA assessment guide lists six attack surface reduction rules for ML2 user application hardening; `endpoint.asr.office_rules_enabled` checks four Office rules. Add a check for the others (Adobe Reader child processes, Office communication apps child processes, executable content from email) and for the VBA notification setting and Trust Center logging in Office. The dev tenant already carries the extra rules (from the Blueprint's ASR configuration); the VBA notification setting is in the Blueprint's `OfficeAllMacrosDisabled` and `OfficeMacrosForTrusted` exports, not yet embedded, and none of its exports sets Trust Center logging.
+- s09-44: Essential Eight evidence from the endpoint itself (registry, services, AppLocker effective policy, Office macro settings), as an MIT PowerShell checklist does, is outside every current collector. Consider it with ASD's example assessment test plan, which names endpoint tests, when planning release 2.
+
+- s09-42: an agent finds files waiting for a proposal by listing the drop folder. Add `hound manual pending --json` (files with neither an attestation nor a proposal, per source, with what each check asks for).
+- s09-42: `hound manual upload` writes an attestation without the file's hash, so a file changed after a person attested it unaided is not noticed. Record `file_sha256` there too.
+- s09-42: a rejected proposal stays beside the file as `<file>.proposal.yaml`; nothing reports rejected proposals or clears them when the file is replaced.
+
+- s09-41: after the environment's decisions are approved, the rows other systems' audits leave open are written only by running `hound onboard environment --no-model` again. Have `hound approve` write them when it approves the last capability.
+- s09-41: `hound scope import` reports a row that already waits as a draft under `already_assessed`. Give it its own list.
+- s09-41: an imported row whose requirement a mapping computes is caught by `hound scope validate` (`scope.result_conflict`), not by the import. Have the import leave such rows out and list them.
+- s09-41: an Excel date cell is read as its stored day number and converted; a date typed as text in another format (such as 1/5/2026) is copied as written. Normalise or refuse it.
+
+- s09-38: the agent skills carry hound's default skills only. The organisation's own skills (`skills/` in the config repo, with `overrides:`) reach an agent through `hound onboard <system> pending --json`, but not through the skill files. Consider having `hound agent setup` include them (fits s09-41).
+- s09-38: `examples/compliance-repo/CLAUDE.md` is hand-written and older than the agent files. Regenerate the example repo's assistant files with `hound agent setup` once the VS Code check passes, and keep one of the two.
+
+- **Before the sprint PR is marked ready:** turn the `functional` CI job back on for pull requests (`.github/workflows/ci.yml`). It was switched to run only on `main` and by hand on 2026-11-23 to keep pushes fast; until then functional tests run in the dev container with `make test-functional`, and each task's functional check records that run.
+
+- s09-37: the interactive `hound onboard <system>` still takes a not-applicable approver's name from piped input, so an agent could answer its prompts. Make its not-applicable approval go through `hound approve` too, or refuse it without a terminal (fits s09-41).
+
+- s09-37: `hound approve` asks about every open supplier review each time it runs, including reviews not yet due and ones already concluded in CISO Assistant before conclusions moved to config. Consider asking only for reviews that are due or that the person names, and importing existing conclusions with `hound scope export`.
+
+- s09-37: the onboarding tutorial (`docs/examples/onboarding-tutorial.md`) and the files `hound onboard` drafts for a person still describe concluding the supplier review in CISO Assistant. That route still works; move the tutorial to `hound approve` with s09-39.
+
+- s09-37: `hound onboard environment` has no `pending` and `decide` yet (planned in s09-41); `hound approve` already approves capabilities that have no `approved_by`.
+
+- s09-28: the capability map's signals do not yet include devices onboarded to Defender for Endpoint (`security/machines` needs a Defender API permission, not Graph). Add when s09-02 reads Defender.
 
 - Open items from s08's discovered work (trial token refresh, the seed's compliance owner, HTTP logging at `info`, wizard prompts, trial re-runs, evidence on applied controls, the "unlisted rule" wording, `HOUND_CA_URL` in the dev container) are listed in [s08](s08-sophos-veeam-collectors.md#discovered-work); pick them up here or in s12.
 
+- The config check's long-run rule (32+ letters, digits, `/`, `_`) also matches a deep folder path that contains digits, for example a `profiles_path` under a generated temp folder. Short mounted paths such as `/config/profiles` are fine. Consider excluding `/` from the run for `_path` settings (found in s09-10).
+
+- Scope export (`hound scope export`) does not yet cover third parties or the organisation's own entity; a tenant that already has suppliers in CISO Assistant has to write their files by hand (found in s09-19).
+
+- The Anthropic adapter asks for replies of up to 16,000 tokens without streaming. Steps that need longer replies (a whole drafted profile) should stream through the SDK's streaming call (found in s09-21).
+
+- The official Anthropic .NET SDK sends the API key as `Authorization: Bearer`, and reads `ANTHROPIC_BASE_URL` from the environment when no base URL is set. `hound onboard config --check` confirms the key works end to end; note both in the onboarding guide if a provider proxy is used (found in s09-21).
+
+- Vendor documents kept during `hound onboard` are saved with their SHA-256, source and retrieval date, but are attached to the supplier assessment as evidence only once supplier assessments exist (s09-20). The model reads only text documents (HTML, text, Markdown); PDFs are kept but not read (found in s09-22).
+
+- An Essential Eight audit that declares `groups: ["2"]` is stored by CISO Assistant as groups 1 and 2, so `hound scope plan` shows it as changed after every apply. `hound scope validate` should warn, or the planner compare the groups CISO Assistant keeps; until then declare ML2 as `["1", "2"]` (found in s09-24's functional test).
+
+- `hound onboard` now declares the system in `scope/setup.yaml` with its `solution`, and a drafted supplier file includes a yearly review (fixed after s09-20, at the person's request). Still open: `supplied_through` for a reseller is not asked, and kept vendor documents are not yet attached to the supplier assessment as evidence (found in s09-20).
+
+- `hound scope export` does not write supplier assessments or forced tiers (found in s09-20).
+
+- `hound onboard` reads OpenAPI 3 files only. Other API specifications, documentation saved as text, and specifications fetched from allowed URLs need further readers; Sophos Firewall's XML API (s09-15) is the first that will need one (found in s09-22).
+
+- `hound run --dry-run` reports only counts of passed, failed and other checks; it does not print each check's outcome and observation. An operator trying a new profile needs them; `hound profile test` (s09-12) or a `--show-checks` option would help (found in s09-11).
+
+- Fixed 2026-11-23 (s09-21 defect, commits 842f9d0 and 7714c09): `hound onboard config --check` failed against the real Anthropic API with HTTP 400, because a request with no inputs sent an empty user message (`messages.0: user messages must have non-empty content`); the recorded-reply tests accepted it. A request with no inputs now sends a fixed line, covered by a contract test for both adapters. Functional check: `make run ARGS="onboard config --check"` with a real key: `anthropic claude-opus-5-5: the key works.`
+
+- A 4xx other than 401 or 403 from the model provider still says "Check the key with 'hound onboard config --check'", which sent the person looking at the key when the request itself was wrong. Name the provider's error type (such as `invalid_request_error`, which never echoes the request) and suggest the key only for 401 and 403 (found in s09-21).
+
+- Supplier documents in PDF (such as a vendor's ISO/IEC 27001 certificate) are kept with their hash but not given to the model: hound reads only HTML, text and Markdown, so the supplier step cannot use the strongest assurance a vendor publishes. Since 2026-11-23 the person is told; next, extract PDF text (a maintained PDF library, checked as any new dependency) or send the PDF to the provider as a document block, within the same outbound guard and token budget (found in s09-22, Sophos trial).
+
+- `hound onboard` summarises an OpenAPI spec without its response fields when they are behind `$ref` components (the Sophos Firewall API v1.5.0 spec: `GET /firewalls: List of firewalls` and nothing more), so the model proposed ISM-1501 as manual, saying no endpoint shows a firmware version, although `firmwareVersion` is in the response and the sophos collector checks it. Resolve `$ref` response schemas and list each read endpoint's top-level fields in the summary (found in s09-22, Sophos trial).
+
+- `hound onboard environment` writes not-applicable rows into an audit for requirements the audit's own mapping computes (`scope.result_conflict` on validate), records "provided by another system" as not applicable even when that system has no audit (so the gap shows as closed), and overwrote collector evidence (ISM-1672). Record such rows as open, covered by the named system, until its audit exists; skip rows the mapping computes and say which (found in s09-28, Sophos trial).
+
+- `hound explain` reads a printed plan but not the saved plan file `scope plan --out` writes, and with no file and no piped input it waits silently on the terminal. Read saved plans, and refuse with a hint when standard input is a terminal (found in s09-30, Sophos trial).
+
+- `hound onboard profile` drafted a Sophos firewall profile that did not validate after 3 rounds: it used its own template syntax (`{{ parameters.x }}` rather than `${x}`) and put `field` and `missing` on the check rather than in `each`; the validation problems fed back did not get it there. Give the drafting step the profile format reference (or the closest shipped profile as an example) and the exact problem lines (found in s09-25).
+
+- A requirement a collector marks compliant keeps status `to_do` in CISO Assistant (ISM-1501 on the Sophos firewall audit). Set the status to done with the result, as hand-written rows are (found in s09-25).
+
+- `hound onboard` does not keep `--group` between runs: the second run (after the supplier stop) without the same `--group` options decides every requirement of the framework (152 for the Essential Eight, not 107). Save the groups with the session at the start, or refuse a run whose groups differ (found in s09-32).
+
+- `hound onboard` writes an apostrophe in an observation as `\u0027` (JSON escaping inside a YAML string), and names the audit by the system ID and framework slug ("GRC-PLATFORM essential-eight-2023"). Write plain YAML strings and a readable name (found in s09-32).
+
+- `hound scope validate` reports older not-applicable rows that name another system, but nothing rewrites them: in the trial 109 rows were fixed with a one-off script. A `hound scope fix` (or a `--fix` on validate) that rewrites them as open rows with `provided_by` would save hand edits (found in s09-36).
+
+- An open dependency's "result there" comes from the scope files, not from CISO Assistant, so a requirement a collector has marked compliant in the providing system's audit reads "from collectors", not "compliant". Read the held result when the plan has it (found in s09-36).
+
+- The plan's "Open dependencies" lists one line per row, which was 116 lines in the trial. Group by providing system, with counts, and list rows only with `--detailed` (found in s09-36).
+
+- From the s09-59 agent dry run (2026-11-23), not fixed there:
+  - Requirement text is cut with "…" at `FrameworkSnapshot.TitleLength` in `hound onboard <system> pending --json`, the session and the snapshot, so an agent decides on part of the requirement. Give `pending --json` the full text.
+  - `hound onboard <system> decide --kind api_check` is accepted with no API specification given; the approve step then has nothing to show. Refuse it, or require `--spec`.
+  - The supplier assessment asks for a level with no scale named in the skill or the help. Name the scale.
+  - `pending` drafts decisions before the supplier is approved while its help says onboarding "stops here"; only the approve step waits. Reword the help.
+  - `--owner` is required but the usage line does not show it; the usage `hound onboard [<system>] profile <system>` names the system twice.
+  - `hound add collector rest` asks for no profile settings when the profile is missing from `profiles_path`; it should say the profile was not found.
+
+- From the s09-60 rehearsal (2026-11-23), not fixed there:
+  - The framework snapshot keeps only an 80-character title, so the full requirement text is nowhere in a compliance repo and an agent decides from memory. Snapshot the full text (needs the CISO Assistant library file).
+  - `decide --other-system` accepts a system that is in neither the scope nor the capability map, with no warning.
+  - `decide --source` is not checked when no `--spec` was given, and a POST is accepted although read-an-api-specification asks for operations that only read (the sophos-central firmware upgrade check is a POST that changes nothing; say so in the skill or allow it explicitly).
+  - Requirements shared by several mitigations (ISM-1815, 1906, 1228, 0123, 0140, 1819) are decided once per mitigation, by URN; deciding by ref ID is refused. Offer one decision for all of them.
+  - `session.json` keeps `proposals` with `kind: null` beside the real `decisions`, which reads as undecided to a reviewer.
+  - review-before-apply has no step for onboarding drafts, and `hound explain` refuses `session.json`. Give the review a summary of a session's decisions (counts by kind, not-applicable justifications).
+  - `hound supplier draft --json` prints plain text on an error; an open-source project needs a contract ref for its licence; `--kind vendor` for a community project is a guess. The two supplier skills give different command options, assess-a-supplier calls a section "the supplier-assurance-documents skill", and neither prints the level scales.
+  - `pending` names the library skill `reading-an-api-specification` while the repo's skill is `read-an-api-specification`; with no `--spec` it gives `"api": ""` without the warning the terminal path prints.
+  - Environment `pending` counts every group while a system's session counts only its groups.
+
 ## Sprint review
+
+**2026-11-23.** Closed at the maintainer's request, to merge s09 and the AI governance plan to main and start s10. 42 tasks done, each with red and green commits; the trial runs unattended in CI against CISO Assistant, and the trial's agent stages were rehearsed by an agent in a scratch repo (s09-59, s09-60).
+
+- **The generic REST collector** with YAML profiles, a tested public library (`profiles/`), declarative and code checks, earlier evidence for checks that need history (firmware upgrade age), and Sophos Central as a profile (s09-09 to s09-15).
+- **Third parties and onboarding without a built-in model**: suppliers, solutions, contracts and reviews; the capability map; the agent interface (`pending`, `decide`, `--json`) driven by the person's own agent from `hound agent setup`, and `hound approve` for the person at a terminal; `hound explain` (s09-19 to s09-42).
+- **Patching and application control evidence**: Defender advanced hunting, the `vuln-scan` collector and its eleven patching checks (s09-02 to s09-04, s09-06).
+- **A trial with no API keys**: dev servers for Microsoft 365, Sophos Central and the IaC pipeline, fictional scan exports, and the private-hosting use case on Oracle Cloud with an XGS 88W (s09-44, s09-51 to s09-58).
+
+About 1,500 unit, contract and functional tests; lint, ShellCheck and the bats tests pass, and CI's functional, trial, compose and image jobs are green.
+
+Carried to s10, waiting on the maintainer's own environment rather than on code: s09-01 (a real Graph export for App Control for Business setting IDs), s09-15 (whether the read-only role may call the firmware upgrade check), s09-17 (the real-tenant Sophos trial), s09-29 (a run against the maintainer's tenant), s09-38 to s09-42 (the maintainer's own agent-driven onboarding), s09-54 and s09-57 (`make trial` on the maintainer's machine). They stay unticked here, with their notes. s09-16 is not applicable.
+
+What the feedback taught us:
+- Rehearse with an agent that has only what the person's agent will have. It found empty folders and help text that contradicted the commands, which unit tests had not.
+- CISO Assistant refuses attachments outside its allow-list (`.nessus`), and a mapped requirement clashes with a hand-written row; the trial in CI caught both.
+- Side pull requests into the sprint branch cost the maintainer more than they saved; from s10 the work goes straight onto the sprint branch.

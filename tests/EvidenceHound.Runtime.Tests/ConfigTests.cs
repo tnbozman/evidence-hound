@@ -179,6 +179,24 @@ public class ConfigTests
         problem.Message.ShouldNotContain("abcd1234");
     }
 
+    [Theory]
+    // An address or path setting is judged by its value: a profile's token_url names where to sign in, not a token.
+    [InlineData("token_url: https://login.example.com/oauth2/token")]
+    [InlineData("secrets_path: /config/secrets-list")]
+    public void Address_named_after_a_secret_is_not_a_secret(string setting)
+    {
+        var collector = ConfigLoader.Parse(Valid.Replace("tenant: example.com", setting, StringComparison.Ordinal), Source, Known).Value().Collectors[0];
+
+        collector.Settings.Count.ShouldBe(1);
+    }
+
+    [Theory]
+    [InlineData("token_url: https://login.example.com/oauth2/token?key=abcd1234abcd1234abcd1234abcd1234abcd1234")]
+    [InlineData("token_url: hunter2")]
+    public void Address_setting_holding_a_secret_is_rejected(string setting) =>
+        ConfigLoader.Parse(Valid.Replace("tenant: example.com", setting, StringComparison.Ordinal), Source, Known).Problems()
+            .ShouldHaveSingleItem().Code.ShouldBe("config.secret_inline");
+
     [Fact]
     public void Unknown_collector_type_lists_known_types()
     {

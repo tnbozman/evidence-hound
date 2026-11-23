@@ -71,6 +71,7 @@ public class MappingEngineTests
         var results = Apply(MappingRule.AnyPass, Check("identity.mfa.admins", CheckOutcome.Pass), Check("identity.mfa.users", CheckOutcome.Error));
 
         results.Single().Result.ShouldBe(ComplianceResult.NotAssessed);
+        results.Single().Observation.ShouldContain("identity.mfa.users: unable to assess (");
     }
 
     [Fact]

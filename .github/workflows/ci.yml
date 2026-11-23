@@ -38,6 +38,8 @@ jobs:
         run: make build CONFIGURATION="$CONFIGURATION"
       - name: Unit and contract tests with coverage
         run: make coverage CONFIGURATION="$CONFIGURATION"
+      - name: Library profile tests
+        run: make test-profiles CONFIGURATION="$CONFIGURATION"
       - name: Upload test results
         if: ${{ always() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -47,7 +49,7 @@ jobs:
           if-no-files-found: ignore
 
   functional:
-    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     needs: build-test
     runs-on: ubuntu-latest
     steps:
@@ -96,6 +98,12 @@ jobs:
         if: ${{ always() }}
         run: |
           for file in test-results/review-workflow/*.txt; do
+            if [ -f "$file" ]; then echo "== $file"; head -c 6000 "$file"; echo; fi
+          done
+      - name: Show the supplier apply and plans
+        if: ${{ always() }}
+        run: |
+          for file in test-results/suppliers/*.txt; do
             if [ -f "$file" ]; then echo "== $file"; head -c 6000 "$file"; echo; fi
           done
       - name: Upload functional results
@@ -151,8 +159,9 @@ jobs:
         run: make compose-smoke
 
   trial:
-    # s08-09: the interactive local trial, unattended, against a fresh local CISO Assistant (stops before Sophos).
-    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    # s08-09: the interactive local trial, unattended, against a fresh local CISO Assistant; every collector reads its dev server
+    # (s09-57). Also by hand (workflow dispatch), for a branch whose pull request is not into main.
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -182,6 +191,25 @@ jobs:
         run: make lint-shell
       - name: Script tests
         run: make test-scripts
+
+  terraform:
+    # s09-55: the tutorial's control tests, with mock providers. No cloud account or credentials.
+    runs-on: ubuntu-latest
+    env:
+      TERRAFORM_VERSION: 1.13.4
+      TERRAFORM_SHA256: 98aa516201e948306698efd9954ab4cc0d1227c2578ba56245898b5f679e590b
+      CHECKPOINT_DISABLE: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Terraform
+        run: |
+          curl -fsSLo "$RUNNER_TEMP/terraform.zip" "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip"
+          echo "${TERRAFORM_SHA256}  $RUNNER_TEMP/terraform.zip" | sha256sum -c -
+          unzip -q "$RUNNER_TEMP/terraform.zip" -d "$RUNNER_TEMP/bin" && echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+      - name: Control tests
+        run: make test-terraform
 
   org-data:
     runs-on: ubuntu-latest

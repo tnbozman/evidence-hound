@@ -73,6 +73,33 @@ internal static class ScopePlanOutput
             }
         }
 
+        if (notes.Suppliers.Count > 0)
+        {
+            markdown.Append("\n### Suppliers\n\nRead from CISO Assistant, where the GRC team concludes supplier assessments.\n\n| Supplier | System | Note |\n| --- | --- | --- |\n");
+            foreach (var note in notes.Suppliers)
+            {
+                markdown.Append(CultureInfo.InvariantCulture, $"| {Cell(note.Supplier)} | {Cell(note.System ?? "")} | {Cell(note.Detail)} [{note.Code}] |\n");
+            }
+        }
+
+        if (notes.Gaps.Count > 0)
+        {
+            markdown.Append("\n### Capability gaps\n\nMitigations scope/capabilities.yaml says no product provides: no system's audit answers these requirements, and none fails for them.\n\n| Mitigation | Requirements | Ref IDs |\n| --- | --- | --- |\n");
+            foreach (var gap in notes.Gaps)
+            {
+                markdown.Append(CultureInfo.InvariantCulture, $"| {Cell(gap.Mitigation)} | {gap.Requirements.Count} | {Cell(string.Join(", ", gap.Requirements))} |\n");
+            }
+        }
+
+        if (notes.Dependencies.Count > 0)
+        {
+            markdown.Append("\n### Open dependencies\n\nRequirements left open because another system meets them: each closes when that system's audit shows it met.\n\n| Audit | Requirement | Met by | Its audit | Result there |\n| --- | --- | --- | --- | --- |\n");
+            foreach (var dependency in notes.Dependencies)
+            {
+                markdown.Append(CultureInfo.InvariantCulture, $"| {Cell(dependency.Audit)} | {Cell(dependency.Requirement)} | {Cell(dependency.System)} | {Cell(dependency.SystemAudit ?? "(none)")} | {Cell(dependency.ResultThere)} |\n");
+            }
+        }
+
         if (notes.Unmanaged.Count > 0)
         {
             markdown.Append("\n### Unmanaged settings\n\nCISO Assistant's own: settings.yaml does not name them, so applying leaves them as they are.\n\n| Kind | Name | Value |\n| --- | --- | --- |\n");
@@ -107,6 +134,20 @@ internal static class ScopePlanOutput
                 ["detail"] = n.Detail,
             })]),
             ["periods"] = new JsonArray([.. periods.Select(p => (JsonNode)new JsonObject { ["audit"] = p.Audit, ["event"] = Event(p.Event), ["baseline"] = p.Baseline })]),
+            ["gaps"] = new JsonArray([.. notes.Gaps.Select(g => (JsonNode)new JsonObject
+            {
+                ["mitigation"] = g.Mitigation,
+                ["requirements"] = new JsonArray([.. g.Requirements.Select(r => (JsonNode)JsonValue.Create(r))]),
+            })]),
+            ["dependencies"] = new JsonArray([.. notes.Dependencies.Select(d => (JsonNode)new JsonObject
+            {
+                ["audit"] = d.Audit,
+                ["requirement"] = d.Requirement,
+                ["system"] = d.System,
+                ["system_audit"] = d.SystemAudit,
+                ["result_there"] = d.ResultThere,
+            })]),
+            ["suppliers"] = new JsonArray([.. notes.Suppliers.Select(n => (JsonNode)new JsonObject { ["code"] = n.Code, ["supplier"] = n.Supplier, ["system"] = n.System, ["detail"] = n.Detail })]),
             ["changes"] = new JsonArray([.. plan.Changes.Select(c => (JsonNode)new JsonObject
             {
                 ["kind"] = Kind(c.Kind),
@@ -244,6 +285,7 @@ internal static class ScopePlanOutput
     internal static string Kind(ScopeKind kind) => kind switch
     {
         ScopeKind.FeatureFlag => "feature_flag",
+        ScopeKind.EntityAssessment => "supplier_assessment",
         _ => kind.ToString().ToLowerInvariant(),
     };
 
@@ -260,4 +302,13 @@ internal sealed record PlanNotes(IReadOnlyList<PeriodNote> Periods, IReadOnlyLis
 
     /// <summary>The plan's effect on each audit's compliance; empty when no result changes.</summary>
     public IReadOnlyList<AuditImpact> Compliance { get; init; } = [];
+
+    /// <summary>Lapsed supplier approvals and tiers that differ from the forced one.</summary>
+    public IReadOnlyList<SupplierNote> Suppliers { get; init; } = [];
+
+    /// <summary>Mitigations the capability map says no product provides.</summary>
+    public IReadOnlyList<CapabilityGap> Gaps { get; init; } = [];
+
+    /// <summary>Requirements left open because another system meets them.</summary>
+    public IReadOnlyList<OpenDependency> Dependencies { get; init; } = [];
 }

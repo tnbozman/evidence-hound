@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>scan-dev</AssemblyName>
+    <RootNamespace>EvidenceHound.ScanDev</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <Description>Writes fictional Example Pty Ltd vulnerability scan exports (Nessus and a Defender CSV), one per scope, for the trial and for developing the vuln-scan checks.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Collectors\EvidenceHound.Collectors.VulnScan\EvidenceHound.Collectors.VulnScan.csproj" />
+  </ItemGroup>
+</Project>

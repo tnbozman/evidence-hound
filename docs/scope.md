@@ -14,6 +14,9 @@ compliance-repo/
       ex-e8-2026.yaml   one file per audit (compliance assessment)
     access.yaml         users with their roles, and teams (optional)
     settings.yaml       feature flags and general settings (optional)
+    third-parties/
+      example-cloud.yaml  one file per supplier or other third party (optional)
+    capabilities.yaml   which system provides each mitigation (optional)
   mappings/             which checks satisfy which requirements (docs/mapping-files.md)
   frameworks/           framework snapshots and custom library files
   documents/            the files that documents name, relative to the compliance repo (the scope folder's parent)
@@ -24,16 +27,35 @@ compliance-repo/
 
 The local CISO Assistant (`make ca-up`, the dev container and the functional tests) is seeded by applying this example scope, so every pull request exercises `hound scope apply`.
 
+## Ref ID conventions
+
+Every ref ID reads the same way whoever wrote it: its kind's prefix, then upper case letters, digits and hyphens. `hound` keeps one table of these conventions, used by every prompt and by `hound scope validate`.
+
+| Kind | Prefix | Example |
+| --- | --- | --- |
+| third party | `SUP-` | `SUP-EXAMPLE` |
+| solution | `SOL-` | `SOL-EXAMPLE-HOSTING` |
+| contract | `CTR-` | `CTR-EXAMPLE-2026` |
+| system | `SYS-` | `SYS-FIREWALL` |
+| control | `AC-` | `AC-BACKUP` |
+| perimeter | `PER-` | `PER-CORP` |
+| supplier assessment | `EA-` | `EA-SUP-EXAMPLE` |
+
+An audit has no prefix. An audit that runs in periods, as `hound init` writes it, is a series `<CODE>-<FRAMEWORK>`, such as `EX-E8`, or `<CODE>-<FRAMEWORK>-<SYSTEM>` for one system; each period reads `<CODE>-<FRAMEWORK>-<INTERVAL>-<YEAR>FY[-<SYSTEM>]`, such as `EX-E8-Q2-2027FY` ([Audit periods](#audit-periods)). An audit without a cycle reads `<CODE>-<FRAMEWORK>-<YEAR>`, such as `EX-E8-2026`.
+
+A prompt for a ref ID (`hound add system`, `hound add control`, `hound onboard <system>`) prints the prefix as part of the prompt, such as `Supplier ref_id: SUP-`, and takes only the rest. The answer is upper-cased, and an answer with a space or any other character is asked again with the rule. An option such as `--ref-id` is taken in full when it has its prefix and is given the prefix when it has not. `hound scope validate` reports any other ref ID as `scope.ref_id_convention`, naming the kind, the prefix and the ref ID to rename it to.
+
 ## setup.yaml
 
 | Key | Meaning |
 | --- | --- |
 | `organisation.root_folder` | The existing folder the domains sit under. Default `Global`. |
+| `organisation.entity` | Optional. The organisation's own entity, which CISO Assistant creates itself as its main entity: `name`, and optional `description`, `mission`, `country`, `currency` and `identifiers`, as for a [third party](#third-partiesentityyaml). `hound scope apply` only ever updates it in place, never creates or deletes it, and it carries no `[hound scope]` marker. Left out, the main entity is not read or changed. |
 | `frameworks` | Each framework to load: `urn` (the framework URN), and `library` (a library URN from CISO Assistant's stored libraries) or `file` (a custom library file). `snapshot` names the framework snapshot made by `hound framework snapshot`, so groups and requirements can be checked offline; Paths are relative to setup.yaml. |
 | `libraries` | Other libraries to load by URN, such as the mapping set between the Essential Eight and the Essentials. |
 | `domains` | Folders. Each has a `name`, a `description`, its `perimeters` (or a single `perimeter`) and its `systems`. |
 | perimeter | `name`, optional `ref_id` and `description`. |
-| system | `name`, `type` (`primary` or `supporting`), optional `ref_id`, `description`, `owner`, `parents` (other systems by name) and `tags` (per-framework labels such as `essentials_domain: identity` or `cui: "true"`). |
+| system | `name`, `type` (`primary` or `supporting`), optional `ref_id`, `description`, `owner`, `parents` (other systems by name), `tags` (per-framework labels such as `essentials_domain: identity` or `cui: "true"`), `solution` (the third-party solution that provides it, by `ref_id`) and `supplied_through` (a reseller or managed service provider, by the third party's `ref_id`). A system with either is registered only once those suppliers are approved: see [Supplier approval](#supplier-approval). |
 
 ## controls.yaml
 
@@ -72,6 +94,128 @@ Names are checked offline against the settings snapshot of the CISO Assistant re
 
 `scope plan` lists each named setting whose value differs (`| Update | feature_flag | tprm | value: true → false |`). `scope plan --show-unmanaged` adds an **Unmanaged settings** section: every flag and general setting the file does not name, with its current value, to help decide what to manage. Settings carry no marker and are never deleted, so `--prune` leaves them alone.
 
+## third-parties/&lt;entity&gt;.yaml
+
+The supplier register, one file per supplier or other third party, so a new supplier or a renewed contract is a reviewed pull request. Each file is a CISO Assistant entity with the solutions it provides to the organisation, the contracts covering them and, optionally, its representatives. The folder is optional; without it `hound` neither reads nor changes third parties.
+
+```yaml
+ref_id: SUP-EXCLOUD
+name: Example Cloud Pty Ltd
+description: Hosts the customer portal.
+mission: Managed cloud hosting.
+country: AU                  # ISO 3166-1 alpha-2
+currency: AUD                # ISO 4217
+domain: Example Pty Ltd      # left out for the root folder
+dependency: 3                # 0-4: how much we depend on it
+penetration: 2               # 0-4: how far it reaches into our systems
+maturity: 3                  # 1-4: its security maturity
+trust: 3                     # 1-4: how far we trust it
+identifiers:
+  LEI: EXAMPLE0000000000000
+solutions:
+  - ref_id: SOL-EXCLOUD-HOST
+    name: Managed hosting
+    criticality: 3           # 1-4
+contracts:
+  - ref_id: CTR-EXCLOUD-2026
+    name: Hosting agreement 2026
+    status: active           # draft, active, expired or terminated
+    start: "2026-01-01"
+    end: "2026-12-31"
+    annual_expense: 12000
+    currency: AUD
+    solutions: [SOL-EXCLOUD-HOST]
+representatives:
+  - email: account.manager@example.com
+    first_name: Sam
+    last_name: Example
+    role: Account manager
+```
+
+- The entity: `ref_id` and `name`, and optionally `description`, `mission`, `country`, `currency`, `parent` (another third party's `ref_id`, for a subsidiary), `domain`, the four levels CISO Assistant uses as defaults for its stakeholder assessments (`dependency`, `penetration`, `maturity`, `trust`), and `identifiers` (legal identifiers by kind, such as LEI, VAT or ABN). CISO Assistant keeps identifiers on the entity, not on its contracts.
+- `solutions`: what the entity provides, each with `ref_id`, `name`, and optionally `description` and `criticality`. A level or criticality the file leaves out is left as CISO Assistant holds it (its default on a new supplier), so a drafted supplier with levels still to decide plans no change after it is applied.
+- `contracts`: each with `ref_id`, `name`, `status`, and optionally `description`, `start` and `end` (yyyy-MM-dd), `annual_expense`, `currency` and `solutions` (the entity's own, by `ref_id`). A contract sits in the entity's domain.
+- `representatives`: people at the entity, by `email`, with optional `first_name`, `last_name`, `role` and `phone`. They are personal data, so keep them in CISO Assistant instead unless the compliance repo is private and access-controlled. `hound` never gives a representative a login.
+
+Validation reports a country or currency code CISO Assistant does not accept (`supplier.country_invalid`, `supplier.currency_invalid`; the lists come from the pinned release), a level outside its range (`supplier.level_invalid`), a contract that ends before it starts (`supplier.contract_dates_invalid`), a contract covering a solution the entity does not provide (`supplier.solution_unknown`), a repeated `ref_id` or email, an unknown `parent` or `domain`, and an `active` contract whose end date has passed (`supplier.contract_lapsed`): renew it and record the new end date, or set it to `expired` or `terminated`. Turning off the `tprm` or `contracts` feature flag in settings.yaml while third parties or contracts are declared is an error. CISO Assistant ships with `contracts` off, so set `contracts: true` in settings.yaml to see contracts in its interface.
+
+Objects are matched by `ref_id` (representatives by email), and the organisation's own entity, which CISO Assistant makes itself, is never touched. `scope plan` shows a renewed contract's new end date as a one-field update.
+
+### Supplier reviews and tiers
+
+```yaml
+forced_tier:                 # optional: the tier the organisation decides, whatever CISO Assistant computes
+  tier: critical             # critical, important, standard or low-impact
+  reason: Holds staff personal data.
+assessments:
+  - ref_id: EA-EXCLOUD
+    name: Example Cloud review
+    solutions: [SOL-EXCLOUD-HOST]
+    perimeter: Corporate IT    # a perimeter of setup.yaml, in the assessment's domain
+    domain: Example Pty Ltd    # default: the entity's domain
+    due_date: "2026-06-30"
+    criticality: 3             # 1-4
+    questionnaire: urn:example:risk:framework:example-baseline   # a framework of setup.yaml
+    groups: ["1"]              # the questionnaire's implementation groups
+    review_every: 12 months    # optional: "N months" or "N years"
+```
+
+- `assessments` are CISO Assistant's entity assessments: `hound` sets up the review (its name, solutions, perimeter, due date and criticality) and, when it creates one with a `questionnaire`, CISO Assistant creates the questionnaire's audit with it. Answers, the expiry date and the tier stay CISO Assistant's. The **conclusion** is approved in this repo: `hound approve` records it under the assessment's `conclusions`, and `hound scope apply` writes it to CISO Assistant. A review with no conclusion in the file is left as CISO Assistant holds it, so one concluded there still counts.
+- `conclusions` lists the reviews a person concluded: `review` (the review's key, as below), `result` (`ok`, `warning` or `blocker`), `by` and `on` (who concluded it and the day). Write them with `hound approve`, in a terminal, not by hand:
+
+  ```yaml
+      conclusions:
+        - review: ENA-EXCLOUD-2026-03
+          result: ok
+          by: Sam Example
+          on: "2026-04-02"
+  ```
+- A contract can carry `approved_by` and `approved_on`: who approved the supplier by making the contract `active` with `hound approve`, and when. They are this repo's record and are not sent to CISO Assistant.
+- With `review_every`, each review is keyed `<ref_id>-<yyyy-MM>` by its due date, and once today reaches a review's due date the plan opens the next one, a cycle later. Without it, the review is the one object `<ref_id>`.
+- `forced_tier` needs a `reason`. `hound` never writes the tier; the plan lists a tier in CISO Assistant that differs from the forced one.
+
+Validation reports an assessment naming a solution the entity does not provide (`supplier.solution_unknown`), an unknown perimeter, domain or questionnaire, a criticality outside 1 to 4, `review_every` without a `due_date` (`supplier.review_without_due_date`), a conclusion naming a review that is not one of the assessment's (`supplier.conclusion_review_unknown`) and a forced tier without a reason (`supplier.forced_tier_reason_missing`).
+
+### Supplier approval
+
+A supplier is **approved** when its latest concluded assessment is concluded `ok`, that conclusion has not expired, no later review is past its due date without a conclusion, and it has an `active` contract. A person approves in this repo with `hound approve` (in a terminal; an agent or a pipe is refused), which makes the contract `active` and records the review's conclusion in the supplier's file. What the file records counts before it is applied, and wins over what CISO Assistant holds for the same review, so one `hound scope apply` can write the supplier, its conclusion and the system together. `scope plan` and `scope apply` check this before planning:
+
+- A system not yet registered whose supplier (its `solution`'s entity, or `supplied_through`) is not approved is refused with `system.supplier_not_approved` and the reason, such as "no concluded assessment", and nothing is applied. Approve the supplier and conclude its review as `ok` with `hound approve`, then plan again.
+- A registered system whose supplier is no longer approved stays registered; the plan lists it under **Suppliers** as `supplier.approval_lapsed`, for the security committee.
+- A tier that differs from `forced_tier` is listed under **Suppliers** as `supplier.tier_differs`. The JSON plan has both as `suppliers`.
+
+## capabilities.yaml
+
+Which system provides each mitigation of one framework, decided with [`hound onboard environment`](onboarding.md#onboard-the-environment-first-which-system-provides-each-mitigation). Optional.
+
+```yaml
+framework: urn:intuitem:risk:framework:essential-eight-2023
+mitigations:
+  - mitigation: ac              # the last part of the mitigation's node URN
+    provided_by: system         # system, manual or gap
+    systems: [Example app control]
+    supplier: SUP-EXAPPCTL      # optional, a third party's ref_id
+    owner: it@example.com       # optional
+    evidence: profile           # optional: collector, profile or manual
+    route: example-app-control  # optional: the collector or profile
+    approved_by: GRC lead       # required: the role that approved it
+    approved_on: "2026-11-23"
+    reason: Application control is enforced by the third-party product, not Intune.
+    signals:
+      - "Microsoft Graph: licence SPE_E3 (Microsoft 365 E3) is subscribed"
+```
+
+The map only decides which system answers each requirement. Results stay in each system's own audit; in every other system's audit of the
+same framework, the mitigation's requirements stay open (`not_assessed`) with `provided_by` naming the providing system, and the observation
+names its audit; each closes when that system's audit shows the requirement met. Validation reports a framework
+`setup.yaml` does not load (`capability.framework_unknown`), a mitigation decided twice (`scope.duplicate`), not in the framework
+(`capability.mitigation_unknown`) or not decided at all (`capability.decision_missing`), a missing approver (`capability.approver_missing`),
+a system decision with no systems (`capability.systems_missing`) and an unknown supplier. A system named but not declared yet is not an
+error: it is waiting to be onboarded. `hound scope plan` lists each gap under "Capability gaps" (JSON `gaps`): the mitigation and the
+requirements no system's audit answers. It lists each requirement an audit leaves open for another system under "Open dependencies" (JSON
+`dependencies`): the audit, the requirement, the system that meets it, that system's audit if it has one, and the result there (as the scope
+declares it, "from collectors" when that audit's mapping computes it, or "no audit yet").
+
 ## audits/&lt;audit&gt;.yaml
 
 | Key | Meaning |
@@ -84,8 +228,8 @@ Names are checked offline against the settings snapshot of the CISO Assistant re
 | `systems` | The systems in scope. |
 | `documents` | Static evidence such as policies and reports: `id`, `name`, `files` (paths or globs, relative to the compliance repo, the scope folder's parent), `systems` and `requirements` it supports. A document is linked to the rows it cites in its own audit, and in every other audit of the same framework that shares one of its systems. |
 | `controls` | The applied controls this audit relies on, by `ref_id`, each with the `requirements` it supports in this framework. |
-| `assessments` | Hand-written results for requirements no check covers: `ref` (or `urn`), `status` (`to_do`, `in_progress`, `in_review`, `done`), `result` and `observation`. |
-| `cycle`, `sign_offs` | Optional, for an audit that runs in periods: `cycle: {period: month|quarter|half_year|year, starts: YYYY-MM-DD, close: sign_off|auto}` and `sign_offs: [{period, by, date}]`. See [Audit periods](#audit-periods). |
+| `assessments` | Hand-written results for requirements no check covers: `ref` (or `urn`), `status` (`to_do`, `in_progress`, `in_review`, `done`), `result`, `observation`, and `provided_by` (the systems that meet it, when another system does: the row stays open, never `not_applicable`, and `hound scope plan` lists it under "Open dependencies" with that system's audit and its result there). |
+| `cycle`, `sign_offs` | Optional, for an audit that runs in periods: `cycle: {period: month|quarter, starts: YYYY-MM-DD, close: sign_off|auto}` and `sign_offs: [{period, by, date}]`. See [Audit periods](#audit-periods). |
 | `unlisted` | Required. What happens to in-group requirements the file does not list: `{result: not_assessed}`, or `{result: not_applicable, reason: …}` for an audit scoped to one system. Nothing is marked not applicable silently. It is applied only with `--config`, because the deployment's mappings say which rows a run computes, and those are left alone. |
 
 A requirement is named by its ref_id, or by its URN when the value starts with `urn:` (needed when a framework repeats a ref).
@@ -98,24 +242,24 @@ hound scope new-audit --framework frameworks/essential-eight-2023.json --groups 
 
 ## Audit periods
 
-An audit file with a `cycle` describes a series rather than one audit. Each period is its own audit, with `ref_id` `<series>-<label>`:
+An audit file with a `cycle` describes a series rather than one audit. The series' `ref_id` is `<ORG>-<FRAMEWORK>`, or `<ORG>-<FRAMEWORK>-<SYSTEM>` for one system's audit, where `<SYSTEM>` is the system's ref ID without `SYS-`. Each period is its own audit, and its label goes after the organisation and framework: `<ORG>-<FRAMEWORK>-<INTERVAL>-<YEAR>FY[-<SYSTEM>]`.
 
 ```yaml
 ref_id: EX-E8-BACKUP
 name: Backups
 cycle: {period: quarter, starts: "2026-07-01"}   # close: sign_off (the default) or auto
 sign_offs:
-  - {period: 2026Q3, by: ceo@example.com, date: "2026-10-14"}
+  - {period: Q1-2027FY, by: ceo@example.com, date: "2026-10-14"}
 ```
 
-| `period` | Labels | Example `ref_id` |
-| --- | --- | --- |
-| `month` | year and month | `EX-E8-BACKUP-2026M02` |
-| `quarter` | year and calendar quarter | `EX-E8-BACKUP-2026Q4` |
-| `half_year` | year and calendar half | `EX-E8-BACKUP-2027H1` |
-| `year` | year, or `FY` and the year it starts when `starts` is not 1 January | `EX-E8-BACKUP-2026`, `EX-E8-BACKUP-FY2026` |
+The year is the financial year, 1 July to 30 June, named by the year it ends: `2027FY` runs from 1 July 2026 to 30 June 2027.
 
-`starts` must be the first day of a month. Periods follow on from it, each labelled by the month, quarter, half or year it starts in. `hound` works out the periods from the date it runs on (UTC), and each `scope plan` and `scope apply` brings CISO Assistant up to that date:
+| `period` | Interval | Example `ref_id` |
+| --- | --- | --- |
+| `quarter` | `Q1` to `Q4`, the quarter of the financial year (`Q1` is July to September) | `EX-E8-Q2-2027FY-BACKUP` (October to December 2026) |
+| `month` | `M01` to `M12`, the calendar month | `EX-E8-M07-2027FY-BACKUP` (July 2026), `EX-E8-M02-2027FY-BACKUP` (February 2027) |
+
+`starts` must be the first day of a month, and for a quarterly cycle the first day of a financial-year quarter (1 July, 1 October, 1 January or 1 April); otherwise `scope.cycle_start_invalid`. Periods follow on from it, each labelled by the quarter or month it starts in. `hound` works out the periods from the date it runs on (UTC), and each `scope plan` and `scope apply` brings CISO Assistant up to that date:
 
 - The **open** period (the one holding today) is in progress. It is created from the previous period's audit as its baseline, so CISO Assistant copies its results, evidence links and hand-written assessments over, and its ETA is the period's last day. Its documents, controls, hand-written assessments and `unlisted` rule are written to it only.
 - An **ended** period moves to in review and is never written again, by `scope apply` or by runs.
@@ -126,7 +270,7 @@ A deployment target may name the series (`compliance_assessment: EX-E8-BACKUP`):
 
 The plan lists what happens to each period under **Audit periods**: opens (with its baseline), closes (in review, awaiting sign-off), awaiting sign-off (still in review from an earlier period), or signed off (done and locked). In JSON these are `periods[]`, each `{audit, event, baseline}`.
 
-CISO Assistant v4.3.4 audits have no start or end dates, so the period shows in the `ref_id`, the name (`Backups 2026Q4`) and the ETA. Locking an audit does not freeze the applied controls it links to, so a locked period never blocks the open one.
+CISO Assistant v4.3.4 audits have no start or end dates, so the period shows in the `ref_id`, the name (`Backups Q2-2027FY`) and the ETA. Locking an audit does not freeze the applied controls it links to, so a locked period never blocks the open one.
 
 ## The review workflow
 
@@ -156,12 +300,14 @@ Every problem is reported at once with its file, line, code and a hint, and the 
 | `scope.key_unknown`, `scope.key_duplicate`, `scope.key_missing`, `scope.value_invalid` | A key is not known, appears twice, is missing, or has a value of the wrong shape. |
 | `scope.file_missing` | The scope folder has no setup.yaml. |
 | `scope.duplicate` | Two domains, systems, perimeters of one domain, controls, audits, or documents of one audit share a name. |
+| `scope.ref_id_convention` | A ref ID without its kind's prefix, or with characters other than upper case letters, digits and hyphens. See [Ref ID conventions](#ref-id-conventions). |
 | `scope.reference_unknown` | A domain, perimeter, system, framework, document or control is used but not declared. |
 | `scope.framework_snapshot_missing`, `scope.framework_file_missing`, `scope.framework_snapshot_mismatch` | A framework cannot be checked offline: no snapshot, a missing file, or a snapshot of another framework. |
 | `scope.group_unknown` | An audit selects a group its framework does not define. |
 | `scope.requirement_unknown` | A requirement is not in the framework. |
 | `scope.requirement_not_assessed` | A document, control or assessment cites a requirement outside the audit's groups. |
 | `scope.result_conflict` | A hand-written result for a requirement a target's mapping also computes, so a person and a collector would write the same row. |
+| `scope.other_system_as_not_applicable` | A requirement marked `not_applicable` because another system meets it (`provided_by`, or an observation starting "Provided by"): it would show as closed while nothing proves it met. Keep it open with `provided_by`. |
 | `scope.field_not_writable` | `field_visibility` leaves `result`, `observation` or `evidences` below `edit` for the auditor. |
 | `scope.unlisted_missing`, `scope.unlisted_reason_missing` | `unlisted` is missing, or marks requirements not applicable without a reason. |
 | `scope.cycle_start_invalid` | A cycle's `starts` is not the first day of a month. |
@@ -174,6 +320,8 @@ Every problem is reported at once with its file, line, code and a hint, and the 
 HOUND_CA_URL=http://localhost:8000/api/ HOUND_CA_TOKEN=… hound scope plan scope/ [--config hound.yaml] [--format markdown|json] [--prune] [--detailed-exitcode] [--out plan.json]
 ```
 
+With `--config`, the plan reaches CISO Assistant at the config's `ciso_assistant.url` with the token its `ciso_assistant.token` reference resolves to, so `hound scope plan scope/ --config hound.yaml` needs no variables when the token reference does (for example `env:HOUND_CA_TOKEN`). `HOUND_CA_URL` and `HOUND_CA_TOKEN` override them when set, and are needed without `--config`. `hound scope apply` reads them the same way.
+
 With `--detailed-exitcode`, as with Terraform, the plan exits 0 when there is nothing to change and no drift, 2 when there is, and 1 on any error, a usage error included, so that a pipeline can gate on 2. Without it, the exit codes are hound's usual ones. `--out` also saves the plan to a file, for [Saved plans](#saved-plans).
 
 The plan validates the scope first and stops, reading nothing, when there are problems. Otherwise it reads CISO Assistant (GET requests only) and prints what applying the scope would do, as Markdown for a pull request comment or as JSON for tools. It writes nothing.
@@ -181,6 +329,7 @@ The plan validates the scope first and stops, reading nothing, when there are pr
 - **Create**: objects the scope declares that CISO Assistant does not hold, with their fields.
 - **Update**: objects whose fields differ, field by field (old → new). An object that exists but was not made by `hound` is taken over: "mark as managed".
 - **Delete**, only with `--prune`: objects `hound` manages that the scope no longer declares. Objects made by hand are never deleted.
+- **Suppliers**: lapsed supplier approvals and tiers that differ from the forced one (see [Supplier approval](#supplier-approval)). A system whose supplier is not approved stops the plan.
 - **Drift**: objects changed in CISO Assistant since `hound` last wrote them (they are written back), objects under the root folder that the scope does not declare, an audit that is locked in CISO Assistant (it and its rows are never changed), and a framework whose loaded library is older than the snapshot's (it is reported, not upgraded).
 
 ### Changes to compliance

@@ -182,13 +182,13 @@ public sealed class ScopeClientTests : IDisposable
     public async Task Opens_a_period_audit_from_the_previous_period_as_baseline()
     {
         List("frameworks", new JsonObject { ["id"] = "fw-e8", ["urn"] = E8 });
-        List("compliance-assessments", new JsonObject { ["id"] = "ca-q3", ["ref_id"] = "EX-E8-BACKUP-2026Q3" });
+        List("compliance-assessments", new JsonObject { ["id"] = "ca-q3", ["ref_id"] = "EX-E8-Q1-2027FY-BACKUP" });
         Respond("POST", "/api/compliance-assessments/", 201, new JsonObject { ["id"] = "ca-q4" });
-        var period = Declared(ScopeKind.Audit, "EX-E8-BACKUP-2026Q4",
-            ("name", "Backups 2026Q4"), ("framework", E8), ("groups", "1, 2"), ("domain", "Example Pty Ltd"), ("perimeter", "Corporate IT"),
+        var period = Declared(ScopeKind.Audit, "EX-E8-Q2-2027FY-BACKUP",
+            ("name", "Backups Q2-2027FY"), ("framework", E8), ("groups", "1, 2"), ("domain", "Example Pty Ltd"), ("perimeter", "Corporate IT"),
             ("eta", "2026-12-31"), ("status", "in_progress")) with
         {
-            Initial = new Dictionary<string, string> { ["baseline"] = "EX-E8-BACKUP-2026Q3" },
+            Initial = new Dictionary<string, string> { ["baseline"] = "EX-E8-Q1-2027FY-BACKUP" },
         };
 
         (await Create(period)).Value();
@@ -202,10 +202,10 @@ public sealed class ScopeClientTests : IDisposable
     public async Task Closing_a_period_sets_its_status_and_lock_in_one_write()
     {
         List("frameworks", new JsonObject { ["id"] = "fw-e8", ["urn"] = E8 });
-        List("compliance-assessments", new JsonObject { ["id"] = "ca-q3", ["ref_id"] = "EX-E8-BACKUP-2026Q3" });
+        List("compliance-assessments", new JsonObject { ["id"] = "ca-q3", ["ref_id"] = "EX-E8-Q1-2027FY-BACKUP" });
         Respond("PATCH", "/api/compliance-assessments/ca-q3/", 200, new JsonObject());
-        var period = Declared(ScopeKind.Audit, "EX-E8-BACKUP-2026Q3",
-            ("name", "Backups 2026Q3"), ("framework", E8), ("domain", "Example Pty Ltd"), ("perimeter", "Corporate IT"), ("status", "done"), ("locked", "true"));
+        var period = Declared(ScopeKind.Audit, "EX-E8-Q1-2027FY-BACKUP",
+            ("name", "Backups Q1-2027FY"), ("framework", E8), ("domain", "Example Pty Ltd"), ("perimeter", "Corporate IT"), ("status", "done"), ("locked", "true"));
 
         (await Write(period, ScopeAction.Update, State)).Value();
 

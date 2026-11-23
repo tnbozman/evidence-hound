@@ -1,4 +1,5 @@
 using System.CommandLine;
+using EvidenceHound.Collectors;
 using EvidenceHound.Core.Results;
 using EvidenceHound.Core.Secrets;
 using EvidenceHound.Runtime.Collectors;
@@ -23,8 +24,9 @@ internal static class ConfigCommands
             var config = await LoadAsync(parseResult.GetRequiredValue(file), registry, cancellationToken);
             var checkedConfig = parseResult.GetValue(checkSecrets) ? config.Bind(c => WithSecrets(c, configuration)) : config;
             return await checkedConfig.Match(
-                async _ =>
+                async loaded =>
                 {
+                    WarnAboutInstances(loaded, registry, logger);
                     await output.WriteLineAsync("valid");
                     return ExitCodes.Ok;
                 },
@@ -37,6 +39,22 @@ internal static class ConfigCommands
     /// <summary>Loads a deployment config, checking each collector against what its registered type describes.</summary>
     internal static Task<Result<DeploymentConfig>> LoadAsync(FileInfo file, CollectorRegistry registry, CancellationToken cancellationToken) =>
         ConfigLoader.LoadAsync(file.FullName, registry.Descriptions, cancellationToken);
+
+    /// <summary>
+    /// Logs a warning for each problem a collector finds with its own instances (such as a rest instance whose profile is not valid).
+    /// Such an instance stops only itself, so this never fails the command.
+    /// </summary>
+    internal static void WarnAboutInstances(DeploymentConfig config, CollectorRegistry registry, ILogger logger)
+    {
+        foreach (var instance in config.Collectors)
+        {
+            if (registry.ByType.GetValueOrDefault(instance.Type) is IInstanceValidator validator
+                && validator.ValidateInstance(new CollectorSettings(instance.Settings), [.. instance.Secrets.Keys]) is { Count: > 0 } problems)
+            {
+                Log.InstanceProblems(logger, instance.Name, problems);
+            }
+        }
+    }
 
     /// <summary>The secret provider for this run: <c>env:</c> reads .NET configuration (environment variables and test settings).</summary>
     internal static ISecretProvider Secrets(IConfiguration configuration) => CompositeSecretProvider.Standard(name => configuration[name]);

@@ -22,9 +22,13 @@
     <EmbeddedResource Include="..\..\examples\compliance-repo\.gitignore" LogicalName="init/.gitignore" />
   </ItemGroup>
   <ItemGroup>
+    <!-- hound onboard reads each provider's default model from here; edit it to change model without a new build. -->
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\EvidenceHound.CisoAssistant\EvidenceHound.CisoAssistant.csproj" />
     <ProjectReference Include="..\EvidenceHound.Core\EvidenceHound.Core.csproj" />
     <ProjectReference Include="..\EvidenceHound.Core.Yaml\EvidenceHound.Core.Yaml.csproj" />
+    <ProjectReference Include="..\EvidenceHound.Onboarding\EvidenceHound.Onboarding.csproj" />
     <ProjectReference Include="..\EvidenceHound.Runtime\EvidenceHound.Runtime.csproj" />
     <ProjectReference Include="..\EvidenceHound.Transport.Kafka\EvidenceHound.Transport.Kafka.csproj" />
   </ItemGroup>

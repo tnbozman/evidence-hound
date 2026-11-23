@@ -20,6 +20,7 @@ public sealed class M365CollectorTests : IDisposable
         "identity.mfa.registered_all_users", "identity.mfa.enforced_conditional_access", "identity.legacy_auth_blocked", "identity.mfa.phishing_resistant_admins",
         "identity.privileged.global_admin_count", "identity.privileged.admins_cloud_only", "identity.privileged.pim_eligible_not_permanent",
         "endpoint.managed.compliant_ratio", "endpoint.os.supported_versions", "apps.office.macros_blocked_from_internet", "endpoint.asr.office_rules_enabled",
+        "endpoint.application_control.enforced", "endpoint.application_control.file_types_covered", "endpoint.application_control.events_centrally_logged",
     ];
 
     [Fact]
@@ -65,7 +66,8 @@ public sealed class M365CollectorTests : IDisposable
 
         result.Files.Select(f => f.FileName).ShouldBe(
             ["users.json", "mfa-registration.json", "conditional-access-policies.json", "role-assignments.json", "role-eligibility-schedules.json", "role-assignment-schedule-instances.json",
-             "managed-devices.json", "device-configurations.json", "configuration-policies.json"]);
+             "managed-devices.json", "device-configurations.json", "configuration-policies.json",
+             "hunting-app-control-events.json", "hunting-app-control-blocked-files.json", "hunting-defender-onboarding.json"]);
     }
 
     [Fact]
@@ -80,6 +82,23 @@ public sealed class M365CollectorTests : IDisposable
         pim.EvidenceRefs.ShouldBe(["role-assignments.json"]);
         result.Files.Select(f => f.FileName).ShouldNotContain("role-eligibility-schedules.json");
         result.Files.Select(f => f.FileName).ShouldNotContain("role-assignment-schedule-instances.json");
+    }
+
+    [Fact]
+    public async Task Without_advanced_hunting_the_run_succeeds_and_the_events_check_says_why()
+    {
+        foreach (var name in new[] { "hunting-app-control-events", "hunting-app-control-blocked-files", "hunting-defender-onboarding" })
+        {
+            _tenant.Fail(name, 403, "Authorization_RequestDenied", "Insufficient privileges to complete the operation.");
+        }
+
+        var result = (await CollectAsync(_tenant)).Value();
+
+        var events = result.Checks.Single(c => c.CheckId.Value == "endpoint.application_control.events_centrally_logged");
+        events.Outcome.ShouldBe(CheckOutcome.Error);
+        events.Observation.ShouldContain("ThreatHunting.Read.All");
+        result.Files.Select(f => f.FileName).ShouldNotContain("hunting-app-control-events.json");
+        result.Checks.Single(c => c.CheckId.Value == "endpoint.application_control.enforced").Outcome.ShouldBe(CheckOutcome.Pass);
     }
 
     [Fact]

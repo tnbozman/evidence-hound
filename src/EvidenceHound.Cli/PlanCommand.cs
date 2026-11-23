@@ -48,7 +48,7 @@ internal static class PlanCommand
         ILogger logger,
         CancellationToken cancellationToken)
     {
-        var inputs = (await InputsAsync(configFile, checksFile, registry, AuditSeries.Today(configuration), cancellationToken))
+        var inputs = (await InputsAsync(configFile, checksFile, registry, AuditSeries.Today(configuration), cancellationToken, logger))
             .Bind(i => PublishCommand.Connection(configuration).Map(connection => (Inputs: i, Connection: connection)));
         return await inputs.Match(
             async ready =>
@@ -78,7 +78,8 @@ internal static class PlanCommand
 
     private static async Task<int> DryRunAsync(FileInfo configFile, FileInfo checksFile, CollectorRegistry registry, DateOnly today, TextWriter output, ILogger logger, CancellationToken cancellationToken)
     {
-        var plan = await PlanAsync(configFile, checksFile, registry, today, cancellationToken);
+        var plan = (await InputsAsync(configFile, checksFile, registry, today, cancellationToken, logger))
+            .Bind(i => AuditPlanner.PlanUpdates(i.Targets, i.Run.Evidence, i.Run.ControlStatuses));
 
         return await plan.Match(
             async updates =>
@@ -102,10 +103,18 @@ internal static class PlanCommand
 
     /// <summary>Each target audit with its mapped results, and the run the results came from.</summary>
     private static async Task<Result<(IReadOnlyList<TargetResults> Targets, RunResults Run)>> InputsAsync(
-        FileInfo configFile, FileInfo checksFile, CollectorRegistry registry, DateOnly today, CancellationToken cancellationToken)
+        FileInfo configFile, FileInfo checksFile, CollectorRegistry registry, DateOnly today, CancellationToken cancellationToken, ILogger? logger = null)
     {
         var targets = await (await ConfigCommands.LoadAsync(configFile, registry, cancellationToken)).Match(
-            async config => await LoadMappingsAsync((await AuditSeries.ResolveAsync(config, today, cancellationToken)).Targets, cancellationToken),
+            async config =>
+            {
+                if (logger is not null)
+                {
+                    ConfigCommands.WarnAboutInstances(config, registry, logger);
+                }
+
+                return await LoadMappingsAsync((await AuditSeries.ResolveAsync(config, today, cancellationToken)).Targets, cancellationToken);
+            },
             problems => Task.FromResult(Result.Fail<IReadOnlyList<(TargetConfig Target, FrameworkMapping Mapping)>>(problems)));
         var run = await CheckResultsJson.LoadRunAsync(checksFile, cancellationToken);
 

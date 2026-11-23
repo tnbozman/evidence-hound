@@ -1,4 +1,4 @@
-# Mapping used by the functional test that runs the sophos collector against the recorded example.com tenant.
+# Mapping used by the functional test that runs the sophos-central profile against the recorded example.com tenant.
 # Fictional framework (the example baseline); only requirements this collector fully owns are listed.
 framework_urn: urn:example:risk:library:example-baseline
 description: Example baseline requirements assessed from the recorded Sophos Central tenant.

@@ -1,0 +1,342 @@
+m
+Sophos Central lists every managed firewall; the list is exported fortnightly.
+m
+The external vulnerability scanner plug-in feed updates daily; its settings are captured quarterly.
+n
+No applications run on it.
+The firewall runs only the vendor firmware; no applications are installed on it. Its firmware is patched as an operating system.
+Alex Example
+n
+No applications run on it.
+The firewall runs only the vendor firmware; no applications are installed on it. Its firmware is patched as an operating system.
+Alex Example
+n
+No applications run on it.
+The firewall runs only the vendor firmware; no applications are installed on it. Its firmware is patched as an operating system.
+Alex Example
+n
+No applications run on it.
+The firewall runs only the vendor firmware; no applications are installed on it. Its firmware is patched as an operating system.
+Alex Example
+n
+No applications run on it.
+The firewall runs only the vendor firmware; no applications are installed on it. Its firmware is patched as an operating system.
+Alex Example
+n
+No applications run on it.
+The firewall runs only the vendor firmware; no applications are installed on it. Its firmware is patched as an operating system.
+Alex Example
+n
+No applications run on it.
+The firewall runs only the vendor firmware; no applications are installed on it. Its firmware is patched as an operating system.
+Alex Example
+n
+No applications run on it.
+The firewall runs only the vendor firmware; no applications are installed on it. Its firmware is patched as an operating system.
+Alex Example
+n
+No applications run on it.
+The firewall runs only the vendor firmware; no applications are installed on it. Its firmware is patched as an operating system.
+Alex Example
+m
+Sophos Central lists every managed firewall; the list is exported fortnightly.
+m
+The external vulnerability scanner plug-in feed updates daily; its settings are captured quarterly.
+m
+An external vulnerability scan of the internet-facing interface of the firewall runs daily; reports kept.
+n
+It is internet-facing.
+The firewall is an internet-facing network device, so the daily scan (ISM-1701) applies instead.
+Alex Example
+m
+Firmware hotfixes for exploited vulnerabilities are applied within 48 hours; the firmware history in Sophos Central is the record.
+c
+The firmware upgrade check of Sophos Central lists the upgrades offered to each firewall; hound counts how long each has been offered, at most 14 days (sophos-central profile).
+n
+It is internet-facing.
+ISM-1695 covers workstations, non-internet-facing servers and non-internet-facing network devices; the firewall is internet-facing, so ISM-1694 applies.
+Alex Example
+c
+The firewalls endpoint of Sophos Central returns the firmware version of each firewall, checked against the supported releases (sophos-central profile).
+n
+Not an online service.
+The firewall is a network device, not an online service. Sophos Central, which manages it, is covered by the Sophos supplier review.
+Alex Example
+m
+Sophos Central requires MFA of every admin; its admin settings are captured quarterly.
+n
+Not an online service.
+The firewall is a network device, not an online service. Sophos Central, which manages it, is covered by the Sophos supplier review.
+Alex Example
+n
+Not an online service.
+The firewall is a network device, not an online service. Sophos Central, which manages it, is covered by the Sophos supplier review.
+Alex Example
+m
+Sophos Central admins use phishing-resistant MFA; its admin settings are captured quarterly.
+n
+No customers use it.
+No customer signs in to the firewall or to Sophos Central.
+Alex Example
+m
+The local admin console of the firewall requires a one-time password and is reachable only from the management network.
+n
+No unprivileged users.
+Only administrators sign in to the firewall; it has no unprivileged user accounts.
+Alex Example
+m
+The admin one-time password is something the admin has, with their password; the setting is captured quarterly.
+n
+Not an online service.
+The firewall is a network device, not an online service. Sophos Central, which manages it, is covered by the Sophos supplier review.
+Alex Example
+n
+No customers use it.
+No customer signs in to the firewall or to Sophos Central.
+Alex Example
+m
+Admins sign in through Sophos Central with phishing-resistant MFA; the local console is a break glass path only.
+m
+Admin sign-in events, with their MFA outcome, go to Sophos Central; a sample is captured monthly.
+m
+The firewall sends its logs to Sophos Central, where they are kept and reviewed weekly; incidents follow the incident response plan and register.
+m
+The firewall sends its logs to Sophos Central, where they are kept and reviewed weekly; incidents follow the incident response plan and register.
+m
+The firewall sends its logs to Sophos Central, where they are kept and reviewed weekly; incidents follow the incident response plan and register.
+m
+The firewall sends its logs to Sophos Central, where they are kept and reviewed weekly; incidents follow the incident response plan and register.
+m
+The firewall sends its logs to Sophos Central, where they are kept and reviewed weekly; incidents follow the incident response plan and register.
+m
+The firewall sends its logs to Sophos Central, where they are kept and reviewed weekly; incidents follow the incident response plan and register.
+m
+Firewall admin access is requested and approved through the access request process; records kept.
+m
+Admin access is revalidated at the annual access review; the review record is kept.
+m
+Inactive admins are removed after 45 days; the monthly admin review is kept.
+m
+Each admin has a dedicated Sophos Central admin account; the admin list is captured quarterly.
+m
+Firewall admin accounts are used only for administration; the admin list is captured quarterly.
+c
+The admins endpoint of Sophos Central shows who holds Super Admin, checked against a limit of two (sophos-central profile).
+o
+Administrators work from their managed Example laptops, whose operating environments meet this.
+Example laptops
+o
+Administrators work from their managed Example laptops, whose operating environments meet this.
+Example laptops
+o
+Administrators work from their managed Example laptops, whose operating environments meet this.
+Example laptops
+o
+Administrators work from their managed Example laptops, whose operating environments meet this.
+Example laptops
+m
+The local admin console accepts connections only from the management network; the rule is captured quarterly.
+m
+The local break glass admin password is long, unique and kept in the password vault; the history of the vault entry is captured quarterly.
+m
+Admin sign-ins and changes go to Sophos Central; a sample is captured monthly.
+m
+Admin account changes go to the Sophos Central audit log; a sample is captured monthly.
+m
+The firewall sends its logs to Sophos Central, where they are kept and reviewed weekly; incidents follow the incident response plan and register.
+m
+The firewall sends its logs to Sophos Central, where they are kept and reviewed weekly; incidents follow the incident response plan and register.
+m
+The firewall sends its logs to Sophos Central, where they are kept and reviewed weekly; incidents follow the incident response plan and register.
+m
+The firewall sends its logs to Sophos Central, where they are kept and reviewed weekly; incidents follow the incident response plan and register.
+m
+The firewall sends its logs to Sophos Central, where they are kept and reviewed weekly; incidents follow the incident response plan and register.
+m
+The firewall sends its logs to Sophos Central, where they are kept and reviewed weekly; incidents follow the incident response plan and register.
+n
+A network device, not a workstation or internet-facing server.
+Application control at maturity level two covers workstations and internet-facing servers. A firewall appliance is neither.
+Alex Example
+n
+A network device, not a workstation or internet-facing server.
+Application control at maturity level two covers workstations and internet-facing servers. A firewall appliance is neither.
+Alex Example
+n
+A network device, not a workstation or internet-facing server.
+Application control at maturity level two covers workstations and internet-facing servers. A firewall appliance is neither.
+Alex Example
+n
+A network device, not a workstation or internet-facing server.
+Application control at maturity level two covers workstations and internet-facing servers. A firewall appliance is neither.
+Alex Example
+n
+A network device, not a workstation or internet-facing server.
+Application control at maturity level two covers workstations and internet-facing servers. A firewall appliance is neither.
+Alex Example
+n
+A network device, not a workstation or internet-facing server.
+Application control at maturity level two covers workstations and internet-facing servers. A firewall appliance is neither.
+Alex Example
+n
+A network device, not a workstation or internet-facing server.
+Application control at maturity level two covers workstations and internet-facing servers. A firewall appliance is neither.
+Alex Example
+n
+A network device, not a workstation or internet-facing server.
+Application control at maturity level two covers workstations and internet-facing servers. A firewall appliance is neither.
+Alex Example
+n
+A network device, not a workstation or internet-facing server.
+Application control at maturity level two covers workstations and internet-facing servers. A firewall appliance is neither.
+Alex Example
+n
+A network device, not a workstation or internet-facing server.
+Application control at maturity level two covers workstations and internet-facing servers. A firewall appliance is neither.
+Alex Example
+n
+A network device, not a workstation or internet-facing server.
+Application control at maturity level two covers workstations and internet-facing servers. A firewall appliance is neither.
+Alex Example
+n
+A network device, not a workstation or internet-facing server.
+Application control at maturity level two covers workstations and internet-facing servers. A firewall appliance is neither.
+Alex Example
+n
+A network device, not a workstation or internet-facing server.
+Application control at maturity level two covers workstations and internet-facing servers. A firewall appliance is neither.
+Alex Example
+n
+A network device, not a workstation or internet-facing server.
+Application control at maturity level two covers workstations and internet-facing servers. A firewall appliance is neither.
+Alex Example
+n
+No Microsoft Office.
+A firewall appliance runs no Microsoft Office.
+Alex Example
+n
+No Microsoft Office.
+A firewall appliance runs no Microsoft Office.
+Alex Example
+n
+No Microsoft Office.
+A firewall appliance runs no Microsoft Office.
+Alex Example
+n
+No Microsoft Office.
+A firewall appliance runs no Microsoft Office.
+Alex Example
+n
+No Microsoft Office.
+A firewall appliance runs no Microsoft Office.
+Alex Example
+n
+No office suite, browser, PDF software or PowerShell.
+User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance.
+Alex Example
+n
+No office suite, browser, PDF software or PowerShell.
+User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance.
+Alex Example
+n
+No office suite, browser, PDF software or PowerShell.
+User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance.
+Alex Example
+n
+No office suite, browser, PDF software or PowerShell.
+User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance.
+Alex Example
+n
+No office suite, browser, PDF software or PowerShell.
+User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance.
+Alex Example
+n
+No office suite, browser, PDF software or PowerShell.
+User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance.
+Alex Example
+n
+No office suite, browser, PDF software or PowerShell.
+User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance.
+Alex Example
+n
+No office suite, browser, PDF software or PowerShell.
+User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance.
+Alex Example
+n
+No office suite, browser, PDF software or PowerShell.
+User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance.
+Alex Example
+n
+No office suite, browser, PDF software or PowerShell.
+User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance.
+Alex Example
+n
+No office suite, browser, PDF software or PowerShell.
+User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance.
+Alex Example
+n
+No office suite, browser, PDF software or PowerShell.
+User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance.
+Alex Example
+n
+No office suite, browser, PDF software or PowerShell.
+User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance.
+Alex Example
+n
+No office suite, browser, PDF software or PowerShell.
+User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance.
+Alex Example
+n
+No office suite, browser, PDF software or PowerShell.
+User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance.
+Alex Example
+n
+No office suite, browser, PDF software or PowerShell.
+User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance.
+Alex Example
+n
+No office suite, browser, PDF software or PowerShell.
+User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance.
+Alex Example
+n
+No office suite, browser, PDF software or PowerShell.
+User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance.
+Alex Example
+n
+No office suite, browser, PDF software or PowerShell.
+User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance.
+Alex Example
+n
+No office suite, browser, PDF software or PowerShell.
+User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance.
+Alex Example
+n
+No office suite, browser, PDF software or PowerShell.
+User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance.
+Alex Example
+n
+No office suite, browser, PDF software or PowerShell.
+User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance.
+Alex Example
+m
+Sophos Central backs up the firewall configuration on each change and weekly; the backup list is captured monthly.
+m
+The configuration is backed up as one file, so it restores to a single point.
+m
+Configuration backups are kept in Sophos Central and copied monthly to the backup service.
+m
+A configuration restore to a spare or virtual firewall is tested each year; the test record is the evidence.
+n
+No unprivileged users.
+Only administrators sign in to the firewall; it has no unprivileged user accounts.
+Alex Example
+m
+Only Super Admins can download configuration backups; the role settings are captured quarterly.
+n
+No unprivileged users.
+Only administrators sign in to the firewall; it has no unprivileged user accounts.
+Alex Example
+m
+Only Super Admins can delete configuration backups; the role settings are captured quarterly.
+
+

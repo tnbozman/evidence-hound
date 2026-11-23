@@ -1,0 +1,20 @@
+# Recorded answers from the fictional Example Pty Ltd tenant: one XGS firewall on SFOS 21.0.1, three admins.
+description: Supported firmware and few Super Admins.
+now: 2026-11-22T02:00:00Z
+settings:
+  client_id: 00000000-0000-4000-8000-0000000050d1
+  supported_firewall_firmware: "20.0, 21.0"
+secrets:
+  client_secret: example-test-client-secret
+responses:
+  - { post: /api/v2/oauth2/token, file: recordings/token.json }
+  - { get: /whoami/v1, file: recordings/whoami.json }
+  - { get: /firewall/v1/firewalls, file: recordings/firewalls.json }
+  - { get: /common/v1/admins, file: recordings/admins.json }
+  - { get: /common/v1/admins, query: { page: "2" }, file: recordings/admins.2.json }
+  - { get: /common/v1/roles, file: recordings/roles.json }
+  - { post: /firewall/v1/firewalls/actions/firmware-upgrade-check, file: recordings/firmware-upgrade-none.json }
+expect:
+  network.firewall.firmware_supported: pass
+  network.management.super_admin_count: pass
+  network.firewall.firmware_current: pass

@@ -17,7 +17,8 @@ public static class Manifests
     /// One entry per file, sorted by file name, with its size and SHA-256. File names must be plain, unique and not start with
     /// <c>_</c>, which is kept for the store's own files.
     /// </summary>
-    public static Result<EvidenceManifest> Build(string collector, string collectorVersion, DateTimeOffset collectedAt, IReadOnlyList<CollectedFile> files)
+    public static Result<EvidenceManifest> Build(
+        string collector, string collectorVersion, DateTimeOffset collectedAt, IReadOnlyList<CollectedFile> files, IReadOnlyList<ManifestProfile>? profiles = null)
     {
         ArgumentNullException.ThrowIfNull(files);
 
@@ -35,14 +36,17 @@ public static class Manifests
                 collector,
                 collectorVersion,
                 collectedAt,
-                [.. files.OrderBy(f => f.FileName, StringComparer.Ordinal).Select(f => Entry(f, collectedAt))]));
+                [.. files.OrderBy(f => f.FileName, StringComparer.Ordinal).Select(f => Entry(f, collectedAt))])
+            {
+                Profiles = profiles ?? [],
+            });
     }
 
     /// <summary>Indented JSON with snake_case keys; the same manifest always gives the same text.</summary>
     public static string ToJson(EvidenceManifest manifest)
     {
         ArgumentNullException.ThrowIfNull(manifest);
-        return new JsonObject
+        var json = new JsonObject
         {
             ["collector"] = manifest.Collector,
             ["collector_version"] = manifest.CollectorVersion,
@@ -55,7 +59,19 @@ public static class Manifests
                 ["media_type"] = f.MediaType,
                 ["collected_at"] = f.CollectedAt,
             })]),
-        }.ToJsonString(Indented);
+        };
+        if (manifest.Profiles.Count > 0)
+        {
+            json["profiles"] = new JsonArray([.. manifest.Profiles.Select(p => new JsonObject
+            {
+                ["name"] = p.Name,
+                ["version"] = p.Version,
+                ["source"] = p.Source,
+                ["sha256"] = p.Sha256,
+            })]);
+        }
+
+        return json.ToJsonString(Indented);
     }
 
     private static ManifestEntry Entry(CollectedFile file, DateTimeOffset collectedAt) =>

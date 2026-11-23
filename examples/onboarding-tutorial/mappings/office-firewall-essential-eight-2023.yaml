@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=../../../schemas/mapping.schema.json
+# The office firewall's Essential Eight audit (OFFICE-FIREWALL-ESSENTIAL-EIGHT-2023): the two requirements onboarding decided as API
+# checks, from the sophos-central profile. Every other row of that audit is in its audit file, decided when it was onboarded.
+framework_urn: urn:intuitem:risk:framework:essential-eight-2023
+description: The office firewall's API checks, from the sophos-central profile.
+requirements:
+  # Patch operating systems. The firewall runs firmware still in support.
+  - ref: ISM-1501
+    rule: all_pass
+    checks:
+      - network.firewall.firmware_supported
+  # Patch operating systems. No firmware upgrade offered to the firewall for more than 14 days; counted from hound's earlier runs.
+  - ref: ISM-1694
+    rule: all_pass
+    checks:
+      - network.firewall.firmware_current
+  # Restrict administrative privileges. Few Sophos Central admins hold Super Admin.
+  - ref: ISM-1883
+    rule: all_pass
+    checks:
+      - network.management.super_admin_count

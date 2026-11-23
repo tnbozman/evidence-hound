@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>m365-dev</AssemblyName>
+    <RootNamespace>EvidenceHound.M365DevServer</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <Description>A fictional Example Pty Ltd Microsoft 365 tenant that answers Microsoft Graph offline, for developing and testing the m365 collector.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="WireMock.Net" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Published by the Australian Signals Directorate under CC BY 4.0; see Blueprint/NOTICE.md. -->
+    <EmbeddedResource Include="Blueprint\OfficeHardening.txt" LogicalName="blueprint/OfficeHardening.txt" />
+    <EmbeddedResource Include="Blueprint\NOTICE.md" LogicalName="blueprint/NOTICE.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\EvidenceHound.Core\EvidenceHound.Core.csproj" />
+  </ItemGroup>
+</Project>

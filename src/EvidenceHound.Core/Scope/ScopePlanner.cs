@@ -110,8 +110,19 @@ public static class ScopePlanner
     private static Dictionary<string, string> Comparable(ScopeKind kind, IReadOnlyDictionary<string, string> held, IReadOnlyDictionary<string, string> wanted) =>
         held.Where(h => kind == ScopeKind.Assessment || Optional(kind, h.Key) ? wanted.ContainsKey(h.Key) : h.Key != "ref_id" || wanted.ContainsKey(h.Key)).ToDictionary(StringComparer.Ordinal);
 
-    /// <summary>Fields compared only when the scope declares them: an audit's status and lock, which only a period audit declares.</summary>
-    private static bool Optional(ScopeKind kind, string field) => kind == ScopeKind.Audit && field is "status" or "locked";
+    /// <summary>
+    /// Fields compared only when the scope declares them: an audit's status and lock, which only a period audit declares, and a supplier
+    /// review's conclusion, which the scope declares once a person concludes it with <c>hound approve</c>, and a supplier's levels and a
+    /// solution's criticality, which a drafted supplier leaves to decide and CISO Assistant fills in with its defaults.
+    /// </summary>
+    private static bool Optional(ScopeKind kind, string field) => kind switch
+    {
+        ScopeKind.Audit => field is "status" or "locked",
+        ScopeKind.EntityAssessment => field == "conclusion",
+        ScopeKind.Entity => field is "dependency" or "penetration" or "maturity" or "trust",
+        ScopeKind.Solution => field == "criticality",
+        _ => false,
+    };
 
     /// <summary>The declared object with the links CISO Assistant already holds added to its own.</summary>
     private static ScopeObject Linked(ScopeObject declared, IReadOnlyDictionary<string, string> held)
@@ -161,7 +172,7 @@ public static class ScopePlanner
     /// Frameworks come from libraries, assessments are rows of an audit, and flags and settings are CISO Assistant's own: none carries a marker,
     /// nor is ever deleted, and those the scope does not name are not drift.
     /// </summary>
-    private static bool Marked(ScopeKind kind) => kind is not (ScopeKind.Framework or ScopeKind.Assessment or ScopeKind.FeatureFlag or ScopeKind.Setting);
+    private static bool Marked(ScopeKind kind) => kind is not (ScopeKind.Framework or ScopeKind.Assessment or ScopeKind.FeatureFlag or ScopeKind.Setting or ScopeKind.MainEntity);
 
     /// <summary>
     /// Objects the scope does not declare are drift when <c>hound</c> manages them, or when they are structure (domains, perimeters, systems,

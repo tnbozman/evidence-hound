@@ -24,17 +24,21 @@ public sealed class CollectorsCommandTests : IDisposable
               settings: tenant (optional)
               secrets: none
             m365 1.0.0
-              checks: apps.office.macros_blocked_from_internet, endpoint.asr.office_rules_enabled, endpoint.managed.compliant_ratio, endpoint.os.supported_versions, identity.legacy_auth_blocked, identity.mfa.enforced_conditional_access, identity.mfa.phishing_resistant_admins, identity.mfa.registered_all_users, identity.privileged.admins_cloud_only, identity.privileged.global_admin_count, identity.privileged.pim_eligible_not_permanent
-              settings: tenant_id (required), client_id (required), graph_url (optional), include_identities (optional), break_glass_accounts (optional), mfa_partial_percent (optional), privileged_roles (optional), global_admin_min (optional), global_admin_max (optional), compliant_pass_percent (optional), compliant_partial_percent (optional), supported_windows_builds (required)
+              checks: apps.office.macros_blocked_from_internet, endpoint.application_control.enforced, endpoint.application_control.events_centrally_logged, endpoint.application_control.file_types_covered, endpoint.asr.office_rules_enabled, endpoint.managed.compliant_ratio, endpoint.os.supported_versions, identity.legacy_auth_blocked, identity.mfa.enforced_conditional_access, identity.mfa.phishing_resistant_admins, identity.mfa.registered_all_users, identity.privileged.admins_cloud_only, identity.privileged.global_admin_count, identity.privileged.pim_eligible_not_permanent
+              settings: tenant_id (required), client_id (required), graph_url (optional), sign_in (optional), include_identities (optional), break_glass_accounts (optional), mfa_partial_percent (optional), privileged_roles (optional), global_admin_min (optional), global_admin_max (optional), compliant_pass_percent (optional), compliant_partial_percent (optional), application_control_groups (optional), application_control_window_days (optional), defender_onboarded_percent (optional), system (optional), supported_windows_builds (required)
               secrets: client_certificate (optional), client_secret (optional)
             manual 1.0.0
               checks: set per instance by setting 'checks'
               settings: drop_folder (required), patterns (optional), checks (required), due_days (required), owner (required)
               secrets: none
-            sophos 2.1.0
-              checks: network.firewall.firmware_supported, network.management.super_admin_count
-              settings: client_id (required), tenant_id (optional), id_url (optional), api_url (optional), include_identities (optional), supported_firewall_firmware (required), super_admin_max (optional)
-              secrets: client_secret (required)
+            rest 1.0.0
+              checks: set per instance by its settings
+              settings: profile (required), profiles_path (optional), include_identities (optional), allow_writes (optional), require_profile_tests (optional)
+              secrets: none
+            vuln-scan 1.0.0
+              checks: vuln.common_apps.patched_in_window, vuln.common_apps.scanned_in_interval, vuln.common_apps.unsupported_removed, vuln.internet_facing.patched_in_window, vuln.internet_facing.scanned_in_interval, vuln.internet_facing.unsupported_removed, vuln.operating_systems.patched_in_window, vuln.operating_systems.scanned_in_interval, vuln.operating_systems.unsupported_removed, vuln.other_apps.patched_in_window, vuln.other_apps.scanned_in_interval
+              settings: drop_folder (required), format (required), scope (required), owner (required), scan_interval_days (optional), patch_window_days (optional), exploited_patch_window_hours (optional), column_host (optional), column_finding_id (optional), column_severity (optional), column_name (optional), column_cve (optional), column_first_seen (optional), column_patch_published (optional), column_exploit_available (optional), column_unsupported (optional), column_scan_date (optional)
+              secrets: none
             widget 0.1.0
               checks: widget.patched
               settings: site (required)

@@ -1,0 +1,102 @@
+# yaml-language-server: $schema=../../schemas/config.schema.json
+# Example Pty Ltd's deployment config. Everything here is made up; your own lives in your private compliance repo.
+# Guide: docs/configuration.md. Check it with: hound config validate hound.yaml
+# Relative paths are relative to this file. Secrets are references only, never values.
+
+ciso_assistant:
+  url: https://ciso.example.com/api/     # HOUND_CA_URL overrides this, for example in CI
+  token: env:HOUND_CA_TOKEN              # a personal access token for hound's service account
+
+evidence:
+  root: /var/lib/evidence-hound/evidence # outside the repo: evidence is never committed
+  retention_days: 90
+  period_retention_years: 7
+
+# `hound serve` (the runner container) reads every schedule below in this time zone, and delays each collector's
+# runs by up to jitter_seconds (a stable amount per collector).
+scheduler:
+  time_zone: Australia/Sydney
+  jitter_seconds: 300
+
+# The scope folder: lets a target name an audit series that runs in periods (see docs/scope.md).
+scope: scope
+
+collectors:
+  - name: example-m365
+    type: m365
+    schedule: "0 3 * * *"                # nightly at 03:00 Sydney time, publishing to EX-E8-2026
+    settings:
+      tenant_id: 00000000-0000-4000-8000-000000000001     # fictional
+      client_id: 00000000-0000-4000-8000-000000000002     # fictional
+      supported_windows_builds: "10.0.22631, 10.0.26100"
+    secrets:
+      client_certificate: file:/run/secrets/m365_client_certificate
+
+  # Manual sources: people drop their exports here, outside the repo. See manual-sources/README.md.
+  - name: example-incident-register
+    type: manual
+    schedule: "0 6 * * *"
+    settings:
+      drop_folder: /var/lib/evidence-hound/manual/example-incident-register
+      checks: incident.reported_to_ciso, incident.reported_to_asd, incident.response_plan_followed
+      due_days: 31
+      owner: Alex Example
+
+  - name: example-backup-restore-test
+    type: manual
+    schedule: "0 6 * * *"
+    settings:
+      drop_folder: /var/lib/evidence-hound/manual/example-backup-restore-test
+      checks: backup.restore_tested
+      due_days: 92
+      owner: Sam Example
+
+  # The office firewall (OFFICE-FIREWALL), through Sophos Central, read only: docs/collectors/sophos.md. Feeds the firewall's
+  # audit (OFFICE-FIREWALL-ESSENTIAL-EIGHT-2023) and the company-wide one. Copy the profile and its tests into profiles/ first.
+  - name: example-sophos
+    type: rest
+    schedule: "0 4 * * *"
+    settings:
+      profile: sophos-central
+      client_id: 00000000-0000-4000-8000-0000000050d1     # fictional
+      supported_firewall_firmware: "21.5, 22.0"
+      super_admin_max: "2"
+    secrets:
+      client_secret: file:/run/secrets/sophos_client_secret
+
+  # The GRC platform's cloud (GRC-PLATFORM) against its reviewed infrastructure code, from the IaC pipeline's nightly plan:
+  # docs/collectors/terraform-drift.md. Read only; hound never runs Terraform. The GRC platform's backup rows need it with their
+  # control tests (mappings/grc-platform-essential-eight-2023.yaml): the code says the control, drift says the cloud matches.
+  - name: example-grc-infra-drift
+    type: rest
+    schedule: "0 23 * * *"                # after the IaC pipeline's 22:00 plan
+    settings:
+      profile: terraform-drift
+      repository: example/grc-infra
+      workflow: drift.yml
+    secrets:
+      token: file:/run/secrets/iac_actions_token
+
+  # The GRC platform's hosting controls, proven by terraform test with mock providers in the same IaC repository on every change
+  # (infra/oci/tests/controls.tftest.hcl): docs/collectors/terraform-tests.md. Read only, with the same Actions-read token. One check
+  # per control, from the tutorial's copy of the terraform-tests profile (profiles/grc-infra-controls.yaml).
+  - name: example-grc-infra-controls
+    type: rest
+    schedule: "30 23 * * *"
+    settings:
+      profile: grc-infra-controls
+      repository: example/grc-infra
+      workflow: controls.yml
+    secrets:
+      token: file:/run/secrets/iac_actions_token
+
+targets:
+  - mapping: mappings/essential-eight-2023.yaml
+    compliance_assessment: EX-E8-2026
+    health_control: AC-AUTO-EVIDENCE
+  # The office firewall's own audit, written by hound onboard (docs/examples/onboarding-tutorial.md).
+  - mapping: mappings/office-firewall-essential-eight-2023.yaml
+    compliance_assessment: OFFICE-FIREWALL-ESSENTIAL-EIGHT-2023
+  # The GRC platform's own audit: its backup rows, from the control tests and the drift check together.
+  - mapping: mappings/grc-platform-essential-eight-2023.yaml
+    compliance_assessment: GRC-PLATFORM-ESSENTIAL-EIGHT-2023

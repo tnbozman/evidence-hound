@@ -1,0 +1,16 @@
+# hound starts the fictional drift workflow, waits for the run, then reads its plan, which shows drift.
+description: The triggered run's plan shows drift on one resource.
+now: 2026-11-23T02:00:00Z
+settings:
+  repository: example/grc-infra
+  workflow: drift.yml
+  allow_writes: "true"
+secrets:
+  token: example-test-token
+responses:
+  - { post: /repos/example/grc-infra/actions/workflows/drift.yml/dispatches, file: recordings/dispatch.json }
+  - { get: /repos/example/grc-infra/actions/runs/7001, file: recordings/run.json }
+  - { get: /repos/example/grc-infra/actions/runs/7001/artifacts, file: recordings/artifacts.json }
+  - { get: /repos/example/grc-infra/actions/artifacts/9001/zip, file: recordings/plan-drift.zip }
+expect:
+  infrastructure.drift.none: fail

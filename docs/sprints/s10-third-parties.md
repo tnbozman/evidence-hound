@@ -60,6 +60,13 @@ How it works, using CISO Assistant's own features only (checked against the v4.3
 - `docs/manual-evidence.md`: the plan file, a runbook template (what to export, from where, how to send it to the GRC team), turning mail on (`EMAIL_*` in the deployment, `notifications_enable_mailing` in `settings.yaml`) and the overdue email off (`disabled_email_templates`), the GRC team's steps in CISO Assistant, and the limits below.
 - The example compliance repo gains a fictional evidence plan with two manual rows, an owner contact and a runbook, all of which validate.
 
+**Templates for the remaining Essential Eight requirements (moved from s09-05 and s09-06, 2026-11-23)**
+- `examples/manual-sources/essential-eight/` holds one manual source per remaining area (at least user application hardening, administrative privilege reviews, privileged account restrictions, event log retention, and backup restore tests; the maintainer does not use Veeam, so backup evidence is manual). Each has a config snippet, the check IDs it supports, and a README (what to export, from where, how often, who attests) that is the runbook its evidence plan row points to, so one file drives both the drop folder and the CISO Assistant task.
+- `hound manual template --source <name>` writes an attestation skeleton (`<file>.attest.yaml`) listing that source's check IDs with empty outcomes, for `hound manual approve` (s09-42) to fill in at a terminal.
+- `docs/collectors/manual-templates.md` indexes the templates by Essential Eight strategy.
+- **Decide when this task starts:** s09-05 mapped the manual check IDs in `mappings/essential-eight-2023.yaml` so rows get attested results from `hound run`, while this task keeps manual rows `manual_only` with results set by the GRC team. s09-42 since made attestation a person's step at a terminal, which may settle it in favour of mapping; confirm with the maintainer before writing either.
+- Tests (from s09-05): `ManualTemplateTests.Skeleton_lists_source_checks_with_empty_outcomes`, `ExampleManualSourcesTests.Every_template_config_validates`, `E8MappingTests.Every_manual_only_requirement_names_an_example_source`.
+
 **Limits, accepted rather than built**
 - No timed escalation: the committee's overdue list (s11-05) is the escalation.
 - Reminder days (30, 7, 1) are fixed by CISO Assistant, so an owner gets the instructions plus two warnings before the due date rather than exactly one. Turning off `task_node_due_soon` would remove all three, so it stays on.

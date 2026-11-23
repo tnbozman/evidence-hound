@@ -10,7 +10,7 @@ CA_COMPOSE := dev/ciso-assistant/compose.yml
 CA_ENV := HOUND_CA_SECRET_KEY="$$(scripts/ca-secret-key.sh)"
 SHELL_SCRIPTS := $(wildcard scripts/*.sh scripts/lib/*.sh deploy/compose/*.sh .devcontainer/*.sh dev/ciso-assistant/seed/*.sh) .githooks/pre-commit
 
-.PHONY: help restore build test test-functional test-template test-scripts coverage image test-image test-compose compose-smoke lint lint-dotnet lint-shell format run hooks ca-up ca-up-kafka ca-down trial trial-clean
+.PHONY: help restore build test test-functional test-profiles test-template test-scripts test-terraform coverage image test-image test-compose compose-smoke lint lint-dotnet lint-shell format run m365-dev sophos-dev iac-dev scan-dev hooks ca-up ca-up-kafka ca-down trial trial-clean
 
 help: ## List targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-16s %s\n", $$1, $$2}'
@@ -33,11 +33,21 @@ test-functional: build ## Functional tests (Testcontainers starts CISO Assistant
 	dotnet test --no-build -c $(CONFIGURATION) --project tests/EvidenceHound.Functional.Tests \
 	  --results-directory $(RESULTS_DIR) --filter-trait "Category=Functional" --report-trx
 
+test-profiles: build ## Run every library profile's offline tests with hound profile test
+	CONFIGURATION=$(CONFIGURATION) scripts/test-profiles.sh
+
 test-template: ## Generate a collector from templates/collector, then build and test it
 	scripts/test-template.sh
 
 test-scripts: ## Shell script tests (bats)
 	bats scripts/tests
+
+TF_EXAMPLE ?= examples/onboarding-tutorial/infra/oci
+
+test-terraform: ## The tutorial's Terraform control tests, with mock providers (no cloud account)
+	terraform -chdir=$(TF_EXAMPLE) fmt -check -recursive
+	terraform -chdir=$(TF_EXAMPLE) init -backend=false -input=false
+	terraform -chdir=$(TF_EXAMPLE) test
 
 image: ## Build the collector runner image (HOUND_IMAGE, default evidence-hound-runner:test)
 	docker build -f src/EvidenceHound.Cli/Dockerfile -t $(HOUND_IMAGE) .
@@ -64,6 +74,18 @@ format: ## Apply formatting fixes
 
 run: ## Run the CLI, for example: make run ARGS="collect --dry-run --config examples/example-pty-ltd.yaml"
 	dotnet run --project src/EvidenceHound.Cli -c $(CONFIGURATION) -- $(ARGS)
+
+m365-dev: ## Serve the fictional Microsoft 365 tenant on port 5365, for example: make m365-dev ARGS="--variant gaps"
+	dotnet run --project src/EvidenceHound.M365DevServer -c $(CONFIGURATION) -- $(ARGS)
+
+sophos-dev: ## Serve the fictional Sophos Central tenant on port 5370, for example: make sophos-dev ARGS="--variant gaps"
+	dotnet run --project src/EvidenceHound.SophosDevServer -c $(CONFIGURATION) -- $(ARGS)
+
+iac-dev: ## Serve the fictional IaC pipeline (GitHub Actions) on port 5380, for example: make iac-dev ARGS="--deviation drift"
+	dotnet run --project src/EvidenceHound.IacDevServer -c $(CONFIGURATION) -- $(ARGS)
+
+scan-dev: ## Write fictional vulnerability scan exports, one per scope, into .dev/scans, for example: make scan-dev ARGS="--variant gaps"
+	dotnet run --project src/EvidenceHound.ScanDev -c $(CONFIGURATION) -- $(ARGS)
 
 hooks: ## Install the git pre-commit hook (format check and gitleaks)
 	git config core.hooksPath .githooks
