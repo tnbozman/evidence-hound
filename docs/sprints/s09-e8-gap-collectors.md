@@ -815,25 +815,29 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 
 **Order:** after s09-30.
 
-### s09-32 The GRC platform as an example system, deployed on premise (added 2026-11-23)
+### s09-32 Onboarding tutorial: Example Pty Ltd's privately hosted GRC platform (added 2026-11-23, refined the same day)
 - [ ] Done
 
-**Story:** As a GRC team member following the examples, I want CISO Assistant and Evidence Hound themselves shown as a system in Example Pty Ltd's config, with how they are deployed on premise, so that I can see a complete worked example and remember that the compliance platform is itself in scope.
+**Story:** As a GRC team member learning hound, I want a complete onboarding tutorial for Example Pty Ltd, whose CISO Assistant and Evidence Hound run privately in the cloud and reach the office's Sophos XGS firewall over a site-to-site VPN, so that I can follow one realistic stack end to end and remember that the compliance platform is itself in scope.
 
 **Acceptance criteria**
-- The example compliance repo declares the self-hosted GRC platform (CISO Assistant and the `hound` runner on one on-premise host) as a system of Example Pty Ltd: owner, type, and the domain and perimeter it belongs to.
-- Its suppliers are declared under `scope/third-parties/`: the CISO Assistant project and the Evidence Hound project as open-source suppliers (no contract value), with levels and reasons. Everything stays fictional apart from the two projects' public names.
-- Its Essential Eight ML2 applicability is recorded as `hound onboard` writes it (its audit, decisions and onboarding record): for example application control and Office macros not applicable to a Linux container host with their justifications, patching and backups as manual evidence, admin MFA through the identity provider as another system.
-- A short guide, `docs/examples/on-premise-grc-platform.md`, describes the on-premise deployment with a diagram: the host, the Compose stack (`deploy/compose`), TLS through Caddy, the database and its backups, where secrets come from, the runner's schedule, and which controls cover each part.
-- `hound scope validate` passes on the example repo, and the example is used as the worked example in `docs/onboarding.md`.
+- A tutorial, `docs/examples/onboarding-tutorial.md`, walks through `hound onboard` for this stack, step by step, with the commands and the answers typed:
+  - suppliers first under `scope/third-parties/`: the fictional cloud hosting provider, Sophos, and the CISO Assistant and Evidence Hound open-source projects (no contract value), each with levels and reasons;
+  - the GRC platform (CISO Assistant and the `hound` runner on one private cloud VM) as a system, with its Essential Eight ML2 applicability: for example application control and Office macros not applicable to a Linux container host with their justifications, patching and backups as manual evidence, admin MFA through the identity provider as another system;
+  - the office XGS firewall as a system, collected through the `sophos-central` profile, with its applicability;
+  - then review, `hound scope validate`, `plan` and `apply`.
+- The tutorial has a deployment diagram and the network path: a private network with no public address or inbound port, the site-to-site IPsec VPN between the cloud network and the XGS, which traffic goes where (operators to CISO Assistant over the VPN; the runner to Sophos Central's API over outbound HTTPS; the runner to CISO Assistant inside the private network), TLS through Caddy, the database and its backups, where secrets come from, the runner's schedule, and which controls cover each part.
+- The example compliance repo holds the files the tutorial produces (systems, suppliers, audits, decisions and onboarding records), as `hound onboard` writes them. Everything is fictional (Example Pty Ltd, `example.com`, documentation IP ranges) apart from the public product names; no employer detail.
+- `hound scope validate` passes on the example repo, and `docs/onboarding.md` points to the tutorial as its worked example.
 
 **Tests first**
-- `ExampleRepoTests.Grc_platform_system_and_suppliers_are_declared`
-- `ExampleRepoTests.Grc_platform_audit_validates_with_justified_not_applicable_rows`
-- `TutorialTests.On_premise_guide_names_only_files_that_exist`
+- `ExampleRepoTests.Tutorial_systems_and_suppliers_are_declared`
+- `ExampleRepoTests.Tutorial_audits_validate_with_justified_not_applicable_rows`
+- `TutorialTests.Onboarding_tutorial_names_only_files_that_exist`
+- `TutorialTests.Onboarding_tutorial_uses_only_documentation_addresses`
 
 **Functional check**
-- `hound onboard` (fake model) on the example repo reproduces the committed GRC platform files, and `hound scope plan` against the local CISO Assistant shows them as new.
+- Following the tutorial with a fake model on a copy of the example repo reproduces the committed files, and `hound scope plan` against the local CISO Assistant shows them as new.
 
 **Order:** after the hands-on Sophos path (s09-25).
 
