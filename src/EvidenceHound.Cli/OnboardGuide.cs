@@ -24,7 +24,7 @@ internal static class OnboardGuide
 
     /// <summary>The steps, as <c>--help</c> lists them.</summary>
     public static readonly string Steps = """
-        1. The supplier: who provides the system, with a draft contract and review. hound stops here until the supplier is approved.
+        1. The supplier: who provides the system, with a draft contract and review. At a terminal, hound stops here until the supplier is approved; an agent's pending and decide go on, and hound approve asks for the supplier before the system.
         2. Applicability: one decision for each requirement in scope (API check, manual evidence, not applicable, or met by another system).
         3. The files: the system's audit, the system itself and the onboarding record, written for you to review.
         """.ReplaceLineEndings("\n");
