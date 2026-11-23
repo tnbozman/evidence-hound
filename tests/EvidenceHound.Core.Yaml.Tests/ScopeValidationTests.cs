@@ -232,4 +232,30 @@ public class ScopeValidationTests
 
         ScopeFixture.Problems(audit: audit).ShouldBeEmpty();
     }
+
+    [Fact]
+    public void Ref_id_without_the_kinds_prefix_is_reported()
+    {
+        var setup = ScopeFixture.Setup.Replace("ref_id: PER-BASE", "ref_id: Base", StringComparison.Ordinal);
+
+        var problem = ScopeFixture.Problems(setup: setup).ShouldHaveSingleItem();
+
+        (problem.Code, problem.At).ShouldBe(("scope.ref_id_convention", new SourceLine("scope/setup.yaml", 23)));
+        problem.Message.ShouldContain("perimeter");
+        problem.Message.ShouldContain("'Base'");
+        problem.Message.ShouldContain("PER-");
+        problem.Hint.ShouldContain("PER-BASE");
+    }
+
+    [Fact]
+    public void Audit_ref_id_is_checked_against_its_own_form()
+    {
+        var audit = ScopeFixture.Audit.Replace("ref_id: EXAMPLE-BASELINE-2026", "ref_id: Example baseline", StringComparison.Ordinal);
+
+        var problem = ScopeFixture.Problems(audit: audit).ShouldHaveSingleItem();
+
+        problem.Code.ShouldBe("scope.ref_id_convention");
+        problem.Message.ShouldContain("audit");
+        problem.Hint.ShouldContain("EX-E8-2026");
+    }
 }

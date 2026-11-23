@@ -109,6 +109,19 @@ public class SupplierScopeTests
         Problems(lapsed.Replace("status: active", "status: expired", StringComparison.Ordinal)).ShouldBeEmpty();
     }
 
+    [Theory]
+    [InlineData("ref_id: SUP-EXCLOUD", "ref_id: Example Cloud", "third party", "SUP-EXAMPLE-CLOUD")]
+    [InlineData("ref_id: CTR-EXCLOUD-2026", "ref_id: Renewal", "contract", "CTR-RENEWAL")]
+    public void Ref_id_without_the_kinds_prefix_is_reported(string from, string to, string kind, string suggested)
+    {
+        var problem = Problems(Supplier.Replace(from, to, StringComparison.Ordinal)).ShouldHaveSingleItem();
+
+        problem.Code.ShouldBe("scope.ref_id_convention");
+        problem.At.File.ShouldBe(SupplierPath);
+        problem.Message.ShouldContain(kind);
+        problem.Hint.ShouldContain(suggested);
+    }
+
     [Fact]
     public void Contract_ending_before_it_starts_is_reported()
     {

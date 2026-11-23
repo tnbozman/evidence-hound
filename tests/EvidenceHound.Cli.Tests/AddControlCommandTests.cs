@@ -39,6 +39,19 @@ public sealed class AddControlCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Ref_id_prompt_shows_the_prefix_and_takes_the_rest()
+    {
+        TestFiles.CopyExampleRepo(Repo);
+
+        // Ref ID without its prefix, name, owner, category, systems.
+        var exitCode = await Run("firewall\nFirewall rules reviewed quarterly\nit@example.com\n\nExample 365\n", "add", "control", "--scope", Scope);
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        _error.ToString().ShouldContain("Control ref_id: AC-");
+        (await File.ReadAllTextAsync(Path.Combine(Scope, "controls.yaml"), TestContext.Current.CancellationToken)).ShouldContain("  - ref_id: AC-FIREWALL\n");
+    }
+
+    [Fact]
     public async Task Requirement_the_framework_does_not_have_is_refused_and_nothing_is_written()
     {
         TestFiles.CopyExampleRepo(Repo);

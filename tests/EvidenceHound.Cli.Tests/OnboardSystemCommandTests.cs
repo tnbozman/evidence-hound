@@ -105,6 +105,26 @@ public sealed class OnboardSystemCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Ref_id_prompts_show_the_prefix_and_take_the_rest()
+    {
+        // The solution's first answer has a space, so it is asked again with the rule.
+        var answers = "Alex Example\nalex@example.com\nExample Asset API\nexample\nExample Assets Ltd\nexample assets\nexample-assets\nAsset inventory\nrenewal\nAsset inventory subscription\nHosts the asset inventory.\n\n";
+
+        var (exit, output, error) = await RunAsync(answers);
+
+        exit.ShouldBe(ExitCodes.Ok, error);
+        error.ShouldContain("Supplier ref_id: SUP-");
+        error.ShouldContain("Solution ref_id (what the supplier provides): SOL-");
+        error.ShouldContain("Contract ref_id: CTR-");
+        error.ShouldContain("upper case letters, digits and hyphens");
+        (output + error).ShouldContain("SUP-EXAMPLE is not approved yet");
+        var drafted = await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "third-parties", "sup-example.yaml"), _ct);
+        drafted.ShouldContain("ref_id: \"SUP-EXAMPLE\"");
+        drafted.ShouldContain("ref_id: \"SOL-EXAMPLE-ASSETS\"");
+        drafted.ShouldContain("ref_id: \"CTR-RENEWAL\"");
+    }
+
+    [Fact]
     public async Task System_owner_is_asked_as_a_ciso_assistant_users_email_and_a_name_is_asked_again()
     {
         var answers = SupplierAnswers.Replace("Alex Example\nalex@example.com\n", "Alex Example\nAlex Example\nalex@example.com\n", StringComparison.Ordinal);
