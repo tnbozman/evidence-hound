@@ -53,6 +53,7 @@ public static class ScopeDesired
             .. Access(scope.Access, setup.RootFolder),
             .. setup.Organisation is { } organisation ? [Organisation(organisation)] : Array.Empty<ScopeObject>(),
             .. scope.ThirdParties.SelectMany(ThirdParty),
+            .. scope.ThirdParties.SelectMany(e => e.Assessments.SelectMany(a => Reviews(e, a, inputs.Today))),
         ];
     }
 
@@ -83,6 +84,39 @@ public static class ScopeDesired
         .. entity.Representatives.Select(r => new ScopeObject(ScopeKind.Representative, r.Email, Fields(
             ("entity", entity.RefId), ("first_name", r.FirstName), ("last_name", r.LastName), ("role", r.Role), ("phone", r.Phone)))),
     ];
+
+    /// <summary>
+    /// A supplier assessment as CISO Assistant holds it. With a review cycle, each review is its own assessment, <c>&lt;ref_id&gt;-yyyy-MM</c> by
+    /// its due date: the first is due on <c>due_date</c>, and once a review falls due on <paramref name="today"/> the next is opened, a cycle
+    /// later. The questionnaire is set up only when an assessment is created; answers, the conclusion and the tier are never declared.
+    /// </summary>
+    private static IEnumerable<ScopeObject> Reviews(ScopeEntity entity, ScopeEntityAssessment assessment, DateOnly? today)
+    {
+        var initial = Fields(("questionnaire", assessment.Questionnaire?.Value), ("groups", Joined(assessment.Groups)));
+        ScopeObject Review(string key, string name, string? due) => new(ScopeKind.EntityAssessment, key, Fields(
+            ("name", name), ("entity", entity.RefId), ("solutions", Joined(assessment.Solutions.Select(s => s.Value))),
+            ("domain", assessment.Domain?.Value ?? entity.Domain?.Value), ("perimeter", assessment.Perimeter.Value), ("due_date", due),
+            ("criticality", Whole(assessment.Criticality))))
+        {
+            Initial = initial,
+        };
+
+        if (assessment.ReviewMonths is not { } months || !DateOnly.TryParseExact(assessment.DueDate, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var first))
+        {
+            yield return Review(assessment.RefId, assessment.Name, assessment.DueDate);
+            yield break;
+        }
+
+        for (var due = first; ; due = due.AddMonths(months))
+        {
+            var label = due.ToString("yyyy-MM", CultureInfo.InvariantCulture);
+            yield return Review($"{assessment.RefId}-{label}", $"{assessment.Name} {label}", due.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+            if (today is not { } day || day < due)
+            {
+                yield break;
+            }
+        }
+    }
 
     /// <summary>Legal identifiers as one JSON object with sorted keys, or null when there are none.</summary>
     public static string? Identifiers(IReadOnlyDictionary<string, string> identifiers)

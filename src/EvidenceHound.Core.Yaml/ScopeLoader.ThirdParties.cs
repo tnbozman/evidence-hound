@@ -10,8 +10,11 @@ public static partial class ScopeLoader
     private static readonly string[] EntityKeys =
     [
         "ref_id", "name", "description", "mission", "country", "currency", "parent", "domain", "dependency", "penetration", "maturity", "trust",
-        "identifiers", "solutions", "contracts", "representatives",
+        "identifiers", "solutions", "contracts", "representatives", "forced_tier", "assessments",
     ];
+
+    private static readonly string[] ForcedTierKeys = ["tier", "reason"];
+    private static readonly string[] SupplierAssessmentKeys = ["ref_id", "name", "solutions", "domain", "perimeter", "due_date", "criticality", "questionnaire", "groups", "review_every"];
 
     private static readonly string[] OrganisationEntityKeys = ["name", "description", "mission", "country", "currency", "identifiers"];
 
@@ -50,6 +53,10 @@ public static partial class ScopeLoader
             Solutions = [.. file.Items(root, "solutions").Select(item => ReadSolution(item, file)).OfType<ScopeSolution>()],
             Contracts = [.. file.Items(root, "contracts").Select(item => ReadContract(item, file)).OfType<ScopeContract>()],
             Representatives = [.. file.Items(root, "representatives").Select(item => ReadRepresentative(item, file)).OfType<ScopeRepresentative>()],
+            ForcedTier = file.Map(root, "forced_tier") is { } forced ? ForcedTier(forced, file).Tier : null,
+            ForcedTierReason = file.Map(root, "forced_tier") is { } reasoned ? file.Text(reasoned, "reason") : null,
+            ForcedTierAt = FileReader.Child(root, "forced_tier") is { } forcedAt ? file.At(forcedAt) : null,
+            Assessments = [.. file.Items(root, "assessments").Select(item => ReadSupplierAssessment(item, file)).OfType<ScopeEntityAssessment>()],
             LevelsAt = levels.Where(l => l.Value is not null).ToDictionary(l => l.Name, l => file.At(FileReader.Child(root, l.Name)!), StringComparer.Ordinal),
             CodesAt = Codes.Where(k => FileReader.Child(root, k) is not null)
                 .ToDictionary(k => k, k => file.At(FileReader.Child(root, k)!), StringComparer.Ordinal),
@@ -108,6 +115,60 @@ public static partial class ScopeLoader
                 CurrencyAt = FileReader.Child(item, "currency") is { } currency ? file.At(currency) : null,
                 Solutions = file.Refs(item, "solutions"),
             };
+    }
+
+    private static (string? Tier, string? Reason) ForcedTier(YamlMappingNode forced, FileReader file)
+    {
+        file.Keys(forced, ForcedTierKeys);
+        return (file.Required(forced, "tier"), file.Text(forced, "reason"));
+    }
+
+    private static ScopeEntityAssessment? ReadSupplierAssessment(YamlMappingNode item, FileReader file)
+    {
+        file.Keys(item, SupplierAssessmentKeys);
+        var refId = file.Required(item, "ref_id");
+        var name = file.Required(item, "name");
+        var perimeter = file.Ref(item, "perimeter", required: true);
+        return refId is null || name is null || perimeter is null
+            ? null
+            : new ScopeEntityAssessment(refId, name, perimeter, file.At(item))
+            {
+                Solutions = file.Refs(item, "solutions"),
+                Domain = file.Ref(item, "domain"),
+                DueDate = Date(item, "due_date", file),
+                Criticality = Whole(item, "criticality", file),
+                Questionnaire = file.Ref(item, "questionnaire"),
+                Groups = [.. file.Refs(item, "groups").Select(g => g.Value)],
+                ReviewMonths = ReviewMonths(item, file),
+            };
+    }
+
+    /// <summary><c>review_every</c> as months: <c>N months</c> or <c>N years</c>; anything else is reported.</summary>
+    private static int? ReviewMonths(YamlMappingNode item, FileReader file)
+    {
+        var text = file.Text(item, "review_every");
+        if (text is null)
+        {
+            return null;
+        }
+
+        var parts = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts is [var count, var unit] && int.TryParse(count, NumberStyles.None, CultureInfo.InvariantCulture, out var number) && number > 0)
+        {
+            int? months = unit switch
+            {
+                "month" or "months" => number,
+                "year" or "years" => number * 12,
+                _ => null,
+            };
+            if (months is not null)
+            {
+                return months;
+            }
+        }
+
+        file.Invalid(FileReader.Child(item, "review_every")!, $"'review_every' is '{text}'; expected a number of months or years, such as 12 months.");
+        return null;
     }
 
     private static ScopeRepresentative? ReadRepresentative(YamlMappingNode item, FileReader file)

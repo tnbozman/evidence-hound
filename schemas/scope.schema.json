@@ -232,6 +232,14 @@
           "additionalProperties": {
             "type": "string"
           }
+        },
+        "solution": {
+          "$ref": "#/$defs/text",
+          "description": "The ref_id of the supplier's solution this system is. Its supplier must be approved in CISO Assistant before the system is registered."
+        },
+        "supplied_through": {
+          "$ref": "#/$defs/text",
+          "description": "The ref_id of the reseller or provider the contract is with, when not the solution's own supplier; it must be approved too."
         }
       }
     },
@@ -1072,6 +1080,83 @@
               }
             }
           }
+        },
+        "forced_tier": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "tier",
+            "reason"
+          ],
+          "description": "Hold the supplier at this tier whatever its assessment says; scope plan reports when CISO Assistant's tier differs.",
+          "properties": {
+            "tier": {
+              "$ref": "#/$defs/text",
+              "description": "A key of the tier scale, such as critical, important, standard or low-impact."
+            },
+            "reason": {
+              "$ref": "#/$defs/text"
+            }
+          }
+        },
+        "assessments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "ref_id",
+              "name",
+              "perimeter"
+            ],
+            "properties": {
+              "ref_id": {
+                "$ref": "#/$defs/text"
+              },
+              "name": {
+                "$ref": "#/$defs/text"
+              },
+              "solutions": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/text"
+                },
+                "description": "ref_ids of this third party's solutions the assessment covers."
+              },
+              "domain": {
+                "$ref": "#/$defs/text",
+                "description": "The perimeter's domain; the third party's own domain when left out."
+              },
+              "perimeter": {
+                "$ref": "#/$defs/text"
+              },
+              "due_date": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              },
+              "criticality": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 4
+              },
+              "questionnaire": {
+                "$ref": "#/$defs/text",
+                "description": "URN of the questionnaire framework; CISO Assistant creates its audit with the assessment. Declare the framework in scope/setup.yaml."
+              },
+              "groups": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "review_every": {
+                "type": "string",
+                "pattern": "^[1-9][0-9]* (month|months|year|years)$",
+                "description": "Open the next review once one falls due, such as 12 months."
+              }
+            }
+          },
+          "description": "Assessments of this third party. Answers, the conclusion and the tier are CISO Assistant's; hound never writes them."
         }
       }
     }

@@ -25,7 +25,7 @@ public static partial class ScopeLoader
     private static readonly string[] FrameworkKeys = ["urn", "library", "file", "snapshot"];
     private static readonly string[] DomainKeys = ["name", "description", "perimeters", "perimeter", "systems"];
     private static readonly string[] PerimeterKeys = ["name", "ref_id", "description"];
-    private static readonly string[] SystemKeys = ["name", "ref_id", "type", "description", "owner", "parents", "tags"];
+    private static readonly string[] SystemKeys = ["name", "ref_id", "type", "description", "owner", "parents", "tags", "solution", "supplied_through"];
     private static readonly string[] ControlsKeys = ["controls"];
     private static readonly string[] ControlKeys =
         ["ref_id", "name", "description", "domain", "owner", "status", "priority", "category", "eta", "systems", "reference_control", "documents"];
@@ -262,7 +262,11 @@ public static partial class ScopeLoader
                 file.Text(item, "owner"),
                 file.Refs(item, "parents"),
                 tags is null ? new Dictionary<string, string>() : file.TextMap(tags),
-                file.At(item));
+                file.At(item))
+            {
+                Solution = file.Ref(item, "solution"),
+                SuppliedThrough = file.Ref(item, "supplied_through"),
+            };
     }
 
     private static ScopeControl[] ReadControls(YamlMappingNode root, FileReader file)

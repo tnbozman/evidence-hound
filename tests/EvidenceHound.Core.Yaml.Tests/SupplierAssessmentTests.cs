@@ -38,7 +38,7 @@ public class SupplierAssessmentTests
         Reviews(Today).ShouldBe([("ENA-EXCLOUD-2026-03", "2026-03-31"), ("ENA-EXCLOUD-2027-03", "2027-03-31")]);
 
         // Without a cycle, the assessment is declared once under its own ref_id.
-        var once = Assessed.Replace("    review_every: 12 months\n", "", StringComparison.Ordinal);
+        var once = Assessed.Replace("\n    review_every: 12 months", "", StringComparison.Ordinal);
         Desired(once, Today).Single(o => o.Kind == ScopeKind.EntityAssessment).Key.ShouldBe("ENA-EXCLOUD");
     }
 
