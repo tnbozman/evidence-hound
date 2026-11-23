@@ -562,6 +562,8 @@ The first run found that a single-system audit needs `unlisted:` and that a requ
 **Functional check**
 - The person's onboarding run produces a profile that passes `hound profile test`, and the firewall's checks appear in a `hound plan --dry-run`.
 
+**Sophos firewall run (2026-11-23):** onboarded end to end on the person's tenant; see [`docs/evidence/s09/s09-25.md`](../evidence/s09/s09-25.md). The functional check is met with the shipped `sophos-central` profile (3 of 3 cases pass, both checks pass on the tenant); the model-drafted profile did not validate (discovered work), so the task stays open until drafting produces a passing profile.
+
 **As built so far (2026-11-23).** The docs part is done: `OnboardingDocsTests` checks that every option of `hound onboard`, `onboard config`, `onboard environment` and `onboard profile` is in `docs/onboarding.md`, that its relative links resolve, and that it has a tutorial on the example API. The tutorial ("Tutorial: onboard the example API") was followed as written against a copy of `examples/compliance-repo` with `--no-model` and `--group 1`: the supplier stop, then 48 decisions (1 API check, 47 manual), the audit, `scope/setup.yaml` and the record written, `hound scope validate scope` valid, and `hound profile test example` passing both cases. Still open: the person's own Sophos firewall run, and the discovered work it shows.
 
 ### s09-01 Application control policies from Intune
@@ -1027,5 +1029,9 @@ Added at the person's request after the s09-22 Sophos onboarding trial, where th
 - `hound onboard environment` writes not-applicable rows into an audit for requirements the audit's own mapping computes (`scope.result_conflict` on validate), records "provided by another system" as not applicable even when that system has no audit (so the gap shows as closed), and overwrote collector evidence (ISM-1672). Record such rows as open, covered by the named system, until its audit exists; skip rows the mapping computes and say which (found in s09-28, Sophos trial).
 
 - `hound explain` reads a printed plan but not the saved plan file `scope plan --out` writes, and with no file and no piped input it waits silently on the terminal. Read saved plans, and refuse with a hint when standard input is a terminal (found in s09-30, Sophos trial).
+
+- `hound onboard profile` drafted a Sophos firewall profile that did not validate after 3 rounds: it used its own template syntax (`{{ parameters.x }}` rather than `${x}`) and put `field` and `missing` on the check rather than in `each`; the validation problems fed back did not get it there. Give the drafting step the profile format reference (or the closest shipped profile as an example) and the exact problem lines (found in s09-25).
+
+- A requirement a collector marks compliant keeps status `to_do` in CISO Assistant (ISM-1501 on the Sophos firewall audit). Set the status to done with the result, as hand-written rows are (found in s09-25).
 
 ## Sprint review
