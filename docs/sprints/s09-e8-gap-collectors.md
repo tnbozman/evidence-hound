@@ -704,7 +704,7 @@ Added at the maintainer's request (2026-11-23): s09-01 to s09-04 and the Microso
 - Scratch config with `vuln-example` (`format: nessus`, `scope: internet_facing`): `hound config validate` valid; `hound manual upload --source vuln-example internet-facing-2026-11-16.nessus` copied it (no attestation prompt), a second upload said "already uploaded … nothing copied", and the Defender CSV was refused ("does not match this source's patterns: *.nessus"). `HOUND_TODAY=2026-11-23 hound run --config hound.yaml --only vuln-example --no-publish` succeeded and stored the export, `scan.json` (scan date 2026-11-16T10:25:00+00:00, 3 hosts, 3 findings: web-01 900101 high with exploit, web-01 900102 medium, vpn 900103 critical unsupported) and `scan-history.json`. With a truncated `broken.nessus` added, the run exited 1 with `vuln_scan.export_invalid`: "broken.nessus line 3: not well-formed XML (…)". Unit suite 1430 passed; the 27 failures are the Docker-only functional tests. Lint clean.
 
 ### s09-04 Patching checks from scans
-- [ ] Done
+- [x] Done
 
 **Story:** As a compliance owner, I want scan frequency, patch timeliness and unsupported software measured from scans, so that the patch applications and patch operating systems strategies have evidence.
 
@@ -723,6 +723,15 @@ Added at the maintainer's request (2026-11-23): s09-01 to s09-04 and the Microso
 
 **Functional check**
 - `hound run` with fictional exports for two scopes updates the example Essential Eight audit's patching rows in the local CISO Assistant.
+
+**As built (2026-11-23)**
+- `PatchPolicy.For(scope)` gives the maturity level 2 defaults (internet_facing 1 day, 14 days, 48 hours; common_apps 7, 14, 336 hours; other_apps and operating_systems 14, 30, 720 hours); `scan_interval_days`, `patch_window_days` and `exploited_patch_window_hours` override them. `PatchChecks` (pure) judges the current scan: interval by calendar days to now; windows counted up to the scan date from patch publication, else first seen, else the earliest export in the history with the same host and finding ID. Evidence `patch-assessment.json` lists every overdue and unsupported finding; observations name at most 20.
+- **Eleven checks, not twelve:** `other_apps` has no `unsupported_removed`, because removing unsupported other applications is ISM-0304, maturity level 3 only, and `E8MappingTests` rightly refuses ML3 rows in the ML1/ML2 mapping. `hound collectors list` shows the eleven.
+- Mapped in both E8 mappings and removed from `manual_only`: ISM-1698, ISM-1701, ISM-1690, ISM-1876, ISM-1877, ISM-1905, ISM-1699, ISM-1691, ISM-1704, ISM-1700, ISM-1693, ISM-1702; `vuln.operating_systems.patched_in_window` joins ISM-1695 and `vuln.operating_systems.unsupported_removed` joins ISM-1501 (both `all_pass`). ISM-1807 and ISM-1808 stay manual. ISM-1694 is left to s09-15 (see Discovered work). `vuln-scan` is now a reference type in `E8MappingTests`.
+
+**Functional result (2026-11-23)**
+- Scratch config with two scan sources, `internet-facing-scans` (nessus, internet_facing) and `laptop-vulnerabilities` (csv, common_apps, the Defender column map); both exports dropped with `hound manual upload`. `HOUND_TODAY=2026-11-23 hound run --only <each> --no-publish`: internet-facing 0 passed, 3 failed (scan 7 days old against 1; web-01 900101 with an exploit 154 hours since the patch against 48; vpn 900103 unsupported); laptops 2 passed, 1 failed (laptop-01 CVE-2026-0201, 454 hours since first seen against 336). `hound collectors list` showed the eleven `vuln.*` IDs. Unit suite 1447 passed; the 27 failures are the Docker-only functional tests. Lint clean.
+- Still to do: the audit rows in a local CISO Assistant, which needs Docker; the trial step with fictional scans (s09-54) does it and runs in CI's trial job.
 
 ### s09-05 Manual-upload templates for the remaining requirements
 - Moved to s10-04 (2026-11-23, maintainer's decision): the templates and the evidence plan describe the same thing from two ends, so they are built together. Kept here as a record.
@@ -1610,6 +1619,8 @@ At the maintainer's request (2026-11-23): "we are self-hosting CISO Assistant an
 - As built: `scripts/lib/trial.sh` gains `trial_scene`, `trial_systems`, `trial_system_product`, `trial_system_solution`, `trial_add_target` (a single `target:` becomes `targets:`; a target is added once, inside the block), `trial_iac_dev_sets`, `trial_controls_report_args`; `trial_brief` and `trial_stage_ready` take the system (four third parties; a control naming the system). `scripts/trial.sh`: the scene after the workspace; stage 5 the four third parties; `onboard_system` runs stages 6 to 8 for `GRC-PLATFORM` and 9 to 11 for `OFFICE-FIREWALL`; `wire_audit` copies the tutorial's system mapping and adds its target; step 12 runs `terraform test` when Terraform is there, starts `make iac-dev` with that report, adds `grc-infra-controls` and `grc-infra-drift`, and offers a `drift` run; step 13 Sophos Central for `OFFICE-FIREWALL`; step 14 Microsoft 365. `examples/trial/third-parties`: Oracle, Sophos, CISO Assistant and Evidence Hound; the managed service provider is removed. `docs/tutorials/local-trial.md` follows the new order.
 
 ## Discovered work
+
+- s09-04 follow-up (2026-11-23): once s09-15 merges, add `vuln.internet_facing.patched_in_window` to ISM-1694 beside `network.firewall.firmware_current`, in both E8 mappings. Map `vuln.other_apps.unsupported_removed` (ISM-0304) when an ML3 mapping is written. Consider a `min_severity` setting if owners want low findings out of the windows.
 
 - s09-01 follow-ups (2026-11-23): read AppLocker values Graph returns encrypted through `getOmaSettingPlainTextValue`; read App Control for Business set through the ApplicationControl CSP in custom profiles (a binary policy); cover compiled HTML, HTML applications and control panel applets (ISM-1657); suggest `ac` for the Intune and Microsoft 365 E3/E5 licences in `CapabilitySignals`.
 
