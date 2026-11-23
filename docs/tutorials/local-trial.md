@@ -1,6 +1,10 @@
 # Local trial: Evidence Hound next to your CISO Assistant
 
-This tutorial is interactive: `make trial` runs it step by step from the dev container. It takes Evidence Hound from nothing to results in CISO Assistant in the order you onboard for real: the organisation with `hound init` ([guided setup](../guided-setup.md)) (the fictional Example Pty Ltd, if you press Enter through the questions), its third parties, the Sophos perimeter firewall as a system, the system's audit, the controls it relies on, and its evidence collectors: Sophos Central, by default a fictional tenant served on your machine by [the Sophos Central dev server](sophos-dev-server.md) so you need no account or API key, and Microsoft 365, by default [its dev server](m365-dev-server.md) too. Either can be your own tenant instead. From the third parties on, your coding agent drafts each stage with hound's skills and you approve it. You need no server. Allow an hour, most of it the first image build.
+This tutorial is interactive: `make trial` runs it step by step from the dev container. It sets a scene and walks it the way you would onboard for real, so you can explore CISO Assistant and Evidence Hound with little fuss.
+
+**The scene.** The fictional Example Pty Ltd self-hosts its cyber GRC: CISO Assistant and Evidence Hound run in Docker Compose on one private Oracle Cloud (OCI) VM with no public IP address (`GRC-PLATFORM`). The office reaches it only over a site-to-site VPN through its Sophos XGS 88W firewall, managed in Sophos Central (`OFFICE-FIREWALL`). Staff sign in with Microsoft 365. The GRC team audits each system to the Essential Eight, maturity level 2. This is [the onboarding tutorial's deployment](../examples/onboarding-tutorial.md#the-deployment), with its diagram.
+
+**The order.** The organisation with `hound init` ([guided setup](../guided-setup.md)), its third parties (Oracle, Sophos, and the CISO Assistant and Evidence Hound projects), then each system with its own audit and the controls it relies on, and last the collectors that gather evidence on a schedule: the IaC pipeline's control tests and drift check for `GRC-PLATFORM` ([its dev server](iac-dev-server.md)), Sophos Central for `OFFICE-FIREWALL` ([its dev server](sophos-dev-server.md)) and Microsoft 365 for identity and laptops ([its dev server](m365-dev-server.md)). Every collector reads a fictional tenant on your machine, so you need no account, API key or cloud; Sophos Central and Microsoft 365 can be your own tenants instead. From the third parties on, your coding agent drafts each stage with hound's skills and you approve it. Allow an hour, most of it the first image build.
 
 ```bash
 make trial
@@ -12,8 +16,8 @@ Each step shows the `hound` command before it runs and asks before anything that
 
 - The dev container, with Docker answering inside it.
 - A CISO Assistant. The dev container starts its own, at `http://backend:8000` in the dev container and `https://localhost:8443` in your browser. A stack from `make ca-up` works too. If none is running, the trial offers to start one.
-- For the Sophos step: nothing, with the dev server. To use your own Sophos Central tenant instead, an API credential with the **Service Principal Read-Only** role, created as [the Sophos guide](../collectors/sophos.md) describes.
-- For the Microsoft 365 step: nothing, with the dev server; or a test tenant of your own ([section 10](#10-evidence-collectors-microsoft-365)).
+- No account or key: each collector reads its dev server. Optionally Terraform (the dev container has it), so the trial runs the GRC platform's real control tests.
+- For your own Sophos Central tenant instead (step 13), an API credential with the **Service Principal Read-Only** role, created as [the Sophos guide](../collectors/sophos.md) describes; for your own Microsoft 365 test tenant (step 14), [section 14](#14-identity-and-laptops-microsoft-365).
 
 ## 1. Preflight
 
@@ -47,10 +51,11 @@ In both cases the API is `http://backend:8000/api/`. The token is copied from `.
 | --- | --- |
 | `repo/` | The organisation's compliance repo, as `hound init` writes it |
 | `secrets/` | The API token and, later, the Sophos client secret (folder 700, files 600) |
-| `profiles/` | The `sophos-central` profile and its tests, copied from the repository for the Sophos step |
+| `profiles/` | The profiles the collectors read, with their tests: `grc-infra-controls` and `terraform-drift` (step 12), `sophos-central` (step 13) |
+| `iac/` | The GRC platform's Terraform, copied to run its control tests, and their report `controls.xml` (step 12) |
 | `manual/` | Drop folders for manual evidence sources |
 | `evidence/` | Evidence and run records |
-| `specs/` | The firewall's API specification, for the agent |
+| `specs/` | API specifications, for the agent |
 | `inbox/` | Vendor documents for the agent, and the Microsoft 365 test certificate |
 | `bin/hound` | `hound` for your coding agent: the trial's image, against the trial's CISO Assistant |
 
@@ -74,22 +79,33 @@ cd .dev/trial/repo && export PATH="$PWD/../bin:$PATH"
 claude
 ```
 
-Or open `.dev/trial/repo` in VS Code and pick the `hound-onboarding` agent in Copilot. Put the firewall's API specification in `.dev/trial/specs` and the vendor documents in `.dev/trial/inbox`.
+Or open `.dev/trial/repo` in VS Code and pick the `hound-onboarding` agent in Copilot. Put any API specification in `.dev/trial/specs` and the vendor documents in `.dev/trial/inbox`.
 
-## 5 to 8. Third parties, the system, its audit and controls
+## 5 to 11. Third parties, then each system, its audit and controls
 
-Each of these stages works the same way. The trial says what the stage is and prints what to ask your agent, with the skills it uses. It waits until `hound` sees the draft in the repo; answer `y` when the agent has finished, or `q` to stop and carry on later. Where a person must approve, it runs `hound approve --repo .` in your terminal, which shows each draft one at a time (answer `y`, `n` or `s`). Then it validates, plans and applies, as in step 4, and says what to look at in CISO Assistant.
+Each of these stages works the same way. The trial says what the stage is and prints what to ask your agent, with the skills it uses. It waits until `hound` sees the draft in the repo; answer `y` when the agent has finished, or `q` to stop and carry on later. Where a person must approve, it runs `hound approve --repo .` in your terminal, which shows each draft one at a time (answer `y`, `n` or `s`). Then it validates, plans and applies, as in step 4, and says what to look at in CISO Assistant. Steps 6 to 8 are `GRC-PLATFORM`; steps 9 to 11 are the same for `OFFICE-FIREWALL`.
 
 | Stage | The agent drafts (skills) | You | In CISO Assistant |
 | --- | --- | --- | --- |
-| 5. Third parties | Sophos, who makes the firewall, and the managed service provider that runs it (fictional Example Managed Services Pty Ltd, an `msp` for Sophos), with `hound supplier draft` (onboard-a-third-party, assess-a-supplier) | Approve each supplier and conclude its review with `hound approve` | Third parties SUP-SOPHOS and SUP-EXAMPLE-MSP, with their solutions, contracts and reviews |
-| 6. The system | The session for `SOPHOS-NETWORK`, with `hound onboard SOPHOS-NETWORK pending`: owner, product, solution, maturity level and the API specification (onboard-a-system-with-hound) | Answer what it asks | Nothing yet: the session waits in `repo/onboarding/SOPHOS-NETWORK/` |
-| 7. Its audit | One decision per requirement with `hound onboard SOPHOS-NETWORK decide` (read-an-api-specification), then the review (review-before-apply) | Approve the decisions with `hound approve`, which writes the system and its audit | The asset `SYS-SOPHOS-NETWORK` and the audit `EX-E8-<period>-SOPHOS-NETWORK`, such as `EX-E8-Q2-2027FY-SOPHOS-NETWORK`, next to `EX-E8-Q2-2027FY` |
-| 8. Controls | The applied controls the audit's manual requirements rely on, with `hound add control … --audit EX-E8-SOPHOS-NETWORK` | Review them | The applied controls, linked to the audit's requirements |
+| 5. Third parties | Oracle (OCI hosting, `SOL-OCI-HOSTING`) and the CISO Assistant and Evidence Hound projects for `GRC-PLATFORM`; Sophos (the XGS 88W and Sophos Central, `SOL-SOPHOS-FIREWALL`) for `OFFICE-FIREWALL`, with `hound supplier draft` (onboard-a-third-party, assess-a-supplier) | Approve each supplier and conclude its review with `hound approve`. A system is registered only once its supplier's review is concluded ok | Third parties SUP-ORACLE, SUP-SOPHOS, SUP-CISO-ASSISTANT and SUP-EVIDENCE-HOUND, with their solutions, contracts and reviews |
+| 6 and 9. The system | The session, with `hound onboard <system> pending`: owner, product, solution and maturity level (onboard-a-system-with-hound) | Answer what it asks | Nothing yet: the session waits in `repo/onboarding/<system>/` |
+| 7 and 10. Its audit | One decision per requirement with `hound onboard <system> decide` (read-an-api-specification), then the review (review-before-apply) | Approve the decisions with `hound approve`, which writes the system and its audit | The asset and the audit `EX-E8-<period>-<system>`, such as `EX-E8-Q2-2027FY-GRC-PLATFORM`, next to the organisation's `EX-E8-Q2-2027FY` |
+| 8 and 11. Controls | The applied controls the audit's manual requirements rely on, with `hound add control … --audit EX-E8-<system>`: for `GRC-PLATFORM` patching (ISM-1695) and restore tests (ISM-1515), for `OFFICE-FIREWALL` a daily external scan (ISM-1701) | Review them | The applied controls, linked to the audit's requirements |
 
 A finished stage is skipped on the next run; remove its file in `.dev/trial/state/` to do it again.
 
-## 9. Evidence collectors: Sophos Central, a fictional tenant on this machine or your own
+## 12. GRC-PLATFORM's evidence: its hosting controls and drift, from the IaC pipeline
+
+The GRC platform's network, backups and hosting controls are Terraform ([`infra/oci`](../../examples/onboarding-tutorial/infra/oci)). Its IaC pipeline proves each control with `terraform test` on every change and checks nightly that the cloud still matches the code ([the tutorial, steps 5 and 6](../examples/onboarding-tutorial.md#5-check-the-platform-for-drift)). hound only reads the pipeline's reports through the GitHub Actions API; it never runs Terraform against the cloud and holds no cloud credential. In the trial:
+
+1. If Terraform is installed, the trial copies the Terraform to `.dev/trial/iac/oci` and runs `terraform init -backend=false` and `terraform test -junit-xml=controls.xml`, as the pipeline would. The tests use mock providers: no Oracle account, nothing created.
+2. It starts [the IaC pipeline dev server](iac-dev-server.md) (`make iac-dev` on port 5380), which serves that report, or its own report of the same tests without Terraform, and a drift plan with no drift, as the fictional repository `example/grc-infra`.
+3. It copies the tutorial's mapping for the system, `mappings/grc-platform-essential-eight-2023.yaml`, and adds a target for `EX-E8-GRC-PLATFORM` to `hound.yaml`, so the results reach the system's own audit. No hound command writes these yet.
+4. It adds two rest collectors with a placeholder token, `grc-infra-controls` (the tutorial's per-control copy of `terraform-tests`) and `grc-infra-drift` (`terraform-drift`), then validates, dry-runs and, after asking, publishes each.
+
+Each backup row (ISM-1811, ISM-1705, ISM-1812, ISM-1707, ISM-1814) needs its control test **and** no drift: the test proves the code declares the control, and the drift check proves the cloud still matches the code. The trial then offers to restart the dev server with the `drift` deviation and collect again: the backup rows now fail. The system's other rows stay manual, with the controls from step 8 and it@example.com as their owner.
+
+## 13. OFFICE-FIREWALL's evidence: Sophos Central, a fictional tenant on this machine or your own
 
 The trial copies the `sophos-central` library profile and its tests into `.dev/trial/profiles`, then asks which tenant to read. Press Enter for the dev server; an unattended run takes it too.
 
@@ -126,13 +142,13 @@ hound run --config hound.yaml --only sophos
 hound status --config hound.yaml
 ```
 
-The dry run signs in, reads the firewalls, stores the evidence locally and plans the updates, and sends nothing. The real run publishes the firewall firmware check to the requirement it maps to in the Essential Eight audit (ISM-1501, together with the Microsoft 365 collector's operating system check). Until that check has a result too, ISM-1501 stays `not_assessed`: step 10 adds it. Sophos Central is read for network devices only; evidence about endpoint protection comes from the endpoints' own antivirus, not from Sophos.
+Before it runs, the trial copies the tutorial's `mappings/office-firewall-essential-eight-2023.yaml` and targets `EX-E8-OFFICE-FIREWALL`, as in step 12. The dry run signs in, reads the firewalls, stores the evidence locally and plans the updates, and sends nothing. The real run publishes the firmware and Super Admin checks to `OFFICE-FIREWALL`'s audit (ISM-1501 and ISM-1883) and the firmware check to the organisation's (ISM-1501, together with the Microsoft 365 collector's operating system check, so that row waits for step 14). Sophos Central is read for network devices only; evidence about endpoint protection comes from the endpoints' own antivirus, not from Sophos.
 
 With the dev server, the trial then offers to restart it with the `unsupported-firmware` deviation (the branch firewall on SFOS 20.0.3) and run again: the firmware check now fails, and you can watch the result change in CISO Assistant. This is continual evidence collection in miniature: the schedule runs the same collector every day and CISO Assistant keeps each result.
 
 If you share output for help, remove identifiers first: tenant IDs, host names, IP addresses and serial numbers.
 
-## 10. Evidence collectors: Microsoft 365
+## 14. Identity and laptops: Microsoft 365
 
 The trial offers the [Microsoft 365 dev server](m365-dev-server.md) first: a fictional Example Pty Ltd tenant that answers Microsoft Graph on this machine, with no tenant, no sign-in and nothing leaving the machine. Choose the compliant tenant, which passes every check, or the gaps tenant, where each named check fails. The trial:
 
@@ -159,4 +175,4 @@ If you share output for help, remove identifiers first: tenant and client IDs, d
 
 ## Unattended
 
-`HOUND_TRIAL_YES=1 make trial` answers yes to every question and gives the wizards their answers as options (`--yes`). Stages 5 to 8 replay fictional answers through the same commands an agent uses: the third parties with `hound supplier draft`, the system with `hound onboard SOPHOS-NETWORK pending`, its decisions from the onboarding tutorial's answers typed into `hound onboard`, and a control with `hound add control`. Because `hound approve` refuses without a person at a terminal, approved copies of the two supplier files stand in for it ([`examples/trial/`](../../examples/trial/README.md)). Step 9 uses the Sophos Central dev server, publishes, and collects again with the `unsupported-firmware` deviation; step 10 runs against the Microsoft 365 dev server's compliant tenant. No step needs a credential. CI uses it to check the trial against a fresh CISO Assistant, twice: the second run applies nothing new.
+`HOUND_TRIAL_YES=1 make trial` answers yes to every question and gives the wizards their answers as options (`--yes`). Stages 5 to 11 replay fictional answers through the same commands an agent uses: the four third parties with `hound supplier draft`, each system with `hound onboard <system> pending`, its decisions from the onboarding tutorial's answers ([`answers/`](../../examples/onboarding-tutorial/answers)) typed into `hound onboard`, and its controls with `hound add control`. Because `hound approve` refuses without a person at a terminal, approved copies of the four supplier files stand in for it ([`examples/trial/`](../../examples/trial/README.md)). Steps 12 to 14 use the three dev servers, publish, and collect again with the `drift` and `unsupported-firmware` deviations. No step needs a credential. CI uses it to check the trial against a fresh CISO Assistant, twice: the second run applies nothing new.

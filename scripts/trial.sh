@@ -522,7 +522,7 @@ m365() {
         m365_dev
         return
       fi
-      if ! ask "Try your own test tenant now? Never a work one (docs/tutorials/local-trial.md, section 10)."; then return 0; fi
+      if ! ask "Try your own test tenant now? Never a work one (docs/tutorials/local-trial.md, section 14)."; then return 0; fi
       say "In the tenant's Entra admin center, register an app with the six read-only Graph application permissions in"
       say "docs/collectors/m365.md and grant admin consent. The collector signs in with a certificate."
       if [[ ! -f "$pem" ]] && command -v openssl >/dev/null && ask "Make a test certificate in ${ws#"$root"/}/inbox now?"; then
