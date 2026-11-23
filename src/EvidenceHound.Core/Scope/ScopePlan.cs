@@ -49,6 +49,12 @@ public sealed record ActualObject(ScopeObject Held, string? AppliedState)
 
     /// <summary>An audit locked in CISO Assistant: <c>hound</c> never changes it or its rows.</summary>
     public bool Locked { get; init; }
+
+    /// <summary>
+    /// Values CISO Assistant owns and <c>hound</c> only reads, never compares or writes: a supplier assessment's conclusion and expiry date,
+    /// and an entity's tier.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> Observed { get; init; } = new Dictionary<string, string>();
 }
 
 public enum ScopeAction

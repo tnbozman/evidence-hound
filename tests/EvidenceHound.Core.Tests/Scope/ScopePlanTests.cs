@@ -318,4 +318,27 @@ public class ScopePlanTests
 
         public int GetHashCode(ScopeDrift obj) => obj.Key.GetHashCode(StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void Tier_differing_from_forced_tier_is_reported()
+    {
+        var at = new SourceLine("scope/third-parties/sup-host.yaml", 1);
+        var scope = SupplierGateTests.Scope(SupplierGateTests.System("Example portal", null, null)) with
+        {
+            ThirdParties = [new ScopeEntity("SUP-HOST", "Example Hosting", at) { ForcedTier = "critical", ForcedTierReason = "Hosts the customer portal." }],
+        };
+        static ActualObject Held(string? tier) => new(new ScopeObject(ScopeKind.Entity, "SUP-HOST", new Dictionary<string, string>()), "abc")
+        {
+            Observed = tier is null ? new Dictionary<string, string>() : new Dictionary<string, string> { ["tier"] = tier },
+        };
+
+        var note = SupplierReview.Check(scope, [Held("standard")], SupplierGateTests.Today).Notes.ShouldHaveSingleItem();
+
+        (note.Code, note.Supplier).ShouldBe(("supplier.tier_differs", "SUP-HOST"));
+        note.Detail.ShouldContain("standard");
+        note.Detail.ShouldContain("critical");
+        note.Detail.ShouldContain("Hosts the customer portal.");
+        SupplierReview.Check(scope, [Held("critical")], SupplierGateTests.Today).Notes.ShouldBeEmpty();
+        SupplierReview.Check(scope, [Held(null)], SupplierGateTests.Today).Notes.ShouldHaveSingleItem().Detail.ShouldContain("no tier");
+    }
 }
