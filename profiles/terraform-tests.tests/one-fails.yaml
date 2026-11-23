@@ -1,0 +1,14 @@
+# The same repository after a change that broke the VPN's routes: terraform test failed one test, so the run ended failure.
+description: One control test failed.
+now: 2026-11-23T02:00:00Z
+settings:
+  repository: example/grc-infra
+  workflow: controls.yml
+secrets:
+  token: example-test-token
+responses:
+  - { get: /repos/example/grc-infra/actions/workflows/controls.yml/runs, file: recordings/runs-failed.json }
+  - { get: /repos/example/grc-infra/actions/runs/7101/artifacts, file: recordings/artifacts.json }
+  - { get: /repos/example/grc-infra/actions/artifacts/9101/zip, file: recordings/report-fail.zip }
+expect:
+  infrastructure.tests.pass: fail

@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../../../schemas/scope.schema.json
+# The open-source evidence collector the GRC platform runs (the hound runner). Written by hand, like SUP-CISO-ASSISTANT.
+# There is no contract value; the licence is the contract.
+ref_id: "SUP-EVIDENCE-HOUND"
+name: "Evidence Hound (open-source project)"
+description: "The hound runner, run from its container image, and its profile library copied into this repo's profiles folder."
+domain: "Example Pty Ltd"
+dependency: 2     # without it, evidence is collected by hand until it is fixed
+penetration: 1    # it runs in our VM with read-only credentials; the project has no access to it
+maturity: 2       # an active project with code scanning; no attestation
+trust: 3          # the image is pinned by version and profiles are reviewed before they are copied in
+solutions:
+  - ref_id: "SOL-EVIDENCE-HOUND"
+    name: "Evidence Hound runner and profile library"
+    criticality: 2
+contracts:
+  - ref_id: "CTR-EVIDENCE-HOUND-LICENCE"
+    name: "Apache-2.0 licence"
+    status: active
+    solutions: ["SOL-EVIDENCE-HOUND"]
+assessments:
+  - ref_id: "EA-SUP-EVIDENCE-HOUND"
+    name: "Evidence Hound project review"
+    solutions: ["SOL-EVIDENCE-HOUND"]
+    perimeter: "Corporate IT"
+    due_date: "2026-12-23"
+    review_every: 12 months

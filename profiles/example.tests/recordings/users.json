@@ -1,0 +1,7 @@
+{
+  "users": [
+    { "id": "usr-0001", "name": "Alex Example", "email": "alex@example.com", "status": "active", "mfa": { "enabled": true }, "roleIds": ["role-owner"] },
+    { "id": "usr-0002", "name": "Sam Example", "email": "sam@example.com", "status": "active", "mfa": { "enabled": true }, "roleIds": ["role-member"] }
+  ],
+  "total": 3
+}

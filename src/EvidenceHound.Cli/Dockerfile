@@ -13,6 +13,10 @@ COPY src/ src/
 COPY mappings/essential-eight-2023.yaml mappings/
 COPY frameworks/essential-eight-2023.json frameworks/
 COPY examples/compliance-repo/.gitignore examples/compliance-repo/
+# hound onboard's default model per provider (onboarding only; the runner refuses any model settings).
+# hound onboard's default skills, built into hound.
+COPY skills/ skills/
+COPY agent/ agent/
 RUN dotnet restore src/EvidenceHound.Cli/EvidenceHound.Cli.csproj --locked-mode
 # The SDK stage runs on the build machine's platform and publishes for the target architecture only
 # (one of the csproj's RuntimeIdentifiers), so arm64 needs no emulation and other platforms' native

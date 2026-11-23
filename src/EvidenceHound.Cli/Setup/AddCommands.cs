@@ -65,16 +65,17 @@ internal static class AddCommands
             var domains = current.Scope.Setup.Domains;
             var domainName = await AskDomainAsync(wizard, domains, parseResult.GetValue(domain), cancellationToken);
             var systemName = await wizard.AskAsync("System name", parseResult.GetValue(name), "", cancellationToken);
+            var systemRef = await wizard.AskRefIdAsync(RefIdKind.System, "System ref_id", parseResult.GetValue(refId), Wizard.Slug(systemName), cancellationToken);
             var system = YamlMap.Of(
                 ("name", new YamlText(systemName)),
-                ("ref_id", new YamlText(await wizard.AskAsync("Ref ID", parseResult.GetValue(refId), systemName.Length > 0 ? $"SYS-{Wizard.Slug(systemName)}" : "", cancellationToken))),
+                ("ref_id", new YamlText(systemRef.Match(r => r, _ => ""))),
                 ("type", new YamlText(await wizard.AskAsync("Type (primary or supporting)", parseResult.GetValue(type), "supporting", cancellationToken))),
-                ("owner", new YamlText(await wizard.AskAsync("Owner's email", parseResult.GetValue(owner), "", cancellationToken))),
+                ("owner", new YamlText(await wizard.AskAsync("Owner's email, as a CISO Assistant user", parseResult.GetValue(owner), "", cancellationToken))),
                 ("description", new YamlText(await wizard.AskAsync("Description", parseResult.GetValue(description), "", cancellationToken))),
                 ("parents", new YamlFlowList(Wizard.List(await wizard.AskAsync("Systems it supports, comma-separated", parseResult.GetValue(parents), "", cancellationToken)))));
             system = new YamlMap([.. Ordered(system, "name", "ref_id", "type", "description", "owner", "parents")]);
 
-            var problems = new List<Problem>();
+            var problems = new List<Problem>(systemRef.Match(_ => [], p => p));
             if (systemName.Length == 0)
             {
                 problems.Add(new Problem("add.answer_invalid", "The system name is empty."));
@@ -132,22 +133,23 @@ internal static class AddCommands
 
             var wizard = new Wizard(terminal, parseResult.GetValue(yes));
             var domains = current.Scope.Setup.Domains;
-            var controlRef = await wizard.AskAsync("Control ref ID, such as AC-BACKUP", parseResult.GetValue(refId), "", cancellationToken);
+            var askedRef = await wizard.AskRefIdAsync(RefIdKind.Control, "Control ref_id", parseResult.GetValue(refId), "", cancellationToken);
+            var controlRef = askedRef.Match(r => r, _ => "");
             var controlName = await wizard.AskAsync("Control name", parseResult.GetValue(name), "", cancellationToken);
             var domainName = await AskDomainAsync(wizard, domains, parseResult.GetValue(domain), cancellationToken);
             var control = YamlMap.Of(
                 ("ref_id", new YamlText(controlRef)),
                 ("name", new YamlText(controlName)),
                 ("domain", new YamlText(domainName)),
-                ("owner", new YamlText(await wizard.AskAsync("Owner's email", parseResult.GetValue(owner), "", cancellationToken))),
+                ("owner", new YamlText(await wizard.AskAsync("Owner's email, as a CISO Assistant user", parseResult.GetValue(owner), "", cancellationToken))),
                 ("status", new YamlText("to_do")),
                 ("category", new YamlText(await wizard.AskAsync("Category (policy, process, technical, physical or procedure)", parseResult.GetValue(category), "technical", cancellationToken))),
                 ("systems", new YamlFlowList(Wizard.List(await wizard.AskAsync("Systems it covers, comma-separated", parseResult.GetValue(systems), "", cancellationToken)))));
             var auditRef = parseResult.GetValue(audit);
             var linked = auditRef is null ? [] : Wizard.List(await wizard.AskAsync($"Requirements of {auditRef} it supports, comma-separated", parseResult.GetValue(requirements), "", cancellationToken));
 
-            var problems = new List<Problem>();
-            if (controlRef.Length == 0 || controlName.Length == 0)
+            var problems = new List<Problem>(askedRef.Match(_ => [], p => p));
+            if (controlName.Length == 0)
             {
                 problems.Add(new Problem("add.answer_invalid", "The control needs a ref ID and a name."));
             }
@@ -186,7 +188,7 @@ internal static class AddCommands
 
     private static Command CollectorCommand(Terminal terminal, ILogger logger, CollectorRegistry registry)
     {
-        var type = new Argument<string>("type") { Description = "The collector type, as hound collectors lists it, such as manual or sophos." };
+        var type = new Argument<string>("type") { Description = "The collector type, as hound collectors lists it, such as manual or rest." };
         var config = new Option<FileInfo>("--config") { Description = "The deployment config file (YAML).", Required = true };
         var name = new Option<string?>("--name") { Description = "The collector's name in the config. Default: the type." };
         var schedule = new Option<string?>("--schedule") { Description = $"When it runs, as a cron expression. Default: {DefaultSchedule}." };
@@ -214,6 +216,17 @@ internal static class AddCommands
             }
 
             var store = parseResult.GetValue(secretsDir);
+            var configFile = parseResult.GetRequiredValue(config);
+            var wizard = new Wizard(terminal, parseResult.GetValue(yes));
+            var collectorName = await wizard.AskAsync("Collector name", parseResult.GetValue(name), typeName, cancellationToken);
+            var when = await wizard.AskAsync("Schedule (cron)", parseResult.GetValue(schedule), DefaultSchedule, cancellationToken);
+            var settings = await AskSettingsAsync(wizard, described, given.Match(g => g, _ => []), cancellationToken);
+            if (described.SettingsFrom is { } settingsFrom)
+            {
+                described = settingsFrom(new CollectorSettings(settings.ToDictionary(s => s.Key, s => s.Value, StringComparer.Ordinal)));
+                settings = await AskSettingsAsync(wizard, described, settings, cancellationToken);
+            }
+
             var fromFiles = SecretFiles(parseResult.GetValue(secretFile) ?? [], described, store);
             if (fromFiles is Result<IReadOnlyList<KeyValuePair<string, string>>>.Fail badFile)
             {
@@ -221,11 +234,6 @@ internal static class AddCommands
             }
 
             var files = fromFiles.Match(f => f, _ => []);
-            var configFile = parseResult.GetRequiredValue(config);
-            var wizard = new Wizard(terminal, parseResult.GetValue(yes));
-            var collectorName = await wizard.AskAsync("Collector name", parseResult.GetValue(name), typeName, cancellationToken);
-            var when = await wizard.AskAsync("Schedule (cron)", parseResult.GetValue(schedule), DefaultSchedule, cancellationToken);
-            var settings = await AskSettingsAsync(wizard, described, given.Match(g => g, _ => []), cancellationToken);
             var secrets = new List<(SettingDescription Secret, string Reference, string? Value)>();
             foreach (var (secretName, path) in files)
             {

@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    hound onboard only. The language model adapters and everything that sends to a model live here, so the runner, the scheduler, the
+    core and the collectors cannot reach a model: ArchitectureTests fails if any of them references this project or a model SDK.
+  -->
+  <PropertyGroup>
+    <RootNamespace>EvidenceHound.Onboarding</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="YamlDotNet" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- The default skills, built into hound; organisations add their own from skills_path. -->
+    <EmbeddedResource Include="..\..\skills\*.md" LogicalName="skills/%(Filename)%(Extension)" />
+    <!-- The source of the assistant files hound agent setup writes: rules, instructions, skills and agents. -->
+    <EmbeddedResource Include="..\..\agent\*.md" LogicalName="agent/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="..\..\agent\skills\*.md" LogicalName="agent/skills/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="..\..\agent\agents\*.md" LogicalName="agent/agents/%(Filename)%(Extension)" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="EvidenceHound.Onboarding.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\EvidenceHound.Core\EvidenceHound.Core.csproj" />
+  </ItemGroup>
+</Project>

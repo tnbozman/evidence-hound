@@ -1,0 +1,6 @@
+{
+  "roles": [
+    { "id": "role-owner", "name": "Owner" },
+    { "id": "role-member", "name": "Member" }
+  ]
+}

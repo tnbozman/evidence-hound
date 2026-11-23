@@ -37,8 +37,8 @@ public abstract class CollectorContractTests<TCollector>
         var collector = CreateCollector();
         var description = collector.Describe();
         Assert.True(
-            description.Checks.Count > 0 || description.ChecksSetting is not null,
-            $"Collector '{collector.Type}' describes no checks. Describe() must list every check ID it can emit, or name the setting that lists them in ChecksSetting.");
+            description.Checks.Count > 0 || description.ChecksSetting is not null || description.ChecksFrom is not null,
+            $"Collector '{collector.Type}' describes no checks. Describe() must list every check ID it can emit, name the setting that lists them in ChecksSetting, or give ChecksFrom.");
     }
 
     [Fact]
@@ -130,11 +130,14 @@ public abstract class CollectorContractTests<TCollector>
         (await collector.CollectAsync(Context(Working, collector, NullLogger.Instance), Token))
             .Match(result => result, problems => throw FailException.ForFailure($"Collector '{collector.Type}' failed its Working scenario: {Describe(problems)}"));
 
-    /// <summary>The check IDs a scenario's config allows, when the collector names a setting that lists them.</summary>
+    /// <summary>The check IDs a scenario's config allows, when the collector names a setting that lists them or works them out from its settings.</summary>
     private static string[] Configured(CollectorDescription description, CollectorScenario scenario) =>
-        description.ChecksSetting is { } setting && scenario.Settings.TryGetValue(setting, out var list)
+    [
+        .. description.ChecksSetting is { } setting && scenario.Settings.TryGetValue(setting, out var list)
             ? list.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            : [];
+            : [],
+        .. description.ChecksFrom?.Invoke(new CollectorSettings(scenario.Settings)) ?? [],
+    ];
 
     private static CollectorContext Context(CollectorScenario scenario, ICollector collector, ILogger logger) => new(
         InstanceName,

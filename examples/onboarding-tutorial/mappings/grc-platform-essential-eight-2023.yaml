@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=../../../schemas/mapping.schema.json
+# The GRC platform's Essential Eight audit (GRC-PLATFORM-ESSENTIAL-EIGHT-2023): the backup requirements the backup bucket's settings
+# answer (s09-55). Each needs two checks: the control test proves the infrastructure code declares the setting (grc-infra-controls,
+# terraform test with mock providers), and the drift check proves the live tenancy still matches that code (terraform-drift). Every
+# other row of that audit is in its audit file, decided when it was onboarded; the restore test (ISM-1515) stays manual evidence.
+framework_urn: urn:intuitem:risk:framework:essential-eight-2023
+description: The GRC platform's backup bucket, from its control tests and the drift check.
+requirements:
+  # Backups are retained in a secure and resilient manner: private, encrypted, in another region, locked by a retention rule.
+  - ref: ISM-1811
+    rule: all_pass
+    checks:
+      - infrastructure.controls.backups_private_and_in_another_region
+      - infrastructure.controls.backups_retention_locked
+      - infrastructure.controls.storage_encrypted
+      - infrastructure.drift.none
+  # Unprivileged accounts cannot access backups: only the backup administrators read them.
+  - ref: ISM-1705
+    rule: all_pass
+    checks:
+      - infrastructure.controls.only_backup_admins_reach_backups
+      - infrastructure.drift.none
+  # Privileged accounts, other than backup administrators, cannot access backups.
+  - ref: ISM-1812
+    rule: all_pass
+    checks:
+      - infrastructure.controls.only_backup_admins_reach_backups
+      - infrastructure.drift.none
+  # Unprivileged accounts cannot modify or delete backups: the retention rule and the policy allow only adding them.
+  - ref: ISM-1707
+    rule: all_pass
+    checks:
+      - infrastructure.controls.backups_retention_locked
+      - infrastructure.controls.only_backup_admins_reach_backups
+      - infrastructure.drift.none
+  # Privileged accounts, backup administrators included, cannot modify or delete backups during their retention period.
+  - ref: ISM-1814
+    rule: all_pass
+    checks:
+      - infrastructure.controls.backups_retention_locked
+      - infrastructure.drift.none

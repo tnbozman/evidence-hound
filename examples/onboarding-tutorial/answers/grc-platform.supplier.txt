@@ -1,0 +1,11 @@
+Sam Example
+it@example.com
+CISO Assistant and Evidence Hound on an OCI Compute VM
+SUP-ORACLE
+Oracle Cloud Infrastructure
+SOL-OCI-HOSTING
+OCI compute, networking and storage
+CTR-OCI-2026
+OCI pay-as-you-go 2026
+The private VM, network, site-to-site VPN, bastion, block volumes, object storage, logging and vault that host the GRC platform
+

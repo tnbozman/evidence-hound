@@ -12,15 +12,16 @@
     <!-- The recorded example.com tenant, shared with the M365 collector's own tests. -->
     <Compile Include="..\EvidenceHound.Collectors.M365.Tests\RecordedTenant.cs" Link="M365\RecordedTenant.cs" />
     <Compile Include="..\EvidenceHound.Collectors.M365.Tests\TestCredentials.cs" Link="M365\TestCredentials.cs" />
-    <!-- The recorded example.com Sophos Central tenant, shared with the Sophos collector's own tests. -->
-    <Compile Include="..\EvidenceHound.Collectors.Sophos.Tests\RecordedSophos.cs" Link="Sophos\RecordedSophos.cs" />
+    <!-- The recorded fictional Example Asset API, shared with the rest collector's own tests. -->
+    <Compile Include="..\EvidenceHound.Collectors.Rest.Tests\RecordedExample.cs" Link="Rest\RecordedExample.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\mappings\*.yaml" Link="files\mappings\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\profiles\*.yaml" Link="files\profiles\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\frameworks\*.json" Link="files\frameworks\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\examples\*.yaml" Link="files\examples\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\fixtures\m365\*.json" Link="m365\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\fixtures\sophos\*.json" Link="sophos\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\profiles\**\*.tests\**\*" Link="profiles\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\schemas\config.schema.json" Link="files\schemas\config.schema.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

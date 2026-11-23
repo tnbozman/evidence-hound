@@ -21,11 +21,11 @@ public sealed record ScopeParse(ScopeDocument Scope, IReadOnlyList<ScopeProblem>
 public static partial class ScopeLoader
 {
     private static readonly string[] SetupKeys = ["organisation", "frameworks", "libraries", "domains"];
-    private static readonly string[] OrganisationKeys = ["root_folder"];
+    private static readonly string[] OrganisationKeys = ["root_folder", "entity"];
     private static readonly string[] FrameworkKeys = ["urn", "library", "file", "snapshot"];
     private static readonly string[] DomainKeys = ["name", "description", "perimeters", "perimeter", "systems"];
     private static readonly string[] PerimeterKeys = ["name", "ref_id", "description"];
-    private static readonly string[] SystemKeys = ["name", "ref_id", "type", "description", "owner", "parents", "tags"];
+    private static readonly string[] SystemKeys = ["name", "ref_id", "type", "description", "owner", "parents", "tags", "solution", "supplied_through"];
     private static readonly string[] ControlsKeys = ["controls"];
     private static readonly string[] ControlKeys =
         ["ref_id", "name", "description", "domain", "owner", "status", "priority", "category", "eta", "systems", "reference_control", "documents"];
@@ -40,11 +40,11 @@ public static partial class ScopeLoader
     private static readonly string[] Accesses = ["edit", "read", "hidden"];
     private static readonly string[] DocumentKeys = ["id", "name", "files", "systems", "requirements"];
     private static readonly string[] AuditControlKeys = ["ref_id", "requirements"];
-    private static readonly string[] AssessmentKeys = ["ref", "urn", "status", "result", "observation"];
+    private static readonly string[] AssessmentKeys = ["ref", "urn", "status", "result", "observation", "provided_by"];
     private static readonly string[] Statuses = ["to_do", "in_progress", "in_review", "done"];
     private static readonly string[] CycleKeys = ["period", "starts", "close"];
     private static readonly string[] Closes = ["sign_off", "auto"];
-    private static readonly string[] Periods = ["month", "quarter", "half_year", "year"];
+    private static readonly string[] Periods = [.. AuditPeriods.Lengths];
     private static readonly string[] SignOffKeys = ["period", "by", "date"];
     private static readonly string[] UnlistedKeys = ["result", "reason"];
     private static readonly string[] SystemTypes = ["primary", "supporting"];
@@ -60,7 +60,9 @@ public static partial class ScopeLoader
     /// <summary>Keys that would hold a credential: rejected wherever they appear in <c>access.yaml</c>, without echoing the value.</summary>
     private static readonly string[] SecretKeys = ["password", "password_hash", "api_token", "token", "secret", "totp_secret"];
 
-    public static ScopeParse Parse(ScopeSource setup, ScopeSource? controls, IReadOnlyList<ScopeSource> audits, ScopeSource? access = null, ScopeSource? settings = null)
+    public static ScopeParse Parse(
+        ScopeSource setup, ScopeSource? controls, IReadOnlyList<ScopeSource> audits, ScopeSource? access = null, ScopeSource? settings = null, IReadOnlyList<ScopeSource>? thirdParties = null,
+        ScopeSource? capabilities = null)
     {
         ArgumentNullException.ThrowIfNull(setup);
         ArgumentNullException.ThrowIfNull(audits);
@@ -75,12 +77,16 @@ public static partial class ScopeLoader
         var parsedAccess = accessFile?.Root() is { } accessRoot ? ReadAccess(accessRoot, accessFile) : ScopeAccess.None;
         var settingsFile = settings is null ? null : new FileReader(settings);
         var parsedSettings = settingsFile?.Root() is { } settingsRoot ? ReadSettings(settingsRoot, settingsFile) : ScopeSettings.None;
+        var thirdPartyFiles = (thirdParties ?? []).Select(t => new FileReader(t)).ToArray();
+        var parsedThirdParties = thirdPartyFiles.Select(file => file.Root() is { } root ? ReadEntity(root, file) : null).OfType<ScopeEntity>().ToArray();
+        var capabilitiesFile = capabilities is null ? null : new FileReader(capabilities);
+        var parsedCapabilities = capabilitiesFile?.Root() is { } capabilitiesRoot ? ReadCapabilities(capabilitiesRoot, capabilitiesFile) : null;
 
         return new ScopeParse(
-            new ScopeDocument(parsedSetup, parsedControls, parsedAudits) { Access = parsedAccess, Settings = parsedSettings },
+            new ScopeDocument(parsedSetup, parsedControls, parsedAudits) { Access = parsedAccess, Settings = parsedSettings, ThirdParties = parsedThirdParties, Capabilities = parsedCapabilities },
             [
                 .. setupFile.Problems, .. controlsFile?.Problems ?? [], .. auditFiles.SelectMany(f => f.Problems), .. accessFile?.Problems ?? [],
-                .. settingsFile?.Problems ?? [],
+                .. settingsFile?.Problems ?? [], .. thirdPartyFiles.SelectMany(f => f.Problems), .. capabilitiesFile?.Problems ?? [],
             ]);
     }
 
@@ -208,6 +214,7 @@ public static partial class ScopeLoader
             [.. file.Items(root, "domains").Select(item => ReadDomain(item, file)).OfType<ScopeDomain>()])
         {
             Libraries = file.Refs(root, "libraries"),
+            Organisation = organisation is not null && file.Map(organisation, "entity") is { } entity ? ReadOrganisation(entity, file) : null,
         };
     }
 
@@ -258,7 +265,11 @@ public static partial class ScopeLoader
                 file.Text(item, "owner"),
                 file.Refs(item, "parents"),
                 tags is null ? new Dictionary<string, string>() : file.TextMap(tags),
-                file.At(item));
+                file.At(item))
+            {
+                Solution = file.Ref(item, "solution"),
+                SuppliedThrough = file.Ref(item, "supplied_through"),
+            };
     }
 
     private static ScopeControl[] ReadControls(YamlMappingNode root, FileReader file)
@@ -379,7 +390,10 @@ public static partial class ScopeLoader
             : byRef is not null ? new RequirementRef(RequirementKey.Ref(byRef.Value), file.At(item)) : null;
         return requirement is null || status is null || result is null
             ? null
-            : new HandAssessment(requirement with { At = file.At(item) }, status, result.Value, file.Text(item, "observation") ?? "");
+            : new HandAssessment(requirement with { At = file.At(item) }, status, result.Value, file.Text(item, "observation") ?? "")
+            {
+                ProvidedBy = [.. file.Refs(item, "provided_by").Select(r => r.Value)],
+            };
     }
 
     private static AuditCycle? ReadCycle(YamlMappingNode map, FileReader file)

@@ -38,13 +38,18 @@ public sealed class AddCollectorCommandTests : IDisposable
 
     private string ConfigFile => Path.Combine(_root, "hound.yaml");
 
+    /// <summary>The library profiles, as the test project copies them.</summary>
+    private static readonly string Profiles = Path.Combine(AppContext.BaseDirectory, "files", "profiles");
+
+    private static readonly string[] SophosProfile = ["--set", "profile=sophos-central", "--set", $"profiles_path={Profiles}"];
+
     [Fact]
     public async Task Asks_for_the_required_settings_from_the_collector_description()
     {
         await WriteConfigAsync(Config);
 
-        // Name, schedule, client_id, supported_firewall_firmware, the client secret's reference.
-        var exitCode = await Run($"\n\n{ClientId}\n21.0, 22.0\n\n", "add", "collector", "sophos", "--config", ConfigFile);
+        // Name, schedule, then the profile's client_id and supported_firewall_firmware, and the client secret's reference.
+        var exitCode = await Run($"sophos\n\n{ClientId}\n21.0, 22.0\n\n", ["add", "collector", "rest", "--config", ConfigFile, .. SophosProfile]);
 
         exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
         var config = await File.ReadAllTextAsync(ConfigFile, TestContext.Current.CancellationToken);
@@ -52,15 +57,18 @@ public sealed class AddCollectorCommandTests : IDisposable
         config.ShouldContain($"""
             collectors:   # added with hound add collector
               - name: sophos
-                type: sophos
+                type: rest
                 schedule: "0 3 * * *"
                 settings:
+                  profile: sophos-central
+                  profiles_path: {Profiles}
                   client_id: {ClientId}
                   supported_firewall_firmware: "21.0, 22.0"
                 secrets:
                   client_secret: file:/run/secrets/sophos_client_secret
             """.ReplaceLineEndings("\n"));
-        _error.ToString().ShouldContain("Client ID of the Sophos Central API credential");
+        _error.ToString().ShouldContain("The API credential's client ID. (client_id)");
+        _error.ToString().ShouldNotContain("(super_admin_max)");
         (await Run("", "config", "validate", ConfigFile)).ShouldBe(ExitCodes.Ok, _error.ToString());
     }
 
@@ -70,12 +78,12 @@ public sealed class AddCollectorCommandTests : IDisposable
         await WriteConfigAsync(Config);
 
         var exitCode = await Run(
-            "", "add", "collector", "sophos", "--config", ConfigFile, "--yes", "--name", "home-sophos",
-            "--set", $"client_id={ClientId}", "--set", "supported_firewall_firmware=21.0", "--set", "stale_agent_days=7");
+            "", ["add", "collector", "rest", "--config", ConfigFile, "--yes", "--name", "home-sophos", .. SophosProfile,
+            "--set", $"client_id={ClientId}", "--set", "supported_firewall_firmware=21.0", "--set", "super_admin_max=1"]);
 
         exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
         var config = await File.ReadAllTextAsync(ConfigFile, TestContext.Current.CancellationToken);
-        config.ShouldContain("      stale_agent_days: \"7\"");
+        config.ShouldContain("      super_admin_max: \"1\"");
         config.ShouldContain("      client_secret: file:/run/secrets/home-sophos_client_secret");
         _error.ToString().ShouldNotContain("[");
     }
@@ -87,8 +95,8 @@ public sealed class AddCollectorCommandTests : IDisposable
         var secrets = Path.Combine(_root, "secrets");
 
         var exitCode = await Run(
-            $"{Secret}\n", "add", "collector", "sophos", "--config", ConfigFile, "--yes", "--secrets-dir", secrets,
-            "--set", $"client_id={ClientId}", "--set", "supported_firewall_firmware=21.0");
+            $"{Secret}\n", ["add", "collector", "rest", "--config", ConfigFile, "--yes", "--name", "sophos", "--secrets-dir", secrets, .. SophosProfile,
+            "--set", $"client_id={ClientId}", "--set", "supported_firewall_firmware=21.0"]);
 
         exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
         var file = Path.Combine(secrets, "sophos_client_secret");
@@ -193,10 +201,10 @@ public sealed class AddCollectorCommandTests : IDisposable
     public async Task Duplicate_name_or_unknown_type_is_refused_and_nothing_is_written()
     {
         await WriteConfigAsync(Config);
-        (await Run("", "add", "collector", "sophos", "--config", ConfigFile, "--yes", "--set", $"client_id={ClientId}", "--set", "supported_firewall_firmware=21.0")).ShouldBe(ExitCodes.Ok, _error.ToString());
+        (await Run("", ["add", "collector", "rest", "--config", ConfigFile, "--yes", "--name", "sophos", .. SophosProfile, "--set", $"client_id={ClientId}", "--set", "supported_firewall_firmware=21.0"])).ShouldBe(ExitCodes.Ok, _error.ToString());
         var before = await File.ReadAllTextAsync(ConfigFile, TestContext.Current.CancellationToken);
 
-        (await Run("", "add", "collector", "sophos", "--config", ConfigFile, "--yes", "--set", $"client_id={ClientId}", "--set", "supported_firewall_firmware=21.0")).ShouldBe(ExitCodes.Configuration);
+        (await Run("", ["add", "collector", "rest", "--config", ConfigFile, "--yes", "--name", "sophos", .. SophosProfile, "--set", $"client_id={ClientId}", "--set", "supported_firewall_firmware=21.0"])).ShouldBe(ExitCodes.Configuration);
         _error.ToString().ShouldContain("'sophos' is already used");
         (await Run("", "add", "collector", "no-such-type", "--config", ConfigFile, "--yes")).ShouldBe(ExitCodes.Configuration);
         _error.ToString().ShouldContain("known types");

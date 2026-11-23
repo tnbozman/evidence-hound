@@ -32,11 +32,12 @@ internal static class ScopeCommands
         var config = new Option<FileInfo?>("--config") { Description = "A deployment config whose targets must be audits and controls the scope declares." };
         var format = new Option<string>("--format") { Description = "text (the default) or json.", DefaultValueFactory = _ => "text" };
         format.AcceptOnlyFromAmong("text", "json");
-        var validate = new Command("validate", "Check the scope files offline and report every problem with its file, line and code.") { dir, config, format };
+        var validateJson = new Option<bool>("--json") { Description = "The same as --format json, for an agent." };
+        var validate = new Command("validate", "Check the scope files offline and report every problem with its file, line and code.") { dir, config, format, validateJson };
         validate.SetAction(async (parseResult, cancellationToken) =>
         {
             var checkedScope = await ValidateAsync(parseResult.GetRequiredValue(dir), parseResult.GetValue(config), registry, AuditSeries.Today(configuration), cancellationToken);
-            return await ReportAsync(checkedScope.Problems, checkedScope.Summary, parseResult.GetRequiredValue(format), output, logger);
+            return await ReportAsync(checkedScope.Problems, checkedScope.Summary, parseResult.GetValue(validateJson) ? "json" : parseResult.GetRequiredValue(format), output, logger);
         });
 
         var framework = new Option<FileInfo>("--framework") { Description = "The framework snapshot (from hound framework snapshot).", Required = true };
@@ -54,15 +55,16 @@ internal static class ScopeCommands
 
         var planFormat = new Option<string>("--format") { Description = "markdown (the default, for a pull request comment) or json.", DefaultValueFactory = _ => "markdown" };
         planFormat.AcceptOnlyFromAmong("markdown", "json");
+        var planJson = new Option<bool>("--json") { Description = "The same as --format json, for an agent." };
         var prune = new Option<bool>("--prune") { Description = "Also plan deleting the objects hound manages that the scope no longer declares." };
         var showUnmanaged = new Option<bool>("--show-unmanaged") { Description = "Also list the feature flags and general settings settings.yaml does not name, with their values." };
         var detailedExitCode = new Option<bool>(DetailedExitCodeFlag) { Description = "Exit 0 when there is nothing to change and no drift, 2 when there is, and 1 on any error." };
         var planOut = new Option<FileInfo?>("--out") { Description = "Also save the plan here, for 'hound scope apply <file>' to apply exactly. Holds no token; do not commit it." };
         var plan = new Command(
             "plan",
-            $"Show what applying the scope would create, update or delete in CISO Assistant, and what drifted (reads it; needs {PublishCommand.UrlSetting} and {PublishCommand.TokenSetting}). Sends nothing.")
+            $"Show what applying the scope would create, update or delete in CISO Assistant, and what drifted (reads it; with --config, uses the config's ciso_assistant address and token unless {PublishCommand.UrlSetting} and {PublishCommand.TokenSetting} override them; without it, needs both). Sends nothing.")
         {
-            dir, config, planFormat, prune, showUnmanaged, detailedExitCode, planOut,
+            dir, config, planFormat, planJson, prune, showUnmanaged, detailedExitCode, planOut,
         };
         plan.SetAction(async (parseResult, cancellationToken) =>
         {
@@ -70,11 +72,11 @@ internal static class ScopeCommands
             var checkedScope = await ValidateAsync(parseResult.GetRequiredValue(dir), parseResult.GetValue(config), registry, AuditSeries.Today(configuration), cancellationToken);
             var exitCode = checkedScope.Problems.Count > 0
                 ? await ReportAsync(checkedScope.Problems, checkedScope.Summary, "text", output, logger)
-                : await PublishCommand.Connection(configuration).Match(
+                : await (await PublishCommand.ConnectionAsync(configuration, parseResult.GetValue(config), registry, cancellationToken)).Match(
                     connection => PlanAsync(
                         checkedScope,
                         connection,
-                        new PlanOptions(parseResult.GetValue(prune), parseResult.GetValue(showUnmanaged), parseResult.GetRequiredValue(planFormat))
+                        new PlanOptions(parseResult.GetValue(prune), parseResult.GetValue(showUnmanaged), parseResult.GetValue(planJson) ? "json" : parseResult.GetRequiredValue(planFormat))
                         {
                             DetailedExitCode = detailed,
                             Save = parseResult.GetValue(planOut) is { } file ? new PlanSave(file, parseResult.GetRequiredValue(dir), parseResult.GetValue(config)) : null,
@@ -91,7 +93,7 @@ internal static class ScopeCommands
         var scopeOrPlan = new Argument<string>("scope") { Description = "The scope folder, or a plan saved with 'hound scope plan --out' to apply exactly as reviewed." };
         var apply = new Command(
             "apply",
-            $"Write the scope to CISO Assistant, in dependency order: libraries, domains, perimeters, systems, audits, documents, controls and rows (needs {PublishCommand.UrlSetting} and {PublishCommand.TokenSetting}). Safe to run again. Give --config so the unlisted rule leaves the rows a mapping computes alone. Given a saved plan, applies it without planning again, and refuses it if the scope or CISO Assistant changed since.")
+            $"Write the scope to CISO Assistant, in dependency order: libraries, domains, perimeters, systems, audits, documents, controls and rows (with --config, uses the config's ciso_assistant address and token unless {PublishCommand.UrlSetting} and {PublishCommand.TokenSetting} override them; without it, needs both). Safe to run again. Give --config so the unlisted rule leaves the rows a mapping computes alone. Given a saved plan, applies it without planning again, and refuses it if the scope or CISO Assistant changed since.")
         {
             scopeOrPlan, config, dryRun, prune,
         };
@@ -111,7 +113,7 @@ internal static class ScopeCommands
                 return await ReportAsync(checkedScope.Problems, checkedScope.Summary, "text", output, logger);
             }
 
-            return await PublishCommand.Connection(configuration).Match(
+            return await (await PublishCommand.ConnectionAsync(configuration, parseResult.GetValue(config), registry, cancellationToken)).Match(
                 connection => ApplyAsync(checkedScope, connection, parseResult.GetValue(prune), parseResult.GetValue(dryRun), loggers, output, logger, cancellationToken),
                 problems => Task.FromResult(Log.Problems(logger, problems)));
         });
@@ -129,7 +131,7 @@ internal static class ScopeCommands
             connection => ExportAsync(parseResult.GetRequiredValue(outDir), parseResult.GetRequiredValue(rootFolder), parseResult.GetValue(withFiles), connection, loggers, output, logger, cancellationToken),
             problems => Task.FromResult(Log.Problems(logger, problems))));
 
-        return new Command("scope", "Work with a compliance repo's scope files.") { validate, newAudit, plan, apply, export };
+        return new Command("scope", "Work with a compliance repo's scope files.") { validate, newAudit, plan, apply, export, ScopeImportCommand.Build(output, logger) };
     }
 
     private static async Task<int> ApplyAsync(
@@ -141,11 +143,24 @@ internal static class ScopeCommands
         return await actual.Match(
             async held =>
             {
+                var suppliers = Suppliers(checkedScope, held);
+                if (suppliers.Refused.Count > 0)
+                {
+                    return await ReportAsync(suppliers.Refused, "", "text", output, logger);
+                }
+
                 var plan = ScopePlanner.Plan(declared, held, prune);
                 var compliance = ComplianceImpact.Of(plan, declared, held, checkedScope.Inputs);
                 if (dryRun)
                 {
-                    await output.WriteAsync(ScopePlanOutput.Markdown(plan, PlanNotes.None with { Periods = ScopePeriods.Notes(declared, plan), Compliance = compliance }));
+                    await output.WriteAsync(ScopePlanOutput.Markdown(plan, PlanNotes.None with
+                    {
+                        Periods = ScopePeriods.Notes(declared, plan),
+                        Compliance = compliance,
+                        Suppliers = suppliers.Notes,
+                        Gaps = CapabilityMap.Gaps(checkedScope.Scope, checkedScope.Inputs.Snapshots),
+                        Dependencies = OpenDependencies.Of(checkedScope.Scope, checkedScope.Inputs.Targets ?? []),
+                    }));
                     return ExitCodes.Ok;
                 }
 
@@ -200,6 +215,11 @@ internal static class ScopeCommands
                 if (changed.Length > 0)
                 {
                     return Log.Problems(logger, [Stale($"CISO Assistant changed since it was made: {string.Join(", ", changed)}")]);
+                }
+
+                if (Suppliers(checkedScope, held).Refused is { Count: > 0 } refused)
+                {
+                    return await ReportAsync(refused, "", "text", output, logger);
                 }
 
                 if (dryRun)
@@ -317,9 +337,18 @@ internal static class ScopeCommands
         return await actual.Bind(held => access.Map(users => (Held: held, Users: users))).Match(
             async read =>
             {
+                var suppliers = Suppliers(checkedScope, read.Held);
+                if (suppliers.Refused.Count > 0)
+                {
+                    return await ReportAsync(suppliers.Refused, "", options.Format == "json" ? "json" : "text", output, logger);
+                }
+
                 var plan = ScopePlanner.Plan(declared, read.Held, options.Prune);
                 var notes = new PlanNotes(ScopePeriods.Notes(declared, plan), AccessReview.Notes(checkedScope.Scope.Access, read.Users))
                 {
+                    Suppliers = suppliers.Notes,
+                    Gaps = CapabilityMap.Gaps(checkedScope.Scope, checkedScope.Inputs.Snapshots),
+                    Dependencies = OpenDependencies.Of(checkedScope.Scope, checkedScope.Inputs.Targets ?? []),
                     Unmanaged = options.ShowUnmanaged ? UnmanagedSettings(declared, read.Held) : [],
                     Compliance = ComplianceImpact.Of(plan, declared, read.Held, checkedScope.Inputs),
                 };
@@ -343,6 +372,10 @@ internal static class ScopeCommands
             },
             problems => Task.FromResult(Log.Problems(logger, problems)));
     }
+
+    /// <summary>The supplier gate on the day the scope is checked for: systems refused until their suppliers are approved, and notes.</summary>
+    private static SupplierReviewResult Suppliers(CheckedScope checkedScope, IReadOnlyList<ActualObject> held) =>
+        SupplierReview.Check(checkedScope.Scope, held, checkedScope.Inputs.Today ?? DateOnly.FromDateTime(DateTime.UtcNow));
 
     /// <summary>The flags and general settings CISO Assistant holds that the scope does not name, by kind and name.</summary>
     private static ScopeObject[] UnmanagedSettings(IReadOnlyList<ScopeObject> declared, IReadOnlyList<ActualObject> held)
@@ -394,12 +427,17 @@ internal static class ScopeCommands
         var audits = Directory.Exists(auditsDir) ? Directory.GetFiles(auditsDir, "*.yaml").Order(StringComparer.Ordinal).ToArray() : [];
         var accessPath = Path.Combine(dir.ToString(), "access.yaml");
         var settingsPath = Path.Combine(dir.ToString(), "settings.yaml");
+        var thirdPartiesDir = Path.Combine(dir.ToString(), "third-parties");
+        var thirdParties = Directory.Exists(thirdPartiesDir) ? Directory.GetFiles(thirdPartiesDir, "*.yaml").Order(StringComparer.Ordinal).ToArray() : [];
+        var capabilitiesPath = Path.Combine(dir.ToString(), "capabilities.yaml");
         var parsed = ScopeLoader.Parse(
             await ReadAsync(setupPath, cancellationToken),
             File.Exists(controlsPath) ? await ReadAsync(controlsPath, cancellationToken) : null,
             [.. await Task.WhenAll(audits.Select(a => ReadAsync(a, cancellationToken)))],
             File.Exists(accessPath) ? await ReadAsync(accessPath, cancellationToken) : null,
-            File.Exists(settingsPath) ? await ReadAsync(settingsPath, cancellationToken) : null);
+            File.Exists(settingsPath) ? await ReadAsync(settingsPath, cancellationToken) : null,
+            [.. await Task.WhenAll(thirdParties.Select(t => ReadAsync(t, cancellationToken)))],
+            File.Exists(capabilitiesPath) ? await ReadAsync(capabilitiesPath, cancellationToken) : null);
 
         var snapshots = await SnapshotsAsync(parsed.Scope.Setup.Frameworks, Path.GetDirectoryName(Path.GetFullPath(setupPath))!, cancellationToken);
         var targets = configFile is null ? Result.Ok<IReadOnlyList<ScopeTarget>>([]) : await TargetsAsync(configFile, registry, cancellationToken);
@@ -412,13 +450,18 @@ internal static class ScopeCommands
             .. files.Problems,
             .. targets.Match(_ => [], ps => ps.Select(p => new ScopeProblem(p.Code, new SourceLine(configFile!.ToString(), 0), p.Message, "Fix the deployment config first."))),
             .. ScopeValidator.Validate(scope, snapshots.Loaded, targets.Match(t => t, _ => [])),
+            .. SupplierValidator.Validate(scope, today),
         ];
         return new(
             problems,
-            string.Create(CultureInfo.InvariantCulture, $"scope valid: {scope.Setup.Domains.Count} domain(s), {scope.Controls.Count} control(s), {scope.Audits.Count} audit(s)"),
+            string.Create(CultureInfo.InvariantCulture, $"scope valid: {scope.Setup.Domains.Count} domain(s), {scope.Controls.Count} control(s), {scope.Audits.Count} audit(s){ThirdPartyCount(scope)}"),
             scope,
             new ScopeInputs(snapshots.Loaded, configFile is null ? null : targets.Match(t => t, _ => []), files.Found) { Today = today });
     }
+
+    /// <summary>", N third party(ies)" when the scope declares any, so a scope without them reads as before.</summary>
+    private static string ThirdPartyCount(ScopeDocument scope) =>
+        scope.ThirdParties.Count == 0 ? "" : string.Create(CultureInfo.InvariantCulture, $", {scope.ThirdParties.Count} third party(ies)");
 
     /// <summary>
     /// The files to upload, with their SHA-256: each document's, by path or glob relative to the compliance repo (the folder that holds the

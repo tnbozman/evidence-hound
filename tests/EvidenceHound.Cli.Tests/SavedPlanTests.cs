@@ -50,6 +50,22 @@ public sealed class SavedPlanTests
     }
 
     [Fact]
+    public void Every_kind_of_change_and_drift_round_trips()
+    {
+        var kinds = Enum.GetValues<ScopeKind>();
+        var plan = new ScopePlan(
+            [.. kinds.Select(k => new ScopeChange(k, $"key-{k}", ScopeAction.Delete, [], null))],
+            [.. kinds.Select(k => new ScopeDrift(k, $"key-{k}", DriftReason.Edited, Managed: false, []))]);
+        var saved = new SavedPlan(
+            "https://ciso.example.com/api/", "2026-11-23", "/repo/scope", "/repo/hound.yaml", new string('b', 64), "Global", plan, [], new Dictionary<string, string?>());
+
+        var read = SavedPlanFile.Read(SavedPlanFile.Write(saved), "plan.json").Match(p => p, p => throw new ShouldAssertException(p[0].Message));
+
+        read.Plan.Changes.Select(c => c.Kind).ShouldBe(kinds);
+        read.Plan.Drift.Select(d => d.Kind).ShouldBe(kinds);
+    }
+
+    [Fact]
     public void A_file_that_is_not_a_saved_plan_is_a_problem()
     {
         SavedPlanFile.Read("{\"changes\": []}", "plan.json").ShouldBeOfType<Result<SavedPlan>.Fail>().Errors[0].Code.ShouldBe("scope.plan_invalid");

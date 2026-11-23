@@ -50,3 +50,11 @@ model() {
 @test "the seed leaves the shared env file readable by the dev container user" {
   [ "$(model | jq -r '.services["ca-seed"].environment.HOUND_CA_ENV_MODE')" = "644" ]
 }
+
+@test "on start the dev container copies the token and applies no scope" {
+  # devcontainer.json is JSON with comments, so the one line is read as text.
+  start="$(grep '"postStartCommand"' "$BATS_TEST_DIRNAME/../../.devcontainer/devcontainer.json")"
+  [ -n "$start" ]
+  [[ "$start" == *"scripts/dev-ca-env.sh"* ]]
+  [[ "$start" != *"ca-apply-scope"* ]]
+}

@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../../../schemas/scope.schema.json
+# The open-source GRC application the GRC platform runs. Written by hand: no system is onboarded from it, because GRC-PLATFORM is
+# registered under its host, SUP-ORACLE. There is no contract value; the licence is the contract.
+ref_id: "SUP-CISO-ASSISTANT"
+name: "CISO Assistant (open-source project)"
+description: "The community edition of CISO Assistant, run from its published container images."
+domain: "Example Pty Ltd"
+dependency: 3     # it is our system of record for compliance
+penetration: 1    # it runs in our VM; the project has no access to it
+maturity: 2       # an active project with a security policy; no attestation
+trust: 3          # images pinned by version and updated through a reviewed pull request
+solutions:
+  - ref_id: "SOL-CISO-ASSISTANT"
+    name: "CISO Assistant community edition"
+    criticality: 3
+contracts:
+  - ref_id: "CTR-CISO-ASSISTANT-LICENCE"
+    name: "AGPL-3.0 licence"
+    status: active
+    solutions: ["SOL-CISO-ASSISTANT"]
+assessments:
+  - ref_id: "EA-SUP-CISO-ASSISTANT"
+    name: "CISO Assistant project review"
+    solutions: ["SOL-CISO-ASSISTANT"]
+    perimeter: "Corporate IT"
+    due_date: "2026-12-23"
+    review_every: 12 months

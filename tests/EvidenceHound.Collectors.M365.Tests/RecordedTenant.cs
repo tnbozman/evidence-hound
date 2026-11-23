@@ -30,7 +30,13 @@ internal sealed class RecordedTenant : IDisposable
         ["managed-devices"] = "/v1.0/deviceManagement/managedDevices",
         ["device-configurations"] = "/v1.0/deviceManagement/deviceConfigurations",
         ["configuration-policies"] = "/beta/deviceManagement/configurationPolicies",
+        ["hunting-app-control-events"] = HuntingPath,
+        ["hunting-app-control-blocked-files"] = HuntingPath,
+        ["hunting-defender-onboarding"] = HuntingPath,
     };
+
+    /// <summary>Advanced hunting: one POST address for every query, told apart by the marker comment each query carries.</summary>
+    public const string HuntingPath = "/v1.0/security/runHuntingQuery";
 
     public static readonly string SupportedBuilds = "10.0.22631, 10.0.26100";
 
@@ -43,12 +49,12 @@ internal sealed class RecordedTenant : IDisposable
             var pages = Pages(name, _api.Url);
             if (edit is not null)
             {
-                pages = [new JsonObject { ["value"] = edit(name, Merge(pages)) }];
+                pages = [new JsonObject { [IsHunting(name) ? "results" : "value"] = edit(name, Merge(pages)) }];
             }
 
             for (var i = 0; i < pages.Count; i++)
             {
-                var request = Request.Create().WithPath(path).UsingGet();
+                var request = For(name);
                 request = i == 0 ? request : request.WithParam("$skiptoken", $"{i + 1}");
                 _api.Server.Given(request).AtPriority(i == 0 ? 10 : 1)
                     .RespondWith(Response.Create().WithStatusCode(200).WithHeader("Content-Type", "application/json").WithBody(pages[i].ToJsonString()));
@@ -84,7 +90,7 @@ internal sealed class RecordedTenant : IDisposable
     /// <summary>Answers <paramref name="name"/>'s path with an error instead of the recording.</summary>
     public RecordedTenant Fail(string name, int status, string code, string message)
     {
-        _api.Server.Given(Request.Create().WithPath(Paths[name]).UsingGet()).AtPriority(0)
+        _api.Server.Given(For(name)).AtPriority(0)
             .RespondWith(Response.Create().WithStatusCode(status).WithHeader("Content-Type", "application/json")
                 .WithBody(new JsonObject { ["error"] = new JsonObject { ["code"] = code, ["message"] = message } }.ToJsonString()));
         return this;
@@ -118,5 +124,11 @@ internal sealed class RecordedTenant : IDisposable
         return [.. files.Select(f => JsonNode.Parse(File.ReadAllText(f).Replace("{{graph}}", graph.ToString(), StringComparison.Ordinal))!.AsObject())];
     }
 
-    private static JsonArray Merge(IEnumerable<JsonObject> pages) => [.. pages.SelectMany(p => p["value"]!.AsArray()).Select(i => i?.DeepClone())];
+    private static JsonArray Merge(IEnumerable<JsonObject> pages) => [.. pages.SelectMany(p => (p["value"] ?? p["results"])!.AsArray()).Select(i => i?.DeepClone())];
+
+    private static bool IsHunting(string name) => name.StartsWith("hunting-", StringComparison.Ordinal);
+
+    private static IRequestBuilder For(string name) => IsHunting(name)
+        ? Request.Create().WithPath(HuntingPath).UsingPost().WithBody((string? body) => body?.Contains($"evidence-hound: {name}", StringComparison.Ordinal) == true)
+        : Request.Create().WithPath(Paths[name]).UsingGet();
 }

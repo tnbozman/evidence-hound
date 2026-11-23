@@ -22,6 +22,12 @@ public sealed record ScopeDocument(ScopeSetup Setup, IReadOnlyList<ScopeControl>
 
     /// <summary><c>scope/settings.yaml</c>: feature flags and general settings; empty when the repo has no such file.</summary>
     public ScopeSettings Settings { get; init; } = ScopeSettings.None;
+
+    /// <summary><c>scope/third-parties/*.yaml</c>: suppliers and other third parties, one entity per file.</summary>
+    public IReadOnlyList<ScopeEntity> ThirdParties { get; init; } = [];
+
+    /// <summary><c>scope/capabilities.yaml</c>: which system provides each mitigation; null when the repo has no such file.</summary>
+    public ScopeCapabilityMap? Capabilities { get; init; }
 }
 
 /// <summary><c>scope/setup.yaml</c>: the root folder, the frameworks to load and the domains.</summary>
@@ -29,6 +35,9 @@ public sealed record ScopeSetup(string RootFolder, IReadOnlyList<ScopeFramework>
 {
     /// <summary>Other libraries to load by URN, such as the mapping sets between the frameworks.</summary>
     public IReadOnlyList<ScopeRef> Libraries { get; init; } = [];
+
+    /// <summary>The organisation's own entity (CISO Assistant's main entity), from <c>organisation.entity</c>. It is only ever updated.</summary>
+    public ScopeEntity? Organisation { get; init; }
 }
 
 /// <summary>A framework to load: its URN, and its library by URN or as a custom library file. A snapshot makes it checkable offline.</summary>
@@ -54,7 +63,14 @@ public sealed record ScopeSystem(
     string? Owner,
     IReadOnlyList<ScopeRef> Parents,
     IReadOnlyDictionary<string, string> Tags,
-    SourceLine At);
+    SourceLine At)
+{
+    /// <summary>The supplier's solution the system is, from <c>scope/third-parties/</c>; its supplier must be approved before the system is registered.</summary>
+    public ScopeRef? Solution { get; init; }
+
+    /// <summary>The reseller or provider the contract is with, when not the solution's own supplier; it must be approved too.</summary>
+    public ScopeRef? SuppliedThrough { get; init; }
+}
 
 /// <summary>An applied control, declared once in <c>scope/controls.yaml</c> and used by any number of audits.</summary>
 public sealed record ScopeControl(
@@ -82,7 +98,11 @@ public sealed record ScopeEvidenceDocument(string Id, string Name, IReadOnlyList
 public sealed record AuditControl(ScopeRef Control, IReadOnlyList<RequirementRef> Requirements);
 
 /// <summary>A hand-written result for a requirement no check covers.</summary>
-public sealed record HandAssessment(RequirementRef Requirement, string Status, ComplianceResult Result, string Observation);
+public sealed record HandAssessment(RequirementRef Requirement, string Status, ComplianceResult Result, string Observation)
+{
+    /// <summary>The systems that meet this requirement for the audit, when another system does; the row stays open until their audit shows it met.</summary>
+    public IReadOnlyList<string> ProvidedBy { get; init; } = [];
+}
 
 /// <summary>
 /// An audit that runs in periods: how long each period is, when the first starts, and how an ended period closes: <c>sign_off</c> (locked once

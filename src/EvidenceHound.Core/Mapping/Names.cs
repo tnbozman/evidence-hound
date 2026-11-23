@@ -3,7 +3,7 @@ using EvidenceHound.Core.Planning;
 
 namespace EvidenceHound.Core.Mapping;
 
-/// <summary>The lowercase snake_case names used in files, observations and output.</summary>
+/// <summary>The lowercase snake_case names used in files and output, and the words people read in observations.</summary>
 public static class Names
 {
     public static string Of(CheckOutcome outcome) => outcome switch
@@ -13,6 +13,16 @@ public static class Names
         CheckOutcome.Partial => "partial",
         CheckOutcome.NotApplicable => "not_applicable",
         CheckOutcome.Error => "error",
+        _ => throw new ArgumentOutOfRangeException(nameof(outcome), outcome, null),
+    };
+
+    public static string Display(CheckOutcome outcome) => outcome switch
+    {
+        CheckOutcome.Pass => "pass",
+        CheckOutcome.Fail => "fail",
+        CheckOutcome.Partial => "partial",
+        CheckOutcome.NotApplicable => "not applicable",
+        CheckOutcome.Error => "unable to assess",
         _ => throw new ArgumentOutOfRangeException(nameof(outcome), outcome, null),
     };
 

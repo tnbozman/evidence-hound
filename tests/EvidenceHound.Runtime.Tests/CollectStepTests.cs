@@ -3,6 +3,7 @@ using EvidenceHound.Collectors;
 using EvidenceHound.Core.Checks;
 using EvidenceHound.Core.Packaging;
 using EvidenceHound.Core.Results;
+using EvidenceHound.Core.Scope;
 using EvidenceHound.Core.Secrets;
 using EvidenceHound.Runtime.Configuration;
 using EvidenceHound.Runtime.Storage;
@@ -47,6 +48,54 @@ public sealed class CollectStepTests : IDisposable
         context.Name.ShouldBe("idp");
         context.Settings.Find("tenant").ShouldBe("example.com");
         context.Clock.UtcNow.ShouldBe(Now);
+    }
+
+    [Fact]
+    public async Task The_capabilities_another_product_provides_are_passed_to_the_collector()
+    {
+        var collector = new StubCollector(Output);
+        var at = new SourceLine("scope/capabilities.yaml", 1);
+        var framework = new ScopeRef("urn:example:framework", at);
+        var scope = new ScopeDocument(new ScopeSetup("Example Pty Ltd", [], []), [], [])
+        {
+            Capabilities = new ScopeCapabilityMap(framework, [new ScopeCapability("ac", CapabilityProvision.System, at) { Route = "example-app-control", Systems = [new ScopeRef("Example app control", at)], ApprovedBy = "GRC lead" }], at),
+        };
+
+        await Step().RunAsync(Instance(), collector, TestContext.Current.CancellationToken);
+        collector.Calls.Single().Capabilities.ProvidedElsewhere.ShouldBeEmpty();
+
+        var step = new CollectStep(Secrets.From(new Dictionary<string, string>()), new FileEvidenceStore(_root), _clock, null, TestCollectorServices.None) { Scope = scope };
+        await step.RunAsync(Instance(), collector, TestContext.Current.CancellationToken);
+        collector.Calls[1].Capabilities.ProvidedElsewhere.ShouldBe(new Dictionary<string, string> { ["ac"] = "Example app control (no audit yet)" });
+    }
+
+    [Fact]
+    public async Task Earlier_copies_of_an_evidence_file_are_given_to_the_collector_oldest_first()
+    {
+        var first = new CollectStep(Secrets.From(new Dictionary<string, string>()), new FileEvidenceStore(_root), new FixedClock(Now.AddDays(-2)), null, TestCollectorServices.None);
+        var second = new CollectStep(Secrets.From(new Dictionary<string, string>()), new FileEvidenceStore(_root), new FixedClock(Now.AddDays(-1)), null, TestCollectorServices.None);
+        await first.RunAsync(Instance(), new StubCollector(Output), TestContext.Current.CancellationToken);
+        await second.RunAsync(Instance(), new StubCollector(Output), TestContext.Current.CancellationToken);
+        Directory.CreateDirectory(Path.Combine(_root, "idp", "20260629T120000000Z"));
+        IReadOnlyList<EarlierFile> earlier = [];
+        var collector = new StubCollector(context =>
+        {
+            earlier = context.History.EarlierAsync("admins.json", CancellationToken.None).GetAwaiter().GetResult();
+            return Output(context);
+        });
+
+        await Step().RunAsync(Instance(), collector, TestContext.Current.CancellationToken);
+
+        earlier.Select(e => e.CollectedAt).ShouldBe([Now.AddDays(-2), Now.AddDays(-1)]);
+        earlier.ShouldAllBe(e => Encoding.UTF8.GetString(e.Content) == "{}");
+    }
+
+    [Fact]
+    public async Task Without_a_store_a_collector_has_no_history()
+    {
+        var context = new CollectorContext("idp", new CollectorSettings(new Dictionary<string, string>()), new Dictionary<string, Secret>(), _clock, Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance, new TestHttpClients());
+
+        (await context.History.EarlierAsync("admins.json", TestContext.Current.CancellationToken)).ShouldBeEmpty();
     }
 
     [Fact]

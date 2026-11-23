@@ -1,3 +1,4 @@
+using EvidenceHound.Collectors;
 using EvidenceHound.Core.Checks;
 using EvidenceHound.Core.Frameworks;
 using EvidenceHound.Core.Mapping;
@@ -14,8 +15,11 @@ public class E8MappingTests
     private static readonly string Files = Path.Combine(AppContext.BaseDirectory, "files");
     private static readonly string[] Ml2Groups = ["1", "2"];
 
-    /// <summary>The reference collectors whose checks the mapping must cover: Microsoft 365 (s05) and Sophos Central (s08). Veeam joins in s09.</summary>
-    private static readonly string[] ReferenceTypes = ["m365", "sophos"];
+    /// <summary>The reference collectors whose checks the mapping must cover: Microsoft 365 (s05) and vulnerability scans (s09-04).</summary>
+    private static readonly string[] ReferenceTypes = ["m365", "vuln-scan"];
+
+    /// <summary>The library profiles whose checks the mapping must cover: Sophos Central (s08, a profile since s09-13).</summary>
+    private static readonly string[] ReferenceProfiles = ["sophos-central"];
 
     private static LoadedMapping Mapping { get; } =
         MappingLoader.Parse(File.ReadAllText(Path.Combine(Files, "mappings", "essential-eight-2023.yaml")), "mappings/essential-eight-2023.yaml").Value();
@@ -117,15 +121,22 @@ public class E8MappingTests
         Path.GetFileName(config.Targets[0].MappingPath).ShouldBe("essential-eight-2023.yaml");
     }
 
-    /// <summary>The checks of every reference collector: Microsoft 365 and Sophos Central.</summary>
+    /// <summary>The checks of every reference collector and library profile: Microsoft 365 and Sophos Central.</summary>
     private static IEnumerable<CheckId> ReferenceChecks()
     {
         var descriptions = Registry().Descriptions;
+        var profileChecks = ReferenceProfiles.Select(profile => descriptions["rest"].ChecksFrom!(new CollectorSettings(new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["profile"] = profile,
+            ["profiles_path"] = Path.Combine(Files, "profiles"),
+        }))).ToList();
+        profileChecks.ShouldAllBe(checks => checks.Count > 0, "every reference profile loads and has checks");
         return ReferenceTypes
-            .Where(descriptions.ContainsKey)
             .SelectMany(type => descriptions[type].Checks)
+            .Concat(profileChecks.SelectMany(checks => checks))
             .Select(c => CheckId.Create(c).Value());
     }
+
 
     private static IEnumerable<CheckId> ExampleManualChecks() =>
         Config().Collectors

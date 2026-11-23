@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>EvidenceHound.Collectors.Rest</RootNamespace>
+    <IsPackable>true</IsPackable>
+    <PackageId>EvidenceHound.Collectors.Rest</PackageId>
+    <Description>The Evidence Hound rest collector: reads any REST API described by a YAML profile, builds evidence datasets and evaluates declarative checks.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="EvidenceHound.Collectors.Rest.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="YamlDotNet" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\EvidenceHound.Collectors.Abstractions\EvidenceHound.Collectors.Abstractions.csproj" />
+  </ItemGroup>
+</Project>

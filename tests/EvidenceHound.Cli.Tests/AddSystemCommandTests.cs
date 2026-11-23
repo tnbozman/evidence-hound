@@ -38,6 +38,7 @@ public sealed class AddSystemCommandTests : IDisposable
         setup.Length.ShouldBeGreaterThan(before.Length);
         (await File.ReadAllTextAsync(AuditFile, TestContext.Current.CancellationToken)).ShouldContain("systems: [Example 365, Example laptops, Example backup service, Example firewall]");
         _error.ToString().ShouldContain("System name");
+        _error.ToString().ShouldContain("Owner's email, as a CISO Assistant user");
         (await Run("", "scope", "validate", Scope, "--config", Path.Combine(Repo, "hound.yaml"))).ShouldBe(ExitCodes.Ok, _error.ToString() + _output);
     }
 
@@ -54,6 +55,44 @@ public sealed class AddSystemCommandTests : IDisposable
         _error.ToString().ShouldContain("Example 365");
         (await File.ReadAllTextAsync(SetupFile, TestContext.Current.CancellationToken)).ShouldBe(before);
         (await File.ReadAllTextAsync(AuditFile, TestContext.Current.CancellationToken)).ShouldBe(audit);
+    }
+
+    [Fact]
+    public async Task Ref_id_without_its_prefix_gets_it()
+    {
+        TestFiles.CopyExampleRepo(Repo);
+
+        var exitCode = await Run("", "add", "system", "--scope", Scope, "--yes", "--name", "Example firewall", "--ref-id", "firewall", "--owner", "it@example.com");
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        (await File.ReadAllTextAsync(SetupFile, TestContext.Current.CancellationToken)).ShouldContain("ref_id: SYS-FIREWALL\n");
+    }
+
+    [Fact]
+    public async Task Ref_id_prompt_shows_the_prefix_and_asks_again_until_it_fits()
+    {
+        TestFiles.CopyExampleRepo(Repo);
+
+        // Name, ref ID (refused, then given), type, owner, description, parents.
+        var exitCode = await Run("Example firewall\noffice firewall\noffice-fw\n\nit@example.com\nThe office firewall.\n\n", "add", "system", "--scope", Scope);
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        _error.ToString().ShouldContain("System ref_id [EXAMPLE-FIREWALL]: SYS-");
+        _error.ToString().ShouldContain("upper case letters, digits and hyphens");
+        (await File.ReadAllTextAsync(SetupFile, TestContext.Current.CancellationToken)).ShouldContain("ref_id: SYS-OFFICE-FW\n");
+    }
+
+    [Fact]
+    public async Task Ref_id_option_that_does_not_fit_is_refused()
+    {
+        TestFiles.CopyExampleRepo(Repo);
+        var before = await File.ReadAllTextAsync(SetupFile, TestContext.Current.CancellationToken);
+
+        var exitCode = await Run("", "add", "system", "--scope", Scope, "--yes", "--name", "Example firewall", "--ref-id", "office firewall", "--owner", "it@example.com");
+
+        exitCode.ShouldBe(ExitCodes.Configuration);
+        _error.ToString().ShouldContain("SYS-");
+        (await File.ReadAllTextAsync(SetupFile, TestContext.Current.CancellationToken)).ShouldBe(before);
     }
 
     public void Dispose()

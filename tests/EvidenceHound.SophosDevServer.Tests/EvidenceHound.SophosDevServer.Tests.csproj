@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Collectors\EvidenceHound.Collectors.Rest\EvidenceHound.Collectors.Rest.csproj" />
+    <ProjectReference Include="..\..\src\EvidenceHound.SophosDevServer\EvidenceHound.SophosDevServer.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\profiles\sophos-central.yaml" Link="profiles\sophos-central.yaml" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\docs\tutorials\sophos-dev-server.md" Link="docs\sophos-dev-server.md" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,221 @@
+# Fictional. A short description of the Sophos Central API calls the trial's dev server answers (make sophos-dev), written for the
+# Evidence Hound trial so the person's agent has an API specification to read. It is not Sophos's specification: for a real
+# tenant, use the vendor's published API reference. Only read-only calls are listed; the firmware upgrade check is a POST that
+# changes nothing.
+openapi: 3.0.3
+info:
+  title: Sophos Central API (trial description, fictional)
+  version: "1.0"
+  description: >-
+    Tenant-level API. Sign in with OAuth 2.0 client credentials at the identity service, call whoami to learn the tenant ID and its
+    data region, then call the data region with the X-Tenant-ID header. Lists are paged by page number (page, pageSize, pageTotal).
+servers:
+  - url: http://localhost:5370
+    description: The trial's dev server (identity service, global API and data region on one address)
+components:
+  securitySchemes:
+    clientCredentials:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: /api/v2/oauth2/token
+          scopes:
+            token: Read the tenant's data
+  parameters:
+    tenant:
+      name: X-Tenant-ID
+      in: header
+      required: true
+      schema: { type: string }
+    page:
+      name: page
+      in: query
+      schema: { type: integer, minimum: 1 }
+    pageSize:
+      name: pageSize
+      in: query
+      schema: { type: integer, maximum: 100 }
+    pageTotal:
+      name: pageTotal
+      in: query
+      description: When true, the answer's pages.total says how many pages there are.
+      schema: { type: boolean }
+  schemas:
+    Pages:
+      type: object
+      properties:
+        current: { type: integer }
+        size: { type: integer }
+        total: { type: integer }
+    Firewall:
+      type: object
+      properties:
+        id: { type: string }
+        serialNumber: { type: string }
+        hostname: { type: string }
+        name: { type: string }
+        model: { type: string }
+        firmwareVersion: { type: string, description: "The SFOS version the firewall runs, for example 21.0.1 MR-1" }
+        status:
+          type: object
+          properties:
+            managing: { type: string }
+            reporting: { type: string }
+            connected: { type: boolean }
+            suspended: { type: boolean }
+        capabilities: { type: array, items: { type: string } }
+    Admin:
+      type: object
+      properties:
+        id: { type: string }
+        profile:
+          type: object
+          properties:
+            name: { type: string }
+            firstName: { type: string }
+            lastName: { type: string }
+            email: { type: string }
+        roleAssignments:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              roleId: { type: string }
+    Role:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string, description: "For example Super Admin, Admin, Read-only" }
+        type: { type: string }
+        principalType: { type: string }
+        description: { type: string }
+security:
+  - clientCredentials: [token]
+paths:
+  /api/v2/oauth2/token:
+    post:
+      summary: Get an access token (client credentials)
+      security: []
+      responses:
+        "200":
+          description: The token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token: { type: string }
+                  token_type: { type: string }
+                  expires_in: { type: integer }
+  /whoami/v1:
+    get:
+      summary: Who the credential belongs to
+      responses:
+        "200":
+          description: The tenant and its API hosts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: string, description: The tenant ID, sent as X-Tenant-ID }
+                  idType: { type: string, enum: [tenant, partner, organization] }
+                  apiHosts:
+                    type: object
+                    properties:
+                      global: { type: string }
+                      dataRegion: { type: string, description: The base address for the calls below }
+  /firewall/v1/firewalls:
+    get:
+      summary: The firewalls Sophos Central manages
+      parameters:
+        - $ref: "#/components/parameters/tenant"
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/pageSize"
+        - $ref: "#/components/parameters/pageTotal"
+      responses:
+        "200":
+          description: One page of firewalls
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items: { type: array, items: { $ref: "#/components/schemas/Firewall" } }
+                  pages: { $ref: "#/components/schemas/Pages" }
+  /firewall/v1/firewalls/actions/firmware-upgrade-check:
+    post:
+      summary: Which firmware upgrades are offered to the given firewalls (changes nothing)
+      description: >-
+        Gives no release dates, so how long an upgrade has been offered can only be worked out from earlier answers.
+      parameters:
+        - $ref: "#/components/parameters/tenant"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firewalls: { type: array, items: { type: string, description: A firewall id } }
+      responses:
+        "200":
+          description: Each firewall's current version and the versions it may upgrade to
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  firewalls:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: string }
+                        firmwareVersion: { type: string }
+                        upgradeToVersion: { type: array, items: { type: string } }
+                  firmwareVersions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        version: { type: string }
+                        size: { type: string }
+                        bugs: { type: array, items: { type: string } }
+                        news: { type: array, items: { type: string } }
+  /common/v1/admins:
+    get:
+      summary: The tenant's Sophos Central admins and their role assignments
+      parameters:
+        - $ref: "#/components/parameters/tenant"
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/pageSize"
+        - $ref: "#/components/parameters/pageTotal"
+      responses:
+        "200":
+          description: One page of admins
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items: { type: array, items: { $ref: "#/components/schemas/Admin" } }
+                  pages: { $ref: "#/components/schemas/Pages" }
+  /common/v1/roles:
+    get:
+      summary: The roles admins can hold
+      parameters:
+        - $ref: "#/components/parameters/tenant"
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/pageSize"
+        - $ref: "#/components/parameters/pageTotal"
+      responses:
+        "200":
+          description: One page of roles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items: { type: array, items: { $ref: "#/components/schemas/Role" } }
+                  pages: { $ref: "#/components/schemas/Pages" }

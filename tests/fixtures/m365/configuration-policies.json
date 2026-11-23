@@ -8,7 +8,7 @@
       "technologies": "mdm",
       "settings": [
         { "id": "0", "settingInstance": { "@odata.type": "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance", "settingDefinitionId": "user_vendor_msft_policy_config_word16v2~policy~l_microsoftofficeword~l_wordoptions~l_security~l_trustcenter_l_blockmacroexecutionfrominternet", "choiceSettingValue": { "value": "user_vendor_msft_policy_config_word16v2~policy~l_microsoftofficeword~l_wordoptions~l_security~l_trustcenter_l_blockmacroexecutionfrominternet_1", "children": [] } } },
-        { "id": "1", "settingInstance": { "@odata.type": "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance", "settingDefinitionId": "user_vendor_msft_policy_config_excel16v2~policy~l_microsoftofficeexcel~l_excel_options~l_security~l_trustcenter_l_blockmacroexecutionfrominternet", "choiceSettingValue": { "value": "user_vendor_msft_policy_config_excel16v2~policy~l_microsoftofficeexcel~l_excel_options~l_security~l_trustcenter_l_blockmacroexecutionfrominternet_1", "children": [] } } },
+        { "id": "1", "settingInstance": { "@odata.type": "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance", "settingDefinitionId": "user_vendor_msft_policy_config_excel16v2~policy~l_microsoftofficeexcel~l_exceloptions~l_security~l_trustcenter_l_blockmacroexecutionfrominternet", "choiceSettingValue": { "value": "user_vendor_msft_policy_config_excel16v2~policy~l_microsoftofficeexcel~l_exceloptions~l_security~l_trustcenter_l_blockmacroexecutionfrominternet_1", "children": [] } } },
         { "id": "2", "settingInstance": { "@odata.type": "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance", "settingDefinitionId": "user_vendor_msft_policy_config_ppt16v2~policy~l_microsoftofficepowerpoint~l_powerpointoptions~l_security~l_trustcenter_l_blockmacroexecutionfrominternet", "choiceSettingValue": { "value": "user_vendor_msft_policy_config_ppt16v2~policy~l_microsoftofficepowerpoint~l_powerpointoptions~l_security~l_trustcenter_l_blockmacroexecutionfrominternet_1", "children": [] } } }
       ],
       "assignments": [ { "id": "cp01-a1", "target": { "@odata.type": "#microsoft.graph.allLicensedUsersAssignmentTarget" } } ]
@@ -38,6 +38,47 @@
         }
       ],
       "assignments": [ { "id": "cp02-a1", "target": { "@odata.type": "#microsoft.graph.allDevicesAssignmentTarget" } } ]
+    },
+    {
+      "id": "00000000-0000-4000-8000-00000000cp03",
+      "name": "App Control for Business - Windows and Store apps",
+      "platforms": "windows10",
+      "technologies": "mdm",
+      "templateReference": {
+        "templateId": "4321b946-b76b-4450-8afd-769c08b16ffc_1",
+        "templateFamily": "endpointSecurityApplicationControl",
+        "templateDisplayName": "App Control for Business"
+      },
+      "settings": [
+        {
+          "id": "0",
+          "settingInstance": {
+            "@odata.type": "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance",
+            "settingDefinitionId": "device_vendor_msft_policy_config_applicationcontrol_policies_{policyguid}_policiesoptions",
+            "choiceSettingValue": {
+              "value": "device_vendor_msft_policy_config_applicationcontrol_built_in_controls_selected",
+              "children": [
+                {
+                  "@odata.type": "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance",
+                  "settingDefinitionId": "device_vendor_msft_policy_config_applicationcontrol_built_in_controls_enable_app_control",
+                  "choiceSettingValue": {
+                    "value": "device_vendor_msft_policy_config_applicationcontrol_built_in_controls_enable_app_control_0",
+                    "children": []
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "assignments": [
+        {
+          "id": "cp03-a1",
+          "target": {
+            "@odata.type": "#microsoft.graph.allDevicesAssignmentTarget"
+          }
+        }
+      ]
     }
   ]
 }

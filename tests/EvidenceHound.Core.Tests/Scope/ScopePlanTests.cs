@@ -250,8 +250,8 @@ public class ScopePlanTests
     public void A_period_audit_declared_without_its_status_is_neither_drift_nor_an_update()
     {
         // Applied as a period of a series, in progress; exported later as a plain audit, which says nothing of its status.
-        var applied = Applied(Declared(ScopeKind.Audit, "EX-PERIOD-2026Q4", ("name", "Backups 2026Q4"), ("status", "in_progress")));
-        var declared = Declared(ScopeKind.Audit, "EX-PERIOD-2026Q4", ("name", "Backups 2026Q4"));
+        var applied = Applied(Declared(ScopeKind.Audit, "EX-PERIOD-Q2-2027FY", ("name", "Backups Q2-2027FY"), ("status", "in_progress")));
+        var declared = Declared(ScopeKind.Audit, "EX-PERIOD-Q2-2027FY", ("name", "Backups Q2-2027FY"));
 
         ScopePlanner.Plan([declared], [applied], prune: false).IsEmpty.ShouldBeTrue();
     }
@@ -317,5 +317,48 @@ public class ScopePlanTests
             x is not null && y is not null && (x.Kind, x.Key, x.Reason, x.Managed) == (y.Kind, y.Key, y.Reason, y.Managed) && x.Fields.SequenceEqual(y.Fields);
 
         public int GetHashCode(ScopeDrift obj) => obj.Key.GetHashCode(StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Supplier_levels_the_scope_leaves_to_decide_are_left_as_ciso_assistant_holds_them()
+    {
+        // A drafted supplier declares only the levels someone decided. CISO Assistant fills the others in with its defaults, and those are
+        // not changes to plan: the plan after an apply is empty. A level the scope declares is still compared.
+        var supplier = Declared(ScopeKind.Entity, "SUP-HOST", ("name", "Example Hosting"), ("dependency", "2"));
+        var solution = Declared(ScopeKind.Solution, "SOL-HOST", ("name", "Hosting"), ("entity", "SUP-HOST"));
+        var heldSupplier = Applied(supplier) with
+        {
+            Held = supplier with { Fields = new Dictionary<string, string>(supplier.Fields) { ["penetration"] = "0", ["maturity"] = "1", ["trust"] = "1" } },
+        };
+        var heldSolution = Applied(solution) with { Held = solution with { Fields = new Dictionary<string, string>(solution.Fields) { ["criticality"] = "0" } } };
+
+        ScopePlanner.Plan([supplier, solution], [heldSupplier, heldSolution], prune: false).Changes.ShouldBeEmpty();
+
+        var decided = supplier with { Fields = new Dictionary<string, string>(supplier.Fields) { ["trust"] = "3" } };
+        var change = ScopePlanner.Plan([decided, solution], [heldSupplier, heldSolution], prune: false).Changes.ShouldHaveSingleItem();
+        change.Fields.ShouldHaveSingleItem().ShouldBe(new FieldChange("trust", "1", "3"));
+    }
+
+    [Fact]
+    public void Tier_differing_from_forced_tier_is_reported()
+    {
+        var at = new SourceLine("scope/third-parties/sup-host.yaml", 1);
+        var scope = SupplierGateTests.Scope(SupplierGateTests.System("Example portal", null, null)) with
+        {
+            ThirdParties = [new ScopeEntity("SUP-HOST", "Example Hosting", at) { ForcedTier = "critical", ForcedTierReason = "Hosts the customer portal." }],
+        };
+        static ActualObject Held(string? tier) => new(new ScopeObject(ScopeKind.Entity, "SUP-HOST", new Dictionary<string, string>()), "abc")
+        {
+            Observed = tier is null ? new Dictionary<string, string>() : new Dictionary<string, string> { ["tier"] = tier },
+        };
+
+        var note = SupplierReview.Check(scope, [Held("standard")], SupplierGateTests.Today).Notes.ShouldHaveSingleItem();
+
+        (note.Code, note.Supplier).ShouldBe(("supplier.tier_differs", "SUP-HOST"));
+        note.Detail.ShouldContain("standard");
+        note.Detail.ShouldContain("critical");
+        note.Detail.ShouldContain("Hosts the customer portal.");
+        SupplierReview.Check(scope, [Held("critical")], SupplierGateTests.Today).Notes.ShouldBeEmpty();
+        SupplierReview.Check(scope, [Held(null)], SupplierGateTests.Today).Notes.ShouldHaveSingleItem().Detail.ShouldContain("no tier");
     }
 }

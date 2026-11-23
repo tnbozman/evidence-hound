@@ -1,0 +1,37 @@
+# Fictional. The unattended trial (HOUND_TRIAL_YES=1, CI) copies this file over the agent's draft: it is the draft as hound approve
+# leaves it once a person approves the supplier (the contract active) and concludes its review ok. Interactively, you approve.
+ref_id: "SUP-ORACLE"
+name: "Oracle Cloud Infrastructure"
+domain: "Example Pty Ltd"
+# dependency: The GRC platform runs only on it; moving it is a planned project. (agent)
+dependency: 3
+# penetration: It hosts the VM and its disks, but holds no account in our identity provider. (agent)
+penetration: 2
+# maturity: Its security attestations are current. (agent)
+maturity: 3
+# trust: A major cloud provider with published shared-responsibility terms. (agent)
+trust: 3
+solutions:
+  - ref_id: "SOL-OCI-HOSTING"
+    name: "OCI compute, networking and storage"
+    # criticality: to decide (1 to 4)
+contracts:
+  - ref_id: "CTR-OCI-2026"
+    name: "OCI pay-as-you-go 2026"
+    status: active
+    approved_by: Sam Example
+    approved_on: "2026-11-23"
+    solutions: ["SOL-OCI-HOSTING"]
+# The supplier's review: a person concludes it with hound approve, and a system it supplies is registered only once it is concluded ok.
+assessments:
+  - ref_id: "EA-SUP-ORACLE"
+    name: "Oracle Cloud Infrastructure review"
+    solutions: ["SOL-OCI-HOSTING"]
+    perimeter: "Corporate IT"
+    due_date: "2026-12-23"
+    review_every: 12 months
+    conclusions:
+      - review: EA-SUP-ORACLE-2026-12
+        result: ok
+        by: Sam Example
+        on: "2026-11-23"

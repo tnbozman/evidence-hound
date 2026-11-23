@@ -1,0 +1,430 @@
+# yaml-language-server: $schema=../../../../schemas/scope.schema.json
+# Written by hound onboard for GRC-PLATFORM on 2026-11-23; how each row was decided is in onboarding/grc-platform-essential-eight-2023-2026-11-23.md.
+ref_id: "GRC-PLATFORM-ESSENTIAL-EIGHT-2023"
+name: "GRC-PLATFORM essential-eight-2023"
+framework: "urn:intuitem:risk:framework:essential-eight-2023"
+groups: ["1", "2"]
+domain: "Example Pty Ltd"
+perimeter: "Corporate IT"
+systems: ["GRC-PLATFORM"]
+# Requirements not listed below are checked through the API; they stay not assessed until the collector's results are published.
+unlisted:
+  result: not_assessed
+assessments:
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:pa:ism-1807
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: OCI resource inventory and the image list of the stack (docker compose images), reviewed fortnightly. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:pa:ism-1808
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: OCI Vulnerability Scanning on the VM and a container image scanner, both with vendor-updated databases; settings captured quarterly. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1698
+    status: done
+    result: not_applicable
+    observation: "Not applicable: The GRC platform has no public address and no inbound port from the internet; staff reach it only over the site-to-site VPN, so it is not an online service. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1699
+    status: done
+    result: not_applicable
+    observation: "Not applicable: The VM is a Linux container host: no office suite, web browser, email client or PDF software is installed on it. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1700
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: The container images (CISO Assistant, Caddy, PostgreSQL, hound) are scanned fortnightly; reports kept. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1876
+    status: done
+    result: not_applicable
+    observation: "Not applicable: The GRC platform has no public address and no inbound port from the internet; staff reach it only over the site-to-site VPN, so it is not an online service. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1690
+    status: done
+    result: not_applicable
+    observation: "Not applicable: The GRC platform has no public address and no inbound port from the internet; staff reach it only over the site-to-site VPN, so it is not an online service. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1691
+    status: done
+    result: not_applicable
+    observation: "Not applicable: The VM is a Linux container host: no office suite, web browser, email client or PDF software is installed on it. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1693
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Image versions are pinned in deploy/deploy.env and updated within a month of a release, through a reviewed pull request. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1905
+    status: done
+    result: not_applicable
+    observation: "Not applicable: The GRC platform has no public address and no inbound port from the internet; staff reach it only over the site-to-site VPN, so it is not an online service. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1704
+    status: done
+    result: not_applicable
+    observation: "Not applicable: The VM is a Linux container host: no office suite, web browser, email client or PDF software is installed on it. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1807
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: OCI resource inventory and the image list of the stack (docker compose images), reviewed fortnightly. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1808
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: OCI Vulnerability Scanning on the VM and a container image scanner, both with vendor-updated databases; settings captured quarterly. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1701
+    status: done
+    result: not_applicable
+    observation: "Not applicable: The VM sits in a private subnet with no public IP address and no inbound internet port, so it is not internet-facing. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1702
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: OCI Vulnerability Scanning scans the operating system of the VM at least fortnightly; reports kept. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1877
+    status: done
+    result: not_applicable
+    observation: "Not applicable: The VM sits in a private subnet with no public IP address and no inbound internet port, so it is not internet-facing. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1694
+    status: done
+    result: not_applicable
+    observation: "Not applicable: The VM sits in a private subnet with no public IP address and no inbound internet port, so it is not internet-facing. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1695
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Unattended upgrades install security updates daily and the VM restarts in the monthly window; the patch record is kept. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1501
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Ubuntu LTS in standard support; the release and its support end date are recorded each quarter. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1504
+    status: done
+    result: not_applicable
+    observation: "Not applicable: The GRC platform has no public address and no inbound port from the internet; staff reach it only over the site-to-site VPN, so it is not an online service. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1679
+    status: done
+    result: not_applicable
+    observation: "Not applicable: The GRC platform has no public address and no inbound port from the internet; staff reach it only over the site-to-site VPN, so it is not an online service. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1680
+    status: done
+    result: not_applicable
+    observation: "Not applicable: The GRC platform has no public address and no inbound port from the internet; staff reach it only over the site-to-site VPN, so it is not an online service. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1892
+    status: done
+    result: not_applicable
+    observation: "Not applicable: The GRC platform has no public address and no inbound port from the internet; staff reach it only over the site-to-site VPN, so it is not an online service. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1893
+    status: done
+    result: not_applicable
+    observation: "Not applicable: The GRC platform has no public address and no inbound port from the internet; staff reach it only over the site-to-site VPN, so it is not an online service. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1681
+    status: done
+    result: not_applicable
+    observation: "Not applicable: The GRC platform is used only by the GRC team; no customer has an account. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1173
+    status: to_do
+    result: not_assessed
+    provided_by: ["Example 365"]
+    observation: "Met by Example 365; open until the audit of Example 365 shows it met: Staff sign in to CISO Assistant through single sign-on with Example 365, which enforces MFA; OCI console and Bastion sign-in is federated to the same identity provider. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-0974
+    status: to_do
+    result: not_assessed
+    provided_by: ["Example 365"]
+    observation: "Met by Example 365; open until the audit of Example 365 shows it met: Staff sign in to CISO Assistant through single sign-on with Example 365, which enforces MFA; OCI console and Bastion sign-in is federated to the same identity provider. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1401
+    status: to_do
+    result: not_assessed
+    provided_by: ["Example 365"]
+    observation: "Met by Example 365; open until the audit of Example 365 shows it met: Staff sign in to CISO Assistant through single sign-on with Example 365, which enforces MFA; OCI console and Bastion sign-in is federated to the same identity provider. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1872
+    status: done
+    result: not_applicable
+    observation: "Not applicable: The GRC platform has no public address and no inbound port from the internet; staff reach it only over the site-to-site VPN, so it is not an online service. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1873
+    status: done
+    result: not_applicable
+    observation: "Not applicable: The GRC platform is used only by the GRC team; no customer has an account. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1682
+    status: to_do
+    result: not_assessed
+    provided_by: ["Example 365"]
+    observation: "Met by Example 365; open until the audit of Example 365 shows it met: Staff sign in to CISO Assistant through single sign-on with Example 365, which enforces MFA; OCI console and Bastion sign-in is federated to the same identity provider. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1683
+    status: to_do
+    result: not_assessed
+    provided_by: ["Example 365"]
+    observation: "Met by Example 365; open until the audit of Example 365 shows it met: Staff sign in to CISO Assistant through single sign-on with Example 365, which enforces MFA; OCI console and Bastion sign-in is federated to the same identity provider. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1815
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Container and system logs go to OCI Logging, where they are retained and reviewed weekly; incidents follow the incident response plan and register. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1906
+    status: done
+    result: not_applicable
+    observation: "Not applicable: The VM sits in a private subnet with no public IP address and no inbound internet port, so it is not internet-facing. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1228
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Container and system logs go to OCI Logging, where they are retained and reviewed weekly; incidents follow the incident response plan and register. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-0123
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Container and system logs go to OCI Logging, where they are retained and reviewed weekly; incidents follow the incident response plan and register. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-0140
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Container and system logs go to OCI Logging, where they are retained and reviewed weekly; incidents follow the incident response plan and register. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1819
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Container and system logs go to OCI Logging, where they are retained and reviewed weekly; incidents follow the incident response plan and register. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1507
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: CISO Assistant administrator and VM sudo access are requested and approved through scope/access.yaml pull requests. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1647
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Privileged access is revalidated at the annual access review; the review record is kept. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1648
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Inactive privileged accounts are disabled after 45 days; the monthly account review is kept. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-0445
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Administrators use dedicated admin accounts for CISO Assistant and the VM; the account list is reviewed quarterly. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1175
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: The egress rules of the VM allows only the listed API hosts, and admin accounts have no mailbox; those rules are captured quarterly. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1883
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Only the admin account of the GRC lead may use the OCI console; the OCI IAM group membership is captured quarterly. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1380
+    status: to_do
+    result: not_assessed
+    provided_by: ["Example laptops"]
+    observation: "Met by Example laptops; open until the audit of Example laptops shows it met: Administrators work from their managed Example laptops, whose operating environments meet this. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1687
+    status: to_do
+    result: not_assessed
+    provided_by: ["Example laptops"]
+    observation: "Met by Example laptops; open until the audit of Example laptops shows it met: Administrators work from their managed Example laptops, whose operating environments meet this. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1688
+    status: to_do
+    result: not_assessed
+    provided_by: ["Example laptops"]
+    observation: "Met by Example laptops; open until the audit of Example laptops shows it met: Administrators work from their managed Example laptops, whose operating environments meet this. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1689
+    status: to_do
+    result: not_assessed
+    provided_by: ["Example laptops"]
+    observation: "Met by Example laptops; open until the audit of Example laptops shows it met: Administrators work from their managed Example laptops, whose operating environments meet this. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1387
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Administration is only through OCI Bastion sessions or over the VPN; the Bastion session list is exported monthly. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1685
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Break glass, local and service account credentials are long, unique and kept in the OCI Vault; the vault inventory is captured quarterly. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1509
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: sudo, SSH and CISO Assistant admin events go to OCI Logging; a sample is captured monthly. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1650
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Account and group changes on the VM and in CISO Assistant go to OCI Logging; a sample is captured monthly. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1815
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Container and system logs go to OCI Logging, where they are retained and reviewed weekly; incidents follow the incident response plan and register. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1906
+    status: done
+    result: not_applicable
+    observation: "Not applicable: The VM sits in a private subnet with no public IP address and no inbound internet port, so it is not internet-facing. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1228
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Container and system logs go to OCI Logging, where they are retained and reviewed weekly; incidents follow the incident response plan and register. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-0123
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Container and system logs go to OCI Logging, where they are retained and reviewed weekly; incidents follow the incident response plan and register. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-0140
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Container and system logs go to OCI Logging, where they are retained and reviewed weekly; incidents follow the incident response plan and register. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1819
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Container and system logs go to OCI Logging, where they are retained and reviewed weekly; incidents follow the incident response plan and register. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-0843
+    status: done
+    result: not_applicable
+    observation: "Not applicable: Application control at maturity level two covers workstations and internet-facing servers. This VM is a private server, neither of those. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1490
+    status: done
+    result: not_applicable
+    observation: "Not applicable: Application control at maturity level two covers workstations and internet-facing servers. This VM is a private server, neither of those. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1870
+    status: done
+    result: not_applicable
+    observation: "Not applicable: Application control at maturity level two covers workstations and internet-facing servers. This VM is a private server, neither of those. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1871
+    status: done
+    result: not_applicable
+    observation: "Not applicable: Application control at maturity level two covers workstations and internet-facing servers. This VM is a private server, neither of those. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1657
+    status: done
+    result: not_applicable
+    observation: "Not applicable: Application control at maturity level two covers workstations and internet-facing servers. This VM is a private server, neither of those. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1544
+    status: done
+    result: not_applicable
+    observation: "Not applicable: Application control at maturity level two covers workstations and internet-facing servers. This VM is a private server, neither of those. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1582
+    status: done
+    result: not_applicable
+    observation: "Not applicable: Application control at maturity level two covers workstations and internet-facing servers. This VM is a private server, neither of those. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1660
+    status: done
+    result: not_applicable
+    observation: "Not applicable: Application control at maturity level two covers workstations and internet-facing servers. This VM is a private server, neither of those. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1815
+    status: done
+    result: not_applicable
+    observation: "Not applicable: Application control at maturity level two covers workstations and internet-facing servers. This VM is a private server, neither of those. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1906
+    status: done
+    result: not_applicable
+    observation: "Not applicable: Application control at maturity level two covers workstations and internet-facing servers. This VM is a private server, neither of those. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1228
+    status: done
+    result: not_applicable
+    observation: "Not applicable: Application control at maturity level two covers workstations and internet-facing servers. This VM is a private server, neither of those. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-0123
+    status: done
+    result: not_applicable
+    observation: "Not applicable: Application control at maturity level two covers workstations and internet-facing servers. This VM is a private server, neither of those. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-0140
+    status: done
+    result: not_applicable
+    observation: "Not applicable: Application control at maturity level two covers workstations and internet-facing servers. This VM is a private server, neither of those. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1819
+    status: done
+    result: not_applicable
+    observation: "Not applicable: Application control at maturity level two covers workstations and internet-facing servers. This VM is a private server, neither of those. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1671
+    status: done
+    result: not_applicable
+    observation: "Not applicable: There is no Microsoft Office or Windows on this Linux container host. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1488
+    status: done
+    result: not_applicable
+    observation: "Not applicable: There is no Microsoft Office or Windows on this Linux container host. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1672
+    status: done
+    result: not_applicable
+    observation: "Not applicable: There is no Microsoft Office or Windows on this Linux container host. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1673
+    status: done
+    result: not_applicable
+    observation: "Not applicable: There is no Microsoft Office or Windows on this Linux container host. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1489
+    status: done
+    result: not_applicable
+    observation: "Not applicable: There is no Microsoft Office or Windows on this Linux container host. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1654
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell on workstations and internet-facing servers. None run on this private Linux server. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1486
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell on workstations and internet-facing servers. None run on this private Linux server. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1485
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell on workstations and internet-facing servers. None run on this private Linux server. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1412
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell on workstations and internet-facing servers. None run on this private Linux server. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1585
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell on workstations and internet-facing servers. None run on this private Linux server. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1667
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell on workstations and internet-facing servers. None run on this private Linux server. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1668
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell on workstations and internet-facing servers. None run on this private Linux server. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1669
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell on workstations and internet-facing servers. None run on this private Linux server. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1542
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell on workstations and internet-facing servers. None run on this private Linux server. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1859
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell on workstations and internet-facing servers. None run on this private Linux server. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1823
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell on workstations and internet-facing servers. None run on this private Linux server. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1670
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell on workstations and internet-facing servers. None run on this private Linux server. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1860
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell on workstations and internet-facing servers. None run on this private Linux server. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1824
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell on workstations and internet-facing servers. None run on this private Linux server. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1623
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell on workstations and internet-facing servers. None run on this private Linux server. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1889
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell on workstations and internet-facing servers. None run on this private Linux server. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1815
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell on workstations and internet-facing servers. None run on this private Linux server. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1906
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell on workstations and internet-facing servers. None run on this private Linux server. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1228
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell on workstations and internet-facing servers. None run on this private Linux server. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-0123
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell on workstations and internet-facing servers. None run on this private Linux server. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-0140
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell on workstations and internet-facing servers. None run on this private Linux server. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1819
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell on workstations and internet-facing servers. None run on this private Linux server. Approved by Alex Example; accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1511
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Nightly database dumps and weekly OCI block volume backups, kept 35 days, per the backup procedure. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1810
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: The database dump and the volume backup are taken in the same nightly window, so they restore to a common point. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1515
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: A restore to a scratch VM is tested each quarter; the test record is the evidence. Accepted by Sam Example when onboarding GRC-PLATFORM on 2026-11-23 (onboarding/grc-platform-essential-eight-2023-2026-11-23.md)."

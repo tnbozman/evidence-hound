@@ -1,6 +1,6 @@
 # Design: a generic REST collector
 
-Status: Agreed (Nov 22). Not built yet; the build is tasks s09-09 to s09-14 in [the s09 sprint](../sprints/s09-e8-gap-collectors.md).
+Status: Implemented (s09-09 to s09-14, Nov 22). The reference is [docs/collectors/rest.md](../collectors/rest.md) and the tutorial [Write a profile](../tutorials/write-a-profile.md). Changes made during the build are listed at the end, under "As built".
 
 ## The problem
 
@@ -373,3 +373,17 @@ Added to s09 rather than a new sprint, ahead of s09-01 so new Microsoft 365 and 
 - **s09-12 Code checks and profile tests.** Built-in code-check library with names profiles can use; profiles folder as the only load path, with validation, `requires`, `source` and manifest hashes; `hound profile test` and `hound profile diff`; the public `profiles/` library with an `example` profile; CI runs every library profile's tests.
 - **s09-13 Sophos as a profile.** `profiles/sophos-central.yaml` in the library; parity test against the coded collector; then remove the coded collector, migrate `type: sophos` config, and have the interactive tutorial copy the profile.
 - **s09-14 Documentation.** `docs/collectors/rest.md` (reference) and a tutorial: write a profile for a fictional API, test-first.
+
+## As built
+
+What changed from this design while it was built:
+
+- **Retries.** `rate_limit` has `per_second` and `max_retries` only. `Retry-After` is always honoured, so there is no `retry_after` key.
+- **Redirects** are followed only on the same host, at most 5 times, and refused otherwise (`rest.redirect_refused`).
+- **Identities are hashed before extraction**, so datasets and checks see the hashed values, the same as the evidence.
+- **Results.** A check gives pass, fail, partial (only for a ratio with `partial_at`), not applicable or unable to assess. `when_empty` has no default.
+- **Sophos as a profile.** The `sophos-central` profile matched the coded collector on six recordings (same check IDs, outcomes and evidence items), so the coded collector was removed and `type: sophos` now fails validation, naming the replacement. The profile needed no datasets: its firmware check reads the `firewalls` query directly, and the Super Admin count is the `sophos.super_admin_count` code check over `admins` and `roles`. It supports tenant credentials only; partner and organisation credentials, which the coded collector also read, are not supported.
+- **Profile tests** are YAML cases in `<profile>.tests/` with recordings beside them, run offline by `hound profile test`. A profile without tests runs with a warning, or is unable to assess when the instance sets `require_profile_tests`.
+- **Adding a collector.** `hound add collector rest --set profile=<name>` asks for the profile's required parameters and secrets.
+- **Manifest.** The run's `_manifest.json` lists each profile that ran, with its version, source and SHA-256.
+

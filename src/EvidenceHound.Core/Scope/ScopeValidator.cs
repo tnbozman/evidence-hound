@@ -36,8 +36,26 @@ public static class ScopeValidator
             .. targets.SelectMany(t => TargetProblems(t, index)),
             .. AccessValidator.Validate(scope),
             .. SettingsValidator.Validate(scope, CisoAssistantSettings.Current),
+            .. SupplierValidator.References(scope),
+            .. CapabilityMap.Validate(scope, snapshots),
+            .. scope.Audits.SelectMany(OtherSystemProblems),
+            .. RefIdValidator.Validate(scope),
         ];
     }
+
+    /// <summary>
+    /// A requirement another system meets stays open until that system's audit shows it met: marked not applicable, the gap would show as closed.
+    /// Rows written before s09-36 name the system only in their observation ("Provided by ...").
+    /// </summary>
+    private static IEnumerable<ScopeProblem> OtherSystemProblems(ScopeAudit audit) =>
+        audit.Assessments
+            .Where(a => a.Result == ComplianceResult.NotApplicable
+                && (a.ProvidedBy.Count > 0 || a.Observation.StartsWith("Provided by ", StringComparison.Ordinal)))
+            .Select(a => new ScopeProblem(
+                "scope.other_system_as_not_applicable",
+                a.Requirement.At,
+                $"requirement '{a.Requirement.Key}' in audit '{audit.RefId}' is not applicable because another system meets it, which shows the requirement as closed when nothing yet proves it met.",
+                "Keep it open: set 'result: not_assessed' and 'status: to_do', and name the system with 'provided_by: [<system>]'. It closes when that system's audit shows the requirement met."));
 
     private static IEnumerable<ScopeProblem> Duplicates(ScopeDocument scope) =>
     [
@@ -100,7 +118,10 @@ public static class ScopeValidator
         ];
     }
 
-    /// <summary>A cycle starts on the first of a month; each sign-off names one of its periods, and is dated after that period ended.</summary>
+    /// <summary>
+    /// A cycle starts on the first of a month, and a quarterly one on the first day of a financial-year quarter; each sign-off names one of its
+    /// periods, and is dated after that period ended.
+    /// </summary>
     private static IEnumerable<ScopeProblem> CycleProblems(ScopeAudit audit)
     {
         if (audit.Cycle is not { } cycle)
@@ -112,15 +133,16 @@ public static class ScopeValidator
                 "Add a 'cycle', or remove the sign-offs."));
         }
 
-        if (!DateOnly.TryParseExact(cycle.Starts, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var first) || first.Day != 1)
+        if (!DateOnly.TryParseExact(cycle.Starts, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var first) || !AuditPeriods.StartsOnItsUnit(cycle.Period, first))
         {
+            var unit = cycle.Period == "quarter" ? "the first day of a financial-year quarter (1 July, 1 October, 1 January or 1 April)" : "the first day of a month";
             return
             [
                 new ScopeProblem(
                     "scope.cycle_start_invalid",
                     cycle.At,
-                    $"the cycle of audit '{audit.RefId}' starts on '{cycle.Starts}', which is not the first day of a month.",
-                    "Start the cycle on the first of a month, such as \"2026-07-01\"."),
+                    $"the cycle of audit '{audit.RefId}' starts on '{cycle.Starts}', which is not {unit}.",
+                    $"Start the cycle on {unit}, such as \"2026-07-01\"."),
             ];
         }
 

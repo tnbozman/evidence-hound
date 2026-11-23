@@ -1,0 +1,37 @@
+# Fictional. The unattended trial (HOUND_TRIAL_YES=1, CI) copies this file over the agent's draft: it is the draft as hound approve
+# leaves it once a person approves the supplier (the contract active) and concludes its review ok. Interactively, you approve.
+ref_id: "SUP-EVIDENCE-HOUND"
+name: "Evidence Hound (open-source project)"
+domain: "Example Pty Ltd"
+# dependency: It collects our evidence; CISO Assistant still works without it. (agent)
+dependency: 2
+# penetration: It runs in our VM with read-only credentials; the project has no access to it. (agent)
+penetration: 1
+# maturity: A young project with tests, code scanning and signed images; no attestation. (agent)
+maturity: 2
+# trust: Images pinned by version and updated through a reviewed pull request. (agent)
+trust: 3
+solutions:
+  - ref_id: "SOL-EVIDENCE-HOUND"
+    name: "Evidence Hound runner"
+    # criticality: to decide (1 to 4)
+contracts:
+  - ref_id: "CTR-EVIDENCE-HOUND-LICENCE"
+    name: "Apache-2.0 licence"
+    status: active
+    approved_by: Sam Example
+    approved_on: "2026-11-23"
+    solutions: ["SOL-EVIDENCE-HOUND"]
+# The supplier's review: a person concludes it with hound approve, and a system it supplies is registered only once it is concluded ok.
+assessments:
+  - ref_id: "EA-SUP-EVIDENCE-HOUND"
+    name: "Evidence Hound (open-source project) review"
+    solutions: ["SOL-EVIDENCE-HOUND"]
+    perimeter: "Corporate IT"
+    due_date: "2026-12-23"
+    review_every: 12 months
+    conclusions:
+      - review: EA-SUP-EVIDENCE-HOUND-2026-12
+        result: ok
+        by: Sam Example
+        on: "2026-11-23"

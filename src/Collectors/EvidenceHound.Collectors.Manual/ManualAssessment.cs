@@ -41,10 +41,19 @@ internal static class ManualAssessment
     private static (CheckOutcome, string, string[]) Present(CheckId id, DroppedFile newest) => newest.Attestation switch
     {
         null => (CheckOutcome.Partial, $"Evidence present, not attested: {newest.FileName}, {Day(newest.ModifiedAt)}.", [newest.FileName]),
+        { FileSha256: { } hash } a when !string.Equals(hash, newest.ContentHash, StringComparison.OrdinalIgnoreCase) =>
+            (CheckOutcome.Partial, $"Evidence changed since it was attested by {a.Who} on {Day(a.Date)}: {newest.FileName}. Attest the file as it is now.", [newest.FileName, newest.Sidecar]),
         { } a when a.Outcomes.TryGetValue(id.Value, out var attested) =>
-            (attested, $"Attested {Attestation.NameOf(attested)} by {a.Who} on {Day(a.Date)}: {newest.FileName}.{(a.Note is null ? "" : $" {a.Note}")}", [newest.FileName, newest.Sidecar]),
+            (attested, $"{Attested(a, attested)}: {newest.FileName}{Kept(a)}.{(a.Note is null ? "" : $" {a.Note}")}", [newest.FileName, newest.Sidecar]),
         _ => (CheckOutcome.Partial, $"Evidence present, not attested for this check: {newest.Sidecar} has no outcome for {id.Value}.", [newest.FileName, newest.Sidecar]),
     };
+
+    /// <summary>Who stands behind the outcome: the person who attested it, and the agent when it proposed what they attested.</summary>
+    private static string Attested(Attestation a, CheckOutcome outcome) => a.ProposedBy is { } proposer
+        ? $"Proposed by {proposer}, attested {Attestation.NameOf(outcome)} by {a.Who} on {Day(a.Date)}"
+        : $"Attested {Attestation.NameOf(outcome)} by {a.Who} on {Day(a.Date)}";
+
+    private static string Kept(Attestation a) => a.FileSha256 is { Length: >= 12 } hash ? $" (sha256 {hash[..12]})" : "";
 
     private static (CheckOutcome, string, string[]) Missing(ManualSource source, DateTimeOffset? lastSeen) => lastSeen switch
     {

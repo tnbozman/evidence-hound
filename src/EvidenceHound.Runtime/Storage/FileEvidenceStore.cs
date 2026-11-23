@@ -52,6 +52,16 @@ public sealed partial class FileEvidenceStore(string root) : IEvidenceStore
         return Task.FromResult(runs);
     }
 
+    public async Task<byte[]?> ReadFileAsync(StoredRun run, string fileName, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(run);
+        ArgumentNullException.ThrowIfNull(fileName);
+        var path = Path.Combine(run.Location, fileName);
+        return Path.GetFileName(fileName) == fileName && fileName is not ("." or "..") && File.Exists(path)
+            ? await File.ReadAllBytesAsync(path, cancellationToken)
+            : null;
+    }
+
     public Task DeleteRunAsync(StoredRun run, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(run);

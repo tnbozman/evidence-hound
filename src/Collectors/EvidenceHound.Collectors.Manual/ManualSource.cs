@@ -44,9 +44,10 @@ public sealed record ManualSource(string DropFolder, IReadOnlyList<string> Patte
             : folder.Bind(f => checks.Bind(c => dueDays.Bind(d => owner.Map(o => new ManualSource(f, patterns, c, d, o)))));
     }
 
-    /// <summary>Whether <paramref name="fileName"/> matches one of the accepted patterns (<c>*</c> and <c>?</c>). Attestation sidecars never match.</summary>
+    /// <summary>Whether <paramref name="fileName"/> matches one of the accepted patterns (<c>*</c> and <c>?</c>). Attestation sidecars and proposals never match.</summary>
     public bool Accepts(string fileName) =>
         !fileName.EndsWith(Attestation.Suffix, StringComparison.OrdinalIgnoreCase)
+        && !fileName.EndsWith(Proposal.Suffix, StringComparison.OrdinalIgnoreCase)
         && Patterns.Any(pattern => FileSystemName.MatchesSimpleExpression(pattern, fileName, ignoreCase: true));
 
     private static Result<string> Required(CollectorSettings settings, string name) =>

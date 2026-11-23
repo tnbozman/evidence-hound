@@ -8,7 +8,11 @@ namespace EvidenceHound.Collectors;
 /// What a collector found. Check results cite evidence by <see cref="CollectedEvidence.FileName"/>; the runner hashes the files and
 /// turns those names into evidence IDs.
 /// </summary>
-public sealed record CollectionResult(IReadOnlyList<CheckResult> Checks, IReadOnlyList<CollectedEvidence> Files, IReadOnlyList<ControlStatus> ControlStatuses);
+public sealed record CollectionResult(IReadOnlyList<CheckResult> Checks, IReadOnlyList<CollectedEvidence> Files, IReadOnlyList<ControlStatus> ControlStatuses)
+{
+    /// <summary>The profiles that judged this run, recorded in the run's manifest. Only collectors driven by profiles set it.</summary>
+    public IReadOnlyList<ManifestProfile> Profiles { get; init; } = [];
+}
 
 /// <summary>One evidence file, read as a stream: a plain file name, its media type and a way to read its content. The runner disposes each stream it opens.</summary>
 public sealed record CollectedEvidence(string FileName, string MediaType, Func<Stream> Open)

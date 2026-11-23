@@ -19,10 +19,10 @@ public sealed class RollTests
         var plan = ScopePlanner.Plan(ScopeDesired.From(scope, Inputs(new DateOnly(2026, 10, 1))), held, prune: false);
 
         var opened = plan.Changes.Single(c => c.Kind == ScopeKind.Audit && c.Action == ScopeAction.Create);
-        opened.Key.ShouldBe("EX-E8-BACKUP-2026Q4");
-        opened.Desired!.Initial["baseline"].ShouldBe("EX-E8-BACKUP-2026Q3");
-        (opened.Desired.Fields["status"], opened.Desired.Fields["name"], opened.Desired.Fields["eta"]).ShouldBe(("in_progress", "Backups 2026Q4", "2026-12-31"));
-        plan.Changes.Where(c => c.Kind == ScopeKind.Assessment).ShouldAllBe(c => c.Key.StartsWith("EX-E8-BACKUP-2026Q4/", StringComparison.Ordinal));
+        opened.Key.ShouldBe("EX-E8-Q2-2027FY-BACKUP");
+        opened.Desired!.Initial["baseline"].ShouldBe("EX-E8-Q1-2027FY-BACKUP");
+        (opened.Desired.Fields["status"], opened.Desired.Fields["name"], opened.Desired.Fields["eta"]).ShouldBe(("in_progress", "Backups Q2-2027FY", "2026-12-31"));
+        plan.Changes.Where(c => c.Kind == ScopeKind.Assessment).ShouldAllBe(c => c.Key.StartsWith("EX-E8-Q2-2027FY-BACKUP/", StringComparison.Ordinal));
         plan.Changes.Where(c => c.Kind == ScopeKind.Assessment).ShouldNotBeEmpty();
     }
 
@@ -34,25 +34,25 @@ public sealed class RollTests
 
         var plan = ScopePlanner.Plan(ScopeDesired.From(scope, Inputs(new DateOnly(2026, 10, 1))), held, prune: false);
 
-        plan.Changes.Single(c => c.Key == "EX-E8-BACKUP-2026Q3").Fields.ShouldBe([new FieldChange("status", "in_progress", "in_review")]);
+        plan.Changes.Single(c => c.Key == "EX-E8-Q1-2027FY-BACKUP").Fields.ShouldBe([new FieldChange("status", "in_progress", "in_review")]);
         var later = Apply(scope, new DateOnly(2026, 10, 1), held);
         ScopePlanner.Plan(ScopeDesired.From(scope, Inputs(new DateOnly(2026, 11, 21))), later, prune: false).IsEmpty.ShouldBeTrue();
-        ScopeDesired.From(scope, Inputs(new DateOnly(2026, 11, 21))).ShouldNotContain(o => o.Key.StartsWith("EX-E8-BACKUP-2026Q3/", StringComparison.Ordinal));
+        ScopeDesired.From(scope, Inputs(new DateOnly(2026, 11, 21))).ShouldNotContain(o => o.Key.StartsWith("EX-E8-Q1-2027FY-BACKUP/", StringComparison.Ordinal));
     }
 
     [Fact]
     public void Sign_off_in_file_locks_the_period()
     {
         var held = Apply(Scope(Series()), new DateOnly(2026, 10, 1), Apply(Scope(Series()), new DateOnly(2026, 9, 30), []));
-        var signed = Scope(Series() with { SignOffs = [new SignOff("2026Q3", "ceo@example.com", "2026-10-14")] });
+        var signed = Scope(Series() with { SignOffs = [new SignOff("Q1-2027FY", "ceo@example.com", "2026-10-14")] });
 
         var plan = ScopePlanner.Plan(ScopeDesired.From(signed, Inputs(new DateOnly(2026, 10, 15))), held, prune: false);
 
         plan.Changes.ShouldHaveSingleItem().ShouldSatisfyAllConditions(
-            c => c.Key.ShouldBe("EX-E8-BACKUP-2026Q3"),
+            c => c.Key.ShouldBe("EX-E8-Q1-2027FY-BACKUP"),
             c => c.Fields.ShouldBe([new FieldChange("status", "in_review", "done"), new FieldChange("locked", null, "true")], ignoreOrder: true));
         var locked = Apply(signed, new DateOnly(2026, 10, 15), held);
-        locked.Single(a => a.Held.Key == "EX-E8-BACKUP-2026Q3").Locked.ShouldBeTrue();
+        locked.Single(a => a.Held.Key == "EX-E8-Q1-2027FY-BACKUP").Locked.ShouldBeTrue();
         ScopePlanner.Plan(ScopeDesired.From(signed, Inputs(new DateOnly(2026, 10, 16))), locked, prune: false).IsEmpty.ShouldBeTrue();
     }
 
@@ -64,7 +64,7 @@ public sealed class RollTests
 
         var plan = ScopePlanner.Plan(ScopeDesired.From(Scope(auto), Inputs(new DateOnly(2026, 10, 1))), held, prune: false);
 
-        plan.Changes.Single(c => c.Key == "EX-E8-BACKUP-2026Q3").Fields.ShouldBe([new FieldChange("status", "in_progress", "done"), new FieldChange("locked", null, "true")], ignoreOrder: true);
+        plan.Changes.Single(c => c.Key == "EX-E8-Q1-2027FY-BACKUP").Fields.ShouldBe([new FieldChange("status", "in_progress", "done"), new FieldChange("locked", null, "true")], ignoreOrder: true);
     }
 
     [Fact]
@@ -77,9 +77,9 @@ public sealed class RollTests
 
         plan.Changes.Where(c => c.Kind == ScopeKind.Audit).Select(c => (c.Action, c.Key, c.Desired!.Fields["status"], c.Desired.Initial.GetValueOrDefault("baseline"))).ShouldBe(
         [
-            (ScopeAction.Update, "EX-E8-BACKUP-2026Q2", "in_review", null),
-            (ScopeAction.Create, "EX-E8-BACKUP-2026Q3", "in_review", "EX-E8-BACKUP-2026Q2"),
-            (ScopeAction.Create, "EX-E8-BACKUP-2026Q4", "in_progress", "EX-E8-BACKUP-2026Q3"),
+            (ScopeAction.Update, "EX-E8-Q4-2026FY-BACKUP", "in_review", null),
+            (ScopeAction.Create, "EX-E8-Q1-2027FY-BACKUP", "in_review", "EX-E8-Q4-2026FY-BACKUP"),
+            (ScopeAction.Create, "EX-E8-Q2-2027FY-BACKUP", "in_progress", "EX-E8-Q1-2027FY-BACKUP"),
         ]);
         var caughtUp = Apply(scope, new DateOnly(2026, 11, 21), held);
         ScopePlanner.Plan(ScopeDesired.From(scope, Inputs(new DateOnly(2026, 11, 22))), caughtUp, prune: false).IsEmpty.ShouldBeTrue();
@@ -93,7 +93,7 @@ public sealed class RollTests
         var rows = ScopeDesired.From(Scope(Series()), Inputs(new DateOnly(2026, 11, 21)) with { Targets = [target] })
             .Where(o => o.Kind == ScopeKind.Assessment).Select(o => o.Key);
 
-        rows.ShouldBe(["EX-E8-BACKUP-2026Q4/ISM-1515"]);
+        rows.ShouldBe(["EX-E8-Q2-2027FY-BACKUP/ISM-1515"]);
     }
 
     [Fact]
@@ -107,9 +107,9 @@ public sealed class RollTests
 
         notes.ShouldBe(
         [
-            new PeriodNote("EX-E8-BACKUP-2026Q2", PeriodEvent.AwaitingSignOff, null),
-            new PeriodNote("EX-E8-BACKUP-2026Q3", PeriodEvent.Closes, null),
-            new PeriodNote("EX-E8-BACKUP-2026Q4", PeriodEvent.Opens, "EX-E8-BACKUP-2026Q3"),
+            new PeriodNote("EX-E8-Q4-2026FY-BACKUP", PeriodEvent.AwaitingSignOff, null),
+            new PeriodNote("EX-E8-Q1-2027FY-BACKUP", PeriodEvent.Closes, null),
+            new PeriodNote("EX-E8-Q2-2027FY-BACKUP", PeriodEvent.Opens, "EX-E8-Q1-2027FY-BACKUP"),
         ]);
     }
 
@@ -117,10 +117,10 @@ public sealed class RollTests
     public void Plan_lists_a_period_locked_by_its_sign_off()
     {
         var held = Apply(Scope(Series()), new DateOnly(2026, 10, 1), Apply(Scope(Series()), new DateOnly(2026, 9, 30), []));
-        var signed = Scope(Series() with { SignOffs = [new SignOff("2026Q3", "ceo@example.com", "2026-10-14")] });
+        var signed = Scope(Series() with { SignOffs = [new SignOff("Q1-2027FY", "ceo@example.com", "2026-10-14")] });
         var declared = ScopeDesired.From(signed, Inputs(new DateOnly(2026, 10, 15)));
 
-        ScopePeriods.Notes(declared, ScopePlanner.Plan(declared, held, prune: false)).ShouldBe([new PeriodNote("EX-E8-BACKUP-2026Q3", PeriodEvent.SignedOff, null)]);
+        ScopePeriods.Notes(declared, ScopePlanner.Plan(declared, held, prune: false)).ShouldBe([new PeriodNote("EX-E8-Q1-2027FY-BACKUP", PeriodEvent.SignedOff, null)]);
     }
 
     /// <summary>What CISO Assistant holds after applying the scope on <paramref name="today"/> over what it held: every declared object, as declared.</summary>

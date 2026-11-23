@@ -51,3 +51,26 @@ public sealed class AzureIdentityCredentials : IGraphCredentialFactory
         }
     }
 }
+
+/// <summary>
+/// The credential an instance signs in with: the app registration's, from the credential factory, or with <c>sign_in: none</c>
+/// (loopback dev server only, checked by <see cref="M365Options"/>) a placeholder that asks for no secret.
+/// </summary>
+internal static class GraphSignIn
+{
+    public static Result<TokenCredential> For(M365Options options, IGraphCredentialFactory factory, IReadOnlyDictionary<string, Secret> secrets) =>
+        options.SignIn == "none"
+            ? Result.Ok<TokenCredential>(new PlaceholderCredential())
+            : factory.Create(new GraphConnection(
+                options.TenantId, options.ClientId, secrets.GetValueOrDefault(M365Settings.ClientCertificate), secrets.GetValueOrDefault(M365Settings.ClientSecret)));
+
+    /// <summary>A fixed bearer token the dev server ignores. Never sent to Microsoft: <c>sign_in: none</c> is refused off loopback.</summary>
+    private sealed class PlaceholderCredential : TokenCredential
+    {
+        private static readonly AccessToken Placeholder = new("dev-server-no-sign-in", DateTimeOffset.MaxValue);
+
+        public override AccessToken GetToken(TokenRequestContext requestContext, CancellationToken cancellationToken) => Placeholder;
+
+        public override ValueTask<AccessToken> GetTokenAsync(TokenRequestContext requestContext, CancellationToken cancellationToken) => ValueTask.FromResult(Placeholder);
+    }
+}

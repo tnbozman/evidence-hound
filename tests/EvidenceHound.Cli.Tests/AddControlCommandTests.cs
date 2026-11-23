@@ -21,6 +21,7 @@ public sealed class AddControlCommandTests : IDisposable
             "AC-FIREWALL\nFirewall rules reviewed quarterly\nit@example.com\n\nExample 365\nISM-1173, ISM-1504\n", "add", "control", "--scope", Scope, "--audit", "EX-E8-2026");
 
         exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        _error.ToString().ShouldContain("Owner's email, as a CISO Assistant user");
         (await File.ReadAllTextAsync(Path.Combine(Scope, "controls.yaml"), TestContext.Current.CancellationToken)).ShouldContain("""
               - ref_id: AC-FIREWALL
                 name: Firewall rules reviewed quarterly
@@ -35,6 +36,19 @@ public sealed class AddControlCommandTests : IDisposable
                 requirements: [ISM-1173, ISM-1504]
             """.ReplaceLineEndings("\n"));
         (await Run("", "scope", "validate", Scope, "--config", Path.Combine(Repo, "hound.yaml"))).ShouldBe(ExitCodes.Ok, _error.ToString() + _output);
+    }
+
+    [Fact]
+    public async Task Ref_id_prompt_shows_the_prefix_and_takes_the_rest()
+    {
+        TestFiles.CopyExampleRepo(Repo);
+
+        // Ref ID without its prefix, name, owner, category, systems.
+        var exitCode = await Run("firewall\nFirewall rules reviewed quarterly\nit@example.com\n\nExample 365\n", "add", "control", "--scope", Scope);
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        _error.ToString().ShouldContain("Control ref_id: AC-");
+        (await File.ReadAllTextAsync(Path.Combine(Scope, "controls.yaml"), TestContext.Current.CancellationToken)).ShouldContain("  - ref_id: AC-FIREWALL\n");
     }
 
     [Fact]
