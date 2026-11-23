@@ -921,6 +921,21 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 **Functional check**
 - Against a recorded GitHub Actions API (WireMock, fictional repository), `hound run --dry-run` with the `terraform-drift` profile reports pass for a plan with no drift and fail naming `oci_core_instance.grc` for one with drift; with triggering off, no POST is sent.
 
+**As built so far (2026-11-23).** Engine: `format: zip` with `member:` reads one file of a zip answer, the archive and the unzipped member both under `max_bytes` (`rest.zip_member_missing`, `rest.response_too_large`); `redirect_hosts:` follows a GET's redirect to signed storage with a plain, unsigned request (GitHub artefact downloads); `write: true` marks a query that changes something, and it runs only when the instance sets `allow_writes: true` (otherwise nothing is sent and the check is unable to assess). Profiles `terraform-drift` (read the newest completed run, its `drift-plan` artefact and `plan.json`) and `terraform-drift-trigger` (`workflow_dispatch` with `return_run_details`, poll the run, then read), both with check `infrastructure.drift.none` through the code check `terraform.no_drift` (over `[run, plan]`; provenance from the run). Test cases replay folder recordings as zips (`recordings/plan-drift.zip/plan.json`). Guide: `docs/collectors/terraform-drift.md`.
+
+Functional check, run 2026-11-23 against a local fake of the GitHub Actions API serving the profile's recordings (fictional `example/grc-infra`), with `hound run --no-publish` and `hound status`:
+
+```console
+$ hound run --config hound.yaml --no-publish     # plan-clean
+grc-infra-drift  ...  succeeded  1  0  -         # infrastructure.drift.none: pass
+$ hound run --config hound.yaml --no-publish     # plan-drift
+grc-infra-drift  ...  succeeded  0  1  -         # fail: "1 resource differs ...: oci_core_instance.grc (update). Plan from example/grc-infra at commit 0123..., run 7001."
+$ hound run --config trigger.yaml --no-publish   # terraform-drift-trigger, no allow_writes
+grc-infra-drift  ...  succeeded  0  0  -         # unable to assess; the fake API received no request at all
+```
+
+Still open: the OCI tutorial's use of it (s09-32), and GitLab or Azure DevOps profiles if wanted.
+
 **Order:** after the hands-on Sophos path (s09-25), with s09-32.
 
 ### s09-34 Ref ID conventions enforced at the prompt and in scope validate (added 2026-11-23)
