@@ -137,8 +137,8 @@ organisation() {
   if [[ -s "$ws/repo/hound.yaml" ]]; then
     say "Already written: repo/hound.yaml and repo/scope. Remove ${ws#"$root"/} (make trial-clean) to start again."
   else
-    say "hound init asks about the organisation. Press Enter to take each default: the fictional Example Pty Ltd, the same"
-    say "organisation the dev container seeds, so the plan below updates its domain and adds a new audit."
+    say "hound init asks about the organisation. Press Enter to take each default: the fictional Example Pty Ltd at maturity"
+    say "level 2, audited by quarter. The plan below creates its domain, perimeter, health control and this quarter's audit."
     if [[ "$yes" == 1 ]]; then
       hound no init /trial/repo --evidence-root /trial/evidence --yes
     else
@@ -147,6 +147,25 @@ organisation() {
   fi
   hound no config validate hound.yaml
   apply_scope scope
+  agent_setup
+}
+
+# agent_setup writes the coding agent's files in the trial repo and links bin/hound, which the agent and you run hound with
+agent_setup() {
+  done_already agent && return 0
+  say "hound agent setup writes the skills and agent files Claude Code and GitHub Copilot read in the trial repo."
+  hound no agent setup --assistant both
+  mkdir -p "$ws/bin"
+  ln -sfn "$root/scripts/trial-hound.sh" "$ws/bin/hound"
+  mark_done agent
+  cat <<TEXT
+
+From here your coding agent drafts each stage and you approve it. Start it in a second terminal and keep it open:
+  cd ${ws#"$root"/}/repo && export PATH="\$PWD/../bin:\$PATH"
+  claude        (or open the folder in VS Code and pick the hound-onboarding agent in Copilot)
+${ws#"$root"/}/bin/hound runs this image against this CISO Assistant. hound's container sees only ${ws#"$root"/}: put the
+firewall's API specification in ${ws#"$root"/}/specs and the vendor documents in ${ws#"$root"/}/inbox.
+TEXT
 }
 
 # apply_scope STEP validates and plans the scope, then asks before applying it; STEP marks it done
@@ -168,37 +187,82 @@ add() {
   if [[ "$yes" == 1 ]]; then hound no add "$@" --yes; else hound yes add "$@"; fi
 }
 
-agent() {
-  step "5. Hand the Sophos perimeter firewall to your coding agent"
-  local audit
-  audit="$(audit_ref)"
-  if ! done_already agent; then
-    say "hound agent setup writes the skills and agent files Claude Code and GitHub Copilot read in the trial repo."
-    hound no agent setup --assistant both
-    mkdir -p "$ws/bin"
-    ln -sfn "$root/scripts/trial-hound.sh" "$ws/bin/hound"
-    say "${ws#"$root"/}/bin/hound runs this image against this CISO Assistant, so your agent's hound commands reach it."
-    mark_done agent
+# The system the trial onboards, and the stages an agent drafts. Each stage: what it is, the request for the agent, a wait until its
+# draft is in the repo, the person's approval where one is needed, then validate, plan and apply.
+system=SOPHOS-NETWORK
+
+# stage NAME NUMBER TITLE APPROVE(yes|no) REPLAY LOOK
+stage() {
+  local name="$1" number="$2" title="$3" approve="$4" replay="$5" look="$6" series
+  step "$number. $title"
+  series="$(audit_ref)"
+  if done_already "$name"; then
+    say "Done already. Remove ${ws#"$root"/}/state/$name.done to do it again."
+    return 0
   fi
-  cat <<TEXT
-
-The agent onboards the firewall, not this script. In a new terminal:
-  cd ${ws#"$root"/}/repo && export PATH="\$PWD/../bin:\$PATH"
-  claude        (or open the folder in VS Code and pick the hound-onboarding agent in Copilot)
-Put the firewall's API specification in ${ws#"$root"/}/specs and the vendor documents in ${ws#"$root"/}/inbox:
-hound's container sees only ${ws#"$root"/}. Then ask:
-
-$(trial_agent_brief "$audit" | sed 's/^/  /')
-
-Approve its drafts in that terminal (the wrapper gives hound a terminal there): hound approve --repo . and
-hound manual approve --config hound.yaml. Then hound scope plan and hound scope apply, as the agent proposes.
-TEXT
-  [[ "$yes" == 1 ]] && return 0
-  ask "Carry on to the Sophos Central collector?" || { say "Stopped before Sophos. Run make trial again to add it."; exit 0; }
+  if [[ "$yes" == 1 ]]; then
+    say "Unattended: replaying the fictional answers an agent and a person would give (examples/trial/README.md)."
+    "$replay"
+  else
+    say "Ask your agent, in its terminal:"
+    say ""
+    trial_brief "$name" "$series" "$system" | sed 's/^/  /'
+    say ""
+    until trial_stage_ready "$name" "$ws/repo" "$system"; do
+      ask "Has the agent finished this stage?" || say "Waiting for the agent; answer q to stop and run make trial again later."
+      trial_stage_ready "$name" "$ws/repo" "$system" || say "Not yet: hound does not see the draft in ${ws#"$root"/}/repo."
+    done
+    if [[ "$approve" == yes ]]; then
+      say "Now you: hound approve shows each draft that needs a person, one at a time. Answer y, n or s."
+      hound yes approve --repo .
+    fi
+  fi
+  if [[ "$name" == system ]]; then
+    say "The session is in repo/onboarding/$system/session.json; nothing reaches CISO Assistant until its audit is approved."
+    mark_done "$name"
+    return 0
+  fi
+  apply_scope "$name"
+  done_already "$name" && say "Look in CISO Assistant (https://localhost:8443): $look"
 }
 
+replay_third_parties() {
+  hound no supplier draft --system "$system" --ref SUP-SOPHOS --name Sophos --solution-ref SOL-SOPHOS-FIREWALL \
+    --solution-name "Sophos XGS firewall and Sophos Central" --contract-ref CTR-SOPHOS-2026 --contract-name "Sophos XGS subscription 2026" \
+    --level "dependency=3:The perimeter firewall carries all office internet traffic." --level "penetration=2:Sophos Central manages the firewall remotely." \
+    --level "maturity=3:Publishes a security advisory programme." --level "trust=3:Long-standing vendor." --kind vendor
+  hound no supplier draft --system "$system" --ref SUP-EXAMPLE-MSP --name "Example Managed Services Pty Ltd" --solution-ref SOL-EXAMPLE-MSP-FIREWALL \
+    --solution-name "Managed firewall service" --contract-ref CTR-EXAMPLE-MSP-2026 --contract-name "Managed firewall service 2026" \
+    --level "dependency=3:Runs the firewall's changes and monitoring." --level "penetration=3:Holds admin access in Sophos Central." --kind msp --for SUP-SOPHOS
+  say "Standing in for hound approve: the approved copies in examples/trial/third-parties."
+  cp "$root/examples/trial/third-parties/"*.yaml "$ws/repo/scope/third-parties/"
+}
+
+replay_system() {
+  # The maturity level's groups, as hound init wrote them on the organisation's audit: groups: ["1", "2"]
+  local groups=() group
+  for group in $(sed -n 's/^groups: \[\(.*\)\]/\1/p' "$ws/repo/scope/audits/"*-e8.yaml | tr -d '",'); do groups+=(--group "$group"); done
+  hound no onboard "$system" pending --json --repo . "${groups[@]}" --owner it@example.com \
+    --product "Sophos Firewall on an XGS appliance, managed in Sophos Central" --solution SOL-SOPHOS-FIREWALL >/dev/null
+}
+
+replay_audit() {
+  # Typed into hound onboard as a person would: the answers reach the container on its standard input.
+  hound no onboard "$system" --repo . <"$root/examples/onboarding-tutorial/answers/office-firewall.decisions.txt" >/dev/null
+}
+
+replay_controls() {
+  hound no add control --scope scope --yes --ref-id AC-EXTERNAL-SCAN --name "Daily external vulnerability scan of the firewall" \
+    --owner it@example.com --systems "$system" --audit "$(audit_ref)-$system" --requirements ISM-1701
+}
+
+third_parties() { stage third-parties 5 "Third parties: Sophos and the managed service provider" yes replay_third_parties "Third parties: SUP-SOPHOS and SUP-EXAMPLE-MSP, their solutions, contracts and reviews."; }
+system_stage() { stage system 6 "The system: the Sophos perimeter firewall ($system)" no replay_system ""; }
+audit_stage() { stage audit 7 "The system's audit: one decision per requirement" yes replay_audit "Assets: $system. Compliance > Audits: $(audit_ref)-<period>-$system."; }
+controls_stage() { stage controls 8 "Controls the audit relies on" no replay_controls "Operations > Applied controls, linked to $(audit_ref)-<period>-$system."; }
+
 sophos() {
-  step "6. Add your Sophos Central tenant"
+  step "9. Evidence collectors: your Sophos Central tenant"
   mkdir -p "$ws/profiles"
   cp -R "$root/profiles/sophos-central.yaml" "$root/profiles/sophos-central.tests" "$ws/profiles/"
   case "$(trial_collector_step "$yes" "$ws/repo/hound.yaml" sophos)" in
@@ -214,7 +278,7 @@ sophos() {
       ;;
   esac
   run_collector sophos "ISM-1501, which the firewall firmware check feeds" "reads the firewalls"
-  say "ISM-1501 also needs the Microsoft 365 collector's operating system check, so it stays not assessed until step 7 runs too."
+  say "ISM-1501 also needs the Microsoft 365 collector's operating system check, so it stays not assessed until step 10 runs too."
   say "Sophos Central is read for network devices only: endpoint protection evidence comes from the endpoints' own antivirus."
 }
 
@@ -233,13 +297,13 @@ run_collector() {
 }
 
 m365() {
-  step "7. Add a Microsoft 365 test tenant"
+  step "10. Evidence collectors: a Microsoft 365 test tenant (optional)"
   local pem="$ws/inbox/hound-m365.pem" crt="$ws/inbox/hound-m365.crt"
   case "$(trial_collector_step "$yes" "$ws/repo/hound.yaml" m365)" in
     unattended) say "Unattended run: stopping before Microsoft 365, which needs your tenant."; return ;;
     "added already") say "An m365 collector is already in repo/hound.yaml." ;;
     add)
-      if ! ask "Try Microsoft 365 now? Use a test tenant, never a work one (docs/tutorials/local-trial.md, section 7)."; then return 0; fi
+      if ! ask "Try Microsoft 365 now? Use a test tenant, never a work one (docs/tutorials/local-trial.md, section 10)."; then return 0; fi
       say "In the tenant's Entra admin center, register an app with the six read-only Graph application permissions in"
       say "docs/collectors/m365.md and grant admin consent. The collector signs in with a certificate."
       if [[ ! -f "$pem" ]] && command -v openssl >/dev/null && ask "Make a test certificate in ${ws#"$root"/}/inbox now?"; then
@@ -265,7 +329,10 @@ preflight
 build_image
 workspace
 organisation
-agent
+third_parties
+system_stage
+audit_stage
+controls_stage
 sophos
 m365
 step "Done"

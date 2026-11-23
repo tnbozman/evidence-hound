@@ -1,0 +1,36 @@
+# Fictional. The unattended trial (HOUND_TRIAL_YES=1, CI) copies this file over the agent's draft: it is the draft as hound approve
+# leaves it once a person approves the supplier (the contract active) and concludes its review ok. Interactively, you approve.
+ref_id: "SUP-EXAMPLE-MSP"
+name: "Example Managed Services Pty Ltd"
+description: "Managed service provider for Sophos (SUP-SOPHOS)."
+domain: "Example Pty Ltd"
+# dependency: Runs the firewall's changes and monitoring. (agent)
+dependency: 3
+# penetration: Holds admin access in Sophos Central. (agent)
+penetration: 3
+# maturity: to decide (1 to 4)
+# trust: to decide (1 to 4)
+solutions:
+  - ref_id: "SOL-EXAMPLE-MSP-FIREWALL"
+    name: "Managed firewall service"
+    # criticality: to decide (1 to 4)
+contracts:
+  - ref_id: "CTR-EXAMPLE-MSP-2026"
+    name: "Managed firewall service 2026"
+    status: active
+    approved_by: Sam Example
+    approved_on: "2026-11-23"
+    solutions: ["SOL-EXAMPLE-MSP-FIREWALL"]
+# The supplier's review: a person concludes it with hound approve, and a system it supplies is registered only once it is concluded ok.
+assessments:
+  - ref_id: "EA-SUP-EXAMPLE-MSP"
+    name: "Example Managed Services Pty Ltd review"
+    solutions: ["SOL-EXAMPLE-MSP-FIREWALL"]
+    perimeter: "Corporate IT"
+    due_date: "2026-12-23"
+    review_every: 12 months
+    conclusions:
+      - review: EA-SUP-EXAMPLE-MSP-2026-12
+        result: ok
+        by: Sam Example
+        on: "2026-11-23"

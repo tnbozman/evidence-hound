@@ -1354,6 +1354,30 @@ At the maintainer's request (2026-11-23): the example audits (`EX-E8-2026`, `EX-
 - The example objects removed from the dev container's CISO Assistant, the trial's scope and Sophos run applied again; the audits list holds only `EX-E8-Q2-2027FY`.
 - Result (2026-11-23): through the API, the Example Pty Ltd domain folder, the evidence in Global and the example-only libraries (example baseline, loaded and stored; ASD Essentials, loaded) were removed. `HOUND_TRIAL_YES=1 make trial` applied the trial's scope again and the Sophos run published 3 items, 0 failed, to `EX-E8-Q2-2027FY`. CISO Assistant then held one audit (`EX-E8-Q2-2027FY`, "Essential Eight ML2 Q2-2027FY", in progress), one applied control (AC-AUTO-EVIDENCE), no assets, and the four Sophos evidence items. `bats scripts/tests` all ok.
 - As built: `postStartCommand` runs `scripts/dev-ca-env.sh` only; `README.md` says to run `scripts/ca-apply-scope.sh` for the example. The change takes effect the next time the dev container starts.
+### s09-51 The trial onboards in order: organisation, third parties, system, its audit, controls, evidence (added 2026-11-23)
+- [x] Done
+
+At the maintainer's request (2026-11-23): the trial should follow the onboarding order as a guided, interactive tutorial. Each stage says what it is, prints what to ask the coding agent (and the skill it uses), waits, checks the draft with `hound`, has the person approve in the terminal where one is needed, then validates, plans and applies, and says what to look at in CISO Assistant. Unattended (`HOUND_TRIAL_YES=1`, CI) each stage replays committed fictional answers instead, through the same commands an agent uses; a committed approved file stands in for `hound approve`, which refuses without a person at a terminal.
+
+**Story:** As a GRC lead trying hound, I want the trial to take me through the organisation, its third parties, the system, the system's audit, its controls and its evidence collectors in that order, so that I learn the onboarding as I will do it.
+
+**Acceptance criteria**
+- Stages after the workspace: 4 organisation (`hound init`, `hound agent setup`, the `bin/hound` wrapper); 5 third parties (Sophos and a fictional managed service provider; `hound approve`); 6 the system (`SOPHOS-NETWORK`: `hound onboard … pending` starts its session); 7 its audit (one decision per requirement, review, `hound approve` writes the system and `<series>-SOPHOS-NETWORK`); 8 controls (`hound add control … --audit <series>-SOPHOS-NETWORK`); 9 evidence collectors (Sophos Central, as before); 10 Microsoft 365 (as before).
+- Each agent stage prints the request and the skills, and waits until its check passes (or the person stops); a finished stage is skipped on the next run.
+- Unattended, stages 5 to 8 replay `examples/trial/` (approved third-party files) and `examples/onboarding-tutorial/answers/office-firewall.decisions.txt` and apply each stage; a second run applies nothing new. The old backup example stays out.
+- `docs/tutorials/local-trial.md` describes the stages.
+
+**Tests first**
+- `trial.bats`: "each agent stage's request names what to draft, the skills and the person's part"
+- `trial.bats`: "a stage is ready once its draft is in the repo"
+- `trial.bats`: "the unattended replay uses committed fictional files" (replaces "the trial adds no example system, control or manual source of its own", whose `add control` clause the new controls stage supersedes)
+
+**Functional check**
+- `HOUND_TRIAL_YES=1 make trial` twice against the dev container's CISO Assistant, cleared of the trial: the first run applies every stage, the second applies nothing; CISO Assistant holds `EX-E8-Q2-2027FY`, `EX-E8-Q2-2027FY-SOPHOS-NETWORK`, the two third parties and AC-EXTERNAL-SCAN.
+- Result (2026-11-23): with the trial's objects cleared from the dev container's CISO Assistant and a fresh workspace, `HOUND_TRIAL_YES=1 make trial` exit 0, then again exit 0: the second run skipped stages 5 to 8 ("Done already") and its apply wrote 0. CISO Assistant then held the audits `EX-E8-Q2-2027FY` and `EX-E8-Q2-2027FY-SOPHOS-NETWORK` (both in progress), the entities SUP-SOPHOS and SUP-EXAMPLE-MSP with their solutions, contracts and reviews (EA-SUP-SOPHOS-2026-12, EA-SUP-EXAMPLE-MSP-2026-12), the asset SYS-SOPHOS-NETWORK, and the controls AC-AUTO-EVIDENCE and AC-EXTERNAL-SCAN. `bats scripts/tests` all ok; ShellCheck clean; unit suite passed. The interactive agent path itself is s09-39, by the maintainer.
+- As built: `trial_brief` and `trial_stage_ready` in `scripts/lib/trial.sh`; in `scripts/trial.sh`, `agent_setup` (now part of step 4) and one `stage` runner with a replay per stage. `examples/trial/` holds the approved supplier files and a README; the decisions are the onboarding tutorial's. The first run found that the replay redirected the answers from a container path; they are read on the host and reach the container on standard input.
+- Deviations: the environment (which system provides each mitigation) is not a stage, as the maintainer's order leaves it out; the system and its audit are written together when the person approves the session, as `hound approve` does, so stage 6 starts the session and stage 7 applies both. Manual evidence is not a stage yet (Discovered work).
+
 ### s09-53 Hosting controls proven by Terraform tests with mock providers, read from the IaC pipeline (added 2026-11-23)
 - [x] Done
 
@@ -1432,6 +1456,7 @@ commit it was proven on, without `hound` running Terraform or holding cloud cred
 
 ## Discovered work
 
+- s09-51: a manual evidence source needs its check mapped to a requirement, and the requirement taken out of `manual_only`; no command does it, so an agent edits the mapping by hand and the trial has no manual evidence stage. Add `hound mapping add-check --mapping <file> --requirement <ref> --check <id>` (asks nothing, `--json`), then a manual evidence stage in the trial (drop a scan report, `hound manual propose` by the agent, `hound manual approve` by the person).
 - s09-53: a Terraform plan or state JSON holds sensitive values in plain text (for example an IPSec tunnel's shared secret), and
   `terraform-drift` keeps `resource_drift` and `resource_changes` whole, so a drift on such a resource would store the secret as
   evidence. Keep only `address` and `change.actions` in the profile, or have the pipeline redact values marked in

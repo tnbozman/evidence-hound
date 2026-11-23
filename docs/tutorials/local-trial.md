@@ -1,6 +1,6 @@
 # Local trial: Evidence Hound next to your CISO Assistant
 
-This tutorial is interactive: `make trial` runs it step by step from the dev container. It takes Evidence Hound from nothing to results in CISO Assistant: a new organisation with `hound init` ([guided setup](../guided-setup.md)) (the fictional Example Pty Ltd, if you press Enter through the questions), a hand-over to your coding agent, which onboards the Sophos perimeter firewall, then your own Sophos Central tenant, and optionally a Microsoft 365 test tenant. You need no server. Allow an hour, most of it the first image build.
+This tutorial is interactive: `make trial` runs it step by step from the dev container. It takes Evidence Hound from nothing to results in CISO Assistant in the order you onboard for real: the organisation with `hound init` ([guided setup](../guided-setup.md)) (the fictional Example Pty Ltd, if you press Enter through the questions), its third parties, the Sophos perimeter firewall as a system, the system's audit, the controls it relies on, and its evidence collectors: your own Sophos Central tenant and, optionally, a Microsoft 365 test tenant. From the third parties on, your coding agent drafts each stage with hound's skills and you approve it. You need no server. Allow an hour, most of it the first image build.
 
 ```bash
 make trial
@@ -13,7 +13,7 @@ Each step shows the `hound` command before it runs and asks before anything that
 - The dev container, with Docker answering inside it.
 - A CISO Assistant. The dev container starts its own, at `http://backend:8000` in the dev container and `https://localhost:8443` in your browser. A stack from `make ca-up` works too. If none is running, the trial offers to start one.
 - For the Sophos step: a Sophos Central API credential with the **Service Principal Read-Only** role, created as [the Sophos guide](../collectors/sophos.md) describes.
-- For the optional Microsoft 365 step: a test tenant ([section 7](#7-a-microsoft-365-test-tenant)).
+- For the optional Microsoft 365 step: a test tenant ([section 10](#10-evidence-collectors-a-microsoft-365-test-tenant-optional)).
 
 ## 1. Preflight
 
@@ -56,7 +56,7 @@ In both cases the API is `http://backend:8000/api/`. The token is copied from `.
 
 ## 4. A new organisation
 
-`hound init /trial/repo` asks about the organisation: its name, a short code for ref IDs, the CISO Assistant address, the time zone, the Essential Eight maturity level, whether the audit runs by quarter or by month, and the compliance owner. Press Enter to take each default, the fictional Example Pty Ltd at maturity level 2, audited by quarter: the series `EX-E8`, whose open period on 23 November 2026 is `EX-E8-Q2-2027FY`. That is the organisation the dev container seeds, so the plan updates its domain and perimeter and adds a new audit; give another name to keep them apart. It writes the config, the scope (the domain, the health control and the audit) and the Essential Eight mapping, and checks them. The trial then runs:
+`hound init /trial/repo` asks about the organisation: its name, a short code for ref IDs, the CISO Assistant address, the time zone, the Essential Eight maturity level, whether the audit runs by quarter or by month, and the compliance owner. Press Enter to take each default, the fictional Example Pty Ltd at maturity level 2, audited by quarter: the series `EX-E8`, whose open period on 23 November 2026 is `EX-E8-Q2-2027FY`. It writes the config, the scope (the domain, the health control and the audit) and the Essential Eight mapping, and checks them. The trial then runs:
 
 ```bash
 hound config validate hound.yaml
@@ -67,26 +67,29 @@ hound scope apply /trial/scope-plan.json
 
 Read the plan before you answer: it lists every object and field the apply would create or change. The plan is saved outside the repo, and apply writes exactly that saved plan. If the scope or CISO Assistant changed in between, it refuses with `scope.plan_stale` ([Saved plans](../scope.md#saved-plans)). A second run plans nothing new.
 
-## 5. Hand the Sophos perimeter firewall to your coding agent
-
-The trial does not add a system itself: your coding agent onboards the firewall with hound's skills, and you approve what it drafts. The trial:
-
-1. Runs `hound agent setup --assistant both` in the trial repo, which writes the skills and agent files for Claude Code and GitHub Copilot ([onboarding](../onboarding.md)).
-2. Links `.dev/trial/bin/hound` to `scripts/trial-hound.sh`. It runs the trial's runner image against the trial's CISO Assistant with the trial's token, in the folder you call it from. hound's container sees only `.dev/trial`, so it refuses a folder outside it.
-3. Prints how to start the agent and what to ask it.
-
-In a new terminal:
+It then runs `hound agent setup --assistant both`, which writes the skills and agent files for Claude Code and GitHub Copilot ([onboarding](../onboarding.md)), and links `.dev/trial/bin/hound` to `scripts/trial-hound.sh`: it runs the trial's runner image against the trial's CISO Assistant with the trial's token, in the folder you call it from. hound's container sees only `.dev/trial`, so it refuses a folder outside it. Start your agent in a second terminal and keep it open:
 
 ```bash
 cd .dev/trial/repo && export PATH="$PWD/../bin:$PATH"
 claude
 ```
 
-Or open `.dev/trial/repo` in VS Code and pick the `hound-onboarding` agent in Copilot. Put the firewall's API specification in `.dev/trial/specs` and the vendor documents in `.dev/trial/inbox` first. Then ask the agent to onboard the Sophos perimeter firewall for the trial's audit: Sophos and the managed service provider as third parties, the firewall as a system, its audit decisions and its manual evidence, with the review before it proposes apply.
+Or open `.dev/trial/repo` in VS Code and pick the `hound-onboarding` agent in Copilot. Put the firewall's API specification in `.dev/trial/specs` and the vendor documents in `.dev/trial/inbox`.
 
-The agent drafts; you decide. Approve in that terminal with `hound approve --repo .` and, for manual evidence it proposes, `hound manual approve --config hound.yaml`. Both need a person at a terminal and refuse the agent. Then run `hound scope plan` and `hound scope apply` as the agent proposes.
+## 5 to 8. Third parties, the system, its audit and controls
 
-## 6. Your Sophos Central tenant
+Each of these stages works the same way. The trial says what the stage is and prints what to ask your agent, with the skills it uses. It waits until `hound` sees the draft in the repo; answer `y` when the agent has finished, or `q` to stop and carry on later. Where a person must approve, it runs `hound approve --repo .` in your terminal, which shows each draft one at a time (answer `y`, `n` or `s`). Then it validates, plans and applies, as in step 4, and says what to look at in CISO Assistant.
+
+| Stage | The agent drafts (skills) | You | In CISO Assistant |
+| --- | --- | --- | --- |
+| 5. Third parties | Sophos, who makes the firewall, and the managed service provider that runs it (fictional Example Managed Services Pty Ltd, an `msp` for Sophos), with `hound supplier draft` (onboard-a-third-party, assess-a-supplier) | Approve each supplier and conclude its review with `hound approve` | Third parties SUP-SOPHOS and SUP-EXAMPLE-MSP, with their solutions, contracts and reviews |
+| 6. The system | The session for `SOPHOS-NETWORK`, with `hound onboard SOPHOS-NETWORK pending`: owner, product, solution, maturity level and the API specification (onboard-a-system-with-hound) | Answer what it asks | Nothing yet: the session waits in `repo/onboarding/SOPHOS-NETWORK/` |
+| 7. Its audit | One decision per requirement with `hound onboard SOPHOS-NETWORK decide` (read-an-api-specification), then the review (review-before-apply) | Approve the decisions with `hound approve`, which writes the system and its audit | The asset `SYS-SOPHOS-NETWORK` and the audit `EX-E8-<period>-SOPHOS-NETWORK`, such as `EX-E8-Q2-2027FY-SOPHOS-NETWORK`, next to `EX-E8-Q2-2027FY` |
+| 8. Controls | The applied controls the audit's manual requirements rely on, with `hound add control … --audit EX-E8-SOPHOS-NETWORK` | Review them | The applied controls, linked to the audit's requirements |
+
+A finished stage is skipped on the next run; remove its file in `.dev/trial/state/` to do it again.
+
+## 9. Evidence collectors: your Sophos Central tenant
 
 The trial copies the `sophos-central` library profile and its tests into `.dev/trial/profiles`, then `hound add collector rest --name sophos --config hound.yaml --schedule "0 4 * * *" --secrets-dir /trial/secrets --set profile=sophos-central --set profiles_path=/trial/profiles` asks for what the profile needs:
 
@@ -102,11 +105,11 @@ hound run --config hound.yaml --only sophos
 hound status --config hound.yaml
 ```
 
-The dry run signs in, reads the firewalls, stores the evidence locally and plans the updates, and sends nothing. The real run publishes the firewall firmware check to the requirement it maps to in the Essential Eight audit (ISM-1501, together with the Microsoft 365 collector's operating system check). Until that check has a result too, ISM-1501 stays `not_assessed`: step 7 adds it. Sophos Central is read for network devices only; evidence about endpoint protection comes from the endpoints' own antivirus, not from Sophos.
+The dry run signs in, reads the firewalls, stores the evidence locally and plans the updates, and sends nothing. The real run publishes the firewall firmware check to the requirement it maps to in the Essential Eight audit (ISM-1501, together with the Microsoft 365 collector's operating system check). Until that check has a result too, ISM-1501 stays `not_assessed`: step 10 adds it. Sophos Central is read for network devices only; evidence about endpoint protection comes from the endpoints' own antivirus, not from Sophos.
 
 If you share output for help, remove identifiers first: tenant IDs, host names, IP addresses and serial numbers.
 
-## 7. A Microsoft 365 test tenant
+## 10. Evidence collectors: a Microsoft 365 test tenant (optional)
 
 Use a test tenant, never a work one: the collector only reads, but a trial is the place to make mistakes. Two ways to get one:
 
@@ -121,4 +124,4 @@ If you share output for help, remove identifiers first: tenant and client IDs, d
 
 ## Unattended
 
-`HOUND_TRIAL_YES=1 make trial` answers yes to every question and gives the wizards their answers as options (`--yes`). It stops before the Sophos and Microsoft 365 steps, which need your credentials. CI uses it to check the trial against a fresh CISO Assistant.
+`HOUND_TRIAL_YES=1 make trial` answers yes to every question and gives the wizards their answers as options (`--yes`). Stages 5 to 8 replay fictional answers through the same commands an agent uses: the third parties with `hound supplier draft`, the system with `hound onboard SOPHOS-NETWORK pending`, its decisions from the onboarding tutorial's answers typed into `hound onboard`, and a control with `hound add control`. Because `hound approve` refuses without a person at a terminal, approved copies of the two supplier files stand in for it ([`examples/trial/`](../../examples/trial/README.md)). It stops before the Sophos and Microsoft 365 steps, which need your credentials. CI uses it to check the trial against a fresh CISO Assistant, twice: the second run applies nothing new.

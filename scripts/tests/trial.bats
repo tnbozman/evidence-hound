@@ -69,15 +69,42 @@ setup() {
   [ "$(trial_collector_step 0 "$BATS_TEST_TMPDIR/missing.yaml" m365)" = "add" ]
 }
 
-@test "the agent hand-over names the Sophos perimeter firewall, the audit and approval in a terminal" {
-  run trial_agent_brief EX-E8-2027
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"Sophos perimeter firewall"* ]]
-  [[ "$output" == *"EX-E8-2027"* ]]
-  [[ "$output" == *"third parties"* ]]
-  [[ "$output" == *"manual evidence"* ]]
-  [[ "$output" == *"hound approve"* ]]
-  [[ "$output" == *"hound manual approve"* ]]
+@test "each agent stage's request names what to draft, the skills and the person's part" {
+  run trial_brief third-parties EX-E8 SOPHOS-NETWORK
+  [[ "$output" == *"Sophos"* && "$output" == *"managed service provider"* && "$output" == *"onboard-a-third-party"* && "$output" == *"hound supplier draft"* ]]
+  run trial_brief system EX-E8 SOPHOS-NETWORK
+  [[ "$output" == *"SOPHOS-NETWORK"* && "$output" == *"onboard-a-system-with-hound"* && "$output" == *"pending"* && "$output" == *"../specs"* ]]
+  run trial_brief audit EX-E8 SOPHOS-NETWORK
+  [[ "$output" == *"decide"* && "$output" == *"review-before-apply"* && "$output" == *"EX-E8-SOPHOS-NETWORK"* ]]
+  run trial_brief controls EX-E8 SOPHOS-NETWORK
+  [[ "$output" == *"hound add control"* && "$output" == *"--audit EX-E8-SOPHOS-NETWORK"* ]]
+  run trial_brief unknown EX-E8 SOPHOS-NETWORK
+  [ "$status" -ne 0 ]
+}
+
+@test "a stage is ready once its draft is in the repo" {
+  repo="$BATS_TEST_TMPDIR/repo"
+  mkdir -p "$repo/scope/third-parties" "$repo/onboarding/SOPHOS-NETWORK" "$repo/scope/audits"
+  run trial_stage_ready third-parties "$repo" SOPHOS-NETWORK
+  [ "$status" -ne 0 ]
+  touch "$repo/scope/third-parties/sup-sophos.yaml"
+  run trial_stage_ready third-parties "$repo" SOPHOS-NETWORK
+  [ "$status" -ne 0 ]
+  touch "$repo/scope/third-parties/sup-example-msp.yaml"
+  trial_stage_ready third-parties "$repo" SOPHOS-NETWORK
+  run trial_stage_ready system "$repo" SOPHOS-NETWORK
+  [ "$status" -ne 0 ]
+  printf '{"stage": "deciding"}' >"$repo/onboarding/SOPHOS-NETWORK/session.json"
+  trial_stage_ready system "$repo" SOPHOS-NETWORK
+  run trial_stage_ready audit "$repo" SOPHOS-NETWORK
+  [ "$status" -ne 0 ]
+  touch "$repo/scope/audits/sophos-network-essential-eight-2023.yaml"
+  trial_stage_ready audit "$repo" SOPHOS-NETWORK
+  printf 'controls:\n  - ref_id: AC-AUTO-EVIDENCE\n' >"$repo/scope/controls.yaml"
+  run trial_stage_ready controls "$repo" SOPHOS-NETWORK
+  [ "$status" -ne 0 ]
+  printf '  - ref_id: AC-EXTERNAL-SCAN\n' >>"$repo/scope/controls.yaml"
+  trial_stage_ready controls "$repo" SOPHOS-NETWORK
 }
 
 @test "hound for the agent runs in the folder it is called from, inside the trial workspace only" {
@@ -92,7 +119,13 @@ setup() {
   [[ "$(printf '%s ' $output)" == *" -v /w:/trial -w /trial/repo/scope "* ]]
 }
 
-@test "the trial adds no example system, control or manual source of its own" {
-  run grep -nE 'Example backup service|AC-BACKUP|example-backup-restore-test|add (system|control|collector manual)' "$BATS_TEST_DIRNAME/../trial.sh"
+@test "the unattended replay uses committed fictional files" {
+  fixtures="$BATS_TEST_DIRNAME/../../examples/trial"
+  for f in third-parties/sup-sophos.yaml third-parties/sup-example-msp.yaml; do
+    grep -q "status: active" "$fixtures/$f"
+    grep -q "result: ok" "$fixtures/$f"
+  done
+  [ -f "$BATS_TEST_DIRNAME/../../examples/onboarding-tutorial/answers/office-firewall.decisions.txt" ]
+  run grep -nE 'Example backup service|AC-BACKUP|example-backup-restore-test' "$BATS_TEST_DIRNAME/../trial.sh"
   [ "$status" -eq 1 ]
 }
