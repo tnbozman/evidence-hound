@@ -18,13 +18,13 @@ The server prints the collector settings for the tenant (`tenant_id`, `client_id
 | Roles | The two break-glass accounts hold Global Administrator permanently; the two admins are eligible for Global Administrator through PIM, and for Exchange and Security Administrator. |
 | Devices | Eight Windows laptops on 10.0.26100 or 10.0.22631, all compliant, and one iPhone. |
 | Conditional Access | "USR - G - Require strong auth" (phishing-resistant MFA for all users and apps) and "USR - B - Block access via legacy auth", each excluding only the break-glass accounts. |
-| Intune | "ASD Office Hardening Guidelines" (macros from the internet blocked, among 82 settings) and "ASD Windows Hardening Guidelines - Attack Surface Reduction" (19 rules in block mode), both assigned to all users; one Windows device restriction profile. |
+| Intune | "ASD Office Hardening Guidelines" (macros from the internet blocked, among 82 settings) and "ASD Windows Hardening Guidelines - Attack Surface Reduction" (19 rules in block mode), both assigned to all users; one Windows device restriction profile; an invented AppLocker custom profile enforcing the EXE, DLL, Script and MSI rule collections on all devices. |
 
 The same IDs appear in every collection, so a role holder is a user, a device's owner is a user, and a policy's exclusions are users. Every collection the m365 collector reads is served, in pages of five with `@odata.nextLink`, as Graph pages them. A path the server does not know gets 404.
 
 ## The two variants
 
-The compliant tenant passes all eleven m365 checks. The `gaps` tenant applies every deviation below, each expected to fail the checks it names and no other.
+The compliant tenant passes all thirteen m365 checks. The `gaps` tenant applies every deviation below, each expected to fail the checks it names and no other.
 
 | Deviation | What changes | Check and expected outcome |
 | --- | --- | --- |
@@ -37,6 +37,8 @@ The compliant tenant passes all eleven m365 checks. The `gaps` tenant applies ev
 | `noncompliant-laptop` | One of eight laptops is not compliant (87.5 %). | `endpoint.managed.compliant_ratio`: partial |
 | `office-hardening-unassigned` | The Office hardening policy is assigned to nobody. | `apps.office.macros_blocked_from_internet`: fail |
 | `asr-office-rule-in-audit` | "Block Win32 API calls from Office macros" in audit mode. | `endpoint.asr.office_rules_enabled`: partial |
+| `applocker-for-one-group` | The AppLocker profile is assigned to one group of kiosks, not all devices. | `endpoint.application_control.enforced`: partial |
+| `applocker-dll-rules-in-audit` | The AppLocker DLL rule collection is in audit mode. | `endpoint.application_control.file_types_covered`: fail |
 
 `M365DevTenantTests` runs the m365 collector against each variant and each deviation, so the table and the tenant cannot drift apart.
 
@@ -53,7 +55,7 @@ The Intune and Conditional Access settings follow the [ASD Blueprint for Secure 
 - The Office hardening policy is the Blueprint's Graph export, embedded unchanged. The server adds the assignment and a description, which an export does not carry.
 - The attack surface reduction rules and the two Conditional Access policies are translated by hand from the Blueprint's Microsoft365DSC configurations. The Conditional Access policies are switched on (the Blueprint ships them in report-only mode), and the Blueprint's excluded group is replaced by the two break-glass accounts, because the m365 collector only accepts excluded accounts listed in `break_glass_accounts`.
 
-`src/EvidenceHound.M365DevServer/Blueprint/NOTICE.md` lists each file, its source and every change. The people, devices and roles are invented.
+`src/EvidenceHound.M365DevServer/Blueprint/NOTICE.md` lists each file, its source and every change. The people, devices, roles and the AppLocker profile are invented.
 
 ## What it cannot show
 

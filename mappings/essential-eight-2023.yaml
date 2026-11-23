@@ -101,6 +101,18 @@ requirements:
     rule: all_pass
     checks:
       - backup.restore_tested
+  # Application control. Intune App Control for Business or AppLocker, enforced on all devices or every listed group.
+  - ref: ISM-0843
+    rule: all_pass
+    checks:
+      - endpoint.application_control.enforced
+  # Application control. Executables, software libraries, scripts and installers are controlled; compiled HTML, HTML
+  # applications and control panel applets are not read yet, so the ruleset review below still covers them.
+  - ref: ISM-1657
+    rule: all_pass
+    checks:
+      - endpoint.application_control.enforced
+      - endpoint.application_control.file_types_covered
   # Application control. Manual source: the application control ruleset review.
   - ref: ISM-1582
     rule: all_pass
@@ -194,15 +206,11 @@ manual_only:
     source: Privileged access register, access request approvals and review records, attested by the system owner.
   - ref: ISM-1650  # Restrict administrative privileges
     source: Privileged access register, access request approvals and review records, attested by the system owner.
-  - ref: ISM-0843  # Application control
-    source: Application control policy export and ruleset review record, attested by the endpoint owner.
   - ref: ISM-1490  # Application control
     source: Application control policy export and ruleset review record, attested by the endpoint owner.
   - ref: ISM-1870  # Application control
     source: Application control policy export and ruleset review record, attested by the endpoint owner.
   - ref: ISM-1871  # Application control
-    source: Application control policy export and ruleset review record, attested by the endpoint owner.
-  - ref: ISM-1657  # Application control
     source: Application control policy export and ruleset review record, attested by the endpoint owner.
   - ref: ISM-1544  # Application control
     source: Application control policy export and ruleset review record, attested by the endpoint owner.
