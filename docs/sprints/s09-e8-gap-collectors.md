@@ -10,7 +10,7 @@ The patch windows and scan intervals below are settings, not constants, so the c
 
 ### REST collector (s09-09 to s09-14)
 
-These tasks come first in this sprint, before s09-01, so the Microsoft 365 application control checks and the Veeam tasks can be written as profile checks instead of new code. They build the generic `rest` collector agreed in [`docs/design/rest-collector.md`](../design/rest-collector.md): every query is called once per run, evidence datasets are extracted from one or more responses, and checks test dataset fields, giving pass, fail or unable to assess. Profiles are YAML loaded only from the organisation's profiles folder; this repo keeps a tested public library in `profiles/` to copy from. There are no runtime code plugins. Where the Veeam tasks (s09-07, s09-08) and s09-01/02 say "collector", read "profile in the library" once these tasks are done.
+These tasks come first in this sprint, before s09-01, so the Microsoft 365 application control checks and the Veeam tasks (since dropped) could be written as profile checks instead of new code. They build the generic `rest` collector agreed in [`docs/design/rest-collector.md`](../design/rest-collector.md): every query is called once per run, evidence datasets are extracted from one or more responses, and checks test dataset fields, giving pass, fail or unable to assess. Profiles are YAML loaded only from the organisation's profiles folder; this repo keeps a tested public library in `profiles/` to copy from. There are no runtime code plugins. Where the Veeam tasks (s09-07, s09-08) and s09-01/02 say "collector", read "profile in the library" once these tasks are done.
 
 ### s09-09 Profile model and validation
 - [x] Done
@@ -695,7 +695,7 @@ The first run found that a single-system audit needs `unlisted:` and that a requ
 Moved from s08 on 2026-11-22 at the person's request (s08 focuses on Sophos). Was s08-03 and s08-04.
 
 ### s09-07 Veeam access
-- [ ] Done
+- Dropped (2026-11-23): the maintainer does not want Veeam collection. Kept here as a record; not built. Backup evidence stays manual (s09-05 templates).
 
 **Story:** As the collector, I want Veeam REST API access with a read-only account, so that backup jobs and restore points can be read.
 
@@ -713,7 +713,7 @@ Moved from s08 on 2026-11-22 at the person's request (s08 focuses on Sophos). Wa
 - Run against recordings: jobs and restore points in evidence.
 
 ### s09-08 Veeam checks and documentation
-- [ ] Done
+- Dropped (2026-11-23): the maintainer does not want Veeam collection. Kept here as a record; not built. Backup evidence stays manual (s09-05 templates).
 
 **Story:** As a compliance owner, I want backup success, retention and restore testing measured, so that backup requirements are evidenced.
 
