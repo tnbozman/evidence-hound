@@ -24,11 +24,12 @@ public sealed class SophosDevTenantTests
     {
         using var server = DevSophosServer.Start(SophosDevTenant.Compliant);
 
-        var result = (await CollectAsync(server)).Value();
+        var result = (await CollectAsync(server, SophosDevTenant.Compliant)).Value();
 
-        result.Files.Select(f => f.FileName).ShouldBe(["firewalls.json", "admins.json", "roles.json"], ignoreOrder: true);
+        result.Files.Select(f => f.FileName).ShouldBe(["firewalls.json", "firmware_upgrades.json", "firmware_upgrades.history.json", "admins.json", "roles.json"], ignoreOrder: true);
         server.Requests.ShouldAllBe(r => r.Status == 200);
         server.Requests.Count(r => r.Path == "/common/v1/admins").ShouldBeGreaterThan(1, "admins come in more than one page");
+        server.Requests.Count(r => r.Path == "/firewall/v1/firewalls/actions/firmware-upgrade-check").ShouldBe(SophosDevTenant.Compliant.Firewalls.Count, "one upgrade check per firewall");
     }
 
     [Fact]
@@ -53,9 +54,9 @@ public sealed class SophosDevTenantTests
     {
         using var server = DevSophosServer.Start(SophosDevTenant.Compliant);
 
-        var checks = (await CollectAsync(server)).Value().Checks;
+        var checks = (await CollectAsync(server, SophosDevTenant.Compliant)).Value().Checks;
 
-        checks.Select(c => c.CheckId.Value).ShouldBe(["network.firewall.firmware_supported", "network.management.super_admin_count"]);
+        checks.Select(c => c.CheckId.Value).ShouldBe(["network.firewall.firmware_supported", "network.firewall.firmware_current", "network.management.super_admin_count"]);
         checks.Where(c => c.Outcome != CheckOutcome.Pass).Select(c => $"{c.CheckId.Value}: {c.Observation}").ShouldBeEmpty();
     }
 
@@ -65,9 +66,10 @@ public sealed class SophosDevTenantTests
         SophosDevTenant.Deviations.Count.ShouldBeGreaterThanOrEqualTo(2);
         foreach (var deviation in SophosDevTenant.Deviations)
         {
-            using var server = DevSophosServer.Start(SophosDevTenant.Compliant.With(deviation));
+            var tenant = SophosDevTenant.Compliant.With(deviation);
+            using var server = DevSophosServer.Start(tenant);
 
-            var checks = (await CollectAsync(server)).Value().Checks;
+            var checks = (await CollectAsync(server, tenant)).Value().Checks;
 
             foreach (var check in checks)
             {
@@ -77,7 +79,7 @@ public sealed class SophosDevTenantTests
         }
 
         using var gaps = DevSophosServer.Start(SophosDevTenant.For(DevVariant.Gaps));
-        (await CollectAsync(gaps)).Value().Checks.ShouldAllBe(c => c.Outcome != CheckOutcome.Pass);
+        (await CollectAsync(gaps, SophosDevTenant.For(DevVariant.Gaps))).Value().Checks.ShouldAllBe(c => c.Outcome != CheckOutcome.Pass);
     }
 
     [Fact]
@@ -118,13 +120,41 @@ public sealed class SophosDevTenantTests
 
     private static string Text(JsonNode? node, string name) => node?[name]?.GetValue<string>() ?? string.Empty;
 
-    private static Task<Result<CollectionResult>> CollectAsync(DevSophosServer server)
+    [Fact]
+    public void Earlier_upgrade_checks_are_the_evidence_daily_runs_would_have_kept()
+    {
+        var tenant = SophosDevTenant.Compliant.With(SophosDevTenant.Deviations.Single(d => d.Name == "firmware-upgrade-overdue"));
+
+        var earlier = SophosAnswers.EarlierUpgradeChecks(tenant, Now);
+
+        earlier.Count.ShouldBe(20);
+        earlier[0].CollectedAt.ShouldBe(Now.AddDays(-20));
+        earlier.ShouldAllBe(e => e.Evidence["items"]!.AsArray().Count == tenant.Firewalls.Count);
+        SophosAnswers.EarlierUpgradeChecks(SophosDevTenant.Compliant, Now).ShouldBeEmpty();
+    }
+
+    /// <summary>
+    /// Runs the profile against the server. The collector is given the upgrade checks earlier daily runs would have kept, because Sophos
+    /// Central gives no release date and the age of an offer comes only from earlier evidence.
+    /// </summary>
+    private static Task<Result<CollectionResult>> CollectAsync(DevSophosServer server, SophosDevTenant tenant)
     {
         var settings = SophosDevTenant.Settings(server.Url);
         settings["profiles_path"] = Profiles;
         var secrets = new Dictionary<string, Secret>(StringComparer.Ordinal) { ["client_secret"] = new(SophosDevTenant.ClientSecret) };
-        var context = new CollectorContext("sophos", new CollectorSettings(settings), secrets, new FixedClock(Now), NullLogger.Instance, server.HttpClients);
+        var context = new CollectorContext("sophos", new CollectorSettings(settings), secrets, new FixedClock(Now), NullLogger.Instance, server.HttpClients)
+        {
+            History = new Earlier(tenant),
+        };
         return new RestCollector().CollectAsync(context, Token);
+    }
+
+    private sealed class Earlier(SophosDevTenant tenant) : IEvidenceHistory
+    {
+        public Task<IReadOnlyList<EarlierFile>> EarlierAsync(string fileName, CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyList<EarlierFile>>(fileName == "firmware_upgrades.json"
+                ? [.. SophosAnswers.EarlierUpgradeChecks(tenant, Now).Select(e => new EarlierFile(e.CollectedAt, System.Text.Encoding.UTF8.GetBytes(e.Evidence.ToJsonString())))]
+                : []);
     }
 
     private sealed class FixedClock(DateTimeOffset now) : IClock
