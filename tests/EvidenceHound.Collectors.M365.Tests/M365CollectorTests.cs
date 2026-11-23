@@ -20,6 +20,7 @@ public sealed class M365CollectorTests : IDisposable
         "identity.mfa.registered_all_users", "identity.mfa.enforced_conditional_access", "identity.legacy_auth_blocked", "identity.mfa.phishing_resistant_admins",
         "identity.privileged.global_admin_count", "identity.privileged.admins_cloud_only", "identity.privileged.pim_eligible_not_permanent",
         "endpoint.managed.compliant_ratio", "endpoint.os.supported_versions", "apps.office.macros_blocked_from_internet", "endpoint.asr.office_rules_enabled",
+        "endpoint.application_control.enforced", "endpoint.application_control.file_types_covered",
     ];
 
     [Fact]

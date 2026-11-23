@@ -30,6 +30,7 @@ public sealed class M365Collector(IGraphCredentialFactory credentials, IGraphWai
             new(M365Settings.GlobalAdminMax, "Most Global Administrators expected, break-glass accounts included. Default: 4.", Required: false),
             new(M365Settings.CompliantPassPercent, "Percentage of compliant Intune-managed Windows devices needed to pass. Default: 95.", Required: false),
             new(M365Settings.CompliantPartialPercent, "Percentage of compliant Intune-managed Windows devices needed for partial. Default: 80.", Required: false),
+            new(M365Settings.ApplicationControlGroups, "Comma-separated group IDs an enforced application control policy must be assigned to, when none is assigned to all devices.", Required: false),
             new(M365Settings.System, "The system in scope/setup.yaml this instance collects from, so scope/capabilities.yaml can say which capabilities it answers. Default: only capabilities routed to this instance by name count as its own.", Required: false),
             new(M365Settings.SupportedWindowsBuilds, "Comma-separated Windows builds still in support, for example 10.0.22631, 10.0.26100.", Required: true),
         ],

@@ -36,6 +36,12 @@ public sealed record AccessPolicy(
     IReadOnlyList<string> ExcludeGroups,
     string Source);
 
+/// <summary>
+/// An AppLocker custom profile: the groups it is assigned to (none means all devices) and each rule collection's enforcement mode
+/// (<c>Enabled</c> or <c>AuditOnly</c>), by its CSP name (<c>EXE</c>, <c>DLL</c>, <c>Script</c>, <c>MSI</c>).
+/// </summary>
+public sealed record AppLockerProfile(IReadOnlyList<string> Groups, IReadOnlyDictionary<string, string> Collections);
+
 /// <summary>A named way the <c>gaps</c> tenant differs from the compliant one, and the outcome each check it breaks is expected to have.</summary>
 public sealed record Deviation(string Name, string Description, IReadOnlyDictionary<string, CheckOutcome> Fails, Func<DevTenant, DevTenant> Apply);
 
@@ -51,7 +57,8 @@ public sealed record DevTenant(
     IReadOnlyList<Device> Devices,
     IReadOnlyList<AccessPolicy> AccessPolicies,
     bool OfficeHardeningAssigned,
-    IReadOnlyDictionary<string, string> AsrRules)
+    IReadOnlyDictionary<string, string> AsrRules,
+    AppLockerProfile AppLocker)
 {
     public static readonly string GlobalAdministrator = "62e90394-69f5-4237-9190-012177145e10";
     public static readonly string ExchangeAdministrator = "29232cdf-9323-42fd-ade2-1d097af3e4de";
@@ -120,7 +127,8 @@ public sealed record DevTenant(
             new(Id(5, 2), "USR - B - Block access via legacy auth", "enabled", ["exchangeActiveSync", "other"], ["block"], null, BreakGlass, [], EntraDsc),
         ],
         OfficeHardeningAssigned: true,
-        Blueprint.AsrRules);
+        Blueprint.AsrRules,
+        new([], new Dictionary<string, string>(StringComparer.Ordinal) { ["EXE"] = "Enabled", ["DLL"] = "Enabled", ["Script"] = "Enabled", ["MSI"] = "Enabled" }));
 
     /// <summary>The deviations the <c>gaps</c> tenant carries, each failing the checks it names and no other.</summary>
     public static IReadOnlyList<Deviation> Deviations { get; } =
@@ -170,6 +178,16 @@ public sealed record DevTenant(
             "\"Block Win32 API calls from Office macros\" is in audit mode instead of block.",
             Expect(("endpoint.asr.office_rules_enabled", CheckOutcome.Partial)),
             t => t with { AsrRules = new Dictionary<string, string>(t.AsrRules, StringComparer.Ordinal) { ["blockwin32apicallsfromofficemacros"] = "audit" } }),
+        new(
+            "applocker-for-one-group",
+            "The AppLocker profile is assigned to one group of kiosks instead of all devices.",
+            Expect(("endpoint.application_control.enforced", CheckOutcome.Partial)),
+            t => t with { AppLocker = t.AppLocker with { Groups = [Id(6, 2)] } }),
+        new(
+            "applocker-dll-rules-in-audit",
+            "The AppLocker DLL rule collection is in audit mode, so software libraries are not controlled.",
+            Expect(("endpoint.application_control.file_types_covered", CheckOutcome.Fail)),
+            t => t with { AppLocker = t.AppLocker with { Collections = new Dictionary<string, string>(t.AppLocker.Collections, StringComparer.Ordinal) { ["DLL"] = "AuditOnly" } } }),
     ];
 
     public static DevTenant For(DevVariant variant) =>

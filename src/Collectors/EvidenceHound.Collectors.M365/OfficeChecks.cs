@@ -46,17 +46,17 @@ internal static class OfficeChecks
         if (forAllUsers.Length == apps.Length)
         {
             var policies = Policies(forAllUsers.SelectMany(a => a.Policies.Where(p => p.AllUsers)).Select(p => p.Name));
-            return new(id, CheckOutcome.Pass, $"Macros from the internet are blocked for all users in {And(apps.Select(a => a.Name))} ({policies}).", sources);
+            return new(id, CheckOutcome.Pass, $"Macros from the internet are blocked for all users in {Prose.And(apps.Select(a => a.Name))} ({policies}).", sources);
         }
 
         if (forAllUsers.Length > 0)
         {
             var missing = apps.Select(a => a.Name).Except(forAllUsers.Select(a => a.Name), StringComparer.Ordinal);
-            return new(id, CheckOutcome.Partial, $"Macros from the internet are blocked for all users in {And(forAllUsers.Select(a => a.Name))}, but not in {And(missing)}.", sources);
+            return new(id, CheckOutcome.Partial, $"Macros from the internet are blocked for all users in {Prose.And(forAllUsers.Select(a => a.Name))}, but not in {Prose.And(missing)}.", sources);
         }
 
         return anywhere.Length > 0
-            ? new(id, CheckOutcome.Partial, $"Macros from the internet are blocked in {And(anywhere.Select(a => a.Name))}, but only for some groups, not all users.", sources)
+            ? new(id, CheckOutcome.Partial, $"Macros from the internet are blocked in {Prose.And(anywhere.Select(a => a.Name))}, but only for some groups, not all users.", sources)
             : new(id, CheckOutcome.Fail, "No assigned configuration policy blocks macros from the internet in Word, Excel or PowerPoint.", sources);
     }
 
@@ -128,12 +128,5 @@ internal static class OfficeChecks
     {
         var distinct = names.Distinct(StringComparer.Ordinal).Select(n => $"'{n}'").ToArray();
         return $"{(distinct.Length == 1 ? "policy" : "policies")} {string.Join(", ", distinct)}";
-    }
-
-    /// <summary>"A", "A and B", "A, B and C".</summary>
-    private static string And(IEnumerable<string> items)
-    {
-        var list = items.ToArray();
-        return list.Length <= 1 ? string.Concat(list) : $"{string.Join(", ", list[..^1])} and {list[^1]}";
     }
 }

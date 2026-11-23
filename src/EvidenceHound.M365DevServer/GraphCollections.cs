@@ -36,7 +36,7 @@ public static class GraphCollections
             ["role-eligibility-schedules"] = [.. Held(tenant, Grant.Eligible).Select((r, i) => Eligibility(r, $"es-{i + 1:0000}"))],
             ["role-assignment-schedule-instances"] = [.. Held(tenant, Grant.Permanent).Select((r, i) => Instance(r, $"ai-{i + 1:0000}"))],
             ["managed-devices"] = [.. tenant.Devices.Select(Device)],
-            ["device-configurations"] = [DeviceConfiguration()],
+            ["device-configurations"] = [DeviceConfiguration(), AppLocker(tenant.AppLocker)],
             ["configuration-policies"] = [OfficeHardening(tenant.OfficeHardeningAssigned), Asr(tenant.AsrRules)],
         };
     }
@@ -136,6 +136,38 @@ public static class GraphCollections
         ["displayName"] = "Windows baseline restrictions",
         ["passwordRequired"] = true,
         ["assignments"] = new JsonArray(Assignment("dc01-a1", "#microsoft.graph.allDevicesAssignmentTarget")),
+    };
+
+    /// <summary>An invented AppLocker custom profile: one OMA-URI setting per rule collection, each allowing only the Windows folder.</summary>
+    private static JsonObject AppLocker(AppLockerProfile profile) => new()
+    {
+        ["@odata.type"] = "#microsoft.graph.windows10CustomConfiguration",
+        ["id"] = DevTenant.Id(7, 2),
+        ["displayName"] = "AppLocker - Windows folder only",
+        ["description"] = "Invented for the dev tenant: AppLocker rules through the AppLocker CSP.",
+        ["omaSettings"] = new JsonArray([.. profile.Collections.Select((c, i) => (JsonNode)new JsonObject
+        {
+            ["@odata.type"] = "#microsoft.graph.omaSettingString",
+            ["displayName"] = $"AppLocker {c.Key}",
+            ["omaUri"] = $"./Vendor/MSFT/AppLocker/ApplicationLaunchRestrictions/ExampleApps/{c.Key}/Policy",
+            ["isEncrypted"] = false,
+            ["value"] = $"<RuleCollection Type=\"{RuleType(c.Key)}\" EnforcementMode=\"{c.Value}\"><FilePathRule Id=\"{DevTenant.Id(9, i + 1)}\" Name=\"Windows folder\" UserOrGroupSid=\"S-1-1-0\" Action=\"Allow\"><Conditions><FilePathCondition Path=\"%WINDIR%\\*\" /></Conditions></FilePathRule></RuleCollection>",
+        })]),
+        ["assignments"] = profile.Groups.Count == 0
+            ? new JsonArray(Assignment("al-a1", "#microsoft.graph.allDevicesAssignmentTarget"))
+            : new JsonArray([.. profile.Groups.Select((g, i) => (JsonNode)new JsonObject
+            {
+                ["id"] = $"al-g{i + 1}",
+                ["target"] = new JsonObject { ["@odata.type"] = "#microsoft.graph.groupAssignmentTarget", ["groupId"] = g },
+            })]),
+    };
+
+    private static string RuleType(string collection) => collection switch
+    {
+        "EXE" => "Exe",
+        "DLL" => "Dll",
+        "MSI" => "Msi",
+        _ => collection,
     };
 
     /// <summary>The Blueprint's Office hardening export as published, plus the description and assignment an export does not carry.</summary>
