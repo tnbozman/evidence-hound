@@ -41,14 +41,14 @@ You only need Docker and VS Code (or GitHub Codespaces). Open the repo and choos
 
 ## Try it with a local CISO Assistant
 
-The dev container starts one for you. It runs on the same Docker network as a disposable, seeded CISO Assistant (backend, frontend and Caddy; see [`.devcontainer/compose.yml`](.devcontainer/compose.yml)). On start it waits for the seed, writes `.dev/ca.env` and applies the example scope ([`examples/compliance-repo/scope/`](examples/compliance-repo/scope/)) with `scripts/ca-apply-scope.sh`. `hound` reaches the API as `http://backend:8000/api/`:
+The dev container starts one for you. It runs on the same Docker network as a disposable, seeded CISO Assistant (backend, frontend and Caddy; see [`.devcontainer/compose.yml`](.devcontainer/compose.yml)). On start it waits for the seed and writes `.dev/ca.env`; it applies no scope, so CISO Assistant holds only what you apply. To load the fictional example ([`examples/compliance-repo/scope/`](examples/compliance-repo/scope/)), run `scripts/ca-apply-scope.sh`. `hound` reaches the API as `http://backend:8000/api/`:
 
 ```console
 $ set -a && . .dev/ca.env && set +a
 $ make run ARGS="run --config examples/example-pty-ltd.yaml"
 ```
 
-The UI is at <https://localhost:8443> on your machine. To seed again (a new token), run `docker compose -f .devcontainer/compose.yml run --rm ca-seed` on the host, then `scripts/dev-ca-env.sh` and `scripts/ca-apply-scope.sh` in the dev container. `docker compose -f .devcontainer/compose.yml down -v` on the host removes everything, including the data.
+The UI is at <https://localhost:8443> on your machine. To seed again (a new token), run `docker compose -f .devcontainer/compose.yml run --rm ca-seed` on the host, then `scripts/dev-ca-env.sh` in the dev container (and `scripts/ca-apply-scope.sh` for the example). `docker compose -f .devcontainer/compose.yml down -v` on the host removes everything, including the data.
 
 Outside the dev container, `make ca-up` starts a disposable CISO Assistant (pinned release, SQLite) and seeds it with a service-account token, then applies the fictional Example Pty Ltd scope: its libraries, perimeter, systems, audits, documents and applied controls. Open <https://localhost:8443> and sign in as `admin@example.com` (password `HOUND_CA_ADMIN_PASSWORD`, default `change-me-local-only`). Then follow [`docs/publishing.md`](docs/publishing.md) to publish the example run. `make ca-down ARGS=-v` removes it.
 
