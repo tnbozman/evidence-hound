@@ -73,6 +73,23 @@ public static partial class OutboundGuard
         }
     }
 
+    /// <summary>
+    /// <paramref name="text"/> with what the guard would block replaced by placeholders: secret values, deny terms, CISO Assistant object IDs, and
+    /// email, IP and MAC addresses outside documentation ranges. For material read by code before a model sees it. Pure.
+    /// </summary>
+    public static string Redact(string text, GuardTerms terms)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        ArgumentNullException.ThrowIfNull(terms);
+        var redacted = terms.Secrets.Values.Where(v => v.Length >= 4).Aggregate(text, (t, secret) => t.Replace(secret, "[secret]", StringComparison.Ordinal));
+        redacted = terms.DenyTerms.Select(t => t.Trim()).Where(t => t.Length > 0).Aggregate(redacted, (t, term) => t.Replace(term, "[redacted]", StringComparison.OrdinalIgnoreCase));
+        redacted = Uuid().Replace(redacted, "[id]");
+        redacted = Email().Replace(redacted, m => DocumentationDomains.Contains(m.Groups["domain"].Value.ToLowerInvariant()) ? m.Value : "[email]");
+        redacted = Mac().Replace(redacted, m => DocumentationMac(m.Value) ? m.Value : "[mac]");
+        redacted = IPv4().Replace(redacted, m => IPAddress.TryParse(m.Value, out var address) && !Documentation(address) ? "[ip]" : m.Value);
+        return IPv6().Replace(redacted, m => IPAddress.TryParse(m.Value, out var address) && !Documentation(address) ? "[ip]" : m.Value);
+    }
+
     private static readonly HashSet<string> DocumentationDomains = ["example.com", "example.org", "example.net"];
 
     private static readonly (IPAddress Network, int Bits)[] DocumentationRanges =
@@ -89,6 +106,9 @@ public static partial class OutboundGuard
         var plain = mac.Replace(":", "", StringComparison.Ordinal).Replace("-", "", StringComparison.Ordinal).ToUpperInvariant();
         return plain == "000000000000" || plain.StartsWith("00005E0053", StringComparison.Ordinal);
     }
+
+    [GeneratedRegex(@"\b[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}\b", RegexOptions.CultureInvariant)]
+    private static partial Regex Uuid();
 
     [GeneratedRegex(@"[A-Za-z0-9._%+-]+@(?<domain>(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,})", RegexOptions.CultureInvariant)]
     private static partial Regex Email();

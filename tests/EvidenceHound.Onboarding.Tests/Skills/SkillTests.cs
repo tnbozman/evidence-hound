@@ -87,7 +87,7 @@ public class SkillCatalogueTests
         var defaults = SkillCatalogue.Defaults().Value();
 
         defaults.Select(s => s.Name).ShouldBe(
-            ["supplier-assessment", "supplier-assurance-documents", "applicability", "essential-eight-ml2-mapping", "profile-authoring", "reading-an-api-specification"],
+            ["supplier-assessment", "supplier-assurance-documents", "applicability", "essential-eight-ml2-mapping", "profile-authoring", "reading-an-api-specification", "reviewing-a-config-change"],
             ignoreOrder: true);
         defaults.ShouldAllBe(s => s.Source == SkillSource.Default);
         defaults.SelectMany(s => SkillCatalogue.Warnings(s, [])).ShouldBeEmpty();

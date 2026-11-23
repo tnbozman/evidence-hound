@@ -67,6 +67,23 @@ carry on where it stopped; the model is never asked again for what it already an
 
 `--no-model` runs the same steps with empty proposals, for teams without a key. `--show-requests` prints each request before it is sent.
 
+## Explain a change for review
+
+`hound explain` writes a plain-English review summary of a plan or a config change, so you approve only what you understand. It reads
+the output of `hound scope plan` (Markdown or `--json`), `hound plan`, a diff (a file, or piped in: `git diff | hound explain`), or two
+versions of one file (`hound explain before.yaml after.yaml`).
+
+- **Code reads it first.** The counts, the objects and what needs a careful look (requirements newly marked not applicable, deletions,
+  removed checks in mappings or profiles, a supplier contract that is not active) come from code, not the model. The plan is the source
+  of truth: the summary quotes its counts, and a reply that names an object the plan does not contain is refused (`llm.invalid_reply`).
+- **The right skills.** The `explain` step's skills, plus those for what the change touches: third parties get the supplier skills,
+  not-applicable rows the applicability skill, profiles the profile authoring skill, mappings and audits the framework's mapping skill
+  (`--framework`, default `essential-eight-2023`). `--skill <name>` chooses instead. The summary lists each skill with its source,
+  version and SHA-256.
+- **Same gate as onboarding.** The model connection from `onboarding.yaml`, the outbound guard and deny terms, `--show-requests`, and a
+  record in `onboarding/explain/requests/`. Object IDs, email, IP and MAC addresses and secret values are replaced before anything is sent.
+- **Review only.** It never edits config or applies a plan, and collection never uses it. `--no-model` prints only what code found.
+
 ## onboarding.yaml
 
 Separate from `hound.yaml`; only `hound onboard` reads it.
@@ -108,7 +125,7 @@ shapes, the named approver for not applicable, the supplier gate, schema checks 
 name: our-applicability
 description: How we justify not applicable.
 version: 1.0.0
-applies_to: [applicability]          # supplier, system, applicability, profile, mapping
+applies_to: [applicability]          # supplier, system, applicability, profile, mapping, explain
 frameworks: [essential-eight-2023]    # optional: only for these frameworks
 overrides: applicability              # optional: replace this default on purpose
 ---
@@ -116,8 +133,8 @@ Guidance for the model, in plain Markdown.
 ```
 
 - **Defaults** are built into `hound`, from this repository's [`skills/`](../skills/) folder: supplier assessment and tiering, supplier
-  assurance documents, applicability and not-applicable justification, Essential Eight ML2 mapping, profile authoring, and reading an API
-  specification.
+  assurance documents, applicability and not-applicable justification, Essential Eight ML2 mapping, profile authoring, reading an API
+  specification, and reviewing a config change (for `hound explain`).
 - **Organisation skills** live in the config repo's `skills/` folder (`skills_path`, mounted read-only like profiles). They add to the
   defaults; one with a default's name is an error unless it says `overrides:`.
 - **Choosing:** at each step the model gets every skill whose `applies_to` names the step and whose `frameworks` match, defaults first, within

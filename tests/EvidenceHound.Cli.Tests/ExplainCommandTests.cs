@@ -3,7 +3,7 @@ namespace EvidenceHound.Cli.Tests;
 /// <summary><c>hound explain</c> reads a saved plan, a diff, or two versions of a file, and writes a review summary. Review only.</summary>
 public sealed class ExplainCommandTests : IDisposable
 {
-    private const string Plan = """
+    internal const string Plan = """
         ## Scope plan
 
         1 to create, 0 to update, 1 to delete. No drift.

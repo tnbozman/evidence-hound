@@ -178,6 +178,7 @@ public static class HoundCli
             FrameworkCommands.Build(output, loggers),
             Setup.InitCommand.Build(terminal, loggers, configuration, registry),
             Setup.AddCommands.Build(terminal, loggers, configuration, registry),
+            ExplainCommand.Build(terminal, loggers, configuration),
             OnboardCommands.Build(terminal, loggers, configuration),
             ManualCommand.Build(terminal, loggers, registry, new SystemClock()),
             MappingCommands.Build(output, loggers),

@@ -7,7 +7,7 @@ using YamlDotNet.RepresentationModel;
 
 namespace EvidenceHound.Onboarding.Skills;
 
-/// <summary>The onboarding steps a skill can guide.</summary>
+/// <summary>The steps a skill can guide: the onboarding steps, and explaining a change for review.</summary>
 public enum SkillStep
 {
     Supplier,
@@ -15,6 +15,7 @@ public enum SkillStep
     Applicability,
     Profile,
     Mapping,
+    Explain,
 }
 
 public enum SkillSource
@@ -46,7 +47,7 @@ public static partial class SkillParser
 
     private static readonly string[] Keys = ["name", "description", "version", "applies_to", "frameworks", "overrides"];
 
-    public static IReadOnlyList<string> Steps { get; } = ["supplier", "system", "applicability", "profile", "mapping"];
+    public static IReadOnlyList<string> Steps { get; } = ["supplier", "system", "applicability", "profile", "mapping", "explain"];
 
     public static Result<Skill> Parse(string text, string path, SkillSource source)
     {

@@ -84,14 +84,14 @@ internal static class OnboardSystemCommand
     }
 
     /// <summary>The model behind the gate and the skills to guide it; none with <c>--no-model</c>.</summary>
-    private sealed record Assistant(IDraftingModel Model, SkillCatalogue Skills, SessionRecord Record, ModelUsed Used);
+    internal sealed record Assistant(IDraftingModel Model, SkillCatalogue Skills, SessionRecord Record, ModelUsed Used, GuardTerms Terms);
 
     private static async Task<int> RunAsync(Settings settings, Terminal terminal, ILogger logger, IConfiguration configuration, CancellationToken cancellationToken)
     {
         Assistant? model = null;
         if (!settings.NoModel)
         {
-            var assistant = await AssistantAsync(settings, terminal, configuration, cancellationToken);
+            var assistant = await AssistantAsync(settings.Config, Path.Combine(settings.Folder, "requests"), settings.Show, terminal, configuration, cancellationToken);
             if (assistant is Result<Assistant>.Fail { Errors: var assistantProblems })
             {
                 return Log.Problems(logger, assistantProblems);
@@ -156,9 +156,10 @@ internal static class OnboardSystemCommand
         return decided.Match(_ => ExitCodes.Ok, problems => Log.Problems(logger, problems));
     }
 
-    private static async Task<Result<Assistant>> AssistantAsync(Settings settings, Terminal terminal, IConfiguration configuration, CancellationToken cancellationToken)
+    /// <summary>The model behind the gate (guard, deny terms, session record in <paramref name="recordFolder"/>, token budget) and the skills catalogue.</summary>
+    internal static async Task<Result<Assistant>> AssistantAsync(string configFile, string recordFolder, bool show, Terminal terminal, IConfiguration configuration, CancellationToken cancellationToken)
     {
-        var loaded = await ModelDefaults.Load(ModelDefaults.ShippedPath).BindAsync(defaults => OnboardingConfigLoader.LoadAsync(settings.Config, defaults, cancellationToken));
+        var loaded = await ModelDefaults.Load(ModelDefaults.ShippedPath).BindAsync(defaults => OnboardingConfigLoader.LoadAsync(configFile, defaults, cancellationToken));
         if (loaded is not Result<OnboardingConfig>.Ok { Value: var config })
         {
             return Result.Fail<Assistant>(((Result<OnboardingConfig>.Fail)loaded).Errors);
@@ -179,14 +180,10 @@ internal static class OnboardSystemCommand
         var deny = config.DenyTermsFile is { } denyFile && File.Exists(denyFile)
             ? (await File.ReadAllLinesAsync(denyFile, cancellationToken)).Select(l => l.Trim()).Where(l => l.Length > 0 && !l.StartsWith('#')).ToArray()
             : [];
-        var record = new SessionRecord(Path.Combine(settings.Folder, "requests"));
-        var guarded = new GuardedModel(
-            OnboardCommands.Model(config.Llm, secret, configuration),
-            new GuardTerms(new Dictionary<string, string>(StringComparer.Ordinal) { ["llm_api_key"] = secret.Reveal() }, deny),
-            record,
-            config.MaxTokensPerSession,
-            settings.Show ? terminal.Error : null);
-        return Result.Ok(new Assistant(guarded, catalogue, record, new ModelUsed(OnboardingConfigLoader.NameOf(config.Llm.Provider), config.Llm.Model)));
+        var record = new SessionRecord(recordFolder);
+        var terms = new GuardTerms(new Dictionary<string, string>(StringComparer.Ordinal) { ["llm_api_key"] = secret.Reveal() }, deny);
+        var guarded = new GuardedModel(OnboardCommands.Model(config.Llm, secret, configuration), terms, record, config.MaxTokensPerSession, show ? terminal.Error : null);
+        return Result.Ok(new Assistant(guarded, catalogue, record, new ModelUsed(OnboardingConfigLoader.NameOf(config.Llm.Provider), config.Llm.Model), terms));
     }
 
     /// <summary>The questions that start a session: who reviews, who owns the system, the product, and who supplies it. Null when input ended.</summary>
