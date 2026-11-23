@@ -124,6 +124,17 @@ public sealed class CheckEvaluatorTests
         Evaluate(check, failing is null ? "[{}]" : $$"""[{ "v": {{failing}} }]""").Outcome.ShouldBe(CheckOutcome.Fail);
     }
 
+    [Theory]
+    [InlineData("XGS88w_SN01_22.0.3.576", CheckOutcome.Pass)]
+    [InlineData("SFOS 21.5.0 GA-Build171", CheckOutcome.Pass)]
+    [InlineData("XGS88w_SN01_20.0.1.100", CheckOutcome.Fail)]
+    public void Version_is_the_dotted_number_not_the_first_digits_of_a_model_name(string firmware, CheckOutcome expected)
+    {
+        var check = Check("each: { field: $.v, version_in: \"${supported}\" }\nrequire: all\nwhen_empty: fail");
+
+        Evaluate(check, $$"""[{ "v": "{{firmware}}" }]""", ("supported", "21.5, 22.0")).Outcome.ShouldBe(expected);
+    }
+
     [Fact]
     public void Count_requirement_counts_rows_in_scope()
     {
