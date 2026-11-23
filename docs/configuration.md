@@ -106,8 +106,9 @@ Each run reads the drop folder and emits every accepted file dated within the la
 | Newest file within the interval | Check result |
 | --- | --- |
 | Has an attestation with an outcome for the check | That outcome (`pass`, `fail`, `partial` or `not_applicable`), naming who attested, when, and the note |
+| Has an attestation, and the file changed after it was attested | `partial`: "evidence changed since it was attested" (when the attestation records the file's hash) |
 | Has an attestation without an outcome for the check | `partial`: "evidence present, not attested for this check" |
-| Has no attestation | `partial`: "evidence present, not attested" |
+| Has no attestation (with or without an agent's proposal) | `partial`: "evidence present, not attested" |
 | None, but an older file exists | `error`: "evidence overdue since <date>" |
 | None ever | `error`: "no evidence uploaded yet" |
 
@@ -136,6 +137,42 @@ Note (optional): Rules reviewed with the network team.
 ```
 
 The command refuses a file that does not match the source's patterns, or whose name is already taken by different content (exit 3), and a non-attestable outcome answer (exit 2). A file whose content is already in the drop folder is not copied again.
+
+### Proposals from an agent: `hound manual propose` and `hound manual approve`
+
+**No evidence without a person.** A coding assistant set up with `hound agent setup` can read a manual evidence file and propose its result, but only a person attests it. Runs never use a model, and they publish attested results only.
+
+```
+$ hound manual propose example-backup-restore-test restore-test-2026-11.txt --config hound.yaml \
+    --result pass --observation "Restore test of 18 November 2026: 3 files restored, hashes match." \
+    --supports "Restored: 3 files to a scratch folder, hashes match" --json
+```
+
+The agent's command takes the source, the file (a path, or the name of a file already in the drop folder), `--result pass|fail|partial` for every check of the source, `--check <check id>=<result>` for a check that differs, `--observation`, and at least one `--supports`: an extract or a location in the file that shows the result. It copies the file into the drop folder if it is not there, and writes `<file>.proposal.yaml` beside it with `proposed_by: agent`, the file's SHA-256, the outcomes, the observation and the supporting extracts. A proposal is pending: it is not an attestation, a run does not publish it or store it as evidence, and the check stays "evidence present, not attested". Proposing again replaces a pending proposal. The command refuses a file a person already attested, a file the source's patterns do not accept, and a proposal without `--supports` (exit 3).
+
+```
+$ hound manual approve --config hound.yaml
+Your name, recorded as the attester: Sam Example
+
+[1/1] example-backup-restore-test restore-test-2026-11.txt
+  File: /var/lib/evidence-hound/manual/example-backup-restore-test/restore-test-2026-11.txt
+  Proposed by agent: pass
+  Restore test of 18 November 2026: 3 files restored, hashes match.
+  Supports: Restored: 3 files to a scratch folder, hashes match
+  Attest (a), change (c), reject (r) or stop (s): a
+Attested 1 of 1 proposals. The next 'hound run' publishes what you attested.
+```
+
+`hound manual approve [--source <source>]` walks a person through every pending proposal. Open the file and check it against what the agent quotes, then answer:
+
+- `a` attests the proposal as it stands.
+- `c` changes it: the outcome of each check (Enter keeps the proposed one), then the observation; what you enter is attested.
+- `r` rejects it, with a reason. The proposal keeps `rejected_by`, the date and the reason, and is not asked again; no attestation is written.
+- `s` stops; the rest wait.
+
+Attesting writes `<file>.attest.yaml` with your name, the time, the outcomes, the observation as the note, `proposed_by: agent` and `file_sha256`, and removes the proposal. The next run publishes it as "Proposed by agent, attested pass by Sam Example on 2026-11-20: <file> (sha256 <first 12 characters>)." with the file and the attestation attached. If the file changes after that, the check is `partial` until the file is attested again. An attestation entered without a proposal reads as before.
+
+**It needs a person at a terminal.** When its input or output is redirected, as when an agent runs it or answers are piped in, `hound manual approve` refuses (exit 2) and changes nothing.
 
 A collector is a class implementing `ICollector` from `EvidenceHound.Collectors.Abstractions`, registered with `services.AddCollector<T>()`. Two collectors with the same type stop the CLI at startup (`collector.type_duplicate`, exit 3).
 

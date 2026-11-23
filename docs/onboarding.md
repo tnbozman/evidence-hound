@@ -5,9 +5,11 @@ drafts its configuration, and the person accepts or edits every decision. The ou
 is applied to CISO Assistant until a person reviews it and runs `hound scope validate`, `plan` and `apply`. The design is in
 [design/onboarding-assistant.md](design/onboarding-assistant.md).
 
-**No model in evidence collection.** Only `hound onboard` uses a model. `hound run`, `hound serve` and every collector never do: they cannot
+**No model in evidence collection, and no evidence without a person.** Only `hound onboard` uses a model. `hound run`, `hound serve` and every collector never do: they cannot
 reach the onboarding code, and the runner refuses a deployment config (`hound.yaml`) that has an `llm` section or refers to the onboarding
-key (`config.llm_in_runner`).
+key (`config.llm_in_runner`). For manual evidence a coding assistant may read a file and propose its result with
+`hound manual propose`, but the result becomes evidence only when a person attests it with `hound manual approve`
+([manual sources](configuration.md#manual-sources)).
 
 ## Set up the model
 
@@ -218,6 +220,7 @@ The agent drafts each kind through a command that asks nothing; `hound` checks i
 | A system | `hound onboard <system> pending` and `decide` | `onboarding/<SYSTEM>/session.json` |
 | An audit | `hound audit draft --ref ... --name ... --framework ... --group ... --domain ... --perimeter ... --system ... --due ...` | `onboarding/drafts/audits/<ref>.yaml` |
 | An audit workbook | `hound scope import <workbook> --audit <ref> [--sheet ...] [--column <name>=<heading>]...` | Approved rows go to the audit; the rest wait in `onboarding/drafts/imports/<audit>.json` |
+| Manual evidence | `hound manual propose <source> <file> --result ... --observation ... --supports ...` | `<file>.proposal.yaml` beside the file in the drop folder, until `hound manual approve` |
 
 - **The environment.** `pending` lists the mitigations not yet decided, the drafts waiting and the systems in scope. `decide` records one
   mitigation; deciding it again replaces the draft, and a decision a person approved is refused. Once the decisions are approved,
@@ -260,7 +263,8 @@ everything you approve: `approved_by` and `approved_on` on the capability and th
 and the approver in the session and the onboarding record.
 
 **It needs a person at a terminal.** When its input or output is redirected, as when an agent runs it or answers are piped in,
-`hound approve` refuses and changes nothing. Nothing is approved in CISO Assistant: review the changed files in a pull request, then
+`hound approve` refuses and changes nothing. `hound manual approve` is the same walk for manual evidence only: it shows each file an
+agent proposed a result for, and you attest, change or reject it ([manual sources](configuration.md#manual-sources)). Nothing is approved in CISO Assistant: review the changed files in a pull request, then
 `hound scope plan` and `hound scope apply` write the approved state, including each review's conclusion.
 
 ## Explain a change for review

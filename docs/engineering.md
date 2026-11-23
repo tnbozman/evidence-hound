@@ -21,6 +21,15 @@
 
 Dependencies point inwards. Collectors reference the core; the core references nothing outside the standard library and its small approved dependency list.
 
+## No model in collection, and no evidence without a person
+
+`hound run`, `hound serve` and every collector are deterministic code: no language model is called while evidence is collected, assessed, mapped or published. A coding assistant works only before that, as an author of drafts and proposals in the config repo and the drop folders, and each one waits for a person:
+
+- Drafted configuration is approved with `hound approve`.
+- A proposed result for a manual evidence file (`hound manual propose`) is attested with `hound manual approve`. A proposal is not an attestation; the manual collector ignores it and publishes attested results only, naming who proposed and who attested.
+
+Both commands refuse to run without a person at a terminal. Code that approves or attests takes the `Terminal` and checks `Interactive` first; do not add another path that writes `approved_by` or an attestation.
+
 ## Framework-neutral checks
 
 Collectors emit stable check IDs such as `identity.mfa.admins` or `backup.restore_tested` with a result (`pass`, `fail`, `partial`, `not_applicable`, `error`), a short observation and evidence references. They never mention Essential Eight or NIST.
