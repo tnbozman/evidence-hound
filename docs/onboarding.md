@@ -142,6 +142,37 @@ hound onboard environment --repo . --graph example-m365 --no-model      # read t
 The default skill `environment-capabilities` describes how to tell which product is authoritative; organisation skills that apply to the
 `environment` step extend it.
 
+## Set up your coding assistant: hound agent setup
+
+```console
+$ hound agent setup --repo . --assistant both
+```
+
+`hound agent setup` writes the files a coding assistant reads in the compliance repo, so that it can onboard systems and suppliers, import
+an audit workbook, write a profile and review a plan before you apply it. Without `--assistant` it asks which one you use in VS Code:
+`claude`, `copilot` or `both`. `hound init` offers the same at its end (or takes `--assistant`).
+
+| Assistant | Files |
+| --- | --- |
+| Claude Code | `CLAUDE.md`; `.claude/skills/<skill>/SKILL.md`; `.claude/agents/hound-onboarding.md` and `hound-review.md` |
+| GitHub Copilot in VS Code | `.github/copilot-instructions.md`; `.github/agents/hound-onboarding.agent.md` and `hound-review.agent.md`; `.github/skills/<skill>/SKILL.md` |
+
+With `both`, the skills are written once, under `.claude/skills/`, which Copilot in VS Code reads too.
+
+- **Six skills, from one source.** Onboard a system with hound, assess a supplier, read an API specification, import an audit workbook,
+  write a profile, review before apply. Each is the steps for driving `hound`, followed by hound's default guidance for that step (the
+  same text `hound skill list` shows).
+- **Two agents, with the least tools each needs.** `hound-onboarding` reads, searches, edits and runs commands. `hound-review` reads,
+  searches and runs commands; it cannot edit a file.
+- **Every file opens with the same rules:** organisation data stays in this private repo; never open `secrets/`; never approve on the
+  person's behalf; nothing reaches CISO Assistant except through `hound scope plan` and `hound scope apply`. The rules guide the
+  assistant; what enforces them is `hound` itself: `hound approve` refuses anything but a person at a terminal.
+- **Your files are yours.** Each file hound writes carries a comment naming hound and its version. Running the command again replaces
+  those files (`Updated`), and leaves alone any file without the comment (`Kept`), including a `CLAUDE.md` you already had. To take a
+  file over, delete the comment; to get hound's version back, delete the file and run the command again.
+
+Your assistant's provider sees what the assistant reads in the repo. Keep secrets out of it, as the rules say.
+
 ## Drive it with an agent: pending, decide, supplier draft, approve
 
 A coding agent (Claude Code, GitHub Copilot) can draft a whole onboarding without answering a prompt. Every command below takes options

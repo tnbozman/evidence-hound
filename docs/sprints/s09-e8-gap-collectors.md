@@ -1072,6 +1072,9 @@ Design decision 9. The person chose Claude Code and Copilot custom agents in VS 
 
 **Functional check**
 - `hound agent setup --assistant both` in the trial repo; VS Code lists the hound agents in the Copilot agent picker and Claude Code lists the skills.
+- Result (2026-11-23), command part only, in an empty folder with the built CLI: `hound agent setup --repo <folder> --assistant both` wrote 12 files (`CLAUDE.md`, six `.claude/skills/<skill>/SKILL.md`, two `.claude/agents/*.md`, `.github/copilot-instructions.md`, two `.github/agents/*.agent.md`); a second run reported each `Unchanged`. **Still to do, by the maintainer in the trial repo:** confirm VS Code lists `hound-onboarding` and `hound-review` in the Copilot agent picker and Claude Code lists the six skills. The task stays unticked until then.
+- As built: the source is the repo's `agent/` folder (`rules.md`, `instructions.md`, `skills/`, `agents/`), embedded in hound; an agent skill names the default skills it carries with `includes:` (`AgentKit`, pure). The marker is an HTML comment after any frontmatter, with hound's version. Agents are named `hound-onboarding` and `hound-review`. Claude agents get `tools: Read, Grep, Glob, Edit, Write, Bash` (review: no `Edit`, `Write`). `hound init` asks at its end, or takes `--assistant`; `--yes` sets nothing up.
+- Deviations: Copilot alone also gets the skills, under `.github/skills/`, because its agents name them; with both, they are written once under `.claude/skills/` and hound removes its own copies from `.github/skills/`. "Every file starts with the rules" means straight after the frontmatter and the marker, since both assistants need the frontmatter first. An existing `CLAUDE.md` without the marker is kept, not merged. Extra test: `AgentSetupTests.Init_offers_the_setup_at_the_end`.
 
 ### s09-39 Onboard the Sophos firewall again, driven by the agent (added 2026-11-23)
 - [ ] Done
@@ -1154,6 +1157,9 @@ Design decision 10, and the reworded rule: no model in collection, and no eviden
 - In the trial repo: a restore-test record dropped in, a proposal recorded by the agent, attested with `hound manual approve`, and `hound run --only example-backup-restore-test` publishing it with the attestation line.
 
 ## Discovered work
+
+- s09-38: the agent skills carry hound's default skills only. The organisation's own skills (`skills/` in the config repo, with `overrides:`) reach an agent through `hound onboard <system> pending --json`, but not through the skill files. Consider having `hound agent setup` include them (fits s09-41).
+- s09-38: `examples/compliance-repo/CLAUDE.md` is hand-written and older than the agent files. Regenerate the example repo's assistant files with `hound agent setup` once the VS Code check passes, and keep one of the two.
 
 - **Before the sprint PR is marked ready:** turn the `functional` CI job back on for pull requests (`.github/workflows/ci.yml`). It was switched to run only on `main` and by hand on 2026-11-23 to keep pushes fast; until then functional tests run in the dev container with `make test-functional`, and each task's functional check records that run.
 

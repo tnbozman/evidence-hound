@@ -39,6 +39,8 @@ It writes:
 
 For access, settings and a pull request workflow, copy them from the [example compliance repo](../examples/compliance-repo/README.md), as the [first deployment tutorial](tutorials/first-deployment.md) describes.
 
+At the end `hound init` asks whether to set up a coding assistant in the new repo (`claude`, `copilot`, `both` or `none`; `--assistant` answers it, and `--yes` takes `none`). It writes what [`hound agent setup`](onboarding.md#set-up-your-coding-assistant-hound-agent-setup) writes.
+
 ## hound add system
 
 ```bash
