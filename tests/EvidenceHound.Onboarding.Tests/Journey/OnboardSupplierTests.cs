@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using EvidenceHound.Core.Scope;
 using EvidenceHound.Core.Yaml;
+using EvidenceHound.Onboarding.Output;
 using EvidenceHound.Onboarding.Sessions;
 using EvidenceHound.Onboarding.Skills;
 using EvidenceHound.Onboarding.Suppliers;
@@ -79,6 +80,24 @@ public sealed class OnboardSupplierTests
         var undecided = SupplierFile.Write(Choice, [], "EXAMPLE-ASSETS", new DateOnly(2026, 11, 22));
         undecided.ShouldContain("# dependency: to decide (0 to 4)");
         undecided.ShouldNotContain("dependency: 3");
+    }
+
+    [Fact]
+    public void Drafted_supplier_has_a_yearly_review_for_the_grc_team_to_conclude_in_ciso_assistant()
+    {
+        var yaml = SupplierFile.Write(Choice, [], "EXAMPLE-ASSETS", new DateOnly(2026, 11, 22), new AuditPlace("Example Pty Ltd", "Corporate IT"));
+
+        yaml.ShouldContain("domain: \"Example Pty Ltd\"\n");
+        yaml.ShouldContain("assessments:\n  - ref_id: \"EA-SUP-EXAMPLE\"\n");
+        var parsed = ScopeLoader.Parse(
+            new ScopeSource("setup.yaml", "organisation:\n  root_folder: Global\n"), null, [], thirdParties: [new ScopeSource("example-assets.yaml", yaml)]);
+        parsed.Problems.ShouldBeEmpty();
+        var review = parsed.Scope.ThirdParties.ShouldHaveSingleItem().Assessments.ShouldHaveSingleItem();
+        (review.Name, review.Perimeter.Value, review.DueDate, review.ReviewMonths).ShouldBe(("Example Assets Ltd review", "Corporate IT", "2026-12-22", 12));
+        review.Solutions.Select(s => s.Value).ShouldBe(["SOL-EXAMPLE-ASSETS"]);
+
+        // Without a domain and perimeter to put it in, the review is left for the person to add.
+        SupplierFile.Write(Choice, [], "EXAMPLE-ASSETS", new DateOnly(2026, 11, 22)).ShouldContain("# assessments: add a review");
     }
 
     [Fact]

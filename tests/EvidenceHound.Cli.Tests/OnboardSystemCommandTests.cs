@@ -1,4 +1,6 @@
 using System.Text.Json.Nodes;
+using EvidenceHound.Core.Scope;
+using EvidenceHound.Core.Yaml;
 
 namespace EvidenceHound.Cli.Tests;
 
@@ -46,6 +48,7 @@ public sealed class OnboardSystemCommandTests : IDisposable
         var supplierFile = Path.Combine(Repo, "scope", "third-parties", "sup-example.yaml");
         var drafted = await File.ReadAllTextAsync(supplierFile, _ct);
         drafted.ShouldContain("status: draft");
+        drafted.ShouldContain("perimeter: \"Corporate IT\"");
         Session()["stage"]!.GetValue<string>().ShouldBe("awaiting_supplier");
 
         // Still not approved: nothing more is asked.
@@ -80,6 +83,15 @@ public sealed class OnboardSystemCommandTests : IDisposable
         audit.ShouldContain("ref_id: \"EXAMPLE-ASSETS-EXAMPLE-FRAMEWORK\"");
         audit.ShouldContain("domain: \"Example Pty Ltd\"");
         audit.ShouldContain("result: not_applicable");
+        audit.ShouldContain("systems: [\"EXAMPLE-ASSETS\"]");
+
+        // The system is declared in its domain with the solution it is, so scope plan holds it back until the supplier is approved.
+        var setup = ScopeLoader.Parse(new ScopeSource("setup.yaml", await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "setup.yaml"), _ct)), null, []);
+        setup.Problems.ShouldBeEmpty();
+        var system = setup.Scope.Setup.Domains.Single(d => d.Name == "Example Pty Ltd").Systems.Single(x => x.Name == System);
+        (system.Type, system.Solution?.Value, system.Description).ShouldBe((SystemType.Primary, "SOL-EXAMPLE-ASSETS", "Example Asset API, from Example Assets Ltd."));
+        output.ShouldContain("scope/setup.yaml");
+        output.ShouldContain("Conclude EA-SUP-EXAMPLE");
         var record = Directory.GetFiles(Path.Combine(Repo, "onboarding"), "example-assets-*.md").ShouldHaveSingleItem();
         (await File.ReadAllTextAsync(record, _ct)).ShouldContain("| EX-2 | (none) | not_applicable | No privileged users. | Alex Example | Only the supplier administers it. Approved by Sam Example. |");
         output.ShouldContain("Wrote scope/audits/example-assets-example-framework.yaml");

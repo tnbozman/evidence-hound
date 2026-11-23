@@ -1,3 +1,5 @@
+using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json.Nodes;
 using EvidenceHound.Cli;
 
@@ -27,6 +29,13 @@ public sealed class OnboardFunctionalTests(CisoAssistantFixture ciso) : IDisposa
             name: Asset inventory subscription
             status: active
             solutions: [SOL-FT-ASSETS]
+        assessments:
+          - ref_id: EA-FT-ASSETS
+            name: Example Assets review
+            domain: Example Pty Ltd
+            solutions: [SOL-FT-ASSETS]
+            perimeter: Corporate IT
+            due_date: "2026-12-31"
         """;
 
     private readonly string _repo = Directory.CreateTempSubdirectory("hound-onboard-").FullName;
@@ -49,6 +58,13 @@ public sealed class OnboardFunctionalTests(CisoAssistantFixture ciso) : IDisposa
         var config = Path.Combine(_repo, "hound.yaml");
         var scope = Path.Combine(_repo, "scope");
 
+        // s09-20: the supplier and its review go to CISO Assistant first, and the GRC team concludes the review there, so the system
+        // onboarding declares can be registered.
+        var (supplierExit, supplier) = await StepAsync("0-apply-supplier", ["scope", "apply", scope, "--config", config], "", ct);
+        supplierExit.ShouldBe(ExitCodes.Ok, supplier);
+        var review = (await SendAsync(HttpMethod.Get, "entity-assessments/?ref_id=EA-FT-ASSETS", null, ct))["results"]!.AsArray().ShouldHaveSingleItem()!;
+        await SendAsync(HttpMethod.Patch, $"entity-assessments/{review["id"]!.GetValue<string>()}/", new JsonObject { ["conclusion"] = "ok" }, ct);
+
         // Who and what, the supplier (already approved), then: the first of the 107 ML2 requirements not applicable, the other 106 manual,
         // and the default domain and perimeter for the system's audit.
         var answers = "Alex Example\nAlex Example\nExample Asset API\nSUP-FT-ASSETS\nExample Assets Ltd\nSOL-FT-ASSETS\nAsset inventory\nCTR-FT-ASSETS\nAsset inventory subscription\n"
@@ -63,6 +79,7 @@ public sealed class OnboardFunctionalTests(CisoAssistantFixture ciso) : IDisposa
         var (onboardExit, onboarded) = await StepAsync("1-onboard", onboard, answers, ct);
         onboardExit.ShouldBe(ExitCodes.Ok, onboarded);
         onboarded.ShouldContain("Wrote scope/audits/example-assets-essential-eight-2023.yaml");
+        (await File.ReadAllTextAsync(Path.Combine(scope, "setup.yaml"), ct)).ShouldContain("solution: SOL-FT-ASSETS");
 
         var (validateExit, validated) = await StepAsync("2-validate", ["scope", "validate", scope, "--config", config], "", ct);
         validateExit.ShouldBe(ExitCodes.Ok, validated);
@@ -88,6 +105,22 @@ public sealed class OnboardFunctionalTests(CisoAssistantFixture ciso) : IDisposa
     }
 
     public void Dispose() => Directory.Delete(_repo, recursive: true);
+
+    private async Task<JsonNode> SendAsync(HttpMethod method, string path, JsonObject? body, CancellationToken ct)
+    {
+        using var http = new HttpClient();
+        using var request = new HttpRequestMessage(method, new Uri(ciso.ApiUrl, path));
+        request.Headers.Authorization = new AuthenticationHeaderValue("Token", ciso.Token);
+        if (body is not null)
+        {
+            request.Content = new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json");
+        }
+
+        using var response = await http.SendAsync(request, ct);
+        var text = await response.Content.ReadAsStringAsync(ct);
+        response.IsSuccessStatusCode.ShouldBeTrue(text);
+        return JsonNode.Parse(text)!;
+    }
 
     private async Task<(int ExitCode, string Output)> StepAsync(string name, string[] args, string input, CancellationToken ct)
     {

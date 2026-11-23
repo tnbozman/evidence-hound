@@ -26,6 +26,7 @@ public sealed class OnboardOutputTests
         parsed.Groups.Select(g => g.Value).ShouldBe(["2"]);
         parsed.Domain.Value.ShouldBe("Example Pty Ltd");
         parsed.Perimeter.Value.ShouldBe("Corporate IT");
+        parsed.Systems.Select(x => x.Value).ShouldBe(["EXAMPLE-ASSETS"]);
 
         // Requirements checked through the API are not listed: they start not assessed until the collector's results are published.
         parsed.Unlisted.ShouldNotBeNull().Result.ShouldBe(ComplianceResult.NotAssessed);

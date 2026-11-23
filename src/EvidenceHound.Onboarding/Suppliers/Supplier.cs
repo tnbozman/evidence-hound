@@ -190,7 +190,7 @@ public static class SupplierFile
         return $"{choice.EntityRef.ToLowerInvariant()}.yaml";
     }
 
-    public static string Write(SupplierChoice choice, IReadOnlyList<LevelProposal> levels, string system, DateOnly today)
+    public static string Write(SupplierChoice choice, IReadOnlyList<LevelProposal> levels, string system, DateOnly today, Output.AuditPlace? place = null)
     {
         ArgumentNullException.ThrowIfNull(choice);
         ArgumentNullException.ThrowIfNull(levels);

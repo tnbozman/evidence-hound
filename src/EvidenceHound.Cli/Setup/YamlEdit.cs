@@ -66,6 +66,10 @@ internal static partial class YamlEdit
         });
     }
 
+    /// <summary>Sets the scalar at <paramref name="path"/> when it is missing; an equal value is left alone and a different one is refused.</summary>
+    public static Result<string> SetScalar(string yaml, string path, string value) =>
+        Result.Fail<string>(new Problem("setup.not_implemented", $"'{path}' cannot be set yet."));
+
     /// <summary>The item as block lines, its dash at <paramref name="indent"/>.</summary>
     private static IEnumerable<string> Item(YamlMap item, int indent) =>
         Entries(item, indent + 2).Select((line, index) => index == 0 ? $"{Indent(indent)}- {line.TrimStart()}" : line);

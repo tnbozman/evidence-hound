@@ -13,6 +13,38 @@ public sealed class YamlEditTests
     ]);
 
     [Fact]
+    public void Sets_a_missing_key_on_a_list_item_and_leaves_an_equal_one_alone()
+    {
+        const string yaml = """
+            domains:
+              - name: Example Pty Ltd   # the company
+                systems:
+                  - name: Example firewall
+                    type: primary
+                  - name: Example 365
+                    type: primary
+
+            """;
+
+        var edited = Ok(YamlEdit.SetScalar(yaml, "domains[name=Example Pty Ltd].systems[name=Example firewall].solution", "SOL-EX-FW"));
+
+        edited.ShouldBe("""
+            domains:
+              - name: Example Pty Ltd   # the company
+                systems:
+                  - name: Example firewall
+                    type: primary
+                    solution: SOL-EX-FW
+                  - name: Example 365
+                    type: primary
+
+            """);
+        Ok(YamlEdit.SetScalar(edited, "domains[name=Example Pty Ltd].systems[name=Example firewall].solution", "SOL-EX-FW")).ShouldBe(edited);
+        YamlEdit.SetScalar(edited, "domains[name=Example Pty Ltd].systems[name=Example firewall].solution", "SOL-OTHER")
+            .ShouldBeOfType<Result<string>.Fail>().Errors.ShouldHaveSingleItem().Code.ShouldBe("setup.value_differs");
+    }
+
+    [Fact]
     public void Appends_to_a_block_list_in_its_indentation_keeping_comments()
     {
         const string yaml = """
