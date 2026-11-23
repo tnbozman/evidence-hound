@@ -178,6 +178,58 @@ internal sealed partial class ScopeWriter
         });
     }
 
+    /// <summary>
+    /// A supplier assessment, in its perimeter. When it is created with a questionnaire, CISO Assistant creates the questionnaire's audit with it
+    /// (in the supplier's own workspace). The conclusion, expiry date, answers and tier are never sent.
+    /// </summary>
+    private async Task<Result<Unit>> EntityAssessmentAsync(ScopeWrite write, Folders folders, CancellationToken cancellationToken)
+    {
+        var lists = Result.Combine([await ListAsync("entities/", cancellationToken), await ListAsync("solutions/", cancellationToken), await ListAsync("entity-assessments/", cancellationToken)]);
+        return await lists.BindAsync(async all =>
+        {
+            var existing = ByRefId(all[2]).GetValueOrDefault(write.Change.Key);
+            if (write.Change.Action == ScopeAction.Delete || write.Declared is not { } declared)
+            {
+                return await DeleteAsync("entity-assessments", existing, write, cancellationToken);
+            }
+
+            var folder = folders.FolderOf(declared);
+            var entity = Resolve(Split(Field(declared, "entity")), ByRefId(all[0].Where(e => !IsBuiltin(e))), "third party").Map(ids => ids[0]!.DeepClone());
+            var solutions = Resolve(Split(Field(declared, "solutions")), ByRefId(all[1]), "solution").Map(ids => (JsonNode)ids);
+            var perimeter = await folder.BindAsync(f => PerimeterIdAsync(Field(declared, "perimeter"), f, cancellationToken));
+            var create = write.Change.Action == ScopeAction.Create;
+            var questionnaire = create && declared.Initial.GetValueOrDefault("questionnaire") is { } urn
+                ? await FrameworkIdAsync(urn, cancellationToken)
+                : Result.Ok("");
+            return await Result.Combine([folder.Map(Node), entity, solutions, perimeter.Map(Node), questionnaire.Map(Node)]).BindAsync(async resolved =>
+            {
+                var body = new JsonObject
+                {
+                    ["name"] = Field(declared, "name"),
+                    ["ref_id"] = declared.Key,
+                    ["description"] = Described(declared, write.Change),
+                    ["folder"] = resolved[0].DeepClone(),
+                    ["entity"] = resolved[1].DeepClone(),
+                    ["solutions"] = resolved[2].DeepClone(),
+                    ["perimeter"] = resolved[3].DeepClone(),
+                    ["due_date"] = Field(declared, "due_date"),
+                    ["criticality"] = WholeNumber(declared, "criticality"),
+                };
+                Drop(body, write.Change, "due_date", "criticality");
+                if (create && Text(resolved[4]) is { } framework)
+                {
+                    body["create_audit"] = true;
+                    body["framework"] = framework;
+                    body["selected_implementation_groups"] = new JsonArray([.. Split(declared.Initial.GetValueOrDefault("groups")).Select(g => JsonValue.Create(g))]);
+                }
+
+                return create
+                    ? await SendAsync(HttpMethod.Post, "entity-assessments/", body, $"to create supplier assessment {declared.Key}", cancellationToken)
+                    : await UpdateAsync("entity-assessments", existing, body, write, cancellationToken);
+            });
+        });
+    }
+
     private async Task<Result<List<JsonNode>>> ListAsync(string path, CancellationToken cancellationToken) => await http.ListAllAsync(path, cancellationToken);
 
     /// <summary>Each object's ID by its <c>ref_id</c>.</summary>

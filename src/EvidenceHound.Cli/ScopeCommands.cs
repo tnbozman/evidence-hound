@@ -141,11 +141,17 @@ internal static class ScopeCommands
         return await actual.Match(
             async held =>
             {
+                var suppliers = Suppliers(checkedScope, held);
+                if (suppliers.Refused.Count > 0)
+                {
+                    return await ReportAsync(suppliers.Refused, "", "text", output, logger);
+                }
+
                 var plan = ScopePlanner.Plan(declared, held, prune);
                 var compliance = ComplianceImpact.Of(plan, declared, held, checkedScope.Inputs);
                 if (dryRun)
                 {
-                    await output.WriteAsync(ScopePlanOutput.Markdown(plan, PlanNotes.None with { Periods = ScopePeriods.Notes(declared, plan), Compliance = compliance }));
+                    await output.WriteAsync(ScopePlanOutput.Markdown(plan, PlanNotes.None with { Periods = ScopePeriods.Notes(declared, plan), Compliance = compliance, Suppliers = suppliers.Notes }));
                     return ExitCodes.Ok;
                 }
 
@@ -200,6 +206,11 @@ internal static class ScopeCommands
                 if (changed.Length > 0)
                 {
                     return Log.Problems(logger, [Stale($"CISO Assistant changed since it was made: {string.Join(", ", changed)}")]);
+                }
+
+                if (Suppliers(checkedScope, held).Refused is { Count: > 0 } refused)
+                {
+                    return await ReportAsync(refused, "", "text", output, logger);
                 }
 
                 if (dryRun)
@@ -317,9 +328,16 @@ internal static class ScopeCommands
         return await actual.Bind(held => access.Map(users => (Held: held, Users: users))).Match(
             async read =>
             {
+                var suppliers = Suppliers(checkedScope, read.Held);
+                if (suppliers.Refused.Count > 0)
+                {
+                    return await ReportAsync(suppliers.Refused, "", options.Format == "json" ? "json" : "text", output, logger);
+                }
+
                 var plan = ScopePlanner.Plan(declared, read.Held, options.Prune);
                 var notes = new PlanNotes(ScopePeriods.Notes(declared, plan), AccessReview.Notes(checkedScope.Scope.Access, read.Users))
                 {
+                    Suppliers = suppliers.Notes,
                     Unmanaged = options.ShowUnmanaged ? UnmanagedSettings(declared, read.Held) : [],
                     Compliance = ComplianceImpact.Of(plan, declared, read.Held, checkedScope.Inputs),
                 };
@@ -343,6 +361,10 @@ internal static class ScopeCommands
             },
             problems => Task.FromResult(Log.Problems(logger, problems)));
     }
+
+    /// <summary>The supplier gate on the day the scope is checked for: systems refused until their suppliers are approved, and notes.</summary>
+    private static SupplierReviewResult Suppliers(CheckedScope checkedScope, IReadOnlyList<ActualObject> held) =>
+        SupplierReview.Check(checkedScope.Scope, held, checkedScope.Inputs.Today ?? DateOnly.FromDateTime(DateTime.UtcNow));
 
     /// <summary>The flags and general settings CISO Assistant holds that the scope does not name, by kind and name.</summary>
     private static ScopeObject[] UnmanagedSettings(IReadOnlyList<ScopeObject> declared, IReadOnlyList<ActualObject> held)
