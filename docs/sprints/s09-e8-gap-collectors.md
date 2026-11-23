@@ -279,6 +279,7 @@ These tasks come after s09-14, because they draft REST profiles, and after s09-2
 
 ### s09-21 Model port, Anthropic and OpenAI adapters, onboarding config and outbound guard
 - [x] Done
+- Superseded (2026-11-23): s09-40 removed the model port, the adapters, the onboarding config and the outbound guard. Kept here as a record.
 
 **Story:** As an operator, I want `hound` to use a language model I choose, with my key kept as a secret and nothing sensitive sent, so that I can use the assistant without leaking organisation data.
 
@@ -489,6 +490,7 @@ Requests saved: `001-supplier`, `002`-`004-applicability` (107 requirements in b
 
 ### s09-23 Draft, sample and test the profile
 - [x] Done
+- Superseded (2026-11-23): s09-40 removed the model-drafted profile; `hound onboard profile` now checks a profile a person or their agent wrote. Kept here as a record.
 
 **Story:** As a GRC team member, I want the profile for the accepted API checks drafted, proven against the real system and tested, so that I only review a profile that already works.
 
@@ -551,7 +553,7 @@ EXAMPLE-ASSETS is onboarded and its files are already written: ... Move onboardi
 The first run found that a single-system audit needs `unlisted:` and that a requirement keyed by URN is already covered when the mapping names its ref_id; both fixed. Plan, apply and re-plan against CISO Assistant run in CI as `OnboardFunctionalTests`.
 
 ### s09-25 Onboard the Sophos firewall, and documentation
-- [ ] Done
+- Not applicable (2026-11-23): it waits on a model-drafted profile, and s09-40 removed hound's built-in model. The agent-driven Sophos onboarding (s09-39) replaces it. Kept here as a record.
 
 **Story:** As the person running this project, I want to onboard my own Sophos firewall with `hound onboard`, so that the assistant is proven on a real system and real requirements.
 
@@ -791,7 +793,7 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 - Dry run against the person's tenant.
 
 ### s09-16 Sophos switches (was s08-14)
-- [ ] Done
+- Not applicable (2026-11-23): the maintainer has no Sophos switches, and the Sophos Central API cannot list them. Kept here as a record.
 
 **Story:** As a compliance owner with Sophos switches, I want them read like firewalls, so that non-internet-facing network devices (ISM-1501, ISM-1695) have live evidence.
 
@@ -819,7 +821,7 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 - If s09-13 has landed by then, the run uses the `sophos-central` profile.
 
 ### s09-18 Microsoft 365 trial on a test tenant (rest of s08-10)
-- [ ] Done
+- Not applicable (2026-11-23): the Microsoft 365 dev server (s09-44, with `sign_in: none` in s09-52) is the trial's test tenant now. A run against a real test tenant stays possible (trial step 14, your own tenant). Kept here as a record.
 
 **Done in s08.** The trial's Microsoft 365 step, `hound add collector --secret-file`, and the tutorial section are built and tested (CI's unattended trial stops before Sophos and Microsoft 365).
 
@@ -829,7 +831,7 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 - Fix any defect test-first; correct the tutorial wherever it was wrong or unclear.
 
 ### s09-27 Record a Microsoft 365 tenant with Dev Proxy and publish it scrubbed (added 2026-11-22)
-- [ ] Done
+- Not applicable (2026-11-23): the Microsoft 365 dev server (s09-44) replaces a recorded and scrubbed tenant. Kept here as a record.
 
 **Story:** As a maintainer, I want my trial tenant's Microsoft Graph answers recorded once, scrubbed and published, so that `hound`'s Microsoft 365 tests and tutorial run offline against realistic, internally consistent data, and others can learn from it.
 
@@ -914,6 +916,7 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 
 ### s09-32 Onboarding tutorial: Example Pty Ltd's privately hosted GRC platform (added 2026-11-23, refined the same day)
 - [x] Done
+- Rechecked 2026-11-23 after s09-37, s09-40 and s09-55: the model and its questions are gone already; step 6 has the OCI Terraform control tests. Updated: suppliers are approved and their reviews concluded with `hound approve` (step 3) and the conclusions applied with the plan (step 7), instead of concluding them in CISO Assistant; the intro points to `make trial`, which now walks this deployment (s09-57).
 
 **Story:** As a GRC team member learning hound, I want a complete onboarding tutorial for Example Pty Ltd, whose CISO Assistant and Evidence Hound run privately in the cloud and reach the office's Sophos XGS firewall over a site-to-site VPN, so that I can follow one realistic stack end to end and remember that the compliance platform is itself in scope.
 
@@ -991,7 +994,8 @@ The OCI tutorial (s09-32) uses it for the GRC platform (`example-grc-infra-drift
 **Order:** after the hands-on Sophos path (s09-25), with s09-32.
 
 ### s09-34 Ref ID conventions enforced at the prompt and in scope validate (added 2026-11-23)
-- [ ] Done
+- [x] Done
+- Ticked 2026-11-23 at the maintainer's say-so: functional CI run 341 on 2f82ad6 (10:36 UTC) passed with s09-29, 34 and 35 in it.
 
 Added at the person's request after the s09-22 onboarding trial, where a contract ref was saved as "Renewal" because prompts only suggested the prefix.
 
@@ -1018,7 +1022,8 @@ Added at the person's request after the s09-22 onboarding trial, where a contrac
 - CI (2026-11-23): run 341, started by hand on 2f82ad6 with the functional tests, passed (unit, functional, lint, CodeQL).
 
 ### s09-35 Guidance in the terminal for hound onboard (added 2026-11-23)
-- [ ] Done
+- [x] Done
+- Ticked 2026-11-23 at the maintainer's say-so: functional CI run 341 on 2f82ad6 (10:36 UTC) passed with it.
 
 Added at the person's request after the s09-22 Sophos onboarding trial, where the prompts gave too little to go on: a bare "type 0 to 4" for each supplier level, no example answers, a session written into the wrong folder, and the model's open questions shown as results rather than asked. The terminal is the place for it for now; a help page can follow.
 

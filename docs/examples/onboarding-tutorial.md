@@ -12,7 +12,9 @@ You start from a copy of the template compliance repo, `examples/compliance-repo
 The template itself stays without them, so a new repo still starts empty.
 
 It assumes you have read [Onboarding](../onboarding.md) and, for installing the stack, the
-[first deployment tutorial](../tutorials/first-deployment.md).
+[first deployment tutorial](../tutorials/first-deployment.md). To try the whole deployment on your machine first, with fictional tenants
+for Sophos Central, Microsoft 365 and the IaC pipeline and no account or key, run [`make trial`](../tutorials/local-trial.md): it walks
+the same third parties, systems, audits, controls and collectors.
 
 ## The deployment
 
@@ -157,9 +159,17 @@ cp examples/onboarding-tutorial/scope/third-parties/sup-ciso-assistant.yaml exam
    Oracle is a new supplier, so `hound` drafts `scope/third-parties/sup-oracle.yaml` with a draft contract and a review, `EA-SUP-ORACLE`,
    and stops.
 
-2. **Review the supplier.** Decide its four levels and the solution's criticality, each with its reason, and make the contract
-   active once the review is concluded. Compare yours with
-   [`scope/third-parties/sup-oracle.yaml`](../../examples/onboarding-tutorial/scope/third-parties/sup-oracle.yaml).
+2. **Review the supplier.** Decide its four levels and the solution's criticality in the file, each with its reason. Compare yours with
+   [`scope/third-parties/sup-oracle.yaml`](../../examples/onboarding-tutorial/scope/third-parties/sup-oracle.yaml). Then approve it
+   yourself, in a terminal:
+
+   ```sh
+   hound approve --repo /tmp/grc-repo
+   ```
+
+   It shows the supplier and makes the contract `active` when you approve it, then concludes the review `EA-SUP-ORACLE` (`ok`,
+   `warning` or `blocker`), recorded under `conclusions:` in the file. It refuses to run without a person at a terminal, so an agent
+   cannot approve for you.
 
 3. **Decide applicability.** Run the same command again, with the same groups. For each requirement type `m` (manual evidence), `n` (not
    applicable, with a justification and who approved it), `o` (another system meets it, naming that system) or `c` (an API check), each
@@ -282,9 +292,11 @@ proves the live tenancy still matches the code. A mock alone proves only the cod
    cd /tmp/grc-repo && hound config validate hound.yaml && hound scope validate scope --config hound.yaml
    ```
 
-3. **Suppliers, then systems.** A plan that registers a system whose supplier is not approved is refused
-   (`system.supplier_not_approved`) and nothing is applied. So merge and apply the four supplier files first, in a pull request of their
-   own, conclude `EA-SUP-ORACLE` and `EA-SUP-SOPHOS` as ok in CISO Assistant, and then plan and apply the rest:
+3. **Suppliers, then systems.** A plan that registers a system whose supplier's review is not concluded ok is refused
+   (`system.supplier_not_approved`) and nothing is applied. `hound approve` recorded `EA-SUP-ORACLE` and `EA-SUP-SOPHOS` as concluded
+   in the supplier files (steps 3 and 4), and the plan counts those conclusions, so one plan applies the suppliers, their conclusions,
+   the systems and their audits. The two open-source projects' reviews are concluded the same way: run `hound approve` once more if it
+   still lists them. Then:
 
    ```sh
    cd /tmp/grc-repo && hound scope plan scope --config hound.yaml
