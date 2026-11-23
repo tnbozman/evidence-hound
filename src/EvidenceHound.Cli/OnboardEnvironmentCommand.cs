@@ -29,7 +29,7 @@ internal static class OnboardEnvironmentCommand
         var framework = new Option<FileInfo>("--framework") { Description = "The framework snapshot whose mitigations to decide. Default: frameworks/essential-eight-2023.json in the repo." };
         var signals = new Option<FileInfo>("--signals") { Description = "Recorded answers of the read-only Microsoft Graph lookups (subscribed licences and Intune configuration kinds), as JSON." };
         var graph = new Option<string>("--graph") { Description = "Read the licences and Intune configuration kinds live, read-only, as this m365 collector of the deployment config." };
-        var deployment = new Option<FileInfo>("--deployment") { Description = "The deployment config that names the --graph collector. Default: hound.yaml in the repo." };
+        var deployment = new Option<FileInfo>("--deployment") { Description = "The deployment config: the --graph collector, and the targets whose mappings compute requirements, which are left to them. Default: hound.yaml in the repo." };
         var config = new Option<FileInfo>("--config") { Description = $"The onboarding config. Default: {OnboardCommands.DefaultConfig} in the repo." };
         var show = new Option<bool>("--show-requests") { Description = "Print each request to the model before it is sent." };
         var microsoft = new Option<string>("--microsoft-system") { Description = "The system in scope/setup.yaml that is Microsoft 365, which Microsoft signals suggest. Default: the first whose name has 365." };
@@ -89,6 +89,12 @@ internal static class OnboardEnvironmentCommand
         if (scope.Capabilities is { } held && held.Framework.Value != snapshot.FrameworkUrn)
         {
             return Result.Fail<Unit>(new Problem("capability.framework_unknown", $"scope/capabilities.yaml maps {held.Framework.Value}, not {snapshot.FrameworkUrn}."));
+        }
+
+        var targets = await TargetsAsync(source.Config, access, cancellationToken);
+        if (targets is Result<IReadOnlyList<ScopeTarget>>.Fail { Errors: var targetProblems })
+        {
+            return Result.Fail<Unit>(targetProblems);
         }
 
         var facts = source switch
@@ -155,8 +161,8 @@ internal static class OnboardEnvironmentCommand
         }
 
         var mapped = scope with { Capabilities = new ScopeCapabilityMap(new ScopeRef(snapshot.FrameworkUrn, new SourceLine(capabilitiesPath, 1)), decisions, new SourceLine(capabilitiesPath, 1)) };
-        var rows = CapabilityMap.Rows(mapped, snapshot);
-        foreach (var audit in rows.Audits)
+        var rows = CapabilityMap.Rows(mapped, snapshot, ((Result<IReadOnlyList<ScopeTarget>>.Ok)targets).Value);
+        foreach (var audit in rows.Audits.Where(a => a.Rows.Count > 0))
         {
             var text = await File.ReadAllTextAsync(audit.File, cancellationToken);
             foreach (var row in audit.Rows)
@@ -187,6 +193,8 @@ internal static class OnboardEnvironmentCommand
             return $"Next: onboard {p.System} ({string.Join(", ", p.Mitigations)}) with 'hound onboard \"{p.System}\"'; "
                 + (supplier is null ? "name its supplier there, which goes through the supplier gate first." : $"its supplier {supplier} goes through the supplier gate first.");
         }));
+        report.AddRange(rows.Audits.Where(a => a.Computed.Count > 0).Select(a =>
+            $"Left to the mapping of audit {a.AuditRefId}, which computes them: {string.Join(", ", a.Computed)}. If this audit's systems should not be judged on them, take them out of that mapping."));
         report.AddRange(rows.Gaps.Select(g => $"Gap: {g.Mitigation} has no product; no system's audit answers its {g.Requirements.Count} requirement(s)."));
         report.Add("Review the changes in a pull request, then run 'hound scope validate scope' and 'hound scope plan scope'.");
         await terminal.Output.WriteLineAsync(string.Join('\n', report).AsMemory(), cancellationToken);
@@ -266,6 +274,23 @@ internal static class OnboardEnvironmentCommand
             choice.Config, Path.Combine(root, "onboarding", "environment", "requests"), choice.Show, terminal, access.Configuration, cancellationToken);
         return await assistant.BindAsync(a => SkillSelection.Select(a.Skills, SkillStep.Environment, frameworkName, SkillSelection.DefaultBudgetCharacters)
             .BindAsync(skills => CapabilityProposals.ProposeAsync(a.Model, skills, mitigations, systems, prefilled, cancellationToken)));
+    }
+
+    /// <summary>The deployment's targets and the requirements their mappings compute; none when the repo has no deployment config.</summary>
+    private static async Task<Result<IReadOnlyList<ScopeTarget>>> TargetsAsync(string configFile, GraphAccess access, CancellationToken cancellationToken)
+    {
+        if (!File.Exists(configFile))
+        {
+            return Result.Ok<IReadOnlyList<ScopeTarget>>([]);
+        }
+
+        var loaded = await ConfigLoader.LoadAsync(configFile, access.CollectorTypes, cancellationToken);
+        return await loaded.Match(
+            async config => (await PlanCommand.LoadMappingsAsync(config.Targets, cancellationToken)).Map(mappings => (IReadOnlyList<ScopeTarget>)
+            [
+                .. mappings.Select(t => new ScopeTarget(t.Target.ComplianceAssessmentRefId, [.. t.Mapping.Requirements.Select(r => r.Key)], [], new SourceLine(configFile, 0))),
+            ]),
+            problems => Task.FromResult(Result.Fail<IReadOnlyList<ScopeTarget>>(problems)));
     }
 
     /// <summary>The two read-only Graph lookups, signed in as the named m365 collector of the deployment config, with its own settings and secrets.</summary>

@@ -125,7 +125,7 @@ hound onboard environment --repo . --graph example-m365 --no-model      # read t
   gap, or `q` to save and stop. It asks once for your name and the role that approves the decisions. A product not onboarded yet can be
   named; you are asked for its supplier.
 - **What it writes, for review:** `scope/capabilities.yaml` (see [scope.md](scope.md#capabilitiesyaml)), and in each system's own audit,
-  every requirement another system provides as `not_applicable`, "Provided by <system> (audit <ref>)". Nothing is merged into a combined
+  every requirement another system provides as `not_applicable`, "Provided by <system> (audit <ref>)". A requirement the audit's mapping already computes (a target in `hound.yaml`, `--deployment`) is left to the mapping and listed, since a hand-written row would conflict with it (`scope.result_conflict`); take it out of that mapping if the system should not be judged on it. Nothing is merged into a combined
   audit, rows you wrote by hand are never changed, and running it again adds nothing.
 - **What comes next:** each named system not onboarded yet is listed with `hound onboard "<system>"`, whose supplier goes through the
   supplier gate first; each gap is listed as requirements no system's audit answers.

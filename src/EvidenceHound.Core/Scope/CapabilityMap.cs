@@ -8,8 +8,14 @@ public sealed record Mitigation(string Code, IReadOnlyList<SnapshotNode> Require
 /// <summary>A row to write in a system's audit: the requirement, by <c>ref</c> or <c>urn</c>, and why it is not applicable there.</summary>
 public sealed record CapabilityRow(string Key, string Requirement, string Observation);
 
-/// <summary>The rows the map writes into one system's own audit file.</summary>
-public sealed record AuditCapabilityRows(string AuditRefId, string File, IReadOnlyList<CapabilityRow> Rows);
+/// <summary>
+/// The rows the map writes into one system's own audit file, and the requirements left out because the audit's mapping computes them
+/// (a hand-written row would conflict with it, <c>scope.result_conflict</c>).
+/// </summary>
+public sealed record AuditCapabilityRows(string AuditRefId, string File, IReadOnlyList<CapabilityRow> Rows)
+{
+    public IReadOnlyList<string> Computed { get; init; } = [];
+}
 
 /// <summary>A mitigation no product provides: its requirements, which no system's audit answers.</summary>
 public sealed record CapabilityGap(string Mitigation, IReadOnlyList<string> Requirements);
@@ -123,8 +129,12 @@ public static class CapabilityMap
         return scope.Capabilities is { } map && snapshots.TryGetValue(map.Framework.Value, out var snapshot) ? Rows(scope, snapshot).Gaps : [];
     }
 
-    public static CapabilityRows Rows(ScopeDocument scope, FrameworkSnapshot snapshot)
+    public static CapabilityRows Rows(ScopeDocument scope, FrameworkSnapshot snapshot) => Rows(scope, snapshot, []);
+
+    /// <summary>The rows, leaving out each requirement that a target's mapping computes for the same audit.</summary>
+    public static CapabilityRows Rows(ScopeDocument scope, FrameworkSnapshot snapshot, IReadOnlyList<ScopeTarget> targets)
     {
+        ArgumentNullException.ThrowIfNull(targets);
         ArgumentNullException.ThrowIfNull(scope);
         ArgumentNullException.ThrowIfNull(snapshot);
         if (scope.Capabilities is not { } map || map.Framework.Value != snapshot.FrameworkUrn)
@@ -146,7 +156,11 @@ public static class CapabilityMap
         {
             var own = audit.Systems.Select(s => s.Value).ToHashSet(StringComparer.Ordinal);
             var groups = audit.Groups.Select(g => g.Value).ToHashSet(StringComparer.Ordinal);
+            var computed = targets.Where(t => t.AuditRefId == audit.RefId)
+                .SelectMany(t => t.Computed.SelectMany(k => snapshot.Resolve(k) is { Count: > 0 } nodes ? nodes.Select(n => n.Urn) : [k.Value]))
+                .ToHashSet(StringComparer.Ordinal);
             var rows = new List<CapabilityRow>();
+            var leftToMapping = new List<string>();
             foreach (var mitigation in mitigations)
             {
                 if (decisions.GetValueOrDefault(mitigation.Code) is not { ProvidedBy: CapabilityProvision.System } decision
@@ -157,17 +171,20 @@ public static class CapabilityMap
 
                 var approved = decision.ApprovedOn is null ? $"approved by {decision.ApprovedBy}" : $"approved by {decision.ApprovedBy} on {decision.ApprovedOn}";
                 var observation = $"Provided by {string.Join(" and ", decision.Systems.Select(s => Provider(s.Value)))}, as recorded in {FileName} ({approved}).";
-                rows.AddRange(mitigation.Requirements
+                var open = mitigation.Requirements
                     .Where(n => groups.Count == 0 || n.Groups.Any(groups.Contains))
                     .Where(n => !audit.Assessments.Any(a => a.Requirement.Key.Value == n.Urn || a.Requirement.Key.Value == n.RefId))
+                    .ToArray();
+                leftToMapping.AddRange(open.Where(n => computed.Contains(n.Urn)).Select(n => n.RefId ?? n.Urn));
+                rows.AddRange(open.Where(n => !computed.Contains(n.Urn))
                     .Select(n => n.RefId is { } refId && refCounts.GetValueOrDefault(refId) == 1
                         ? new CapabilityRow("ref", refId, observation)
                         : new CapabilityRow("urn", n.Urn, observation)));
             }
 
-            if (rows.Count > 0)
+            if (rows.Count > 0 || leftToMapping.Count > 0)
             {
-                perAudit.Add(new AuditCapabilityRows(audit.RefId, audit.At.File, rows));
+                perAudit.Add(new AuditCapabilityRows(audit.RefId, audit.At.File, rows) { Computed = leftToMapping });
             }
         }
 

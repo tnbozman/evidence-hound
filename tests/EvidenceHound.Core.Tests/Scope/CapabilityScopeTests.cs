@@ -1,5 +1,5 @@
-using EvidenceHound.Core.Scope;
 using EvidenceHound.Core.Mapping;
+using EvidenceHound.Core.Scope;
 using static EvidenceHound.Core.Tests.Scope.CapabilityFixture;
 
 namespace EvidenceHound.Core.Tests.Scope;
