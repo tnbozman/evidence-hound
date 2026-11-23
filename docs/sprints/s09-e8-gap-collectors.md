@@ -1355,7 +1355,7 @@ At the maintainer's request (2026-11-23): the example audits (`EX-E8-2026`, `EX-
 - Result (2026-11-23): through the API, the Example Pty Ltd domain folder, the evidence in Global and the example-only libraries (example baseline, loaded and stored; ASD Essentials, loaded) were removed. `HOUND_TRIAL_YES=1 make trial` applied the trial's scope again and the Sophos run published 3 items, 0 failed, to `EX-E8-Q2-2027FY`. CISO Assistant then held one audit (`EX-E8-Q2-2027FY`, "Essential Eight ML2 Q2-2027FY", in progress), one applied control (AC-AUTO-EVIDENCE), no assets, and the four Sophos evidence items. `bats scripts/tests` all ok.
 - As built: `postStartCommand` runs `scripts/dev-ca-env.sh` only; `README.md` says to run `scripts/ca-apply-scope.sh` for the example. The change takes effect the next time the dev container starts.
 ### s09-51 Hosting controls proven by Terraform tests with mock providers, read from the IaC pipeline (added 2026-11-23)
-- [ ] Done
+- [x] Done
 
 At the maintainer's request (2026-11-23), instead of an AWS variant on LocalStack: the goal is to detail the GRC platform's hosting
 controls and collect evidence for them, not to prove the VPN connects. LocalStack emulates AWS only, its free Hobby plan is for
@@ -1408,7 +1408,34 @@ commit it was proven on, without `hound` running Terraform or holding cloud cred
   report, zipped as the pipeline uploads it, replayed by `hound profile test grc-infra-controls`, gives pass for each control,
   and fail naming the broken one.
 
+- Result (2026-11-23), Terraform 1.13.4 with the OCI provider 9.14.0 from a local mirror (the cloud session cannot reach the registry;
+  CI and the dev container can): `make test-terraform` gave "Success! 12 passed, 0 failed." In a scratch copy with
+  `assign_public_ip = "true"`, `terraform test -junit-xml` gave "Failure! 11 passed, 1 failed." with `vm_has_no_public_ip`'s message.
+  Both reports, put in a scratch copy of `grc-infra-controls.tests` as the zipped artefact, replayed by
+  `hound profile test grc-infra-controls`: all-pass, missing-report and one-fails passed (13 checks each), the broken report giving
+  fail for `infrastructure.controls.vm_has_no_public_ip` and `infrastructure.tests.pass` and pass for the other eleven. Unit suite
+  1327 passed; `dotnet format` clean; `scripts/test-profiles.sh` passes for `terraform-tests`.
+- As built: code check `terraform.tests_pass` in `CodeChecks` (shares `Provenance` and `Stale` with `terraform.no_drift`); a failed
+  run counts, because a failing test fails it; skipped tests are unable to assess. Library profile `profiles/terraform-tests.yaml`
+  (`format: zip`, member `controls.xml`, `arrays:` so one suite or test reads as a list; `max_age` P8D for a weekly schedule) with
+  recordings from real `terraform test` reports. The tutorial: `infra/oci/` (`main.tf`, `variables.tf`, `versions.tf`, lock hashes for
+  five platforms, `tests/controls.tftest.hcl` with 12 runs, two of them `expect_failures` on validations,
+  `.github/workflows/controls.yml`), `profiles/grc-infra-controls.yaml` (12 per-control checks), `mappings/grc-platform-essential-eight-2023.yaml`,
+  the answers for the five backup rows changed from `m` to `c` and the audit and onboarding record written again from them
+  (5 API checks, 32 manual). `hound.yaml` gains `example-grc-infra-controls` and the platform's target. Step 6 "Prove the hosting
+  controls" in the tutorial (review is step 7), and `docs/collectors/terraform-tests.md`. CI job `terraform` (Terraform by checksum,
+  no credentials), `make test-terraform`, and the dev container's Terraform feature.
+- Deviation: a negative run per control was dropped; only the two controls the code guards itself (office range, retention) have
+  one, since a toggle to turn a control off would be worse code. Breaking a control by hand is the functional check instead.
+
 ## Discovered work
+
+- s09-51: a Terraform plan or state JSON holds sensitive values in plain text (for example an IPSec tunnel's shared secret), and
+  `terraform-drift` keeps `resource_drift` and `resource_changes` whole, so a drift on such a resource would store the secret as
+  evidence. Keep only `address` and `change.actions` in the profile, or have the pipeline redact values marked in
+  `sensitive_values` before upload. The JUnit report of `terraform-tests` holds only test names and messages.
+- s09-51: `hound profile test` prints each case's outcome, not the observation; showing it with an option would make a functional
+  check read like the finding in CISO Assistant.
 
 - s09-47: move the fictional example repo's audits to series (`EX-E8`, `EX-ESSENTIALS`, `EX-BASELINE` with cycles), with its config targets, the example run and the tests that use `EX-E8-2026` as a fixture.
 
