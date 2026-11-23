@@ -148,6 +148,7 @@ Guidance for the model, in plain Markdown.
 | `hound skill list` | Every active skill: source, version, SHA-256, steps and override. |
 | `hound skill new <name>` | Writes a skeleton to fill in. |
 | `hound skill add <file>` | Validates the skill against the defaults and the folder, then copies it in. |
-| `hound skill validate [--deny-terms <file>]` | Checks every skill and warns about anything that looks like organisation data, since skills are sent to the model provider. |
+| `hound skill validate [--deny-terms <file>]` | Checks every skill and refuses (`skill.sensitive_content`) any that holds organisation data such as an email, IP or MAC address or a deny term, since skills are sent to the model provider. |
+| `hound skill draft [--repo <repo>] [--only <name>]... [--no-model] [--show-requests]` | Drafts the organisation's own skills (`organisation-profile`, `risk-appetite`, `it-landscape`, `ai-landscape`) from your answers and the repo's systems, suppliers and capability map, through the same gate as onboarding. Identifiers are stripped before writing; each draft starts at version 1 and a re-draft shows the change and bumps it. `--no-model` writes templates with the questions as headings. Drafts go only into the skills folder, for you to review, edit and commit. |
 
 Each takes `--skills <folder>` (default `HOUND_SKILLS_PATH`, else `./skills`).

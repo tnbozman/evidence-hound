@@ -803,7 +803,7 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 - `OnboardFunctionalTests` now explains the real scope plan from the local CISO Assistant with `--no-model` and checks the counts match.
 
 ### s09-31 Draft organisation skills from onboarding (added 2026-11-22)
-- [ ] Done
+- [x] Done
 
 **Story:** As a GRC team member, I want onboarding to help me write skills about my own organisation (its business, risk appetite, IT and AI landscape and conventions), so that later onboarding and `hound explain` give advice that fits us rather than generic advice.
 
@@ -825,6 +825,15 @@ Added 2026-11-22 when s08 closed. The two Sophos tasks are built as checks in th
 - With a fake model, `hound skill draft --skills <temp>` on the example repo writes draft skills that pass `hound skill validate`, and `--show-requests` shows no secret or identifier.
 
 **Order:** after s09-30.
+
+**As built (2026-11-23)**
+- `hound skill draft [--skills <folder>] [--repo] [--only <name>]... [--no-model] [--show-requests] [--config]` drafts `organisation-profile` (supplier, system, applicability, explain), `risk-appetite` (supplier, applicability, explain), `it-landscape` (system, applicability, explain) and `ai-landscape` (supplier, system, explain). It asks each skill's questions, then sends the answers and the repo's `scope/setup.yaml`, `scope/third-parties/*.yaml` and `scope/capabilities.yaml` (when s09-28 adds it) through the onboarding gate, with requests in `onboarding/skills/requests/`.
+- `OrganisationSkills.Draft` strips secrets, deny terms, object IDs and email, IP and MAC addresses before writing; versions start at 1 and a re-draft prints the diff and bumps it. Drafts are parsed as skills before they are written, and only into the skills folder.
+- `hound skill validate` now refuses (exit 3, `skill.sensitive_content`) a skill holding organisation data, instead of warning.
+- Host names are not stripped (they cannot be told from public names such as a vendor's domain); the drafting instructions ask the model to leave them out, and deny terms catch the organisation's own domains. Environment onboarding (s09-28) offers the draft as its last step when it lands.
+
+**Functional check (2026-11-23)**
+- With a fake Anthropic server, `hound skill draft --repo <copy of the example repo> --skills <temp> --show-requests` (answers piped in) wrote four skills at version 1; the fake reply's `10.20.30.40` was written as `[ip]`; `hound skill validate --skills <temp>` printed "11 skills valid (4 from ...), 0 warnings." and exited 0. The requests shown hold only the example repo's `example.com` addresses.
 
 ### s09-32 Onboarding tutorial: Example Pty Ltd's privately hosted GRC platform (added 2026-11-23, refined the same day)
 - [ ] Done

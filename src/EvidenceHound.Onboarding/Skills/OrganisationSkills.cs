@@ -135,7 +135,7 @@ public static class OrganisationSkills
         var text = $"""
             ---
             name: {kind.Name}
-            description: {System.Text.Json.JsonSerializer.Serialize(kind.Description)}
+            description: '{kind.Description.Replace("'", "''", StringComparison.Ordinal)}'
             version: {version}
             applies_to: [{string.Join(", ", kind.AppliesTo)}]
             ---
