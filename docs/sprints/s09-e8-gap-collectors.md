@@ -754,7 +754,7 @@ Added at the maintainer's request (2026-11-23): s09-01 to s09-04 and the Microso
 - Write a skeleton for one template, fill it in, upload a fictional export with it, and see the attested result in the example audit.
 
 ### s09-06 Documentation
-- [ ] Done
+- [x] Done
 
 **Acceptance criteria**
 - `docs/collectors/m365.md` gains the application control checks, the `ThreatHunting.Read.All` permission with its justification, licence notes and limits.
@@ -769,6 +769,10 @@ Added at the maintainer's request (2026-11-23): s09-01 to s09-04 and the Microso
 - Following `docs/collectors/vuln-scan.md` verbatim, import a fictional export and see its checks.
 
 Moved from s08 on 2026-11-22 at the person's request (s08 focuses on Sophos). Was s08-03 and s08-04.
+
+**As built (2026-11-23).** `docs/collectors/m365.md` already carried the application control checks, `ThreatHunting.Read.All` with its reason, the licences and the limits (s09-01, s09-02). `docs/collectors/vuln-scan.md` gains "Scheduling exports from common scanners" (the scan, export and collector schedules, keeping older exports, scanner credentials staying with the export job, and Nessus, Tenable Vulnerability Management, Tenable Security Center, Defender Vulnerability Management and any CSV scanner), and names both checks ISM-1694 now needs. Tests: `VulnScan.Tests.DocsTests` (every check ID, setting, evidence file and problem code; the scheduling section; the ISM-1694 row) and `Cli.Tests.DocsLinkTests` (every relative link in `docs/` and the README points at a file that exists; there was no link check before). There is no markdown linter in the repo, so the link test stands in for "docs lint".
+
+**Functional check (2026-11-23).** Following the guide in a scratch folder: `hound init <repo> --evidence-root <evidence> --yes`, `hound add collector vuln-scan --name internet-facing-scans --set drop_folder=../scans/internet-facing --set format=nessus --set scope=internet_facing --set owner="Sam Example" --yes`, the fictional `internet-facing-2026-11-16.nessus` copied into the drop folder, `hound config validate` valid, then `hound run --only internet-facing-scans --no-publish`: succeeded with the three `internet_facing` checks, all failing as the guide says they should for a week-old export with an overdue exploited finding and an unsupported VPN appliance.
 
 ### s09-07 Veeam access
 - Dropped (2026-11-23): the maintainer does not want Veeam collection. Kept here as a record; not built. Backup evidence stays manual (s09-05 templates).

@@ -81,6 +81,26 @@ hound manual upload --config hound.yaml --source internet-facing-scans internet-
 
 It refuses a file that is not the source's format. If the same content is already in the folder, under any name, it copies nothing. It does not ask you to attest the file, because the scan itself is the evidence.
 
+## Scheduling exports from common scanners
+
+The collector never calls a scanner, so three things run on their own schedules: the scan, the export into the drop folder, and the collector. Set them up so that:
+
+- the scanner scans at least as often as the scope's `scan_interval_days` (daily for `internet_facing`, weekly for `common_apps`, fortnightly otherwise);
+- the export runs after the scan has finished, and writes into the source's `drop_folder`;
+- the collector's `schedule` runs after the export has landed. For example: scan at 01:00, export at 05:00, collector at 07:00.
+
+Leave older exports in the folder. They are the history that gives a finding its age when the export has no first-seen date, and the collector never deletes them. Archive exports older than your longest patch window if the folder grows too large.
+
+Any scanner credential the export job uses stays with that job, in an environment variable or a secret store on the machine that runs it. `hound` only reads files, so it holds no scanner credential.
+
+The menus and API paths below are as the vendors document them at the time of writing; check your product's own documentation for the current names.
+
+- **Nessus** (Professional or Expert): set a schedule in the scan's settings. Export a finished scan in the **Nessus** format from the scan's **Export** menu, or have a scheduled job request it through the Nessus API (`POST /scans/{scan_id}/export` with `format` set to `nessus`, then download the file once it is ready) and save it in the drop folder. Use `format: nessus`.
+- **Tenable Vulnerability Management** (Tenable.io): schedule the scan in the scan's settings, then export its latest results in the Nessus format, from the scan's export menu or through the same API pattern (`POST /scans/{scan_id}/export`, `format` set to `nessus`). Use `format: nessus`.
+- **Tenable Security Center** (Tenable.sc): schedule the scan, then download the finished scan result as a `.nessus` file into the drop folder. Use `format: nessus`.
+- **Microsoft Defender Vulnerability Management**: there is no scan to schedule, because Defender assesses onboarded devices continuously. Schedule an export instead, for example a daily job that reads the per-device software vulnerability assessment (the Defender API's `SoftwareVulnerabilitiesByMachine` export) and writes it as CSV with the columns in the example above. `LastSeenTimestamp` becomes the scan date, so a daily export keeps `scanned_in_interval` passing. Use `format: csv` with the column map above.
+- **Any other scanner**: export CSV and map its columns with the `column_` settings. Only `column_host`, `column_finding_id` and `column_severity` are required; each optional column you map makes the checks fairer, `column_patch_published` most of all.
+
 ## How a run reads the folder
 
 - Every export of the source's format is read. The same content dropped twice is read once, under its newest name.
@@ -154,7 +174,7 @@ Every open finding counts, whatever its severity, because the Essential Eight wi
 | `vuln.operating_systems.patched_in_window` | ISM-1695 (one month), with Intune compliance |
 | `vuln.operating_systems.unsupported_removed` | ISM-1501, with the Microsoft 365 operating system check and the firewall firmware check |
 
-All the rows use `all_pass`. So a deployment that maps ISM-1695 or ISM-1501 needs an `operating_systems` scan source, or those rows stay not assessed. ISM-1694, the two-week window for operating systems of internet-facing servers and network devices, is mapped to the firewall firmware check in s09-15, and will take `vuln.internet_facing.patched_in_window` too.
+All the rows use `all_pass`. So a deployment that maps ISM-1695 or ISM-1501 needs an `operating_systems` scan source, or those rows stay not assessed. ISM-1694, the two-week window (48 hours with an exploit) for operating systems of internet-facing servers and network devices, needs both `vuln.internet_facing.patched_in_window` and the Sophos Central firewall check `network.firewall.firmware_current`.
 
 ## Problems
 
