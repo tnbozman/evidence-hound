@@ -132,6 +132,17 @@ public sealed class OnboardSystemCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task A_pasted_control_character_is_dropped_from_an_answer()
+    {
+        var answers = SupplierAnswers.Replace("Alex Example\nalex@example.com\n", "Alex Example\n\u0016alex@example.com\n", StringComparison.Ordinal);
+
+        var (exit, _, error) = await RunAsync(answers);
+
+        exit.ShouldBe(ExitCodes.Ok, error);
+        Session()["owner"]!.GetValue<string>().ShouldBe("alex@example.com");
+    }
+
+    [Fact]
     public async Task Without_an_onboarding_config_a_model_session_is_refused()
     {
         var (exit, _, error) = await RunAsync(SupplierAnswers, noModel: false);

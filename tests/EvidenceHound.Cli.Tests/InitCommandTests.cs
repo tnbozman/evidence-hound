@@ -45,6 +45,17 @@ public sealed class InitCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task A_pasted_control_character_is_dropped_from_an_answer()
+    {
+        var exitCode = await Run("Example Two Pty Ltd\nEX2\n\n\n2\n2027-03-31\n\u0016grc@example.com\n", "init", Repo);
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var controls = await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "controls.yaml"), TestContext.Current.CancellationToken);
+        controls.ShouldContain("owner: grc@example.com");
+        controls.ShouldNotContain("\u0016");
+    }
+
+    [Fact]
     public async Task Folder_that_is_not_empty_is_refused()
     {
         Directory.CreateDirectory(Repo);
