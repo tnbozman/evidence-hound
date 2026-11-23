@@ -13,6 +13,9 @@ public sealed record OnboardingConfig(LlmSettings Llm, SecretReference ApiKey)
 
     public long MaxTokensPerSession { get; init; } = DefaultTokensPerSession;
 
+    /// <summary>Most drafts the model makes of a profile, each checked and its problems sent back (<c>llm.max_rounds</c>).</summary>
+    public int MaxRounds { get; init; } = 3;
+
     public string? DenyTermsFile { get; init; }
 
     public string SkillsPath { get; init; } = "/config/skills";
@@ -49,7 +52,7 @@ public sealed record ModelDefaults(IReadOnlyDictionary<LlmProvider, string> Mode
 public static class OnboardingConfigLoader
 {
     private static readonly string[] TopKeys = ["llm", "skills_path", "profiles_path"];
-    private static readonly string[] LlmKeys = ["provider", "model", "api_key", "effort", "max_tokens_per_session", "deny_terms_file"];
+    private static readonly string[] LlmKeys = ["provider", "model", "api_key", "effort", "max_tokens_per_session", "max_rounds", "deny_terms_file"];
     private static readonly string[] Efforts = ["low", "medium", "high", "max"];
 
     public static string[] Providers { get; } = ["anthropic", "openai"];
@@ -132,6 +135,12 @@ public static class OnboardingConfigLoader
             problems.Add(new Problem("onboarding.budget_invalid", $"{At(source, budgetNode)}: llm.max_tokens_per_session must be a whole number above 0."));
         }
 
+        var rounds = 3;
+        if (Child(llm, "max_rounds") is YamlScalarNode roundsNode && (!int.TryParse(roundsNode.Value, out rounds) || rounds <= 0))
+        {
+            problems.Add(new Problem("onboarding.rounds_invalid", $"{At(source, roundsNode)}: llm.max_rounds must be a whole number above 0."));
+        }
+
         var model = (Child(llm, "model") as YamlScalarNode)?.Value?.Trim();
         string? resolved = null;
         if (provider is { } p)
@@ -148,6 +157,7 @@ public static class OnboardingConfigLoader
             : Result.Ok(new OnboardingConfig(new LlmSettings(provider!.Value, resolved!, effort is { Length: > 0 } ? effort : null), key!)
             {
                 MaxTokensPerSession = budget,
+                MaxRounds = rounds,
                 DenyTermsFile = Text(llm, "deny_terms_file"),
                 SkillsPath = Text(root, "skills_path") ?? "/config/skills",
                 ProfilesPath = Text(root, "profiles_path") ?? "/config/profiles",

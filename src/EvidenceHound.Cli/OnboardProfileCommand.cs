@@ -37,7 +37,7 @@ internal static class OnboardProfileCommand
         var set = new Option<string[]>("--set") { Description = "An instance setting for the sample run, as name=value. Repeat for more.", AllowMultipleArgumentsPerToken = false };
         var secret = new Option<string[]>("--secret") { Description = "A secret for the sample run, as name=<env:VAR or file:/path>. Repeat for more." };
         var sample = new Option<bool>("--sample") { Description = "Run each draft once, read-only, against the API without asking first." };
-        var rounds = new Option<int>("--rounds") { Description = $"Most drafts the model makes. Default: {ProfileDraft.DefaultRounds}.", DefaultValueFactory = _ => ProfileDraft.DefaultRounds };
+        var rounds = new Option<int?>("--rounds") { Description = "Most drafts the model makes. Default: llm.max_rounds in onboarding.yaml, else 3." };
         var show = new Option<bool>("--show-requests") { Description = "Print each request to the model before it is sent." };
         var command = new Command("profile", "Draft, sample and test the profile for a system's accepted API checks, for review.")
         {
@@ -135,7 +135,7 @@ internal static class OnboardProfileCommand
 
         Directory.CreateDirectory(options.Profiles);
         var state = new DraftState(options, checks, string.Join("\n\n", api), sampling, secrets, prompt, terminal);
-        var outcome = await ProfileDraft.RunAsync(model.Model, chosen, state.Context, state.CheckAsync, options.Rounds, cancellationToken);
+        var outcome = await ProfileDraft.RunAsync(model.Model, chosen, state.Context, state.CheckAsync, options.Rounds ?? model.MaxRounds, cancellationToken);
         if (outcome is not Result<DraftOutcome>.Ok { Value: var done })
         {
             return Result.Fail<int>(((Result<DraftOutcome>.Fail)outcome).Errors);
@@ -164,7 +164,7 @@ internal static class OnboardProfileCommand
         IReadOnlyList<(string Key, string Value)> Settings,
         IReadOnlyList<(string Key, string Value)> Secrets,
         bool Sample,
-        int Rounds,
+        int? Rounds,
         bool Show);
 
     /// <summary>What one draft round checks, and what carries over between rounds: the shapes of the last sample, and the confirmed results.</summary>

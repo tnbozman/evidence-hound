@@ -86,7 +86,7 @@ internal static class OnboardSystemCommand
     }
 
     /// <summary>The model behind the gate and the skills to guide it; none with <c>--no-model</c>.</summary>
-    internal sealed record Assistant(IDraftingModel Model, SkillCatalogue Skills, SessionRecord Record, ModelUsed Used, GuardTerms Terms);
+    internal sealed record Assistant(IDraftingModel Model, SkillCatalogue Skills, SessionRecord Record, ModelUsed Used, GuardTerms Terms, int MaxRounds = 3);
 
     private static async Task<int> RunAsync(Settings settings, Terminal terminal, ILogger logger, IConfiguration configuration, CancellationToken cancellationToken)
     {
@@ -185,7 +185,7 @@ internal static class OnboardSystemCommand
         var record = new SessionRecord(recordFolder);
         var terms = new GuardTerms(new Dictionary<string, string>(StringComparer.Ordinal) { ["llm_api_key"] = secret.Reveal() }, deny);
         var guarded = new GuardedModel(OnboardCommands.Model(config.Llm, secret, configuration), terms, record, config.MaxTokensPerSession, show ? terminal.Error : null);
-        return Result.Ok(new Assistant(guarded, catalogue, record, new ModelUsed(OnboardingConfigLoader.NameOf(config.Llm.Provider), config.Llm.Model), terms));
+        return Result.Ok(new Assistant(guarded, catalogue, record, new ModelUsed(OnboardingConfigLoader.NameOf(config.Llm.Provider), config.Llm.Model), terms, config.MaxRounds));
     }
 
     /// <summary>The questions that start a session: who reviews, who owns the system, the product, and who supplies it. Null when input ended.</summary>
