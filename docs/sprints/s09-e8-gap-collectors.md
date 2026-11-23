@@ -1178,7 +1178,7 @@ Design decision 10, and the reworded rule: no model in collection, and no eviden
 - Deviations: `--check <check id>=<result>` gives one check a different result from `--result` (a source can have several checks). `hound manual approve` takes `--config`, as `hound manual upload` does, and has a stop answer (`s`). A proposal is refused when the file is already attested, and is skipped in the walk when the file changed after it was proposed. Extra tests: `AgentSkillTests.Manual_evidence_skill_proposes_from_the_file_and_never_attests`.
 
 ### s09-43 hound init's compliance owner defaults to the accountable executive (added 2026-11-23)
-- [ ] Done
+- [x] Done
 
 Found while resetting the trial for s09-34 to s09-42. The compliance owner default was `it@example.com`, the fictional IT person who owns systems. Compliance is owned by the accountable executive, `ceo@example.com` in the fictional organisation (the dev seed creates both users).
 
@@ -1193,8 +1193,13 @@ Found while resetting the trial for s09-34 to s09-42. The compliance owner defau
 
 **Functional check**
 - `make run ARGS="init <temp folder> --yes"`, then `scope/controls.yaml` shows `owner: ceo@example.com` and `hound scope validate` passes.
+- Result (2026-11-23): `make run ARGS="init <scratch>/init-check --yes"` wrote 8 files and audit EX-E8-2027; `scope/controls.yaml` has `owner: ceo@example.com`; `hound scope validate` answered "scope valid: 1 domain(s), 1 control(s), 1 audit(s)" (exit 0); `hound init --help` says "Default: ceo@example.com." for `--owner`.
+- As built: `DefaultOwner` in `InitCommand` and the table in `docs/guided-setup.md`. The trial's own `hound add` steps still name `it@example.com` as the system and control owner, which is right for those.
 
 ## Discovered work
+
+- s09-43: in the dev container, `make test` has one failure, `PublishCommandTests.Without_a_url_exits_three`, because the container sets `HOUND_CA_URL` and the test reads the process environment; it passes with `env -u HOUND_CA_URL make test`. Have the test (or `Publish`) not see the ambient variable.
+- s09-43: in the dev container, `make ca-up` seeds the `make ca-up` instance but `scripts/ca-apply-scope.sh` applies the scope to `http://backend:8000/api/` (the container's `HOUND_CA_URL` overrides the env file's URL) with the other instance's token, so the seed ends with HTTP 401. Have `ca-seed.sh` pass the URL it wrote.
 
 - s09-42: an agent finds files waiting for a proposal by listing the drop folder. Add `hound manual pending --json` (files with neither an attestation nor a proposal, per source, with what each check asks for).
 - s09-42: `hound manual upload` writes an attestation without the file's hash, so a file changed after a person attested it unaided is not noticed. Record `file_sha256` there too.
