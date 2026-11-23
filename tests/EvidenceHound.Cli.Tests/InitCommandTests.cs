@@ -25,6 +25,28 @@ public sealed class InitCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Every_answer_can_be_given_as_an_option()
+    {
+        // s09-41: an agent gives every answer as an option, so nothing is asked even without --yes, and reads the result as JSON.
+        var exitCode = await Run(
+            "", "init", Repo, "--org", "Example Two Pty Ltd", "--code", "EX2", "--url", "https://ciso.example.com/api/", "--time-zone", "Australia/Perth", "--level", "1",
+            "--due", "2027-03-31", "--owner", "grc@example.com", "--assistant", "claude", "--json");
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        _error.ToString().ShouldNotContain("]: ");
+        _error.ToString().ShouldNotContain("Organisation name");
+        var answer = System.Text.Json.Nodes.JsonNode.Parse(_output.ToString())!;
+        answer["organisation"]!.GetValue<string>().ShouldBe("Example Two Pty Ltd");
+        answer["audit"]!.GetValue<string>().ShouldBe("EX2-E8-2027");
+        var files = answer["files"]!.AsArray().Select(f => f!.GetValue<string>()).ToArray();
+        files.ShouldContain("scope/setup.yaml");
+        files.ShouldContain("CLAUDE.md");
+        files.ShouldContain(".claude/skills/onboard-the-organisation/SKILL.md");
+        (await File.ReadAllTextAsync(Path.Combine(Repo, "hound.yaml"), TestContext.Current.CancellationToken)).ShouldContain("Australia/Perth");
+        await ShouldValidateAsync();
+    }
+
+    [Fact]
     public async Task Answers_on_stdin_set_the_organisation_code_level_and_owner()
     {
         // Organisation, code, CISO Assistant URL, time zone, maturity level, due date, owner.

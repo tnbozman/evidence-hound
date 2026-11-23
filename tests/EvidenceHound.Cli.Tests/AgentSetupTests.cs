@@ -11,6 +11,7 @@ public sealed partial class AgentSetupTests : IDisposable
     internal static readonly string[] Skills =
     [
         "onboard-a-system-with-hound", "assess-a-supplier", "read-an-api-specification", "import-an-audit-workbook", "write-a-profile", "review-before-apply",
+        "onboard-the-organisation", "onboard-the-environment", "onboard-a-third-party", "onboard-an-audit",
     ];
 
     internal static readonly string[] Rules =
@@ -63,7 +64,7 @@ public sealed partial class AgentSetupTests : IDisposable
         var onboarding = await ReadAsync(".github", "agents", "hound-onboarding.agent.md");
         onboarding.ShouldStartWith("---\nname: hound-onboarding\ndescription: ");
         onboarding.ShouldContain("\ntools: [\"read\", \"search\", \"edit\", \"execute\"]\n");
-        onboarding.ShouldContain("\nskills: [\"onboard-a-system-with-hound\", \"assess-a-supplier\", \"read-an-api-specification\", \"import-an-audit-workbook\", \"write-a-profile\"]\n");
+        onboarding.ShouldContain("\nskills: [\"onboard-the-organisation\", \"onboard-the-environment\", \"onboard-a-third-party\", \"assess-a-supplier\", \"onboard-a-system-with-hound\", \"read-an-api-specification\", \"onboard-an-audit\", \"import-an-audit-workbook\", \"write-a-profile\"]\n");
 
         // The review agent reads and runs hound; it cannot edit a file.
         var review = await ReadAsync(".github", "agents", "hound-review.agent.md");
@@ -132,7 +133,7 @@ public sealed partial class AgentSetupTests : IDisposable
             .. Directory.GetFiles(Path.Combine(_root, ".claude"), "*.md", SearchOption.AllDirectories),
             .. Directory.GetFiles(Path.Combine(_root, ".github"), "*.md", SearchOption.AllDirectories),
         ];
-        written.Length.ShouldBe(1 + 6 + 2 + 2 + 1 + 6);
+        written.Length.ShouldBe(1 + Skills.Length + 2 + 2 + 1 + Skills.Length);
         foreach (var file in written)
         {
             // After any frontmatter comes hound's marker with its version, then the rules, before anything else.

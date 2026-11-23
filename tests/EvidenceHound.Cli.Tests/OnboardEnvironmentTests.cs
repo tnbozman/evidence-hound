@@ -47,6 +47,55 @@ public sealed class OnboardEnvironmentTests : IDisposable
     private string Repo => Path.Combine(_root, "repo");
 
     [Fact]
+    public async Task Agent_decides_capabilities_through_pending_and_decide()
+    {
+        // s09-41: no prompt is answered. pending lists what is undecided; decide records one mitigation, with no approver.
+        var (exit, output, error) = await AgentAsync("pending");
+        exit.ShouldBe(ExitCodes.Ok, error);
+        var pending = System.Text.Json.Nodes.JsonNode.Parse(output)!;
+        pending["pending"]!.AsArray().Select(m => m!["mitigation"]!.GetValue<string>()).ShouldBe(["pa", "pos", "mfa", "rap", "ac", "rmom", "uah", "rb"]);
+        pending["pending"]![0]!["requirements"]!.GetValue<int>().ShouldBeGreaterThan(0);
+        pending["systems"]!.AsArray().Select(s => s!.GetValue<string>()).ShouldContain("Example 365");
+
+        (exit, output, error) = await AgentAsync("decide", "mfa", "--provided-by", "system", "--system", "Example 365", "--reason", "Entra ID enforces multi-factor authentication.", "--evidence", "collector");
+        exit.ShouldBe(ExitCodes.Ok, error);
+        System.Text.Json.Nodes.JsonNode.Parse(output)!["approved"]!.GetValue<bool>().ShouldBeFalse();
+        (exit, _, error) = await AgentAsync("decide", "pa", "--provided-by", "gap", "--reason", "No product patches applications yet.");
+        exit.ShouldBe(ExitCodes.Ok, error);
+
+        var parsed = ScopeLoader.Parse(
+            new ScopeSource("setup.yaml", "organisation:\n  root_folder: Global\n"), null, [],
+            capabilities: new ScopeSource("capabilities.yaml", await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "capabilities.yaml"), _ct)));
+        parsed.Scope.Capabilities!.Mitigations.Select(m => (m.Mitigation, m.ProvidedBy, m.ApprovedBy)).ShouldBe([("pa", CapabilityProvision.Gap, null), ("mfa", CapabilityProvision.System, null)]);
+        parsed.Scope.Capabilities.Mitigations[1].Reason.ShouldBe("Entra ID enforces multi-factor authentication.");
+
+        // Deciding again replaces a draft. What is not valid is refused: a mitigation the framework lacks, a system decision without a system.
+        (exit, _, error) = await AgentAsync("decide", "pa", "--provided-by", "manual", "--reason", "The owner reports patching each month.");
+        exit.ShouldBe(ExitCodes.Ok, error);
+        (exit, _, error) = await AgentAsync("decide", "nope", "--provided-by", "gap", "--reason", "None.");
+        exit.ShouldBe(ExitCodes.Configuration);
+        error.ShouldContain("capability.mitigation_unknown");
+        (exit, _, error) = await AgentAsync("decide", "rb", "--provided-by", "system", "--reason", "The backup service.");
+        exit.ShouldBe(ExitCodes.Configuration);
+        error.ShouldContain("capability.systems_missing");
+
+        (exit, output, error) = await AgentAsync("pending");
+        System.Text.Json.Nodes.JsonNode.Parse(output)!["pending"]!.AsArray().Count.ShouldBe(6);
+        System.Text.Json.Nodes.JsonNode.Parse(output)!["drafts"]!.AsArray().Select(m => m!["mitigation"]!.GetValue<string>()).ShouldBe(["pa", "mfa"]);
+
+        // A person approves each on a terminal, and an approved decision is not replaced by an agent.
+        (exit, output, error) = await OnboardAgentCommandTests.RunAsync(["approve", "--repo", Repo], "Sam Example\ny\ny\n", terminal: true, Path.Combine(_root, "home"), _ct);
+        exit.ShouldBe(ExitCodes.Ok, error);
+        output.ShouldContain("Approved 2 of 2.");
+        (exit, _, error) = await AgentAsync("decide", "mfa", "--provided-by", "gap", "--reason", "Changed my mind.");
+        exit.ShouldBe(ExitCodes.Configuration);
+        error.ShouldContain("capability.already_approved");
+    }
+
+    private Task<(int Exit, string Output, string Error)> AgentAsync(params string[] args) =>
+        OnboardAgentCommandTests.RunAsync(["onboard", "environment", .. args, "--repo", Repo, "--json"], "", terminal: false, Path.Combine(_root, "home"), _ct);
+
+    [Fact]
     public async Task Named_system_and_supplier_are_queued_for_onboarding()
     {
         var (exit, output, error) = await RunAsync(Answers);
