@@ -17,6 +17,7 @@ COPY examples/compliance-repo/.gitignore examples/compliance-repo/
 COPY onboarding/models.yaml onboarding/
 # hound onboard's default skills, built into hound.
 COPY skills/ skills/
+COPY agent/ agent/
 RUN dotnet restore src/EvidenceHound.Cli/EvidenceHound.Cli.csproj --locked-mode
 # The SDK stage runs on the build machine's platform and publishes for the target architecture only
 # (one of the csproj's RuntimeIdentifiers), so arm64 needs no emulation and other platforms' native

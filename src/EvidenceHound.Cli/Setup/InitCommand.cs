@@ -28,11 +28,12 @@ internal static class InitCommand
         var due = new Option<string?>("--due") { Description = "The audit's due date, yyyy-MM-dd. Default: 30 June next year." };
         var owner = new Option<string?>("--owner") { Description = $"The email of whoever owns compliance. Default: {DefaultOwner}." };
         var evidenceRoot = new Option<string>("--evidence-root") { Description = "Where the runner keeps evidence, outside the repo.", DefaultValueFactory = _ => DefaultEvidenceRoot };
+        var assistant = new Option<string?>("--assistant") { Description = "Also set up a coding assistant in the repo, as 'hound agent setup' does: claude, copilot, both or none. Default: none." };
         var yes = new Option<bool>("--yes", "-y") { Description = "Ask nothing: take the options given and the defaults." };
 
         var init = new Command("init", "Write a new organisation's compliance repo: config, scope, an Essential Eight audit and its mapping. Asks each question it needs.")
         {
-            folder, org, code, url, timeZone, level, due, owner, evidenceRoot, yes,
+            folder, org, code, url, timeZone, level, due, owner, evidenceRoot, assistant, yes,
         };
         init.SetAction(async (parseResult, cancellationToken) =>
         {
@@ -54,13 +55,25 @@ internal static class InitCommand
                 await wizard.AskAsync("Compliance owner's email, as a CISO Assistant user", parseResult.GetValue(owner), DefaultOwner, cancellationToken),
                 parseResult.GetRequiredValue(evidenceRoot));
 
-            return await Check(answers).Match(
+            var written = await Check(answers).Match(
                 organisation => WriteAsync(target, organisation, terminal, logger, registry, configuration, cancellationToken),
                 problems => Task.FromResult(Log.Problems(logger, problems)));
+            if (written != ExitCodes.Ok)
+            {
+                return written;
+            }
+
+            // The offer at the end: the assistant files, as hound agent setup writes them.
+            var wanted = await wizard.AskAsync(AssistantQuestion, parseResult.GetValue(assistant), "none", cancellationToken);
+            return AgentCommands.Parse(wanted) is { } chosen
+                ? await AgentCommands.SetupAsync(target.FullName, chosen, terminal, logger, cancellationToken)
+                : ExitCodes.Ok;
         });
 
         return init;
     }
+
+    internal const string AssistantQuestion = "Set up an AI assistant in this repo (claude, copilot, both or none)";
 
     private sealed record Answers(string Name, string Code, string Url, string TimeZone, string Level, string Due, string Owner, string EvidenceRoot);
 
@@ -132,7 +145,7 @@ internal static class InitCommand
         }
 
         await terminal.Output.WriteLineAsync(string.Create(CultureInfo.InvariantCulture, $"Wrote {org.Name}'s compliance repo to {target.FullName}: {files.Count + RepoTemplate.Copied.Count} files, audit {org.AuditRef}."));
-        await terminal.Output.WriteLineAsync("Next: add systems, controls and collectors (see README.md), then hound scope plan and apply.");
+        await terminal.Output.WriteLineAsync("Next: add systems, controls and collectors (see README.md), then hound scope plan and apply. hound agent setup writes the files a coding assistant needs to help.");
         return ExitCodes.Ok;
     }
 
