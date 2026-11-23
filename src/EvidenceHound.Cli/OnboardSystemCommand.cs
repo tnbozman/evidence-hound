@@ -194,7 +194,7 @@ internal static class OnboardSystemCommand
         string?[] answers =
         [
             await prompt.AskAsync("Your name, recorded as who accepted each decision", cancellationToken),
-            await prompt.AskAsync("System owner", cancellationToken),
+            await prompt.AskEmailAsync("System owner's email, as a CISO Assistant user (hound matches the owner by email)", cancellationToken),
             await prompt.AskAsync("Product, as the vendor names it", cancellationToken),
             await prompt.AskAsync("Supplier ref_id, such as SUP-EXAMPLE", cancellationToken),
             await prompt.AskAsync("Supplier name", cancellationToken),
@@ -662,6 +662,22 @@ internal static class OnboardSystemCommand
         {
             var answer = await AskAsync(@default.Length > 0 ? $"{question} [{@default}]" : question, cancellationToken);
             return string.IsNullOrEmpty(answer) ? @default : answer;
+        }
+
+        /// <summary>Asks until the answer is an email, because CISO Assistant matches people by email; null once the input has ended.</summary>
+        public async Task<string?> AskEmailAsync(string question, CancellationToken cancellationToken)
+        {
+            while (await AskAsync(question, cancellationToken) is { } answer)
+            {
+                if (answer.Contains('@', StringComparison.Ordinal))
+                {
+                    return answer;
+                }
+
+                await terminal.Error.WriteLineAsync($"'{answer}' is not an email. Give the email of a user in CISO Assistant.".AsMemory(), cancellationToken);
+            }
+
+            return null;
         }
 
         public async Task<string?> AskUntilAnsweredAsync(string question, CancellationToken cancellationToken)

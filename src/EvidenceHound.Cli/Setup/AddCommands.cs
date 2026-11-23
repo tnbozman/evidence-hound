@@ -69,7 +69,7 @@ internal static class AddCommands
                 ("name", new YamlText(systemName)),
                 ("ref_id", new YamlText(await wizard.AskAsync("Ref ID", parseResult.GetValue(refId), systemName.Length > 0 ? $"SYS-{Wizard.Slug(systemName)}" : "", cancellationToken))),
                 ("type", new YamlText(await wizard.AskAsync("Type (primary or supporting)", parseResult.GetValue(type), "supporting", cancellationToken))),
-                ("owner", new YamlText(await wizard.AskAsync("Owner's email", parseResult.GetValue(owner), "", cancellationToken))),
+                ("owner", new YamlText(await wizard.AskAsync("Owner's email, as a CISO Assistant user", parseResult.GetValue(owner), "", cancellationToken))),
                 ("description", new YamlText(await wizard.AskAsync("Description", parseResult.GetValue(description), "", cancellationToken))),
                 ("parents", new YamlFlowList(Wizard.List(await wizard.AskAsync("Systems it supports, comma-separated", parseResult.GetValue(parents), "", cancellationToken)))));
             system = new YamlMap([.. Ordered(system, "name", "ref_id", "type", "description", "owner", "parents")]);
@@ -139,7 +139,7 @@ internal static class AddCommands
                 ("ref_id", new YamlText(controlRef)),
                 ("name", new YamlText(controlName)),
                 ("domain", new YamlText(domainName)),
-                ("owner", new YamlText(await wizard.AskAsync("Owner's email", parseResult.GetValue(owner), "", cancellationToken))),
+                ("owner", new YamlText(await wizard.AskAsync("Owner's email, as a CISO Assistant user", parseResult.GetValue(owner), "", cancellationToken))),
                 ("status", new YamlText("to_do")),
                 ("category", new YamlText(await wizard.AskAsync("Category (policy, process, technical, physical or procedure)", parseResult.GetValue(category), "technical", cancellationToken))),
                 ("systems", new YamlFlowList(Wizard.List(await wizard.AskAsync("Systems it covers, comma-separated", parseResult.GetValue(systems), "", cancellationToken)))));

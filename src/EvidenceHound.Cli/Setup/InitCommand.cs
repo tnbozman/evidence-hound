@@ -51,7 +51,7 @@ internal static class InitCommand
                 await wizard.AskAsync("Time zone", parseResult.GetValue(timeZone), DefaultTimeZone, cancellationToken),
                 await wizard.AskAsync("Essential Eight maturity level to assess (1, 2 or 3)", parseResult.GetValue(level), "2", cancellationToken),
                 await wizard.AskAsync("Audit due date", parseResult.GetValue(due), DefaultDue(AuditSeries.Today(configuration)), cancellationToken),
-                await wizard.AskAsync("Compliance owner's email", parseResult.GetValue(owner), DefaultOwner, cancellationToken),
+                await wizard.AskAsync("Compliance owner's email, as a CISO Assistant user", parseResult.GetValue(owner), DefaultOwner, cancellationToken),
                 parseResult.GetRequiredValue(evidenceRoot));
 
             return await Check(answers).Match(

@@ -112,8 +112,8 @@ public sealed class OnboardSystemCommandTests : IDisposable
         var (exit, output, error) = await RunAsync(answers);
 
         exit.ShouldBe(ExitCodes.Ok, error);
-        output.ShouldContain("System owner's email, as a CISO Assistant user");
-        output.ShouldContain("'Alex Example' is not an email");
+        (output + error).ShouldContain("System owner's email, as a CISO Assistant user");
+        (output + error).ShouldContain("'Alex Example' is not an email");
         Session()["owner"]!.GetValue<string>().ShouldBe("alex@example.com");
     }
 
