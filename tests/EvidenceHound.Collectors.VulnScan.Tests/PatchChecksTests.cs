@@ -23,7 +23,8 @@ public class PatchChecksTests
     public void Check_ids_are_per_scope()
     {
         PatchChecks.Ids("common_apps").ShouldBe(["vuln.common_apps.scanned_in_interval", "vuln.common_apps.patched_in_window", "vuln.common_apps.unsupported_removed"]);
-        PatchChecks.All.Count.ShouldBe(12);
+        PatchChecks.Ids("other_apps").ShouldBe(["vuln.other_apps.scanned_in_interval", "vuln.other_apps.patched_in_window"]);
+        PatchChecks.All.Count.ShouldBe(11);
     }
 
     [Fact]

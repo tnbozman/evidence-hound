@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.Json.Nodes;
-using EvidenceHound.Core.Checks;
 using EvidenceHound.Core;
+using EvidenceHound.Core.Checks;
 using EvidenceHound.Core.Results;
 using EvidenceHound.Core.Secrets;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -169,11 +169,11 @@ public sealed class VulnScanCollectorTests : IDisposable
     }
 
     [Fact]
-    public void Describes_all_twelve_checks_and_an_instance_emits_its_scope_s_three()
+    public void Describes_all_eleven_checks_and_an_instance_emits_its_scope_s_three()
     {
         var description = new VulnScanCollector().Describe();
 
-        description.Checks.Count.ShouldBe(12);
+        description.Checks.Count.ShouldBe(11);
         description.ChecksFrom!(new CollectorSettings(Settings())).ShouldBe(PatchChecks.Ids("internet_facing"));
     }
 

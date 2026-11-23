@@ -21,12 +21,15 @@ public sealed class VulnScanCollector : ICollector
     public string Version => "1.0.0";
 
     public CollectorDescription Describe() => new(
-        [],
+        PatchChecks.All,
         [
             new(VulnScanSettings.DropFolder, "Folder the scanner exports are dropped in. A relative path is resolved against the config file's folder.", Required: true, IsPath: true),
             new(VulnScanSettings.Format, "Export format: nessus (Nessus v2 .nessus files) or csv (with the column settings below).", Required: true),
             new(VulnScanSettings.Scope, $"What the scans cover: {string.Join(", ", VulnScanSource.Scopes)}.", Required: true),
             new(VulnScanSettings.Owner, "Who owns the scans and fixes what they find.", Required: true),
+            new(VulnScanSettings.ScanIntervalDays, "Most days between scans. Default for maturity level 2: 1 for internet_facing, 7 for common_apps, 14 otherwise.", Required: false),
+            new(VulnScanSettings.PatchWindowDays, "Most days a finding may stay open after its patch is published. Default: 14 for internet_facing and common_apps, 30 otherwise.", Required: false),
+            new(VulnScanSettings.ExploitedPatchWindowHours, "Most hours a finding with a known exploit may stay open. Default: 48 for internet_facing, otherwise the patch window.", Required: false),
             new(VulnScanSettings.ColumnHost, "CSV only, required: the column with the host name.", Required: false),
             new(VulnScanSettings.ColumnFindingId, "CSV only, required: the column that identifies the finding, such as a plugin ID or CVE.", Required: false),
             new(VulnScanSettings.ColumnSeverity, "CSV only, required: the severity column (info, low, medium, high, critical, or 0 to 4).", Required: false),
@@ -40,7 +43,9 @@ public sealed class VulnScanCollector : ICollector
         ],
         [])
     {
-        ChecksFrom = _ => [],
+        ChecksFrom = settings => settings.Find(VulnScanSettings.Scope) is { } scope && VulnScanSource.Scopes.Contains(scope, StringComparer.Ordinal)
+            ? PatchChecks.Ids(scope)
+            : [],
     };
 
     public async Task<Result<CollectionResult>> CollectAsync(CollectorContext context, CancellationToken cancellationToken)
@@ -48,11 +53,11 @@ public sealed class VulnScanCollector : ICollector
         ArgumentNullException.ThrowIfNull(context);
         cancellationToken.ThrowIfCancellationRequested();
         return await VulnScanSource.FromSettings(context.Settings)
-            .BindAsync(async source => (await ReadAsync(source, cancellationToken)).Bind(files => Assess(source, files)));
+            .BindAsync(async source => (await ReadAsync(source, cancellationToken)).Bind(files => Assess(source, files, context.Clock.UtcNow, context.Name)));
     }
 
-    private static Result<CollectionResult> Assess(VulnScanSource source, IReadOnlyList<ExportFile> files) =>
-        ScanFolder.Read(files, file => Parse(source, file)).Map(folder =>
+    private static Result<CollectionResult> Assess(VulnScanSource source, IReadOnlyList<ExportFile> files, DateTimeOffset now, string name) =>
+        ScanFolder.Read(files, file => Parse(source, file)).Bind(folder => PatchChecks.Assess(source, folder, now, name).Map(checks =>
         {
             var hashes = files.GroupBy(f => f.FileName, StringComparer.Ordinal).ToDictionary(g => g.Key, g => g.First(), StringComparer.Ordinal);
             var runs = (folder.Current is { } current ? [current, .. folder.History] : folder.History).Select(r => (r, hashes[r.FileName].ContentHash));
@@ -62,10 +67,11 @@ public sealed class VulnScanCollector : ICollector
                     CollectedEvidence.FromBytes(scan.FileName, source.Format == ScanFormat.Nessus ? "application/xml" : "text/csv", hashes[scan.FileName].Content),
                     ScanEvidence.Scan(source, scan, hashes[scan.FileName].ContentHash),
                     ScanEvidence.History(source, runs),
+                    ScanEvidence.Assessment(source, PatchChecks.Assessment(source, folder)),
                 ]
                 : [ScanEvidence.History(source, runs)];
-            return new CollectionResult([], evidence, []);
-        });
+            return new CollectionResult(checks, evidence, []);
+        }));
 
     private static Result<ScanRun> Parse(VulnScanSource source, ExportFile file) => source.Format == ScanFormat.Nessus
         ? NessusParser.Parse(file.FileName, file.Content)
