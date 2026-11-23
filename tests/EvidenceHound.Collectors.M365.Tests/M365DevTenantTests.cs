@@ -54,7 +54,7 @@ public sealed class M365DevTenantTests
 
         var result = (await CollectAsync(server)).Value();
 
-        result.Checks.Count.ShouldBe(11);
+        result.Checks.Count.ShouldBe(13);
         result.Checks.Where(c => c.Outcome != CheckOutcome.Pass).Select(c => $"{c.CheckId.Value}: {c.Observation}").ShouldBeEmpty();
     }
 
