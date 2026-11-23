@@ -1619,7 +1619,7 @@ At the maintainer's request (2026-11-23): "we are self-hosting CISO Assistant an
 - As built: `scripts/lib/trial.sh` gains `trial_scene`, `trial_systems`, `trial_system_product`, `trial_system_solution`, `trial_add_target` (a single `target:` becomes `targets:`; a target is added once, inside the block), `trial_iac_dev_sets`, `trial_controls_report_args`; `trial_brief` and `trial_stage_ready` take the system (four third parties; a control naming the system). `scripts/trial.sh`: the scene after the workspace; stage 5 the four third parties; `onboard_system` runs stages 6 to 8 for `GRC-PLATFORM` and 9 to 11 for `OFFICE-FIREWALL`; `wire_audit` copies the tutorial's system mapping and adds its target; step 12 runs `terraform test` when Terraform is there, starts `make iac-dev` with that report, adds `grc-infra-controls` and `grc-infra-drift`, and offers a `drift` run; step 13 Sophos Central for `OFFICE-FIREWALL`; step 14 Microsoft 365. `examples/trial/third-parties`: Oracle, Sophos, CISO Assistant and Evidence Hound; the managed service provider is removed. `docs/tutorials/local-trial.md` follows the new order.
 
 ### s09-58 Fictional scan exports for the trial (`make scan-dev`)
-- [ ] Done
+- [ ] Done (ticked once CI's trial job publishes the scans)
 
 Added at the maintainer's request (2026-11-23): s09-03 and s09-04 need a testbed, as the Microsoft 365 and Sophos dev servers are for theirs.
 
@@ -1640,6 +1640,14 @@ Added at the maintainer's request (2026-11-23): s09-03 and s09-04 need a testbed
 
 **Functional check**
 - `make scan-dev ARGS="--variant gaps --out <dir>"`, then `hound run --no-publish` for the four sources: each fails what the tutorial table says. CI's trial job publishes the compliant estate to the local CISO Assistant.
+
+**As built (2026-11-23)**
+- `src/EvidenceHound.ScanDev` (`scan-dev`, not in the runner image): `ScanDevEstate` describes the estate once (four scans with hosts and findings dated in days before today, six deviations), `ScanExports` renders Nessus XML and the Defender CSV, `ScanDevWriter` replaces each scope folder's exports, `ScanDevOptions` parses `--variant`, `--deviation`, `--out` and `--today`. Owner `it@example.com`, hosts `*.example.com`, documentation addresses.
+- Deviations: `internet-facing-scan-stale`, `exploited-web-flaw-unpatched`, `unsupported-vpn-appliance`, `browser-patch-overdue`, `os-update-overdue`, `unsupported-laptop-os`. The gaps estate fails six of the eleven checks (other applications stay compliant).
+- Trial step 15 (`scans` in `scripts/trial.sh`), with `trial_scan_source_names` and `trial_scan_source_args` in `scripts/lib/trial.sh`. The bats test was written alongside the helpers rather than before them.
+
+**Functional result (2026-11-23)**
+- In a scratch repo: `scan-dev --variant compliant --out ../scans`, the four sources added with `hound add collector vuln-scan --yes` from the printed settings through the trial helpers, `hound config validate` valid, `hound run --only <each> --no-publish`: 3, 3, 2 and 3 passed, none failed. Then `--variant gaps` and the same runs: internet-facing 0 passed 3 failed, laptops 2 and 1, other apps 2 and 0, operating systems 1 and 2, as the tutorial table says; each folder held only the new export. `ScanDevEstateTests` (8) pass; `bats scripts/tests` all ok; ShellCheck clean. Publishing to CISO Assistant runs in CI's trial job (dispatched on this branch).
 
 ## Discovered work
 
