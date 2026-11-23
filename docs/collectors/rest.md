@@ -1,6 +1,6 @@
 # REST collector and profiles
 
-The built-in `rest` collector reads any HTTP API described by a **profile**: a YAML file that says how to sign in, which lists to read, and which checks to run over them. A new system, or a new check on a system, is a profile change, not a code change or a release. Sophos Central is read this way ([`profiles/sophos-central.yaml`](../../profiles/sophos-central.yaml), [guide](sophos.md)), and so is infrastructure drift from an IaC pipeline's plan artefact ([`profiles/terraform-drift.yaml`](../../profiles/terraform-drift.yaml), [guide](terraform-drift.md)).
+The built-in `rest` collector reads any HTTP API described by a **profile**: a YAML file that says how to sign in, which lists to read, and which checks to run over them. A new system, or a new check on a system, is a profile change, not a code change or a release. Sophos Central is read this way ([`profiles/sophos-central.yaml`](../../profiles/sophos-central.yaml), [guide](sophos.md)), infrastructure drift from an IaC pipeline's plan artefact ([`profiles/terraform-drift.yaml`](../../profiles/terraform-drift.yaml), [guide](terraform-drift.md)), and hosting controls from the pipeline's infrastructure tests ([`profiles/terraform-tests.yaml`](../../profiles/terraform-tests.yaml), [guide](terraform-tests.md)).
 
 Each run has three phases, and each is kept apart from the others:
 
