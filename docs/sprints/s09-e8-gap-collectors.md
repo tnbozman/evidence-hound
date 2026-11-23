@@ -1231,6 +1231,7 @@ Found while resetting the trial for s09-34 to s09-42. The compliance owner defau
 ## Discovered work
 
 - s09-43: in the dev container, `make test` has one failure, `PublishCommandTests.Without_a_url_exits_three`, because the container sets `HOUND_CA_URL` and the test reads the process environment; it passes with `env -u HOUND_CA_URL make test`. Have the test (or `Publish`) not see the ambient variable.
+- s09-43: `make trial` keeps the runner image it built first (`state/image.done`), so a fix committed after that is not in the trial until `make image HOUND_IMAGE=evidence-hound-runner:trial`. Rebuild when the checkout's commit differs from the image's (label the image with it).
 - s09-43: in the dev container, `make ca-up` seeds the `make ca-up` instance but `scripts/ca-apply-scope.sh` applies the scope to `http://backend:8000/api/` (the container's `HOUND_CA_URL` overrides the env file's URL) with the other instance's token, so the seed ends with HTTP 401. Have `ca-seed.sh` pass the URL it wrote.
 - s09-44: Essential Eight evidence from the endpoint itself (registry, services, AppLocker effective policy, Office macro settings), as an MIT PowerShell checklist does, is outside every current collector. Consider it with ASD's example assessment test plan, which names endpoint tests, when planning release 2.
 
