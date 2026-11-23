@@ -161,6 +161,9 @@ versions of one file (`hound explain before.yaml after.yaml`).
 
 ## Tutorial: onboard the example API
 
+For a worked example of a whole stack, two systems and four suppliers, see the [onboarding tutorial](examples/onboarding-tutorial.md):
+Example Pty Ltd's privately hosted GRC platform on Oracle Cloud and its office firewall, onboarded, reviewed, validated and applied.
+
 This walk-through onboards the fictional Example Asset API into a copy of the template config repo, without a model (`--no-model`), so it
 needs no key and sends nothing anywhere. It takes about ten minutes. Run it from the root of this repository.
 

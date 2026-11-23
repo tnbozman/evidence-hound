@@ -1,0 +1,433 @@
+# yaml-language-server: $schema=../../../../schemas/scope.schema.json
+# Written by hound onboard for OFFICE-FIREWALL on 2026-11-23; how each row was decided is in onboarding/office-firewall-essential-eight-2023-2026-11-23.md.
+ref_id: "OFFICE-FIREWALL-ESSENTIAL-EIGHT-2023"
+name: "OFFICE-FIREWALL essential-eight-2023"
+framework: "urn:intuitem:risk:framework:essential-eight-2023"
+groups: ["1", "2"]
+domain: "Example Pty Ltd"
+perimeter: "Corporate IT"
+systems: ["OFFICE-FIREWALL"]
+# Requirements not listed below are checked through the API; they stay not assessed until the collector's results are published.
+unlisted:
+  result: not_assessed
+assessments:
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:pa:ism-1807
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Sophos Central lists every managed firewall; the list is exported fortnightly. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:pa:ism-1808
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: The external vulnerability scanner plug-in feed updates daily; its settings are captured quarterly. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1698
+    status: done
+    result: not_applicable
+    observation: "Not applicable: The firewall runs only the vendor firmware; no applications are installed on it. Its firmware is patched as an operating system. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1699
+    status: done
+    result: not_applicable
+    observation: "Not applicable: The firewall runs only the vendor firmware; no applications are installed on it. Its firmware is patched as an operating system. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1700
+    status: done
+    result: not_applicable
+    observation: "Not applicable: The firewall runs only the vendor firmware; no applications are installed on it. Its firmware is patched as an operating system. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1876
+    status: done
+    result: not_applicable
+    observation: "Not applicable: The firewall runs only the vendor firmware; no applications are installed on it. Its firmware is patched as an operating system. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1690
+    status: done
+    result: not_applicable
+    observation: "Not applicable: The firewall runs only the vendor firmware; no applications are installed on it. Its firmware is patched as an operating system. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1691
+    status: done
+    result: not_applicable
+    observation: "Not applicable: The firewall runs only the vendor firmware; no applications are installed on it. Its firmware is patched as an operating system. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1693
+    status: done
+    result: not_applicable
+    observation: "Not applicable: The firewall runs only the vendor firmware; no applications are installed on it. Its firmware is patched as an operating system. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1905
+    status: done
+    result: not_applicable
+    observation: "Not applicable: The firewall runs only the vendor firmware; no applications are installed on it. Its firmware is patched as an operating system. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1704
+    status: done
+    result: not_applicable
+    observation: "Not applicable: The firewall runs only the vendor firmware; no applications are installed on it. Its firmware is patched as an operating system. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1807
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Sophos Central lists every managed firewall; the list is exported fortnightly. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1808
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: The external vulnerability scanner plug-in feed updates daily; its settings are captured quarterly. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1701
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: An external vulnerability scan of the internet-facing interface of the firewall runs daily; reports kept. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1702
+    status: done
+    result: not_applicable
+    observation: "Not applicable: The firewall is an internet-facing network device, so the daily scan (ISM-1701) applies instead. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1877
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Firmware hotfixes for exploited vulnerabilities are applied within 48 hours; the firmware history in Sophos Central is the record. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1694
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Firmware updates are applied within two weeks of release; the firmware history in Sophos Central is the record. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1695
+    status: done
+    result: not_applicable
+    observation: "Not applicable: ISM-1695 covers workstations, non-internet-facing servers and non-internet-facing network devices; the firewall is internet-facing, so ISM-1694 applies. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1504
+    status: done
+    result: not_applicable
+    observation: "Not applicable: The firewall is a network device, not an online service. Sophos Central, which manages it, is covered by the Sophos supplier review. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1679
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Sophos Central requires MFA of every admin; its admin settings are captured quarterly. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1680
+    status: done
+    result: not_applicable
+    observation: "Not applicable: The firewall is a network device, not an online service. Sophos Central, which manages it, is covered by the Sophos supplier review. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1892
+    status: done
+    result: not_applicable
+    observation: "Not applicable: The firewall is a network device, not an online service. Sophos Central, which manages it, is covered by the Sophos supplier review. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1893
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Sophos Central admins use phishing-resistant MFA; its admin settings are captured quarterly. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1681
+    status: done
+    result: not_applicable
+    observation: "Not applicable: No customer signs in to the firewall or to Sophos Central. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1173
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: The local admin console of the firewall requires a one-time password and is reachable only from the management network. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-0974
+    status: done
+    result: not_applicable
+    observation: "Not applicable: Only administrators sign in to the firewall; it has no unprivileged user accounts. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1401
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: The admin one-time password is something the admin has, with their password; the setting is captured quarterly. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1872
+    status: done
+    result: not_applicable
+    observation: "Not applicable: The firewall is a network device, not an online service. Sophos Central, which manages it, is covered by the Sophos supplier review. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1873
+    status: done
+    result: not_applicable
+    observation: "Not applicable: No customer signs in to the firewall or to Sophos Central. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1682
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Admins sign in through Sophos Central with phishing-resistant MFA; the local console is a break glass path only. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1683
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Admin sign-in events, with their MFA outcome, go to Sophos Central; a sample is captured monthly. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1815
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: The firewall sends its logs to Sophos Central, where they are kept and reviewed weekly; incidents follow the incident response plan and register. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1906
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: The firewall sends its logs to Sophos Central, where they are kept and reviewed weekly; incidents follow the incident response plan and register. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1228
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: The firewall sends its logs to Sophos Central, where they are kept and reviewed weekly; incidents follow the incident response plan and register. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-0123
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: The firewall sends its logs to Sophos Central, where they are kept and reviewed weekly; incidents follow the incident response plan and register. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-0140
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: The firewall sends its logs to Sophos Central, where they are kept and reviewed weekly; incidents follow the incident response plan and register. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1819
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: The firewall sends its logs to Sophos Central, where they are kept and reviewed weekly; incidents follow the incident response plan and register. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1507
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Firewall admin access is requested and approved through the access request process; records kept. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1647
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Admin access is revalidated at the annual access review; the review record is kept. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1648
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Inactive admins are removed after 45 days; the monthly admin review is kept. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-0445
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Each admin has a dedicated Sophos Central admin account; the admin list is captured quarterly. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1175
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Firewall admin accounts are used only for administration; the admin list is captured quarterly. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1380
+    status: done
+    result: not_applicable
+    observation: "Provided by Example laptops: Administrators work from their managed Example laptops, whose operating environments meet this. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1687
+    status: done
+    result: not_applicable
+    observation: "Provided by Example laptops: Administrators work from their managed Example laptops, whose operating environments meet this. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1688
+    status: done
+    result: not_applicable
+    observation: "Provided by Example laptops: Administrators work from their managed Example laptops, whose operating environments meet this. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1689
+    status: done
+    result: not_applicable
+    observation: "Provided by Example laptops: Administrators work from their managed Example laptops, whose operating environments meet this. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1387
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: The local admin console accepts connections only from the management network; the rule is captured quarterly. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1685
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: The local break glass admin password is long, unique and kept in the password vault; the history of the vault entry is captured quarterly. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1509
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Admin sign-ins and changes go to Sophos Central; a sample is captured monthly. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1650
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Admin account changes go to the Sophos Central audit log; a sample is captured monthly. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1815
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: The firewall sends its logs to Sophos Central, where they are kept and reviewed weekly; incidents follow the incident response plan and register. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1906
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: The firewall sends its logs to Sophos Central, where they are kept and reviewed weekly; incidents follow the incident response plan and register. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1228
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: The firewall sends its logs to Sophos Central, where they are kept and reviewed weekly; incidents follow the incident response plan and register. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-0123
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: The firewall sends its logs to Sophos Central, where they are kept and reviewed weekly; incidents follow the incident response plan and register. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-0140
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: The firewall sends its logs to Sophos Central, where they are kept and reviewed weekly; incidents follow the incident response plan and register. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1819
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: The firewall sends its logs to Sophos Central, where they are kept and reviewed weekly; incidents follow the incident response plan and register. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-0843
+    status: done
+    result: not_applicable
+    observation: "Not applicable: Application control at maturity level two covers workstations and internet-facing servers. A firewall appliance is neither. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1490
+    status: done
+    result: not_applicable
+    observation: "Not applicable: Application control at maturity level two covers workstations and internet-facing servers. A firewall appliance is neither. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1870
+    status: done
+    result: not_applicable
+    observation: "Not applicable: Application control at maturity level two covers workstations and internet-facing servers. A firewall appliance is neither. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1871
+    status: done
+    result: not_applicable
+    observation: "Not applicable: Application control at maturity level two covers workstations and internet-facing servers. A firewall appliance is neither. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1657
+    status: done
+    result: not_applicable
+    observation: "Not applicable: Application control at maturity level two covers workstations and internet-facing servers. A firewall appliance is neither. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1544
+    status: done
+    result: not_applicable
+    observation: "Not applicable: Application control at maturity level two covers workstations and internet-facing servers. A firewall appliance is neither. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1582
+    status: done
+    result: not_applicable
+    observation: "Not applicable: Application control at maturity level two covers workstations and internet-facing servers. A firewall appliance is neither. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1660
+    status: done
+    result: not_applicable
+    observation: "Not applicable: Application control at maturity level two covers workstations and internet-facing servers. A firewall appliance is neither. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1815
+    status: done
+    result: not_applicable
+    observation: "Not applicable: Application control at maturity level two covers workstations and internet-facing servers. A firewall appliance is neither. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1906
+    status: done
+    result: not_applicable
+    observation: "Not applicable: Application control at maturity level two covers workstations and internet-facing servers. A firewall appliance is neither. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1228
+    status: done
+    result: not_applicable
+    observation: "Not applicable: Application control at maturity level two covers workstations and internet-facing servers. A firewall appliance is neither. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-0123
+    status: done
+    result: not_applicable
+    observation: "Not applicable: Application control at maturity level two covers workstations and internet-facing servers. A firewall appliance is neither. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-0140
+    status: done
+    result: not_applicable
+    observation: "Not applicable: Application control at maturity level two covers workstations and internet-facing servers. A firewall appliance is neither. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1819
+    status: done
+    result: not_applicable
+    observation: "Not applicable: Application control at maturity level two covers workstations and internet-facing servers. A firewall appliance is neither. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1671
+    status: done
+    result: not_applicable
+    observation: "Not applicable: A firewall appliance runs no Microsoft Office. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1488
+    status: done
+    result: not_applicable
+    observation: "Not applicable: A firewall appliance runs no Microsoft Office. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1672
+    status: done
+    result: not_applicable
+    observation: "Not applicable: A firewall appliance runs no Microsoft Office. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1673
+    status: done
+    result: not_applicable
+    observation: "Not applicable: A firewall appliance runs no Microsoft Office. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1489
+    status: done
+    result: not_applicable
+    observation: "Not applicable: A firewall appliance runs no Microsoft Office. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1654
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1486
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1485
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1412
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1585
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1667
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1668
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1669
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1542
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1859
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1823
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1670
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1860
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1824
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1623
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1889
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1815
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1906
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1228
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-0123
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-0140
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - urn: urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1819
+    status: done
+    result: not_applicable
+    observation: "Not applicable: User application hardening covers office suites, web browsers, PDF software and PowerShell. None run on a firewall appliance. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1511
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Sophos Central backs up the firewall configuration on each change and weekly; the backup list is captured monthly. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1810
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: The configuration is backed up as one file, so it restores to a single point. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1811
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Configuration backups are kept in Sophos Central and copied monthly to the backup service. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1515
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: A configuration restore to a spare or virtual firewall is tested each year; the test record is the evidence. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1812
+    status: done
+    result: not_applicable
+    observation: "Not applicable: Only administrators sign in to the firewall; it has no unprivileged user accounts. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1705
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Only Super Admins can download configuration backups; the role settings are captured quarterly. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1814
+    status: done
+    result: not_applicable
+    observation: "Not applicable: Only administrators sign in to the firewall; it has no unprivileged user accounts. Approved by Alex Example; accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."
+  - ref: ISM-1707
+    status: to_do
+    result: not_assessed
+    observation: "Manual evidence: Only Super Admins can delete configuration backups; the role settings are captured quarterly. Accepted by Sam Example when onboarding OFFICE-FIREWALL on 2026-11-23 (onboarding/office-firewall-essential-eight-2023-2026-11-23.md)."

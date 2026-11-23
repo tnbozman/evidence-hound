@@ -1,0 +1,11 @@
+Sam Example
+it@example.com
+Sophos Firewall on an XGS appliance, managed in Sophos Central
+SUP-SOPHOS
+Sophos
+SOL-SOPHOS-FIREWALL
+Sophos XGS firewall and Sophos Central
+CTR-SOPHOS-2026
+Sophos XGS subscription 2026
+The office firewall appliance, its firmware and security subscriptions, the site-to-site VPN endpoint, and Sophos Central, which manages it
+

@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=../../../../schemas/scope.schema.json
+# Drafted by hound onboard for GRC-PLATFORM on 2026-11-23. Review each level and its reason.
+# Once the supplier is approved, make the contract active and run hound onboard again.
+# Reviewed by Sam Example: levels decided, contract made active once the review EA-SUP-ORACLE was concluded ok.
+ref_id: "SUP-ORACLE"
+name: "Oracle Cloud Infrastructure"
+domain: "Example Pty Ltd"
+country: US
+currency: USD
+dependency: 3     # the GRC platform runs only on it; moving it is a planned project, not an afternoon
+penetration: 2    # it hosts the VM and its disks, but holds no account in our identity provider
+maturity: 3       # its security attestations are current; read at the review
+trust: 3          # a major cloud provider with published shared-responsibility terms
+solutions:
+  - ref_id: "SOL-OCI-HOSTING"
+    name: "OCI compute, networking and storage"
+    criticality: 3    # the GRC platform is down while it is down, but nothing customer-facing is
+contracts:
+  - ref_id: "CTR-OCI-2026"
+    name: "OCI pay-as-you-go 2026"
+    status: active
+    start: "2026-11-23"
+    annual_expense: 900    # about USD 71 a month for the VM, its disk and backups
+    currency: USD
+    solutions: ["SOL-OCI-HOSTING"]
+# The supplier's review: the GRC team concludes it in CISO Assistant, and a system it supplies is registered only once it is concluded ok.
+assessments:
+  - ref_id: "EA-SUP-ORACLE"
+    name: "Oracle Cloud Infrastructure review"
+    solutions: ["SOL-OCI-HOSTING"]
+    perimeter: "Corporate IT"
+    due_date: "2026-12-23"
+    review_every: 12 months
