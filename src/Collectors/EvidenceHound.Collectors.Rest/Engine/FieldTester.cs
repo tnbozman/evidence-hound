@@ -125,10 +125,14 @@ public static partial class FieldTester
 
     private static int[]? Version(JsonNode? value) => Text(value) is { } text ? Version(text) : null;
 
-    /// <summary>The numeric parts of a dotted version such as 15.1.2 or v21.0.1 MR1; null when it has none.</summary>
+    /// <summary>
+    /// The numeric parts of a dotted version such as 15.1.2, v21.0.1 MR1 or XGS88w_SN01_22.0.3.576: the first dotted number, so digits in a
+    /// model name before it are skipped; a bare number such as 15 when the text has no dotted one; null when it has neither.
+    /// </summary>
     private static int[]? Version(string text)
     {
-        var parts = VersionParts().Match(text.Trim());
+        var dotted = DottedVersionParts().Match(text.Trim());
+        var parts = dotted.Success ? dotted : VersionParts().Match(text.Trim());
         var numbers = parts.Success ? parts.Value.Split('.').Select(p => int.TryParse(p, CultureInfo.InvariantCulture, out var n) ? n : -1).ToArray() : [];
         return numbers.Length > 0 && numbers.All(n => n >= 0) ? numbers : null;
     }
@@ -161,4 +165,7 @@ public static partial class FieldTester
 
     [GeneratedRegex(@"\d+(\.\d+)*", RegexOptions.CultureInvariant)]
     private static partial Regex VersionParts();
+
+    [GeneratedRegex(@"\d+(\.\d+)+", RegexOptions.CultureInvariant)]
+    private static partial Regex DottedVersionParts();
 }
