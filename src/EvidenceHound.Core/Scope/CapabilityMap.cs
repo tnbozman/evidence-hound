@@ -14,6 +14,9 @@ public sealed record AuditCapabilityRows(string AuditRefId, string File, IReadOn
 /// <summary>A mitigation no product provides: its requirements, which no system's audit answers.</summary>
 public sealed record CapabilityGap(string Mitigation, IReadOnlyList<string> Requirements);
 
+/// <summary>A system the map names that <c>scope/setup.yaml</c> does not declare yet: onboard it, with its supplier.</summary>
+public sealed record PendingSystem(string System, IReadOnlyList<string> Mitigations, string? Supplier);
+
 public sealed record CapabilityRows(IReadOnlyList<AuditCapabilityRows> Audits, IReadOnlyList<CapabilityGap> Gaps);
 
 /// <summary>
@@ -103,6 +106,8 @@ public static class CapabilityMap
     /// system and its audit; rows the audit already writes by hand, and requirements outside its groups, are left alone. Gaps are listed
     /// apart: no audit answers them, and none fails for them.
     /// </summary>
+    public static IReadOnlyList<PendingSystem> Pending(ScopeDocument scope) => [];
+
     public static CapabilityRows Rows(ScopeDocument scope, FrameworkSnapshot snapshot)
     {
         ArgumentNullException.ThrowIfNull(scope);

@@ -31,13 +31,27 @@ public class CapabilityMapTests
         var problems = CapabilityMap.Validate(ScopeOf(map), Snapshots);
 
         problems.Select(p => p.Code).ShouldBe(
-            ["scope.duplicate", "capability.approver_missing", "capability.systems_missing", "capability.mitigation_unknown", "scope.reference_unknown"],
+            ["scope.duplicate", "capability.approver_missing", "capability.systems_missing", "capability.mitigation_unknown"],
             ignoreOrder: true);
         problems.ShouldContain(p => p.Code == "capability.approver_missing" && p.Message.Contains("mfa", StringComparison.Ordinal));
-        problems.ShouldContain(p => p.Code == "scope.reference_unknown" && p.Message.Contains("Example tablets", StringComparison.Ordinal));
         CapabilityMap.Validate(ScopeOf(Map(Decision("ac", CapabilityProvision.Manual))), Snapshots)
             .Where(p => p.Code == "capability.decision_missing").Select(p => p.Message).ShouldBe(
                 ["mitigation 'mfa' has no decision in scope/capabilities.yaml.", "mitigation 'rb' has no decision in scope/capabilities.yaml.", "mitigation 'pa' has no decision in scope/capabilities.yaml."]);
+    }
+
+    [Fact]
+    public void Systems_named_before_they_are_onboarded_are_pending_not_errors()
+    {
+        var map = Map(
+            Decision("ac", CapabilityProvision.System, "Example app control") with { Supplier = new ScopeRef("SUP-EXAPPCTL", At) },
+            Decision("mfa", CapabilityProvision.System, "Example 365"),
+            Decision("rb", CapabilityProvision.System, "Example tablets", "Example app control"),
+            Decision("pa", CapabilityProvision.Gap));
+        var scope = ScopeOf(map) with { Setup = ScopeOf(map).Setup with { Domains = [ScopeOf(map).Setup.Domains[0] with { Systems = [ScopeOf(map).Setup.Domains[0].Systems[0]] }] } };
+
+        CapabilityMap.Validate(scope, Snapshots).Select(p => p.Code).ShouldBe(["scope.reference_unknown"]);
+        CapabilityMap.Pending(scope).Select(p => (p.System, string.Join(",", p.Mitigations), p.Supplier)).ShouldBe(
+            [("Example app control", "ac,rb", (string?)"SUP-EXAPPCTL"), ("Example tablets", "rb", (string?)null)]);
     }
 
     [Fact]
