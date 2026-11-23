@@ -18,6 +18,9 @@ public sealed partial class ExampleRepoTests : IDisposable
 
     internal static string Repo => Path.Combine(RepoRoot, "examples", "compliance-repo");
 
+    /// <summary>s09-32: what the onboarding tutorial adds to a copy of the template, at the same paths.</summary>
+    internal static string Tutorial => Path.Combine(RepoRoot, "examples", "onboarding-tutorial");
+
     [Fact]
     public async Task Example_compliance_repo_validates()
     {
@@ -153,31 +156,48 @@ public sealed partial class ExampleRepoTests : IDisposable
         broken.ShouldBeEmpty();
     }
 
+    /// <summary>s09-32: the template starts without the tutorial's systems and suppliers, so a new repo applies in one go.</summary>
+    [Fact]
+    public void The_template_holds_none_of_the_tutorials_systems()
+    {
+        File.ReadAllText(Path.Combine(Repo, "scope", "setup.yaml")).ShouldNotContain("GRC-PLATFORM");
+        Directory.Exists(Path.Combine(Repo, "scope", "third-parties")).ShouldBeFalse();
+        Directory.Exists(Path.Combine(Repo, "onboarding")).ShouldBeFalse();
+    }
+
     /// <summary>s09-32: the onboarding tutorial's two systems, each supplied under an active contract, and the open-source projects the platform runs.</summary>
     [Fact]
     public async Task Tutorial_systems_and_suppliers_are_declared()
     {
-        var scope = await ExampleScopeAsync();
-
-        var systems = scope.Setup.Domains.SelectMany(d => d.Systems).ToDictionary(s => s.Name, StringComparer.Ordinal);
-        systems["GRC-PLATFORM"].Solution?.Value.ShouldBe("SOL-OCI-HOSTING");
-        systems["OFFICE-FIREWALL"].Solution?.Value.ShouldBe("SOL-SOPHOS-FIREWALL");
-        systems["GRC-PLATFORM"].Owner.ShouldBe("it@example.com");
-
-        var suppliers = scope.ThirdParties.ToDictionary(e => e.RefId, StringComparer.Ordinal);
-        suppliers.Keys.ShouldBe(["SUP-CISO-ASSISTANT", "SUP-EVIDENCE-HOUND", "SUP-ORACLE", "SUP-SOPHOS"], ignoreOrder: true);
-        foreach (var (supplier, solution) in new[] { ("SUP-ORACLE", "SOL-OCI-HOSTING"), ("SUP-SOPHOS", "SOL-SOPHOS-FIREWALL") })
+        var repo = TutorialRepo();
+        try
         {
-            var entity = suppliers[supplier];
-            entity.Contracts.ShouldContain(c => c.Status == "active" && c.Solutions.Any(s => s.Value == solution), $"{supplier} supplies {solution} under an active contract");
-            new[] { entity.Dependency, entity.Penetration, entity.Maturity, entity.Trust }.ShouldAllBe(level => level != null, $"{supplier}'s levels are decided in review");
-            entity.Assessments.ShouldNotBeEmpty($"{supplier} has a review for the GRC team to conclude");
+            var scope = await ScopeAsync(repo);
+
+            var systems = scope.Setup.Domains.SelectMany(d => d.Systems).ToDictionary(s => s.Name, StringComparer.Ordinal);
+            systems["GRC-PLATFORM"].Solution?.Value.ShouldBe("SOL-OCI-HOSTING");
+            systems["OFFICE-FIREWALL"].Solution?.Value.ShouldBe("SOL-SOPHOS-FIREWALL");
+            systems["GRC-PLATFORM"].Owner.ShouldBe("it@example.com");
+
+            var suppliers = scope.ThirdParties.ToDictionary(e => e.RefId, StringComparer.Ordinal);
+            suppliers.Keys.ShouldBe(["SUP-CISO-ASSISTANT", "SUP-EVIDENCE-HOUND", "SUP-ORACLE", "SUP-SOPHOS"], ignoreOrder: true);
+            foreach (var (supplier, solution) in new[] { ("SUP-ORACLE", "SOL-OCI-HOSTING"), ("SUP-SOPHOS", "SOL-SOPHOS-FIREWALL") })
+            {
+                var entity = suppliers[supplier];
+                entity.Contracts.ShouldContain(c => c.Status == "active" && c.Solutions.Any(s => s.Value == solution), $"{supplier} supplies {solution} under an active contract");
+                new[] { entity.Dependency, entity.Penetration, entity.Maturity, entity.Trust }.ShouldAllBe(level => level != null, $"{supplier}'s levels are decided in review");
+                entity.Assessments.ShouldNotBeEmpty($"{supplier} has a review for the GRC team to conclude");
+            }
+
+            foreach (var project in new[] { "SUP-CISO-ASSISTANT", "SUP-EVIDENCE-HOUND" })
+            {
+                suppliers[project].Solutions.ShouldNotBeEmpty();
+                suppliers[project].Contracts.ShouldAllBe(c => c.AnnualExpense == null, $"{project} is open source, with no contract value");
+            }
         }
-
-        foreach (var project in new[] { "SUP-CISO-ASSISTANT", "SUP-EVIDENCE-HOUND" })
+        finally
         {
-            suppliers[project].Solutions.ShouldNotBeEmpty();
-            suppliers[project].Contracts.ShouldAllBe(c => c.AnnualExpense == null, $"{project} is open source, with no contract value");
+            Directory.Delete(repo, recursive: true);
         }
     }
 
@@ -185,46 +205,59 @@ public sealed partial class ExampleRepoTests : IDisposable
     [Fact]
     public async Task Tutorial_audits_validate_with_justified_not_applicable_rows()
     {
-        (await Hound("scope", "validate", Path.Combine(Repo, "scope"), "--config", Path.Combine(Repo, "hound.yaml"))).ShouldBe(ExitCodes.Ok, _error.ToString());
-        var audits = (await ExampleScopeAsync()).Audits.ToDictionary(a => a.RefId, StringComparer.Ordinal);
-
-        foreach (var (audit, system) in new[] { ("GRC-PLATFORM-ESSENTIAL-EIGHT-2023", "GRC-PLATFORM"), ("OFFICE-FIREWALL-ESSENTIAL-EIGHT-2023", "OFFICE-FIREWALL") })
+        var repo = TutorialRepo();
+        try
         {
-            var rows = audits[audit].Assessments;
-            audits[audit].Systems.Select(s => s.Value).ShouldBe([system]);
-            audits[audit].Groups.Select(g => g.Value).ShouldBe(["1", "2"]);
-            rows.Where(r => r.Result == ComplianceResult.NotApplicable).ShouldNotBeEmpty();
-            rows.Where(r => r.Result == ComplianceResult.NotApplicable)
-                .Where(r => !(r.Observation.StartsWith("Not applicable: ", StringComparison.Ordinal) && r.Observation.Contains("Approved by ", StringComparison.Ordinal))
-                    && !r.Observation.StartsWith("Provided by ", StringComparison.Ordinal))
-                .Select(r => r.Requirement.Key.Value)
-                .ShouldBeEmpty($"each not applicable row of {audit} has a justification and approver, or names the system that provides it");
+            (await Hound("config", "validate", Path.Combine(repo, "hound.yaml"))).ShouldBe(ExitCodes.Ok, _error.ToString());
+            (await Hound("scope", "validate", Path.Combine(repo, "scope"), "--config", Path.Combine(repo, "hound.yaml"))).ShouldBe(ExitCodes.Ok, _error.ToString());
+            (await Hound("mapping", "validate", Path.Combine(repo, "mappings", "office-firewall-essential-eight-2023.yaml"))).ShouldBe(ExitCodes.Ok, _error.ToString());
+            var audits = (await ScopeAsync(repo)).Audits.ToDictionary(a => a.RefId, StringComparer.Ordinal);
+
+            foreach (var (audit, system) in new[] { ("GRC-PLATFORM-ESSENTIAL-EIGHT-2023", "GRC-PLATFORM"), ("OFFICE-FIREWALL-ESSENTIAL-EIGHT-2023", "OFFICE-FIREWALL") })
+            {
+                var rows = audits[audit].Assessments;
+                audits[audit].Systems.Select(s => s.Value).ShouldBe([system]);
+                audits[audit].Groups.Select(g => g.Value).ShouldBe(["1", "2"]);
+                rows.Where(r => r.Result == ComplianceResult.NotApplicable).ShouldNotBeEmpty();
+                rows.Where(r => r.Result == ComplianceResult.NotApplicable)
+                    .Where(r => !(r.Observation.StartsWith("Not applicable: ", StringComparison.Ordinal) && r.Observation.Contains("Approved by ", StringComparison.Ordinal))
+                        && !r.Observation.StartsWith("Provided by ", StringComparison.Ordinal))
+                    .Select(r => r.Requirement.Key.Value)
+                    .ShouldBeEmpty($"each not applicable row of {audit} has a justification and approver, or names the system that provides it");
+            }
+
+            var platform = audits["GRC-PLATFORM-ESSENTIAL-EIGHT-2023"].Assessments;
+            Row(platform, "ISM-0843").Result.ShouldBe(ComplianceResult.NotApplicable, "application control does not apply to a private Linux server");
+            Row(platform, "ISM-1671").Result.ShouldBe(ComplianceResult.NotApplicable, "there are no Office macros on a Linux container host");
+            Row(platform, "ISM-1511").Observation.ShouldStartWith("Manual evidence: ", customMessage: "backups are manual evidence");
+            Row(platform, "ISM-1695").Observation.ShouldStartWith("Manual evidence: ", customMessage: "patching is manual evidence");
+            Row(platform, "ISM-1173").Observation.ShouldStartWith("Provided by Example 365", customMessage: "admin MFA is the identity provider's");
+
+            var firewall = audits["OFFICE-FIREWALL-ESSENTIAL-EIGHT-2023"].Assessments.Select(r => r.Requirement.Key.Value).ToArray();
+            firewall.ShouldNotContain("ISM-1501", "the firmware check comes from the sophos-central profile");
+            firewall.ShouldNotContain("ISM-1883", "the Super Admin check comes from the sophos-central profile");
         }
-
-        var platform = audits["GRC-PLATFORM-ESSENTIAL-EIGHT-2023"].Assessments;
-        Row(platform, "ISM-0843").Result.ShouldBe(ComplianceResult.NotApplicable, "application control does not apply to a private Linux server");
-        Row(platform, "ISM-1671").Result.ShouldBe(ComplianceResult.NotApplicable, "there are no Office macros on a Linux container host");
-        Row(platform, "ISM-1511").Observation.ShouldStartWith("Manual evidence: ", customMessage: "backups are manual evidence");
-        Row(platform, "ISM-1695").Observation.ShouldStartWith("Manual evidence: ", customMessage: "patching is manual evidence");
-        Row(platform, "ISM-1173").Observation.ShouldStartWith("Provided by Example 365", customMessage: "admin MFA is the identity provider's");
-
-        var firewall = audits["OFFICE-FIREWALL-ESSENTIAL-EIGHT-2023"].Assessments;
-        firewall.Select(r => r.Requirement.Key.Value).ShouldNotContain("ISM-1501", "the firmware check comes from the sophos-central profile");
-        firewall.Select(r => r.Requirement.Key.Value).ShouldNotContain("ISM-1883", "the Super Admin check comes from the sophos-central profile");
+        finally
+        {
+            Directory.Delete(repo, recursive: true);
+        }
     }
 
     /// <summary>s09-32: the firewall's audit is fed by the sophos-central profile, and the platform's cloud is checked for drift.</summary>
     [Fact]
     public async Task Tutorial_collectors_feed_the_firewall_audit_and_check_the_platform_for_drift()
     {
-        var config = await File.ReadAllTextAsync(Path.Combine(Repo, "hound.yaml"), _ct);
+        var config = await File.ReadAllTextAsync(Path.Combine(Tutorial, "hound.yaml"), _ct);
 
         config.ShouldContain("profile: sophos-central");
         config.ShouldContain("profile: terraform-drift");
         config.ShouldContain("compliance_assessment: OFFICE-FIREWALL-ESSENTIAL-EIGHT-2023");
-        var mapping = await File.ReadAllTextAsync(Path.Combine(Repo, "mappings", "office-firewall-essential-eight-2023.yaml"), _ct);
+        var mapping = await File.ReadAllTextAsync(Path.Combine(Tutorial, "mappings", "office-firewall-essential-eight-2023.yaml"), _ct);
         mapping.ShouldContain("network.firewall.firmware_supported");
         mapping.ShouldContain("network.management.super_admin_count");
+        var compose = await File.ReadAllTextAsync(Path.Combine(Tutorial, "deploy", "compose.override.yml"), _ct);
+        compose.ShouldContain("sophos_client_secret");
+        compose.ShouldContain("iac_actions_token");
     }
 
     public void Dispose()
@@ -274,11 +307,30 @@ public sealed partial class ExampleRepoTests : IDisposable
 
     private static HandAssessment Row(IReadOnlyList<HandAssessment> rows, string refId) => rows.Single(r => r.Requirement.Key.Value == refId);
 
-    /// <summary>The example repo's whole scope, as <c>hound scope validate</c> reads it.</summary>
-    internal static async Task<ScopeDocument> ExampleScopeAsync()
+    /// <summary>A copy of the template with the tutorial's files over it, as the tutorial leaves it.</summary>
+    internal static string TutorialRepo()
+    {
+        var repo = Directory.CreateTempSubdirectory("hound-tutorial-repo").FullName;
+        CopyFolder(Repo, repo);
+        CopyFolder(Tutorial, repo);
+        return repo;
+    }
+
+    internal static void CopyFolder(string from, string to)
+    {
+        foreach (var file in Directory.GetFiles(from, "*", SearchOption.AllDirectories))
+        {
+            var copy = Path.Combine(to, Path.GetRelativePath(from, file));
+            Directory.CreateDirectory(Path.GetDirectoryName(copy)!);
+            File.Copy(file, copy, overwrite: true);
+        }
+    }
+
+    /// <summary>A repo's whole scope, as <c>hound scope validate</c> reads it.</summary>
+    private static async Task<ScopeDocument> ScopeAsync(string repo)
     {
         var ct = TestContext.Current.CancellationToken;
-        var scope = Path.Combine(Repo, "scope");
+        var scope = Path.Combine(repo, "scope");
         async Task<ScopeSource> Source(string path) => new(path, await File.ReadAllTextAsync(path, ct));
         var audits = await Task.WhenAll(Directory.GetFiles(Path.Combine(scope, "audits"), "*.yaml").Order(StringComparer.Ordinal).Select(Source));
         var thirdParties = await Task.WhenAll(Directory.GetFiles(Path.Combine(scope, "third-parties"), "*.yaml").Order(StringComparer.Ordinal).Select(Source));
