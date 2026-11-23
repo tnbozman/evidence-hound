@@ -45,7 +45,7 @@ Thumbs.db
 /onboarding.yaml
 /onboarding/*/
 
-# Terraform working folders (s09-49 example)
+# Terraform working folders (s09-51 example)
 .terraform/
 *.tfstate
 *.tfstate.*

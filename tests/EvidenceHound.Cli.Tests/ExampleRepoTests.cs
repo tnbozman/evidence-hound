@@ -304,7 +304,7 @@ public sealed partial class ExampleRepoTests : IDisposable
         compose.ShouldContain("iac_actions_token");
     }
 
-    /// <summary>s09-49: each per-control check in the tutorial's copy of terraform-tests names a run block of the control tests.</summary>
+    /// <summary>s09-51: each per-control check in the tutorial's copy of terraform-tests names a run block of the control tests.</summary>
     [Fact]
     public async Task Grc_infra_control_checks_name_tests_that_exist()
     {
@@ -318,7 +318,7 @@ public sealed partial class ExampleRepoTests : IDisposable
         (await Hound("profile", "test", "grc-infra-controls", "--profiles", Path.Combine(Tutorial, "profiles"))).ShouldBe(ExitCodes.Ok, _error.ToString());
     }
 
-    /// <summary>s09-49: a backup row the bucket's settings answer passes only when its control test and the drift check both pass.</summary>
+    /// <summary>s09-51: a backup row the bucket's settings answer passes only when its control test and the drift check both pass.</summary>
     [Fact]
     public async Task Grc_platform_backup_rows_need_the_control_test_and_no_drift()
     {

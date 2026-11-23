@@ -1,0 +1,25 @@
+# .github/workflows/controls.yml in Example Pty Ltd's IaC repository (fictional): the GRC platform's control tests on every change
+# and weekly, published as the control-tests artefact that hound's grc-infra-controls profile reads (docs/collectors/terraform-tests.md).
+# Mock providers need no cloud account: this job holds no cloud credentials and creates nothing.
+name: Control tests
+on:
+  push:
+    branches: [main]
+  pull_request: {}
+  schedule: [{ cron: "0 22 * * 0" }]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { persist-credentials: false }
+      - uses: hashicorp/setup-terraform@v3
+        with: { terraform_version: 1.13.4 }
+      - run: terraform init -backend=false -input=false
+      # A failing test fails this run, and the report is still published: the failure is the finding.
+      - run: terraform test -junit-xml=controls.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: control-tests, path: controls.xml, retention-days: 14 }

@@ -1,4 +1,4 @@
-# Example Pty Ltd's copy of the terraform-tests library profile (s09-49), with one check per hosting control of the GRC platform
+# Example Pty Ltd's copy of the terraform-tests library profile (s09-51), with one check per hosting control of the GRC platform
 # (GRC-PLATFORM), named after the run blocks in infra/oci/tests/controls.tftest.hcl. The library profile's header follows.
 #
 # Infrastructure tests, read from the JUnit report an IaC pipeline published as a GitHub Actions artefact.
