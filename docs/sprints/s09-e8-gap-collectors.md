@@ -1256,7 +1256,7 @@ At the maintainer's request (2026-11-23): the trial focuses on the Sophos perime
 - Deviation: the agent can only reach files under `.dev/trial`, so the hand-over asks for the specification in `specs/` and the vendor documents in `inbox/`; an absolute path outside the workspace in a `hound` argument does not resolve in the container.
 
 ### s09-46 One ref ID pattern for audit periods: organisation, framework, interval, financial year, system (added 2026-11-23)
-- [ ] Done
+- [x] Done
 
 At the maintainer's request (2026-11-23): every audit reads `<ORG>-<FRAMEWORK>-<INTERVAL>-<YEAR>FY[-<SYSTEM>]`, such as `EX-E8-Q1-2027FY-SOPHOS-NETWORK`. The interval is a quarter of the financial year (`Q1` is July to September) or a calendar month (`M07` is July). The year is the financial year, named by the year it ends (`2027FY` runs from 1 July 2026 to 30 June 2027). The framework part is its code only (`E8`); the maturity level stays in the audit's name and groups. The system part is the system's ref ID without `SYS-`.
 
@@ -1274,6 +1274,9 @@ At the maintainer's request (2026-11-23): every audit reads `<ORG>-<FRAMEWORK>-<
 
 **Functional check**
 - `hound scope plan` on a copy of the example scope with a quarterly cycle starting 2026-07-01, as of `HOUND_TODAY=2026-11-23`, lists `EX-E8-Q1-2027FY` (closes) and `EX-E8-Q2-2027FY` (opens).
+- Result (2026-11-23): in a scratch copy of `examples/` with `ex-e8-2026.yaml` changed to `ref_id: EX-E8` and `cycle: {period: quarter, starts: "2026-07-01"}` (and the config's target to `EX-E8`), `HOUND_TODAY=2026-11-23 hound scope validate` answered "scope valid: 1 domain(s), 3 control(s), 3 audit(s)", and `hound scope plan` against the dev container's CISO Assistant listed `Create | audit | EX-E8-Q1-2027FY` (eta 2026-09-30, `in_review`) and `Create | audit | EX-E8-Q2-2027FY` (eta 2026-12-31, `in_progress`, baseline `EX-E8-Q1-2027FY`), with the target's rows under `EX-E8-Q2-2027FY/…`. Unit suite 1312 passed; lint clean.
+- As built: `AuditPeriod.RefId` splits the series into organisation, framework and the rest, and puts the label between them; `AuditPeriods.Label` counts quarters from July and names the year by its end; `AuditPeriods.Lengths` is `month, quarter`, which `ScopeLoader` and the schema use; `AuditPeriods.StartsOnItsUnit` backs `scope.cycle_start_invalid`. `docs/scope.md` (Audit periods) and `schemas/scope.schema.json` describe the pattern.
+- Deviation: `ScopePeriods.Notes` sorted periods by ref ID, which no longer sorts by date once the quarter leads (`Q1-2027FY` before `Q4-2026FY`); it now sorts by the period's end. The tests that held old labels as plain strings (client, contract, parse, plan and functional tests) were moved to the new form, so the repo shows one pattern.
 
 ### s09-47 hound init writes a quarterly audit series (added 2026-11-23)
 - [ ] Done
