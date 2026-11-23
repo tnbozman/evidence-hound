@@ -1,4 +1,5 @@
 using EvidenceHound.Core.Scope;
+using EvidenceHound.Core.Mapping;
 using static EvidenceHound.Core.Tests.Scope.CapabilityFixture;
 
 namespace EvidenceHound.Core.Tests.Scope;
@@ -50,5 +51,16 @@ public class CapabilityScopeTests
 
         CapabilityMap.Rows(scope, Snapshot).Audits.ShouldHaveSingleItem().Rows[0].Observation
             .ShouldStartWith("Provided by Example app control (no audit yet; onboard it with 'hound onboard Example app control'),");
+    }
+
+    [Fact]
+    public void Requirements_the_audits_mapping_computes_are_left_to_the_mapping_and_listed()
+    {
+        var target = new ScopeTarget("EX365-E8", [RequirementKey.Ref("AC-1")], [], At);
+
+        var ms365 = CapabilityMap.Rows(ScopeOf(Standard()), Snapshot, [target]).Audits.Single(a => a.AuditRefId == "EX365-E8");
+
+        ms365.Rows.Select(r => r.Requirement).ShouldBe(["AC-2", "RB-1"]);
+        ms365.Computed.ShouldBe(["AC-1"]);
     }
 }
