@@ -202,13 +202,19 @@ suppliers change.
   (s15-07), for example DFARS 7012 within 72 hours, Defence for DISP, and the Notifiable Data Breaches assessment within 30 days.
 - Judgement sections the person writes: severity definitions, escalation decisions, containment priorities, communication approach and
   lessons learned. A missing section or role is a gap, reported like the SSP's gaps; `--strict` exits non-zero on gaps.
-- The plan cites ISM-0043 and NIST SP 800-171 3.6.1 to 3.6.3, and its annual test (s15-07's manual source) records the plan version
-  it tested.
+- Structure (maintainer's decision, 2026-11-24): NIST first. The plan follows NIST SP 800-61 Rev 3 (2025, aligned to CSF 2.0: govern,
+  identify, protect, detect, respond, recover), as the SSP follows SP 800-18. The Australian specifics come from ASD's ACSC Cyber
+  Incident Response Plan Guidance (https://www.cyber.gov.au/sites/default/files/2023-03/ACSC%20Cyber%20Incident%20Response%20Plan%20Guidance_A4.pdf)
+  and sit inside that structure, mainly as reporting obligations and contacts: ReportCyber to ASD, the Notifiable Data Breaches scheme,
+  DISP reporting to Defence, and DFARS 252.204-7012's 72 hours for covered defence information. One layout, not a separate ACSC one.
+- The plan cites ISM-0043, NIST SP 800-61 Rev 3, the ACSC guidance and NIST SP 800-171 3.6.1 to 3.6.3, and its annual test (s15-07's
+  manual source) records the plan version it tested.
 
 **Tests first**
 - `IrpBuilderTests.Contacts_come_from_role_holders_with_sources`
 - `IrpBuilderTests.Reporting_obligations_list_each_deadline`
 - `IrpValidatorTests.Missing_judgement_section_is_a_gap`
+- `IrpLayoutTests.Sections_follow_sp_800_61r3_with_australian_reporting`
 - `IrpCommandTests.Strict_build_with_gaps_exits_non_zero`
 
 **Functional check**
