@@ -55,3 +55,11 @@ domains:
         description: "Sophos Firewall on an XGS appliance, managed in Sophos Central, from Sophos."
         owner: it@example.com
         solution: SOL-SOPHOS-FIREWALL
+# Compliance programmes: reports are organised by programme. Each names a framework, the groups reported against and the audit
+# of record. Programmes create nothing in CISO Assistant. List them with: hound programme list
+programmes:
+  - id: essential-eight
+    name: Essential Eight
+    framework: urn:intuitem:risk:framework:essential-eight-2023
+    groups: ["1", "2"]
+    audit: EX-E8-2026

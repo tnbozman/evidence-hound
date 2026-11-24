@@ -20,7 +20,9 @@ public sealed record ScopeParse(ScopeDocument Scope, IReadOnlyList<ScopeProblem>
 /// </summary>
 public static partial class ScopeLoader
 {
-    private static readonly string[] SetupKeys = ["organisation", "frameworks", "libraries", "domains"];
+    private static readonly string[] SetupKeys = ["organisation", "frameworks", "libraries", "domains", "programmes"];
+    private static readonly string[] ProgrammeKeys = ["id", "name", "framework", "groups", "audit", "group_by"];
+    private static readonly string[] GroupBys = ["parent"];
     private static readonly string[] OrganisationKeys = ["root_folder", "entity"];
     private static readonly string[] FrameworkKeys = ["urn", "library", "file", "snapshot"];
     private static readonly string[] DomainKeys = ["name", "description", "perimeters", "perimeter", "systems"];
@@ -220,7 +222,21 @@ public static partial class ScopeLoader
         {
             Libraries = file.Refs(root, "libraries"),
             Organisation = organisation is not null && file.Map(organisation, "entity") is { } entity ? ReadOrganisation(entity, file) : null,
+            Programmes = [.. file.Items(root, "programmes").Select(item => ReadProgramme(item, file)).OfType<ScopeProgramme>()],
         };
+    }
+
+    private static ScopeProgramme? ReadProgramme(YamlMappingNode item, FileReader file)
+    {
+        file.Keys(item, ProgrammeKeys);
+        var id = file.Required(item, "id");
+        var name = file.Required(item, "name");
+        var framework = file.Ref(item, "framework", required: true);
+        var audit = file.Ref(item, "audit", required: true);
+        var groupBy = file.OneOf(item, "group_by", GroupBys, required: false) ?? "parent";
+        return id is null || name is null || framework is null || audit is null
+            ? null
+            : new ScopeProgramme(id, name, framework, [.. file.Refs(item, "groups").Select(g => g.Value)], audit, groupBy, file.At(item));
     }
 
     private static ScopeFramework? ReadFramework(YamlMappingNode item, FileReader file)

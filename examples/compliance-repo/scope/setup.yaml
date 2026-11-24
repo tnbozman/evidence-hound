@@ -43,3 +43,11 @@ domains:
         type: supporting
         description: Daily backups of Example 365 and the laptops.
         owner: it@example.com
+# Compliance programmes: reports are organised by programme. Each names a framework, the groups reported against and the audit
+# of record. Programmes create nothing in CISO Assistant. List them with: hound programme list
+programmes:
+  - id: essential-eight
+    name: Essential Eight
+    framework: urn:intuitem:risk:framework:essential-eight-2023
+    groups: ["1", "2"]
+    audit: EX-E8-2026

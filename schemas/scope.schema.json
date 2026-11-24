@@ -119,6 +119,23 @@
           "items": {
             "$ref": "#/$defs/domain"
           }
+        },
+        "programmes": {
+          "description": "The compliance programmes reported on (s11-01): each a framework, the groups reported against and the audit of record. Programmes create nothing in CISO Assistant.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "name", "framework", "groups", "audit"],
+            "properties": {
+              "id": { "description": "A lowercase slug, unique, such as essential-eight.", "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+              "name": { "$ref": "#/$defs/text" },
+              "framework": { "description": "A framework URN declared under frameworks, with a snapshot.", "$ref": "#/$defs/text" },
+              "groups": { "description": "The implementation groups reported against; each must exist in the framework's snapshot.", "type": "array", "items": { "$ref": "#/$defs/text" } },
+              "audit": { "description": "The ref_id of the audit, or audit series, of record. It uses the programme's framework and belongs to no other programme.", "$ref": "#/$defs/text" },
+              "group_by": { "description": "How requirements are grouped in reports: parent (the default) groups them under their parent node.", "enum": ["parent"] }
+            }
+          }
         }
       }
     },

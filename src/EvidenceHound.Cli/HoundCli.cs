@@ -208,6 +208,7 @@ public static class HoundCli
             AuditCommands.Build(terminal, loggers, configuration),
             PlanCommand.Build(output, loggers, configuration, registry),
             ProfileCommands.Build(output, loggers, configuration),
+            ProgrammeCommands.Build(output, loggers, configuration, registry),
             PublishCommand.Build(output, loggers, configuration, registry),
             RunCommand.Build(output, loggers, configuration, registry, collectorServices),
             ServeCommand.Build(output, loggers, configuration, registry, collectorServices),

@@ -5,7 +5,7 @@ namespace EvidenceHound.Core.Yaml.Tests;
 /// <summary>s11-01: programmes in <c>scope/setup.yaml</c> name a framework, the groups reported against and the audit of record.</summary>
 public class ProgrammeScopeTests
 {
-    private const string OtherFramework = "urn:example:risk:framework:example-other";
+    private static readonly string OtherFramework = "urn:example:risk:framework:example-other";
 
     [Fact]
     public void A_valid_programme_is_read_and_has_no_problems()

@@ -41,6 +41,7 @@ public static class ScopeValidator
             .. EvidencePlanValidator.Validate(scope),
             .. scope.Audits.SelectMany(OtherSystemProblems),
             .. RefIdValidator.Validate(scope),
+            .. ProgrammeValidator.Validate(scope, snapshots),
         ];
     }
 

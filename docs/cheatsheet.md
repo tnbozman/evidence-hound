@@ -27,6 +27,8 @@ file by `scripts/cheatsheet/render.sh`.
   - `--scope` (req) `--ref-id --name --domain --owner --category --systems --audit --requirements -y`
 - `hound audit draft`: draft an audit
   - `--ref --name --framework` (req) `--group --domain --perimeter --system --due --json`
+- `hound programme list`: programmes with framework, groups, audit of record and requirement counts
+  - `--scope --json`
 
 ### Onboard
 - `hound onboard <system>`: onboard a system: supplier, applicability, files
