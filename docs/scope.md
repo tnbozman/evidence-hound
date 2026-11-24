@@ -17,6 +17,7 @@ compliance-repo/
     third-parties/
       example-cloud.yaml  one file per supplier or other third party (optional)
     capabilities.yaml   which system provides each mitigation (optional)
+    ssp.yaml            one system security plan per programme (optional)
   mappings/             which checks satisfy which requirements (docs/mapping-files.md)
   frameworks/           framework snapshots and custom library files
   documents/            the files that documents name, relative to the compliance repo (the scope folder's parent)
@@ -271,6 +272,22 @@ How each control's evidence arrives, from whom and how often. Optional. The guid
 | `evidence` | One row per control: `ref_id` (`EV-`), `control`, `requirements` (optional), `method` (`automated`, `manual` or `hybrid`), `collector` (a collector in `hound.yaml`, for automated and hybrid rows), `owner` (a team, for manual and hybrid rows), `grc_team`, `every` (`3 months`, `6 months` or `12 months`) and `runbook` (a Markdown file in the repo). |
 
 Each row becomes an evidence item labelled `method:` and `collector:`; each manual and hybrid row also becomes a recurring task for the owner and the GRC team, with the runbook as its description. Problems: `evidence_plan.owner_missing`, `evidence_plan.every_missing`, `evidence_plan.runbook_missing`, `evidence_plan.runbook_file_missing`, `evidence_plan.collector_missing`, `evidence_plan.collector_unknown`, `evidence_plan.team_unknown`, `evidence_plan.control_unknown` and `evidence_plan.owner_contact_has_role`.
+
+## ssp.yaml
+
+One system security plan (SSP) per programme. Optional. `hound ssp build --programme <id>` assembles the plan from one read of CISO Assistant and the repo, and writes nothing; `--json` gives every value with its source (`ciso_assistant` with the object, or `repo` with the file and line), so each one can be traced.
+
+| Key | Meaning |
+| --- | --- |
+| `programme` | The programme's `id` from `setup.yaml`. One plan per programme. |
+| `profile` | The layout: `ism` (the Essential Eight in the shape the ISM expects) or `nist-800-171`. |
+| `system_name`, `version` | The system's name as the plan gives it, and the plan's version. |
+| `perimeter` | The boundary: a perimeter in `setup.yaml`. The inventory is the systems the audits on that perimeter cover, as CISO Assistant holds them, with their owners. |
+| `roles` | `system_owner`, `authorising_official` and `security_contact`, each a user's email or a team from `access.yaml`. All three are required. |
+| `documents` | Boundary and network diagrams, data flows, policies and procedures, by document `id` from an audit. |
+| `sections` | The parts that cannot be generated, as Markdown files in the repo: `environment`, `physical` and `personnel` are required by both profiles. |
+
+External services are the solutions the scope links the boundary's systems to (`solution:` in `setup.yaml`), with their suppliers as CISO Assistant holds them. Controls and requirement rows come from the programme's audit of record. Problems: `ssp.programme_unknown`, `ssp.perimeter_unknown`, `ssp.role_missing`, `ssp.role_unknown`, `ssp.document_unknown`, `ssp.section_missing`, and `scope.duplicate` for a second plan for the same programme.
 
 ## audits/&lt;audit&gt;.yaml
 
