@@ -46,7 +46,7 @@ public class SspScopeTests
     [Fact]
     public void Required_section_missing_is_reported()
     {
-        var problem = SspFixture.Problems(SspFixture.Ssp.Replace("      personnel: ssp/personnel.md\n", "", StringComparison.Ordinal))
+        var problem = SspFixture.Problems(SspFixture.Ssp.Replace("\n      personnel: ssp/personnel.md", "", StringComparison.Ordinal))
             .Single(p => p.Code == "ssp.section_missing");
 
         problem.Message.ShouldContain("personnel");
@@ -63,7 +63,7 @@ public class SspScopeTests
     [Fact]
     public void A_programme_has_at_most_one_ssp()
     {
-        var twice = SspFixture.Ssp + SspFixture.Ssp["ssps:\n".Length..];
+        var twice = SspFixture.Ssp + "\n" + SspFixture.Ssp["ssps:\n".Length..];
 
         SspFixture.Problems(twice).ShouldContain(p => p.Code == "scope.duplicate" && p.Message.Contains("ssp for programme 'baseline'", StringComparison.Ordinal));
     }

@@ -29,6 +29,8 @@ file by `scripts/cheatsheet/render.sh`.
   - `--ref --name --framework` (req) `--group --domain --perimeter --system --due --json`
 - `hound programme list`: programmes with framework, groups, audit of record and requirement counts
   - `--scope --json`
+- `hound ssp build`: a programme's system security plan from CISO Assistant and the repo, each value with its source
+  - `--programme` (req) `--scope --config --json`
 
 ### Onboard
 - `hound onboard <system>`: onboard a system: supplier, applicability, files

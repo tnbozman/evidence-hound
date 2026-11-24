@@ -41,15 +41,3 @@ public sealed record SspDocument(
     IReadOnlyList<SspRequirement> Requirements,
     IReadOnlyList<SspValue> Documents,
     IReadOnlyList<SspValue> Sections);
-
-/// <summary>Builds the plan from the scope and one read of CISO Assistant. Pure.</summary>
-public static class SspBuilder
-{
-    public static SspDocument Build(ScopeSsp ssp, ScopeDocument scope, IReadOnlyList<ActualObject> held) => throw new NotImplementedException();
-}
-
-/// <summary>The plan as JSON: every value as <c>{"value", "source": {"kind", "reference"}}</c>.</summary>
-public static class SspJson
-{
-    public static string Write(SspDocument document) => throw new NotImplementedException();
-}

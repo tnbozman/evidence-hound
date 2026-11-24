@@ -41,6 +41,9 @@ public class ScopeSchemaTests
         Errors(EvidencePlanScopeTests.Plan).ShouldBeEmpty();
         Errors(SensitiveDataScopeTests.Supplier()).ShouldBeEmpty();
         Errors(SensitiveDataScopeTests.Setup()).ShouldBeEmpty();
+        Errors(SspFixture.Ssp).ShouldBeEmpty();
+        Errors(SspFixture.Setup).ShouldBeEmpty();
+        Errors(SspFixture.Ssp.Replace("profile: ism", "profile: iso27001", StringComparison.Ordinal)).ShouldNotBeEmpty();
     }
 
     [Fact]

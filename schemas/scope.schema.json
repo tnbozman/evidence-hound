@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/tnbozman/evidence-hound/schemas/scope.schema.json",
   "title": "Evidence Hound scope file",
-  "description": "One file of a compliance repo's scope: setup.yaml (organisation, frameworks, domains), controls.yaml (applied controls), audits/<audit>.yaml (one compliance assessment), access.yaml (users, teams and role assignments), settings.yaml (feature flags and general settings), third-parties/<entity>.yaml (one supplier or other third party), capabilities.yaml (which system provides each mitigation), or evidence-plan.yaml (how each control's evidence arrives, from whom and how often). Guide: docs/scope.md.",
+  "description": "One file of a compliance repo's scope: setup.yaml (organisation, frameworks, domains), controls.yaml (applied controls), audits/<audit>.yaml (one compliance assessment), access.yaml (users, teams and role assignments), settings.yaml (feature flags and general settings), third-parties/<entity>.yaml (one supplier or other third party), capabilities.yaml (which system provides each mitigation), evidence-plan.yaml (how each control's evidence arrives, from whom and how often), or ssp.yaml (one system security plan per programme). Guide: docs/scope.md.",
   "oneOf": [
     {
       "$ref": "#/$defs/setup"
@@ -27,6 +27,9 @@
     },
     {
       "$ref": "#/$defs/evidencePlan"
+    },
+    {
+      "$ref": "#/$defs/ssps"
     }
   ],
   "$defs": {
@@ -126,14 +129,43 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["id", "name", "framework", "groups", "audit"],
+            "required": [
+              "id",
+              "name",
+              "framework",
+              "groups",
+              "audit"
+            ],
             "properties": {
-              "id": { "description": "A lowercase slug, unique, such as essential-eight.", "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
-              "name": { "$ref": "#/$defs/text" },
-              "framework": { "description": "A framework URN declared under frameworks, with a snapshot.", "$ref": "#/$defs/text" },
-              "groups": { "description": "The implementation groups reported against; each must exist in the framework's snapshot.", "type": "array", "items": { "$ref": "#/$defs/text" } },
-              "audit": { "description": "The ref_id of the audit, or audit series, of record. It uses the programme's framework and belongs to no other programme.", "$ref": "#/$defs/text" },
-              "group_by": { "description": "How requirements are grouped in reports: parent (the default) groups them under their parent node.", "enum": ["parent"] }
+              "id": {
+                "description": "A lowercase slug, unique, such as essential-eight.",
+                "type": "string",
+                "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+              },
+              "name": {
+                "$ref": "#/$defs/text"
+              },
+              "framework": {
+                "description": "A framework URN declared under frameworks, with a snapshot.",
+                "$ref": "#/$defs/text"
+              },
+              "groups": {
+                "description": "The implementation groups reported against; each must exist in the framework's snapshot.",
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/text"
+                }
+              },
+              "audit": {
+                "description": "The ref_id of the audit, or audit series, of record. It uses the programme's framework and belongs to no other programme.",
+                "$ref": "#/$defs/text"
+              },
+              "group_by": {
+                "description": "How requirements are grouped in reports: parent (the default) groups them under their parent node.",
+                "enum": [
+                  "parent"
+                ]
+              }
             }
           }
         }
@@ -1520,6 +1552,83 @@
               },
               "expires": {
                 "$ref": "#/$defs/date"
+              }
+            }
+          }
+        }
+      }
+    },
+    "ssps": {
+      "description": "ssp.yaml: one system security plan per programme (s11-02).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ssps"
+      ],
+      "properties": {
+        "ssps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "programme",
+              "profile",
+              "system_name",
+              "perimeter",
+              "version"
+            ],
+            "properties": {
+              "programme": {
+                "description": "The programme's id from setup.yaml.",
+                "$ref": "#/$defs/text"
+              },
+              "profile": {
+                "description": "The layout: ism (the Essential Eight in the shape the ISM expects) or nist-800-171.",
+                "enum": [
+                  "ism",
+                  "nist-800-171"
+                ]
+              },
+              "system_name": {
+                "$ref": "#/$defs/text"
+              },
+              "perimeter": {
+                "description": "The plan's boundary: a perimeter declared in setup.yaml.",
+                "$ref": "#/$defs/text"
+              },
+              "version": {
+                "$ref": "#/$defs/text"
+              },
+              "roles": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "system_owner": {
+                    "description": "A user's email or a team from access.yaml.",
+                    "$ref": "#/$defs/text"
+                  },
+                  "authorising_official": {
+                    "$ref": "#/$defs/text"
+                  },
+                  "security_contact": {
+                    "$ref": "#/$defs/text"
+                  }
+                }
+              },
+              "documents": {
+                "description": "Documents by id from an audit's documents: diagrams, policies and procedures.",
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/text"
+                }
+              },
+              "sections": {
+                "description": "The parts that cannot be generated, as Markdown files in the repo, by section name: environment, physical, personnel.",
+                "type": "object",
+                "additionalProperties": {
+                  "$ref": "#/$defs/text"
+                }
               }
             }
           }

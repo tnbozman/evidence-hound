@@ -85,12 +85,14 @@ public static partial class ScopeLoader
         var parsedCapabilities = capabilitiesFile?.Root() is { } capabilitiesRoot ? ReadCapabilities(capabilitiesRoot, capabilitiesFile) : null;
         var planFile = evidencePlan is null ? null : new FileReader(evidencePlan);
         var parsedPlan = planFile?.Root() is { } planRoot ? ReadEvidencePlan(planRoot, planFile) : null;
+        var sspFile = ssp is null ? null : new FileReader(ssp);
+        var parsedSsps = sspFile?.Root() is { } sspRoot ? ReadSsps(sspRoot, sspFile) : [];
 
         return new ScopeParse(
-            new ScopeDocument(parsedSetup, parsedControls, parsedAudits) { Access = parsedAccess, Settings = parsedSettings, ThirdParties = parsedThirdParties, Capabilities = parsedCapabilities, EvidencePlan = parsedPlan },
+            new ScopeDocument(parsedSetup, parsedControls, parsedAudits) { Access = parsedAccess, Settings = parsedSettings, ThirdParties = parsedThirdParties, Capabilities = parsedCapabilities, EvidencePlan = parsedPlan, Ssps = parsedSsps },
             [
                 .. setupFile.Problems, .. controlsFile?.Problems ?? [], .. auditFiles.SelectMany(f => f.Problems), .. accessFile?.Problems ?? [],
-                .. settingsFile?.Problems ?? [], .. thirdPartyFiles.SelectMany(f => f.Problems), .. capabilitiesFile?.Problems ?? [], .. planFile?.Problems ?? [],
+                .. settingsFile?.Problems ?? [], .. thirdPartyFiles.SelectMany(f => f.Problems), .. capabilitiesFile?.Problems ?? [], .. planFile?.Problems ?? [], .. sspFile?.Problems ?? [],
             ]);
     }
 
