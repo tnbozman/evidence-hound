@@ -232,15 +232,15 @@ Standing task from 2026-11-24, after the maintainer asked for 10 to 20% of effor
 
 Human trials and onboarding tests, moved from s11 on 2026-11-24 at the maintainer's request. Built and tested in CI. Details stay under
 each task in its own sprint file. From 2026-11-24 Claude's rehearsal (s12-09) closes the ones a person's own environment is not needed
-for (s11-08, s09-38, s09-40 to s09-42, s09-54, s09-57); only the real tenant and firewall items (s09-01, s09-15, s09-17, s09-29, s09-39)
-wait on the maintainer.
+for (s11-08, s09-38, s09-40 to s09-42, s09-54, s09-57); the items that need a real tenant or firewall (s09-01, s09-15, s09-17,
+s09-29, s09-39) stay open until one is available.
 - [ ] s11-08 AI governance walkthrough: someone who has not read AI6 follows `docs/tutorials/ai-governance.md` on the local stack without help, and notes anything unclear under Discovered work.
 - [ ] s09-01 Application control policies from Intune: a real Graph export for the App Control for Business setting IDs.
-- [ ] s09-15 Firewall firmware update timeliness: whether the read-only role may call the firmware upgrade check, and a dry run on the maintainer's tenant.
+- [ ] s09-15 Firewall firmware update timeliness: whether the read-only role may call the firmware upgrade check, and a dry run on a real tenant.
 - [ ] s09-17 The Sophos trial on a real tenant.
-- [ ] s09-29 Microsoft 365 checks follow the capability map: a run against the maintainer's tenant.
-- [ ] s09-38 to s09-42 Agent-driven onboarding and manual evidence: the maintainer's own run with their agent, including s09-39, their XGS firewall.
-- [ ] s09-54 and s09-57 `make trial` on the maintainer's machine.
+- [ ] s09-29 Microsoft 365 checks follow the capability map: a run against a real tenant.
+- [ ] s09-38 to s09-42 Agent-driven onboarding and manual evidence: a full run with an agent, including s09-39 on a real XGS firewall.
+- [ ] s09-54 and s09-57 `make trial` end to end.
 
 ## Discovered work
 
