@@ -30,7 +30,10 @@ file by `scripts/cheatsheet/render.sh`.
 - `hound programme list`: programmes with framework, groups, audit of record and requirement counts
   - `--scope --json`
 - `hound ssp build`: a programme's system security plan from CISO Assistant and the repo, gaps first, each value with its source
-  - `--programme` (req) `--scope --config --json --strict`
+  - `--programme` (req) `--scope --config --json --strict --snapshot-out --from-snapshot`
+- `hound ssp diff <before> <after>`: what changed between two signed versions' snapshots, boundary and inventory first
+- `hound ssp publish`: upload a signed version (plan, POA&M, snapshot, audit report) as a new evidence revision
+  - `--programme --snapshot` (req) `--scope --config`
 - `hound ssp poam`: the plan of action and milestones: requirements not yet met, with control, owner, ETA and status
   - `--programme` (req) `--scope --config --json`
 

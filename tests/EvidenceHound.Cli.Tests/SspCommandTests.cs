@@ -162,7 +162,7 @@ public sealed class SspCommandTests : IDisposable
 
         (await Build("--from-snapshot", snapshot)).ShouldBe(ExitCodes.Configuration);
 
-        _error.ToString().ShouldContain("ssp.signoff_hash_mismatch");
+        ErrorCodes().ShouldContain("ssp.signoff_hash_mismatch");
     }
 
     [Fact]
@@ -201,7 +201,7 @@ public sealed class SspCommandTests : IDisposable
 
         exit.ShouldBe(ExitCodes.Ok, _error.ToString());
         var upload = _ca.LogEntries.Select(e => e.RequestMessage!).Single(r => r.Path == "/api/evidence-revisions/" && r.Method == "POST");
-        upload.Body!.ShouldContain("filename=ssp-baseline-0.1.zip");
+        System.Text.Encoding.Latin1.GetString(upload.BodyAsBytes!).ShouldContain("filename=ssp-baseline-0.1.zip");
         _ca.LogEntries.Select(e => e.RequestMessage!).Single(r => r.Path == "/api/evidences/" && r.Method == "POST").Body!.ShouldContain("SSP-BASELINE");
     }
 
@@ -216,7 +216,7 @@ public sealed class SspCommandTests : IDisposable
 
         (await Publish(snapshot)).ShouldBe(ExitCodes.Configuration);
 
-        _error.ToString().ShouldContain("ssp.not_signed");
+        ErrorCodes().ShouldContain("ssp.not_signed");
         _ca.LogEntries.ShouldBeEmpty();
     }
 
@@ -264,6 +264,9 @@ public sealed class SspCommandTests : IDisposable
             logging => logging.AddProvider(_logs),
             new Dictionary<string, string?> { ["HOUND_CA_URL"] = $"{_ca.Url}/api/", ["HOUND_CA_TOKEN"] = Token },
             _ct);
+
+    private string[] ErrorCodes() =>
+        [.. _logs.Entries.Where(e => e.Level == LogLevel.Error).SelectMany(e => e.State).Where(kv => kv.Key == "Code").Select(kv => (string)kv.Value!)];
 
     private static string SignOff(string sha256) =>
         $"\n    sign_offs:\n      - {{version: \"0.1\", by: it@example.com, date: \"2026-11-24\", sha256: {sha256}}}\n";
