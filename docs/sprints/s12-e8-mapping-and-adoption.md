@@ -248,7 +248,7 @@ s09-29, s09-39) stay open until one is available.
   loaded library before the file. Revisit when CISO Assistant adds one (s17, with CMMC). The output says the file is used.
 - s12-10 Improve: the committee report's "collector success rate for the month" needs run history; the run store keeps only each
   collector's latest run.
-- s12-10 Improve: `ReportCommands` uses `.Result` inside `Bind` (sync over async) when reading snapshots.
+- s12-10 Improve: `ReportCommands` used `.Result` inside `Bind` (sync over async) when reading snapshots. Fixed.
 - Cloud sessions cannot pull CISO Assistant's images (ghcr.io blobs are blocked by the proxy), so functional checks against CISO Assistant run in CI's functional job; dev servers and `--dry-run` runs work locally.
 
 ## Sprint review

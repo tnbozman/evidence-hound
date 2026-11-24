@@ -75,8 +75,11 @@ internal static class ReportCommands
             : Result.Fail<ReportingPeriod>(new Problem("report.period_not_month", $"'{monthText}' is a quarter: the committee report is monthly (YYYY-MM); the board report is quarterly.")));
         var deployment = await ConfigCommands.LoadAsync(configFile, registry, cancellationToken);
         var loaded = await period.Bind(p => deployment.Map(d => (Period: p, Root: d.Evidence.Root))).BindAsync(async x =>
-            (await ReadSnapshotAsync(x.Root, x.Period, cancellationToken))
-                .Bind(current => ReadSnapshotsAsync(x.Root, [x.Period.Previous()], cancellationToken).Result.Map(previous => (Current: current, Previous: previous.SingleOrDefault()))));
+        {
+            var current = await ReadSnapshotAsync(x.Root, x.Period, cancellationToken);
+            var previous = await ReadSnapshotsAsync(x.Root, [x.Period.Previous()], cancellationToken);
+            return current.Bind(c => previous.Map(p => (Current: c, Previous: p.SingleOrDefault())));
+        });
         return await loaded.Match(
             async snapshots => await WriteReportAsync(CommitteeReport.Render(snapshots.Current, snapshots.Previous), outFile, output, cancellationToken),
             problems => Task.FromResult(Log.Problems(logger, problems)));
@@ -95,9 +98,9 @@ internal static class ReportCommands
                 .Select(i => new ReportingPeriod(PeriodKind.Month, x.Quarter.End.AddMonths(-3 * i).Year, x.Quarter.End.AddMonths(-3 * i).Month))
                 .Reverse()
                 .ToList();
-            return (await ReadSnapshotAsync(x.Root, ends[^1], cancellationToken))
-                .Bind(_ => ReadSnapshotsAsync(x.Root, ends, cancellationToken).Result)
-                .Map(snapshots => (x.Quarter, Snapshots: snapshots));
+            var last = await ReadSnapshotAsync(x.Root, ends[^1], cancellationToken);
+            var snapshots = await ReadSnapshotsAsync(x.Root, ends, cancellationToken);
+            return last.Bind(_ => snapshots).Map(found => (x.Quarter, Snapshots: found));
         });
         return await loaded.Match(
             async x => await WriteReportAsync(BoardReport.Render(x.Quarter, x.Snapshots), outFile, output, cancellationToken),
