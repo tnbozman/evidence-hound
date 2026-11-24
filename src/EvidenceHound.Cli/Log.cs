@@ -55,6 +55,10 @@ internal static partial class Log
     [LoggerMessage(EventId = 1005, Level = LogLevel.Error, Message = "{Collector}: scheduled run failed unexpectedly; the schedule carries on")]
     public static partial void ScheduledRunFailed(ILogger logger, Exception exception, string collector);
 
+    /// <summary>A manual upload that succeeded without attesting: the next step, not an error (s13-07).</summary>
+    [LoggerMessage(EventId = 1010, Level = LogLevel.Information, Message = "{File} is copied but not attested: only a person at a terminal attests evidence. Propose a result with 'hound manual propose', and a person attests it with 'hound manual approve' or in the weekly review.")]
+    public static partial void CopiedNotAttested(ILogger logger, string file);
+
     [LoggerMessage(EventId = 1009, Level = LogLevel.Warning, Message = "{Message}")]
     public static partial void Warning(ILogger logger, string message);
 

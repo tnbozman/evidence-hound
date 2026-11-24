@@ -113,7 +113,7 @@ internal static class AddCommands
         var domain = new Option<string?>("--domain") { Description = "The domain that owns it. Asked only when the scope has more than one." };
         var owner = new Option<string?>("--owner") { Description = "The email of the control's owner." };
         var category = new Option<string?>("--category") { Description = "policy, process, technical, physical or procedure. Default: technical." };
-        var systems = new Option<string?>("--systems") { Description = "Comma-separated systems it covers." };
+        var systems = new Option<string?>("--systems") { Description = "Comma-separated systems it covers, by name or ref ID (written by name)." };
         var audit = new Option<string?>("--audit") { Description = "An audit (by ref_id) to link the control to." };
         var requirements = new Option<string?>("--requirements") { Description = "Comma-separated requirements of that audit's framework the control supports, such as ISM-1511." };
 
@@ -144,7 +144,7 @@ internal static class AddCommands
                 ("owner", new YamlText(await wizard.AskAsync("Owner's email, as a CISO Assistant user", parseResult.GetValue(owner), "", cancellationToken))),
                 ("status", new YamlText("to_do")),
                 ("category", new YamlText(await wizard.AskAsync("Category (policy, process, technical, physical or procedure)", parseResult.GetValue(category), "technical", cancellationToken))),
-                ("systems", new YamlFlowList(Wizard.List(await wizard.AskAsync("Systems it covers, comma-separated", parseResult.GetValue(systems), "", cancellationToken)))));
+                ("systems", new YamlFlowList(SystemNames(domains, Wizard.List(await wizard.AskAsync("Systems it covers, comma-separated", parseResult.GetValue(systems), "", cancellationToken))))));
             var auditRef = parseResult.GetValue(audit);
             var linked = auditRef is null ? [] : Wizard.List(await wizard.AskAsync($"Requirements of {auditRef} it supports, comma-separated", parseResult.GetValue(requirements), "", cancellationToken));
 
@@ -184,6 +184,13 @@ internal static class AddCommands
         });
 
         return command;
+    }
+
+    /// <summary>Each system given by its ref ID, such as SYS-365, as its name; names and unknown entries as given, for validation to judge.</summary>
+    private static IReadOnlyList<string> SystemNames(IReadOnlyList<ScopeDomain> domains, IReadOnlyList<string> given)
+    {
+        var byRef = domains.SelectMany(d => d.Systems).Where(s => s.RefId is not null).ToDictionary(s => s.RefId!, s => s.Name, StringComparer.Ordinal);
+        return [.. given.Select(g => byRef.GetValueOrDefault(g, g))];
     }
 
     private static Command CollectorCommand(Terminal terminal, ILogger logger, CollectorRegistry registry)
