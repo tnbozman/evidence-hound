@@ -91,6 +91,23 @@ internal static partial class YamlEdit
         });
     }
 
+    /// <summary>
+    /// Writes the scalar at <paramref name="path"/>, adding it or replacing a one-line value, with <paramref name="comment"/> on the line
+    /// above it (added once). The list item or map that holds it must exist.
+    /// </summary>
+    public static Result<string> WriteScalar(string yaml, string path, string value, string comment)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        var marker = $"# {comment}";
+        return Locate(yaml, path).Bind(found => found.Value switch
+        {
+            null => Result.Ok(found.Lines.Insert(LastLine(found.Parent), [$"{Indent(found.KeyIndent)}{marker}", $"{Indent(found.KeyIndent)}{found.Key}: {Scalar(value)}"])),
+            YamlScalarNode scalar when scalar.Start.Line == scalar.End.Line || (scalar.End.Column == 1 && scalar.End.Line == scalar.Start.Line + 1) =>
+                Result.Ok(found.Lines.ReplaceWithComment(scalar, Scalar(value), $"{Indent(found.KeyIndent)}{marker}")),
+            _ => Result.Fail<string>(new Problem("setup.not_a_value", $"'{path}' is not a single value on one line; change it by hand.")),
+        });
+    }
+
     /// <summary>The item as block lines, its dash at <paramref name="indent"/>.</summary>
     private static IEnumerable<string> Item(YamlMap item, int indent) =>
         Entries(item, indent + 2).Select((line, index) => index == 0 ? $"{Indent(indent)}- {line.TrimStart()}" : line);
@@ -204,6 +221,19 @@ internal static partial class YamlEdit
             var text = _lines[line];
             var end = scalar.Style == ScalarStyle.Plain ? start + (scalar.Value ?? "").Length : (int)scalar.End.Column - 1;
             _lines[line] = text[..start] + written + text[Math.Min(end, text.Length)..];
+            return string.Join('\n', _lines);
+        }
+
+        /// <summary>The file with <paramref name="scalar"/> replaced and <paramref name="comment"/> on the line above it, unless it is there already.</summary>
+        public string ReplaceWithComment(YamlScalarNode scalar, string written, string comment)
+        {
+            var line = (int)scalar.Start.Line - 1;
+            Replace(scalar, written);
+            if (line == 0 || _lines[line - 1] != comment)
+            {
+                _lines.Insert(line, comment);
+            }
+
             return string.Join('\n', _lines);
         }
 

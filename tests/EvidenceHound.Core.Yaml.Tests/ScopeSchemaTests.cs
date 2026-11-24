@@ -41,6 +41,12 @@ public class ScopeSchemaTests
         Errors(EvidencePlanScopeTests.Plan).ShouldBeEmpty();
         Errors(SensitiveDataScopeTests.Supplier()).ShouldBeEmpty();
         Errors(SensitiveDataScopeTests.Setup()).ShouldBeEmpty();
+        Errors(AiRegisterScopeTests.Setup()).ShouldBeEmpty();
+        Errors(ProgrammeScopeTests.WithProgrammes(ProgrammeScopeTests.Programme() + "    register:\n      of: ai_systems\n      by: [screening, use]\n")).ShouldBeEmpty();
+        Errors(AiRegisterScopeTests.Setup().Replace("screening: elevated", "screening: extreme", StringComparison.Ordinal)).ShouldNotBeEmpty();
+        Errors(SspFixture.Ssp).ShouldBeEmpty();
+        Errors(SspFixture.Setup).ShouldBeEmpty();
+        Errors(SspFixture.Ssp.Replace("profile: ism", "profile: iso27001", StringComparison.Ordinal)).ShouldNotBeEmpty();
     }
 
     [Fact]

@@ -39,6 +39,21 @@ public sealed class EvidencePlanValidateTests : IDisposable
     }
 
     [Fact]
+    public async Task Make_ca_up_applies_the_example_scope_with_a_config_it_validates_against()
+    {
+        // make ca-up (scripts/ca-apply-scope.sh) and the functional fixture apply the example scope with the repo's own hound.yaml: the
+        // Essential Eight config lacks the AI collectors the evidence plan names (evidence_plan.collector_unknown).
+        var script = await File.ReadAllTextAsync(Path.Combine(ExampleRepoTests.RepoRoot, "scripts", "ca-apply-scope.sh"), _ct);
+        script.ShouldContain("--config \"$root/examples/compliance-repo/hound.yaml\"");
+
+        var exit = await Hound(
+            "scope", "validate", Path.Combine(ExampleRepoTests.RepoRoot, "examples", "compliance-repo", "scope"),
+            "--config", Path.Combine(ExampleRepoTests.RepoRoot, "examples", "compliance-repo", "hound.yaml"), "--format", "json");
+
+        exit.ShouldBe(ExitCodes.Ok, _output.ToString() + _error);
+    }
+
+    [Fact]
     public async Task A_hand_written_row_conflicts_only_once_a_configured_collector_reports_its_checks()
     {
         // s10-04: manual checks are mapped, but a run publishes a requirement only when every one of its checks is reported, so a team
@@ -48,7 +63,7 @@ public sealed class EvidencePlanValidateTests : IDisposable
         (await Hound("scope", "validate", scope, "--config", config)).ShouldBe(ExitCodes.Ok, _error.ToString());
 
         var text = await File.ReadAllTextAsync(config, _ct);
-        await File.WriteAllTextAsync(config, text.Replace("\ntarget:", """
+        await File.WriteAllTextAsync(config, text.Replace("\ntargets:", """
 
               - name: user-application-hardening
                 type: manual
@@ -59,7 +74,7 @@ public sealed class EvidencePlanValidateTests : IDisposable
                   due_days: 183
                   owner: Example endpoint owner
 
-            target:
+            targets:
             """, StringComparison.Ordinal), _ct);
 
         (await Hound("scope", "validate", scope, "--config", config)).ShouldNotBe(ExitCodes.Ok);
@@ -75,7 +90,12 @@ public sealed class EvidencePlanValidateTests : IDisposable
 
         var runbook = await File.ReadAllTextAsync(Path.Combine(_root, "manual-sources", "backup-restore-test.md"), _ct);
         checkedScope.Inputs.Runbooks["manual-sources/backup-restore-test.md"].ShouldBe(runbook);
-        checkedScope.Inputs.Runbooks.Keys.ShouldBe(["manual-sources/backup-restore-test.md", "manual-sources/mfa-exceptions-review.md", "manual-sources/weekly-compliance-review.md"], ignoreOrder: true);
+        checkedScope.Inputs.Runbooks.Keys.ShouldBe(
+            [
+                "manual-sources/backup-restore-test.md", "manual-sources/mfa-exceptions-review.md", "manual-sources/weekly-compliance-review.md",
+                "manual-sources/ai-governance.md", "manual-sources/ai-operations.md",
+            ],
+            ignoreOrder: true);
     }
 
     public void Dispose()

@@ -11,6 +11,9 @@ public static class ExitCodes
 
     /// <summary>At least one profile test case did not give the results it expects. Shares 1 with <see cref="Unexpected"/>.</summary>
     public const int ProfileTestsFailed = 1;
+
+    /// <summary><c>hound ssp build --strict</c>: the plan still has gaps. Shares 1 with <see cref="Unexpected"/>.</summary>
+    public const int SspGaps = 1;
     public const int Usage = 2;
     public const int Configuration = 3;
     public const int PublishFailed = 4;

@@ -88,6 +88,9 @@ public sealed class ScopeStateReaderTests : IDisposable
             ["systems"] = "Example 365",
             ["documents"] = "identity-policy",
         }, ignoreOrder: true);
+
+        // s11-02: the status CISO Assistant owns is read for the system security plan, never compared or written.
+        held[(ScopeKind.Control, "AC-MFA")].Observed.ShouldBe(new Dictionary<string, string> { ["status"] = "active" });
         held[(ScopeKind.Assessment, "EX-E8-2026/ISM-1486")].Held.Fields.ShouldBe(new Dictionary<string, string>
         {
             ["status"] = "done",

@@ -61,6 +61,68 @@ public sealed class ScopeExportTests
     }
 
     [Fact]
+    public void An_ai_system_exports_its_register_entry_from_its_labels_and_description()
+    {
+        // s11-12: the register entry reaches CISO Assistant as labels and description lines, so export reads it back from them.
+        var entry = new AiRegistration(AiScreening.Elevated, new DateOnly(2026, 3, 2), AiUse.Customised, AiOversight.HumanOnTheLoop, "The sales lead can switch it off; staff draft by hand.", new SourceLine("setup.yaml", 1))
+        {
+            ScreeningYes = [1, 5],
+            RegisteredOn = new DateOnly(2026, 3, 4),
+            Version = "2.1",
+            Purpose = "Drafts proposals: faster.",
+            IntendedUses = ["Draft proposal text", "Summarise past bids"],
+            Limitations = "Not for pricing.",
+            Misuse = "None identified.",
+            DataSources = ["Past proposals (text)"],
+            Stakeholders = ["Sales team", "Customers"],
+            ImpactAssessment = AiImpactAssessment.Approved,
+            ImpactAssessedOn = new DateOnly(2026, 3, 20),
+            InUseFrom = new DateOnly(2026, 4, 1),
+        };
+        var built = entry with { Use = AiUse.Built, Screening = AiScreening.Normal, ScreeningYes = [], Version = null, IntendedUses = [], Stakeholders = [], Oversight = AiOversight.HumanInTheLoop, ImpactAssessment = AiImpactAssessment.NotRequired, ImpactAssessedOn = null, LastTestedOn = new DateOnly(2026, 5, 1), RetiredOn = new DateOnly(2026, 10, 1) };
+        var held = Held();
+        held = held with
+        {
+            Objects =
+            [
+                .. held.Objects,
+                AiSystem("Example proposal assistant", "Drafts proposals.", entry),
+                AiSystem("Example ticket triage", null, built),
+            ],
+        };
+
+        var files = ScopeExport.Write(held);
+
+        files["setup.yaml"].ShouldContain("screening: elevated");
+        files["setup.yaml"].ShouldContain("oversight: human_on_the_loop");
+        var (scope, problems) = Parse(files);
+        problems.ShouldBeEmpty(string.Join("\n", problems.Select(p => $"{p.Code} {p.At.File}:{p.At.Line} {p.Message}")));
+        var declared = ScopeDesired.From(scope, new ScopeInputs(Snapshots(files), null, new Dictionary<string, IReadOnlyList<ScopeFile>>()));
+        var plan = ScopePlanner.Plan(declared, held.Objects, prune: false);
+        plan.Changes.ShouldBeEmpty(string.Join("\n", plan.Changes.Select(c => $"{c.Action} {c.Kind} {c.Key}: {string.Join(", ", c.Fields.Select(f => $"{f.Field} {f.Old} -> {f.New}"))}")));
+    }
+
+    [Fact]
+    public void Ai_labels_without_a_register_entry_in_the_description_export_no_ai_block()
+    {
+        var held = Held();
+        held = held with
+        {
+            Objects =
+            [
+                .. held.Objects,
+                Managed(ScopeKind.System, "Example chat", ("ref_id", "SYS-CHAT"), ("type", "primary"), ("description", "Edited by hand in CISO Assistant."), ("domain", "Example Pty Ltd"),
+                    ("labels", "ai-oversight-in-the-loop, ai-screening-normal, ai-system, ai-use-built")),
+            ],
+        };
+
+        var files = ScopeExport.Write(held);
+
+        files["setup.yaml"].ShouldNotContain("    ai:");
+        files["setup.yaml"].ShouldContain("Edited by hand in CISO Assistant.");
+    }
+
+    [Fact]
     public void Objects_without_a_ref_id_are_given_one()
     {
         ScopeRefIds.For(ScopeKind.Audit, "Essential Eight review 2026").ShouldBe("ESSENTIAL-EIGHT-REVIEW-2026");
@@ -103,6 +165,10 @@ public sealed class ScopeExportTests
             Row("EX-E8-2026/ISM-1173", ("status", "to_do"), ("result", "not_assessed"), ("controls", "AC-MFA"), ("documents", "identity-policy")),
         ],
         [Snapshot]);
+
+    private static ActualObject AiSystem(string name, string? description, AiRegistration entry) =>
+        Managed(ScopeKind.System, name, ("ref_id", ScopeRefIds.For(ScopeKind.System, name)), ("type", "primary"), ("description", AiRegister.Description(description, entry)),
+            ("owner", "it@example.com"), ("domain", "Example Pty Ltd"), ("labels", string.Join(", ", AiRegister.Labels(entry).Order(StringComparer.Ordinal))));
 
     private static ActualObject Managed(ScopeKind kind, string key, params (string Name, string? Value)[] fields)
     {

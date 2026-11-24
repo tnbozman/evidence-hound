@@ -21,7 +21,7 @@ trap 'rm -rf "$work"' EXIT
 cp -R "$root/examples/compliance-repo" "$work/repo"
 scope="$work/repo/scope"
 audit="$scope/audits/ex-e8-2026.yaml"
-config="$root/examples/example-essential-eight.yaml"
+config="$work/repo/hound.yaml"
 plan="$work/plan.json"
 dotnet build -c Release --nologo -v q "$root/src/EvidenceHound.Cli" >/dev/null
 

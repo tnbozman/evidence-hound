@@ -18,11 +18,12 @@ set -a
 set +a
 [[ -z "$url_override" ]] || HOUND_CA_URL="$url_override"
 
-# The Essential Eight config tells apply which rows its mapping computes, so `unlisted` leaves them alone.
+# The repo's own config tells apply which rows its targets' mappings compute, so `unlisted` leaves them alone, and names
+# the collectors its evidence plan uses.
 # The report (JSON) goes next to the env file; it lists every change and what happened to it.
 report="$(dirname "$env_file")/scope-apply.json"
 if ! dotnet run --project "$root/src/EvidenceHound.Cli" -- scope apply "$root/examples/compliance-repo/scope" \
-  --config "$root/examples/example-essential-eight.yaml" >"$report"; then
+  --config "$root/examples/compliance-repo/hound.yaml" >"$report"; then
   echo "ca-apply-scope: hound scope apply failed; see $report" >&2
   # The changes that failed, so a CI log shows why without the report.
   command -v jq >/dev/null && jq -c '[.. | objects | select((.problems? // []) | length > 0)]' "$report" >&2 || true

@@ -51,7 +51,36 @@ collectors:
       due_days: 92
       owner: Sam Example
 
-target:
-  mapping: mappings/essential-eight-2023.yaml
-  compliance_assessment: EX-E8-2026
-  health_control: AC-AUTO-EVIDENCE
+  # AI governance (docs/ai-grc.md). The register entries are the ai blocks in scope/setup.yaml, read from the repo itself.
+  - name: example-ai-register
+    type: ai-register
+    schedule: "0 6 * * *"
+    settings:
+      scope: scope
+
+  # AI governance and operations records a person attests (examples/manual-sources/ai6/ in the Evidence Hound repo).
+  - name: example-ai-governance
+    type: manual
+    schedule: "0 6 * * *"
+    settings:
+      drop_folder: /var/lib/evidence-hound/manual/example-ai-governance
+      checks: ai.senior_owner_named, ai.training_current, ai.policy_approved, ai.redress_process_in_place, ai.risk_method_documented, ai.use_disclosed, ai.generated_content_labelled, ai.retirement_recorded
+      due_days: 366
+      owner: Sam Example
+
+  - name: example-ai-operations
+    type: manual
+    schedule: "0 6 * * *"
+    settings:
+      drop_folder: /var/lib/evidence-hound/manual/example-ai-operations
+      checks: ai.stakeholders_identified, ai.systemic_issues_reviewed, ai.incidents_reviewed, ai.performance_monitored, ai.data_and_cyber_covered
+      due_days: 92
+      owner: Alex Example
+
+# The audits that results are published to: the Essential Eight ML2 audit and the AI6 self-assessment.
+targets:
+  - mapping: mappings/essential-eight-2023.yaml
+    compliance_assessment: EX-E8-2026
+    health_control: AC-AUTO-EVIDENCE
+  - mapping: mappings/ai6.yaml
+    compliance_assessment: EX-AI6-2026

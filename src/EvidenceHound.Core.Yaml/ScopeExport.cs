@@ -102,15 +102,63 @@ public static class ScopeExport
                     yaml.Append(CultureInfo.InvariantCulture, $"      - name: {Scalar(system.Key)}\n");
                     Optional(yaml, "        ", "ref_id", Field(system, "ref_id"));
                     yaml.Append(CultureInfo.InvariantCulture, $"        type: {Field(system, "type") ?? "primary"}\n");
-                    Optional(yaml, "        ", "description", Field(system, "description"));
+                    var (description, ai) = AiRegister.Read(Field(system, "description"), Split(Field(system, "labels")), new SourceLine("setup.yaml", 0));
+                    Optional(yaml, "        ", "description", description);
                     Optional(yaml, "        ", "owner", Field(system, "owner"));
                     List(yaml, "        ", "parents", Split(Field(system, "parents")));
+                    Ai(yaml, ai);
                 }
             }
         }
 
         return yaml.ToString();
     }
+
+    /// <summary>A system's AI register entry (s11-12), as <see cref="AiRegister.Read"/> recovered it from CISO Assistant.</summary>
+    private static void Ai(StringBuilder yaml, AiRegistration? ai)
+    {
+        if (ai is null)
+        {
+            return;
+        }
+
+        const string Indent = "          ";
+        yaml.Append("        ai:\n")
+            .Append(CultureInfo.InvariantCulture, $"{Indent}screening: {Snake(ai.Screening)}\n")
+            .Append(CultureInfo.InvariantCulture, $"{Indent}screening_yes: [{string.Join(", ", ai.ScreeningYes)}]\n")
+            .Append(CultureInfo.InvariantCulture, $"{Indent}screened_on: {Scalar(Day(ai.ScreenedOn))}\n");
+        Optional(yaml, Indent, "registered_on", ai.RegisteredOn is { } registered ? Day(registered) : null);
+        Optional(yaml, Indent, "version", ai.Version);
+        yaml.Append(CultureInfo.InvariantCulture, $"{Indent}use: {Snake(ai.Use)}\n");
+        Optional(yaml, Indent, "purpose", ai.Purpose);
+        InOrder(yaml, Indent, "intended_uses", ai.IntendedUses);
+        Optional(yaml, Indent, "limitations", ai.Limitations);
+        Optional(yaml, Indent, "misuse", ai.Misuse);
+        InOrder(yaml, Indent, "data_sources", ai.DataSources);
+        InOrder(yaml, Indent, "stakeholders", ai.Stakeholders);
+        yaml.Append(CultureInfo.InvariantCulture, $"{Indent}oversight: {Snake(ai.Oversight)}\n")
+            .Append(CultureInfo.InvariantCulture, $"{Indent}oversight_note: {Scalar(ai.OversightNote)}\n");
+        Optional(yaml, Indent, "impact_assessment", ai.ImpactAssessment is { } impact ? Snake(impact) : null);
+        Optional(yaml, Indent, "impact_assessed_on", ai.ImpactAssessedOn is { } assessed ? Day(assessed) : null);
+        Optional(yaml, Indent, "in_use_from", ai.InUseFrom is { } from ? Day(from) : null);
+        Optional(yaml, Indent, "last_tested_on", ai.LastTestedOn is { } tested ? Day(tested) : null);
+        Optional(yaml, Indent, "retired_on", ai.RetiredOn is { } retired ? Day(retired) : null);
+    }
+
+    /// <summary>A list in the order it was written, since the register entry's description keeps that order.</summary>
+    private static void InOrder(StringBuilder yaml, string indent, string key, IReadOnlyList<string> values)
+    {
+        if (values.Count > 0)
+        {
+            yaml.Append(CultureInfo.InvariantCulture, $"{indent}{key}: [{string.Join(", ", values.Select(Scalar))}]\n");
+        }
+    }
+
+    private static string Snake<T>(T value)
+        where T : struct, Enum =>
+        AiRegister.Code(value).Replace('-', '_');
+
+    private static string Day(DateOnly day) => day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
     private static string Controls(ScopeObject[] controls, HashSet<string> documentIds)
     {

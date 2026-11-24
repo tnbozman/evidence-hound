@@ -28,4 +28,11 @@ public sealed record FrameworkSnapshot(
 public sealed record ImplementationGroup(string RefId, string Name);
 
 /// <summary>An assessable requirement node: URN, ref_id, parent URN, implementation groups and a short title.</summary>
-public sealed record SnapshotNode(string Urn, string? RefId, string? ParentUrn, IReadOnlyList<string> Groups, string Title);
+public sealed record SnapshotNode(string Urn, string? RefId, string? ParentUrn, IReadOnlyList<string> Groups, string Title)
+{
+    /// <summary>The node's full text on one line; empty in snapshots made before s11-16.</summary>
+    public string Description { get; init; } = "";
+
+    /// <summary>The URNs of the reference controls the library links the node to, such as <c>…:doc-pol:tech.mfa</c>.</summary>
+    public IReadOnlyList<string> ReferenceControls { get; init; } = [];
+}

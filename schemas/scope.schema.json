@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/tnbozman/evidence-hound/schemas/scope.schema.json",
   "title": "Evidence Hound scope file",
-  "description": "One file of a compliance repo's scope: setup.yaml (organisation, frameworks, domains), controls.yaml (applied controls), audits/<audit>.yaml (one compliance assessment), access.yaml (users, teams and role assignments), settings.yaml (feature flags and general settings), third-parties/<entity>.yaml (one supplier or other third party), capabilities.yaml (which system provides each mitigation), or evidence-plan.yaml (how each control's evidence arrives, from whom and how often). Guide: docs/scope.md.",
+  "description": "One file of a compliance repo's scope: setup.yaml (organisation, frameworks, domains), controls.yaml (applied controls), audits/<audit>.yaml (one compliance assessment), access.yaml (users, teams and role assignments), settings.yaml (feature flags and general settings), third-parties/<entity>.yaml (one supplier or other third party), capabilities.yaml (which system provides each mitigation), evidence-plan.yaml (how each control's evidence arrives, from whom and how often), or ssp.yaml (one system security plan per programme). Guide: docs/scope.md.",
   "oneOf": [
     {
       "$ref": "#/$defs/setup"
@@ -27,6 +27,9 @@
     },
     {
       "$ref": "#/$defs/evidencePlan"
+    },
+    {
+      "$ref": "#/$defs/ssps"
     }
   ],
   "$defs": {
@@ -118,6 +121,62 @@
           "type": "array",
           "items": {
             "$ref": "#/$defs/domain"
+          }
+        },
+        "programmes": {
+          "description": "The compliance programmes reported on (s11-01): each a framework, the groups reported against and the audit of record. Programmes create nothing in CISO Assistant.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "name",
+              "framework",
+              "groups",
+              "audit"
+            ],
+            "properties": {
+              "id": {
+                "description": "A lowercase slug, unique, such as essential-eight.",
+                "type": "string",
+                "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+              },
+              "name": {
+                "$ref": "#/$defs/text"
+              },
+              "framework": {
+                "description": "A framework URN declared under frameworks, with a snapshot.",
+                "$ref": "#/$defs/text"
+              },
+              "groups": {
+                "description": "The implementation groups reported against; each must exist in the framework's snapshot.",
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/text"
+                }
+              },
+              "audit": {
+                "description": "The ref_id of the audit, or audit series, of record. It uses the programme's framework and belongs to no other programme.",
+                "$ref": "#/$defs/text"
+              },
+              "group_by": {
+                "description": "How requirements are grouped in reports: parent (the default) groups them under their parent node.",
+                "enum": [
+                  "parent"
+                ]
+              },
+              "register": {
+                "description": "The register the programme's reports summarise (s11-14): ai_systems (by screening, use, oversight) or systems (by type).",
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["of"],
+                "properties": {
+                  "of": { "enum": ["ai_systems", "systems"] },
+                  "by": { "type": "array", "items": { "enum": ["screening", "use", "oversight", "type"] } }
+                }
+              }
+            }
           }
         }
       }
@@ -249,6 +308,33 @@
         },
         "data": {
           "$ref": "#/$defs/sensitiveData"
+        },
+        "ai": {
+          "description": "The system's entry in the AI register (s11-12), with the National AI Centre register template's columns (s11-11): written to CISO Assistant as filtering labels and in the description. See docs/scope.md.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["screening", "screening_yes", "screened_on", "use", "oversight", "oversight_note"],
+          "properties": {
+            "screening": { "enum": ["normal", "elevated", "unacceptable"], "description": "The outcome of the National AI Centre's AI screening questions: normal when every answer is no, elevated when any is yes, unacceptable when it is not to be used." },
+            "screening_yes": { "type": "array", "items": { "type": ["integer", "string"], "pattern": "^[1-7]$", "minimum": 1, "maximum": 7 }, "uniqueItems": true, "description": "The screening questions (1 to 7) answered yes; [] when every answer was no." },
+            "screened_on": { "$ref": "#/$defs/date", "description": "When the screening questions were answered." },
+            "registered_on": { "$ref": "#/$defs/date", "description": "When the system was first added to the register." },
+            "version": { "$ref": "#/$defs/text", "description": "The system's version, where it is needed." },
+            "use": { "enum": ["built", "customised", "third_party"], "description": "Built in-house, customised, or a supplier's product (needs 'solution')." },
+            "purpose": { "$ref": "#/$defs/text", "description": "Why the system exists and what it aims to achieve." },
+            "intended_uses": { "type": "array", "items": { "$ref": "#/$defs/text" }, "description": "The specific ways it is meant to be used." },
+            "limitations": { "$ref": "#/$defs/text", "description": "What it cannot or should not do: known limitations and prohibited use." },
+            "misuse": { "$ref": "#/$defs/text", "description": "Foreseeable ways it might be misused, or 'None identified.'" },
+            "data_sources": { "type": "array", "items": { "$ref": "#/$defs/text" }, "description": "What data it learns from or processes, with its type (text, structured, image, audio)." },
+            "stakeholders": { "type": "array", "items": { "$ref": "#/$defs/text" }, "description": "Who might be affected by it." },
+            "oversight": { "enum": ["human_in_the_loop", "human_on_the_loop", "human_out_of_loop"], "description": "How people oversee it." },
+            "oversight_note": { "$ref": "#/$defs/text", "description": "Who can override or switch it off, and the fallback." },
+            "impact_assessment": { "enum": ["not_started", "in_progress", "approved", "not_required"] },
+            "impact_assessed_on": { "$ref": "#/$defs/date", "description": "When the impact assessment was approved." },
+            "in_use_from": { "$ref": "#/$defs/date", "description": "Go-live date; leave out while it is being considered." },
+            "last_tested_on": { "$ref": "#/$defs/date", "description": "The last test or evaluation, on evidence." },
+            "retired_on": { "$ref": "#/$defs/date", "description": "When it stopped being used." }
+          }
         }
       }
     },
@@ -318,6 +404,10 @@
         "reference_control": {
           "type": "string",
           "pattern": "^urn:"
+        },
+        "responsible_entity": {
+          "description": "Who implements the control, for the SSP annex (ASD SSP annex template). Without it, hound infers shared when the control covers a system a supplier's solution provides, and consumer otherwise.",
+          "enum": ["consumer", "shared", "outsourced_service_provider", "cloud_service_provider", "not_applicable"]
         },
         "documents": {
           "description": "Ids of documents declared in audit files.",
@@ -1503,6 +1593,111 @@
               },
               "expires": {
                 "$ref": "#/$defs/date"
+              }
+            }
+          }
+        }
+      }
+    },
+    "ssps": {
+      "description": "ssp.yaml: one system security plan per programme (s11-02).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ssps"
+      ],
+      "properties": {
+        "ssps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "programme",
+              "profile",
+              "system_name",
+              "perimeter",
+              "version"
+            ],
+            "properties": {
+              "programme": {
+                "description": "The programme's id from setup.yaml.",
+                "$ref": "#/$defs/text"
+              },
+              "profile": {
+                "description": "The controls annex: ism (ISM controls grouped by Essential Eight strategy) or nist-800-171. The layout is always NIST SP 800-18 Rev 1.",
+                "enum": [
+                  "ism",
+                  "nist-800-171"
+                ]
+              },
+              "system_name": {
+                "$ref": "#/$defs/text"
+              },
+              "perimeter": {
+                "description": "The plan's boundary: a perimeter declared in setup.yaml.",
+                "$ref": "#/$defs/text"
+              },
+              "version": {
+                "$ref": "#/$defs/text"
+              },
+              "classification": {
+                "description": "SP 800-18 section 2, system categorisation: for the ISM, the highest classification the system processes, such as OFFICIAL or OFFICIAL: Sensitive.",
+                "$ref": "#/$defs/text"
+              },
+              "operational_status": {
+                "description": "SP 800-18 section 7: operational, under development or undergoing a major modification.",
+                "$ref": "#/$defs/text"
+              },
+              "system_type": {
+                "description": "SP 800-18 section 8: major application or general support system.",
+                "$ref": "#/$defs/text"
+              },
+              "roles": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "system_owner": {
+                    "description": "A user's email or a team from access.yaml.",
+                    "$ref": "#/$defs/text"
+                  },
+                  "authorising_official": {
+                    "$ref": "#/$defs/text"
+                  },
+                  "security_contact": {
+                    "$ref": "#/$defs/text"
+                  }
+                }
+              },
+              "documents": {
+                "description": "Documents by id from an audit's documents: diagrams, policies and procedures.",
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/text"
+                }
+              },
+              "sign_offs": {
+                "description": "Signed versions (s11-05): the authorising official's approval of a reviewed draft, by pull request.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["version", "by", "date", "sha256"],
+                  "properties": {
+                    "version": { "$ref": "#/$defs/text" },
+                    "by": { "description": "The authorising official's email.", "$ref": "#/$defs/text" },
+                    "date": { "$ref": "#/$defs/text" },
+                    "sha256": { "description": "SHA-256 of the reviewed draft, as 'hound ssp build --snapshot-out' prints it.", "type": "string", "pattern": "^[0-9a-f]{64}$" },
+                    "snapshot": { "description": "SHA-256 of the snapshot file the draft was built from.", "type": "string", "pattern": "^[0-9a-f]{64}$" }
+                  }
+                }
+              },
+              "sections": {
+                "description": "The parts that cannot be generated, as Markdown files in the repo, by section name: purpose, environment, management and laws_and_policies (SP 800-18 sections 9, 10, 6 and 12).",
+                "type": "object",
+                "additionalProperties": {
+                  "$ref": "#/$defs/text"
+                }
               }
             }
           }

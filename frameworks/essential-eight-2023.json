@@ -26,7 +26,12 @@
         "2",
         "3"
       ],
-      "title": "An automated method of asset discovery is used at least fortnightly to support\u2026"
+      "title": "An automated method of asset discovery is used at least fortnightly to support\u2026",
+      "description": "An automated method of asset discovery is used at least fortnightly to support the detection of assets for subsequent vulnerability scanning activities.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.asset_discovery",
+        "urn:intuitem:risk:function:doc-pol:doc.asset_register"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa:ism-1808",
@@ -37,7 +42,12 @@
         "2",
         "3"
       ],
-      "title": "A vulnerability scanner with an up-to-date vulnerability database is used for\u2026"
+      "title": "A vulnerability scanner with an up-to-date vulnerability database is used for\u2026",
+      "description": "A vulnerability scanner with an up-to-date vulnerability database is used for vulnerability scanning activities.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.vuln_scanner",
+        "urn:intuitem:risk:function:doc-pol:pol.vulnerability"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa:ism-1698",
@@ -48,7 +58,12 @@
         "2",
         "3"
       ],
-      "title": "A vulnerability scanner is used at least daily to identify missing patches or\u2026"
+      "title": "A vulnerability scanner is used at least daily to identify missing patches or\u2026",
+      "description": "A vulnerability scanner is used at least daily to identify missing patches or updates for vulnerabilities in online services.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.vuln_scanner",
+        "urn:intuitem:risk:function:doc-pol:pol.vulnerability"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa:ism-1699",
@@ -59,7 +74,12 @@
         "2",
         "3"
       ],
-      "title": "A vulnerability scanner is used at least weekly to identify missing patches or\u2026"
+      "title": "A vulnerability scanner is used at least weekly to identify missing patches or\u2026",
+      "description": "A vulnerability scanner is used at least weekly to identify missing patches or updates for vulnerabilities in office productivity suites, web browsers and their extensions, email clients, PDF software, and security products.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.vuln_scanner",
+        "urn:intuitem:risk:function:doc-pol:pol.vulnerability"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa:ism-1700",
@@ -69,7 +89,12 @@
         "2",
         "3"
       ],
-      "title": "A vulnerability scanner is used at least fortnightly to identify missing\u2026"
+      "title": "A vulnerability scanner is used at least fortnightly to identify missing\u2026",
+      "description": "A vulnerability scanner is used at least fortnightly to identify missing patches or updates for vulnerabilities in applications other than office productivity suites, web browsers and their extensions, email clients, PDF software, and security products.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.vuln_scanner",
+        "urn:intuitem:risk:function:doc-pol:pol.vulnerability"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa:ism-1876",
@@ -80,7 +105,12 @@
         "2",
         "3"
       ],
-      "title": "Patches, updates or other vendor mitigations for vulnerabilities in online\u2026"
+      "title": "Patches, updates or other vendor mitigations for vulnerabilities in online\u2026",
+      "description": "Patches, updates or other vendor mitigations for vulnerabilities in online services are applied within 48 hours of release when vulnerabilities are assessed as critical by vendors or when working exploits exist.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.update",
+        "urn:intuitem:risk:function:doc-pol:pol.vulnerability"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa:ism-1690",
@@ -91,7 +121,12 @@
         "2",
         "3"
       ],
-      "title": "Patches, updates or other vendor mitigations for vulnerabilities in online\u2026"
+      "title": "Patches, updates or other vendor mitigations for vulnerabilities in online\u2026",
+      "description": "Patches, updates or other vendor mitigations for vulnerabilities in online services are applied within two weeks of release when vulnerabilities are assessed as non-critical by vendors and no working exploits exist.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.update",
+        "urn:intuitem:risk:function:doc-pol:pol.vulnerability"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa:ism-1691",
@@ -101,7 +136,12 @@
         "1",
         "2"
       ],
-      "title": "Patches, updates or other vendor mitigations for vulnerabilities in office\u2026"
+      "title": "Patches, updates or other vendor mitigations for vulnerabilities in office\u2026",
+      "description": "Patches, updates or other vendor mitigations for vulnerabilities in office productivity suites, web browsers and their extensions, email clients, PDF software, and security products are applied within two weeks of release.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.update",
+        "urn:intuitem:risk:function:doc-pol:pol.vulnerability"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa:ism-1692",
@@ -110,7 +150,12 @@
       "groups": [
         "3"
       ],
-      "title": "Patches, updates or other vendor mitigations for vulnerabilities in office\u2026"
+      "title": "Patches, updates or other vendor mitigations for vulnerabilities in office\u2026",
+      "description": "Patches, updates or other vendor mitigations for vulnerabilities in office productivity suites, web browsers and their extensions, email clients, PDF software, and security products are applied within 48 hours of release when vulnerabilities are assessed as critical by vendors or when working exploits exist.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.update",
+        "urn:intuitem:risk:function:doc-pol:pol.vulnerability"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa:ism-1901",
@@ -119,7 +164,12 @@
       "groups": [
         "3"
       ],
-      "title": "Patches, updates or other vendor mitigations for vulnerabilities in office\u2026"
+      "title": "Patches, updates or other vendor mitigations for vulnerabilities in office\u2026",
+      "description": "Patches, updates or other vendor mitigations for vulnerabilities in office productivity suites, web browsers and their extensions, email clients, PDF software, and security products are applied within two weeks of release when vulnerabilities are assessed as non-critical by vendors and no working exploits exist.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.update",
+        "urn:intuitem:risk:function:doc-pol:pol.vulnerability"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa:ism-1693",
@@ -129,7 +179,12 @@
         "2",
         "3"
       ],
-      "title": "Patches, updates or other vendor mitigations for vulnerabilities in\u2026"
+      "title": "Patches, updates or other vendor mitigations for vulnerabilities in\u2026",
+      "description": "Patches, updates or other vendor mitigations for vulnerabilities in applications other than office productivity suites, web browsers and their extensions, email clients, PDF software, and security products are applied within one month of release.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.update",
+        "urn:intuitem:risk:function:doc-pol:pol.vulnerability"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa:ism-1905",
@@ -140,7 +195,12 @@
         "2",
         "3"
       ],
-      "title": "Online services that are no longer supported by vendors are removed."
+      "title": "Online services that are no longer supported by vendors are removed.",
+      "description": "Online services that are no longer supported by vendors are removed.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.software_lifecycle",
+        "urn:intuitem:risk:function:doc-pol:doc.asset_register"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa:ism-1704",
@@ -151,7 +211,12 @@
         "2",
         "3"
       ],
-      "title": "Office productivity suites, web browsers and their extensions, email clients\u2026"
+      "title": "Office productivity suites, web browsers and their extensions, email clients\u2026",
+      "description": "Office productivity suites, web browsers and their extensions, email clients, PDF software, Adobe Flash Player, and security products that are no longer supported by vendors are removed.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.software_lifecycle",
+        "urn:intuitem:risk:function:doc-pol:tech.sw_inventory"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa:ism-0304",
@@ -160,7 +225,12 @@
       "groups": [
         "3"
       ],
-      "title": "Applications other than office productivity suites, web browsers and their\u2026"
+      "title": "Applications other than office productivity suites, web browsers and their\u2026",
+      "description": "Applications other than office productivity suites, web browsers and their extensions, email clients, PDF software, Adobe Flash Player, and security products that are no longer supported by vendors are removed.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.software_lifecycle",
+        "urn:intuitem:risk:function:doc-pol:tech.sw_inventory"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1807",
@@ -171,7 +241,12 @@
         "2",
         "3"
       ],
-      "title": "An automated method of asset discovery is used at least fortnightly to support\u2026"
+      "title": "An automated method of asset discovery is used at least fortnightly to support\u2026",
+      "description": "An automated method of asset discovery is used at least fortnightly to support the detection of assets for subsequent vulnerability scanning activities.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.asset_discovery",
+        "urn:intuitem:risk:function:doc-pol:doc.asset_register"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1808",
@@ -182,7 +257,12 @@
         "2",
         "3"
       ],
-      "title": "A vulnerability scanner with an up-to-date vulnerability database is used for\u2026"
+      "title": "A vulnerability scanner with an up-to-date vulnerability database is used for\u2026",
+      "description": "A vulnerability scanner with an up-to-date vulnerability database is used for vulnerability scanning activities.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.vuln_scanner",
+        "urn:intuitem:risk:function:doc-pol:pol.vulnerability"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1701",
@@ -193,7 +273,12 @@
         "2",
         "3"
       ],
-      "title": "A vulnerability scanner is used at least daily to identify missing patches or\u2026"
+      "title": "A vulnerability scanner is used at least daily to identify missing patches or\u2026",
+      "description": "A vulnerability scanner is used at least daily to identify missing patches or updates for vulnerabilities in operating systems of internet-facing servers and internet-facing network devices.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.vuln_scanner",
+        "urn:intuitem:risk:function:doc-pol:pol.vulnerability"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1702",
@@ -204,7 +289,12 @@
         "2",
         "3"
       ],
-      "title": "A vulnerability scanner is used at least fortnightly to identify missing\u2026"
+      "title": "A vulnerability scanner is used at least fortnightly to identify missing\u2026",
+      "description": "A vulnerability scanner is used at least fortnightly to identify missing patches or updates for vulnerabilities in operating systems of workstations, non-internet-facing servers and non-internet-facing network devices.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.vuln_scanner",
+        "urn:intuitem:risk:function:doc-pol:pol.vulnerability"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1703",
@@ -213,7 +303,12 @@
       "groups": [
         "3"
       ],
-      "title": "A vulnerability scanner is used at least fortnightly to identify missing\u2026"
+      "title": "A vulnerability scanner is used at least fortnightly to identify missing\u2026",
+      "description": "A vulnerability scanner is used at least fortnightly to identify missing patches or updates for vulnerabilities in drivers.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.vuln_scanner",
+        "urn:intuitem:risk:function:doc-pol:pol.vulnerability"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1900",
@@ -222,7 +317,12 @@
       "groups": [
         "3"
       ],
-      "title": "A vulnerability scanner is used at least fortnightly to identify missing\u2026"
+      "title": "A vulnerability scanner is used at least fortnightly to identify missing\u2026",
+      "description": "A vulnerability scanner is used at least fortnightly to identify missing patches or updates for vulnerabilities in firmware.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.vuln_scanner",
+        "urn:intuitem:risk:function:doc-pol:pol.vulnerability"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1877",
@@ -233,7 +333,12 @@
         "2",
         "3"
       ],
-      "title": "Patches, updates or other vendor mitigations for vulnerabilities in operating\u2026"
+      "title": "Patches, updates or other vendor mitigations for vulnerabilities in operating\u2026",
+      "description": "Patches, updates or other vendor mitigations for vulnerabilities in operating systems of internet-facing servers and internet-facing network devices are applied within 48 hours of release when vulnerabilities are assessed as critical by vendors or when working exploits exist.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.update",
+        "urn:intuitem:risk:function:doc-pol:pol.vulnerability"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1694",
@@ -244,7 +349,12 @@
         "2",
         "3"
       ],
-      "title": "Patches, updates or other vendor mitigations for vulnerabilities in operating\u2026"
+      "title": "Patches, updates or other vendor mitigations for vulnerabilities in operating\u2026",
+      "description": "Patches, updates or other vendor mitigations for vulnerabilities in operating systems of internet-facing servers and internet-facing network devices are applied within two weeks of release when vulnerabilities are assessed as non-critical by vendors and no working exploits exist.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.update",
+        "urn:intuitem:risk:function:doc-pol:pol.vulnerability"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1695",
@@ -254,7 +364,12 @@
         "1",
         "2"
       ],
-      "title": "Patches, updates or other vendor mitigations for vulnerabilities in operating\u2026"
+      "title": "Patches, updates or other vendor mitigations for vulnerabilities in operating\u2026",
+      "description": "Patches, updates or other vendor mitigations for vulnerabilities in operating systems of workstations, non-internet-facing servers and non-internet-facing network devices are applied within one month of release.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.update",
+        "urn:intuitem:risk:function:doc-pol:pol.vulnerability"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1696",
@@ -263,7 +378,12 @@
       "groups": [
         "3"
       ],
-      "title": "Patches, updates or other vendor mitigations for vulnerabilities in operating\u2026"
+      "title": "Patches, updates or other vendor mitigations for vulnerabilities in operating\u2026",
+      "description": "Patches, updates or other vendor mitigations for vulnerabilities in operating systems of workstations, non-internet-facing servers and non-internet-facing network devices are applied within 48 hours of release when vulnerabilities are assessed as critical by vendors or when working exploits exist.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.update",
+        "urn:intuitem:risk:function:doc-pol:pol.vulnerability"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1902",
@@ -272,7 +392,12 @@
       "groups": [
         "3"
       ],
-      "title": "Patches, updates or other vendor mitigations for vulnerabilities in operating\u2026"
+      "title": "Patches, updates or other vendor mitigations for vulnerabilities in operating\u2026",
+      "description": "Patches, updates or other vendor mitigations for vulnerabilities in operating systems of workstations, non-internet-facing servers and non-internet-facing network devices are applied within one month of release when vulnerabilities are assessed as non-critical by vendors and no working exploits exist.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.update",
+        "urn:intuitem:risk:function:doc-pol:pol.vulnerability"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1879",
@@ -281,7 +406,12 @@
       "groups": [
         "3"
       ],
-      "title": "Patches, updates or other vendor mitigations for vulnerabilities in drivers\u2026"
+      "title": "Patches, updates or other vendor mitigations for vulnerabilities in drivers\u2026",
+      "description": "Patches, updates or other vendor mitigations for vulnerabilities in drivers are applied within 48 hours of release when vulnerabilities are assessed as critical by vendors or when working exploits exist.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.update",
+        "urn:intuitem:risk:function:doc-pol:pol.vulnerability"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1697",
@@ -290,7 +420,12 @@
       "groups": [
         "3"
       ],
-      "title": "Patches, updates or other vendor mitigations for vulnerabilities in drivers\u2026"
+      "title": "Patches, updates or other vendor mitigations for vulnerabilities in drivers\u2026",
+      "description": "Patches, updates or other vendor mitigations for vulnerabilities in drivers are applied within one month of release when vulnerabilities are assessed as non-critical by vendors and no working exploits exist.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.update",
+        "urn:intuitem:risk:function:doc-pol:pol.vulnerability"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1903",
@@ -299,7 +434,12 @@
       "groups": [
         "3"
       ],
-      "title": "Patches, updates or other vendor mitigations for vulnerabilities in firmware\u2026"
+      "title": "Patches, updates or other vendor mitigations for vulnerabilities in firmware\u2026",
+      "description": "Patches, updates or other vendor mitigations for vulnerabilities in firmware are applied within 48 hours of release when vulnerabilities are assessed as critical by vendors or when working exploits exist.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.update",
+        "urn:intuitem:risk:function:doc-pol:pol.vulnerability"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1904",
@@ -308,7 +448,12 @@
       "groups": [
         "3"
       ],
-      "title": "Patches, updates or other vendor mitigations for vulnerabilities in firmware\u2026"
+      "title": "Patches, updates or other vendor mitigations for vulnerabilities in firmware\u2026",
+      "description": "Patches, updates or other vendor mitigations for vulnerabilities in firmware are applied within one month of release when vulnerabilities are assessed as non-critical by vendors and no working exploits exist.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.update",
+        "urn:intuitem:risk:function:doc-pol:pol.vulnerability"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1407",
@@ -317,7 +462,12 @@
       "groups": [
         "3"
       ],
-      "title": "The latest release, or the previous release, of operating systems are used."
+      "title": "The latest release, or the previous release, of operating systems are used.",
+      "description": "The latest release, or the previous release, of operating systems are used.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.software_lifecycle",
+        "urn:intuitem:risk:function:doc-pol:proc.update"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos:ism-1501",
@@ -328,7 +478,12 @@
         "2",
         "3"
       ],
-      "title": "Operating systems that are no longer supported by vendors are replaced."
+      "title": "Operating systems that are no longer supported by vendors are replaced.",
+      "description": "Operating systems that are no longer supported by vendors are replaced.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.software_lifecycle",
+        "urn:intuitem:risk:function:doc-pol:doc.asset_register"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1504",
@@ -339,7 +494,11 @@
         "2",
         "3"
       ],
-      "title": "Multi-factor authentication is used to authenticate users to their\u2026"
+      "title": "Multi-factor authentication is used to authenticate users to their\u2026",
+      "description": "Multi-factor authentication is used to authenticate users to their organisation\u2019s online services that process, store or communicate their organisation\u2019s sensitive data.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.mfa"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1679",
@@ -350,7 +509,11 @@
         "2",
         "3"
       ],
-      "title": "Multi-factor authentication is used to authenticate users to third-party\u2026"
+      "title": "Multi-factor authentication is used to authenticate users to third-party\u2026",
+      "description": "Multi-factor authentication is used to authenticate users to third-party online services that process, store or communicate their organisation\u2019s sensitive data.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.mfa"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1680",
@@ -361,7 +524,11 @@
         "2",
         "3"
       ],
-      "title": "Multi-factor authentication (where available) is used to authenticate users to\u2026"
+      "title": "Multi-factor authentication (where available) is used to authenticate users to\u2026",
+      "description": "Multi-factor authentication (where available) is used to authenticate users to third-party online services that process, store or communicate their organisation\u2019s non-sensitive data.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.mfa"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1892",
@@ -372,7 +539,11 @@
         "2",
         "3"
       ],
-      "title": "Multi-factor authentication is used to authenticate users to their\u2026"
+      "title": "Multi-factor authentication is used to authenticate users to their\u2026",
+      "description": "Multi-factor authentication is used to authenticate users to their organisation\u2019s online customer services that process, store or communicate their organisation\u2019s sensitive customer data.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.mfa"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1893",
@@ -383,7 +554,11 @@
         "2",
         "3"
       ],
-      "title": "Multi-factor authentication is used to authenticate users to third-party\u2026"
+      "title": "Multi-factor authentication is used to authenticate users to third-party\u2026",
+      "description": "Multi-factor authentication is used to authenticate users to third-party online customer services that process, store or communicate their organisation\u2019s sensitive customer data.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.mfa"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1681",
@@ -394,7 +569,11 @@
         "2",
         "3"
       ],
-      "title": "Multi-factor authentication is used to authenticate customers to online\u2026"
+      "title": "Multi-factor authentication is used to authenticate customers to online\u2026",
+      "description": "Multi-factor authentication is used to authenticate customers to online customer services that process, store or communicate sensitive customer data.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.mfa"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1173",
@@ -404,7 +583,12 @@
         "2",
         "3"
       ],
-      "title": "Multi-factor authentication is used to authenticate privileged users of systems."
+      "title": "Multi-factor authentication is used to authenticate privileged users of systems.",
+      "description": "Multi-factor authentication is used to authenticate privileged users of systems.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.mfa",
+        "urn:intuitem:risk:function:doc-pol:proc.pam"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-0974",
@@ -414,7 +598,11 @@
         "2",
         "3"
       ],
-      "title": "Multi-factor authentication is used to authenticate unprivileged users of\u2026"
+      "title": "Multi-factor authentication is used to authenticate unprivileged users of\u2026",
+      "description": "Multi-factor authentication is used to authenticate unprivileged users of systems.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.mfa"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1505",
@@ -423,7 +611,11 @@
       "groups": [
         "3"
       ],
-      "title": "Multi-factor authentication is used to authenticate users of data repositories."
+      "title": "Multi-factor authentication is used to authenticate users of data repositories.",
+      "description": "Multi-factor authentication is used to authenticate users of data repositories.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.mfa"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1401",
@@ -434,7 +626,11 @@
         "2",
         "3"
       ],
-      "title": "Multi-factor authentication uses either: something users have and something\u2026"
+      "title": "Multi-factor authentication uses either: something users have and something\u2026",
+      "description": "Multi-factor authentication uses either: something users have and something users know, or something users have that is unlocked by something users know or are.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.mfa"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1872",
@@ -444,7 +640,11 @@
         "2",
         "3"
       ],
-      "title": "Multi-factor authentication used for authenticating users of online services\u2026"
+      "title": "Multi-factor authentication used for authenticating users of online services\u2026",
+      "description": "Multi-factor authentication used for authenticating users of online services is phishing-resistant.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.mfa"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1873",
@@ -453,7 +653,11 @@
       "groups": [
         "2"
       ],
-      "title": "Multi-factor authentication used for authenticating customers of online\u2026"
+      "title": "Multi-factor authentication used for authenticating customers of online\u2026",
+      "description": "Multi-factor authentication used for authenticating customers of online customer services provides a phishing-resistant option.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.mfa"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1874",
@@ -462,7 +666,11 @@
       "groups": [
         "3"
       ],
-      "title": "Multi-factor authentication used for authenticating customers of online\u2026"
+      "title": "Multi-factor authentication used for authenticating customers of online\u2026",
+      "description": "Multi-factor authentication used for authenticating customers of online customer services is phishing-resistant.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.mfa"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1682",
@@ -472,7 +680,11 @@
         "2",
         "3"
       ],
-      "title": "Multi-factor authentication used for authenticating users of systems is\u2026"
+      "title": "Multi-factor authentication used for authenticating users of systems is\u2026",
+      "description": "Multi-factor authentication used for authenticating users of systems is phishing-resistant.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.mfa"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1894",
@@ -481,7 +693,11 @@
       "groups": [
         "3"
       ],
-      "title": "Multi-factor authentication used for authenticating users of data repositories\u2026"
+      "title": "Multi-factor authentication used for authenticating users of data repositories\u2026",
+      "description": "Multi-factor authentication used for authenticating users of data repositories is phishing-resistant.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.mfa"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1683",
@@ -491,7 +707,12 @@
         "2",
         "3"
       ],
-      "title": "Successful and unsuccessful multi-factor authentication events are centrally\u2026"
+      "title": "Successful and unsuccessful multi-factor authentication events are centrally\u2026",
+      "description": "Successful and unsuccessful multi-factor authentication events are centrally logged.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.logging",
+        "urn:intuitem:risk:function:doc-pol:tech.siem"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1815",
@@ -501,7 +722,12 @@
         "2",
         "3"
       ],
-      "title": "Event logs are protected from unauthorised modification and deletion."
+      "title": "Event logs are protected from unauthorised modification and deletion.",
+      "description": "Event logs are protected from unauthorised modification and deletion.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.logging",
+        "urn:intuitem:risk:function:doc-pol:tech.siem"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1906",
@@ -511,7 +737,12 @@
         "2",
         "3"
       ],
-      "title": "Event logs from internet-facing servers are analysed in a timely manner to\u2026"
+      "title": "Event logs from internet-facing servers are analysed in a timely manner to\u2026",
+      "description": "Event logs from internet-facing servers are analysed in a timely manner to detect cyber security events.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.siem",
+        "urn:intuitem:risk:function:doc-pol:proc.logging"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1907",
@@ -520,7 +751,12 @@
       "groups": [
         "3"
       ],
-      "title": "Event logs from non-internet-facing servers are analysed in a timely manner to\u2026"
+      "title": "Event logs from non-internet-facing servers are analysed in a timely manner to\u2026",
+      "description": "Event logs from non-internet-facing servers are analysed in a timely manner to detect cyber security events.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.siem",
+        "urn:intuitem:risk:function:doc-pol:proc.logging"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-0109",
@@ -529,7 +765,12 @@
       "groups": [
         "3"
       ],
-      "title": "Event logs from workstations are analysed in a timely manner to detect cyber\u2026"
+      "title": "Event logs from workstations are analysed in a timely manner to detect cyber\u2026",
+      "description": "Event logs from workstations are analysed in a timely manner to detect cyber security events.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.siem",
+        "urn:intuitem:risk:function:doc-pol:proc.logging"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1228",
@@ -539,7 +780,12 @@
         "2",
         "3"
       ],
-      "title": "Cyber security events are analysed in a timely manner to identify cyber\u2026"
+      "title": "Cyber security events are analysed in a timely manner to identify cyber\u2026",
+      "description": "Cyber security events are analysed in a timely manner to identify cyber security incidents.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.siem",
+        "urn:intuitem:risk:function:doc-pol:proc.incident"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-0123",
@@ -549,7 +795,12 @@
         "2",
         "3"
       ],
-      "title": "Cyber security incidents are reported to the chief information security\u2026"
+      "title": "Cyber security incidents are reported to the chief information security\u2026",
+      "description": "Cyber security incidents are reported to the chief information security officer, or one of their delegates, as soon as possible after they occur or are discovered.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.incident",
+        "urn:intuitem:risk:function:doc-pol:proc.incident"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-0140",
@@ -559,7 +810,12 @@
         "2",
         "3"
       ],
-      "title": "Cyber security incidents are reported to ASD as soon as possible after they\u2026"
+      "title": "Cyber security incidents are reported to ASD as soon as possible after they\u2026",
+      "description": "Cyber security incidents are reported to ASD as soon as possible after they occur or are discovered.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.incident",
+        "urn:intuitem:risk:function:doc-pol:proc.incident"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1819",
@@ -569,7 +825,11 @@
         "2",
         "3"
       ],
-      "title": "Following the identification of a cyber security incident, the cyber security\u2026"
+      "title": "Following the identification of a cyber security incident, the cyber security\u2026",
+      "description": "Following the identification of a cyber security incident, the cyber security incident response plan is enacted.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.incident"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1507",
@@ -580,7 +840,12 @@
         "2",
         "3"
       ],
-      "title": "Requests for privileged access to systems, applications and data repositories\u2026"
+      "title": "Requests for privileged access to systems, applications and data repositories\u2026",
+      "description": "Requests for privileged access to systems, applications and data repositories are validated when first requested.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.pam",
+        "urn:intuitem:risk:function:doc-pol:pol.access"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1647",
@@ -590,7 +855,12 @@
         "2",
         "3"
       ],
-      "title": "Privileged access to systems, applications and data repositories is disabled\u2026"
+      "title": "Privileged access to systems, applications and data repositories is disabled\u2026",
+      "description": "Privileged access to systems, applications and data repositories is disabled after 12 months unless revalidated.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.recertification",
+        "urn:intuitem:risk:function:doc-pol:proc.pam"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1648",
@@ -600,7 +870,12 @@
         "2",
         "3"
       ],
-      "title": "Privileged access to systems and applications is disabled after 45 days of\u2026"
+      "title": "Privileged access to systems and applications is disabled after 45 days of\u2026",
+      "description": "Privileged access to systems and applications is disabled after 45 days of inactivity.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.pam",
+        "urn:intuitem:risk:function:doc-pol:tech.iam"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-0445",
@@ -611,7 +886,12 @@
         "2",
         "3"
       ],
-      "title": "Privileged users are assigned a dedicated privileged user account to be used\u2026"
+      "title": "Privileged users are assigned a dedicated privileged user account to be used\u2026",
+      "description": "Privileged users are assigned a dedicated privileged user account to be used solely for duties requiring privileged access.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.pam",
+        "urn:intuitem:risk:function:doc-pol:doc.pam_register"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1508",
@@ -620,7 +900,12 @@
       "groups": [
         "3"
       ],
-      "title": "Privileged access to systems, applications and data repositories is limited to\u2026"
+      "title": "Privileged access to systems, applications and data repositories is limited to\u2026",
+      "description": "Privileged access to systems, applications and data repositories is limited to only what is required for users and services to undertake their duties.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.access",
+        "urn:intuitem:risk:function:doc-pol:proc.rbac"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1175",
@@ -631,7 +916,12 @@
         "2",
         "3"
       ],
-      "title": "Privileged user accounts (excluding those explicitly authorised to access\u2026"
+      "title": "Privileged user accounts (excluding those explicitly authorised to access\u2026",
+      "description": "Privileged user accounts (excluding those explicitly authorised to access online services) are prevented from accessing the internet, email and web services.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.pam",
+        "urn:intuitem:risk:function:doc-pol:tech.web_proxy"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1883",
@@ -642,7 +932,12 @@
         "2",
         "3"
       ],
-      "title": "Privileged user accounts explicitly authorised to access online services are\u2026"
+      "title": "Privileged user accounts explicitly authorised to access online services are\u2026",
+      "description": "Privileged user accounts explicitly authorised to access online services are strictly limited to only what is required for users and services to undertake their duties.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.pam",
+        "urn:intuitem:risk:function:doc-pol:pol.access"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1898",
@@ -651,7 +946,11 @@
       "groups": [
         "3"
       ],
-      "title": "Secure Admin Workstations are used in the performance of administrative\u2026"
+      "title": "Secure Admin Workstations are used in the performance of administrative\u2026",
+      "description": "Secure Admin Workstations are used in the performance of administrative activities.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.paw"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1380",
@@ -662,7 +961,12 @@
         "2",
         "3"
       ],
-      "title": "Privileged users use separate privileged and unprivileged operating\u2026"
+      "title": "Privileged users use separate privileged and unprivileged operating\u2026",
+      "description": "Privileged users use separate privileged and unprivileged operating environments.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.paw",
+        "urn:intuitem:risk:function:doc-pol:proc.pam"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1687",
@@ -672,7 +976,11 @@
         "2",
         "3"
       ],
-      "title": "Privileged operating environments are not virtualised within unprivileged\u2026"
+      "title": "Privileged operating environments are not virtualised within unprivileged\u2026",
+      "description": "Privileged operating environments are not virtualised within unprivileged operating environments.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.paw"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1688",
@@ -683,7 +991,12 @@
         "2",
         "3"
       ],
-      "title": "Unprivileged user accounts cannot logon to privileged operating environments."
+      "title": "Unprivileged user accounts cannot logon to privileged operating environments.",
+      "description": "Unprivileged user accounts cannot logon to privileged operating environments.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.paw",
+        "urn:intuitem:risk:function:doc-pol:proc.pam"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1689",
@@ -694,7 +1007,12 @@
         "2",
         "3"
       ],
-      "title": "Privileged user accounts (excluding local administrator accounts) cannot logon\u2026"
+      "title": "Privileged user accounts (excluding local administrator accounts) cannot logon\u2026",
+      "description": "Privileged user accounts (excluding local administrator accounts) cannot logon to unprivileged operating environments.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.paw",
+        "urn:intuitem:risk:function:doc-pol:proc.pam"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1649",
@@ -703,7 +1021,11 @@
       "groups": [
         "3"
       ],
-      "title": "Just-in-time administration is used for administering systems and applications."
+      "title": "Just-in-time administration is used for administering systems and applications.",
+      "description": "Just-in-time administration is used for administering systems and applications.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.pam"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1387",
@@ -713,7 +1035,12 @@
         "2",
         "3"
       ],
-      "title": "Administrative activities are conducted through jump servers."
+      "title": "Administrative activities are conducted through jump servers.",
+      "description": "Administrative activities are conducted through jump servers.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.paw",
+        "urn:intuitem:risk:function:doc-pol:tech.admin_network"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1685",
@@ -723,7 +1050,12 @@
         "2",
         "3"
       ],
-      "title": "Credentials for break glass accounts, local administrator accounts and service\u2026"
+      "title": "Credentials for break glass accounts, local administrator accounts and service\u2026",
+      "description": "Credentials for break glass accounts, local administrator accounts and service accounts are long, unique, unpredictable and managed.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.password_manager",
+        "urn:intuitem:risk:function:doc-pol:proc.pam"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1896",
@@ -732,7 +1064,12 @@
       "groups": [
         "3"
       ],
-      "title": "Memory integrity functionality is enabled."
+      "title": "Memory integrity functionality is enabled.",
+      "description": "Memory integrity functionality is enabled.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.hardening",
+        "urn:intuitem:risk:function:doc-pol:proc.gpo"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1861",
@@ -741,7 +1078,12 @@
       "groups": [
         "3"
       ],
-      "title": "Local Security Authority protection functionality is enabled."
+      "title": "Local Security Authority protection functionality is enabled.",
+      "description": "Local Security Authority protection functionality is enabled.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.hardening",
+        "urn:intuitem:risk:function:doc-pol:proc.gpo"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1686",
@@ -750,7 +1092,12 @@
       "groups": [
         "3"
       ],
-      "title": "Credential Guard functionality is enabled."
+      "title": "Credential Guard functionality is enabled.",
+      "description": "Credential Guard functionality is enabled.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.hardening",
+        "urn:intuitem:risk:function:doc-pol:proc.gpo"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1897",
@@ -759,7 +1106,12 @@
       "groups": [
         "3"
       ],
-      "title": "Remote Credential Guard functionality is enabled."
+      "title": "Remote Credential Guard functionality is enabled.",
+      "description": "Remote Credential Guard functionality is enabled.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.hardening",
+        "urn:intuitem:risk:function:doc-pol:proc.gpo"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1509",
@@ -769,7 +1121,12 @@
         "2",
         "3"
       ],
-      "title": "Privileged access events are centrally logged."
+      "title": "Privileged access events are centrally logged.",
+      "description": "Privileged access events are centrally logged.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.access_log",
+        "urn:intuitem:risk:function:doc-pol:proc.logging"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1650",
@@ -779,7 +1136,12 @@
         "2",
         "3"
       ],
-      "title": "Privileged user account and security group management events are centrally\u2026"
+      "title": "Privileged user account and security group management events are centrally\u2026",
+      "description": "Privileged user account and security group management events are centrally logged.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.access_log",
+        "urn:intuitem:risk:function:doc-pol:proc.logging"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1815",
@@ -789,7 +1151,12 @@
         "2",
         "3"
       ],
-      "title": "Event logs are protected from unauthorised modification and deletion."
+      "title": "Event logs are protected from unauthorised modification and deletion.",
+      "description": "Event logs are protected from unauthorised modification and deletion.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.logging",
+        "urn:intuitem:risk:function:doc-pol:tech.siem"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1906",
@@ -799,7 +1166,12 @@
         "2",
         "3"
       ],
-      "title": "Event logs from internet-facing servers are analysed in a timely manner to\u2026"
+      "title": "Event logs from internet-facing servers are analysed in a timely manner to\u2026",
+      "description": "Event logs from internet-facing servers are analysed in a timely manner to detect cyber security events.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.siem",
+        "urn:intuitem:risk:function:doc-pol:proc.logging"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1907",
@@ -808,7 +1180,12 @@
       "groups": [
         "3"
       ],
-      "title": "Event logs from non-internet-facing servers are analysed in a timely manner to\u2026"
+      "title": "Event logs from non-internet-facing servers are analysed in a timely manner to\u2026",
+      "description": "Event logs from non-internet-facing servers are analysed in a timely manner to detect cyber security events.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.siem",
+        "urn:intuitem:risk:function:doc-pol:proc.logging"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-0109",
@@ -817,7 +1194,12 @@
       "groups": [
         "3"
       ],
-      "title": "Event logs from workstations are analysed in a timely manner to detect cyber\u2026"
+      "title": "Event logs from workstations are analysed in a timely manner to detect cyber\u2026",
+      "description": "Event logs from workstations are analysed in a timely manner to detect cyber security events.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.siem",
+        "urn:intuitem:risk:function:doc-pol:proc.logging"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1228",
@@ -827,7 +1209,12 @@
         "2",
         "3"
       ],
-      "title": "Cyber security events are analysed in a timely manner to identify cyber\u2026"
+      "title": "Cyber security events are analysed in a timely manner to identify cyber\u2026",
+      "description": "Cyber security events are analysed in a timely manner to identify cyber security incidents.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.siem",
+        "urn:intuitem:risk:function:doc-pol:proc.incident"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-0123",
@@ -837,7 +1224,12 @@
         "2",
         "3"
       ],
-      "title": "Cyber security incidents are reported to the chief information security\u2026"
+      "title": "Cyber security incidents are reported to the chief information security\u2026",
+      "description": "Cyber security incidents are reported to the chief information security officer, or one of their delegates, as soon as possible after they occur or are discovered.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.incident",
+        "urn:intuitem:risk:function:doc-pol:proc.incident"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-0140",
@@ -847,7 +1239,12 @@
         "2",
         "3"
       ],
-      "title": "Cyber security incidents are reported to ASD as soon as possible after they\u2026"
+      "title": "Cyber security incidents are reported to ASD as soon as possible after they\u2026",
+      "description": "Cyber security incidents are reported to ASD as soon as possible after they occur or are discovered.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.incident",
+        "urn:intuitem:risk:function:doc-pol:proc.incident"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap:ism-1819",
@@ -857,7 +1254,11 @@
         "2",
         "3"
       ],
-      "title": "Following the identification of a cyber security incident, the cyber security\u2026"
+      "title": "Following the identification of a cyber security incident, the cyber security\u2026",
+      "description": "Following the identification of a cyber security incident, the cyber security incident response plan is enacted.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.incident"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-0843",
@@ -868,7 +1269,12 @@
         "2",
         "3"
       ],
-      "title": "Application control is implemented on workstations."
+      "title": "Application control is implemented on workstations.",
+      "description": "Application control is implemented on workstations.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.app_control",
+        "urn:intuitem:risk:function:doc-pol:pol.app_control"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1490",
@@ -878,7 +1284,12 @@
         "2",
         "3"
       ],
-      "title": "Application control is implemented on internet-facing servers."
+      "title": "Application control is implemented on internet-facing servers.",
+      "description": "Application control is implemented on internet-facing servers.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.app_control",
+        "urn:intuitem:risk:function:doc-pol:pol.app_control"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1656",
@@ -887,7 +1298,12 @@
       "groups": [
         "3"
       ],
-      "title": "Application control is implemented on non-internet-facing servers."
+      "title": "Application control is implemented on non-internet-facing servers.",
+      "description": "Application control is implemented on non-internet-facing servers.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.app_control",
+        "urn:intuitem:risk:function:doc-pol:pol.app_control"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1870",
@@ -898,7 +1314,12 @@
         "2",
         "3"
       ],
-      "title": "Application control is applied to user profiles and temporary folders used by\u2026"
+      "title": "Application control is applied to user profiles and temporary folders used by\u2026",
+      "description": "Application control is applied to user profiles and temporary folders used by operating systems, web browsers and email clients.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.app_control",
+        "urn:intuitem:risk:function:doc-pol:pol.app_control"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1871",
@@ -908,7 +1329,12 @@
         "2",
         "3"
       ],
-      "title": "Application control is applied to all locations other than user profiles and\u2026"
+      "title": "Application control is applied to all locations other than user profiles and\u2026",
+      "description": "Application control is applied to all locations other than user profiles and temporary folders used by operating systems, web browsers and email clients.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.app_control",
+        "urn:intuitem:risk:function:doc-pol:pol.app_control"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1657",
@@ -919,7 +1345,12 @@
         "2",
         "3"
       ],
-      "title": "Application control restricts the execution of executables, software\u2026"
+      "title": "Application control restricts the execution of executables, software\u2026",
+      "description": "Application control restricts the execution of executables, software libraries, scripts, installers, compiled HTML, HTML applications and control panel applets to an organisation-approved set.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.app_control",
+        "urn:intuitem:risk:function:doc-pol:pol.app_control"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1658",
@@ -928,7 +1359,12 @@
       "groups": [
         "3"
       ],
-      "title": "Application control restricts the execution of drivers to an\u2026"
+      "title": "Application control restricts the execution of drivers to an\u2026",
+      "description": "Application control restricts the execution of drivers to an organisation-approved set.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.app_control",
+        "urn:intuitem:risk:function:doc-pol:pol.app_control"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1544",
@@ -938,7 +1374,11 @@
         "2",
         "3"
       ],
-      "title": "Microsoft\u2019s recommended application blocklist is implemented."
+      "title": "Microsoft\u2019s recommended application blocklist is implemented.",
+      "description": "Microsoft\u2019s recommended application blocklist is implemented.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.app_control"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1659",
@@ -947,7 +1387,11 @@
       "groups": [
         "3"
       ],
-      "title": "Microsoft\u2019s vulnerable driver blocklist is implemented."
+      "title": "Microsoft\u2019s vulnerable driver blocklist is implemented.",
+      "description": "Microsoft\u2019s vulnerable driver blocklist is implemented.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.app_control"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1582",
@@ -957,7 +1401,12 @@
         "2",
         "3"
       ],
-      "title": "Application control rulesets are validated on an annual or more frequent basis."
+      "title": "Application control rulesets are validated on an annual or more frequent basis.",
+      "description": "Application control rulesets are validated on an annual or more frequent basis.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.app_control",
+        "urn:intuitem:risk:function:doc-pol:tech.app_control"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1660",
@@ -967,7 +1416,12 @@
         "2",
         "3"
       ],
-      "title": "Allowed and blocked application control events are centrally logged."
+      "title": "Allowed and blocked application control events are centrally logged.",
+      "description": "Allowed and blocked application control events are centrally logged.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.app_control",
+        "urn:intuitem:risk:function:doc-pol:proc.logging"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1815",
@@ -977,7 +1431,12 @@
         "2",
         "3"
       ],
-      "title": "Event logs are protected from unauthorised modification and deletion."
+      "title": "Event logs are protected from unauthorised modification and deletion.",
+      "description": "Event logs are protected from unauthorised modification and deletion.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.logging",
+        "urn:intuitem:risk:function:doc-pol:tech.siem"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1906",
@@ -987,7 +1446,12 @@
         "2",
         "3"
       ],
-      "title": "Event logs from internet-facing servers are analysed in a timely manner to\u2026"
+      "title": "Event logs from internet-facing servers are analysed in a timely manner to\u2026",
+      "description": "Event logs from internet-facing servers are analysed in a timely manner to detect cyber security events.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.siem",
+        "urn:intuitem:risk:function:doc-pol:proc.logging"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1907",
@@ -996,7 +1460,12 @@
       "groups": [
         "3"
       ],
-      "title": "Event logs from non-internet-facing servers are analysed in a timely manner to\u2026"
+      "title": "Event logs from non-internet-facing servers are analysed in a timely manner to\u2026",
+      "description": "Event logs from non-internet-facing servers are analysed in a timely manner to detect cyber security events.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.siem",
+        "urn:intuitem:risk:function:doc-pol:proc.logging"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-0109",
@@ -1005,7 +1474,12 @@
       "groups": [
         "3"
       ],
-      "title": "Event logs from workstations are analysed in a timely manner to detect cyber\u2026"
+      "title": "Event logs from workstations are analysed in a timely manner to detect cyber\u2026",
+      "description": "Event logs from workstations are analysed in a timely manner to detect cyber security events.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.siem",
+        "urn:intuitem:risk:function:doc-pol:proc.logging"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1228",
@@ -1015,7 +1489,12 @@
         "2",
         "3"
       ],
-      "title": "Cyber security events are analysed in a timely manner to identify cyber\u2026"
+      "title": "Cyber security events are analysed in a timely manner to identify cyber\u2026",
+      "description": "Cyber security events are analysed in a timely manner to identify cyber security incidents.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.siem",
+        "urn:intuitem:risk:function:doc-pol:proc.incident"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-0123",
@@ -1025,7 +1504,12 @@
         "2",
         "3"
       ],
-      "title": "Cyber security incidents are reported to the chief information security\u2026"
+      "title": "Cyber security incidents are reported to the chief information security\u2026",
+      "description": "Cyber security incidents are reported to the chief information security officer, or one of their delegates, as soon as possible after they occur or are discovered.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.incident",
+        "urn:intuitem:risk:function:doc-pol:proc.incident"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-0140",
@@ -1035,7 +1519,12 @@
         "2",
         "3"
       ],
-      "title": "Cyber security incidents are reported to ASD as soon as possible after they\u2026"
+      "title": "Cyber security incidents are reported to ASD as soon as possible after they\u2026",
+      "description": "Cyber security incidents are reported to ASD as soon as possible after they occur or are discovered.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.incident",
+        "urn:intuitem:risk:function:doc-pol:proc.incident"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac:ism-1819",
@@ -1045,7 +1534,11 @@
         "2",
         "3"
       ],
-      "title": "Following the identification of a cyber security incident, the cyber security\u2026"
+      "title": "Following the identification of a cyber security incident, the cyber security\u2026",
+      "description": "Following the identification of a cyber security incident, the cyber security incident response plan is enacted.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.incident"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rmom:ism-1671",
@@ -1056,7 +1549,12 @@
         "2",
         "3"
       ],
-      "title": "Microsoft Office macros are disabled for users that do not have a demonstrated\u2026"
+      "title": "Microsoft Office macros are disabled for users that do not have a demonstrated\u2026",
+      "description": "Microsoft Office macros are disabled for users that do not have a demonstrated business requirement.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.gpo",
+        "urn:intuitem:risk:function:doc-pol:proc.exception_mgmt"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rmom:ism-1674",
@@ -1065,7 +1563,12 @@
       "groups": [
         "3"
       ],
-      "title": "Only Microsoft Office macros running from within a sandboxed environment, a\u2026"
+      "title": "Only Microsoft Office macros running from within a sandboxed environment, a\u2026",
+      "description": "Only Microsoft Office macros running from within a sandboxed environment, a Trusted Location or that are digitally signed by a trusted publisher are allowed to execute.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.gpo",
+        "urn:intuitem:risk:function:doc-pol:pol.hardening"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rmom:ism-1890",
@@ -1074,7 +1577,12 @@
       "groups": [
         "3"
       ],
-      "title": "Microsoft Office macros are checked to ensure they are free of malicious code\u2026"
+      "title": "Microsoft Office macros are checked to ensure they are free of malicious code\u2026",
+      "description": "Microsoft Office macros are checked to ensure they are free of malicious code before being digitally signed or placed within Trusted Locations.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.app_control",
+        "urn:intuitem:risk:function:doc-pol:tech.endpoint_protection"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rmom:ism-1487",
@@ -1083,7 +1591,12 @@
       "groups": [
         "3"
       ],
-      "title": "Only privileged users responsible for checking that Microsoft Office macros\u2026"
+      "title": "Only privileged users responsible for checking that Microsoft Office macros\u2026",
+      "description": "Only privileged users responsible for checking that Microsoft Office macros are free of malicious code can write to and modify content within Trusted Locations.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.rbac",
+        "urn:intuitem:risk:function:doc-pol:proc.gpo"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rmom:ism-1675",
@@ -1092,7 +1605,12 @@
       "groups": [
         "3"
       ],
-      "title": "Microsoft Office macros digitally signed by an untrusted publisher cannot be\u2026"
+      "title": "Microsoft Office macros digitally signed by an untrusted publisher cannot be\u2026",
+      "description": "Microsoft Office macros digitally signed by an untrusted publisher cannot be enabled via the Message Bar or Backstage View.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.gpo",
+        "urn:intuitem:risk:function:doc-pol:pol.hardening"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rmom:ism-1891",
@@ -1101,7 +1619,12 @@
       "groups": [
         "3"
       ],
-      "title": "Microsoft Office macros digitally signed by signatures other than V3\u2026"
+      "title": "Microsoft Office macros digitally signed by signatures other than V3\u2026",
+      "description": "Microsoft Office macros digitally signed by signatures other than V3 signatures cannot be enabled via the Message Bar or Backstage View.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.gpo",
+        "urn:intuitem:risk:function:doc-pol:pol.hardening"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rmom:ism-1676",
@@ -1110,7 +1633,12 @@
       "groups": [
         "3"
       ],
-      "title": "Microsoft Office\u2019s list of trusted publishers is validated on an annual or\u2026"
+      "title": "Microsoft Office\u2019s list of trusted publishers is validated on an annual or\u2026",
+      "description": "Microsoft Office\u2019s list of trusted publishers is validated on an annual or more frequent basis.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.app_control",
+        "urn:intuitem:risk:function:doc-pol:proc.gpo"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rmom:ism-1488",
@@ -1121,7 +1649,12 @@
         "2",
         "3"
       ],
-      "title": "Microsoft Office macros in files originating from the internet are blocked."
+      "title": "Microsoft Office macros in files originating from the internet are blocked.",
+      "description": "Microsoft Office macros in files originating from the internet are blocked.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.gpo",
+        "urn:intuitem:risk:function:doc-pol:pol.hardening"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rmom:ism-1672",
@@ -1132,7 +1665,12 @@
         "2",
         "3"
       ],
-      "title": "Microsoft Office macro antivirus scanning is enabled."
+      "title": "Microsoft Office macro antivirus scanning is enabled.",
+      "description": "Microsoft Office macro antivirus scanning is enabled.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.endpoint_protection",
+        "urn:intuitem:risk:function:doc-pol:proc.gpo"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rmom:ism-1673",
@@ -1142,7 +1680,12 @@
         "2",
         "3"
       ],
-      "title": "Microsoft Office macros are blocked from making Win32 API calls."
+      "title": "Microsoft Office macros are blocked from making Win32 API calls.",
+      "description": "Microsoft Office macros are blocked from making Win32 API calls.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.gpo",
+        "urn:intuitem:risk:function:doc-pol:pol.hardening"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rmom:ism-1489",
@@ -1153,7 +1696,12 @@
         "2",
         "3"
       ],
-      "title": "Microsoft Office macro security settings cannot be changed by users."
+      "title": "Microsoft Office macro security settings cannot be changed by users.",
+      "description": "Microsoft Office macro security settings cannot be changed by users.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.gpo",
+        "urn:intuitem:risk:function:doc-pol:pol.hardening"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1654",
@@ -1164,7 +1712,12 @@
         "2",
         "3"
       ],
-      "title": "Internet Explorer 11 is disabled or removed."
+      "title": "Internet Explorer 11 is disabled or removed.",
+      "description": "Internet Explorer 11 is disabled or removed.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.software_lifecycle",
+        "urn:intuitem:risk:function:doc-pol:proc.gpo"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1486",
@@ -1175,7 +1728,12 @@
         "2",
         "3"
       ],
-      "title": "Web browsers do not process Java from the internet."
+      "title": "Web browsers do not process Java from the internet.",
+      "description": "Web browsers do not process Java from the internet.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.hardening",
+        "urn:intuitem:risk:function:doc-pol:tech.uem"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1485",
@@ -1186,7 +1744,12 @@
         "2",
         "3"
       ],
-      "title": "Web browsers do not process web advertisements from the internet."
+      "title": "Web browsers do not process web advertisements from the internet.",
+      "description": "Web browsers do not process web advertisements from the internet.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.hardening",
+        "urn:intuitem:risk:function:doc-pol:tech.web_proxy"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1412",
@@ -1196,7 +1759,12 @@
         "2",
         "3"
       ],
-      "title": "Web browsers are hardened using ASD and vendor hardening guidance, with the\u2026"
+      "title": "Web browsers are hardened using ASD and vendor hardening guidance, with the\u2026",
+      "description": "Web browsers are hardened using ASD and vendor hardening guidance, with the most restrictive guidance taking precedence when conflicts occur.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.hardening",
+        "urn:intuitem:risk:function:doc-pol:tech.uem"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1585",
@@ -1207,7 +1775,12 @@
         "2",
         "3"
       ],
-      "title": "Web browser security settings cannot be changed by users."
+      "title": "Web browser security settings cannot be changed by users.",
+      "description": "Web browser security settings cannot be changed by users.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.hardening",
+        "urn:intuitem:risk:function:doc-pol:tech.uem"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1667",
@@ -1217,7 +1790,12 @@
         "2",
         "3"
       ],
-      "title": "Microsoft Office is blocked from creating child processes."
+      "title": "Microsoft Office is blocked from creating child processes.",
+      "description": "Microsoft Office is blocked from creating child processes.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.hardening",
+        "urn:intuitem:risk:function:doc-pol:proc.gpo"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1668",
@@ -1227,7 +1805,12 @@
         "2",
         "3"
       ],
-      "title": "Microsoft Office is blocked from creating executable content."
+      "title": "Microsoft Office is blocked from creating executable content.",
+      "description": "Microsoft Office is blocked from creating executable content.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.hardening",
+        "urn:intuitem:risk:function:doc-pol:proc.gpo"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1669",
@@ -1237,7 +1820,12 @@
         "2",
         "3"
       ],
-      "title": "Microsoft Office is blocked from injecting code into other processes."
+      "title": "Microsoft Office is blocked from injecting code into other processes.",
+      "description": "Microsoft Office is blocked from injecting code into other processes.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.hardening",
+        "urn:intuitem:risk:function:doc-pol:proc.gpo"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1542",
@@ -1247,7 +1835,12 @@
         "2",
         "3"
       ],
-      "title": "Microsoft Office is configured to prevent activation of Object Linking and\u2026"
+      "title": "Microsoft Office is configured to prevent activation of Object Linking and\u2026",
+      "description": "Microsoft Office is configured to prevent activation of Object Linking and Embedding packages.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.hardening",
+        "urn:intuitem:risk:function:doc-pol:proc.gpo"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1859",
@@ -1257,7 +1850,12 @@
         "2",
         "3"
       ],
-      "title": "Office productivity suites are hardened using ASD and vendor hardening\u2026"
+      "title": "Office productivity suites are hardened using ASD and vendor hardening\u2026",
+      "description": "Office productivity suites are hardened using ASD and vendor hardening guidance, with the most restrictive guidance taking precedence when conflicts occur.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.hardening",
+        "urn:intuitem:risk:function:doc-pol:proc.gpo"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1823",
@@ -1267,7 +1865,12 @@
         "2",
         "3"
       ],
-      "title": "Office productivity suite security settings cannot be changed by users."
+      "title": "Office productivity suite security settings cannot be changed by users.",
+      "description": "Office productivity suite security settings cannot be changed by users.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.hardening",
+        "urn:intuitem:risk:function:doc-pol:proc.gpo"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1670",
@@ -1277,7 +1880,12 @@
         "2",
         "3"
       ],
-      "title": "PDF software is blocked from creating child processes."
+      "title": "PDF software is blocked from creating child processes.",
+      "description": "PDF software is blocked from creating child processes.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.hardening",
+        "urn:intuitem:risk:function:doc-pol:tech.uem"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1860",
@@ -1287,7 +1895,12 @@
         "2",
         "3"
       ],
-      "title": "PDF software is hardened using ASD and vendor hardening guidance, with the\u2026"
+      "title": "PDF software is hardened using ASD and vendor hardening guidance, with the\u2026",
+      "description": "PDF software is hardened using ASD and vendor hardening guidance, with the most restrictive guidance taking precedence when conflicts occur.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.hardening",
+        "urn:intuitem:risk:function:doc-pol:tech.uem"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1824",
@@ -1297,7 +1910,12 @@
         "2",
         "3"
       ],
-      "title": "PDF software security settings cannot be changed by users."
+      "title": "PDF software security settings cannot be changed by users.",
+      "description": "PDF software security settings cannot be changed by users.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.hardening",
+        "urn:intuitem:risk:function:doc-pol:tech.uem"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1655",
@@ -1306,7 +1924,12 @@
       "groups": [
         "3"
       ],
-      "title": ".NET Framework 3.5 (includes .NET 2.0 and 3.0) is disabled or removed."
+      "title": ".NET Framework 3.5 (includes .NET 2.0 and 3.0) is disabled or removed.",
+      "description": ".NET Framework 3.5 (includes .NET 2.0 and 3.0) is disabled or removed.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.hardening",
+        "urn:intuitem:risk:function:doc-pol:proc.gpo"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1621",
@@ -1315,7 +1938,12 @@
       "groups": [
         "3"
       ],
-      "title": "Windows PowerShell 2.0 is disabled or removed."
+      "title": "Windows PowerShell 2.0 is disabled or removed.",
+      "description": "Windows PowerShell 2.0 is disabled or removed.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.hardening",
+        "urn:intuitem:risk:function:doc-pol:proc.gpo"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1622",
@@ -1324,7 +1952,12 @@
       "groups": [
         "3"
       ],
-      "title": "PowerShell is configured to use Constrained Language Mode."
+      "title": "PowerShell is configured to use Constrained Language Mode.",
+      "description": "PowerShell is configured to use Constrained Language Mode.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.hardening",
+        "urn:intuitem:risk:function:doc-pol:proc.gpo"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1623",
@@ -1334,7 +1967,12 @@
         "2",
         "3"
       ],
-      "title": "PowerShell module logging, script block logging and transcription events are\u2026"
+      "title": "PowerShell module logging, script block logging and transcription events are\u2026",
+      "description": "PowerShell module logging, script block logging and transcription events are centrally logged.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.logging",
+        "urn:intuitem:risk:function:doc-pol:tech.siem"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1889",
@@ -1344,7 +1982,12 @@
         "2",
         "3"
       ],
-      "title": "Command line process creation events are centrally logged."
+      "title": "Command line process creation events are centrally logged.",
+      "description": "Command line process creation events are centrally logged.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.logging",
+        "urn:intuitem:risk:function:doc-pol:tech.siem"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1815",
@@ -1354,7 +1997,12 @@
         "2",
         "3"
       ],
-      "title": "Event logs are protected from unauthorised modification and deletion."
+      "title": "Event logs are protected from unauthorised modification and deletion.",
+      "description": "Event logs are protected from unauthorised modification and deletion.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.logging",
+        "urn:intuitem:risk:function:doc-pol:tech.siem"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1906",
@@ -1364,7 +2012,12 @@
         "2",
         "3"
       ],
-      "title": "Event logs from internet-facing servers are analysed in a timely manner to\u2026"
+      "title": "Event logs from internet-facing servers are analysed in a timely manner to\u2026",
+      "description": "Event logs from internet-facing servers are analysed in a timely manner to detect cyber security events.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.siem",
+        "urn:intuitem:risk:function:doc-pol:proc.logging"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1907",
@@ -1373,7 +2026,12 @@
       "groups": [
         "3"
       ],
-      "title": "Event logs from non-internet-facing servers are analysed in a timely manner to\u2026"
+      "title": "Event logs from non-internet-facing servers are analysed in a timely manner to\u2026",
+      "description": "Event logs from non-internet-facing servers are analysed in a timely manner to detect cyber security events.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.siem",
+        "urn:intuitem:risk:function:doc-pol:proc.logging"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-0109",
@@ -1382,7 +2040,12 @@
       "groups": [
         "3"
       ],
-      "title": "Event logs from workstations are analysed in a timely manner to detect cyber\u2026"
+      "title": "Event logs from workstations are analysed in a timely manner to detect cyber\u2026",
+      "description": "Event logs from workstations are analysed in a timely manner to detect cyber security events.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.siem",
+        "urn:intuitem:risk:function:doc-pol:proc.logging"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1228",
@@ -1392,7 +2055,12 @@
         "2",
         "3"
       ],
-      "title": "Cyber security events are analysed in a timely manner to identify cyber\u2026"
+      "title": "Cyber security events are analysed in a timely manner to identify cyber\u2026",
+      "description": "Cyber security events are analysed in a timely manner to identify cyber security incidents.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.siem",
+        "urn:intuitem:risk:function:doc-pol:proc.incident"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-0123",
@@ -1402,7 +2070,12 @@
         "2",
         "3"
       ],
-      "title": "Cyber security incidents are reported to the chief information security\u2026"
+      "title": "Cyber security incidents are reported to the chief information security\u2026",
+      "description": "Cyber security incidents are reported to the chief information security officer, or one of their delegates, as soon as possible after they occur or are discovered.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.incident",
+        "urn:intuitem:risk:function:doc-pol:proc.incident"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-0140",
@@ -1412,7 +2085,12 @@
         "2",
         "3"
       ],
-      "title": "Cyber security incidents are reported to ASD as soon as possible after they\u2026"
+      "title": "Cyber security incidents are reported to ASD as soon as possible after they\u2026",
+      "description": "Cyber security incidents are reported to ASD as soon as possible after they occur or are discovered.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.incident",
+        "urn:intuitem:risk:function:doc-pol:proc.incident"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah:ism-1819",
@@ -1422,7 +2100,11 @@
         "2",
         "3"
       ],
-      "title": "Following the identification of a cyber security incident, the cyber security\u2026"
+      "title": "Following the identification of a cyber security incident, the cyber security\u2026",
+      "description": "Following the identification of a cyber security incident, the cyber security incident response plan is enacted.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.incident"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rb:ism-1511",
@@ -1433,7 +2115,12 @@
         "2",
         "3"
       ],
-      "title": "Backups of data, applications and settings are performed and retained in\u2026"
+      "title": "Backups of data, applications and settings are performed and retained in\u2026",
+      "description": "Backups of data, applications and settings are performed and retained in accordance with business criticality and business continuity requirements.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.backup",
+        "urn:intuitem:risk:function:doc-pol:proc.bia"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rb:ism-1810",
@@ -1444,7 +2131,11 @@
         "2",
         "3"
       ],
-      "title": "Backups of data, applications and settings are synchronised to enable\u2026"
+      "title": "Backups of data, applications and settings are synchronised to enable\u2026",
+      "description": "Backups of data, applications and settings are synchronised to enable restoration to a common point in time.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.backup"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rb:ism-1811",
@@ -1455,7 +2146,12 @@
         "2",
         "3"
       ],
-      "title": "Backups of data, applications and settings are retained in a secure and\u2026"
+      "title": "Backups of data, applications and settings are retained in a secure and\u2026",
+      "description": "Backups of data, applications and settings are retained in a secure and resilient manner.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.backup",
+        "urn:intuitem:risk:function:doc-pol:tech.immutable_backup"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rb:ism-1515",
@@ -1466,7 +2162,12 @@
         "2",
         "3"
       ],
-      "title": "Restoration of data, applications and settings from backups to a common point\u2026"
+      "title": "Restoration of data, applications and settings from backups to a common point\u2026",
+      "description": "Restoration of data, applications and settings from backups to a common point in time is tested as part of disaster recovery exercises.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:proc.drp",
+        "urn:intuitem:risk:function:doc-pol:proc.bcp_exercise"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rb:ism-1812",
@@ -1477,7 +2178,12 @@
         "2",
         "3"
       ],
-      "title": "Unprivileged user accounts cannot access backups belonging to other user\u2026"
+      "title": "Unprivileged user accounts cannot access backups belonging to other user\u2026",
+      "description": "Unprivileged user accounts cannot access backups belonging to other user accounts.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.backup",
+        "urn:intuitem:risk:function:doc-pol:pol.access"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rb:ism-1813",
@@ -1486,7 +2192,12 @@
       "groups": [
         "3"
       ],
-      "title": "Unprivileged user accounts cannot access their own backups."
+      "title": "Unprivileged user accounts cannot access their own backups.",
+      "description": "Unprivileged user accounts cannot access their own backups.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.backup",
+        "urn:intuitem:risk:function:doc-pol:pol.access"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rb:ism-1705",
@@ -1496,7 +2207,12 @@
         "2",
         "3"
       ],
-      "title": "Privileged user accounts (excluding backup administrator accounts) cannot\u2026"
+      "title": "Privileged user accounts (excluding backup administrator accounts) cannot\u2026",
+      "description": "Privileged user accounts (excluding backup administrator accounts) cannot access backups belonging to other user accounts.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.backup",
+        "urn:intuitem:risk:function:doc-pol:pol.access"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rb:ism-1706",
@@ -1505,7 +2221,12 @@
       "groups": [
         "3"
       ],
-      "title": "Privileged user accounts (excluding backup administrator accounts) cannot\u2026"
+      "title": "Privileged user accounts (excluding backup administrator accounts) cannot\u2026",
+      "description": "Privileged user accounts (excluding backup administrator accounts) cannot access their own backups.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:pol.backup",
+        "urn:intuitem:risk:function:doc-pol:pol.access"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rb:ism-1814",
@@ -1516,7 +2237,12 @@
         "2",
         "3"
       ],
-      "title": "Unprivileged user accounts are prevented from modifying and deleting backups."
+      "title": "Unprivileged user accounts are prevented from modifying and deleting backups.",
+      "description": "Unprivileged user accounts are prevented from modifying and deleting backups.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.immutable_backup",
+        "urn:intuitem:risk:function:doc-pol:pol.backup"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rb:ism-1707",
@@ -1526,7 +2252,12 @@
         "2",
         "3"
       ],
-      "title": "Privileged user accounts (excluding backup administrator accounts) are\u2026"
+      "title": "Privileged user accounts (excluding backup administrator accounts) are\u2026",
+      "description": "Privileged user accounts (excluding backup administrator accounts) are prevented from modifying and deleting backups.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.immutable_backup",
+        "urn:intuitem:risk:function:doc-pol:pol.backup"
+      ]
     },
     {
       "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rb:ism-1708",
@@ -1535,7 +2266,12 @@
       "groups": [
         "3"
       ],
-      "title": "Backup administrator accounts are prevented from modifying and deleting\u2026"
+      "title": "Backup administrator accounts are prevented from modifying and deleting\u2026",
+      "description": "Backup administrator accounts are prevented from modifying and deleting backups during their retention period.",
+      "reference_controls": [
+        "urn:intuitem:risk:function:doc-pol:tech.immutable_backup",
+        "urn:intuitem:risk:function:doc-pol:pol.backup"
+      ]
     }
   ]
 }

@@ -33,6 +33,82 @@ public sealed partial class ExampleRepoTests : IDisposable
     }
 
     [Fact]
+    public void Example_declares_the_essential_eight_plan_with_its_written_sections()
+    {
+        // s11-07: the example's plan validates with the rest of the scope (above); here, that every section it names is written, the
+        // environment carries a boundary diagram, and no generated plan is committed.
+        var ssp = File.ReadAllText(Path.Combine(Repo, "scope", "ssp.yaml"));
+        ssp.ShouldStartWith("# yaml-language-server: $schema=../../../schemas/scope.schema.json");
+        var plan = ScopeLoader.Parse(
+            new ScopeSource("setup.yaml", File.ReadAllText(Path.Combine(Repo, "scope", "setup.yaml"))), null, [], ssp: new ScopeSource("ssp.yaml", ssp)).Scope.Ssps.ShouldHaveSingleItem();
+
+        plan.Programme.Value.ShouldBe("essential-eight");
+        plan.Sections.Select(s => s.Name).ShouldBe(SspProfile.RequiredSections(plan.Profile), ignoreOrder: true);
+        foreach (var section in plan.Sections)
+        {
+            var text = File.ReadAllText(Path.Combine(Repo, section.File));
+            text.ShouldNotBeNullOrWhiteSpace(section.Name);
+        }
+
+        File.ReadAllText(Path.Combine(Repo, plan.Sections.Single(s => s.Name == "environment").File)).ShouldContain("```mermaid");
+        Directory.GetFiles(Repo, "ssp-*", SearchOption.AllDirectories).ShouldBeEmpty();
+        File.ReadAllText(Path.Combine(Repo, ".gitignore")).ShouldContain("ssp-*");
+    }
+
+    [Fact]
+    public void Ai_grc_primer_gives_each_practice_a_worked_example_and_a_glossary()
+    {
+        // s11-08: readable in 15 minutes (about 3,000 words at most), one Example Pty Ltd example per AI6 practice.
+        var primer = File.ReadAllText(Path.Combine(RepoRoot, "docs", "ai-grc-primer.md"));
+        string[] practices = ["Decide who is accountable", "Understand impacts and plan accordingly", "Measure and manage risks", "Share essential information", "Test and monitor", "Maintain human control"];
+        for (var i = 0; i < practices.Length; i++)
+        {
+            var section = primer.Split($"### {i + 1}. {practices[i]}")[1].Split("### ")[0];
+            section.ShouldContain("**Example Pty Ltd:**", Case.Sensitive, practices[i]);
+        }
+
+        foreach (var heading in new[] { "## Glossary", "## What you do not need to do at Foundations" })
+        {
+            primer.ShouldContain(heading, Case.Sensitive);
+        }
+
+        primer.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Length.ShouldBeLessThan(3000);
+    }
+
+    [Fact]
+    public void Ai_governance_walkthrough_says_why_before_what_and_the_training_builds_on_it()
+    {
+        // s11-08: register, screen, record the screening outcome, record an impact assessment and a test date, run hound, read the AI6 rows; each step
+        // opens with what it is for. The 30-minute training outline follows the walkthrough.
+        var walkthrough = File.ReadAllText(Path.Combine(RepoRoot, "docs", "tutorials", "ai-governance.md"));
+        var steps = walkthrough.Split("\n## ").Skip(1).Where(s => char.IsAsciiDigit(s[0])).ToArray();
+        steps.Length.ShouldBeGreaterThanOrEqualTo(7);
+        foreach (var step in steps)
+        {
+            step.Split('\n', 3)[2].TrimStart().ShouldStartWith("**What it is for:**", Case.Sensitive, step.Split('\n')[0]);
+        }
+
+        foreach (var command in new[] { "hound scope validate", "hound scope plan", "hound scope apply", "hound run", "hound programme list", "runbooks/ai-screening.md", "AI6-4.1", "AI6-5.1" })
+        {
+            walkthrough.ShouldContain(command, Case.Sensitive);
+        }
+
+        var training = File.ReadAllText(Path.Combine(RepoRoot, "docs", "training", "ai-governance.md"));
+        training.ShouldContain("../tutorials/ai-governance.md", Case.Sensitive);
+        training.ShouldContain("30 minutes", Case.Sensitive);
+    }
+
+    [Fact]
+    public void Ssp_guide_covers_what_people_write_and_how_a_version_is_approved()
+    {
+        var guide = File.ReadAllText(Path.Combine(RepoRoot, "docs", "govern", "system-security-plan.md"));
+        foreach (var topic in new[] { "## What the plan is built from", "## What people write or draw", "## Review and approval", "## Versions", "## Drafting descriptions with your own agent", "hound ssp publish" })
+        {
+            guide.ShouldContain(topic, Case.Sensitive);
+        }
+    }
+
+    [Fact]
     public void Scope_guide_documents_the_ref_id_conventions_once_and_the_examples_follow_them()
     {
         var guide = File.ReadAllText(Path.Combine(RepoRoot, "docs", "scope.md"));
@@ -99,7 +175,7 @@ public sealed partial class ExampleRepoTests : IDisposable
 
         parsed.Problems.ShouldBeEmpty();
         var manual = parsed.Scope.EvidencePlan!.Rows.Where(r => r.Method == EvidenceMethod.Manual).ToArray();
-        manual.Length.ShouldBe(3);
+        manual.Length.ShouldBe(5);
         var contacts = parsed.Scope.Access.Teams.Where(t => t.IsOwnerContact).Select(t => t.Name).ToArray();
         manual.ShouldContain(r => contacts.Contains(r.Owner!.Value));
 
@@ -192,6 +268,36 @@ public sealed partial class ExampleRepoTests : IDisposable
     }
 
     [Fact]
+    public void Example_declares_the_ai6_programme_with_two_ai_systems_and_its_audit()
+    {
+        // s11-15: the AI6 programme at Foundations, its register, and two fictional AI systems, one deliberately never tested, so a run
+        // shows AI6-4.1 met and AI6-5.1 not met. The scope validates in Example_compliance_repo_validates.
+        var scope = Path.Combine(Repo, "scope");
+        var parsed = ScopeLoader.Parse(
+            new ScopeSource("setup.yaml", File.ReadAllText(Path.Combine(scope, "setup.yaml"))), null,
+            [new ScopeSource("audits/ex-ai6-2026.yaml", File.ReadAllText(Path.Combine(scope, "audits", "ex-ai6-2026.yaml")))]);
+
+        parsed.Problems.ShouldBeEmpty();
+        var programme = parsed.Scope.Setup.Programmes.Single(p => p.Id == "ai6");
+        (programme.Framework.Value, programme.Audit.Value, programme.Register?.Of).ShouldBe(("urn:evidence-hound:risk:framework:ai6", "EX-AI6-2026", "ai_systems"));
+        programme.Groups.ShouldBe(["F"]);
+        var audit = parsed.Scope.Audits.ShouldHaveSingleItem();
+        audit.Groups.Select(g => g.Value).ShouldBe(["F"]);
+
+        var entries = AiRegisterChecks.Entries(parsed.Scope.Setup);
+        entries.Select(e => (e.System, e.Ai.Screening, e.Ai.Use)).ShouldBe(
+            [("Example ticket triage", AiScreening.Normal, AiUse.Built), ("Example proposal assistant", AiScreening.Elevated, AiUse.Customised)]);
+        audit.Systems.Select(s => s.Value).ShouldBe(entries.Select(e => e.System));
+        var findings = AiRegisterChecks.Assess(entries, new DateOnly(2026, 11, 24)).ToDictionary(f => f.CheckId, f => f.Outcome);
+        (findings["ai.register_complete"], findings["ai.owner_assigned"], findings["ai.tested_before_use"]).ShouldBe(
+            (Core.Checks.CheckOutcome.Pass, Core.Checks.CheckOutcome.Pass, Core.Checks.CheckOutcome.Fail));
+
+        var config = File.ReadAllText(Path.Combine(Repo, "hound.yaml"));
+        config.ShouldContain("type: ai-register");
+        config.ShouldContain("compliance_assessment: EX-AI6-2026");
+    }
+
+    [Fact]
     public void Mappings_and_snapshots_are_the_same_as_the_repository_ones()
     {
         foreach (var (copy, original) in new[]
@@ -200,6 +306,9 @@ public sealed partial class ExampleRepoTests : IDisposable
             ("mappings/example.yaml", "mappings/example.yaml"),
             ("frameworks/essential-eight-2023.json", "frameworks/essential-eight-2023.json"),
             ("frameworks/asd-essentials-enterprise-it.json", "frameworks/asd-essentials-enterprise-it.json"),
+            ("mappings/ai6.yaml", "mappings/ai6.yaml"),
+            ("frameworks/ai6.yaml", "frameworks/ai6.yaml"),
+            ("frameworks/ai6.json", "frameworks/ai6.json"),
         })
         {
             WithoutSchemaComment(Path.Combine(Repo, copy)).ShouldBe(WithoutSchemaComment(Path.Combine(RepoRoot, original)), copy);

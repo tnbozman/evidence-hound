@@ -27,6 +27,19 @@ file by `scripts/cheatsheet/render.sh`.
   - `--scope` (req) `--ref-id --name --domain --owner --category --systems --audit --requirements -y`
 - `hound audit draft`: draft an audit
   - `--ref --name --framework` (req) `--group --domain --perimeter --system --due --json`
+- `hound programme list`: programmes with framework, groups, audit of record and requirement counts
+  - `--scope --json`
+- `hound ssp build`: a programme's system security plan from CISO Assistant and the repo, gaps first, each value with its source
+  - `--programme` (req) `--scope --config --json --strict --snapshot-out --from-snapshot --format --out`
+- `hound ssp diff <before> <after>`: what changed between two signed versions' snapshots, boundary and inventory first
+- `hound ssp publish`: upload a signed version (plan, POA&M, snapshot, audit report) as a new evidence revision
+  - `--programme --snapshot` (req) `--scope --config`
+- `hound ssp suggest`: JSON brief for your own agent: controls with no description behind an implemented requirement (no model)
+  - `--programme` (req) `--scope --config --from-snapshot`
+- `hound ssp describe`: write a control description drafted with AI into controls.yaml, marked for review
+  - `--control --text` (req) `--scope --config`
+- `hound ssp poam`: the plan of action and milestones: requirements not yet met, with control, owner, ETA and status
+  - `--programme` (req) `--scope --config --json`
 
 ### Onboard
 - `hound onboard <system>`: onboard a system: supplier, applicability, files

@@ -204,7 +204,10 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
             .. evidences.Where(e => !IsPlanned(e)).Select(e => Marked(ScopeKind.Document, RefIdOrName(ScopeKind.Document, e), e, ("name", Text(e["name"])), ("domain", names.Domain(e)), ("hashes", hashes.GetValueOrDefault(Id(e))))),
             .. controls.Select(c => Marked(ScopeKind.Control, RefIdOrName(ScopeKind.Control, c), c,
                 ("name", Text(c["name"])), ("domain", names.Domain(c)), ("owner", Joined(c["owner"], names.Users)), ("priority", Text(c["priority"])),
-                ("category", Text(c["category"])), ("eta", Text(c["eta"])), ("systems", Joined(c["assets"], names.Assets)), ("documents", Joined(c["evidences"], names.Evidence)))),
+                ("category", Text(c["category"])), ("eta", Text(c["eta"])), ("systems", Joined(c["assets"], names.Assets)), ("documents", Joined(c["evidences"], names.Evidence))) with
+            {
+                Observed = Fields(("status", Text(c["status"]))),
+            }),
             .. rows.Select(r => new ActualObject(
                 new ScopeObject(ScopeKind.Assessment, r.Key, Fields(
                     ("status", Choice(Text(r.Row["status"]))), ("result", Choice(Text(r.Row["result"]))), ("observation", Text(r.Row["observation"])),

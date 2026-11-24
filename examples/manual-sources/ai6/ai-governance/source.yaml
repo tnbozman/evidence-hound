@@ -1,0 +1,10 @@
+# AI governance records: paste this under 'collectors:' in hound.yaml, then set the owner and the drop folder.
+# The runbook is README.md beside this file; point an evidence plan row at your copy of it.
+- name: ai-governance
+  type: manual
+  schedule: "0 6 * * *"
+  settings:
+    drop_folder: /var/lib/evidence-hound/manual/ai-governance
+    checks: ai.senior_owner_named, ai.training_current, ai.policy_approved, ai.redress_process_in_place, ai.risk_method_documented, ai.use_disclosed, ai.generated_content_labelled, ai.retirement_recorded
+    due_days: 366
+    owner: Example AI governance owner

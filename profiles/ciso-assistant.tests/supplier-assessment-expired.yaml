@@ -1,0 +1,17 @@
+# The AI supplier's only assessment expired on 2026-06-30.
+description: A third-party AI system whose supplier's assessment has expired fails.
+now: 2026-11-24T02:00:00Z
+settings:
+  base_url: https://ciso.example.com/api/
+secrets:
+  token: example-test-token
+responses:
+  - { get: /api/assets/, file: recordings/assets.json }
+  - { get: /api/risk-scenarios/, file: recordings/risk-scenarios.json }
+  - { get: /api/solutions/, file: recordings/solutions.json }
+  - { get: /api/entity-assessments/, file: recordings/entity-assessments-expired.json }
+  - { get: /api/contracts/, file: recordings/contracts.json }
+expect:
+  ai.suppliers_assessed: fail
+  supplier.assessments_current: fail
+  ai.supplier_contracts_current: pass

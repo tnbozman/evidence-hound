@@ -1,6 +1,6 @@
 # s11 Essential Eight system security plan and AI governance (AI6)
 
-Status: Planned
+Status: Done
 
 **Goal:** two parts that share one idea, reporting per programme. Part 1: `hound` drafts the Essential Eight system security plan (SSP) and POA&M from the records already in CISO Assistant, in the shape the ISM expects, for people to review and sign. Part 2: AI governance runs on the same machinery as cyber compliance. The Australian *Guidance for AI Adoption* (AI6) is loaded into CISO Assistant as a versioned custom framework, the AI system register lives in CISO Assistant as assets, framework-neutral `ai.*` checks are read from CISO Assistant and mapped to AI6 requirements, and the committee and board reports (s12) work per programme, so AI6 is reported beside the Essential Eight rather than bolted on.
 
@@ -24,7 +24,7 @@ What is configuration here, and what is not:
 ## Part 1: programmes and the Essential Eight system security plan
 
 ### s11-01 Programmes, and reporting per programme
-- [ ] Done
+- [x] Done
 
 **Story:** As the authorising official, I want reports organised by compliance programme (Essential Eight, AI6, later NIST SP 800-171), so that adding a framework adds a section to the same reports instead of a new report or code that assumes Essential Eight maturity levels.
 
@@ -49,15 +49,17 @@ The reports themselves are built in s12. This task declares programmes in config
 **Functional check**
 - `make run ARGS="programme list --scope examples/compliance-repo/scope"` lists the Essential Eight programme with 8 strategies at groups 1 and 2, and (after s11-15) the AI6 programme with 6 practices.
 
+Result (2026-11-24): `make run ARGS="programme list --scope examples/compliance-repo/scope"` prints the `essential-eight` programme (framework version 3, audit of record EX-E8-2026) with 8 parent nodes (pa, pos, mfa, rap, ac, rmom, uah, rb) at groups 1 and 2: 48 requirements at Maturity Level One, 107 at Maturity Level Two. The AI6 line waits for s11-15. Also built: `scope.programme_id` (slug), duplicate ids (`scope.duplicate`), `scope.programme_framework_unknown`, `scope.programme_group_unknown`, `scope.programme_audit_unknown`, `scope.programme_audit_framework`, `scope.programme_audit_shared`, `scope.programme_needs_snapshot`; the schema and both example repos gained the programme.
+
 ### s11-02 SSP model and declaration
-- [ ] Done
+- [x] Done
 
 **Story:** As the authorising official, I want an SSP assembled from the scope, systems, suppliers, controls and results we already keep in CISO Assistant, so that the plan matches what is actually recorded and does not go stale in a separate document.
 
 What CISO Assistant offers today (checked in the v4.3.4 source, not yet run live): each audit has a Word and PDF report (`word_report`, profiles `full` and `attestation`) listing requirements with result, observation, evidence names and applied controls, and an action plan export (PDF, Excel, CSV). Custom Word templates (`CustomWordTemplate`) exist but are a paid-edition feature, and there is no SSP or system-description document. So `hound` assembles the SSP from CISO Assistant's API, the same way the s12 reports will, and attaches CISO Assistant's own audit report as an appendix rather than re-creating it.
 
 **Acceptance criteria**
-- `scope/ssp.yaml` declares one SSP per programme (s11-01): `programme`, `profile` (`nist-800-171` or `ism`, s17-03 and s11-04), `system_name`, `perimeter` (the boundary), `version`, `roles` (system owner, authorising official, security contact: teams or users from `access.yaml`), `documents` (boundary and network diagrams, data flow diagrams, policies and procedures, by document id from the audit, s06), and optional `sections` (Markdown files for the parts that cannot be generated: environment description, physical and personnel arrangements).
+- `scope/ssp.yaml` declares one SSP per programme (s11-01): `programme`, `profile` (the controls annex: `ism` or `nist-800-171`, s11-04 and s17-03; the layout is always SP 800-18), `system_name`, `perimeter` (the boundary), `version`, `roles` (system owner, authorising official, security contact: teams or users from `access.yaml`), `documents` (boundary and network diagrams, data flow diagrams, policies and procedures, by document id from the audit, s06), and optional `sections` (Markdown files for the parts that cannot be generated: environment description, physical and personnel arrangements).
 - A pure function builds an `SspDocument` from a read of CISO Assistant (the programme's audit rows, built so that the s12-04 posture snapshot reuses the same reads), the perimeter's assets with their owners (and custom fields once s11-12 exists), the suppliers and solutions linked to those assets (s09-19), the applied controls with owners, status and descriptions, and the requirement assessments with result, observation and evidence names. No live calls inside the core; the shell reads CISO Assistant once per generation.
 - Every value in the SSP traces to a CISO Assistant object or a file in the repo; the JSON form of the document records the source of each value.
 - Validation: the programme, perimeter, roles and documents exist; a profile's required sections are present.
@@ -72,8 +74,10 @@ What CISO Assistant offers today (checked in the v4.3.4 source, not yet run live
 **Functional check**
 - `make run ARGS="ssp build --programme essential-eight --json"` against the local CISO Assistant with the example repo prints the document model with the example systems, suppliers and controls.
 
+Result (2026-11-24): no CISO Assistant can run in the cloud session, so the check is `SspFunctionalTests.Builds_the_essential_eight_plan_from_the_seeded_records`, which runs `hound ssp build --programme essential-eight --json` against CISO Assistant v4.3.4 seeded from the example repo, with a `scope/ssp.yaml` for the Essential Eight programme. It passed in CI (functional job, run 45337444001): the inventory is Example 365, Example laptops and Example backup service with their owners from CISO Assistant, AC-MFA is among the controls, ISM-1486 reads compliant, and the document is the identity and access policy; the plan is kept in `test-results/ssp/`. The example has no suppliers yet, so external services are covered by `SspBuilderTests` until s11-07 adds them. Also built: `ssp.role_missing`, the `ssps` schema, and control status read from CISO Assistant as an observed value (never compared or written).
+
 ### s11-03 Requirement statements, gaps and POA&M
-- [ ] Done
+- [x] Done
 
 **Story:** As an assessor, I want each requirement's implementation status, statement, responsible party and evidence stated the same way every time, so that I can trust the SSP was generated from the records and see what is missing.
 
@@ -93,24 +97,64 @@ What CISO Assistant offers today (checked in the v4.3.4 source, not yet run live
 **Functional check**
 - On the example repo, `make run ARGS="ssp build --programme essential-eight --strict"` exits non-zero and lists the example's gaps; after adding the missing control description it exits zero.
 
-### s11-04 ISM-style profile for the Essential Eight
-- [ ] Done
+Result (2026-11-24): `SspFunctionalTests.Strict_lists_the_example_gaps_and_the_poam_lists_what_is_not_met` passed in CI against CISO Assistant v4.3.4 seeded from the example (head 6e28ba4): `hound ssp build --programme essential-eight --strict` exits 1 and lists `ISM-1486: no responsible party` (compliant by hand with no control linked), and `hound ssp poam` lists the rows not implemented; both outputs are kept in `test-results/ssp/`. The second half (fix and exit zero) is covered by the unit tests, since the fix for ISM-1486 is linking a control, which s11-07 does in the example. Deviation, decided while building: a row *not implemented* is not a gap, because the POA&M carries it; otherwise every unassessed row of a real audit would block `--strict`. Rows in place need a statement and an owner, Planned rows an owner, Not applicable rows a justification. Flagging requirements a profile does not allow on a POA&M waits for s17-03's list.
 
-**Story:** As an Australian defence supplier, I want an SSP in the shape the ISM expects for the Essential Eight programme, so that the same data serves DISP and CMMC.
+### s11-04 One SSP layout (NIST SP 800-18), with an ISM annex for the Essential Eight
+- [x] Done
+
+**Story:** As an Australian defence supplier, I want one system security plan layout that meets the ISM now and CMMC later, so that the same data and the same template serve DISP and CMMC.
+
+**Decision (maintainer, 2026-11-24):** hound supports one SSP layout, the NIST SP 800-18 Rev 1 Appendix A structure (https://nvlpubs.nist.gov/nistpubs/legacy/sp/nistspecialpublication800-18r1.pdf), linked to the POA&M (s11-03). Only its controls annex switches by framework. This meets ISM-0041, which asks for an overview covering the system's purpose, its boundary and how it is managed, plus an annex of the applicable ISM controls and any others identified and implemented. The ASD Blueprint SSP is not a separate layout.
 
 **Acceptance criteria**
-- The `ism` profile lays out: system overview and boundary, roles, the inventory, external services, then each ISM control in the programme's selected groups with applicability, implementation status and statement, grouped by Essential Eight strategy (or Essentials domain for that programme).
+- The plan follows SP 800-18 Rev 1 Appendix A in order: system name and identifier; categorisation (for the ISM, the classification); system owner; authorising official; other designated contacts; assignment of security responsibility; operational status; system type; general description and purpose; system environment (with the boundary, its diagram and the inventory); interconnections and external service providers (suppliers and solutions); applicable laws, regulations and policies; the controls annex; completion and approval dates (s11-05); ongoing plan maintenance.
+- `profile` in `ssp.yaml` now names the annex: `ism` lists each ISM control in the programme's selected groups with applicability, implementation status, statement, responsible party and evidence, grouped by Essential Eight strategy (or Essentials domain for that programme); `nist-800-171` is built in s17-03. Each annex row links to its POA&M item when it has one.
 - An ISM control the Essential Eight lists under several strategies appears once, with the strategies it serves (the mapping's `rows: all` rule).
+- The sections a person writes follow the layout: purpose, environment, management (how the system is managed and maintained), laws and policies; the required list in `SspProfile` changes to match, for every profile.
+- `docs/ssp.md` cites SP 800-18 Rev 1 and ISM-0041 and says which section of the plan meets each part of ISM-0041.
 
 **Tests first**
-- `IsmSspTests.Repeated_ism_control_appears_once_with_strategies`
-- `IsmSspTests.Renders_expected_markdown_from_fixture` (golden file)
+- `SspLayoutTests.Sections_follow_sp_800_18_appendix_a`
+- `IsmAnnexTests.Repeated_ism_control_appears_once_with_strategies`
+- `IsmAnnexTests.Annex_row_links_its_poam_item`
+- `SspLayoutTests.Renders_expected_markdown_from_fixture` (golden file)
 
 **Functional check**
-- Generate the ISM-style SSP for the example Essential Eight ML2 audit on the local stack.
+- Generate the SSP for the example Essential Eight ML2 audit on the local stack and read it against the Appendix A section list and ISM-0041.
+
+Result (2026-11-24): `SspFunctionalTests.Renders_the_sp_800_18_plan_with_the_ism_annex_by_strategy` passed in CI against CISO Assistant v4.3.4 seeded from the example (head 3af8ae0). `hound ssp build --programme essential-eight` prints sections 1 to 15 of SP 800-18 Rev 1 Appendix A, with the gaps first and the POA&M as an appendix. The purpose section is read from its file, and the classification comes from `ssp.yaml`. ISM-1815 appears once in the annex, listed under `mfa, rap, ac, uah`. The output is kept in `test-results/ssp/ssp-essential-eight.md`. `docs/ssp.md` maps ISM-0041's purpose, boundary, management and annex to the plan's sections. Deviation: the listed `IsmAnnexTests` cases were written in `SspLayoutTests`, beside the layout they exercise. A missing section file prints as "not written yet", so a draft still builds; `ssp.section_missing` still catches an undeclared one.
+
+### s11-16 Annex columns from the ASD Blueprint SSP annex template (added 2026-11-24, do after s11-04)
+- [x] Done
+
+Added at the maintainer's request (2026-11-24). The ASD Blueprint *System Security Plan Annex Template (June 2026)* (https://github.com/ASD-Blueprint/ASD-Blueprint-for-Secure-Cloud/blob/main/static/content/files/Blueprint%20System%20Security%20Plan%20Annex%20Template%20(June%202026).xlsx) is the annex assessors use for the ISM. The layout stays NIST SP 800-18 (s11-04). Only the ISM annex's columns follow the template.
+
+Compared on 2026-11-24 (Essential Eight sheet against CISO Assistant's `essential-eight-2023` library):
+- Both list 126 distinct ISM controls. They differ by one: the template has ISM-1899 (network devices outside administrative infrastructure cannot initiate connections to it), and the library has ISM-1900 (fortnightly vulnerability scanning under patch operating systems). Check this against the current ISM and the library's newer version, and record it under "Discovered work" for s12.
+- The template's columns are Identifier, Description, Related Essential Eight controls and strategies, Org responsibility, Technology addressed, Responsible entity, Implementation status, Implementation comments, and applicability (NC, OS, P, S, TS, ML1 to ML3).
+- Policy versus technical: CISO Assistant has this detail. Each requirement in the library links to reference controls from its `doc-pol` library, whose ids are prefixed `pol.` (policy), `proc.` (procedure), `tech.` (technical) or `doc.` (documentation). Every ISM control has one or two (pol 74, proc 73, tech 69, doc 4). The template's "Technology addressed" column means "covered by the Blueprint's Microsoft 365 design", not "is a technical control", so it is not the same split.
+- hound's framework snapshot keeps only ref, parent, groups and title, so it drops the reference controls and full descriptions today.
+
+**Acceptance criteria**
+- The snapshot (`hound framework snapshot`) keeps each node's full description and its reference control ids. Older snapshots still load, with those fields empty.
+- The `ism` annex columns become: Control, Description, Strategies, Maturity levels, Control type (Policy, Procedure, Technical, Documentation, from the reference controls), Responsible entity, Implementation status, Statement, Responsible, Evidence, POA&M.
+- Responsible entity uses the template's values. It is Consumer by default, and Shared or Outsourced service provider when the control's linked systems are provided by a supplier's solution (s11-02 external services). It can be overridden per control in `controls.yaml`.
+- Implementation status uses the template's vocabulary (Effective, Alternate control, Ineffective, No visibility, Not implemented, Not applicable, Not assessed), next to the SP 800-18 status already shown. The mapping from CISO Assistant results is written down in `docs/ssp.md`. A result of `partially_compliant` maps to Ineffective, and that choice is flagged for the maintainer at review.
+- `hound ssp build --annex-xlsx <file>` is out of scope; Markdown and JSON only.
+
+**Tests first**
+- `FrameworkSnapshotTests.Keeps_reference_controls_and_description`
+- `SspAnnexTests.Control_type_comes_from_reference_control_prefixes`
+- `SspAnnexTests.Supplier_provided_system_makes_responsibility_shared`
+- `SspAnnexTests.Asd_status_maps_from_result`
+
+**Functional check**
+- Regenerate the snapshot from the local CISO Assistant, build the example SSP, and check that ISM-1504's row reads Technical (its reference control is `tech.mfa`) with the expected responsible entity.
+
+**Result (2026-11-24):** the snapshot was regenerated from the CISO Assistant v4.3.4 library (`hound framework snapshot`, identical to main apart from the new descriptions and reference controls). `SspFunctionalTests.Renders_the_sp_800_18_plan_with_the_ism_annex_by_strategy` built the example plan against the seeded CISO Assistant in CI (functional job, run 45387466690, passed): ISM-1504's row reads `| Technical |` with a responsible entity and an ASD implementation status.
 
 ### s11-05 Review, approval and versions
-- [ ] Done
+- [x] Done
 
 **Story:** As the authorising official, I want to review, approve and version the SSP like any other controlled document, so that what we give an assessor is the version we signed.
 
@@ -129,28 +173,35 @@ What CISO Assistant offers today (checked in the v4.3.4 source, not yet run live
 **Functional check**
 - Sign version 1.0 of the example SSP, publish it to the local CISO Assistant, change one control description, regenerate as 1.1 and confirm the diff and both evidence revisions.
 
-### s11-06 Suggested control descriptions with the model (optional, last)
-- [ ] Done
 
-Comes after the deterministic SSP tasks, following the person's rule: deterministic code first, a model only afterwards and only to propose text for people to review.
+**Result (2026-11-24):** `SspFunctionalTests.Signs_publishes_and_diffs_two_versions_of_the_plan` ran in CI against the seeded CISO Assistant (functional job, run 45387466690, passed): version 1.0 of the example plan built with `--snapshot-out`, signed by the authorising official, rebuilt from its snapshot as the approved plan and published with CISO Assistant's own Word audit report attached; the purpose section changed, version 1.1 signed and published; `ssp diff` listed the section change; evidence `SSP-ESSENTIAL-EIGHT` has two revisions. Changing a section stands in for changing a control description, so the shared instance keeps its seeded controls.
 
-**Story:** As the Cyber GRC team, I want help writing the control descriptions the SSP is built from, so that a plan with many gaps can be closed quickly, without the model ever writing the SSP itself.
+### s11-06 Control descriptions drafted by your own agent (optional, last)
+- [x] Done
+
+Comes after the deterministic SSP tasks, following the person's rule: deterministic code first, a model only afterwards and only to propose text for people to review. **Decided Nov 2026 (person):** hound has no model, so the person's own coding agent drafts the descriptions; hound gives it the facts and writes its text where review happens.
+
+**Story:** As the Cyber GRC team, I want help writing the control descriptions the SSP is built from, so that a plan with many gaps can be closed quickly, without a model ever writing the SSP itself.
 
 **Acceptance criteria**
-- `hound ssp suggest --programme <id>` uses the onboarding model port (s09-21, with its key, provider and outbound guard) to propose descriptions for applied controls that the gap list names, from the control, its requirements, the checks and evidence names that back it, and the system list. It sends no evidence content.
-- Proposals are written as edits to `scope/controls.yaml` for a pull request, each marked as drafted with AI, never to CISO Assistant directly and never into a generated SSP. A person accepts, edits or rejects each one in review.
-- It is never run by the scheduled runner and needs no key for any other command (the person's rule: no model in evidence collection).
+- `hound ssp suggest --programme <id>` lists, as JSON, the applied controls with no description that leave an implemented requirement with no implementation statement: each control's name, owner and systems, and the requirements it serves with their description, status and evidence names. It sends nothing anywhere and holds no evidence content. `--from-snapshot` reads a snapshot instead of CISO Assistant.
+- `hound ssp describe --control <ref> --text <description>` writes the description into `scope/controls.yaml` with a `# drafted with AI` comment above it, for a pull request. It never writes to CISO Assistant or into a generated SSP. A person accepts, edits or rejects each one in review; `scope apply` carries the accepted text to CISO Assistant.
+- No model, no key and nothing scheduled: the scheduled runner never calls either command.
 
 **Tests first**
-- `SspSuggestTests.Only_gap_controls_are_sent`
-- `SspSuggestTests.Writes_proposals_as_scope_edits_not_to_ciso_assistant`
-- `SspSuggestTests.Outbound_guard_blocks_evidence_content`
+- `SspSuggestTests.Only_gap_controls_are_listed`
+- `SspSuggestTests.The_brief_holds_names_not_evidence_content`
+- `ControlDescriptionEditTests.Writes_the_description_marked_as_drafted_with_ai`
+- CLI: `SspCommandTests.Describe_writes_to_controls_yaml_not_ciso_assistant`
 
 **Functional check**
-- With a test key, suggest descriptions for the example repo's gaps, accept one in a branch, and see that gap close in `ssp build`.
+- Suggest for the example repo's gaps, describe one control, apply the scope, and see that gap close in `ssp build`.
+
+
+**Result (2026-11-24):** `SspFunctionalTests.Suggest_briefs_your_agent_and_describe_feeds_the_next_scope_plan` passed in CI against the seeded CISO Assistant (run on 411d39e): the brief lists no control the example already describes; `ssp describe` wrote AC-BACKUP's description to a copy of the example's `controls.yaml` under the "drafted with AI" comment, and `scope plan` showed the change for AC-BACKUP with that text. It was not applied, so the shared instance keeps the example's state; applying it is the ordinary `scope apply`.
 
 ### s11-07 SSP documentation and example
-- [ ] Done
+- [x] Done
 
 **Acceptance criteria**
 - `docs/govern/system-security-plan.md`: what the SSP is built from, the ISM-style profile, what cannot be generated and must be written or drawn by people (boundary and network diagrams, data flows, policies and procedures, physical and personnel arrangements, signatures), the review and approval flow, versions, and the optional drafting step.
@@ -162,6 +213,9 @@ Comes after the deterministic SSP tasks, following the person's rule: determinis
 
 **Functional check**
 - Following the guide verbatim, produce, sign and publish the example SSP on the local stack.
+
+
+**Result (2026-11-24):** `SspFunctionalTests.Signs_publishes_and_diffs_two_versions_of_the_plan` now uses the example's own `scope/ssp.yaml` and follows `docs/govern/system-security-plan.md`: build with `--snapshot-out`, sign, rebuild from the snapshot, publish with the audit report, then a second version and `ssp diff`. It passed in CI (run on 411d39e). `ExampleRepoTests` checks the example plan, its written sections and boundary diagram, and that no generated plan is committed.
 
 ## Part 2: AI governance
 
@@ -202,7 +256,7 @@ Written for a GRC team that knows cyber compliance but is new to AI governance (
 Sources read on 2026-11-22: ai.gov.au *Guidance for AI Adoption: Foundations* and *Implementation guidance*, and the SafeAI-Aus AI6 summary. Neither ai.gov.au page states a licence. Decision 1 below covers what this means for the library text.
 
 ### s11-08 AI governance primer and guided walkthrough
-- [ ] Done
+- [x] Done (the walkthrough trial by a person moved to s12, see below)
 
 Done first in Part 2, so the person reviewing the AI tasks has the background.
 
@@ -221,8 +275,17 @@ Done first in Part 2, so the person reviewing the AI tasks has the background.
 **Functional check**
 - Someone who has not read AI6 follows the walkthrough on the local stack without help, and notes anything unclear under "Discovered work".
 
+**Progress (2026-11-24)**
+- The primer is written: `docs/ai-grc-primer.md` (about 1,800 words), checked by `ExampleRepoTests.Ai_grc_primer_gives_each_practice_a_worked_example_and_a_glossary`.
+- The walkthrough, the training outline and the message wording need the register, screening fields and checks, so they are written after s11-14, and this task is ticked then.
+- Written after s11-14: `docs/tutorials/ai-governance.md` (11 steps on the local stack: register a customised, medium tier search assistant, screen it, apply, record the impact assessment and test, run `hound`, read AI6-4.1, AI6-5.1 and AI6-3.2, and the register line) and `docs/training/ai-governance.md` (a 30-minute session built on it). `ExampleRepoTests.Ai_governance_walkthrough_says_why_before_what_and_the_training_builds_on_it` checks each step opens with what it is for. `Ai6MappingTests.Ciso_assistant_profile_observations_name_the_practice_in_words` stands in for `CisoAssistantProfileTests.Observations_name_the_practice_in_words`; `Register_checks_name_a_sub_practice_they_are_mapped_to` covers the `ai-register` checks.
+- Checked offline: on a copy of the example repo, the step 5 entry validates (`scope valid: 1 domain(s), 5 control(s), 4 audit(s)`), the deliberate mistake reports `ai.impact_date_without_approval`, `programme list` prints `Register: 3 AI systems. tier: low 1, medium 2. use: built 1, customised 2.`, and the step 9 config runs the collector and saves `ai-register.json`.
+- Open: the functional check needs someone who has not read AI6 to follow the walkthrough on the local stack.
+- Updated with s11-11 (Nov 24): the walkthrough's search assistant is screened with the National AI Centre's questions (yes to 1 and 7, so elevated), and `programme list` now prints `Register: 3 AI systems. screening: elevated 2, normal 1. use: built 1, customised 2.`
+- Moved (Nov 24, at the maintainer's request): the walkthrough trial joins the other human trials and onboarding tests under "Carried from s09 to s11" in [s12](s12-e8-mapping-and-adoption.md), so s11 can close.
+
 ### s11-09 AI6 framework library and snapshot
-- [ ] Done
+- [x] Done
 
 **Story:** As the Cyber GRC team, I want AI6 as a framework in CISO Assistant, so that AI governance is assessed in audits like any other framework.
 
@@ -244,8 +307,13 @@ Done first in Part 2, so the person reviewing the AI tasks has the background.
 **Functional check**
 - `make run ARGS="framework snapshot frameworks/ai6.yaml --out /tmp/ai6.json"` reports 21 assessable requirements and matches the committed snapshot. With the example scope pointing at the library, `scope apply` against the local CISO Assistant (`make ca-up`) uploads and loads it, and an AI6 audit with group `F` shows only the Foundations rows.
 
+**Progress (2026-11-24)**
+- Library, snapshot, trace table and tests are done. The Foundations actions were read from the guidance PDF (v1.0, October 2025); it prints no licence, so the trace table summarises them in our own words. 20 of the 21 sub-practices are in `F`; only AI6-4.4 is not.
+- The functional check (apply to the local CISO Assistant, an AI6 audit for group `F`) runs once the example scope declares AI6 (s11-15), because the functional tests share one seeded instance.
+- Functional check: CI run 45418984060 (functional job, 36 of 36 functional tests passed). `AiGovernanceFunctionalTests.Seed_registers_the_ai_systems_with_their_labels_and_the_foundations_audit`: the seed's `scope apply` uploads and loads the library, and the audit `EX-AI6-2026` selects only group `F` (read from its object endpoint). CISO Assistant keeps a row for every requirement, AI6-4.4 included, and filters by the selected groups; runs skip rows outside them.
+
 ### s11-10 AI6 mapping
-- [ ] Done
+- [x] Done
 
 **Story:** As a compliance owner, I want a mapping from framework-neutral `ai.*` checks to AI6 requirements, so that AI6 audit rows are filled by runs where a check exists and owned by a named manual source where none does.
 
@@ -288,8 +356,12 @@ Done first in Part 2, so the person reviewing the AI tasks has the background.
 **Notes**
 - AI6-5.4 overlaps the cyber programme. A later mapping could reuse cyber checks (for example `identity.mfa.*`) with `any_pass` once the AI systems' platforms are in scope of those collectors; kept manual here to avoid claiming coverage the collectors do not have.
 
+**Progress (2026-11-24)**
+- Changed from the plan, to follow s10-04 (decided after this sprint was planned): the 12 rows with no register check are mapped to checks a person attests through two manual sources, `examples/manual-sources/ai6/ai-governance` (yearly) and `ai-operations` (quarterly), as the Essential Eight mapping does. `manual_only` stays empty, and is documented in `docs/mapping-files.md` for requirements no manual source covers. The example evidence plan rows for the two sources come with the example AI programme (s11-15).
+- Functional check: `hound mapping validate mappings/ai6.yaml --framework frameworks/ai6.json` printed `valid: 21 requirements` (8 from register checks, 12 from manual sources, and AI6-1.1 from both).
+
 ### s11-11 NAIC templates: register, screening questions and policy
-- [ ] Done
+- [x] Done
 
 Done before s11-12, because the register fields and the screening runbook follow from it.
 
@@ -309,106 +381,149 @@ Done before s11-12, because the register fields and the screening runbook follow
 **Functional check**
 - Export the example AI systems from the local CISO Assistant with its asset Excel export and confirm every template column the trace table says is kept is present and filled for the example systems.
 
+**Progress (Nov 24)**
+- The person supplied the four templates (register as Word and Excel, screening questions as PDF, policy guide as Word). None prints a version or licence, so `docs/ai-grc.md` records where each came from and when it last changed, and summarises them in our own words (decision 1). The person chose the NAIC screening outcome and its seven questions over our own tiers.
+- The `ai` block replaces `tier` with `screening` (`normal`, `elevated`, `unacceptable`) and `screening_yes` (the questions answered yes), and gains the register columns: `registered_on`, `version`, `purpose`, `intended_uses`, `limitations`, `misuse`, `data_sources`, `stakeholders`. *Status* (pilot, operational, decommissioned) follows from the dates; *Source* is `use` with `solution`. Custom fields stay out (Enterprise only), so the trace table maps each column to an `ai` key, shown in the asset's labels and description, instead of `scope/fields.yaml`.
+- `ai.screening_disagrees` flags normal with a yes, or elevated with none. The runbook asks the seven questions in our words; consulting leadership for an elevated system is the approval of its impact assessment.
+- Tests: `AiRegisterTemplateTests.Every_template_column_is_traced` and `Every_screening_question_is_traced`, plus the reworked register, scope, plan, export, schema, collector and summary tests. Unit suite: 1754 passed. Profile tests: 4 passed.
+- Functional check (offline; the Excel export needs the local stack, which this environment cannot run, and the CI functional job checks the labels and description): `hound run --config run.yaml --dry-run` with the `ai-register` collector over the example scope saves `ai-register.json` with every column filled for both example systems (`status: operational`, `screening: elevated`, `screening_yes: [1, 7]` for Example proposal assistant), apart from the optional `version` on the proposal assistant.
+
 ### s11-12 AI system register in CISO Assistant
-- [ ] Done
+- [x] Done
 
-**Story:** As the Cyber GRC team, I want every AI system recorded in CISO Assistant with its owner, risk tier, impact assessment status and human-oversight arrangement, so that the register is in the system of record and can be checked and reported on.
+**Reworked in s11-11 (Nov 24):** the label `ai-tier-<tier>` is now `ai-screening-<outcome>`, and the description carries the screening answers and the register template's columns.
 
-How it works, using CISO Assistant's own features (checked against the v4.3.4 models, not yet run live):
-- An AI system is an **asset** with the asset class *AI system*. Assets already have owners (actors), a lifecycle stage, filtering labels, parent assets and **custom fields** (`CustomFieldDefinition`: key, label, type text, number, date, boolean, choice, multi-choice or URL, scoped to a folder).
-- AI risks are **risk scenarios** linked to the asset; third-party AI is a **solution** of an **entity** (s09-19) linked to the asset.
-- The register is CISO Assistant's asset list filtered by class, exported with its own Excel export. No separate register file or spreadsheet.
+**Story:** As the Cyber GRC team, I want every AI system recorded with its owner, risk tier, impact assessment status and human-oversight arrangement, so that the register can be checked and reported on, and anyone in CISO Assistant can find the AI systems.
+
+**Design change (2026-11-24).** The plan used CISO Assistant custom fields. Reading the v4.3.4 source showed custom fields are an Enterprise feature: the Community Edition has no `custom_fields` feature flag, refuses writes and returns no values. Asset classes, lifecycle stages and filtering labels are in the Community Edition. So, as recommended to the person (decision card open; switch if they choose otherwise):
+- An AI system is a **system** in `scope/setup.yaml` (a CISO Assistant asset) with an `ai` block. The block is the register entry, reviewed by pull request like the rest of the scope, dates and statuses included.
+- In CISO Assistant the asset carries **filtering labels** (`ai-system`, `ai-tier-<tier>`, `ai-use-<use>`, `ai-oversight-<arrangement>`, and `ai-retired` once retired), and the register entry is added to its description, as solutions carry their sensitive data (s10-06). The register is CISO Assistant's asset list filtered by the `ai-system` label, exported with its own Excel export.
+- AI risks are risk scenarios linked to the asset; third-party AI is a solution of a supplier (s09-19) linked to the system.
+- This changes decision 5: impact assessment status and dates are set in git, on evidence, not in CISO Assistant. hound checks read the scope files and CISO Assistant (s11-13).
 
 **Acceptance criteria**
-- `scope/fields.yaml` (new, generic, not AI-specific) declares asset classes (`name`, optional `parent`) and custom field definitions (`model: asset`, `key`, `label`, `type`, `choices` for choice types, `required`, `help`, optional `domain` for scope). Applying creates or updates them by key; removing one needs `--prune`, as for other objects.
-- Systems in `scope/setup.yaml` gain optional `class` (an asset class) and `fields` (custom field values, by key, checked against the definition's type and choices). Fields a system lists are configuration and kept in step; fields it does not list are left to CISO Assistant and never in the plan.
-- The example AI field set, as aligned with the NAIC register template in s11-11 (this table is the starting point):
+- A system in `scope/setup.yaml` may have an `ai` block (field names to be aligned with the NAIC register template in s11-11):
 
-| Key | Type | Set in | Meaning |
+| Key | Required | Values | Meaning |
 | --- | --- | --- | --- |
-| `ai_risk_tier` | choice: `low`, `medium`, `high`, `prohibited` | git | Result of screening |
-| `ai_screened_on` | date | git | When the screening questions were answered |
-| `ai_use` | choice: `built`, `customised`, `third_party` | git | Matches AI6's (DEV) and (DEP) split |
-| `ai_oversight` | choice: `human_in_the_loop`, `human_on_the_loop`, `human_out_of_loop` | git | Human-oversight arrangement |
-| `ai_oversight_note` | text | git | Override points and fallback path |
-| `ai_impact_assessment` | choice: `not_started`, `in_progress`, `approved`, `not_required` | CISO Assistant | Set by the GRC team on evidence |
-| `ai_impact_assessed_on` | date | CISO Assistant | Approval date |
-| `ai_in_use_from` | date | CISO Assistant | Go-live date |
-| `ai_last_tested_on` | date | CISO Assistant | Last test or evaluation, on evidence |
+| `tier` | yes | `low`, `medium`, `high`, `prohibited` | Result of screening |
+| `screened_on` | yes | date | When the screening questions were answered |
+| `use` | yes | `built`, `customised`, `third_party` | AI6's develop and deploy split |
+| `oversight` | yes | `human_in_the_loop`, `human_on_the_loop`, `human_out_of_loop` | Human-oversight arrangement |
+| `oversight_note` | yes | text | Who can override or switch it off, and the fallback |
+| `impact_assessment` | no | `not_started`, `in_progress`, `approved`, `not_required` | Impact assessment status |
+| `impact_assessed_on` | no | date | When the impact assessment was approved; only with `approved` |
+| `in_use_from` | no | date | Go-live date; not set while being considered |
+| `last_tested_on` | no | date | Last test or evaluation, on evidence |
+| `retired_on` | no | date | When it stopped being used; after `in_use_from` |
 
-- Lifecycle: use the native asset lifecycle stage if v4.3.4's built-in stages include an in-use and a retired stage; otherwise add a choice field `ai_stage`. Decide when recording contract responses and note it here.
-- `scope plan` shows asset class, field definition and declared field value changes like other objects; values left to CISO Assistant are never shown or written.
+- Validation: required keys, values and dates as above (`scope.value_invalid`, `scope.key_missing`); `ai.impact_date_without_approval`; `ai.retired_before_use`; a `third_party` AI system with no `solution` is `ai.solution_missing`, because the supplier checks need it.
+- `scope plan` shows the labels and description like any other system field; `scope apply` writes them. A system without an `ai` block gets no AI labels.
+- `docs/scope.md` documents the block.
 
 **Tests first**
-- `FieldScopeTests.Choice_field_needs_choices`
-- `FieldScopeTests.System_field_value_must_match_type_and_choices`
-- `FieldScopeTests.Unknown_field_key_is_reported`
-- `FieldPlanTests.Unlisted_field_values_are_never_in_the_plan`
-- `FieldPlanTests.Removing_a_definition_needs_prune`
-- Contract: `CustomFieldClientTests.Creates_definition_and_sets_asset_value` and `AssetClassClientTests.Creates_class` (recorded responses from the local CISO Assistant; record the custom field endpoints first, as they were not checked when planning)
+- `AiRegisterScopeTests.Ai_block_parses`
+- `AiRegisterScopeTests.Required_keys_and_values_are_checked`
+- `AiRegisterScopeTests.Impact_date_needs_an_approved_assessment`
+- `AiRegisterScopeTests.Retired_before_use_is_reported`
+- `AiRegisterScopeTests.Third_party_ai_needs_a_solution`
+- `AiRegisterPlanTests.Register_entry_becomes_labels_and_description`
+- `AiRegisterPlanTests.Systems_without_ai_carry_no_ai_labels`
+- `ScopeSchemaTests` covers the `ai` block through the example.
 
 **Functional check**
-- Apply the example scope to the local CISO Assistant: the *AI system* class and the field definitions exist, the two example AI systems show their tier and oversight in the asset view, and re-applying writes nothing. Setting `ai_last_tested_on` by hand in CISO Assistant does not appear in the next plan.
+- Apply the example scope to the local CISO Assistant (with s11-15, which adds the example AI systems): the two example AI systems carry their labels and register entry, filtering assets by `ai-system` lists both, and re-applying writes nothing.
 
-### s11-13 AI checks from CISO Assistant
-- [ ] Done
+**Progress (2026-11-24)**
+- Built: the `ai` block, its validation, the labels and the description (`AiRegisterScopeTests`, `AiRegisterPlanTests`, `ScopeSchemaTests`), and the `scope.schema.json` and `docs/scope.md` entries. The writer needed no change: systems already send labels and descriptions.
+- The functional check runs with s11-15, which adds the example AI systems, because the functional tests share one seeded CISO Assistant.
+- Functional check: CI run 45418984060 (functional job, 36 of 36 functional tests passed). The seed applies the example scope: Example ticket triage carries `ai-oversight-in-the-loop`, `ai-system`, `ai-tier-low` and `ai-use-built` with "AI register: low tier, built, human in the loop." in its description; Example proposal assistant carries `ai-tier-medium`; Example 365 has no `ai-system`. `ScopeExportFunctionalTests` shows export then plan is empty: `hound scope export` now reads each entry back from the labels and description (`ScopeExportTests.An_ai_system_exports_its_register_entry_from_its_labels_and_description`).
+- For s11-13: the register fields now live in the scope files, so the `ai.*` checks read the register from the scope (as the supplier and sensitive-data checks do) and read only owners, risk scenarios, solutions, contracts and assessments from CISO Assistant. The check table there still uses the old custom field names and is rewritten when s11-13 starts.
+
+### s11-13 AI checks from the register and CISO Assistant
+- [x] Done
+
+**Reworked in s11-11 (Nov 24):** tiers became the NAIC outcome. `ai.register_complete` now also needs the template's columns; `ai.screening_recorded` fails an unacceptable system in use; `ai.impact_assessment_before_use`, `ai.human_oversight_documented`, `ai.risks_in_register` and the 6-month test interval apply to elevated systems; the profile filters `ai-screening-elevated` (version 1.1.0).
 
 **Story:** As a compliance owner, I want the AI register checked on every run, so that missing owners, unassessed systems and stale tests show up as failing checks rather than at the next audit.
 
+**Design change (2026-11-24).** The register entry now lives in the scope files (s11-12), so the checks split by where the data is:
+- **`ai-register`, a built-in collector that reads the compliance repo's scope files.** It checks the register entries, which are the GRC team's declared record, reviewed by pull request. Each run saves the register as evidence (every AI system with its entry and the SHA-256 of `scope/setup.yaml`). The checks are a pure function over the parsed scope and today's date.
+- **The `ciso-assistant` REST profile** (decision 4) reads what only CISO Assistant holds: risk scenarios linked to the AI systems' assets, and the supplier assessments and contracts.
+
 **Acceptance criteria**
-- A REST collector profile `ciso-assistant` in the public profile library (`profiles/ciso-assistant/`, s09-12) reads CISO Assistant with a read-only token: assets of class *AI system* with owners and custom fields, risk scenarios with their assets, and (per decision 4) entities, solutions, contracts and entity assessments. No coded collector.
-- Checks, each over AI systems that are in use unless stated, each evidenced by the saved query results:
+- An AI system is *in use* when `in_use_from` is on or before today and it is not retired on or before today. Each check covers the AI systems in use, unless stated; with none, it is `not_applicable`, never a pass.
 
-| Check | Passes when |
-| --- | --- |
-| `ai.register_complete` | every AI system has `ai_risk_tier`, `ai_use`, `ai_oversight` and a lifecycle stage |
-| `ai.owner_assigned` | every AI system has at least one owner |
-| `ai.screening_recorded` | every AI system has `ai_screened_on`, and none in use is `prohibited` |
-| `ai.impact_assessment_before_use` | every AI system in use with tier `medium` or `high` has `ai_impact_assessment` `approved`, dated on or before `ai_in_use_from` |
-| `ai.risks_in_register` | every AI system with tier `medium` or `high` is linked to at least one risk scenario |
-| `ai.human_oversight_documented` | every AI system has `ai_oversight` and `ai_oversight_note`; a `high` tier system is not `human_out_of_loop` |
-| `ai.tested_before_use` | every AI system in use has `ai_last_tested_on` |
-| `ai.test_results_current` | `ai_last_tested_on` is within 6 months for `high` and 12 months otherwise |
-| `ai.suppliers_assessed` | every `third_party` AI system's solution belongs to an entity with a current assessment (s09-20) |
-| `ai.supplier_contracts_current` | every `third_party` AI system's solution has an active contract not past its end date |
+| Check | Source | Passes when |
+| --- | --- | --- |
+| `ai.register_complete` | `ai-register` | every AI system (in use or not) has an impact assessment status |
+| `ai.owner_assigned` | `ai-register` | every AI system (in use or not) has an owner |
+| `ai.screening_recorded` | `ai-register` | none in use is tier `prohibited`, and each was screened on or before going into use |
+| `ai.impact_assessment_before_use` | `ai-register` | each `medium` or `high` tier system is `approved`, dated on or before `in_use_from` |
+| `ai.human_oversight_documented` | `ai-register` | no `high` tier system is `human_out_of_loop` (the note is required by validation) |
+| `ai.tested_before_use` | `ai-register` | each has `last_tested_on` |
+| `ai.test_results_current` | `ai-register` | `last_tested_on` is within 6 months for `high` and 12 months otherwise |
+| `ai.risks_in_register` | `ciso-assistant` | every asset labelled `ai-tier-medium` or `ai-tier-high` is linked to at least one risk scenario |
+| `ai.suppliers_assessed` | `ciso-assistant` | every asset labelled `ai-use-third-party` is provided by a solution whose entity has a current assessment |
+| `ai.supplier_contracts_current` | `ciso-assistant` | that solution has an active contract not past its end date |
 
-- No AI systems in use gives `not_applicable` for the per-system checks, not a pass. A field the profile cannot read gives *unable to assess*, never a fail.
-- Field-to-field date comparison (`ai.impact_assessment_before_use`) uses the declarative operators if s09-11 supports it; otherwise it is a named code check compiled into `hound`.
-- The profile passes the collector contract suite (s04) and the profile tests (s09-12) with recorded responses.
+- Every observation names the failing AI systems and the AI6 practice in words (s11-08), and says what to do next.
+- `ai-register` settings: `scope` (the scope folder, relative to the config file). A scope that does not load is an error naming the first problems, never a fail.
+- The `ciso-assistant` profile passes the profile tests (s09-12) with recorded, fictional responses; a field it cannot read is *unable to assess*, never a fail. It also carries the generic `supplier.assessments_current` and `supplier.contracts_current`.
 
 **Tests first**
-- `CisoAssistantProfileTests.Ai_system_without_owner_fails_owner_assigned`
-- `CisoAssistantProfileTests.High_tier_without_risk_scenario_fails`
-- `CisoAssistantProfileTests.Impact_assessment_after_go_live_fails`
-- `CisoAssistantProfileTests.Stale_test_uses_tier_interval`
-- `CisoAssistantProfileTests.No_ai_systems_is_not_applicable`
-- `CisoAssistantProfileTests.Unreadable_custom_field_is_unable_to_assess`
-- `CisoAssistantProfileContractTests` (the s04 contract suite)
+- `AiRegisterChecksTests.Ai_system_without_owner_fails_owner_assigned`
+- `AiRegisterChecksTests.Impact_assessment_after_go_live_fails`
+- `AiRegisterChecksTests.Stale_test_uses_tier_interval`
+- `AiRegisterChecksTests.No_ai_systems_in_use_is_not_applicable`
+- `AiRegisterChecksTests.Prohibited_system_in_use_fails_screening`
+- `AiRegisterChecksTests.High_tier_out_of_loop_fails_oversight`
+- `AiRegisterChecksTests.Observations_name_the_practice_in_words`
+- `AiRegisterCollectorContractTests` (the s04 contract suite) and `AiRegisterCollectorTests.Unloadable_scope_is_an_error`
+- `profiles/ciso-assistant.tests`: `High_tier_without_risk_scenario_fails`, `Third_party_without_current_assessment_fails`, `Unreadable_field_is_unable_to_assess`
 
 **Functional check**
 - Against the local CISO Assistant with the example AI systems, `make run ARGS="run --dry-run"` produces the ten checks with the expected outcomes (one example system is deliberately missing a test date), and `mapping apply mappings/ai6.yaml` on the output fills AI6-4.1 compliant and AI6-5.1 non-compliant.
 
+**Progress (2026-11-24)**
+- Built: `AiRegisterChecks` (pure, 18 tests), the built-in `ai-register` collector (contract suite and `AiRegisterCollectorTests`), and the `ciso-assistant` profile with four recorded test cases (`hound profile test ciso-assistant --profiles profiles`: all four pass). Guide: `docs/collectors/ciso-assistant.md`.
+- Checked against the CISO Assistant v4.3.4 serializers: related objects read as `{"str", "id"}`, so labels are matched on `filtering_labels[*].str`; an entity assessment's `conclusion` is `blocker`, `warning`, `ok` or `not_applicable`, with `expiry_date` saying when it stops being valid.
+- `Ai6MappingTests.Register_checks_name_a_sub_practice_they_are_mapped_to` keeps each observation's practice in step with the mapping.
+- Functional check: CI run 45418984060 (functional job, 36 of 36 functional tests passed). `AiGovernanceFunctionalTests.A_run_fills_the_ai6_rows_from_the_register_and_ciso_assistant` runs the `ai-register` collector and the `ciso-assistant` profile against the seeded instance and publishes with `mappings/ai6.yaml`: AI6-4.1 compliant, AI6-5.1 non-compliant naming Example proposal assistant, AI6-3.3 non-compliant ("0 of 1 medium or high tier AI systems are linked to a risk scenario").
+
 ### s11-14 Register summary for programme reports
-- [ ] Done
+- [x] Done
 
 **Story:** As the security committee, I want each programme's report section to summarise its register (for AI6: AI systems by tier, new this period, and gaps), so that the AI section answers "what AI do we use and is it governed" as well as "which AI6 rows pass".
 
+**Design change (2026-11-24).** The register is the scope's systems (s11-12), not an asset class with custom fields, so a programme names a register kept in the scope.
+
 **Acceptance criteria**
-- A programme (s11-01) may declare `registers`: an asset class and the choice fields to count by (for AI6: class *AI system*, by `ai_risk_tier` and `ai_use`).
-- A pure function `RegisterSummary.Of(assets, register, period)` returns counts by field value, assets added and retired in the period, and assets failing any check that names the class. s12-04's `PostureSnapshot` includes it per programme (s12 amendment).
-- Generic: nothing in the function knows about AI; the Essential Eight programme can declare a register of systems the same way.
+- A programme (s11-01) may declare `register`: `of` (`ai_systems`, the systems with an `ai` block, or `systems`, every system) and `by` (the fields to count by: `tier`, `use` and `oversight` for AI systems, `type` for systems). An unknown register or field is `scope.programme_register_unknown`.
+- `RegisterItems.Of(setup, of)` gives each item's name, its field values, and the dates it was added (an AI system's `in_use_from`) and retired (`retired_on`).
+- A pure function `RegisterSummary.Of(items, by, from, to, failing)` returns the number of items, counts by field value (items retired before the period ends are left out), the items added and retired in the period, and the items a failing check names. `AiRegisterFinding` names the systems it fails. s12-04's `PostureSnapshot` includes the summary per programme (s12 amendment).
+- Generic: nothing in the summary knows about AI; the Essential Eight programme can declare `register: { of: systems, by: [type] }`.
+- `hound programme list` shows each programme's register counts (text and `--json`).
 
 **Tests first**
-- `RegisterSummaryTests.Counts_by_choice_field`
+- `RegisterSummaryTests.Counts_by_field`
 - `RegisterSummaryTests.Added_and_retired_in_period`
 - `RegisterSummaryTests.Empty_register_gives_zero_counts_not_missing_section`
-- `ProgrammeScopeTests.Register_fields_must_be_choice_fields`
+- `RegisterSummaryTests.Failing_lists_the_items_failing_checks_name`
+- `RegisterItemsTests.Ai_systems_give_their_register_fields_and_dates`
+- `ProgrammeScopeTests.Register_must_be_known_with_known_fields`
+- `AiRegisterChecksTests.Findings_name_the_failing_systems`
+- `ProgrammeCommandTests.List_shows_the_register_counts`
 
 **Functional check**
-- A small console check in the test suite prints the example AI register summary; the figures match the two example AI systems. The report output itself is checked in s12.
+- `make run ARGS="programme list --scope examples/compliance-repo/scope"` shows the AI6 programme's register: the two example AI systems by tier and use (with s11-15, which adds them). The report output itself is checked in s12.
+
+**Progress (2026-11-24)**
+- Built: `ProgrammeRegister`, `RegisterItems`, `RegisterSummary`, the failing systems on each `AiRegisterFinding`, the `register` key with `scope.programme_register_unknown`, the schema, and the register line in `hound programme list` (text and `--json`). `ProgrammeCommandTests.List_shows_the_register_counts` runs it on the example repo with a register of systems: "Register: 5 systems. type: primary 1, supporting 4."
+- Functional check: `hound programme list --scope examples/compliance-repo/scope` prints the AI6 line with "Register: 2 AI systems. tier: low 1, medium 1. use: built 1, customised 1." (also `AiGovernanceFunctionalTests.Programme_list_shows_the_ai_register`, CI run 45418984060 (functional job, 36 of 36 functional tests passed)).
 
 ### s11-15 Documentation and example repo
-- [ ] Done
+- [x] Done
 
 **Acceptance criteria**
 - `docs/ai-grc.md`: what AI6 asks, how it maps to CISO Assistant (assets, custom fields, risk scenarios, suppliers, audits), the field set and who sets each field, the checks, the Foundations trace table (s11-09), adopting at Foundations and moving to Implementation, and the limits (no model testing or monitoring collectors, no AI incident workflow, manual practices).
@@ -422,6 +537,14 @@ How it works, using CISO Assistant's own features (checked against the v4.3.4 mo
 
 **Functional check**
 - Following `docs/ai-grc.md` verbatim on the local stack, register a third fictional AI system, apply, run, and see its checks and AI6 rows update.
+
+**Progress (2026-11-24)**
+- Example repo: the AI6 library and snapshot (copies, kept identical by `ExampleRepoTests`), the `ai6` programme with its register, two AI systems (*Example ticket triage*, built, low; *Example proposal assistant*, customised, medium, not yet tested), the audit `EX-AI6-2026` (group `F`), the controls `AC-AI-REGISTER` and `AC-AI-GOVERNANCE`, evidence plan rows for the register and both manual sources, their runbooks, and `hound.yaml` with the three AI collectors and `targets` for both audits. The onboarding tutorial's `setup.yaml` and `hound.yaml` were regenerated from the template.
+- Deviation: neither example AI system is third party, because a third-party system needs an approved supplier, and the shared functional seed has no approved supplier. The supplier checks are covered by the `ciso-assistant` profile's recorded tests.
+- Docs: `docs/ai-grc.md` (what AI6 asks and where each part lives, who sets each field, the checks, adopting at Foundations, moving to Implementation, limits), `examples/compliance-repo/runbooks/ai-screening.md` (questions from the AI6 text until s11-11 brings the NAIC template), README.
+- Functional checks (`AiGovernanceFunctionalTests`, also covering s11-09, s11-12, s11-13 and s11-14): CI run 45418984060 (functional job, 36 of 36 functional tests passed). The seed writes the labels and the Foundations audit; a run of both AI collectors fills AI6-4.1 compliant, AI6-5.1 and AI6-3.3 non-compliant; `programme list` shows the AI register.
+- Fixed on the way: `make ca-up`, the functional fixture and `scripts/check-scope-plans.sh` now apply the example scope with the example repo's own `hound.yaml`, because its evidence plan names the AI collectors (`EvidencePlanValidateTests.Make_ca_up_applies_the_example_scope_with_a_config_it_validates_against`). The Essential Eight SSP's inventory now lists the two AI systems, since the boundary is the perimeter and the AI6 audit is in Corporate IT.
+- The verbatim walkthrough (registering a third AI system) became `docs/tutorials/ai-governance.md` (s11-08); its offline steps were run, and the apply-and-run steps are the ones `AiGovernanceFunctionalTests` exercises.
 
 ## Changes to other sprints
 
@@ -458,18 +581,43 @@ Decided by the person on 2026-11-22:
   2. CMMC Level 2 uses CISO Assistant's built-in `cmmc-2.0` framework; a NIST SP 800-171 Rev 3 mapping is optional.
   3. Output is Markdown, with an option to generate Word.
   4. Model-suggested control descriptions are kept, as proposals people review (s11-06), and come after the deterministic tasks: deterministic code first, a model only afterwards, and never in evidence collection.
+     Updated by the person on 2026-11-24 (s11-06): the person's own agent drafts them from `hound ssp suggest`; hound has no model.
 
 ## Carried from s09 and s10
 
-Moved from s10 on 2026-11-24, at the maintainer's request. Built and tested in CI; each waits on a run in the maintainer's own
-environment, not on code. Details stay under the task in `s09-e8-gap-collectors.md`.
-- [ ] s09-01 Application control policies from Intune: a real Graph export for the App Control for Business setting IDs.
-- [ ] s09-15 Firewall firmware update timeliness: whether the read-only role may call the firmware upgrade check, and a dry run on the maintainer's tenant.
-- [ ] s09-17 The Sophos trial on a real tenant.
-- [ ] s09-29 Microsoft 365 checks follow the capability map: a run against the maintainer's tenant.
-- [ ] s09-38 to s09-42 Agent-driven onboarding and manual evidence: the maintainer's own run with their agent, including s09-39, their XGS firewall.
-- [ ] s09-54 and s09-57 `make trial` on the maintainer's machine.
+Moved from s10 on 2026-11-24, at the maintainer's request, then on to [s12](s12-e8-mapping-and-adoption.md#carried-from-s09-to-s11)
+when s11 closed, with the s11-08 walkthrough trial. Each waits on a person, tenant or machine, not on code.
 
 ## Discovered work
 
+- **s11-11, NAIC policy template.** Its screening outcomes say *prohibited* in one place and *unacceptable* in another; the register uses *unacceptable*. Recommendation: say *unacceptable* in your own policy.
+- **s11-11, NAIC policy template.** It asks for a risk and impact assessment for every AI system, where the screening tool and our checks ask for an approved one only for elevated systems. Recommendation: keep the check as is, and have each organisation's policy state which rule it follows (`docs/ai-grc.md` says so).
+- **s11-11, NAIC register template (Word).** Its field descriptions sit one row below the field they describe from *Data sources* down; the Excel version is right. We followed the Excel version.
+- **s11-11, the policy document in the example.** The example AI6 audit lists no `documents` yet. Add a placeholder AI policy for AI6-1.4 and AI6-3.1 with the s12 adoption guides.
+
+- (s11-16, for s12) The ASD Blueprint SSP annex template (June 2026) lists ISM-1899 under the Essential Eight where CISO Assistant's `essential-eight-2023` library (v3, CISO Assistant v4.3.4) lists ISM-1900. Check both against the current Essential Eight maturity model and ISM, and against a newer library version, while completing the mapping.
+
+- s11-02: a programme whose audit of record is an audit series (with a cycle) has rows under each period's ref_id; `hound ssp build` reads rows under the series ref_id only. Pick the current period's audit before s11-05 versions the plan.
+
+- s11-01: framework snapshots hold parent node URNs but not their titles, so `hound programme list` shows a strategy as its short code (`mfa`, `rap`). The s12 reports need the name ("Multi-factor authentication"): add parent titles to the snapshot (`hound framework snapshot`) before s12-05.
+
+- s11-12: `hound scope export` now reads an AI system's register entry back from its labels and description, but a system's sensitive-data labels (`data-cui` and so on, s10-06) are still not exported, so a scope whose systems record `data` would plan label removals after an export. Export them the same way before s14.
+
+- s11-15: the local seed (`make ca-up`) now applies the example scope with the example repo's own `hound.yaml`, while `examples/example-essential-eight.yaml` stays the Essential Eight-only config for runs. Consider whether the local stack should run with the repo's config too, so the AI collectors run there by default.
+
 ## Sprint review
+
+**2026-11-24.** Closed at the maintainer's request, to go on to s12 and release 1. All 16 tasks done, each with red and green
+commits; CI green on every job, the functional job included.
+
+- **Programmes** (s11-01): a framework, its groups and the audit of record, so reports work per programme; `hound programme list`.
+- **System security plan and POA&M** (s11-02 to s11-07, s11-16): drafted from CISO Assistant's records in the NIST SP 800-18 layout, with
+  an ISM annex for the Essential Eight using the ASD Blueprint annex columns; reviewed, approved, versioned by hash, published with the
+  audit report and written as Word. Control descriptions can be drafted by the maintainer's own agent; hound has no model.
+- **AI governance (AI6)** (s11-08 to s11-15): a plain-English primer, walkthrough and training outline; the AI6 framework and mapping;
+  the AI register as an `ai` block per system, shown in CISO Assistant as labels and description lines; screening with the National AI
+  Centre's seven questions and its register template's columns (s11-11, the maintainer's choice over our own tiers); the `ai-register`
+  collector and `ciso-assistant` profile checks; register counts for programme reports.
+
+Moved to s12, waiting on a person, tenant or machine: the s11-08 walkthrough trial, and s09-01, s09-15, s09-17, s09-29, s09-38 to
+s09-42, s09-54 and s09-57. Open findings are under Discovered work.

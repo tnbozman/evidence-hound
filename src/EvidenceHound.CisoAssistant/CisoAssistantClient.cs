@@ -114,6 +114,15 @@ internal sealed class CisoAssistantClient(HttpClient http) : ICisoAssistantClien
         return (await SendAsync(request, $"to upload {file.FileName}", cancellationToken)).Map(_ => Unit.Value);
     }
 
+    public async Task<Result<EvidenceFile>> DownloadAuditReportAsync(string complianceAssessmentRefId, CancellationToken cancellationToken)
+    {
+        var found = await FindOneAsync("compliance-assessments/", "audit", Selector.ByRefId(complianceAssessmentRefId), cancellationToken);
+        return await found.BindAsync(async id =>
+            (await http.SendForBytesAsync(
+                new HttpRequestMessage(HttpMethod.Get, $"compliance-assessments/{Uri.EscapeDataString(id)}/word_report/"), $"to read the Word report of audit {complianceAssessmentRefId}", cancellationToken))
+                .Map(bytes => new EvidenceFile($"{complianceAssessmentRefId}-audit-report.docx", bytes)));
+    }
+
     public Task<Result<Unit>> LinkEvidenceToAppliedControlAsync(string controlRefId, string evidenceId, CancellationToken cancellationToken) =>
         FindOneAsync("applied-controls/", "applied control", Selector.ByRefId(controlRefId), cancellationToken)
             .BindAsync(id => LinkAsync(id, controlRefId, evidenceId, cancellationToken));

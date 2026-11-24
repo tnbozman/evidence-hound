@@ -464,6 +464,7 @@ internal static class ScopeCommands
         var thirdParties = Directory.Exists(thirdPartiesDir) ? Directory.GetFiles(thirdPartiesDir, "*.yaml").Order(StringComparer.Ordinal).ToArray() : [];
         var capabilitiesPath = Path.Combine(dir.ToString(), "capabilities.yaml");
         var planPath = Path.Combine(dir.ToString(), "evidence-plan.yaml");
+        var sspPath = Path.Combine(dir.ToString(), "ssp.yaml");
         var parsed = ScopeLoader.Parse(
             await ReadAsync(setupPath, cancellationToken),
             File.Exists(controlsPath) ? await ReadAsync(controlsPath, cancellationToken) : null,
@@ -472,7 +473,8 @@ internal static class ScopeCommands
             File.Exists(settingsPath) ? await ReadAsync(settingsPath, cancellationToken) : null,
             [.. await Task.WhenAll(thirdParties.Select(t => ReadAsync(t, cancellationToken)))],
             File.Exists(capabilitiesPath) ? await ReadAsync(capabilitiesPath, cancellationToken) : null,
-            File.Exists(planPath) ? await ReadAsync(planPath, cancellationToken) : null);
+            File.Exists(planPath) ? await ReadAsync(planPath, cancellationToken) : null,
+            File.Exists(sspPath) ? await ReadAsync(sspPath, cancellationToken) : null);
 
         var snapshots = await SnapshotsAsync(parsed.Scope.Setup.Frameworks, Path.GetDirectoryName(Path.GetFullPath(setupPath))!, cancellationToken);
         var deployment = configFile is null ? Result.Ok(Deployment.None) : await DeploymentAsync(configFile, registry, cancellationToken);

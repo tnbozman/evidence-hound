@@ -95,4 +95,16 @@ internal static partial class Log
 
         IEnumerator IEnumerable.GetEnumerator() => _items.GetEnumerator();
     }
+
+    [LoggerMessage(EventId = 1300, Level = LogLevel.Information, Message = "Wrote the plan's snapshot to {File}: draft SHA-256 {Draft}, snapshot SHA-256 {Snapshot}")]
+    public static partial void SspSnapshotWritten(ILogger logger, string file, string draft, string snapshot);
+
+    [LoggerMessage(EventId = 1301, Level = LogLevel.Warning, Message = "Version {Version} is signed, but what CISO Assistant holds now is not the reviewed draft; printing a draft. Rebuild the signed version with --from-snapshot.")]
+    public static partial void SspSignedButChanged(ILogger logger, string version);
+
+    [LoggerMessage(EventId = 1302, Level = LogLevel.Warning, Message = "No audit report attached: {Reason}")]
+    public static partial void SspReportMissing(ILogger logger, string reason);
+
+    [LoggerMessage(EventId = 1303, Level = LogLevel.Information, Message = "Published version {Version} of the plan to evidence {Evidence} as {File}")]
+    public static partial void SspPublished(ILogger logger, string version, string evidence, string file);
 }

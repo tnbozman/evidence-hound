@@ -34,8 +34,9 @@ public static partial class ScopeDesired
             .. setup.Domains.SelectMany(d => d.Perimeters.Select(p => new ScopeObject(
                 ScopeKind.Perimeter, PerimeterKey(d.Name, p.Name), Fields(("name", p.Name), ("ref_id", p.RefId), ("description", p.Description), ("domain", d.Name))))),
             .. setup.Domains.SelectMany(d => d.Systems.Select(s => new ScopeObject(ScopeKind.System, s.Name, Fields(
-                ("ref_id", s.RefId), ("type", s.Type == SystemType.Primary ? "primary" : "supporting"), ("description", s.Description), ("owner", s.Owner),
-                ("domain", d.Name), ("parents", Joined(s.Parents.Select(p => p.Value))), ("labels", DataLabels(s.Data)))))),
+                ("ref_id", s.RefId), ("type", s.Type == SystemType.Primary ? "primary" : "supporting"), ("description", AiRegister.Description(s.Description, s.Ai)),
+                ("owner", s.Owner), ("domain", d.Name), ("parents", Joined(s.Parents.Select(p => p.Value))),
+                ("labels", Joined([.. DataLabelCodes(s.Data), .. AiRegister.Labels(s.Ai)])))))),
             .. scope.Audits.Select(a => new ScopeObject(ScopeKind.Audit, a.RefId, Fields(
                 ("name", a.Name), ("framework", a.Framework.Value), ("groups", Joined(a.Groups.Select(g => g.Value))), ("domain", a.Domain.Value),
                 ("perimeter", a.Perimeter.Value), ("eta", a.Eta), ("due_date", a.DueDate), ("authors", Joined(a.Authors)), ("reviewers", Joined(a.Reviewers)),
@@ -345,8 +346,10 @@ public static partial class ScopeDesired
     }
 
     /// <summary>The kinds of sensitive data as filtering labels, such as <c>data-cui</c>.</summary>
-    private static string? DataLabels(IEnumerable<SensitiveData> data) =>
-        Joined(data.Select(d => $"data-{SensitiveData.Code(d.Kind).Replace('_', '-')}").Distinct());
+    private static string? DataLabels(IEnumerable<SensitiveData> data) => Joined(DataLabelCodes(data));
+
+    private static IEnumerable<string> DataLabelCodes(IEnumerable<SensitiveData> data) =>
+        data.Select(d => $"data-{SensitiveData.Code(d.Kind).Replace('_', '-')}").Distinct();
 
     /// <summary>A solution's description, then each kind of data it handles with what authorises it, so a reader sees it in CISO Assistant.</summary>
     private static string? SolutionDescription(ScopeSolution solution)

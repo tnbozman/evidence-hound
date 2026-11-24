@@ -31,6 +31,9 @@ public sealed record ScopeDocument(ScopeSetup Setup, IReadOnlyList<ScopeControl>
 
     /// <summary><c>scope/evidence-plan.yaml</c>: how each control's evidence arrives, from whom and how often; null when the repo has no such file.</summary>
     public ScopeEvidencePlan? EvidencePlan { get; init; }
+
+    /// <summary><c>scope/ssp.yaml</c>: the system security plans, one per programme (s11-02); empty when the repo has no such file.</summary>
+    public IReadOnlyList<ScopeSsp> Ssps { get; init; } = [];
 }
 
 /// <summary><c>scope/setup.yaml</c>: the root folder, the frameworks to load and the domains.</summary>
@@ -41,6 +44,19 @@ public sealed record ScopeSetup(string RootFolder, IReadOnlyList<ScopeFramework>
 
     /// <summary>The organisation's own entity (CISO Assistant's main entity), from <c>organisation.entity</c>. It is only ever updated.</summary>
     public ScopeEntity? Organisation { get; init; }
+
+    /// <summary>The compliance programmes the organisation reports on (s11-01): each a framework, its groups and the audit of record.</summary>
+    public IReadOnlyList<ScopeProgramme> Programmes { get; init; } = [];
+}
+
+/// <summary>
+/// A compliance programme, such as the Essential Eight or AI6: the framework, the implementation groups reported against, and the audit (or
+/// audit series) of record. Reports are organised by programme. A programme creates nothing in CISO Assistant.
+/// </summary>
+public sealed record ScopeProgramme(string Id, string Name, ScopeRef Framework, IReadOnlyList<string> Groups, ScopeRef Audit, string GroupBy, SourceLine At)
+{
+    /// <summary>The register the programme's reports summarise, if any (s11-14).</summary>
+    public ProgrammeRegister? Register { get; init; }
 }
 
 /// <summary>A framework to load: its URN, and its library by URN or as a custom library file. A snapshot makes it checkable offline.</summary>
@@ -76,6 +92,9 @@ public sealed record ScopeSystem(
 
     /// <summary>The reseller or provider the contract is with, when not the solution's own supplier; it must be approved too.</summary>
     public ScopeRef? SuppliedThrough { get; init; }
+
+    /// <summary>The system's entry in the AI register, when it is an AI system (s11-12).</summary>
+    public AiRegistration? Ai { get; init; }
 }
 
 /// <summary>An applied control, declared once in <c>scope/controls.yaml</c> and used by any number of audits.</summary>
@@ -92,7 +111,11 @@ public sealed record ScopeControl(
     IReadOnlyList<ScopeRef> Systems,
     string? ReferenceControl,
     IReadOnlyList<ScopeRef> Documents,
-    SourceLine At);
+    SourceLine At)
+{
+    /// <summary>Who implements the control, for the SSP annex (s11-16): consumer, shared, outsourced_service_provider, cloud_service_provider or not_applicable; null to infer it.</summary>
+    public string? ResponsibleEntity { get; init; }
+}
 
 /// <summary>How the auditor and respondent roles see one requirement field: <c>edit</c>, <c>read</c> or <c>hidden</c>.</summary>
 public sealed record FieldAccess(string? Auditor, string? Respondent, SourceLine At);

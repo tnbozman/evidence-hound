@@ -29,3 +29,21 @@ controls:
     owner: it@example.com
     status: to_do
     category: process
+  - ref_id: AC-AI-REGISTER
+    name: AI system register
+    description: Every AI system is registered with its owner, screening outcome and oversight; the register is checked on every run.
+    domain: Example Pty Ltd
+    owner: it@example.com
+    status: to_do
+    priority: "2"
+    category: process
+    systems: [Example ticket triage, Example proposal assistant]
+  - ref_id: AC-AI-GOVERNANCE
+    name: AI governance and operations records
+    description: The AI policy, training, redress process and disclosures each year; monitoring and incident reviews each quarter.
+    domain: Example Pty Ltd
+    owner: ceo@example.com
+    status: to_do
+    priority: "2"
+    category: process
+    systems: [Example ticket triage, Example proposal assistant]

@@ -1,0 +1,122 @@
+# yaml-language-server: $schema=../schemas/mapping.schema.json
+# AI6 (Guidance for AI Adoption, National AI Centre, v1.0, October 2025): every sub-practice, from two kinds of check.
+# - Register checks (ai.register_complete and nine more, s11-13): seven come from the built-in ai-register collector, which reads
+#   the ai blocks of systems in scope/setup.yaml; ai.risks_in_register and the two supplier checks come from the ciso-assistant
+#   REST profile, which reads risk scenarios, suppliers and contracts in CISO Assistant.
+# - Every other check is attested by a person through a manual source in examples/manual-sources/ai6/ (ai-governance, yearly;
+#   ai-operations, quarterly): an agent may propose a result with `hound manual propose`, the owner attests it with
+#   `hound manual approve`, and the next run publishes it (s10-04). `manual_only` would list a requirement no manual source covers;
+#   none is left. See docs/ai-grc.md and docs/mapping-files.md.
+framework_urn: urn:evidence-hound:risk:framework:ai6
+description: AI6 (Guidance for AI Adoption) sub-practices, from the AI register in CISO Assistant and the AI governance and operations manual sources.
+requirements:
+  # Accountable people. Register: every AI system has an owner. Manual: a senior person is accountable for AI overall.
+  - ref: AI6-1.1
+    rule: all_pass
+    checks:
+      - ai.owner_assigned
+      - ai.senior_owner_named
+  # Supply chain accountabilities. Register: each third-party AI system's solution has a current contract.
+  - ref: AI6-1.2
+    rule: all_pass
+    checks:
+      - ai.supplier_contracts_current
+  # AI literacy and training. Manual (ai-governance): training records.
+  - ref: AI6-1.3
+    rule: all_pass
+    checks:
+      - ai.training_current
+  # AI governance framework. Manual (ai-governance): the approved AI policy.
+  - ref: AI6-1.4
+    rule: all_pass
+    checks:
+      - ai.policy_approved
+  # Identify and engage stakeholders. Manual (ai-operations): who each AI system affects.
+  - ref: AI6-2.1
+    rule: all_pass
+    checks:
+      - ai.stakeholders_identified
+  # Establish feedback and redress processes. Manual (ai-governance): the concern and review route.
+  - ref: AI6-2.2
+    rule: all_pass
+    checks:
+      - ai.redress_process_in_place
+  # Monitor for systemic issues. Manual (ai-operations): the quarterly feedback review.
+  - ref: AI6-2.3
+    rule: all_pass
+    checks:
+      - ai.systemic_issues_reviewed
+  # Establish a fit-for-purpose risk management framework. Manual (ai-governance): the AI policy and its risk method.
+  - ref: AI6-3.1
+    rule: all_pass
+    checks:
+      - ai.risk_method_documented
+      - ai.policy_approved
+  # Assess AI system risks. Register: every AI system screened before use; elevated systems' impact assessments approved before use.
+  - ref: AI6-3.2
+    rule: all_pass
+    checks:
+      - ai.screening_recorded
+      - ai.impact_assessment_before_use
+  # Implement controls for AI system risks. Register: elevated systems have risk scenarios (with their controls).
+  - ref: AI6-3.3
+    rule: all_pass
+    checks:
+      - ai.risks_in_register
+  # Monitor and report incidents. Manual (ai-operations): the AI incident record.
+  - ref: AI6-3.4
+    rule: all_pass
+    checks:
+      - ai.incidents_reviewed
+  # Maintain an AI register. Register: every AI system recorded with the National AI Centre template's columns, screening, use, oversight and owner.
+  - ref: AI6-4.1
+    rule: all_pass
+    checks:
+      - ai.register_complete
+      - ai.owner_assigned
+  # AI system transparency and explainability. Manual (ai-governance): disclosure statements.
+  - ref: AI6-4.2
+    rule: all_pass
+    checks:
+      - ai.use_disclosed
+  # Supply chain transparency. Register: each third-party AI system's supplier has a current assessment.
+  - ref: AI6-4.3
+    rule: all_pass
+    checks:
+      - ai.suppliers_assessed
+  # AI-generated content transparency. Manual (ai-governance): how AI-generated content is labelled.
+  - ref: AI6-4.4
+    rule: all_pass
+    checks:
+      - ai.generated_content_labelled
+  # Pre-deployment testing. Register: every AI system in use has a test date.
+  - ref: AI6-5.1
+    rule: all_pass
+    checks:
+      - ai.tested_before_use
+  # Monitor system performance. Manual (ai-operations): the owners' monitoring. Monitoring collectors are out of scope.
+  - ref: AI6-5.2
+    rule: all_pass
+    checks:
+      - ai.performance_monitored
+  # Conduct additional testing proportionate to risk. Register: tests within 6 months for elevated systems, 12 months otherwise.
+  - ref: AI6-5.3
+    rule: all_pass
+    checks:
+      - ai.test_results_current
+  # Implement robust data and cybersecurity measures. Manual (ai-operations): kept manual so the mapping claims no cyber coverage the collectors do not have.
+  - ref: AI6-5.4
+    rule: all_pass
+    checks:
+      - ai.data_and_cyber_covered
+  # Maintain human oversight and control. Register: every AI system's oversight arrangement and override points; an elevated system has a person in or on the loop.
+  - ref: AI6-6.1
+    rule: all_pass
+    checks:
+      - ai.human_oversight_documented
+  # Decommission when appropriate. Manual (ai-governance): retirement records.
+  - ref: AI6-6.2
+    rule: all_pass
+    checks:
+      - ai.retirement_recorded
+manual_only: []

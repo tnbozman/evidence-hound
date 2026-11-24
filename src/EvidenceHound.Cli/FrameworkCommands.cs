@@ -15,7 +15,7 @@ internal static class FrameworkCommands
         var logger = loggers.CreateLogger("hound.framework");
         var library = new Argument<FileInfo>("library") { Description = "Path to a CISO Assistant library file (YAML)." };
         var outFile = new Option<FileInfo?>("--out") { Description = "Write the snapshot to this file instead of printing it, for example frameworks/essential-eight-2023.json." };
-        var snapshot = new Command("snapshot", "Make a framework snapshot (URNs, ref_ids, groups and titles of every assessable requirement) from a library file.") { library, outFile };
+        var snapshot = new Command("snapshot", "Make a framework snapshot (URNs, ref_ids, groups, titles, descriptions and reference controls of every assessable requirement) from a library file.") { library, outFile };
         snapshot.SetAction((parseResult, cancellationToken) =>
             SnapshotAsync(parseResult.GetRequiredValue(library), parseResult.GetValue(outFile), output, logger, cancellationToken));
 

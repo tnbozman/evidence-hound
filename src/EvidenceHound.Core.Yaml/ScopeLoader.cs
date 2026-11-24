@@ -20,15 +20,18 @@ public sealed record ScopeParse(ScopeDocument Scope, IReadOnlyList<ScopeProblem>
 /// </summary>
 public static partial class ScopeLoader
 {
-    private static readonly string[] SetupKeys = ["organisation", "frameworks", "libraries", "domains"];
+    private static readonly string[] SetupKeys = ["organisation", "frameworks", "libraries", "domains", "programmes"];
+    private static readonly string[] ProgrammeKeys = ["id", "name", "framework", "groups", "audit", "group_by", "register"];
+    private static readonly string[] RegisterKeys = ["of", "by"];
+    private static readonly string[] GroupBys = ["parent"];
     private static readonly string[] OrganisationKeys = ["root_folder", "entity"];
     private static readonly string[] FrameworkKeys = ["urn", "library", "file", "snapshot"];
     private static readonly string[] DomainKeys = ["name", "description", "perimeters", "perimeter", "systems"];
     private static readonly string[] PerimeterKeys = ["name", "ref_id", "description"];
-    private static readonly string[] SystemKeys = ["name", "ref_id", "type", "description", "owner", "parents", "tags", "solution", "supplied_through", "data"];
+    private static readonly string[] SystemKeys = ["name", "ref_id", "type", "description", "owner", "parents", "tags", "solution", "supplied_through", "data", "ai"];
     private static readonly string[] ControlsKeys = ["controls"];
     private static readonly string[] ControlKeys =
-        ["ref_id", "name", "description", "domain", "owner", "status", "priority", "category", "eta", "systems", "reference_control", "documents"];
+        ["ref_id", "name", "description", "domain", "owner", "status", "priority", "category", "eta", "systems", "reference_control", "documents", "responsible_entity"];
 
     private static readonly string[] AuditKeys =
     [
@@ -62,7 +65,7 @@ public static partial class ScopeLoader
 
     public static ScopeParse Parse(
         ScopeSource setup, ScopeSource? controls, IReadOnlyList<ScopeSource> audits, ScopeSource? access = null, ScopeSource? settings = null, IReadOnlyList<ScopeSource>? thirdParties = null,
-        ScopeSource? capabilities = null, ScopeSource? evidencePlan = null)
+        ScopeSource? capabilities = null, ScopeSource? evidencePlan = null, ScopeSource? ssp = null)
     {
         ArgumentNullException.ThrowIfNull(setup);
         ArgumentNullException.ThrowIfNull(audits);
@@ -83,12 +86,14 @@ public static partial class ScopeLoader
         var parsedCapabilities = capabilitiesFile?.Root() is { } capabilitiesRoot ? ReadCapabilities(capabilitiesRoot, capabilitiesFile) : null;
         var planFile = evidencePlan is null ? null : new FileReader(evidencePlan);
         var parsedPlan = planFile?.Root() is { } planRoot ? ReadEvidencePlan(planRoot, planFile) : null;
+        var sspFile = ssp is null ? null : new FileReader(ssp);
+        var parsedSsps = sspFile?.Root() is { } sspRoot ? ReadSsps(sspRoot, sspFile) : [];
 
         return new ScopeParse(
-            new ScopeDocument(parsedSetup, parsedControls, parsedAudits) { Access = parsedAccess, Settings = parsedSettings, ThirdParties = parsedThirdParties, Capabilities = parsedCapabilities, EvidencePlan = parsedPlan },
+            new ScopeDocument(parsedSetup, parsedControls, parsedAudits) { Access = parsedAccess, Settings = parsedSettings, ThirdParties = parsedThirdParties, Capabilities = parsedCapabilities, EvidencePlan = parsedPlan, Ssps = parsedSsps },
             [
                 .. setupFile.Problems, .. controlsFile?.Problems ?? [], .. auditFiles.SelectMany(f => f.Problems), .. accessFile?.Problems ?? [],
-                .. settingsFile?.Problems ?? [], .. thirdPartyFiles.SelectMany(f => f.Problems), .. capabilitiesFile?.Problems ?? [], .. planFile?.Problems ?? [],
+                .. settingsFile?.Problems ?? [], .. thirdPartyFiles.SelectMany(f => f.Problems), .. capabilitiesFile?.Problems ?? [], .. planFile?.Problems ?? [], .. sspFile?.Problems ?? [],
             ]);
     }
 
@@ -220,7 +225,47 @@ public static partial class ScopeLoader
         {
             Libraries = file.Refs(root, "libraries"),
             Organisation = organisation is not null && file.Map(organisation, "entity") is { } entity ? ReadOrganisation(entity, file) : null,
+            Programmes = [.. file.Items(root, "programmes").Select(item => ReadProgramme(item, file)).OfType<ScopeProgramme>()],
         };
+    }
+
+    private static ScopeProgramme? ReadProgramme(YamlMappingNode item, FileReader file)
+    {
+        file.Keys(item, ProgrammeKeys);
+        var id = file.Required(item, "id");
+        var name = file.Required(item, "name");
+        var framework = file.Ref(item, "framework", required: true);
+        var audit = file.Ref(item, "audit", required: true);
+        var groupBy = file.OneOf(item, "group_by", GroupBys, required: false) ?? "parent";
+        return id is null || name is null || framework is null || audit is null
+            ? null
+            : new ScopeProgramme(id, name, framework, [.. file.Refs(item, "groups").Select(g => g.Value)], audit, groupBy, file.At(item))
+            {
+                Register = file.Map(item, "register") is { } register ? ReadRegister(register, file) : null,
+            };
+    }
+
+    private static ProgrammeRegister? ReadRegister(YamlMappingNode map, FileReader file)
+    {
+        file.Keys(map, RegisterKeys);
+        var of = file.OneOf(map, "of", [.. RegisterItems.Names], required: true);
+        var by = file.Refs(map, "by");
+        if (of is null)
+        {
+            return null;
+        }
+
+        var fields = RegisterItems.Fields(of);
+        foreach (var unknown in by.Where(b => !fields.Contains(b.Value, StringComparer.Ordinal)))
+        {
+            file.Problem(
+                "scope.programme_register_unknown",
+                unknown.At,
+                $"the {of} register has no field '{unknown.Value}' to count by.",
+                $"Use {string.Join(", ", fields)}.");
+        }
+
+        return new ProgrammeRegister(of, [.. by.Select(b => b.Value)], file.At(map));
     }
 
     private static ScopeFramework? ReadFramework(YamlMappingNode item, FileReader file)
@@ -275,6 +320,7 @@ public static partial class ScopeLoader
                 Solution = file.Ref(item, "solution"),
                 SuppliedThrough = file.Ref(item, "supplied_through"),
                 Data = ReadData(item, file, authority: false),
+                Ai = ReadAi(item, name, file),
             };
     }
 
@@ -304,7 +350,10 @@ public static partial class ScopeLoader
                 file.Refs(item, "systems"),
                 file.Text(item, "reference_control"),
                 file.Refs(item, "documents"),
-                file.At(item));
+                file.At(item))
+            {
+                ResponsibleEntity = file.OneOf(item, "responsible_entity", SspAnnex.ResponsibleEntities, required: false),
+            };
     }
 
     private static ScopeAudit? ReadAudit(YamlMappingNode root, FileReader file)

@@ -1,0 +1,13 @@
+{
+  "count": 1,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": "00000000-0000-4000-8000-00000000e501",
+      "ref_id": "R.1",
+      "name": "Leads from some regions are scored unfairly low",
+      "assets": [{ "str": "Example lead scoring", "id": "00000000-0000-4000-8000-0000000a5e02" }]
+    }
+  ]
+}

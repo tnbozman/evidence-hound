@@ -34,3 +34,26 @@ evidence:
     owner: IT team
     every: 1 week
     runbook: manual-sources/weekly-compliance-review.md
+
+  # AI governance (docs/ai-grc.md): the register is checked every night from the scope files; the records a person keeps are
+  # attested once a year (governance) and each quarter (operations).
+  - ref_id: EV-AI-REGISTER
+    control: AC-AI-REGISTER
+    method: automated
+    collector: example-ai-register
+
+  - ref_id: EV-AI-GOVERNANCE
+    control: AC-AI-GOVERNANCE
+    method: manual
+    collector: example-ai-governance
+    owner: IT team
+    every: 12 months
+    runbook: manual-sources/ai-governance.md
+
+  - ref_id: EV-AI-OPERATIONS
+    control: AC-AI-GOVERNANCE
+    method: manual
+    collector: example-ai-operations
+    owner: IT team
+    every: 3 months
+    runbook: manual-sources/ai-operations.md

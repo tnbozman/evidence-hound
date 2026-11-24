@@ -14,6 +14,11 @@ frameworks:
   - urn: urn:example:risk:framework:example-baseline
     library: urn:example:risk:library:example-baseline
     file: ../frameworks/example-baseline.yaml
+  # AI6, the National AI Centre's Guidance for AI Adoption, as a custom library (docs/ai-grc.md).
+  - urn: urn:evidence-hound:risk:framework:ai6
+    library: urn:evidence-hound:risk:library:ai6
+    file: ../frameworks/ai6.yaml
+    snapshot: ../frameworks/ai6.json
 # Other libraries to load, such as the mapping between the Essential Eight and the Essentials.
 libraries:
   - urn:intuitem:risk:library:mapping-essential-eight-2023-and-asd-essentials-enterprise-it
@@ -43,3 +48,68 @@ domains:
         type: supporting
         description: Daily backups of Example 365 and the laptops.
         owner: it@example.com
+      # AI systems: an ai block is the system's entry in the AI register (docs/scope.md#ai-systems), with the National AI Centre
+      # register template's columns. screening is the outcome of its seven screening questions (runbooks/ai-screening.md). Both are made up.
+      - name: Example ticket triage
+        ref_id: SYS-AI-TRIAGE
+        type: supporting
+        description: Suggests a category and priority for each new IT ticket; the IT team confirms it.
+        owner: it@example.com
+        ai:
+          screening: normal
+          screening_yes: []
+          screened_on: "2026-01-12"
+          registered_on: "2026-01-14"
+          version: "1.0"
+          use: built
+          purpose: Get IT tickets to the right person sooner.
+          intended_uses: [Suggest a category and priority for a new ticket]
+          limitations: Reads only the ticket's subject and category text, never who raised it; not for security incidents.
+          misuse: None identified.
+          data_sources: [Past ticket subjects and categories (text)]
+          stakeholders: [IT team, Staff who raise tickets]
+          oversight: human_in_the_loop
+          oversight_note: The IT team confirms or changes every suggestion before the ticket is assigned.
+          impact_assessment: not_required
+          in_use_from: "2026-02-02"
+          last_tested_on: "2026-01-28"
+      - name: Example proposal assistant
+        ref_id: SYS-AI-PROPOSALS
+        type: supporting
+        description: Drafts proposal text from past proposals; staff edit every draft before it is sent.
+        owner: ceo@example.com
+        ai:
+          # Yes to question 1 (past proposals are company confidential) and 7 (built on a general-purpose language model).
+          screening: elevated
+          screening_yes: [1, 7]
+          screened_on: "2026-03-02"
+          registered_on: "2026-03-04"
+          use: customised
+          purpose: Cut the time it takes to draft a proposal.
+          intended_uses: [Draft proposal sections, Summarise past bids for a new one]
+          limitations: Not for pricing, legal terms or claims about delivery dates.
+          misuse: Pasting a customer's confidential documents into it.
+          data_sources: [Past proposals (text)]
+          stakeholders: [Sales team, Prospective customers]
+          oversight: human_in_the_loop
+          oversight_note: The proposal owner reads and edits every draft; the CEO can switch the assistant off in its settings.
+          impact_assessment: approved
+          impact_assessed_on: "2026-03-20"
+          # No last_tested_on yet: the ai-register collector fails ai.tested_before_use, so AI6-5.1 shows as not met.
+          in_use_from: "2026-04-01"
+# Compliance programmes: reports are organised by programme. Each names a framework, the groups reported against and the audit
+# of record. Programmes create nothing in CISO Assistant. List them with: hound programme list
+programmes:
+  - id: essential-eight
+    name: Essential Eight
+    framework: urn:intuitem:risk:framework:essential-eight-2023
+    groups: ["1", "2"]
+    audit: EX-E8-2026
+  - id: ai6
+    name: AI governance (AI6 Foundations)
+    framework: urn:evidence-hound:risk:framework:ai6
+    groups: ["F"]
+    audit: EX-AI6-2026
+    register:
+      of: ai_systems
+      by: [screening, use]

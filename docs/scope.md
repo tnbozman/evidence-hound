@@ -17,6 +17,7 @@ compliance-repo/
     third-parties/
       example-cloud.yaml  one file per supplier or other third party (optional)
     capabilities.yaml   which system provides each mitigation (optional)
+    ssp.yaml            one system security plan per programme (optional)
   mappings/             which checks satisfy which requirements (docs/mapping-files.md)
   frameworks/           framework snapshots and custom library files
   documents/            the files that documents name, relative to the compliance repo (the scope folder's parent)
@@ -56,11 +57,58 @@ A prompt for a ref ID (`hound add system`, `hound add control`, `hound onboard <
 | `libraries` | Other libraries to load by URN, such as the mapping set between the Essential Eight and the Essentials. |
 | `domains` | Folders. Each has a `name`, a `description`, its `perimeters` (or a single `perimeter`) and its `systems`. |
 | perimeter | `name`, optional `ref_id` and `description`. |
-| system | `name`, `type` (`primary` or `supporting`), optional `ref_id`, `description`, `owner`, `parents` (other systems by name), `tags` (per-framework labels such as `essentials_domain: identity` or `cui: "true"`), `solution` (the third-party solution that provides it, by `ref_id`) `supplied_through` (a reseller or managed service provider, by the third party's `ref_id`) and `data` (the [sensitive data](#sensitive-data) it handles). A system with either supplier key is registered only once those suppliers are approved: see [Supplier approval](#supplier-approval). |
+| system | `name`, `type` (`primary` or `supporting`), optional `ref_id`, `description`, `owner`, `parents` (other systems by name), `tags` (per-framework labels such as `essentials_domain: identity` or `cui: "true"`), `solution` (the third-party solution that provides it, by `ref_id`) `supplied_through` (a reseller or managed service provider, by the third party's `ref_id`) `data` (the [sensitive data](#sensitive-data) it handles) and `ai` (its [AI register entry](#ai-systems), when it is an AI system). A system with either supplier key is registered only once those suppliers are approved: see [Supplier approval](#supplier-approval). |
+| `programmes` | Optional. The compliance programmes the reports are organised by, such as the Essential Eight and later AI6. Each has `id` (a lowercase slug such as `essential-eight`, unique), `name`, `framework` (a framework URN declared above, with a `snapshot`), `groups` (the implementation groups reported against, which must exist in the snapshot), `audit` (the `ref_id` of the audit, or audit series, of record) and optional `group_by` (`parent`, the default: requirements are grouped under their parent node, such as the Essential Eight strategy), and optional `register`, the register its reports summarise: `of` (`ai_systems`, the [AI systems](#ai-systems), or `systems`, every system) and `by` (the fields to count by: `screening`, `use` and `oversight` for AI systems, `type` for systems), such as `register: { of: ai_systems, by: [screening, use] }`. An audit belongs to at most one programme. Programmes create nothing in CISO Assistant and never appear in `hound scope plan`. `hound programme list` shows each one with its requirement counts per group and per parent node, from the snapshot alone, and its register's counts from the scope. |
+
+### AI systems
+
+An AI system is a system with an `ai` block: its entry in the AI register. The entry is reviewed by pull request like the rest of the
+scope, dates included, and is written to CISO Assistant as filtering labels and as lines added to the asset's description, because
+CISO Assistant's custom fields are an Enterprise feature. The register is CISO Assistant's asset list filtered by the `ai-system`
+label, which its own Excel export can save. [The AI governance primer](ai-grc-primer.md) explains the terms.
+
+```yaml
+systems:
+  - name: Example lead scoring
+    type: supporting
+    owner: sales@example.com
+    solution: SOL-EXCRM-SCORING          # needed for a third-party AI system
+    ai:
+      screening: elevated                # normal, elevated or unacceptable: the National AI Centre's screening outcome
+      screening_yes: [1, 5]              # the screening questions answered yes, by number; [] for none
+      screened_on: "2026-03-02"
+      registered_on: "2026-03-04"        # the rest are the National AI Centre register template's columns
+      version: "2026.1"
+      purpose: Focus the sales team on the leads most likely to buy.
+      intended_uses: [Rank new leads each morning]
+      limitations: Not for decisions about credit or pricing.
+      misuse: Using scores to drop leads from some regions.
+      data_sources: [CRM lead records (structured)]
+      stakeholders: [Prospective customers, Sales team]
+      use: third_party                   # built, customised or third_party
+      oversight: human_on_the_loop       # human_in_the_loop, human_on_the_loop or human_out_of_loop
+      oversight_note: The sales lead reviews a monthly sample of low scores and can switch scoring off.
+      impact_assessment: approved        # not_started, in_progress, approved or not_required
+      impact_assessed_on: "2026-03-20"   # only with approved
+      in_use_from: "2026-04-01"          # left out while it is a pilot
+      last_tested_on: "2026-03-25"
+      # retired_on: "2026-10-31"         # when it stopped being used
+```
+
+`screening`, `screening_yes`, `screened_on`, `use`, `oversight` and `oversight_note` are required. The register check
+`ai.register_complete` fails an entry without `purpose`, `intended_uses`, `limitations`, `misuse`, `data_sources`, `stakeholders`,
+`registered_on` or `impact_assessment`. The template's *Status* follows from the dates (pilot, operational, decommissioned).
+[AI governance](ai-grc.md#the-national-ai-centres-register-template) traces each template column to its key.
+
+In CISO Assistant the asset gets the labels `ai-system`, `ai-screening-elevated`, `ai-use-third-party` and `ai-oversight-on-the-loop`
+(and `ai-retired` once retired), and its description gains the entry in words, starting "AI register: elevated screening (yes to
+questions 1, 5), third party, human on the loop." `hound scope validate` reports `ai.screening_disagrees` (normal with a yes, or
+elevated with none), `ai.impact_date_without_approval`, `ai.retired_before_use`, and `ai.solution_missing` for a third-party AI system
+with no `solution`.
 
 ## controls.yaml
 
-`controls` lists each applied control once, because CISO Assistant treats an applied control as a reusable object serving many requirements across frameworks: `ref_id` (the stable key), `name`, and optionally `description`, `domain` (left out for the global domain), `owner`, `status` (`to_do`, `in_progress`, `on_hold`, `active`, `degraded`, `deprecated`), `priority` (`"1"` to `"4"`), `category`, `eta`, `systems`, `reference_control` (a URN) and `documents` (ids of documents declared in audit files).
+`controls` lists each applied control once, because CISO Assistant treats an applied control as a reusable object serving many requirements across frameworks: `ref_id` (the stable key), `name`, and optionally `description`, `domain` (left out for the global domain), `owner`, `status` (`to_do`, `in_progress`, `on_hold`, `active`, `degraded`, `deprecated`), `priority` (`"1"` to `"4"`), `category`, `eta`, `systems`, `reference_control` (a URN), `documents` (ids of documents declared in audit files) and `responsible_entity` (`consumer`, `shared`, `outsourced_service_provider`, `cloud_service_provider` or `not_applicable`: who implements the control, for the SSP annex only; hound never writes it to CISO Assistant. Without it the annex infers *Shared* when the control covers a system a supplier's solution provides, and *Consumer* otherwise).
 
 ## access.yaml
 
@@ -270,6 +318,25 @@ How each control's evidence arrives, from whom and how often. Optional. The guid
 | `evidence` | One row per control: `ref_id` (`EV-`), `control`, `requirements` (optional), `method` (`automated`, `manual` or `hybrid`), `collector` (a collector in `hound.yaml`, for automated and hybrid rows), `owner` (a team, for manual and hybrid rows), `grc_team`, `every` (`3 months`, `6 months` or `12 months`) and `runbook` (a Markdown file in the repo). |
 
 Each row becomes an evidence item labelled `method:` and `collector:`; each manual and hybrid row also becomes a recurring task for the owner and the GRC team, with the runbook as its description. Problems: `evidence_plan.owner_missing`, `evidence_plan.every_missing`, `evidence_plan.runbook_missing`, `evidence_plan.runbook_file_missing`, `evidence_plan.collector_missing`, `evidence_plan.collector_unknown`, `evidence_plan.team_unknown`, `evidence_plan.control_unknown` and `evidence_plan.owner_contact_has_role`.
+
+## ssp.yaml
+
+One system security plan (SSP) per programme. Optional. `hound ssp build --programme <id>` assembles the plan from one read of CISO Assistant and the repo, and writes nothing. It prints the plan in the layout of NIST SP 800-18 Rev 1 ([ssp.md](ssp.md)); `--json` gives every value with its source (`ciso_assistant` with the object, or `repo` with the file and line), so each one can be traced.
+
+| Key | Meaning |
+| --- | --- |
+| `programme` | The programme's `id` from `setup.yaml`. One plan per programme. |
+| `profile` | The controls annex: `ism` (ISM controls grouped by Essential Eight strategy) or `nist-800-171` (CMMC, s17). The layout is always NIST SP 800-18 Rev 1, which also meets ISM-0041. |
+| `system_name`, `version` | The system's name as the plan gives it, and the plan's version. |
+| `classification`, `operational_status`, `system_type` | SP 800-18 sections 2, 7 and 8: the highest classification the system processes (such as `OFFICIAL`), whether it is operational, under development or being modified, and whether it is a major application or a general support system. Optional; shown as `-` when absent. |
+| `perimeter` | The boundary: a perimeter in `setup.yaml`. The inventory is the systems the audits on that perimeter cover, as CISO Assistant holds them, with their owners. |
+| `roles` | `system_owner`, `authorising_official` and `security_contact`, each a user's email or a team from `access.yaml`. All three are required. |
+| `documents` | Boundary and network diagrams, data flows, policies and procedures, by document `id` from an audit. |
+| `sections` | The parts that cannot be generated, as Markdown files in the repo (paths relative to the folder that holds `scope/`): `purpose`, `environment`, `management` and `laws_and_policies`, all required. See [ssp.md](ssp.md) for where each one goes in the plan. |
+
+Each requirement row gets a status from its result: `compliant` is *Implemented*, `partially_compliant` *Partially implemented*, `not_applicable` *Not applicable*, and `non_compliant` or `not_assessed` *Planned* when a linked control has an ETA, otherwise *Not implemented*. Its statement is the linked controls' descriptions in ref order, then the observation; the responsible party is the controls' owners. A row in place with no statement, a row in place or planned with no owner, and a row not applicable with no justification (its observation) are **gaps**: listed first, in `--json`, and fatal with `--strict` (exit 1). A row not yet implemented is not a gap: `hound ssp poam --programme <id>` lists it, one line per linked control with its owner, ETA and status.
+
+External services are the solutions the scope links the boundary's systems to (`solution:` in `setup.yaml`), with their suppliers as CISO Assistant holds them. Controls and requirement rows come from the programme's audit of record. Problems: `ssp.programme_unknown`, `ssp.perimeter_unknown`, `ssp.role_missing`, `ssp.role_unknown`, `ssp.document_unknown`, `ssp.section_missing`, and `scope.duplicate` for a second plan for the same programme.
 
 ## audits/&lt;audit&gt;.yaml
 

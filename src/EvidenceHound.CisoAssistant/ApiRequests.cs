@@ -30,6 +30,28 @@ internal static class ApiRequests
         }
     }
 
+    /// <summary>A file CISO Assistant generates, such as an audit's Word report, as bytes.</summary>
+    public static async Task<Result<ReadOnlyMemory<byte>>> SendForBytesAsync(this HttpClient http, HttpRequestMessage request, string action, CancellationToken cancellationToken)
+    {
+        using (request)
+        {
+            try
+            {
+                using var response = await http.SendAsync(request, cancellationToken);
+                if (!response.IsSuccessStatusCode)
+                {
+                    return Result.Fail<ReadOnlyMemory<byte>>(ApiProblems.FromStatus((int)response.StatusCode, await response.Content.ReadAsStringAsync(cancellationToken), action));
+                }
+
+                return Result.Ok<ReadOnlyMemory<byte>>(await response.Content.ReadAsByteArrayAsync(cancellationToken));
+            }
+            catch (Exception ex) when (ex is HttpRequestException or TimeoutRejectedException or BrokenCircuitException)
+            {
+                return Result.Fail<ReadOnlyMemory<byte>>(ApiProblems.Unavailable($"CISO Assistant could not be reached {action}: {ex.Message}"));
+            }
+        }
+    }
+
     /// <summary>Every object of a list, paged by limit and offset. <paramref name="path"/> may carry a query of its own.</summary>
     public static async Task<Result<List<JsonNode>>> ListAllAsync(this HttpClient http, string path, CancellationToken cancellationToken)
     {
