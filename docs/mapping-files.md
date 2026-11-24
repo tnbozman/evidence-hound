@@ -56,6 +56,20 @@ requirements:
 
 When publishing, rows outside the audit's selected implementation groups (such as ML3 rows in an ML2 audit) are left alone and reported as `skipped` with the note `outside selected groups`, not as errors.
 
+## Requirements no check covers
+
+A requirement that no collector can check is usually filled by a manual source: a person exports a record, attests a check with `hound manual approve`, and the next run publishes it ([manual-evidence.md](manual-evidence.md)). Map the requirement to that check like any other. The Essential Eight and AI6 mappings work this way, with their manual sources in `examples/manual-sources/`.
+
+When no manual source covers a requirement either, list it under `manual_only`, with the manual source you suggest for it:
+
+```yaml
+manual_only:
+  - ref: AI6-3.4
+    source: incident register, reviewed by the AI governance owner
+```
+
+A `manual_only` entry names a requirement by `ref` or `urn`, as in `requirements`; `hound mapping validate --framework` checks that it exists in the framework, as for mapped requirements. hound writes nothing to its row: CISO Assistant keeps whatever the GRC team records there. `manual_only: []` says none is left.
+
 ## Framework snapshots
 
 A framework snapshot lets you check a mapping without CISO Assistant. It lists the framework's URN, version and implementation groups, and each assessable requirement's URN, `ref_id`, parent, groups and a short title. Make one from a CISO Assistant library file and commit it under `frameworks/`:

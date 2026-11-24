@@ -339,6 +339,10 @@ Done first in Part 2, so the person reviewing the AI tasks has the background.
 **Notes**
 - AI6-5.4 overlaps the cyber programme. A later mapping could reuse cyber checks (for example `identity.mfa.*`) with `any_pass` once the AI systems' platforms are in scope of those collectors; kept manual here to avoid claiming coverage the collectors do not have.
 
+**Progress (2026-11-24)**
+- Changed from the plan, to follow s10-04 (decided after this sprint was planned): the 12 rows with no register check are mapped to checks a person attests through two manual sources, `examples/manual-sources/ai6/ai-governance` (yearly) and `ai-operations` (quarterly), as the Essential Eight mapping does. `manual_only` stays empty, and is documented in `docs/mapping-files.md` for requirements no manual source covers. The example evidence plan rows for the two sources come with the example AI programme (s11-15).
+- Functional check: `hound mapping validate mappings/ai6.yaml --framework frameworks/ai6.json` printed `valid: 21 requirements` (8 from register checks, 12 from manual sources, and AI6-1.1 from both).
+
 ### s11-11 NAIC templates: register, screening questions and policy
 - [ ] Done
 
