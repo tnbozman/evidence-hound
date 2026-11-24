@@ -69,8 +69,48 @@ public static class Crosswalks
 
     /// <summary>What answers each source requirement today, by ref_id: the mapping's checks and the worst current result of its audit rows.</summary>
     public static IReadOnlyDictionary<string, SourceAnswer> Answers(
-        FrameworkMapping mapping, FrameworkSnapshot snapshot, IReadOnlySet<CheckId> manualChecks, IReadOnlyList<CurrentRow> rows) =>
-        new Dictionary<string, SourceAnswer>(StringComparer.Ordinal);
+        FrameworkMapping mapping, FrameworkSnapshot snapshot, IReadOnlySet<CheckId> manualChecks, IReadOnlyList<CurrentRow> rows)
+    {
+        ArgumentNullException.ThrowIfNull(mapping);
+        ArgumentNullException.ThrowIfNull(snapshot);
+        ArgumentNullException.ThrowIfNull(manualChecks);
+        ArgumentNullException.ThrowIfNull(rows);
+        var checks = mapping.Requirements
+            .SelectMany(r => RefsOf(r.Key, snapshot).Select(refId => (RefId: refId, r.Checks)))
+            .GroupBy(r => r.RefId, StringComparer.Ordinal)
+            .ToDictionary(g => g.Key, g => g.SelectMany(r => r.Checks).Distinct().ToList(), StringComparer.Ordinal);
+        var results = rows
+            .Where(r => r.RefId is not null)
+            .GroupBy(r => r.RefId!, StringComparer.Ordinal)
+            .ToDictionary(g => g.Key, g => g.Select(r => r.Result).MinBy(Severity), StringComparer.Ordinal);
+        return checks.Keys.Union(results.Keys, StringComparer.Ordinal).ToDictionary(
+            refId => refId,
+            refId =>
+            {
+                var mapped = checks.GetValueOrDefault(refId) ?? [];
+                return new SourceAnswer(
+                    refId,
+                    [.. mapped.Select(c => c.Value)],
+                    [.. mapped.Where(manualChecks.Contains).Select(c => c.Value)],
+                    results.TryGetValue(refId, out var result) ? result : null);
+            },
+            StringComparer.Ordinal);
+    }
+
+    /// <summary>Worst first: a gap, then an unknown, then a partial answer.</summary>
+    private static int Severity(ComplianceResult result) => result switch
+    {
+        ComplianceResult.NonCompliant => 0,
+        ComplianceResult.NotAssessed => 1,
+        ComplianceResult.PartiallyCompliant => 2,
+        ComplianceResult.Compliant => 3,
+        _ => 4,
+    };
+
+    private static IEnumerable<string> RefsOf(RequirementKey key, FrameworkSnapshot snapshot) =>
+        key.Kind == RequirementKeyKind.Ref
+            ? [key.Value]
+            : snapshot.Resolve(key).Select(n => n.RefId).OfType<string>();
 
     /// <summary>The crosswalk to use: a mapping library loaded in CISO Assistant first, then the reviewed file, else none.</summary>
     public static CrosswalkDefinition? Choose(CrosswalkDefinition? library, CrosswalkDefinition? file) => library ?? file;
