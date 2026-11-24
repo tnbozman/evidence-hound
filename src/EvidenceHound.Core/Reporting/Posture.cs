@@ -23,7 +23,7 @@ public static class Posture
             .Select(n => n.ParentUrn)
             .OfType<string>()
             .Distinct(StringComparer.Ordinal)
-            .Select(urn => new ParentNode(urn, ShortName(urn)))
+            .Select(urn => new ParentNode(urn, framework.ParentName(urn)))
             .ToList();
         return new ProgrammePosture(
             id,

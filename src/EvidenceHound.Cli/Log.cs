@@ -55,6 +55,9 @@ internal static partial class Log
     [LoggerMessage(EventId = 1005, Level = LogLevel.Error, Message = "{Collector}: scheduled run failed unexpectedly; the schedule carries on")]
     public static partial void ScheduledRunFailed(ILogger logger, Exception exception, string collector);
 
+    [LoggerMessage(EventId = 1009, Level = LogLevel.Warning, Message = "{Message}")]
+    public static partial void Warning(ILogger logger, string message);
+
     [LoggerMessage(EventId = 1006, Level = LogLevel.Warning, Message = "{Collector}: skipped a scheduled run because the previous one is still going")]
     public static partial void ScheduledRunSkipped(ILogger logger, string collector);
 

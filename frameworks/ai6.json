@@ -243,5 +243,37 @@
       "title": "Decommission when appropriate",
       "description": "An AI system can be retired safely, with another way to keep critical work going. Guidance: https://www.ai.gov.au/staying-safe-and-responsible/essential-ai-practices/guidance-ai-adoption-foundations"
     }
+  ],
+  "parents": [
+    {
+      "urn": "urn:evidence-hound:risk:req_node:ai6:ai6-1",
+      "ref_id": "AI6-1",
+      "name": "Decide who is accountable"
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:ai6:ai6-2",
+      "ref_id": "AI6-2",
+      "name": "Understand impacts and plan accordingly"
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:ai6:ai6-3",
+      "ref_id": "AI6-3",
+      "name": "Measure and manage risks"
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:ai6:ai6-4",
+      "ref_id": "AI6-4",
+      "name": "Share essential information"
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:ai6:ai6-5",
+      "ref_id": "AI6-5",
+      "name": "Test and monitor"
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:ai6:ai6-6",
+      "ref_id": "AI6-6",
+      "name": "Maintain human control"
+    }
   ]
 }

@@ -296,10 +296,16 @@ public static partial class ConfigLoader
     /// <summary>
     /// A setting is a secret when its name says so, when it holds a private key, or when it holds a long unbroken run of letters and
     /// digits. A setting named as an address or path (<c>token_url</c>, <c>secrets_path</c>) is judged by its name only when its value
-    /// is not an address or an absolute path.
+    /// is not an address or an absolute path. A path setting (<c>drop_folder</c>, <c>profiles_path</c>) holding a path skips the
+    /// long-run rule, as a folder named by a GUID is not a token.
     /// </summary>
     private static bool LooksLikeSecret(string key, string value) =>
-        (SecretName().IsMatch(key) && !IsAddress(key, value)) || value.Contains("PRIVATE KEY", StringComparison.Ordinal) || TokenLike().Matches(value).Any(m => m.Value.Any(char.IsLetter) && m.Value.Any(char.IsDigit));
+        (SecretName().IsMatch(key) && !IsAddress(key, value))
+        || value.Contains("PRIVATE KEY", StringComparison.Ordinal)
+        || (!IsPath(key, value) && TokenLike().Matches(value).Any(m => m.Value.Any(char.IsLetter) && m.Value.Any(char.IsDigit)));
+
+    private static bool IsPath(string key, string value) =>
+        PathName().IsMatch(key) && (value.StartsWith('/') || value.StartsWith("./", StringComparison.Ordinal) || value.StartsWith("../", StringComparison.Ordinal));
 
     private static bool IsAddress(string key, string value) =>
         (key.EndsWith("_url", StringComparison.OrdinalIgnoreCase) && Uri.TryCreate(value, UriKind.Absolute, out var url) && url.Scheme is "https" or "http")
@@ -376,6 +382,9 @@ public static partial class ConfigLoader
 
     [GeneratedRegex("[A-Za-z0-9+/=_]{32,}", RegexOptions.CultureInvariant)]
     private static partial Regex TokenLike();
+
+    [GeneratedRegex("(_path|_folder|_dir|_directory|_root)$", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase)]
+    private static partial Regex PathName();
 
     private sealed record Locator(string Source, string Folder)
     {
