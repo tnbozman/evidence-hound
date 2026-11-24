@@ -130,6 +130,12 @@ public sealed class ReviewCommandTests : IDisposable
         (exit, _, error) = await RunAsync(["review", "--repo", Repo, "--no-apply"], terminal: true, "Sam Example\na\ns\ns\ns\n");
         exit.ShouldBe(ExitCodes.Ok, error);
         error.ShouldContain("Recommended: accept. Its trust page shows an ISO 27001 certificate valid to 2027. (sources: documents/suppliers/sup-example/trust-centre.md)");
+
+        // The supplier's first review is due in a month: it is not asked now, nor listed, until two weeks before.
+        error.ShouldNotContain("[now ready] [review]");
+        (exit, output, error) = await RunAsync(["review", "pending", "--json", "--repo", Repo], terminal: false);
+        exit.ShouldBe(ExitCodes.Ok, error);
+        JsonNode.Parse(output)!["items"]!.AsArray().ShouldNotContain(i => i!["kind"]!.GetValue<string>() == "supplier_review");
         (await File.ReadAllTextAsync(Path.Combine(Repo, "review", "recommendations.json"), _ct)).ShouldNotContain(Key);
     }
 

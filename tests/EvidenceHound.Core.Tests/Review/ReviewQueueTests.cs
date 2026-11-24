@@ -11,6 +11,17 @@ public class ReviewQueueTests
         new(kind, key, $"Title of {key}", "Why it matters.", "What accepting does.", minutes) { Deadline = deadline };
 
     [Fact]
+    public void A_supplier_review_waits_until_two_weeks_before_it_is_due()
+    {
+        // s10-05 rehearsal: four reviews due in a month took the top of a one-hour session, and none could be concluded yet.
+        ReviewOrder.Ready(Item(ReviewKind.SupplierReview, "review:EA-NEXT-MONTH", 10, Today.AddDays(30)), Today).ShouldBeFalse();
+        ReviewOrder.Ready(Item(ReviewKind.SupplierReview, "review:EA-SOON", 10, Today.AddDays(14)), Today).ShouldBeTrue();
+        ReviewOrder.Ready(Item(ReviewKind.SupplierReview, "review:EA-LATE", 10, Today.AddDays(-3)), Today).ShouldBeTrue();
+        ReviewOrder.Ready(Item(ReviewKind.ManualEvidence, "manual:admins/export.csv", 5, Today.AddDays(60)), Today).ShouldBeTrue();
+        ReviewOrder.Ready(Item(ReviewKind.Supplier, "supplier:SUP-A/CTR-A", 10), Today).ShouldBeTrue();
+    }
+
+    [Fact]
     public void Most_urgent_first_and_stops_at_the_time_given()
     {
         ReviewItem[] items =
