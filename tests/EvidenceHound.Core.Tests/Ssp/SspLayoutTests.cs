@@ -86,7 +86,7 @@ public class SspLayoutTests
         markdown.ShouldBe(File.ReadAllText(golden));
     }
 
-    private static Dictionary<string, string> Texts() => new()
+    internal static Dictionary<string, string> Texts() => new()
     {
         ["purpose"] = "Example corporate IT runs the company's mail, files and laptops.",
         ["environment"] = "One office and its cloud services.",
@@ -94,7 +94,7 @@ public class SspLayoutTests
         ["laws_and_policies"] = "Privacy Act 1988; the Example Pty Ltd information security policy.",
     };
 
-    private static SspDocument Example()
+    internal static SspDocument Example()
     {
         var controls = Controls(Control("AC-MFA", "Every user signs in with MFA.", "it@example.com"), Control("AC-ADMIN", null, "it@example.com", "2026-12-31"));
         var repo = new SspSource(SspSource.Repo, "scope/ssp.yaml line 2");

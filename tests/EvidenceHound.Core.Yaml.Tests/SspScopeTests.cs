@@ -22,6 +22,27 @@ public class SspScopeTests
     }
 
     [Fact]
+    public void Sign_offs_are_read_like_audit_sign_offs()
+    {
+        // s11-05: a version is signed by a reviewed commit that records who approved it, when, and the hashes of the draft and its snapshot.
+        var hash = new string('a', 64);
+        var parsed = SspFixture.Parse(SspFixture.Ssp + $"\n    sign_offs:\n      - {{version: \"0.1\", by: ceo@example.com, date: \"2026-11-24\", sha256: {hash}, snapshot: {new string('b', 64)}}}\n");
+
+        parsed.Problems.ShouldBeEmpty();
+        var signOff = parsed.Scope.Ssps.Single().SignOffs.ShouldHaveSingleItem();
+        (signOff.Version, signOff.By, signOff.Date, signOff.Sha256, signOff.Snapshot).ShouldBe(("0.1", "ceo@example.com", "2026-11-24", hash, new string('b', 64)));
+    }
+
+    [Fact]
+    public void Only_the_authorising_official_signs_with_a_sha256()
+    {
+        var problems = SspFixture.Problems(SspFixture.Ssp + "\n    sign_offs:\n      - {version: \"0.1\", by: it@example.com, date: \"2026-11-24\", sha256: not-a-hash}\n");
+
+        problems.Single(p => p.Code == "ssp.signoff_not_authorising_official").Message.ShouldContain("it@example.com");
+        problems.Single(p => p.Code == "ssp.signoff_hash_invalid").Message.ShouldContain("not-a-hash");
+    }
+
+    [Fact]
     public void Programme_and_perimeter_must_exist()
     {
         var problems = SspFixture.Problems(SspFixture.Ssp
