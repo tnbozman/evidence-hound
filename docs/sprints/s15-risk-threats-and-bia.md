@@ -209,11 +209,19 @@ suppliers change.
   DISP reporting to Defence, and DFARS 252.204-7012's 72 hours for covered defence information. One layout, not a separate ACSC one.
 - The plan cites ISM-0043, NIST SP 800-61 Rev 3, the ACSC guidance and NIST SP 800-171 3.6.1 to 3.6.3, and its annual test (s15-07's
   manual source) records the plan version it tested.
+- Covers ISM-0043's eight items (ISM September 2026, ISM-0043 revision 6), each as a section a test checks for: what constitutes a
+  cyber security incident; the types likely to be encountered and the expected response to each; how to report internally and
+  externally to relevant authorities (from `scope/reporting.yaml`); other parties to inform (suppliers and customers, s15-08); the
+  authorities responsible for investigating and responding; the criteria for requesting an investigation from a law enforcement agency,
+  ASD or another authority; the steps that keep evidence intact; and system contingency measures, or a reference to the business
+  continuity summary (s19-06).
+- It is system-specific documentation, so the system's authorising officer approves it (ISM-0047).
 
 **Tests first**
 - `IrpBuilderTests.Contacts_come_from_role_holders_with_sources`
 - `IrpBuilderTests.Reporting_obligations_list_each_deadline`
 - `IrpValidatorTests.Missing_judgement_section_is_a_gap`
+- `IrpLayoutTests.Covers_every_ism_0043_item`
 - `IrpLayoutTests.Sections_follow_sp_800_61r3_with_australian_reporting`
 - `IrpCommandTests.Strict_build_with_gaps_exits_non_zero`
 
