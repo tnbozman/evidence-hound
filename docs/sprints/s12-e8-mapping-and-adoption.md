@@ -47,6 +47,16 @@ Risks, exceptions and risk acceptances in the reports are read from CISO Assista
 **Functional check**
 - Import the sample workbooks into the local CISO Assistant with `clica` following the guide verbatim.
 
+**Progress (2026-11-24)**
+- `docs/adopt/migrate-from-spreadsheets.md` and `examples/migration/` (systems, controls and suppliers as CSV).
+- Deviation, for the persona: registers move in through hound's own commands (`hound add system`, `hound add control`,
+  `hound supplier draft` then `hound approve`, `hound scope import`), one per row, run by the team's agent, so they land as reviewed
+  configuration rather than as a one-off import into CISO Assistant. CISO Assistant's Data Wizard stays the route for risks, exceptions
+  and incidents until s15 brings them into configuration; the guide links its docs rather than restating column layouts that could not
+  be checked here. CSV rather than .xlsx, because agents read CSV directly and `hound scope import` takes both; so no ClosedXML test.
+- Test: `MigrationExampleTests` runs every sample row through the guide's commands on a copy of the example repo, checks each ref
+  arrived and `hound scope validate` passes, and that the guide's reconciliation table matches the sample counts.
+
 ### s12-03 Operating guides and training
 - [ ] Done
 
@@ -63,6 +73,12 @@ Risks, exceptions and risk acceptances in the reports are read from CISO Assista
 
 **Functional check**
 - Walk through the system owner guide on the local stack without help.
+
+**Progress (2026-11-24)**
+- `docs/operate/` (GRC member's week, month and quarter in 2 to 8 hours; system owner; collector operator; committee member),
+  `docs/training/` (system owners 60, committee 30, board 20 minutes, plus the AI session), `docs/govern/continuous-compliance-procedure.md`
+  and `docs/adopt/answer-a-prime-questionnaire.md` (the crosswalk with a prime's questionnaire, verifiable proof instead of screenshots).
+- Docs link check (`DocsLinkTests`) passes. The walk-through is part of the s12-09 rehearsal.
 
 ### s12-04 Report data model and snapshots
 - [ ] Done
@@ -114,6 +130,9 @@ Risks, exceptions and risk acceptances in the reports are read from CISO Assista
 **Functional check**
 - Generate the report from the local stack for the current month and walk through it against the example audit.
 
+**Guide (2026-11-24):** `docs/reporting.md` (snapshot, committee, board, schedule) and `docs/govern/security-committee.md` (terms of
+reference template, agenda, roles, recording decisions in CISO Assistant).
+
 ### s12-06 Quarterly board report (governance)
 - [ ] Done
 
@@ -141,6 +160,8 @@ Risks, exceptions and risk acceptances in the reports are read from CISO Assista
 **Functional check**
 - Generate the board report from four fixture quarter snapshots and from the local stack; confirm it fits two pages when printed.
 
+**Guide (2026-11-24):** `docs/govern/board-reporting.md` (risk appetite template, roll-up, recording the board's decisions).
+
 ### s12-07 Drafting reports with Claude
 - [ ] Done
 
@@ -154,6 +175,11 @@ Risks, exceptions and risk acceptances in the reports are read from CISO Assista
 
 **Functional check**
 - Follow the guide against the local stack and produce a committee summary from the generated report.
+
+**Progress (2026-11-24)**
+- `docs/govern/ai-assisted-reporting.md`: the person's own agent, given the generated report and snapshot and, for look-ups, a read-only
+  CISO Assistant account; prompts for the committee summary, board positions and expected questions; every sentence traced to a report
+  line. An MCP server is mentioned only as "if your version offers one", since it could not be checked here.
 
 ### s12-08 NIST SP 800-171 crosswalk (added 2026-11-24)
 - [ ] Done
