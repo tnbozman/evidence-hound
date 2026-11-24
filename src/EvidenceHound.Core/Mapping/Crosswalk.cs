@@ -46,9 +46,29 @@ public sealed record CrosswalkRow(CrosswalkTarget Target, CrosswalkStatus Status
 /// </summary>
 public static class Crosswalks
 {
-    public static IReadOnlyList<CrosswalkRow> Build(CrosswalkDefinition crosswalk, IReadOnlyDictionary<string, SourceAnswer> answers) =>
-        throw new NotImplementedException();
+    public static IReadOnlyList<CrosswalkRow> Build(CrosswalkDefinition crosswalk, IReadOnlyDictionary<string, SourceAnswer> answers)
+    {
+        ArgumentNullException.ThrowIfNull(crosswalk);
+        ArgumentNullException.ThrowIfNull(answers);
+        var listed = crosswalk.Targets.Select(t => t.RefId).ToHashSet(StringComparer.Ordinal);
+        var targets = crosswalk.Targets
+            .Concat(crosswalk.Links.Select(l => l.TargetRef).Where(r => !listed.Contains(r)).Distinct(StringComparer.Ordinal).Select(r => new CrosswalkTarget(r, "")));
+        return [.. targets.Select(target => Row(target, crosswalk.Links.Where(l => l.TargetRef == target.RefId), answers))];
+    }
 
     /// <summary>The crosswalk to use: a mapping library loaded in CISO Assistant first, then the reviewed file, else none.</summary>
-    public static CrosswalkDefinition? Choose(CrosswalkDefinition? library, CrosswalkDefinition? file) => throw new NotImplementedException();
+    public static CrosswalkDefinition? Choose(CrosswalkDefinition? library, CrosswalkDefinition? file) => library ?? file;
+
+    private static CrosswalkRow Row(CrosswalkTarget target, IEnumerable<CrosswalkLink> links, IReadOnlyDictionary<string, SourceAnswer> answers)
+    {
+        var sources = links
+            .Select(l => (Link: l, Answer: answers.GetValueOrDefault(l.SourceRef) ?? new SourceAnswer(l.SourceRef, [], [], null)))
+            .ToList();
+        var status = sources.Count == 0
+            ? CrosswalkStatus.Open
+            : sources.Any(s => s.Link.Relationship is CrosswalkRelationship.Equal or CrosswalkRelationship.Superset && s.Answer.Checks.Count > 0)
+                ? CrosswalkStatus.Answered
+                : CrosswalkStatus.PartlyAnswered;
+        return new CrosswalkRow(target, status, sources);
+    }
 }
