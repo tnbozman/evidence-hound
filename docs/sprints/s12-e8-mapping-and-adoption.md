@@ -174,6 +174,18 @@ answers, so that I know my gap before I pay for an assessment.
 **Functional check**
 - `hound mapping crosswalk` against the local CISO Assistant with the example Essential Eight audit prints the 800-171 gap list.
 
+## Carried from s09 to s11
+
+Human trials and onboarding tests, moved from s11 on 2026-11-24 at the maintainer's request. Built and tested in CI; each waits on a
+person, tenant or machine, not on code. Details stay under each task in its own sprint file.
+- [ ] s11-08 AI governance walkthrough: someone who has not read AI6 follows `docs/tutorials/ai-governance.md` on the local stack without help, and notes anything unclear under Discovered work.
+- [ ] s09-01 Application control policies from Intune: a real Graph export for the App Control for Business setting IDs.
+- [ ] s09-15 Firewall firmware update timeliness: whether the read-only role may call the firmware upgrade check, and a dry run on the maintainer's tenant.
+- [ ] s09-17 The Sophos trial on a real tenant.
+- [ ] s09-29 Microsoft 365 checks follow the capability map: a run against the maintainer's tenant.
+- [ ] s09-38 to s09-42 Agent-driven onboarding and manual evidence: the maintainer's own run with their agent, including s09-39, their XGS firewall.
+- [ ] s09-54 and s09-57 `make trial` on the maintainer's machine.
+
 ## Discovered work
 
 ## Sprint review

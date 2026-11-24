@@ -1,6 +1,6 @@
 # s11 Essential Eight system security plan and AI governance (AI6)
 
-Status: In progress
+Status: Done
 
 **Goal:** two parts that share one idea, reporting per programme. Part 1: `hound` drafts the Essential Eight system security plan (SSP) and POA&M from the records already in CISO Assistant, in the shape the ISM expects, for people to review and sign. Part 2: AI governance runs on the same machinery as cyber compliance. The Australian *Guidance for AI Adoption* (AI6) is loaded into CISO Assistant as a versioned custom framework, the AI system register lives in CISO Assistant as assets, framework-neutral `ai.*` checks are read from CISO Assistant and mapped to AI6 requirements, and the committee and board reports (s12) work per programme, so AI6 is reported beside the Essential Eight rather than bolted on.
 
@@ -256,7 +256,7 @@ Written for a GRC team that knows cyber compliance but is new to AI governance (
 Sources read on 2026-11-22: ai.gov.au *Guidance for AI Adoption: Foundations* and *Implementation guidance*, and the SafeAI-Aus AI6 summary. Neither ai.gov.au page states a licence. Decision 1 below covers what this means for the library text.
 
 ### s11-08 AI governance primer and guided walkthrough
-- [ ] Done
+- [x] Done (the walkthrough trial by a person moved to s12, see below)
 
 Done first in Part 2, so the person reviewing the AI tasks has the background.
 
@@ -280,7 +280,9 @@ Done first in Part 2, so the person reviewing the AI tasks has the background.
 - The walkthrough, the training outline and the message wording need the register, screening fields and checks, so they are written after s11-14, and this task is ticked then.
 - Written after s11-14: `docs/tutorials/ai-governance.md` (11 steps on the local stack: register a customised, medium tier search assistant, screen it, apply, record the impact assessment and test, run `hound`, read AI6-4.1, AI6-5.1 and AI6-3.2, and the register line) and `docs/training/ai-governance.md` (a 30-minute session built on it). `ExampleRepoTests.Ai_governance_walkthrough_says_why_before_what_and_the_training_builds_on_it` checks each step opens with what it is for. `Ai6MappingTests.Ciso_assistant_profile_observations_name_the_practice_in_words` stands in for `CisoAssistantProfileTests.Observations_name_the_practice_in_words`; `Register_checks_name_a_sub_practice_they_are_mapped_to` covers the `ai-register` checks.
 - Checked offline: on a copy of the example repo, the step 5 entry validates (`scope valid: 1 domain(s), 5 control(s), 4 audit(s)`), the deliberate mistake reports `ai.impact_date_without_approval`, `programme list` prints `Register: 3 AI systems. tier: low 1, medium 2. use: built 1, customised 2.`, and the step 9 config runs the collector and saves `ai-register.json`.
-- Open: the functional check needs someone who has not read AI6 to follow the walkthrough on the local stack. Left unticked until then.
+- Open: the functional check needs someone who has not read AI6 to follow the walkthrough on the local stack.
+- Updated with s11-11 (Nov 24): the walkthrough's search assistant is screened with the National AI Centre's questions (yes to 1 and 7, so elevated), and `programme list` now prints `Register: 3 AI systems. screening: elevated 2, normal 1. use: built 1, customised 2.`
+- Moved (Nov 24, at the maintainer's request): the walkthrough trial joins the other human trials and onboarding tests under "Carried from s09 to s11" in [s12](s12-e8-mapping-and-adoption.md), so s11 can close.
 
 ### s11-09 AI6 framework library and snapshot
 - [x] Done
@@ -583,14 +585,8 @@ Decided by the person on 2026-11-22:
 
 ## Carried from s09 and s10
 
-Moved from s10 on 2026-11-24, at the maintainer's request. Built and tested in CI; each waits on a run in the maintainer's own
-environment, not on code. Details stay under the task in `s09-e8-gap-collectors.md`.
-- [ ] s09-01 Application control policies from Intune: a real Graph export for the App Control for Business setting IDs.
-- [ ] s09-15 Firewall firmware update timeliness: whether the read-only role may call the firmware upgrade check, and a dry run on the maintainer's tenant.
-- [ ] s09-17 The Sophos trial on a real tenant.
-- [ ] s09-29 Microsoft 365 checks follow the capability map: a run against the maintainer's tenant.
-- [ ] s09-38 to s09-42 Agent-driven onboarding and manual evidence: the maintainer's own run with their agent, including s09-39, their XGS firewall.
-- [ ] s09-54 and s09-57 `make trial` on the maintainer's machine.
+Moved from s10 on 2026-11-24, at the maintainer's request, then on to [s12](s12-e8-mapping-and-adoption.md#carried-from-s09-to-s11)
+when s11 closed, with the s11-08 walkthrough trial. Each waits on a person, tenant or machine, not on code.
 
 ## Discovered work
 
@@ -610,3 +606,18 @@ environment, not on code. Details stay under the task in `s09-e8-gap-collectors.
 - s11-15: the local seed (`make ca-up`) now applies the example scope with the example repo's own `hound.yaml`, while `examples/example-essential-eight.yaml` stays the Essential Eight-only config for runs. Consider whether the local stack should run with the repo's config too, so the AI collectors run there by default.
 
 ## Sprint review
+
+**2026-11-24.** Closed at the maintainer's request, to go on to s12 and release 1. All 16 tasks done, each with red and green
+commits; CI green on every job, the functional job included.
+
+- **Programmes** (s11-01): a framework, its groups and the audit of record, so reports work per programme; `hound programme list`.
+- **System security plan and POA&M** (s11-02 to s11-07, s11-16): drafted from CISO Assistant's records in the NIST SP 800-18 layout, with
+  an ISM annex for the Essential Eight using the ASD Blueprint annex columns; reviewed, approved, versioned by hash, published with the
+  audit report and written as Word. Control descriptions can be drafted by the maintainer's own agent; hound has no model.
+- **AI governance (AI6)** (s11-08 to s11-15): a plain-English primer, walkthrough and training outline; the AI6 framework and mapping;
+  the AI register as an `ai` block per system, shown in CISO Assistant as labels and description lines; screening with the National AI
+  Centre's seven questions and its register template's columns (s11-11, the maintainer's choice over our own tiers); the `ai-register`
+  collector and `ciso-assistant` profile checks; register counts for programme reports.
+
+Moved to s12, waiting on a person, tenant or machine: the s11-08 walkthrough trial, and s09-01, s09-15, s09-17, s09-29, s09-38 to
+s09-42, s09-54 and s09-57. Open findings are under Discovered work.
