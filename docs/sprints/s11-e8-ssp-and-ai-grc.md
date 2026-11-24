@@ -77,7 +77,7 @@ What CISO Assistant offers today (checked in the v4.3.4 source, not yet run live
 Result (2026-11-24): no CISO Assistant can run in the cloud session, so the check is `SspFunctionalTests.Builds_the_essential_eight_plan_from_the_seeded_records`, which runs `hound ssp build --programme essential-eight --json` against CISO Assistant v4.3.4 seeded from the example repo, with a `scope/ssp.yaml` for the Essential Eight programme. It passed in CI (functional job, run 45337444001): the inventory is Example 365, Example laptops and Example backup service with their owners from CISO Assistant, AC-MFA is among the controls, ISM-1486 reads compliant, and the document is the identity and access policy; the plan is kept in `test-results/ssp/`. The example has no suppliers yet, so external services are covered by `SspBuilderTests` until s11-07 adds them. Also built: `ssp.role_missing`, the `ssps` schema, and control status read from CISO Assistant as an observed value (never compared or written).
 
 ### s11-03 Requirement statements, gaps and POA&M
-- [ ] Done
+- [x] Done
 
 **Story:** As an assessor, I want each requirement's implementation status, statement, responsible party and evidence stated the same way every time, so that I can trust the SSP was generated from the records and see what is missing.
 
@@ -96,6 +96,8 @@ Result (2026-11-24): no CISO Assistant can run in the cloud session, so the chec
 
 **Functional check**
 - On the example repo, `make run ARGS="ssp build --programme essential-eight --strict"` exits non-zero and lists the example's gaps; after adding the missing control description it exits zero.
+
+Result (2026-11-24): `SspFunctionalTests.Strict_lists_the_example_gaps_and_the_poam_lists_what_is_not_met` passed in CI against CISO Assistant v4.3.4 seeded from the example (head 6e28ba4): `hound ssp build --programme essential-eight --strict` exits 1 and lists `ISM-1486: no responsible party` (compliant by hand with no control linked), and `hound ssp poam` lists the rows not implemented; both outputs are kept in `test-results/ssp/`. The second half (fix and exit zero) is covered by the unit tests, since the fix for ISM-1486 is linking a control, which s11-07 does in the example. Deviation, decided while building: a row *not implemented* is not a gap, because the POA&M carries it; otherwise every unassessed row of a real audit would block `--strict`. Rows in place need a statement and an owner, Planned rows an owner, Not applicable rows a justification. Flagging requirements a profile does not allow on a POA&M waits for s17-03's list.
 
 ### s11-04 One SSP layout (NIST SP 800-18), with an ISM annex for the Essential Eight
 - [ ] Done
