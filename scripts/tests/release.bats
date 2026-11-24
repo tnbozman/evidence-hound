@@ -52,13 +52,19 @@ setup() {
   grep -q -- '--add-source "$out/packages"' "$root/scripts/release-build.sh"
 }
 
-@test "the only secret is the optional NuGet key; no long-lived token is needed otherwise" {
+@test "the only publishing secret is the optional NuGet key; the deny-list is the only other secret" {
   secrets="$(grep -o 'secrets\.[A-Z_]*' "$wf" | sort -u | tr '\n' ' ')"
-  [ "$secrets" = "secrets.GITHUB_TOKEN secrets.NUGET_API_KEY " ]
+  [ "$secrets" = "secrets.GITHUB_TOKEN secrets.NUGET_API_KEY secrets.ORG_DENYLIST " ]
 }
 
 @test "the documentation site is built strictly and published to GitHub Pages with the release" {
   publish="$(sed -n '/^  publish:/,/^  [a-z-]*:$/p' "$wf")"
   grep -q 'make docs' <<<"$publish"
   grep -q 'mkdocs gh-deploy' <<<"$publish"
+}
+
+@test "a release is checked for organisation data across the full history before anything is built" {
+  verify="$(sed -n '/^  verify:/,/^  publish:$/p' "$wf")"
+  grep -q 'scripts/check-org-data.sh --history' <<<"$verify"
+  grep -q 'ORG_DENYLIST: ${{ secrets.ORG_DENYLIST }}' <<<"$verify"
 }
