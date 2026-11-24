@@ -1,6 +1,6 @@
 # s11 Essential Eight system security plan and AI governance (AI6)
 
-Status: Planned
+Status: In progress
 
 **Goal:** two parts that share one idea, reporting per programme. Part 1: `hound` drafts the Essential Eight system security plan (SSP) and POA&M from the records already in CISO Assistant, in the shape the ISM expects, for people to review and sign. Part 2: AI governance runs on the same machinery as cyber compliance. The Australian *Guidance for AI Adoption* (AI6) is loaded into CISO Assistant as a versioned custom framework, the AI system register lives in CISO Assistant as assets, framework-neutral `ai.*` checks are read from CISO Assistant and mapped to AI6 requirements, and the committee and board reports (s12) work per programme, so AI6 is reported beside the Essential Eight rather than bolted on.
 
