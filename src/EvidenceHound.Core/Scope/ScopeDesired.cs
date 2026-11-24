@@ -35,7 +35,7 @@ public static partial class ScopeDesired
                 ScopeKind.Perimeter, PerimeterKey(d.Name, p.Name), Fields(("name", p.Name), ("ref_id", p.RefId), ("description", p.Description), ("domain", d.Name))))),
             .. setup.Domains.SelectMany(d => d.Systems.Select(s => new ScopeObject(ScopeKind.System, s.Name, Fields(
                 ("ref_id", s.RefId), ("type", s.Type == SystemType.Primary ? "primary" : "supporting"), ("description", s.Description), ("owner", s.Owner),
-                ("domain", d.Name), ("parents", Joined(s.Parents.Select(p => p.Value))))))),
+                ("domain", d.Name), ("parents", Joined(s.Parents.Select(p => p.Value))), ("labels", DataLabels(s.Data)))))),
             .. scope.Audits.Select(a => new ScopeObject(ScopeKind.Audit, a.RefId, Fields(
                 ("name", a.Name), ("framework", a.Framework.Value), ("groups", Joined(a.Groups.Select(g => g.Value))), ("domain", a.Domain.Value),
                 ("perimeter", a.Perimeter.Value), ("eta", a.Eta), ("due_date", a.DueDate), ("authors", Joined(a.Authors)), ("reviewers", Joined(a.Reviewers)),
@@ -127,7 +127,8 @@ public static partial class ScopeDesired
             ("parent", entity.Parent?.Value), ("domain", entity.Domain?.Value), ("dependency", Whole(entity.Dependency)), ("penetration", Whole(entity.Penetration)),
             ("maturity", Whole(entity.Maturity)), ("trust", Whole(entity.Trust)), ("identifiers", Identifiers(entity.Identifiers)))),
         .. entity.Solutions.Select(s => new ScopeObject(ScopeKind.Solution, s.RefId, Fields(
-            ("name", s.Name), ("description", s.Description), ("entity", entity.RefId), ("criticality", Whole(s.Criticality))))),
+            ("name", s.Name), ("description", SolutionDescription(s)), ("entity", entity.RefId), ("criticality", Whole(s.Criticality)),
+            ("labels", DataLabels(s.Data))))),
         .. entity.Contracts.Select(c => new ScopeObject(ScopeKind.Contract, c.RefId, Fields(
             ("name", c.Name), ("description", c.Description), ("entity", entity.RefId), ("domain", entity.Domain?.Value), ("status", c.Status),
             ("start_date", c.Start), ("end_date", c.End), ("annual_expense", Amount(c.AnnualExpense)), ("currency", c.Currency),
@@ -343,13 +344,39 @@ public static partial class ScopeDesired
         return $"{auditRefId}/{requirement.Value}";
     }
 
-    /// <summary>A list as one field value: sorted, joined with ", ", and null when empty.</summary>
+    /// <summary>The kinds of sensitive data as filtering labels, such as <c>data-cui</c>.</summary>
+    private static string? DataLabels(IEnumerable<SensitiveData> data) =>
+        Joined(data.Select(d => $"data-{SensitiveData.Code(d.Kind).Replace('_', '-')}").Distinct());
+
+    /// <summary>A solution's description, then each kind of data it handles with what authorises it, so a reader sees it in CISO Assistant.</summary>
+    private static string? SolutionDescription(ScopeSolution solution)
+    {
+        if (solution.Data.Count == 0)
+        {
+            return solution.Description;
+        }
+
+        var lines = solution.Data.Select(d =>
+            $"- {SensitiveData.Code(d.Kind)}{(d.Detail is null ? "" : $" ({d.Detail})")}, {d.Role.ToString().ToLowerInvariant()}: {Authority(d.Authority)}");
+        return $"{(solution.Description is null ? "" : solution.Description + "\n\n")}Sensitive data:\n{string.Join('\n', lines)}";
+    }
+
+    private static string Authority(DataAuthority? authority) => authority is null
+        ? "no authority recorded"
+        : string.Join(", ", new[]
+        {
+            authority.Name,
+            authority.Evidence is null ? null : $"evidence {authority.Evidence}",
+            authority.Expires is { } expires ? $"expires {expires.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}" : null,
+        }.OfType<string>());
+
     /// <summary>Whether CISO Assistant takes the text as a filtering label: letters, digits, underscores and hyphens, at most 36.</summary>
     public static bool IsLabel(string text) => LabelPattern().IsMatch(text);
 
     [GeneratedRegex(@"^[\w-]{1,36}$", RegexOptions.CultureInvariant)]
     private static partial Regex LabelPattern();
 
+    /// <summary>A list as one field value: sorted, joined with ", ", and null when empty.</summary>
     public static string? Joined(IEnumerable<string> values) =>
         values.Order(StringComparer.Ordinal).ToArray() is { Length: > 0 } sorted ? string.Join(", ", sorted) : null;
 

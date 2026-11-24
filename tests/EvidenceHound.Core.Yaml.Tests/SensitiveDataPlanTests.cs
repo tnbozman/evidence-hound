@@ -10,7 +10,7 @@ public class SensitiveDataPlanTests
     {
         var desired = ScopeDesired.From(SensitiveDataScopeTests.Parse(SensitiveDataScopeTests.Supplier(), SensitiveDataScopeTests.Setup()).Scope);
 
-        var solution = desired.Single(o => o.Kind == ScopeKind.Solution);
+        var solution = desired.Single(o => o.Kind == ScopeKind.Solution && o.Key == "SOL-EXCLOUD-HOST");
         solution.Fields["labels"].ShouldBe("data-cui, data-pii");
         solution.Fields["description"].ShouldContain("cui (CUI//SP-CTI), stores: FedRAMP Moderate equivalent, evidence suppliers/example-cloud-fedramp.pdf, expires 2027-06-30");
         solution.Fields["description"].ShouldContain("pii, stores: no authority recorded");
