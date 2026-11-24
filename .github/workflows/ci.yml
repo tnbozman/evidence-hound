@@ -153,11 +153,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Install bats
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq bats
-      - name: Static checks of the Compose stack (docker compose config)
+      - name: Install bats and age
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq bats age
+      - name: Static checks of the Compose stack and the backup scripts
         run: make test-compose
-      - name: Smoke test (stack up, healthy, runner runs once with the fake collector, HTTPS through Caddy)
+      - name: Smoke test (stack up, healthy, runner runs once with the fake collector, backup and restore test, HTTPS through Caddy)
         if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
         run: make compose-smoke
 

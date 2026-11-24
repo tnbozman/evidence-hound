@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # Smoke test for the reference Compose stack: bring it up from .env.example with throwaway secrets, wait for
 # health, seed a service account and the example scope, run the runner once with the fake collector, check
-# `hound status` and HTTPS through Caddy, then tear everything down (volumes too).
+# `hound status`, back up and restore into a second project (s13-01), check HTTPS through Caddy, then tear
+# everything down (volumes too).
 #
 # Usage: deploy/compose/smoke-test.sh        (make compose-smoke)
 # Environment: HOUND_RUNNER_IMAGE to test a locally built runner image (default: build it from this checkout).
-# Needs Docker with Compose, curl and openssl. Everything it creates is fictional and deleted on exit.
+# Needs Docker with Compose, curl, openssl and age. Everything it creates is fictional and deleted on exit.
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -77,6 +78,25 @@ say "creating the example staff users the example scope names (the dev seed; its
 say "applying the example scope through the runner image"
 compose run --rm --no-deps runner scope apply /config/scope --config /config/hound.yaml >"$work/scope-apply.json" \
   || { cat "$work/scope-apply.json"; exit 1; }
+
+# s13-01: back up the live stack, restore it into a second project, and record the restore test as manual evidence.
+say "backing up the stack (age-encrypted)"
+age-keygen -o "$work/backup.key" 2>/dev/null
+age-keygen -y "$work/backup.key" >"$work/backup.pub"
+mkdir -p "$work/backups"
+HOUND_BACKUP_DIR="$work/backups" HOUND_BACKUP_RECIPIENTS="$work/backup.pub" "$dir/backup.sh"
+ls "$work/backups/"ciso-assistant-*.tar.age >/dev/null
+
+say "restoring the backup into a second project and comparing audit counts"
+HOUND_BACKUP_DIR="$work/backups" HOUND_BACKUP_IDENTITY="$work/backup.key" HOUND_RESTORE_SOURCE=example-backup-restore-test \
+  "$dir/restore-test.sh" | tee "$work/restore.txt"
+grep -q '^Restore test: passed' "$work/restore.txt"
+grep -Eq '^Audits at backup: [1-9]' "$work/restore.txt"
+
+say "checking the restore result is in the manual source's drop folder"
+docker run --rm -v "${COMPOSE_PROJECT_NAME}_runner-data:/data:ro" "postgres:16.11" \
+  sh -c 'ls /data/manual/example-backup-restore-test/restore-test-*.txt' | tee "$work/dropped.txt"
+[[ -s "$work/dropped.txt" ]]
 
 say "running the runner once with the fake collector"
 compose run --rm --no-deps runner run --config /config-smoke/hound.yaml
