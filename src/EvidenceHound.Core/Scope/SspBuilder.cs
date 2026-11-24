@@ -10,7 +10,7 @@ namespace EvidenceHound.Core.Scope;
 /// </summary>
 public static class SspBuilder
 {
-    public static SspDocument Build(ScopeSsp ssp, ScopeDocument scope, IReadOnlyList<ActualObject> held, FrameworkSnapshot? snapshot = null)
+    public static SspDocument Build(ScopeSsp ssp, ScopeDocument scope, IReadOnlyList<ActualObject> held, FrameworkSnapshot? snapshot = null, DateOnly? today = null)
     {
         ArgumentNullException.ThrowIfNull(ssp);
         ArgumentNullException.ThrowIfNull(scope);
@@ -19,7 +19,8 @@ public static class SspBuilder
         var programme = scope.Setup.Programmes.Single(p => p.Id == ssp.Programme.Value);
         var systems = scope.Setup.Domains.SelectMany(d => d.Systems).GroupBy(s => s.Name, StringComparer.Ordinal).ToDictionary(g => g.Key, g => g.First(), StringComparer.Ordinal);
         var inBoundary = scope.Audits.Where(a => a.Perimeter.Value == ssp.Perimeter.Value).SelectMany(a => a.Systems).DistinctBy(s => s.Value).ToArray();
-        var rows = held.Where(o => o.Held.Kind == ScopeKind.Assessment && o.Held.Key.StartsWith(programme.Audit.Value + "/", StringComparison.Ordinal))
+        var audit = AuditOfRecord(scope, programme, today ?? DateOnly.FromDateTime(DateTime.UtcNow));
+        var rows = held.Where(o => o.Held.Kind == ScopeKind.Assessment && o.Held.Key.StartsWith(audit + "/", StringComparison.Ordinal))
             .OrderBy(o => o.Held.Key, StringComparer.Ordinal)
             .ToArray();
         ActualObject? Find(ScopeKind kind, string? key) => key is not null && objects.TryGetValue((kind, key), out var found) ? found : null;
@@ -37,7 +38,7 @@ public static class SspBuilder
             Repo(ssp.SystemName, ssp.At),
             Repo(ssp.Version, ssp.At),
             Repo(programme.Framework),
-            Repo(programme.Audit),
+            Repo(programme.Audit with { Value = audit }),
             Repo(ssp.Perimeter),
             [.. ssp.Roles.Select(r => new SspRoleValue(r.Role, Repo(r.Holder)))],
             [.. inBoundary.Select(s => Inventory(s, Find(ScopeKind.System, s.Value)))],
@@ -52,6 +53,15 @@ public static class SspBuilder
             SystemType = Repo(ssp.SystemType, ssp.At),
         };
         return snapshot is null ? document : document with { Annex = SspAnnex.Of(document, snapshot, programme.Groups) };
+    }
+
+    /// <summary>The audit whose rows the plan reads: the programme's audit, or, when that is a series, its period open on <paramref name="today"/>.</summary>
+    public static string AuditOfRecord(ScopeDocument scope, ScopeProgramme programme, DateOnly today)
+    {
+        ArgumentNullException.ThrowIfNull(scope);
+        ArgumentNullException.ThrowIfNull(programme);
+        var series = scope.Audits.Where(a => a.Cycle is not null).ToDictionary(a => a.RefId, a => a.Cycle!, StringComparer.Ordinal);
+        return AuditPeriods.Target(programme.Audit.Value, series, today);
     }
 
     private static SspSystem Inventory(ScopeRef system, ActualObject? held)

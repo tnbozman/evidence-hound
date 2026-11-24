@@ -359,15 +359,16 @@ internal static class SspCommands
         ScopeSsp ssp, ScopeCommands.CheckedScope checkedScope, CisoAssistantOptions connection, ILoggerFactory loggers, ILogger logger, CancellationToken cancellationToken)
     {
         using var services = new ServiceCollection().AddSingleton(loggers).AddCisoAssistantClient(connection).BuildServiceProvider();
-        var audit = checkedScope.Scope.Setup.Programmes.Single(p => p.Id == ssp.Programme.Value).Audit.Value;
+        var programme = checkedScope.Scope.Setup.Programmes.Single(p => p.Id == ssp.Programme.Value);
+        var today = checkedScope.Inputs.Today ?? DateOnly.FromDateTime(DateTime.UtcNow);
         var query = ScopeStateQuery.For(checkedScope.Scope, ScopeDesired.From(checkedScope.Scope, checkedScope.Inputs)) with
         {
             ThirdParties = true,
-            AllRowsOf = new HashSet<string>(StringComparer.Ordinal) { audit },
+            AllRowsOf = new HashSet<string>(StringComparer.Ordinal) { SspBuilder.AuditOfRecord(checkedScope.Scope, programme, today) },
         };
         var held = await services.GetRequiredService<IScopeStateSource>().ReadAsync(query, cancellationToken);
         return held.Match<(int, SspDocument?)>(
-            objects => (ExitCodes.Ok, SspBuilder.Build(ssp, checkedScope.Scope, objects, Snapshot(checkedScope, audit))),
+            objects => (ExitCodes.Ok, SspBuilder.Build(ssp, checkedScope.Scope, objects, Snapshot(checkedScope, programme.Audit.Value), today)),
             problems => (Log.Problems(logger, problems), null));
     }
 

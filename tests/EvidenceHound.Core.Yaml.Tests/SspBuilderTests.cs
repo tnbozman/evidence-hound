@@ -139,7 +139,7 @@ public class SspBuilderTests
         var open = AuditPeriods.On("EXAMPLE-BASELINE-2026", cycle, today).RefId;
         var ended = AuditPeriods.On("EXAMPLE-BASELINE-2026", cycle, new DateOnly(2026, 8, 1)).RefId;
         const string Series = "EXAMPLE-BASELINE-2026/";
-        ActualObject Rekey(ActualObject o, string period) => o with { Held = o.Held with { Key = period + "/" + o.Held.Key[Series.Length..] } };
+        static ActualObject Rekey(ActualObject o, string period) => o with { Held = o.Held with { Key = period + "/" + o.Held.Key[Series.Length..] } };
         var fixture = SspFixture.Held();
         var stale = Rekey(fixture.First(o => o.Held.Key == Series + "EX-1.1"), ended);
         ActualObject[] held =
@@ -153,6 +153,7 @@ public class SspBuilderTests
 
         document.Requirements.Select(r => r.Ref.Value).ShouldBe(["EX-1.1", "EX-1.2", "EX-2.1"]);
         document.Requirements[0].Result.Value.ShouldBe("compliant");
+        document.Audit.Value.ShouldBe(open, "the audit report is downloaded from the period, which CISO Assistant holds");
     }
 
     private static SspDocument Build() => SspBuilder.Build(Ssp(), SspFixture.Parse().Scope, SspFixture.Held());
