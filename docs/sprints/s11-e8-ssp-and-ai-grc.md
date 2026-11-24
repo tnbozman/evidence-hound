@@ -514,6 +514,8 @@ environment, not on code. Details stay under the task in `s09-e8-gap-collectors.
 
 ## Discovered work
 
+- (s11-16, for s12) The ASD Blueprint SSP annex template (June 2026) lists ISM-1899 under the Essential Eight where CISO Assistant's `essential-eight-2023` library (v3, CISO Assistant v4.3.4) lists ISM-1900. Check both against the current Essential Eight maturity model and ISM, and against a newer library version, while completing the mapping.
+
 - s11-02: a programme whose audit of record is an audit series (with a cycle) has rows under each period's ref_id; `hound ssp build` reads rows under the series ref_id only. Pick the current period's audit before s11-05 versions the plan.
 
 - s11-01: framework snapshots hold parent node URNs but not their titles, so `hound programme list` shows a strategy as its short code (`mfa`, `rap`). The s12 reports need the name ("Multi-factor authentication"): add parent titles to the snapshot (`hound framework snapshot`) before s12-05.

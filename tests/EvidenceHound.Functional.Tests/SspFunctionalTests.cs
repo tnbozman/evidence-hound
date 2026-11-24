@@ -95,6 +95,12 @@ public sealed class SspFunctionalTests(CisoAssistantFixture ciso)
         markdown.Split('\n').Count(l => l.StartsWith("| ISM-1815 |", StringComparison.Ordinal)).ShouldBe(1, markdown);
         markdown.ShouldContain("| mfa, rap, ac, uah |", Case.Sensitive, markdown);
         markdown.ShouldContain("## Appendix: plan of action and milestones", Case.Sensitive, markdown);
+
+        // s11-16: the ASD annex template's columns; ISM-1504's reference control in CISO Assistant's library is tech.mfa.
+        markdown.ShouldContain("| Control | Description | Strategies | Maturity levels | Control type | Responsible entity | Implementation status |", Case.Sensitive, markdown);
+        var mfa = markdown.Split('\n').Single(l => l.StartsWith("| ISM-1504 |", StringComparison.Ordinal));
+        mfa.ShouldContain("| Technical |", Case.Sensitive, mfa);
+        mfa.ShouldMatch(@"\| (Consumer|Shared|Outsourced service provider|Cloud service provider|Not applicable) \| (Effective|Ineffective|Not implemented|Not applicable|Not assessed) \|", mfa);
     }
 
     private static string CopyOfExampleScope()

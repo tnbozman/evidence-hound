@@ -62,7 +62,7 @@ A prompt for a ref ID (`hound add system`, `hound add control`, `hound onboard <
 
 ## controls.yaml
 
-`controls` lists each applied control once, because CISO Assistant treats an applied control as a reusable object serving many requirements across frameworks: `ref_id` (the stable key), `name`, and optionally `description`, `domain` (left out for the global domain), `owner`, `status` (`to_do`, `in_progress`, `on_hold`, `active`, `degraded`, `deprecated`), `priority` (`"1"` to `"4"`), `category`, `eta`, `systems`, `reference_control` (a URN) and `documents` (ids of documents declared in audit files).
+`controls` lists each applied control once, because CISO Assistant treats an applied control as a reusable object serving many requirements across frameworks: `ref_id` (the stable key), `name`, and optionally `description`, `domain` (left out for the global domain), `owner`, `status` (`to_do`, `in_progress`, `on_hold`, `active`, `degraded`, `deprecated`), `priority` (`"1"` to `"4"`), `category`, `eta`, `systems`, `reference_control` (a URN), `documents` (ids of documents declared in audit files) and `responsible_entity` (`consumer`, `shared`, `outsourced_service_provider`, `cloud_service_provider` or `not_applicable`: who implements the control, for the SSP annex only; hound never writes it to CISO Assistant. Without it the annex infers *Shared* when the control covers a system a supplier's solution provides, and *Consumer* otherwise).
 
 ## access.yaml
 

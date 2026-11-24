@@ -42,6 +42,30 @@ ISM-0041 asks for "an overview of the system (covering the system's purpose, the
 | 15. Ongoing system security plan maintenance | Rebuild with `hound ssp build`; review at least once a year and after significant change. |
 | Appendix: plan of action and milestones | The same items as `hound ssp poam`. |
 
+## The ISM annex's columns
+
+The `ism` annex follows the columns of ASD's Blueprint *System Security Plan Annex Template* (the template the ISM's documentation guideline points to), next to the SP 800-18 status the plan and POA&M use:
+
+| Column | Comes from |
+| --- | --- |
+| Control, Description | The framework snapshot (`hound framework snapshot` keeps each requirement's full text). |
+| Strategies | The parent nodes the control is listed under. An ISM control that serves several strategies appears once. |
+| Maturity levels | The implementation groups the control is in. |
+| Control type | *Policy*, *Procedure*, *Technical* or *Documentation*, from the reference controls CISO Assistant's library links the requirement to (ids starting `pol.`, `proc.`, `tech.` and `doc.`). |
+| Responsible entity | `responsible_entity` on a linked control in `controls.yaml`, if set. Otherwise *Shared* when a linked control covers a system a supplier's solution provides, else *Consumer*. |
+| Implementation status | The ASD template's terms, from the requirement's result in CISO Assistant (see below). |
+| SP 800-18 status, Statement, Responsible, POA&M | As described above. |
+
+| Result in CISO Assistant | Implementation status (ASD) | SP 800-18 status |
+| --- | --- | --- |
+| `compliant` | Effective | Implemented |
+| `partially_compliant` | Ineffective | Partially implemented |
+| `non_compliant` | Not implemented | Planned or Not implemented |
+| `not_applicable` | Not applicable | Not applicable |
+| `not_assessed`, or no row | Not assessed | Planned or Not implemented |
+
+*Partially compliant* maps to *Ineffective*, the template's nearest term; the maintainer reviews this choice. The template's *Alternate control* and *No visibility* have no CISO Assistant result, so hound does not use them yet.
+
 A section file that does not exist yet prints as "_Section `name` is not written yet._", so a draft still builds.
 
 `--json` gives the same plan with every value and its source, including the annex (`annex[]`, with `poam` linking each unmet row to its POA&M item).
