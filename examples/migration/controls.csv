@@ -1,0 +1,5 @@
+ref_id,name,owner,category,systems,requirements
+AC-APP-CONTROL,Application control on workstations,it@example.com,technical,Example CAD workstations,ISM-0843
+AC-PATCH-APPS,Patch applications within two weeks,it@example.com,process,Example CAD workstations,"ISM-1690,ISM-1693"
+AC-MACROS,Block macros from the internet,it@example.com,technical,Example CAD workstations,ISM-1488
+AC-ENG-BACKUP,Back up the engineering file share daily,eng@example.com,technical,Example engineering file share,"ISM-1511,ISM-1515"
