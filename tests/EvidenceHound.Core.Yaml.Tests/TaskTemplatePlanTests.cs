@@ -26,10 +26,14 @@ public class TaskTemplatePlanTests
             ["schedule"] = "every 3 months",
             ["evidence"] = "EV-ADMIN-REVIEW",
             ["controls"] = "AC-MFA",
-            ["requirements"] = "EX-1.2",
+            ["requirements"] = "EXAMPLE-BASELINE-2026/EX-1.2",
             ["enabled"] = "true",
         });
         task.Initial["first_due"].ShouldBe("2027-02-23");
+
+        // A row naming no requirements links every requirement its control supports in each audit that lists the control.
+        var mfa = declared.Single(d => d.Kind == ScopeKind.Evidence && d.Key == "EV-MFA");
+        mfa.Fields.ContainsKey("requirements").ShouldBeFalse();
         TaskSchedules.Of(3).ShouldBe(new TaskSchedule("MONTHLY", 3));
         TaskSchedules.Of(6).ShouldBe(new TaskSchedule("MONTHLY", 6));
         TaskSchedules.Of(12).ShouldBe(new TaskSchedule("YEARLY", 1));
