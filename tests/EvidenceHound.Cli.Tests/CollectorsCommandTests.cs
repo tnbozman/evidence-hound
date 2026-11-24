@@ -19,6 +19,10 @@ public sealed class CollectorsCommandTests : IDisposable
 
         exitCode.ShouldBe(ExitCodes.Ok);
         _output.ToString().ReplaceLineEndings("\n").ShouldBe("""
+            ai-register 1.0.0
+              checks: ai.human_oversight_documented, ai.impact_assessment_before_use, ai.owner_assigned, ai.register_complete, ai.screening_recorded, ai.test_results_current, ai.tested_before_use
+              settings: scope (required)
+              secrets: none
             fake 1.0.0
               checks: backup.daily, backup.restore_tested, identity.mfa.admins, identity.mfa.users
               settings: tenant (optional)
