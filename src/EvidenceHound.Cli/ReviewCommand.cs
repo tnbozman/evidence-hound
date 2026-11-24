@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text.Json.Nodes;
 using EvidenceHound.Core.Results;
 using EvidenceHound.Core.Review;
+using EvidenceHound.Runtime;
 using EvidenceHound.Runtime.Collectors;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -38,8 +39,57 @@ internal static class ReviewCommand
                 },
                 problems => Task.FromResult(Log.Problems(logger, problems)));
         });
-        return new Command("review", "Review and sign off everything that waits on a person, in one guided session.") { pending };
+        var forTime = new Option<string>("--for") { Description = "How long you have, such as 60m or 2h. The session takes the most urgent items that fit.", DefaultValueFactory = _ => "60m" };
+        var noApply = new Option<bool>("--no-apply") { Description = "Stop once the accepted items are written to the repo's files; do not plan or apply them to CISO Assistant." };
+        var review = new Command("review", "One guided session: read each item that waits on you, with the agent's recommendation, then accept, challenge or skip it. Accepted items are written and applied in one batch. Needs a person at a terminal.")
+        {
+            repo, config, forTime, noApply, pending,
+        };
+        review.SetAction(async (parseResult, cancellationToken) =>
+        {
+            if (!terminal.Interactive)
+            {
+                Log.Usage(logger, "hound review needs a person at a terminal: sign-off is never piped in or run by an agent. Run it yourself, for example in the VS Code terminal.");
+                return ExitCodes.Usage;
+            }
+
+            if (Minutes(parseResult.GetValue(forTime)) is not { } minutes)
+            {
+                return Log.Problems(logger, [new Problem("review.time_invalid", $"--for '{parseResult.GetValue(forTime)}' is not a time; write it as minutes or hours, such as 60m or 2h.")]);
+            }
+
+            var root = parseResult.GetValue(repo)?.FullName ?? Directory.GetCurrentDirectory();
+            var deployment = parseResult.GetValue(config) ?? new FileInfo(Path.Combine(root, "hound.yaml"));
+            var session = new Session(root, deployment, terminal, registry, AuditSeries.Today(configuration), new SystemClock());
+            var done = await session.RunAsync(minutes, cancellationToken);
+            if (done is Result<Unit>.Fail { Errors: var problems })
+            {
+                return Log.Problems(logger, problems);
+            }
+
+            if (parseResult.GetValue(noApply) || session.Accepted.Count == 0)
+            {
+                return ExitCodes.Ok;
+            }
+
+            await terminal.Output.WriteLineAsync("\nWhat applying the accepted items changes in CISO Assistant:".AsMemory(), cancellationToken);
+            return await ScopeCommands.PlanThenApplyAsync(
+                new DirectoryInfo(Path.Combine(root, "scope")), deployment.Exists ? deployment : null, configuration, registry, loggers, terminal.Output,
+                async ct => (await new Prompt(terminal).AskAsync("Apply these changes to CISO Assistant now (y, n)", ct))?.ToLowerInvariant() == "y",
+                cancellationToken);
+        });
+        return review;
     }
+
+    /// <summary>Minutes from 60m, 2h or a plain number of minutes.</summary>
+    internal static int? Minutes(string? text) => text?.Trim().ToLowerInvariant() switch
+    {
+        null or "" => null,
+        var t when t.EndsWith('h') && int.TryParse(t[..^1], NumberStyles.None, CultureInfo.InvariantCulture, out var h) && h > 0 => h * 60,
+        var t when t.EndsWith('m') && int.TryParse(t[..^1], NumberStyles.None, CultureInfo.InvariantCulture, out var m) && m > 0 => m,
+        var t when int.TryParse(t, NumberStyles.None, CultureInfo.InvariantCulture, out var n) && n > 0 => n,
+        _ => null,
+    };
 
     /// <summary>Every item waiting on a person, most urgent first: what <c>hound approve</c> would ask, and each pending manual evidence proposal.</summary>
     internal static async Task<Result<IReadOnlyList<ReviewItem>>> QueueAsync(
@@ -51,7 +101,9 @@ internal static class ReviewCommand
         var manual = deployment.Exists
             ? await ManualProposalCommands.PendingAsync(deployment, registry, cancellationToken)
             : Result.Ok<IReadOnlyList<ReviewItem>>([]);
-        return walked.Bind(_ => manual).Map(proposals => ReviewOrder.Order([.. listing.Items, .. proposals]));
+        var challenges = await Challenges.ReadAsync(repo, cancellationToken);
+        return walked.Bind(_ => manual).Map(proposals => ReviewOrder.Order([.. listing.Items, .. proposals]).Select(i => i with { Challenge = challenges.GetValueOrDefault(i.Key) }).ToArray())
+            .Map(items => (IReadOnlyList<ReviewItem>)items);
     }
 
     private static string Json(IReadOnlyList<ReviewItem> items) => new JsonObject
@@ -70,6 +122,7 @@ internal static class ReviewCommand
             ["recommendation"] = i.Recommendation is { } r
                 ? new JsonObject { ["answer"] = r.Answer, ["reasons"] = r.Reasons, ["sources"] = new JsonArray([.. r.Sources.Select(s => (JsonNode)s)]) }
                 : null,
+            ["challenge"] = i.Challenge is { } c ? new JsonObject { ["note"] = c.Note, ["by"] = c.By, ["on"] = c.On } : null,
         })]),
     }.ToJsonString(OnboardAgentCommand.Indented);
 
@@ -77,4 +130,167 @@ internal static class ReviewCommand
         ? "Nothing is waiting on a person."
         : string.Create(CultureInfo.InvariantCulture, $"{items.Count} item(s), about {items.Sum(i => i.Minutes)} minutes:\n")
             + string.Join('\n', items.Select(i => $"- {i.Title.Split('\n')[0]}"));
+
+    /// <summary>
+    /// One guided session: the most urgent items that fit the time, each read and answered by the person, then the accepted ones written as
+    /// <c>hound approve</c> and <c>hound manual approve</c> write them, challenges kept for the agent, and one sign-off record.
+    /// </summary>
+    private sealed class Session(string repo, FileInfo deployment, Terminal terminal, CollectorRegistry registry, DateOnly today, Core.IClock clock)
+    {
+        private readonly Dictionary<string, string> _answers = new(StringComparer.Ordinal);
+        private readonly List<(string Key, string Note)> _challenged = [];
+        private readonly List<string> _skipped = [];
+        private readonly Prompt _prompt = new(terminal);
+        private string? _person;
+        private bool _quit;
+
+        public IReadOnlyList<string> Accepted => [.. _answers.Keys];
+
+        public async Task<Result<Unit>> RunAsync(int minutes, CancellationToken cancellationToken)
+        {
+            var queue = await QueueAsync(repo, deployment, terminal, registry, today, cancellationToken);
+            if (queue is Result<IReadOnlyList<ReviewItem>>.Fail failed)
+            {
+                return Result.Fail<Unit>(failed.Errors);
+            }
+
+            var all = queue.Match(q => q, _ => []);
+            if (all.Count == 0)
+            {
+                await terminal.Output.WriteLineAsync("Nothing is waiting on you.".AsMemory(), cancellationToken);
+                return Result.Ok(Unit.Value);
+            }
+
+            var chosen = ReviewOrder.Within(all, minutes);
+            await SayAsync(string.Create(CultureInfo.InvariantCulture, $"{all.Count} item(s) wait on you, about {all.Sum(i => i.Minutes)} minutes. This session takes {chosen.Count}, about {chosen.Sum(i => i.Minutes)} minutes, most urgent first."), cancellationToken);
+            _person = await _prompt.AskUntilAnsweredAsync("Your name, recorded with today's date on everything you accept", cancellationToken);
+            if (_person is null)
+            {
+                return Result.Ok(Unit.Value);
+            }
+
+            for (var i = 0; i < chosen.Count && !_quit; i++)
+            {
+                await AskAsync(chosen[i], string.Create(CultureInfo.InvariantCulture, $"[{i + 1}/{chosen.Count}]"), cancellationToken);
+            }
+
+            // Apply in one batch: approvals as hound approve writes them (asking about anything they unblock), then manual evidence.
+            var walk = new ApproveCommand.Walk(repo, terminal, _prompt, today, new SessionApprovals(this));
+            var walked = await walk.RunAsync(cancellationToken);
+            if (walked is Result<Unit>.Fail { Errors: var problems })
+            {
+                return Result.Fail<Unit>(problems);
+            }
+
+            var manual = _answers.Keys.Where(k => k.StartsWith("manual_evidence:", StringComparison.Ordinal)).ToHashSet(StringComparer.Ordinal);
+            if (manual.Count > 0 && deployment.Exists)
+            {
+                var attested = await ManualProposalCommands.AttestAsync(deployment, registry, manual, _person, clock, cancellationToken);
+                if (attested is Result<IReadOnlyList<string>>.Fail { Errors: var errors })
+                {
+                    return Result.Fail<Unit>(errors);
+                }
+            }
+
+            await Challenges.WriteAsync(repo, _challenged, _answers.Keys, _person, today, cancellationToken);
+            var record = await SignOffAsync(cancellationToken);
+            await terminal.Output.WriteLineAsync(string.Create(
+                CultureInfo.InvariantCulture,
+                $"Accepted {_answers.Count}, challenged {_challenged.Count}, skipped {_skipped.Count}. Sign-off recorded in {record}.{(_challenged.Count > 0 ? " Your agent answers each challenge before the next session." : "")}").AsMemory(), cancellationToken);
+            return Result.Ok(Unit.Value);
+        }
+
+        /// <summary>Shows one item and records the person's answer. Items a walk raises that were not in the queue are asked the same way.</summary>
+        public async Task AskAsync(ReviewItem item, string position, CancellationToken cancellationToken)
+        {
+            await SayAsync($"\n{position} {item.Title}", cancellationToken);
+            await SayAsync($"  Why it matters: {item.Why}", cancellationToken);
+            if (item.Recommendation is { } r)
+            {
+                await SayAsync($"  Recommended: {r.Answer}. {r.Reasons}{(r.Sources.Count > 0 ? $" (sources: {string.Join(", ", r.Sources)})" : "")}".TrimEnd(), cancellationToken);
+            }
+
+            if (item.Challenge is { } c)
+            {
+                await SayAsync($"  Challenged by {c.By} on {c.On}: {c.Note}", cancellationToken);
+            }
+
+            await SayAsync($"  If you accept: {item.Effect}", cancellationToken);
+            string[] accept = item.Kind == ReviewKind.SupplierReview ? ["ok", "warning", "blocker"] : ["a"];
+            var question = item.Kind == ReviewKind.SupplierReview ? "Conclude it (ok, warning, blocker; c challenge, s skip, q quit)" : "a accept, c challenge, s skip, q quit";
+            while (true)
+            {
+                var answer = (await _prompt.AskAsync(question, cancellationToken))?.ToLowerInvariant();
+                if (answer is null or "q")
+                {
+                    _quit = true;
+                    return;
+                }
+
+                if (accept.Contains(answer, StringComparer.Ordinal))
+                {
+                    _answers[item.Key] = answer == "a" ? "y" : answer;
+                    return;
+                }
+
+                if (answer == "s")
+                {
+                    _skipped.Add(item.Key);
+                    return;
+                }
+
+                if (answer == "c")
+                {
+                    var note = await _prompt.AskUntilAnsweredAsync("Your question or objection, for the agent to answer", cancellationToken);
+                    _challenged.Add((item.Key, note ?? ""));
+                    return;
+                }
+            }
+        }
+
+        public string Person => _person!;
+
+        public bool Decided(string key) => _answers.ContainsKey(key) || _skipped.Contains(key) || _challenged.Any(c => c.Key == key);
+
+        public string? Answer(string key) => _answers.GetValueOrDefault(key);
+
+        public bool Quit => _quit;
+
+        private async Task<string> SignOffAsync(CancellationToken cancellationToken)
+        {
+            var at = clock.UtcNow;
+            var relative = $"review/sign-offs/{at.ToString("yyyy-MM-dd-HHmmss", CultureInfo.InvariantCulture)}.yaml";
+            var file = Path.Combine(repo, relative);
+            Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+            static string List(IEnumerable<string> keys) => string.Concat(keys.Select(k => $"\n  - {Quote(k)}"));
+            var text = $"# One review session: who signed off, when, and every item they accepted.\nperson: {Quote(_person!)}\non: \"{today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}\"\nat: \"{at.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture)}\"\n"
+                + $"accepted:{(_answers.Count == 0 ? " []" : List(_answers.Keys))}\n"
+                + $"challenged:{(_challenged.Count == 0 ? " []" : string.Concat(_challenged.Select(c => $"\n  - key: {Quote(c.Key)}\n    note: {Quote(c.Note)}")))}\n"
+                + $"skipped:{(_skipped.Count == 0 ? " []" : List(_skipped))}\n";
+            await File.WriteAllTextAsync(file, text, cancellationToken);
+            return relative;
+        }
+
+        private Task SayAsync(string line, CancellationToken cancellationToken) => terminal.Error.WriteLineAsync(line.AsMemory(), cancellationToken);
+    }
+
+    /// <summary>The session's answers to the walk: what the person accepted, and anything newly unblocked, asked there and then.</summary>
+    private sealed class SessionApprovals(Session session) : ApproveCommand.IApprovals
+    {
+        public Task<string?> ApproverAsync(CancellationToken cancellationToken) => Task.FromResult<string?>(session.Person);
+
+        public async Task<ApproveCommand.Verdict> DecideAsync(ReviewItem item, string question, string[] answers, CancellationToken cancellationToken)
+        {
+            if (!session.Decided(item.Key) && !session.Quit)
+            {
+                await session.AskAsync(item, "[now ready]", cancellationToken);
+            }
+
+            return new ApproveCommand.Verdict(session.Answer(item.Key) is { } answer && answers.Contains(answer, StringComparer.Ordinal) ? answer : null);
+        }
+    }
+
+    /// <summary>A YAML scalar in double quotes when it needs them.</summary>
+    private static string Quote(string text) =>
+        text.Length > 0 && text.All(c => char.IsLetterOrDigit(c) || c is ' ' or '-' or '_' or '.' or '/') && !char.IsWhiteSpace(text[0]) ? text : JsonValue.Create(text).ToJsonString();
 }

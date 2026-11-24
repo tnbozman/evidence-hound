@@ -85,6 +85,35 @@ internal static class ManualProposalCommands
         return waiting.Map(all => (IReadOnlyList<ReviewItem>)[.. all.Select(Item)]);
     }
 
+    /// <summary>
+    /// Attests each pending proposal whose review key is in <paramref name="keys"/>, as proposed, in <paramref name="who"/>'s name. A file that
+    /// changed after the proposal is left, as <c>hound manual approve</c> leaves it. Returns the keys attested.
+    /// </summary>
+    internal static async Task<Result<IReadOnlyList<string>>> AttestAsync(
+        FileInfo config, CollectorRegistry registry, IReadOnlySet<string> keys, string who, IClock clock, CancellationToken cancellationToken)
+    {
+        var sources = (await ConfigCommands.LoadAsync(config, registry, cancellationToken)).Bind(deployment => Sources(deployment, null));
+        var waiting = await sources.BindAsync(found => WaitingAsync(found, cancellationToken));
+        return await waiting.BindAsync(async all =>
+        {
+            var attested = new List<string>();
+            foreach (var one in all.Where(w => keys.Contains(Item(w).Key)))
+            {
+                var proposal = one.Proposal;
+                if (!string.Equals(Convert.ToHexStringLower(SHA256.HashData(await File.ReadAllBytesAsync(one.Path, cancellationToken))), proposal.FileSha256, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                await File.WriteAllTextAsync(one.Path + Attestation.Suffix, proposal.Attest(who, clock.UtcNow, proposal.Outcomes, proposal.Observation).ToYaml(), cancellationToken);
+                File.Delete(one.Path + Proposal.Suffix);
+                attested.Add(Item(one).Key);
+            }
+
+            return Result.Ok<IReadOnlyList<string>>(attested);
+        });
+    }
+
     private static ReviewItem Item(Waiting waiting) => new(
         ReviewKind.ManualEvidence,
         $"manual_evidence:{waiting.Source}/{waiting.File}",

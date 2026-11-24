@@ -25,7 +25,13 @@ public sealed record ReviewItem(ReviewKind Kind, string Key, string Title, strin
 
     /// <summary>The file in the repo the item is recorded in, for the person to read.</summary>
     public string? File { get; init; }
+
+    /// <summary>The person's last challenge, waiting for the agent's answer.</summary>
+    public ReviewChallenge? Challenge { get; init; }
 }
+
+/// <summary>A person's question or objection to an item, kept until the item is accepted.</summary>
+public sealed record ReviewChallenge(string Note, string By, string On);
 
 /// <summary>The one review queue. Pure.</summary>
 public static class ReviewOrder

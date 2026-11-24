@@ -134,6 +134,29 @@ internal static class ScopeCommands
         return new Command("scope", "Work with a compliance repo's scope files.") { validate, newAudit, plan, apply, export, ScopeImportCommand.Build(output, logger) };
     }
 
+    /// <summary>For the review session: shows the plan for the scope folder, and applies it once <paramref name="confirm"/> says so.</summary>
+    internal static async Task<int> PlanThenApplyAsync(
+        DirectoryInfo scope, FileInfo? config, IConfiguration configuration, CollectorRegistry registry, ILoggerFactory loggers, TextWriter output,
+        Func<CancellationToken, Task<bool>> confirm, CancellationToken cancellationToken)
+    {
+        var logger = loggers.CreateLogger("hound.scope");
+        var checkedScope = await ValidateAsync(scope, config, registry, AuditSeries.Today(configuration), cancellationToken);
+        if (checkedScope.Problems.Count > 0)
+        {
+            return await ReportAsync(checkedScope.Problems, checkedScope.Summary, "text", output, logger);
+        }
+
+        return await (await PublishCommand.ConnectionAsync(configuration, config, registry, cancellationToken)).Match(
+            async connection =>
+            {
+                var planned = await ApplyAsync(checkedScope, connection, prune: false, dryRun: true, loggers, output, logger, cancellationToken);
+                return planned != ExitCodes.Ok || !await confirm(cancellationToken)
+                    ? planned
+                    : await ApplyAsync(checkedScope, connection, prune: false, dryRun: false, loggers, output, logger, cancellationToken);
+            },
+            problems => Task.FromResult(Log.Problems(logger, problems)));
+    }
+
     private static async Task<int> ApplyAsync(
         CheckedScope checkedScope, CisoAssistantOptions connection, bool prune, bool dryRun, ILoggerFactory loggers, TextWriter output, ILogger logger, CancellationToken cancellationToken)
     {
