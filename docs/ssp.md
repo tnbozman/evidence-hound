@@ -69,3 +69,22 @@ The `ism` annex follows the columns of ASD's Blueprint *System Security Plan Ann
 A section file that does not exist yet prints as "_Section `name` is not written yet._", so a draft still builds.
 
 `--json` gives the same plan with every value and its source, including the annex (`annex[]`, with `poam` linking each unmet row to its POA&M item).
+
+## Versions, sign-off and publishing
+
+The plan is a controlled document. Until the authorising official signs a version, every copy says so: the title ends in "(DRAFT)", a banner under the title and the last line say it is not approved, and the Word file carries a "DRAFT: not approved" header on every page.
+
+1. **Build the draft and keep its snapshot.** `hound ssp build --programme <id> --snapshot-out ssp-<id>-<version>.json` prints the draft and writes the snapshot: everything the plan was built from (the model, each value with its source, and the section texts). The log gives the draft's SHA-256 and the snapshot's. The version is `version:` in `scope/ssp.yaml`. Keep the snapshot and any generated plan **out of the repo**: they hold the organisation's system details.
+2. **Review.** For a new version, `hound ssp diff <old snapshot> <new snapshot>` lists only what changed: boundary and inventory first (they usually need a new major version), then suppliers, statuses, statements and sections.
+3. **Sign.** The authorising official records the sign-off under the plan in `scope/ssp.yaml`, by pull request like an audit period:
+
+   ```yaml
+   sign_offs:
+     - {version: "1.0", by: ao@example.com, date: "2026-11-24", sha256: <draft SHA-256>, snapshot: <snapshot SHA-256>}
+   ```
+
+   `by` must be the plan's `authorising_official` (ISM-0047); both hashes are 64 lower-case hex digits, as the log printed them.
+4. **Rebuild the signed version.** `hound ssp build --programme <id> --from-snapshot ssp-<id>-1.0.json` rebuilds the plan from the snapshot without contacting CISO Assistant. When the snapshot still gives the reviewed draft, it prints the approved plan: no draft marks, and "Approved by … SHA-256 of the reviewed draft: …". When it does not, it stops with `ssp.signoff_hash_mismatch`. A live build of a signed version whose data has since changed prints a draft and warns.
+5. **Publish.** `hound ssp publish --programme <id> --snapshot ssp-<id>-1.0.json` uploads `ssp-<id>-1.0.zip` (the signed plan, its POA&M, the snapshot, and CISO Assistant's own Word audit report for the programme's audit) as a new revision of the evidence `SSP-<ID>`, "System security plan: <system name>". It refuses a version with no sign-off (`ssp.not_signed`). If the audit report cannot be downloaded, the package goes without it and the log says why.
+
+`--format docx --out <file>` also writes the plan as a Word file (headings, lists and tables from the same text). The same plan gives the same file.
