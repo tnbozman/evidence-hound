@@ -88,6 +88,9 @@ public sealed record ScopeSystem(
 
     /// <summary>The reseller or provider the contract is with, when not the solution's own supplier; it must be approved too.</summary>
     public ScopeRef? SuppliedThrough { get; init; }
+
+    /// <summary>The system's entry in the AI register, when it is an AI system (s11-12).</summary>
+    public AiRegistration? Ai { get; init; }
 }
 
 /// <summary>An applied control, declared once in <c>scope/controls.yaml</c> and used by any number of audits.</summary>

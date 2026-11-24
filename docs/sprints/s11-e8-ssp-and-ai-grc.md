@@ -378,43 +378,46 @@ Done before s11-12, because the register fields and the screening runbook follow
 ### s11-12 AI system register in CISO Assistant
 - [ ] Done
 
-**Story:** As the Cyber GRC team, I want every AI system recorded in CISO Assistant with its owner, risk tier, impact assessment status and human-oversight arrangement, so that the register is in the system of record and can be checked and reported on.
+**Story:** As the Cyber GRC team, I want every AI system recorded with its owner, risk tier, impact assessment status and human-oversight arrangement, so that the register can be checked and reported on, and anyone in CISO Assistant can find the AI systems.
 
-How it works, using CISO Assistant's own features (checked against the v4.3.4 models, not yet run live):
-- An AI system is an **asset** with the asset class *AI system*. Assets already have owners (actors), a lifecycle stage, filtering labels, parent assets and **custom fields** (`CustomFieldDefinition`: key, label, type text, number, date, boolean, choice, multi-choice or URL, scoped to a folder).
-- AI risks are **risk scenarios** linked to the asset; third-party AI is a **solution** of an **entity** (s09-19) linked to the asset.
-- The register is CISO Assistant's asset list filtered by class, exported with its own Excel export. No separate register file or spreadsheet.
+**Design change (2026-11-24).** The plan used CISO Assistant custom fields. Reading the v4.3.4 source showed custom fields are an Enterprise feature: the Community Edition has no `custom_fields` feature flag, refuses writes and returns no values. Asset classes, lifecycle stages and filtering labels are in the Community Edition. So, as recommended to the person (decision card open; switch if they choose otherwise):
+- An AI system is a **system** in `scope/setup.yaml` (a CISO Assistant asset) with an `ai` block. The block is the register entry, reviewed by pull request like the rest of the scope, dates and statuses included.
+- In CISO Assistant the asset carries **filtering labels** (`ai-system`, `ai-tier-<tier>`, `ai-use-<use>`, `ai-oversight-<arrangement>`, and `ai-retired` once retired), and the register entry is added to its description, as solutions carry their sensitive data (s10-06). The register is CISO Assistant's asset list filtered by the `ai-system` label, exported with its own Excel export.
+- AI risks are risk scenarios linked to the asset; third-party AI is a solution of a supplier (s09-19) linked to the system.
+- This changes decision 5: impact assessment status and dates are set in git, on evidence, not in CISO Assistant. hound checks read the scope files and CISO Assistant (s11-13).
 
 **Acceptance criteria**
-- `scope/fields.yaml` (new, generic, not AI-specific) declares asset classes (`name`, optional `parent`) and custom field definitions (`model: asset`, `key`, `label`, `type`, `choices` for choice types, `required`, `help`, optional `domain` for scope). Applying creates or updates them by key; removing one needs `--prune`, as for other objects.
-- Systems in `scope/setup.yaml` gain optional `class` (an asset class) and `fields` (custom field values, by key, checked against the definition's type and choices). Fields a system lists are configuration and kept in step; fields it does not list are left to CISO Assistant and never in the plan.
-- The example AI field set, as aligned with the NAIC register template in s11-11 (this table is the starting point):
+- A system in `scope/setup.yaml` may have an `ai` block (field names to be aligned with the NAIC register template in s11-11):
 
-| Key | Type | Set in | Meaning |
+| Key | Required | Values | Meaning |
 | --- | --- | --- | --- |
-| `ai_risk_tier` | choice: `low`, `medium`, `high`, `prohibited` | git | Result of screening |
-| `ai_screened_on` | date | git | When the screening questions were answered |
-| `ai_use` | choice: `built`, `customised`, `third_party` | git | Matches AI6's (DEV) and (DEP) split |
-| `ai_oversight` | choice: `human_in_the_loop`, `human_on_the_loop`, `human_out_of_loop` | git | Human-oversight arrangement |
-| `ai_oversight_note` | text | git | Override points and fallback path |
-| `ai_impact_assessment` | choice: `not_started`, `in_progress`, `approved`, `not_required` | CISO Assistant | Set by the GRC team on evidence |
-| `ai_impact_assessed_on` | date | CISO Assistant | Approval date |
-| `ai_in_use_from` | date | CISO Assistant | Go-live date |
-| `ai_last_tested_on` | date | CISO Assistant | Last test or evaluation, on evidence |
+| `tier` | yes | `low`, `medium`, `high`, `prohibited` | Result of screening |
+| `screened_on` | yes | date | When the screening questions were answered |
+| `use` | yes | `built`, `customised`, `third_party` | AI6's develop and deploy split |
+| `oversight` | yes | `human_in_the_loop`, `human_on_the_loop`, `human_out_of_loop` | Human-oversight arrangement |
+| `oversight_note` | yes | text | Who can override or switch it off, and the fallback |
+| `impact_assessment` | no | `not_started`, `in_progress`, `approved`, `not_required` | Impact assessment status |
+| `impact_assessed_on` | no | date | When the impact assessment was approved; only with `approved` |
+| `in_use_from` | no | date | Go-live date; not set while being considered |
+| `last_tested_on` | no | date | Last test or evaluation, on evidence |
+| `retired_on` | no | date | When it stopped being used; after `in_use_from` |
 
-- Lifecycle: use the native asset lifecycle stage if v4.3.4's built-in stages include an in-use and a retired stage; otherwise add a choice field `ai_stage`. Decide when recording contract responses and note it here.
-- `scope plan` shows asset class, field definition and declared field value changes like other objects; values left to CISO Assistant are never shown or written.
+- Validation: required keys, values and dates as above (`scope.value_invalid`, `scope.key_missing`); `ai.impact_date_without_approval`; `ai.retired_before_use`; a `third_party` AI system with no `solution` is `ai.solution_missing`, because the supplier checks need it.
+- `scope plan` shows the labels and description like any other system field; `scope apply` writes them. A system without an `ai` block gets no AI labels.
+- `docs/scope.md` documents the block.
 
 **Tests first**
-- `FieldScopeTests.Choice_field_needs_choices`
-- `FieldScopeTests.System_field_value_must_match_type_and_choices`
-- `FieldScopeTests.Unknown_field_key_is_reported`
-- `FieldPlanTests.Unlisted_field_values_are_never_in_the_plan`
-- `FieldPlanTests.Removing_a_definition_needs_prune`
-- Contract: `CustomFieldClientTests.Creates_definition_and_sets_asset_value` and `AssetClassClientTests.Creates_class` (recorded responses from the local CISO Assistant; record the custom field endpoints first, as they were not checked when planning)
+- `AiRegisterScopeTests.Ai_block_parses`
+- `AiRegisterScopeTests.Required_keys_and_values_are_checked`
+- `AiRegisterScopeTests.Impact_date_needs_an_approved_assessment`
+- `AiRegisterScopeTests.Retired_before_use_is_reported`
+- `AiRegisterScopeTests.Third_party_ai_needs_a_solution`
+- `AiRegisterPlanTests.Register_entry_becomes_labels_and_description`
+- `AiRegisterPlanTests.Systems_without_ai_carry_no_ai_labels`
+- `ScopeSchemaTests` covers the `ai` block through the example.
 
 **Functional check**
-- Apply the example scope to the local CISO Assistant: the *AI system* class and the field definitions exist, the two example AI systems show their tier and oversight in the asset view, and re-applying writes nothing. Setting `ai_last_tested_on` by hand in CISO Assistant does not appear in the next plan.
+- Apply the example scope to the local CISO Assistant (with s11-15, which adds the example AI systems): the two example AI systems carry their labels and register entry, filtering assets by `ai-system` lists both, and re-applying writes nothing.
 
 ### s11-13 AI checks from CISO Assistant
 - [ ] Done
