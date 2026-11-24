@@ -22,7 +22,7 @@ internal static class ManualCommand
         var source = new Option<string>("--source") { Description = "The manual source: its collector name in the config.", Required = true };
         var file = new Argument<FileInfo>("file") { Description = "The export file to upload." };
 
-        var upload = new Command("upload", "Copy an export file into a manual source's drop folder, then ask whether to attest it.") { config, source, file };
+        var upload = new Command("upload", "Copy an export file into a manual source's drop folder, then, for a person at a terminal, ask whether to attest it. Through a pipe or an agent it is copied unattested.") { config, source, file };
         upload.SetAction(async (parseResult, cancellationToken) =>
         {
             var found = (await ConfigCommands.LoadAsync(parseResult.GetRequiredValue(config), registry, cancellationToken))
@@ -78,8 +78,13 @@ internal static class ManualCommand
             return Log.Problems(logger, [new Problem("manual.file_exists", $"A different '{file.Name}' is already in {source.DropFolder}. Rename the new export and upload it again.")]);
         }
 
-        // A scan source's export is the evidence itself, with no checks to attest.
-        var answer = source.Checks.Count == 0 ? Result.Ok(new Answer(null)) : await AskAsync(terminal, source, clock, cancellationToken);
+        // A scan source's export is the evidence itself, with no checks to attest. Only a person at a terminal attests: through a pipe
+        // or from an agent the file is copied unattested, for a person to attest later.
+        var answer = source.Checks.Count == 0 || !terminal.Interactive ? Result.Ok(new Answer(null)) : await AskAsync(terminal, source, clock, cancellationToken);
+        if (source.Checks.Count > 0 && !terminal.Interactive)
+        {
+            Log.Usage(logger, $"{file.Name} is copied but not attested: only a person at a terminal attests evidence. Propose a result with 'hound manual propose', and a person attests it with 'hound manual approve' or in the weekly review.");
+        }
         if (answer is Result<Answer>.Fail failed)
         {
             foreach (var problem in failed.Errors)

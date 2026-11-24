@@ -118,7 +118,7 @@ public sealed class ManualCommandTests : IDisposable
     {
         var export = await ExportAsync("firewall-export.txt", "rule 1: allow https");
 
-        var exitCode = await Run("y\n\nmaybe\n", "manual", "upload", "--config", await ConfigAsync(), "--source", "example-firewall-config", export);
+        var exitCode = await RunAtTerminal("y\n\nmaybe\n", "manual", "upload", "--config", await ConfigAsync(), "--source", "example-firewall-config", export);
 
         exitCode.ShouldBe(ExitCodes.Usage);
         _error.ToString().ShouldContain("maybe");

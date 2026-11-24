@@ -11,7 +11,7 @@ The flow:
 2. `hound scope apply` turns each row a person provides into a recurring CISO Assistant task. CISO Assistant emails the owner the
    runbook before each due date.
 3. The owner exports what the runbook asks for and sends it to the GRC team. Their agent may read the export and propose a result
-   (`hound manual propose`); the owner attests it at a terminal (`hound manual approve`).
+   (`hound manual propose`); a person in the GRC team attests it at a terminal (`hound manual approve` or the weekly review).
 4. The next `hound run` publishes the attested result to every requirement the source's checks are mapped to. The GRC team reviews it
    in CISO Assistant and marks the task done.
 5. A task still open at month end is an overdue item in the security committee's report. That is the escalation; nobody is emailed

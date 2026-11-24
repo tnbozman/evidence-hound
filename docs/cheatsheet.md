@@ -87,7 +87,7 @@ file by `scripts/cheatsheet/render.sh`.
   - `--config --checks --evidence-dir` (req) `--dry-run`
 
 ### Manual evidence
-- `hound manual upload <file>`: drop an export into a manual source
+- `hound manual upload <file>`: drop an export into a manual source; only a **Person** at a terminal is asked to attest it
   - `--config --source` (req)
 - `hound manual propose <source> <file>`: agent: propose a result and its extract
   - `--config` (req) `--result --check --observation --supports --json`
