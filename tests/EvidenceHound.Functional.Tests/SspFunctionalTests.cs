@@ -45,7 +45,8 @@ public sealed class SspFunctionalTests(CisoAssistantFixture ciso)
         exit.ShouldBe(ExitCodes.Ok, json);
         var plan = JsonNode.Parse(json)!;
         var inventory = plan["inventory"]!.AsArray().ToDictionary(s => s!["name"]!["value"]!.GetValue<string>());
-        inventory.Keys.ShouldBe(["Example 365", "Example laptops", "Example backup service"], ignoreOrder: true, json);
+        // The boundary is the perimeter, so the AI6 audit's systems in Corporate IT are in the inventory too.
+        inventory.Keys.ShouldBe(["Example 365", "Example laptops", "Example backup service", "Example ticket triage", "Example proposal assistant"], ignoreOrder: true, json);
         inventory["Example 365"]!["owner"]!["value"]!.GetValue<string>().ShouldBe("it@example.com", json);
         inventory["Example 365"]!["owner"]!["source"]!["kind"]!.GetValue<string>().ShouldBe("ciso_assistant", json);
         plan["controls"]!.AsArray().Select(c => c!["ref_id"]!["value"]!.GetValue<string>()).ShouldContain("AC-MFA", json);
