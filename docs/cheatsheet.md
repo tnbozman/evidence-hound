@@ -114,6 +114,8 @@ file by `scripts/cheatsheet/render.sh`.
 - `hound mapping apply <mapping> <checks>`: map check results to requirements
 - `hound mapping coverage <mapping>`: automated, manual and uncovered counts per parent and group
   - `--framework --groups --manual --json`
+- `hound mapping crosswalk`: which NIST SP 800-171 (or other) requirements a programme's evidence answers today (advisory)
+  - `--from --config` (req) `--to --file --scope --offline --json`
 - `hound skill list`: onboarding skills, hound's and yours
 - `hound skill new <name>`: start a skill
 - `hound skill add <file>`: add a skill file

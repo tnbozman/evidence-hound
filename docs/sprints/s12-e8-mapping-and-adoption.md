@@ -179,6 +179,19 @@ answers, so that I know my gap before I pay for an assessment.
 **Functional check**
 - `hound mapping crosswalk` against the local CISO Assistant with the example Essential Eight audit prints the 800-171 gap list.
 
+**Progress (2026-11-24)**
+- `mappings/crosswalks/essential-eight-2023-to-nist-sp-800-171-rev2.yaml`: all 110 Rev 2 requirements, links only to Essential Eight
+  refs the mapping answers (tested), marked advisory and unreviewed. Schema `schemas/crosswalk.schema.json`; loader `CrosswalkLoader`.
+- `hound mapping crosswalk --from <programme> --config hound.yaml [--to] [--file] [--offline] [--json]`: `--file`, else the repo's
+  `mappings/crosswalks/`, else hound's own copy. Today's results come from the programme's audit of record. Reads only.
+- Deviation from the first criterion: CISO Assistant v4.3.4 has no API that lists a mapping library's requirement links
+  (`/api/frameworks/{id}/mappings/` lists target frameworks only), so hound cannot read a loaded library yet. `Crosswalks.Choose` keeps
+  the seam; the docs say so. Recorded under Discovered work.
+- Functional check (offline, local): `hound mapping crosswalk --from essential-eight --offline --scope examples/compliance-repo/scope
+  --config examples/compliance-repo/hound.yaml` printed `Total: 1 answered, 30 partly answered, 79 open, of 110 requirements.`
+  The CA-backed check is `CrosswalkFunctionalTests` (CI; cloud sessions cannot pull the images), which keeps the Markdown in
+  `test-results/reports/`.
+
 ### s12-09 Rehearse trial, onboarding and sustaining GRC (standing, every sprint)
 - [ ] Done
 
@@ -231,6 +244,11 @@ wait on the maintainer.
 
 ## Discovered work
 
+- s12-08: CISO Assistant v4.3.4 exposes no list of a mapping library's requirement links, so `hound mapping crosswalk` cannot use a
+  loaded library before the file. Revisit when CISO Assistant adds one (s17, with CMMC). The output says the file is used.
+- s12-10 Improve: the committee report's "collector success rate for the month" needs run history; the run store keeps only each
+  collector's latest run.
+- s12-10 Improve: `ReportCommands` uses `.Result` inside `Bind` (sync over async) when reading snapshots.
 - Cloud sessions cannot pull CISO Assistant's images (ghcr.io blobs are blocked by the proxy), so functional checks against CISO Assistant run in CI's functional job; dev servers and `--dry-run` runs work locally.
 
 ## Sprint review

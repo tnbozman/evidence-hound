@@ -1,7 +1,6 @@
 using System.CommandLine;
 using System.Text;
 using EvidenceHound.CisoAssistant;
-using EvidenceHound.Core.Checks;
 using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Publishing;
 using EvidenceHound.Core.Reporting;
@@ -239,12 +238,7 @@ internal static class ReportCommands
             return Result.Ok<IReadOnlyList<CoverageCount>>([]);
         }
 
-        var manual = deployment.Collectors
-            .Where(c => c.Type == "manual" && c.Settings.ContainsKey("checks"))
-            .SelectMany(c => c.Settings["checks"].Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
-            .Select(CheckId.Create)
-            .SelectMany(r => r.Match(id => new[] { id }, _ => []))
-            .ToHashSet();
+        var manual = MappingCrosswalkCommand.ManualChecks(deployment);
         var framework = checkedScope.Inputs.Snapshots[programme.Framework.Value];
         return (await MappingCommands.LoadAsync(new FileInfo(target.MappingPath), cancellationToken))
             .Map(loaded => MappingCoverage.Count(framework, loaded.Mapping, loaded.ManualOnly.Select(m => m.Key), manual, programme.Groups));
