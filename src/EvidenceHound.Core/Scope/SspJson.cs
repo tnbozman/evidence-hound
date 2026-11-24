@@ -50,6 +50,9 @@ public static class SspJson
                 ["control"] = a.Control, ["title"] = a.Title, ["listed_under"] = new JsonArray([.. a.Parents.Select(p => JsonValue.Create(p))]),
                 ["applicability"] = Value(a.Applicability), ["status"] = Value(a.Status), ["statement"] = Value(a.Statement),
                 ["responsible"] = Value(a.Responsible), ["evidence"] = Value(a.Evidence), ["poam"] = a.Poam,
+                ["description"] = a.Description, ["maturity_levels"] = new JsonArray([.. a.MaturityLevels.Select(l => JsonValue.Create(l))]),
+                ["control_types"] = new JsonArray([.. a.ControlTypes.Select(t => JsonValue.Create(t))]),
+                ["responsible_entity"] = Value(a.ResponsibleEntity), ["asd_status"] = Value(a.AsdStatus),
             })]),
         }.ToJsonString(Indented) + "\n";
     }

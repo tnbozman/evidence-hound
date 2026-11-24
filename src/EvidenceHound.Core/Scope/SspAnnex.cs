@@ -65,7 +65,7 @@ public static class SspAnnex
         string[] parents = [.. nodes.Select(n => ProgrammeOutline.Name(n.ParentUrn)).Distinct(StringComparer.Ordinal)];
         var described = nodes.Select(n => n.Description).FirstOrDefault(d => d.Length > 0) ?? nodes[0].Title;
         string[] levels = [.. nodes.SelectMany(n => n.Groups).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)];
-        string[] types = [.. nodes.SelectMany(n => n.ReferenceControls).Select(Type).OfType<string>().Distinct(StringComparer.Ordinal)];
+        string[] types = [.. ControlTypeNames.Values.Intersect(nodes.SelectMany(n => n.ReferenceControls).Select(Type).OfType<string>(), StringComparer.Ordinal)];
         if (row is null)
         {
             var none = new SspValue(null, new SspSource(SspSource.CisoAssistant, $"no requirement assessment for {control} in audit {document.Audit.Value}"));

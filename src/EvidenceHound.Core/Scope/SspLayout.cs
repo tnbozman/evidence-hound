@@ -110,15 +110,21 @@ public static class SspLayout
             return;
         }
 
-        text.Append("| Control | Title | Listed under | Applicability | Status | Statement | Responsible | POA&M |\n")
-            .Append("| --- | --- | --- | --- | --- | --- | --- | --- |\n");
+        text.Append("Columns follow the ASD SSP annex template. Implementation status uses the ASD SSP annex template's terms (Effective, Ineffective, ")
+            .Append("Not implemented, Not applicable, Not assessed); the SP 800-18 status beside it decides what the plan of action and milestones carries. ")
+            .Append("Control type comes from the framework's reference controls.\n\n")
+            .Append("| Control | Description | Strategies | Maturity levels | Control type | Responsible entity | Implementation status | SP 800-18 status | Statement | Responsible | POA&M |\n")
+            .Append("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n");
         foreach (var a in document.Annex)
         {
-            text.Append(CultureInfo.InvariantCulture, $"| {a.Control} | {Escape(a.Title)} | {string.Join(", ", a.Parents)} | {Cell(a.Applicability)} | {Cell(a.Status)} | {Cell(a.Statement)} | {Cell(a.Responsible)} | {a.Poam ?? "-"} |\n");
+            text.Append(CultureInfo.InvariantCulture, $"| {a.Control} | {Escape(a.Description.Length > 0 ? a.Description : a.Title)} | {string.Join(", ", a.Parents)} | {List(a.MaturityLevels)} | {List(a.ControlTypes)} | ")
+                .Append(CultureInfo.InvariantCulture, $"{Cell(a.ResponsibleEntity)} | {Cell(a.AsdStatus)} | {Cell(a.Status)} | {Cell(a.Statement)} | {Cell(a.Responsible)} | {a.Poam ?? "-"} |\n");
         }
 
         text.Append('\n');
     }
+
+    private static string List(IReadOnlyList<string> values) => values.Count == 0 ? "-" : string.Join(", ", values);
 
     private static string Role(SspDocument document, string role) =>
         document.Roles.FirstOrDefault(r => r.Role == role) is { } held ? Cell(held.Holder) : "-";
