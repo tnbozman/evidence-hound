@@ -5,6 +5,9 @@
 # Matching is case-insensitive. Matched terms are never printed, only where.
 #
 # Usage: ORG_DENYLIST='...' scripts/check-org-data.sh [git-range-for-messages]
+#        ORG_DENYLIST='...' scripts/check-org-data.sh --history
+#   --history scans every commit on every branch and tag: each commit's changes (so a term that was added and later
+#   removed is still found) and its message. It names the commits, never the terms.
 set -euo pipefail
 
 if [[ -z "${ORG_DENYLIST:-}" ]]; then
@@ -17,6 +20,25 @@ trap 'rm -f "$patterns"' EXIT
 printf '%s\n' "$ORG_DENYLIST" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -v '^$' > "$patterns"
 
 found=0
+
+if [[ "${1:-}" == "--history" ]]; then
+  while IFS= read -r sha; do
+    if git log -1 --format=%B "$sha" | grep -qiF -f "$patterns"; then
+      echo "::error::organisation-specific term in commit message ${sha:0:12}"
+      found=1
+    fi
+    if git show --format= --no-color --no-ext-diff --text "$sha" | grep -qiF -f "$patterns"; then
+      echo "::error::organisation-specific term in the changes of commit ${sha:0:12}"
+      found=1
+    fi
+  done < <(git rev-list --all)
+  if [[ $found -ne 0 ]]; then
+    echo "check-org-data: the history holds organisation-specific content; rewrite it before the repository is published further." >&2
+    exit 1
+  fi
+  echo "check-org-data: history clean ($(git rev-list --all | wc -l | tr -d ' ') commits)"
+  exit 0
+fi
 
 # Tracked files (binary files skipped).
 while IFS= read -r hit; do
