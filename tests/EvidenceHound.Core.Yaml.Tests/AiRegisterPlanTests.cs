@@ -10,11 +10,21 @@ public class AiRegisterPlanTests
     {
         var system = ScopeDesired.From(AiRegisterScopeTests.Parse(AiRegisterScopeTests.Setup()).Scope).Single(o => o.Kind == ScopeKind.System && o.Key == "Example 365");
 
-        system.Fields["labels"].ShouldBe("ai-oversight-on-the-loop, ai-system, ai-tier-medium, ai-use-customised");
-        system.Fields["description"].ShouldStartWith("Mail, files and identity.");
-        system.Fields["description"].ShouldContain("AI register: medium tier, customised, human on the loop.");
-        system.Fields["description"].ShouldContain("Oversight: The sales lead reviews a monthly sample and can switch scoring off.");
-        system.Fields["description"].ShouldContain("Screened 2026-03-02; impact assessment approved 2026-03-20; in use from 2026-04-01; last tested 2026-03-25.");
+        system.Fields["labels"].ShouldBe("ai-oversight-on-the-loop, ai-screening-elevated, ai-system, ai-use-customised");
+        system.Fields["description"].ShouldBe("""
+            Mail, files and identity.
+
+            AI register: elevated screening (yes to questions 1, 5), customised, human on the loop.
+            Version: 2.1
+            Purpose: Point the sales team at the leads most likely to buy.
+            Intended uses: Rank new leads; Suggest a follow-up date
+            Limitations and prohibited use: Not for pricing or credit decisions.
+            Foreseeable misuse: Using scores to judge staff performance.
+            Data sources and type: CRM lead records (structured)
+            Stakeholders affected: Sales team; Prospective customers
+            Oversight: The sales lead reviews a monthly sample and can switch scoring off.
+            Registered 2026-03-04; screened 2026-03-02; impact assessment approved 2026-03-20; in use from 2026-04-01; last tested 2026-03-25.
+            """);
     }
 
     [Fact]

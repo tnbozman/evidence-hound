@@ -12,23 +12,24 @@ public class AiRegisterChecksTests
     private static readonly AiRegisterEntry Chat = new(
         "Example Chat",
         "it@example.com",
-        new AiRegistration(AiRiskTier.Low, new(2026, 2, 1), AiUse.ThirdParty, AiOversight.HumanInTheLoop, "Staff read every draft before sending.", At)
+        Columns(new AiRegistration(AiScreening.Normal, new(2026, 2, 1), AiUse.ThirdParty, AiOversight.HumanInTheLoop, "Staff read every draft before sending.", At)
         {
             ImpactAssessment = AiImpactAssessment.NotRequired,
             InUseFrom = new(2026, 2, 10),
             LastTestedOn = new(2026, 2, 5),
-        });
+        }));
 
     private static readonly AiRegisterEntry Scoring = new(
         "Example lead scoring",
         "sales@example.com",
-        new AiRegistration(AiRiskTier.Medium, new(2026, 3, 2), AiUse.ThirdParty, AiOversight.HumanOnTheLoop, "The sales lead reviews a monthly sample.", At)
+        Columns(new AiRegistration(AiScreening.Elevated, new(2026, 3, 2), AiUse.ThirdParty, AiOversight.HumanOnTheLoop, "The sales lead reviews a monthly sample.", At)
         {
+            ScreeningYes = [1, 5],
             ImpactAssessment = AiImpactAssessment.Approved,
             ImpactAssessedOn = new(2026, 3, 20),
             InUseFrom = new(2026, 4, 1),
             LastTestedOn = new(2026, 3, 25),
-        });
+        }));
 
     [Fact]
     public void A_well_kept_register_passes_every_check()
@@ -59,6 +60,19 @@ public class AiRegisterChecksTests
     }
 
     [Fact]
+    public void Register_complete_names_the_national_ai_centre_columns_left_empty()
+    {
+        // s11-11: the register template's columns, as the ai block keeps them.
+        var bare = Chat with { Ai = Chat.Ai with { Purpose = null, IntendedUses = [], Stakeholders = [], RegisteredOn = null } };
+
+        var finding = Find(AiRegisterChecks.Assess([bare, Scoring], Today), "ai.register_complete");
+
+        finding.Outcome.ShouldBe(CheckOutcome.Fail);
+        finding.Observation.ShouldContain("Example Chat (no purpose, intended uses, stakeholders, registered date)");
+        finding.Failing.ShouldBe(["Example Chat"]);
+    }
+
+    [Fact]
     public void Impact_assessment_after_go_live_fails()
     {
         var late = Scoring with { Ai = Scoring.Ai with { ImpactAssessedOn = new(2026, 4, 15) } };
@@ -71,7 +85,7 @@ public class AiRegisterChecksTests
     }
 
     [Fact]
-    public void Medium_tier_without_approved_assessment_fails()
+    public void Elevated_system_without_approved_assessment_fails()
     {
         var pending = Scoring with { Ai = Scoring.Ai with { ImpactAssessment = AiImpactAssessment.InProgress, ImpactAssessedOn = null } };
 
@@ -79,14 +93,13 @@ public class AiRegisterChecksTests
     }
 
     [Theory]
-    [InlineData(AiRiskTier.High, 2026, 5, 23, CheckOutcome.Fail)]
-    [InlineData(AiRiskTier.High, 2026, 5, 25, CheckOutcome.Pass)]
-    [InlineData(AiRiskTier.Medium, 2025, 11, 23, CheckOutcome.Fail)]
-    [InlineData(AiRiskTier.Medium, 2025, 11, 25, CheckOutcome.Pass)]
-    [InlineData(AiRiskTier.Low, 2025, 11, 25, CheckOutcome.Pass)]
-    public void Stale_test_uses_tier_interval(AiRiskTier tier, int year, int month, int day, CheckOutcome expected)
+    [InlineData(AiScreening.Elevated, 2026, 5, 23, CheckOutcome.Fail)]
+    [InlineData(AiScreening.Elevated, 2026, 5, 25, CheckOutcome.Pass)]
+    [InlineData(AiScreening.Normal, 2025, 11, 23, CheckOutcome.Fail)]
+    [InlineData(AiScreening.Normal, 2025, 11, 25, CheckOutcome.Pass)]
+    public void Stale_test_uses_the_screening_interval(AiScreening screening, int year, int month, int day, CheckOutcome expected)
     {
-        var system = Scoring with { Ai = Scoring.Ai with { Tier = tier, LastTestedOn = new(year, month, day) } };
+        var system = Scoring with { Ai = Scoring.Ai with { Screening = screening, LastTestedOn = new(year, month, day) } };
 
         Find(AiRegisterChecks.Assess([system], Today), "ai.test_results_current").Outcome.ShouldBe(expected);
     }
@@ -104,14 +117,14 @@ public class AiRegisterChecksTests
     }
 
     [Fact]
-    public void Prohibited_system_in_use_fails_screening()
+    public void Unacceptable_system_in_use_fails_screening()
     {
-        var prohibited = Chat with { Ai = Chat.Ai with { Tier = AiRiskTier.Prohibited } };
+        var unacceptable = Chat with { Ai = Chat.Ai with { Screening = AiScreening.Unacceptable } };
 
-        var finding = Find(AiRegisterChecks.Assess([prohibited, Scoring], Today), "ai.screening_recorded");
+        var finding = Find(AiRegisterChecks.Assess([unacceptable, Scoring], Today), "ai.screening_recorded");
 
         finding.Outcome.ShouldBe(CheckOutcome.Fail);
-        finding.Observation.ShouldContain("prohibited");
+        finding.Observation.ShouldContain("Example Chat (unacceptable)");
     }
 
     [Fact]
@@ -123,9 +136,9 @@ public class AiRegisterChecksTests
     }
 
     [Fact]
-    public void High_tier_out_of_loop_fails_oversight()
+    public void Elevated_system_out_of_loop_fails_oversight()
     {
-        var unwatched = Scoring with { Ai = Scoring.Ai with { Tier = AiRiskTier.High, Oversight = AiOversight.HumanOutOfLoop } };
+        var unwatched = Scoring with { Ai = Scoring.Ai with { Oversight = AiOversight.HumanOutOfLoop } };
 
         var finding = Find(AiRegisterChecks.Assess([Chat, unwatched], Today), "ai.human_oversight_documented");
 
@@ -183,6 +196,18 @@ public class AiRegisterChecksTests
         Find(findings, "ai.owner_assigned").Failing.ShouldBe(["Example lead scoring"]);
         Find(findings, "ai.tested_before_use").Failing.ShouldBeEmpty();
     }
+
+    /// <summary>The register template's columns filled in (s11-11).</summary>
+    private static AiRegistration Columns(AiRegistration ai) => ai with
+    {
+        RegisteredOn = ai.ScreenedOn,
+        Purpose = "Saves staff time.",
+        IntendedUses = ["Drafting"],
+        Limitations = "Not for advice to customers.",
+        Misuse = "None identified.",
+        DataSources = ["Past proposals (text)"],
+        Stakeholders = ["Staff"],
+    };
 
     private static AiRegisterFinding Find(IEnumerable<AiRegisterFinding> findings, string checkId) => findings.Single(f => f.CheckId == checkId);
 }

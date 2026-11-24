@@ -12,9 +12,18 @@ public class AiRegisterScopeTests
     private static readonly string Block =
         "        owner: it@example.com\n" +
         "        ai:\n" +
-        "          tier: medium\n" +
+        "          screening: elevated\n" +
+        "          screening_yes: [1, 5]\n" +
         "          screened_on: \"2026-03-02\"\n" +
+        "          registered_on: \"2026-03-04\"\n" +
+        "          version: \"2.1\"\n" +
         "          use: customised\n" +
+        "          purpose: Point the sales team at the leads most likely to buy.\n" +
+        "          intended_uses: [Rank new leads, Suggest a follow-up date]\n" +
+        "          limitations: Not for pricing or credit decisions.\n" +
+        "          misuse: Using scores to judge staff performance.\n" +
+        "          data_sources: [CRM lead records (structured)]\n" +
+        "          stakeholders: [Sales team, Prospective customers]\n" +
         "          oversight: human_on_the_loop\n" +
         "          oversight_note: The sales lead reviews a monthly sample and can switch scoring off.\n" +
         "          impact_assessment: approved\n" +
@@ -30,26 +39,57 @@ public class AiRegisterScopeTests
 
         parsed.Problems.ShouldBeEmpty();
         var ai = parsed.Scope.Setup.Domains.Single().Systems[0].Ai.ShouldNotBeNull();
-        (ai.Tier, ai.ScreenedOn, ai.Use, ai.Oversight, ai.OversightNote).ShouldBe(
-            (AiRiskTier.Medium, new DateOnly(2026, 3, 2), AiUse.Customised, AiOversight.HumanOnTheLoop, "The sales lead reviews a monthly sample and can switch scoring off."));
+        (ai.Screening, ai.ScreenedOn, ai.Use, ai.Oversight, ai.OversightNote).ShouldBe(
+            (AiScreening.Elevated, new DateOnly(2026, 3, 2), AiUse.Customised, AiOversight.HumanOnTheLoop, "The sales lead reviews a monthly sample and can switch scoring off."));
+        ai.ScreeningYes.ShouldBe([1, 5]);
+        (ai.RegisteredOn, ai.Version, ai.Purpose, ai.Limitations, ai.Misuse).ShouldBe(
+            (new DateOnly(2026, 3, 4), "2.1", "Point the sales team at the leads most likely to buy.", "Not for pricing or credit decisions.", "Using scores to judge staff performance."));
+        ai.IntendedUses.ShouldBe(["Rank new leads", "Suggest a follow-up date"]);
+        ai.DataSources.ShouldBe(["CRM lead records (structured)"]);
+        ai.Stakeholders.ShouldBe(["Sales team", "Prospective customers"]);
         (ai.ImpactAssessment, ai.ImpactAssessedOn, ai.InUseFrom, ai.LastTestedOn, ai.RetiredOn).ShouldBe(
             (AiImpactAssessment.Approved, new DateOnly(2026, 3, 20), new DateOnly(2026, 4, 1), new DateOnly(2026, 3, 25), (DateOnly?)null));
         parsed.Scope.Setup.Domains.Single().Systems[1].Ai.ShouldBeNull();
     }
 
     [Theory]
-    [InlineData("          tier: medium\n", "", "scope.key_missing")]
+    [InlineData("          screening: elevated\n", "", "scope.key_missing")]
+    [InlineData("          screening_yes: [1, 5]\n", "", "scope.key_missing")]
     [InlineData("          screened_on: \"2026-03-02\"\n", "", "scope.key_missing")]
     [InlineData("          oversight_note: The sales lead reviews a monthly sample and can switch scoring off.\n", "", "scope.key_missing")]
-    [InlineData("tier: medium", "tier: extreme", "scope.value_invalid")]
+    [InlineData("screening: elevated", "screening: medium", "scope.value_invalid")]
+    [InlineData("screening_yes: [1, 5]", "screening_yes: [1, 8]", "scope.value_invalid")]
     [InlineData("use: customised", "use: borrowed", "scope.value_invalid")]
     [InlineData("oversight: human_on_the_loop", "oversight: nobody", "scope.value_invalid")]
     [InlineData("impact_assessment: approved", "impact_assessment: done", "scope.value_invalid")]
     [InlineData("in_use_from: \"2026-04-01\"", "in_use_from: April", "scope.value_invalid")]
-    [InlineData("          tier: medium\n", "          tier: medium\n          colour: blue\n", "scope.key_unknown")]
+    [InlineData("          screening: elevated\n", "          screening: elevated\n          colour: blue\n", "scope.key_unknown")]
     public void Required_keys_and_values_are_checked(string from, string to, string code)
     {
         Parse(Setup().Replace(from, to, StringComparison.Ordinal)).Problems.Select(p => p.Code).ShouldContain(code);
+    }
+
+    [Theory]
+    [InlineData("screening: normal", "screening_yes: [1, 5]")]
+    [InlineData("screening: elevated", "screening_yes: []")]
+    public void Screening_outcome_must_agree_with_the_answers(string screening, string yes)
+    {
+        // s11-11: the National AI Centre's screening questions: any yes needs more governance (elevated), all no is normal.
+        var setup = Setup().Replace("screening: elevated", screening, StringComparison.Ordinal).Replace("screening_yes: [1, 5]", yes, StringComparison.Ordinal);
+
+        var problem = Parse(setup).Problems.ShouldHaveSingleItem();
+
+        problem.Code.ShouldBe("ai.screening_disagrees");
+        problem.Message.ShouldContain("Example 365");
+        problem.Hint.ShouldContain("runbooks/ai-screening.md");
+    }
+
+    [Fact]
+    public void Unacceptable_can_follow_any_answers()
+    {
+        var setup = Setup().Replace("screening: elevated", "screening: unacceptable", StringComparison.Ordinal).Replace("screening_yes: [1, 5]", "screening_yes: []", StringComparison.Ordinal);
+
+        Parse(setup).Problems.ShouldBeEmpty();
     }
 
     [Fact]

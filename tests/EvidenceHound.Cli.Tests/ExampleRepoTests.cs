@@ -78,7 +78,7 @@ public sealed partial class ExampleRepoTests : IDisposable
     [Fact]
     public void Ai_governance_walkthrough_says_why_before_what_and_the_training_builds_on_it()
     {
-        // s11-08: register, screen, set the tier, record an impact assessment and a test date, run hound, read the AI6 rows; each step
+        // s11-08: register, screen, record the screening outcome, record an impact assessment and a test date, run hound, read the AI6 rows; each step
         // opens with what it is for. The 30-minute training outline follows the walkthrough.
         var walkthrough = File.ReadAllText(Path.Combine(RepoRoot, "docs", "tutorials", "ai-governance.md"));
         var steps = walkthrough.Split("\n## ").Skip(1).Where(s => char.IsAsciiDigit(s[0])).ToArray();
@@ -285,8 +285,8 @@ public sealed partial class ExampleRepoTests : IDisposable
         audit.Groups.Select(g => g.Value).ShouldBe(["F"]);
 
         var entries = AiRegisterChecks.Entries(parsed.Scope.Setup);
-        entries.Select(e => (e.System, e.Ai.Tier, e.Ai.Use)).ShouldBe(
-            [("Example ticket triage", AiRiskTier.Low, AiUse.Built), ("Example proposal assistant", AiRiskTier.Medium, AiUse.Customised)]);
+        entries.Select(e => (e.System, e.Ai.Screening, e.Ai.Use)).ShouldBe(
+            [("Example ticket triage", AiScreening.Normal, AiUse.Built), ("Example proposal assistant", AiScreening.Elevated, AiUse.Customised)]);
         audit.Systems.Select(s => s.Value).ShouldBe(entries.Select(e => e.System));
         var findings = AiRegisterChecks.Assess(entries, new DateOnly(2026, 11, 24)).ToDictionary(f => f.CheckId, f => f.Outcome);
         (findings["ai.register_complete"], findings["ai.owner_assigned"], findings["ai.tested_before_use"]).ShouldBe(

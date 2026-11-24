@@ -22,9 +22,9 @@ public sealed class AiGovernanceFunctionalTests(CisoAssistantFixture ciso) : IDi
 
         var assets = (await GetAsync("assets/?limit=500", ct))["results"]!.AsArray().ToDictionary(a => a!["name"]!.GetValue<string>());
         var triage = assets["Example ticket triage"]!;
-        Labels(triage).ShouldBe(["ai-oversight-in-the-loop", "ai-system", "ai-tier-low", "ai-use-built"], ignoreOrder: true, triage.ToJsonString());
-        triage["description"]!.GetValue<string>().ShouldContain("AI register: low tier, built, human in the loop.");
-        Labels(assets["Example proposal assistant"]!).ShouldContain("ai-tier-medium");
+        Labels(triage).ShouldBe(["ai-oversight-in-the-loop", "ai-screening-normal", "ai-system", "ai-use-built"], ignoreOrder: true, triage.ToJsonString());
+        triage["description"]!.GetValue<string>().ShouldContain("AI register: normal screening (no to every question), built, human in the loop.");
+        Labels(assets["Example proposal assistant"]!).ShouldContain("ai-screening-elevated");
         Labels(assets["Example 365"]!).ShouldNotContain("ai-system");
 
         var audit = (await GetAsync("compliance-assessments/?ref_id=EX-AI6-2026", ct))["results"]!.AsArray().ShouldHaveSingleItem()!;
@@ -53,7 +53,7 @@ public sealed class AiGovernanceFunctionalTests(CisoAssistantFixture ciso) : IDi
         tested["observation"]!.GetValue<string>().ShouldContain("Example proposal assistant");
         var risks = await RowAsync("AI6-3.3", ct);
         risks["result"]!.GetValue<string>().ShouldBe("non_compliant", risks.ToJsonString());
-        risks["observation"]!.GetValue<string>().ShouldContain("0 of 1 medium or high tier AI systems are linked to a risk scenario");
+        risks["observation"]!.GetValue<string>().ShouldContain("0 of 1 elevated AI systems are linked to a risk scenario");
     }
 
     [Fact]
@@ -65,7 +65,7 @@ public sealed class AiGovernanceFunctionalTests(CisoAssistantFixture ciso) : IDi
             ["programme", "list", "--scope", CisoAssistantFixture.ExampleScope], output, error, configureLogging: null, TestContext.Current.CancellationToken);
 
         exit.ShouldBe(ExitCodes.Ok, error.ToString());
-        output.ToString().ShouldContain("Register: 2 AI systems. tier: low 1, medium 1. use: built 1, customised 1.");
+        output.ToString().ShouldContain("Register: 2 AI systems. screening: elevated 1, normal 1. use: built 1, customised 1.");
     }
 
     public void Dispose() => Directory.Delete(_workDir, recursive: true);

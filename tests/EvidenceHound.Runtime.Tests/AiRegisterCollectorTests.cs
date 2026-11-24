@@ -23,7 +23,8 @@ public sealed class AiRegisterCollectorTests : IDisposable
                 type: supporting
                 owner: it@example.com
                 ai:
-                  tier: low
+                  screening: normal
+                  screening_yes: []
                   screened_on: "2026-02-01"
                   use: customised
                   oversight: human_in_the_loop
@@ -56,13 +57,13 @@ public sealed class AiRegisterCollectorTests : IDisposable
         json["file"]!.GetValue<string>().ShouldBe("scope/setup.yaml");
         json["sha256"]!.GetValue<string>().Length.ShouldBe(64);
         var system = json["systems"]!.AsArray().ShouldHaveSingleItem()!;
-        (system["name"]!.GetValue<string>(), system["tier"]!.GetValue<string>(), system["in_use"]!.GetValue<bool>()).ShouldBe(("Example Chat", "low", true));
+        (system["name"]!.GetValue<string>(), system["screening"]!.GetValue<string>(), system["in_use"]!.GetValue<bool>(), system["status"]!.GetValue<string>()).ShouldBe(("Example Chat", "normal", true, "operational"));
     }
 
     [Fact]
     public async Task Unloadable_scope_is_an_error()
     {
-        await File.WriteAllTextAsync(Path.Combine(_scope, "setup.yaml"), Setup.Replace("tier: low", "tier: extreme", StringComparison.Ordinal), TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(_scope, "setup.yaml"), Setup.Replace("screening: normal", "screening: extreme", StringComparison.Ordinal), TestContext.Current.CancellationToken);
 
         var result = await new AiRegisterCollector().CollectAsync(Context(_scope), TestContext.Current.CancellationToken);
 

@@ -59,8 +59,9 @@ public class RegisterSummaryTests
     [Fact]
     public void Ai_systems_give_their_register_fields_and_dates()
     {
-        var ai = new AiRegistration(AiRiskTier.Medium, new(2026, 3, 2), AiUse.ThirdParty, AiOversight.HumanOnTheLoop, "Monthly sample.", At)
+        var ai = new AiRegistration(AiScreening.Elevated, new(2026, 3, 2), AiUse.ThirdParty, AiOversight.HumanOnTheLoop, "Monthly sample.", At)
         {
+            ScreeningYes = [5],
             InUseFrom = new(2026, 4, 1),
             RetiredOn = new(2026, 10, 31),
         };
@@ -70,9 +71,9 @@ public class RegisterSummaryTests
         var item = RegisterItems.Of(setup, RegisterItems.AiSystems).ShouldHaveSingleItem();
 
         (item.Name, item.Added, item.Retired).ShouldBe(("Example lead scoring", new DateOnly(2026, 4, 1), new DateOnly(2026, 10, 31)));
-        item.Values.ShouldBe(new Dictionary<string, string> { ["tier"] = "medium", ["use"] = "third_party", ["oversight"] = "human_on_the_loop" });
+        item.Values.ShouldBe(new Dictionary<string, string> { ["screening"] = "elevated", ["use"] = "third_party", ["oversight"] = "human_on_the_loop" });
         RegisterItems.Of(setup, RegisterItems.Systems).Select(i => (i.Name, i.Values["type"])).ShouldBe([("Example laptops", "supporting"), ("Example lead scoring", "primary")]);
-        RegisterItems.Fields(RegisterItems.AiSystems).ShouldBe(["tier", "use", "oversight"]);
+        RegisterItems.Fields(RegisterItems.AiSystems).ShouldBe(["screening", "use", "oversight"]);
         RegisterItems.Fields(RegisterItems.Systems).ShouldBe(["type"]);
     }
 

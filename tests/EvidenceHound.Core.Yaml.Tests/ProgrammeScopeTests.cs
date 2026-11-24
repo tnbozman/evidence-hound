@@ -102,17 +102,17 @@ public class ProgrammeScopeTests
     [Fact]
     public void Register_must_be_known_with_known_fields()
     {
-        var register = "    register:\n      of: ai_systems\n      by: [tier, use]\n";
+        var register = "    register:\n      of: ai_systems\n      by: [screening, use]\n";
         var programme = ScopeFixture.Parse(WithProgrammes(Programme() + register)).Scope.Setup.Programmes.ShouldHaveSingleItem();
         programme.Register!.Of.ShouldBe("ai_systems");
-        programme.Register.By.ShouldBe(["tier", "use"]);
+        programme.Register.By.ShouldBe(["screening", "use"]);
         Codes(WithProgrammes(Programme() + register)).ShouldNotContain(c => c.StartsWith("scope.programme", StringComparison.Ordinal));
 
         Codes(WithProgrammes(Programme() + register.Replace("of: ai_systems", "of: robots", StringComparison.Ordinal))).ShouldContain("scope.value_invalid");
-        var problem = ScopeFixture.Problems(WithProgrammes(Programme() + register.Replace("[tier, use]", "[tier, colour]", StringComparison.Ordinal)))
+        var problem = ScopeFixture.Problems(WithProgrammes(Programme() + register.Replace("[screening, use]", "[screening, colour]", StringComparison.Ordinal)))
             .Single(p => p.Code == "scope.programme_register_unknown");
         problem.Message.ShouldContain("colour");
-        problem.Hint.ShouldContain("tier, use, oversight");
+        problem.Hint.ShouldContain("screening, use, oversight");
     }
 
     internal static string Programme(string id = "baseline", string framework = ScopeFixture.FrameworkUrn, string groups = "[\"1\", \"2\"]", string audit = "EXAMPLE-BASELINE-2026") =>

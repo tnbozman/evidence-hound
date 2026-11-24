@@ -64,13 +64,22 @@ public sealed class ScopeExportTests
     public void An_ai_system_exports_its_register_entry_from_its_labels_and_description()
     {
         // s11-12: the register entry reaches CISO Assistant as labels and description lines, so export reads it back from them.
-        var entry = new AiRegistration(AiRiskTier.Medium, new DateOnly(2026, 3, 2), AiUse.Customised, AiOversight.HumanOnTheLoop, "The sales lead can switch it off; staff draft by hand.", new SourceLine("setup.yaml", 1))
+        var entry = new AiRegistration(AiScreening.Elevated, new DateOnly(2026, 3, 2), AiUse.Customised, AiOversight.HumanOnTheLoop, "The sales lead can switch it off; staff draft by hand.", new SourceLine("setup.yaml", 1))
         {
+            ScreeningYes = [1, 5],
+            RegisteredOn = new DateOnly(2026, 3, 4),
+            Version = "2.1",
+            Purpose = "Drafts proposals: faster.",
+            IntendedUses = ["Draft proposal text", "Summarise past bids"],
+            Limitations = "Not for pricing.",
+            Misuse = "None identified.",
+            DataSources = ["Past proposals (text)"],
+            Stakeholders = ["Sales team", "Customers"],
             ImpactAssessment = AiImpactAssessment.Approved,
             ImpactAssessedOn = new DateOnly(2026, 3, 20),
             InUseFrom = new DateOnly(2026, 4, 1),
         };
-        var built = entry with { Use = AiUse.Built, Tier = AiRiskTier.Low, Oversight = AiOversight.HumanInTheLoop, ImpactAssessment = AiImpactAssessment.NotRequired, ImpactAssessedOn = null, LastTestedOn = new DateOnly(2026, 5, 1), RetiredOn = new DateOnly(2026, 10, 1) };
+        var built = entry with { Use = AiUse.Built, Screening = AiScreening.Normal, ScreeningYes = [], Version = null, IntendedUses = [], Stakeholders = [], Oversight = AiOversight.HumanInTheLoop, ImpactAssessment = AiImpactAssessment.NotRequired, ImpactAssessedOn = null, LastTestedOn = new DateOnly(2026, 5, 1), RetiredOn = new DateOnly(2026, 10, 1) };
         var held = Held();
         held = held with
         {
@@ -84,7 +93,7 @@ public sealed class ScopeExportTests
 
         var files = ScopeExport.Write(held);
 
-        files["setup.yaml"].ShouldContain("tier: medium");
+        files["setup.yaml"].ShouldContain("screening: elevated");
         files["setup.yaml"].ShouldContain("oversight: human_on_the_loop");
         var (scope, problems) = Parse(files);
         problems.ShouldBeEmpty(string.Join("\n", problems.Select(p => $"{p.Code} {p.At.File}:{p.At.Line} {p.Message}")));
@@ -103,7 +112,7 @@ public sealed class ScopeExportTests
             [
                 .. held.Objects,
                 Managed(ScopeKind.System, "Example chat", ("ref_id", "SYS-CHAT"), ("type", "primary"), ("description", "Edited by hand in CISO Assistant."), ("domain", "Example Pty Ltd"),
-                    ("labels", "ai-oversight-in-the-loop, ai-system, ai-tier-low, ai-use-built")),
+                    ("labels", "ai-oversight-in-the-loop, ai-screening-normal, ai-system, ai-use-built")),
             ],
         };
 
