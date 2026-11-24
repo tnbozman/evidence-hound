@@ -419,6 +419,11 @@ Done before s11-12, because the register fields and the screening runbook follow
 **Functional check**
 - Apply the example scope to the local CISO Assistant (with s11-15, which adds the example AI systems): the two example AI systems carry their labels and register entry, filtering assets by `ai-system` lists both, and re-applying writes nothing.
 
+**Progress (2026-11-24)**
+- Built: the `ai` block, its validation, the labels and the description (`AiRegisterScopeTests`, `AiRegisterPlanTests`, `ScopeSchemaTests`), and the `scope.schema.json` and `docs/scope.md` entries. The writer needed no change: systems already send labels and descriptions.
+- The functional check runs with s11-15, which adds the example AI systems, because the functional tests share one seeded CISO Assistant.
+- For s11-13: the register fields now live in the scope files, so the `ai.*` checks read the register from the scope (as the supplier and sensitive-data checks do) and read only owners, risk scenarios, solutions, contracts and assessments from CISO Assistant. The check table there still uses the old custom field names and is rewritten when s11-13 starts.
+
 ### s11-13 AI checks from CISO Assistant
 - [ ] Done
 

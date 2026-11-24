@@ -57,8 +57,39 @@ A prompt for a ref ID (`hound add system`, `hound add control`, `hound onboard <
 | `libraries` | Other libraries to load by URN, such as the mapping set between the Essential Eight and the Essentials. |
 | `domains` | Folders. Each has a `name`, a `description`, its `perimeters` (or a single `perimeter`) and its `systems`. |
 | perimeter | `name`, optional `ref_id` and `description`. |
-| system | `name`, `type` (`primary` or `supporting`), optional `ref_id`, `description`, `owner`, `parents` (other systems by name), `tags` (per-framework labels such as `essentials_domain: identity` or `cui: "true"`), `solution` (the third-party solution that provides it, by `ref_id`) `supplied_through` (a reseller or managed service provider, by the third party's `ref_id`) and `data` (the [sensitive data](#sensitive-data) it handles). A system with either supplier key is registered only once those suppliers are approved: see [Supplier approval](#supplier-approval). |
+| system | `name`, `type` (`primary` or `supporting`), optional `ref_id`, `description`, `owner`, `parents` (other systems by name), `tags` (per-framework labels such as `essentials_domain: identity` or `cui: "true"`), `solution` (the third-party solution that provides it, by `ref_id`) `supplied_through` (a reseller or managed service provider, by the third party's `ref_id`) `data` (the [sensitive data](#sensitive-data) it handles) and `ai` (its [AI register entry](#ai-systems), when it is an AI system). A system with either supplier key is registered only once those suppliers are approved: see [Supplier approval](#supplier-approval). |
 | `programmes` | Optional. The compliance programmes the reports are organised by, such as the Essential Eight and later AI6. Each has `id` (a lowercase slug such as `essential-eight`, unique), `name`, `framework` (a framework URN declared above, with a `snapshot`), `groups` (the implementation groups reported against, which must exist in the snapshot), `audit` (the `ref_id` of the audit, or audit series, of record) and optional `group_by` (`parent`, the default: requirements are grouped under their parent node, such as the Essential Eight strategy). An audit belongs to at most one programme. Programmes create nothing in CISO Assistant and never appear in `hound scope plan`. `hound programme list` shows each one with its requirement counts per group and per parent node, from the snapshot alone. |
+
+### AI systems
+
+An AI system is a system with an `ai` block: its entry in the AI register. The entry is reviewed by pull request like the rest of the
+scope, dates included, and is written to CISO Assistant as filtering labels and as lines added to the asset's description, because
+CISO Assistant's custom fields are an Enterprise feature. The register is CISO Assistant's asset list filtered by the `ai-system`
+label, which its own Excel export can save. [The AI governance primer](ai-grc-primer.md) explains the terms.
+
+```yaml
+systems:
+  - name: Example lead scoring
+    type: supporting
+    owner: sales@example.com
+    solution: SOL-EXCRM-SCORING          # needed for a third-party AI system
+    ai:
+      tier: medium                       # low, medium, high or prohibited: the result of screening
+      screened_on: "2026-03-02"
+      use: third_party                   # built, customised or third_party
+      oversight: human_on_the_loop       # human_in_the_loop, human_on_the_loop or human_out_of_loop
+      oversight_note: The sales lead reviews a monthly sample of low scores and can switch scoring off.
+      impact_assessment: approved        # optional: not_started, in_progress, approved or not_required
+      impact_assessed_on: "2026-03-20"   # only with approved
+      in_use_from: "2026-04-01"          # left out while it is being considered
+      last_tested_on: "2026-03-25"
+      # retired_on: "2026-10-31"         # when it stopped being used
+```
+
+In CISO Assistant the asset gets the labels `ai-system`, `ai-tier-medium`, `ai-use-third-party` and `ai-oversight-on-the-loop` (and
+`ai-retired` once retired), and its description gains the entry in words, such as "AI register: medium tier, third party, human on the
+loop." `hound scope validate` reports `ai.impact_date_without_approval`, `ai.retired_before_use`, and `ai.solution_missing` for a
+third-party AI system with no `solution`.
 
 ## controls.yaml
 
