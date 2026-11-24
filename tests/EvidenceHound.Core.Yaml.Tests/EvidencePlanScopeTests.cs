@@ -56,8 +56,8 @@ public class EvidencePlanScopeTests
         Problems(Plan).ShouldBeEmpty();
         var plan = parsed.Scope.EvidencePlan.ShouldNotBeNull();
         var manual = plan.Rows[0];
-        (manual.RefId, manual.Control.Value, manual.Method, manual.Owner?.Value, manual.GrcTeam?.Value, manual.EveryMonths, manual.Runbook)
-            .ShouldBe(("EV-ADMIN-REVIEW", "AC-MFA", EvidenceMethod.Manual, "Example 365 owners", "GRC team", 3, "manual-sources/admin-review.md"));
+        (manual.RefId, manual.Control.Value, manual.Method, manual.Owner?.Value, manual.GrcTeam?.Value, manual.Every, manual.Runbook)
+            .ShouldBe(("EV-ADMIN-REVIEW", "AC-MFA", EvidenceMethod.Manual, "Example 365 owners", "GRC team", new EvidenceInterval(3, IntervalUnit.Month), "manual-sources/admin-review.md"));
         manual.Requirements.Select(r => r.Key.ToString()).ShouldBe(["EX-1.2"]);
         (plan.Rows[1].Method, plan.Rows[1].Collector?.Value).ShouldBe((EvidenceMethod.Automated, "example-m365"));
         parsed.Scope.Access.Teams[1].Email.ShouldBe("owners-365@example.com");
@@ -111,6 +111,27 @@ public class EvidencePlanScopeTests
 
         Problems(plan).Select(p => p.Code).ShouldBe(
             ["scope.value_invalid", "evidence_plan.team_unknown", "evidence_plan.team_unknown", "evidence_plan.control_unknown"], ignoreOrder: true);
+    }
+
+    [Fact]
+    public void Weekly_interval_is_a_task_schedule()
+    {
+        var parsed = Parse(Plan.Replace("every: 3 months", "every: 1 week", StringComparison.Ordinal));
+
+        Problems(Plan.Replace("every: 3 months", "every: 1 week", StringComparison.Ordinal)).ShouldBeEmpty();
+        var every = parsed.Scope.EvidencePlan.ShouldNotBeNull().Rows[0].Every.ShouldNotBeNull();
+        every.ShouldBe(new EvidenceInterval(1, IntervalUnit.Week));
+        (every.Text, every.After(new DateOnly(2026, 11, 23))).ShouldBe(("every 1 week", new DateOnly(2026, 11, 30)));
+        TaskSchedules.Of(every).ShouldBe(new TaskSchedule("WEEKLY", 1));
+        TaskSchedules.Of(new EvidenceInterval(12, IntervalUnit.Month)).ShouldBe(new TaskSchedule("YEARLY", 1));
+        EvidenceInterval.Parse("every 1 week").ShouldBe(every);
+        EvidenceInterval.Parse("every 6 months").ShouldBe(new EvidenceInterval(6, IntervalUnit.Month));
+        EvidenceInterval.Parse("every 2 weeks").ShouldBeNull();
+
+        // As CISO Assistant holds it, read back as the plan writes it, so an unchanged row compares equal.
+        TaskSchedules.Text(new TaskSchedule("WEEKLY", 1)).ShouldBe("every 1 week");
+        TaskSchedules.Text(new TaskSchedule("YEARLY", 1)).ShouldBe("every 12 months");
+        TaskSchedules.Text(new TaskSchedule("MONTHLY", 3)).ShouldBe("every 3 months");
     }
 
     [Fact]

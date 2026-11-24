@@ -35,9 +35,18 @@ public class TaskTemplatePlanTests
         // A row naming no requirements links every requirement its control supports in each audit that lists the control.
         var mfa = declared.Single(d => d.Kind == ScopeKind.Evidence && d.Key == "EV-MFA");
         mfa.Fields.ContainsKey("requirements").ShouldBeFalse();
-        TaskSchedules.Of(3).ShouldBe(new TaskSchedule("MONTHLY", 3));
-        TaskSchedules.Of(6).ShouldBe(new TaskSchedule("MONTHLY", 6));
-        TaskSchedules.Of(12).ShouldBe(new TaskSchedule("YEARLY", 1));
+        TaskSchedules.Of(new EvidenceInterval(3, IntervalUnit.Month)).ShouldBe(new TaskSchedule("MONTHLY", 3));
+        TaskSchedules.Of(new EvidenceInterval(6, IntervalUnit.Month)).ShouldBe(new TaskSchedule("MONTHLY", 6));
+        TaskSchedules.Of(new EvidenceInterval(12, IntervalUnit.Month)).ShouldBe(new TaskSchedule("YEARLY", 1));
+    }
+
+    [Fact]
+    public void A_weekly_row_is_due_a_week_from_today()
+    {
+        var task = Declared(EvidencePlanScopeTests.Plan.Replace("every: 3 months", "every: 1 week", StringComparison.Ordinal))
+            .Single(d => d.Kind == ScopeKind.TaskTemplate);
+
+        (task.Fields["schedule"], task.Initial["first_due"]).ShouldBe(("every 1 week", "2026-11-30"));
     }
 
     [Fact]

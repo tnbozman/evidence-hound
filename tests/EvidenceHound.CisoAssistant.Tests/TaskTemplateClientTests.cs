@@ -140,6 +140,17 @@ public sealed class TaskTemplateClientTests : IDisposable
     }
 
     [Fact]
+    public async Task A_weekly_task_is_a_weekly_schedule_and_reads_back_the_same()
+    {
+        (await Create(ScopeKind.TaskTemplate, "EV-ADMIN-REVIEW", [("first_due", "2026-11-30")],
+            ("name", "EV-ADMIN-REVIEW: Multi-factor authentication"), ("domain", "Example Pty Ltd"), ("assignees", "GRC team"),
+            ("schedule", "every 1 week"), ("evidence", "EV-ADMIN-REVIEW"), ("controls", "AC-MFA"), ("enabled", "true"))).Value();
+
+        var schedule = Body("/api/task-templates/")["schedule"]!;
+        (schedule["frequency"]!.GetValue<string>(), schedule["interval"]!.GetValue<int>()).ShouldBe(("WEEKLY", 1));
+    }
+
+    [Fact]
     public async Task Creates_an_evidence_item_with_its_owner_and_labels_making_a_missing_label()
     {
         (await Create(ScopeKind.Evidence, "EV-MFA", [],
