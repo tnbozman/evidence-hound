@@ -50,6 +50,7 @@ Risks, exceptions and risk acceptances in the reports are read from CISO Assista
 **Acceptance criteria**
 - `docs/operate/`: system owner guide (find your audit, upload manual evidence, update an action), collector operator guide (run, troubleshoot, rotate credentials), committee member guide (read the dashboard and pack).
 - `docs/training/`: three short session outlines (system owners 60 min, committee 30 min, board 20 min) with exercises against the example deployment.
+- The guides are built around a GRC member with 2 to 8 hours a week and the guided weekly review (s10-07, [design](../design/guided-review.md)): what to do each week, each month and each quarter within that budget, and what the agent does for them (amended 2026-11-24).
 - `docs/govern/continuous-compliance-procedure.md`: generic continuous compliance procedure (authorising official, reassessment triggers, risk acceptance with expiry, evidence freshness windows).
 
 **Tests first**
@@ -148,6 +149,30 @@ Risks, exceptions and risk acceptances in the reports are read from CISO Assista
 
 **Functional check**
 - Follow the guide against the local stack and produce a committee summary from the generated report.
+
+### s12-08 NIST SP 800-171 crosswalk (added 2026-11-24)
+- [ ] Done
+
+Moved earlier from s17 at the maintainer's request (2026-11-24), lightweight: US suppliers have a window while CMMC Phase 2 is paused.
+Full CMMC Level 2 (mapping, SSP layout, POA&M) stays in s17.
+
+**Story:** As a supplier holding CUI, I want to see which NIST SP 800-171 requirements my existing Essential Eight evidence already
+answers, so that I know my gap before I pay for an assessment.
+
+**Acceptance criteria**
+- `hound mapping crosswalk --from essential-eight-2023 --to <framework urn>` uses a mapping library CISO Assistant ships between the two
+  frameworks when one is loaded (for example through NIST CSF), and otherwise a reviewed crosswalk file in `mappings/crosswalks/`.
+- It prints, as Markdown or JSON, each target requirement with the checks and manual sources that would answer it today, those only
+  partly answered, and those with nothing, with the current result of each source from the audit of record.
+- No new audit is created and nothing is written to CISO Assistant; the crosswalk is advisory until s17.
+- The adoption guide (s12-03) explains how to use it with a prime's questionnaire.
+
+**Tests first**
+- `CrosswalkTests.Every_target_requirement_is_answered_partly_answered_or_open`
+- `CrosswalkTests.Uses_a_loaded_mapping_library_before_the_file`
+
+**Functional check**
+- `hound mapping crosswalk` against the local CISO Assistant with the example Essential Eight audit prints the 800-171 gap list.
 
 ## Discovered work
 

@@ -140,6 +140,45 @@ Decided (maintainer, 2026-11-23): add it in s10 and make it broader than CUI. A 
 **Functional check**
 - Apply the tutorial's suppliers with data kinds to the local CISO Assistant and filter solutions by `data:cui`; the machine-shop rehearsal produces the prime's list with `hound supplier list --data cui`.
 
+### s10-07 Review queue and guided weekly session (added 2026-11-24)
+- [ ] Done
+
+Decided (maintainer, 2026-11-24): assume a GRC member with 2 to 8 hours a week, get as close as possible to AI approving everything,
+and gather every human review into one simple process. Design: [one guided review a week](../design/guided-review.md).
+
+**Story:** As a GRC member with a few hours a week, I want one weekly session in which my agent walks me through everything that
+needs me, with its recommendation and reasons, so that I accept or challenge each item quickly, learn as I go, and apply the lot in one
+batch.
+
+**Acceptance criteria**
+- `hound review pending --json` lists, in one shape, every item that waits on a person: undecided onboarding decisions and
+  not-applicable rows, supplier approvals and review conclusions, manual evidence proposals, and scope changes not yet applied. Each item
+  has its kind, title, why it matters (from the requirement), the agent's recommendation with reasons and sources when one is drafted,
+  the effect of accepting it, its deadline and an estimate in minutes. Prompt-free, for the agent.
+- `hound review` refuses an agent or a pipe, walks the queue most-urgent first, stops at `--for <minutes>`, and asks accept, challenge
+  (a note, the item stays queued for the agent) or skip. Accepted items are written as `hound approve` and `hound manual approve` write
+  them today; it then shows the plan and applies it (`--no-apply` to stop at the files). One sign-off record per session names the
+  person, the time and every accepted item.
+- Standing approvals: a session can accept a rule for re-attesting an unchanged manual source (same checks, same results as the last
+  attestation) for 12 months; the rule is a file in the repo, listed in each session summary, and never covers a not-applicable
+  decision, a risk acceptance or a first approval.
+- The example evidence plan has a "Weekly compliance review" row: a recurring task for the GRC team every week whose description says how
+  to start the session. (Needs a weekly interval in the evidence plan: `every: 1 week`.)
+- A `weekly-review` skill tells the agent how to prepare the queue before the session and answer challenges after it.
+- `docs/manual-evidence.md` and the onboarding docs point to the weekly session as the one place to sign off.
+
+**Tests first**
+- `ReviewQueueTests.Lists_every_pending_kind_in_one_shape`
+- `ReviewQueueTests.Most_urgent_first_and_stops_at_the_time_given`
+- `ReviewCommandTests.Refuses_without_a_terminal`
+- `ReviewCommandTests.Accepted_items_are_written_as_approve_writes_them_and_one_sign_off_is_recorded`
+- `StandingApprovalTests.Unchanged_reattestation_is_accepted_and_nothing_else_is`
+- `EvidencePlanScopeTests.Weekly_interval_is_a_task_schedule`
+
+**Functional check**
+- The machine-shop rehearsal (s10-05): the agent prepares a queue with a supplier, a manual export and two onboarding decisions; the
+  session, run in a terminal with recorded answers, accepts three and challenges one, and the next plan is empty but for the challenge.
+
 ### Carried from s09 (2026-11-23)
 
 Built and tested in CI; each waits on a run in the maintainer's own environment, not on code. Details stay under the task in `s09-e8-gap-collectors.md`.

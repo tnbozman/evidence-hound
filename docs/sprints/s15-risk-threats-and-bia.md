@@ -132,6 +132,57 @@ What is configuration here, and what is not:
 **Functional check**
 - Following the guides verbatim, add a scenario to the example study and apply it.
 
+### s15-07 Incident response and reporting deadlines (added 2026-11-24)
+- [ ] Done
+
+Added at the maintainer's request (2026-11-24): both regimes require incidents to be reported on a clock, and incident response had no
+home in the plan.
+
+**Story:** As a small supplier, I want an incident recorded once with the reports it triggers and their deadlines, so that I meet each
+regulator's and customer's clock without knowing them by heart.
+
+**Acceptance criteria**
+- An incident response plan and its annual test are manual sources with runbooks and an evidence plan row (s10-04).
+- Incidents live in CISO Assistant (its incident records). `scope/reporting.yaml` declares the reporting obligations as configuration:
+  who, within how long, triggered by which data kinds (s10-06) or contract (s15-08). Examples: DFARS 252.204-7012 (72 hours to the
+  DoD for covered defence information), DISP (to Defence), the Notifiable Data Breaches scheme (assess within 30 days), ASD's ACSC
+  reporting, and the customer's own contract clauses.
+- `hound incident obligations <incident>` lists each report owed with its deadline from the incident's discovery time; overdue reports
+  are open actions in the committee report (s12-05) and items in the weekly review (s10-07).
+
+**Tests first**
+- `ReportingObligationTests.Cui_incident_owes_a_72_hour_dfars_report`
+- `ReportingObligationTests.Pii_breach_owes_an_ndb_assessment_within_30_days`
+- `IncidentObligationsCommandTests.Lists_deadlines_from_discovery_time`
+
+**Functional check**
+- Record a fictional incident on a CUI system in the local CISO Assistant; `hound incident obligations` lists the DFARS report due
+  72 hours after discovery.
+
+### s15-08 Supply-chain flow-down (added 2026-11-24)
+- [ ] Done
+
+Added at the maintainer's request (2026-11-24): primes push requirements to their subcontractors, and a supplier must pass them on to its
+own.
+
+**Story:** As a subcontractor, I want each customer contract's security clauses recorded with the requirements they impose, and checked
+against my own suppliers' contracts, so that I can show a prime what I flow down and see where I do not.
+
+**Acceptance criteria**
+- A customer contract (from a prime) is declared like a supplier contract (s09-19), with `obligations`: clause references (for example
+  DFARS 252.204-7012, DFARS 252.204-7021, a DISP clause, an Essential Eight maturity level) and the framework and level each imposes.
+- `flow_down: true` on an obligation means it must appear on every supplier contract whose solution handles the related data kind
+  (s10-06). Validation reports a supplier contract that is missing it (`contract.flow_down_missing`).
+- The obligations a customer imposes become the programme's targets (s11-01), so reports say which customer requires what.
+- `hound supplier list --data` (s10-06) gains the flowed-down clauses on each supplier, for the prime's questionnaire.
+
+**Tests first**
+- `FlowDownTests.Supplier_contract_without_a_flowed_down_clause_is_reported`
+- `FlowDownTests.Customer_obligation_names_a_framework_and_level`
+
+**Functional check**
+- The machine-shop rehearsal records its prime's DFARS clauses and finds the one supplier contract that does not carry them.
+
 ## Discovered work
 
 ## Sprint review
