@@ -100,7 +100,7 @@ Result (2026-11-24): no CISO Assistant can run in the cloud session, so the chec
 Result (2026-11-24): `SspFunctionalTests.Strict_lists_the_example_gaps_and_the_poam_lists_what_is_not_met` passed in CI against CISO Assistant v4.3.4 seeded from the example (head 6e28ba4): `hound ssp build --programme essential-eight --strict` exits 1 and lists `ISM-1486: no responsible party` (compliant by hand with no control linked), and `hound ssp poam` lists the rows not implemented; both outputs are kept in `test-results/ssp/`. The second half (fix and exit zero) is covered by the unit tests, since the fix for ISM-1486 is linking a control, which s11-07 does in the example. Deviation, decided while building: a row *not implemented* is not a gap, because the POA&M carries it; otherwise every unassessed row of a real audit would block `--strict`. Rows in place need a statement and an owner, Planned rows an owner, Not applicable rows a justification. Flagging requirements a profile does not allow on a POA&M waits for s17-03's list.
 
 ### s11-04 One SSP layout (NIST SP 800-18), with an ISM annex for the Essential Eight
-- [ ] Done
+- [x] Done
 
 **Story:** As an Australian defence supplier, I want one system security plan layout that meets the ISM now and CMMC later, so that the same data and the same template serve DISP and CMMC.
 
@@ -121,6 +121,8 @@ Result (2026-11-24): `SspFunctionalTests.Strict_lists_the_example_gaps_and_the_p
 
 **Functional check**
 - Generate the SSP for the example Essential Eight ML2 audit on the local stack and read it against the Appendix A section list and ISM-0041.
+
+Result (2026-11-24): `SspFunctionalTests.Renders_the_sp_800_18_plan_with_the_ism_annex_by_strategy` passed in CI against CISO Assistant v4.3.4 seeded from the example (head 3af8ae0). `hound ssp build --programme essential-eight` prints sections 1 to 15 of SP 800-18 Rev 1 Appendix A, with the gaps first and the POA&M as an appendix. The purpose section is read from its file, and the classification comes from `ssp.yaml`. ISM-1815 appears once in the annex, listed under `mfa, rap, ac, uah`. The output is kept in `test-results/ssp/ssp-essential-eight.md`. `docs/ssp.md` maps ISM-0041's purpose, boundary, management and annex to the plan's sections. Deviation: the listed `IsmAnnexTests` cases were written in `SspLayoutTests`, beside the layout they exercise. A missing section file prints as "not written yet", so a draft still builds; `ssp.section_missing` still catches an undeclared one.
 
 ### s11-16 Annex columns from the ASD Blueprint SSP annex template (added 2026-11-24, do after s11-04)
 - [ ] Done
