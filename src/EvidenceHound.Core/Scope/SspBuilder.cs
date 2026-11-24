@@ -1,4 +1,5 @@
 using System.Globalization;
+using EvidenceHound.Core.Frameworks;
 
 namespace EvidenceHound.Core.Scope;
 
@@ -9,7 +10,7 @@ namespace EvidenceHound.Core.Scope;
 /// </summary>
 public static class SspBuilder
 {
-    public static SspDocument Build(ScopeSsp ssp, ScopeDocument scope, IReadOnlyList<ActualObject> held)
+    public static SspDocument Build(ScopeSsp ssp, ScopeDocument scope, IReadOnlyList<ActualObject> held, FrameworkSnapshot? snapshot = null)
     {
         ArgumentNullException.ThrowIfNull(ssp);
         ArgumentNullException.ThrowIfNull(scope);
@@ -44,7 +45,7 @@ public static class SspBuilder
             controls,
             [.. rows.Select(r => SspStatements.Complete(Requirement(r), byRef))],
             [.. ssp.Documents.Select(d => new SspValue(scope.Audits.SelectMany(a => a.Documents).FirstOrDefault(x => x.Id == d.Value)?.Name ?? d.Value, RepoSource(d.At)))],
-            [.. ssp.Sections.Select(s => Repo(s.File, s.At))]);
+            [.. ssp.Sections.Select(s => new SspNamed(s.Name, Repo(s.File, s.At)))]);
     }
 
     private static SspSystem Inventory(ScopeRef system, ActualObject? held)

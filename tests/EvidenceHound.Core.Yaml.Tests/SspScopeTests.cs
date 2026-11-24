@@ -15,7 +15,9 @@ public class SspScopeTests
         (ssp.Programme.Value, ssp.Profile, ssp.SystemName, ssp.Perimeter.Value, ssp.Version).ShouldBe(("baseline", "ism", "Example corporate IT", "Example baseline", "0.1"));
         ssp.Roles.Select(r => (r.Role, r.Holder.Value)).ShouldBe([("system_owner", "it@example.com"), ("authorising_official", "ceo@example.com"), ("security_contact", "GRC team")]);
         ssp.Documents.Select(d => d.Value).ShouldBe(["mfa-policy"]);
-        ssp.Sections.Select(s => (s.Name, s.File)).ShouldBe([("environment", "ssp/environment.md"), ("physical", "ssp/physical.md"), ("personnel", "ssp/personnel.md")]);
+        ssp.Sections.Select(s => (s.Name, s.File)).ShouldBe(
+            [("purpose", "ssp/purpose.md"), ("environment", "ssp/environment.md"), ("management", "ssp/management.md"), ("laws_and_policies", "ssp/laws-and-policies.md")]);
+        (ssp.Classification, ssp.OperationalStatus, ssp.SystemType).ShouldBe(("OFFICIAL", "operational", "general support system"));
         SspFixture.Problems().ShouldNotContain(p => p.Code.StartsWith("ssp.", StringComparison.Ordinal));
     }
 
@@ -46,10 +48,10 @@ public class SspScopeTests
     [Fact]
     public void Required_section_missing_is_reported()
     {
-        var problem = SspFixture.Problems(SspFixture.Ssp.Replace("\n      personnel: ssp/personnel.md", "", StringComparison.Ordinal))
+        var problem = SspFixture.Problems(SspFixture.Ssp.Replace("\n      management: ssp/management.md", "", StringComparison.Ordinal))
             .Single(p => p.Code == "ssp.section_missing");
 
-        problem.Message.ShouldContain("personnel");
+        problem.Message.ShouldContain("management");
         problem.Message.ShouldContain("ism");
     }
 

@@ -44,7 +44,7 @@ public class SspBuilderTests
     {
         var document = Build();
 
-        document.Requirements.Select(r => (r.Ref.Value, r.Result.Value)).ShouldBe([("EX-1.1", "compliant"), ("EX-1.2", "partially_compliant")]);
+        document.Requirements.Select(r => (r.Ref.Value, r.Result.Value)).ShouldBe([("EX-1.1", "compliant"), ("EX-1.2", "partially_compliant"), ("EX-2.1", "not_assessed")]);
         document.Requirements[0].Evidence.Value.ShouldBe("mfa-policy");
         document.Requirements[0].Result.Source.ShouldBe(new SspSource(SspSource.CisoAssistant, "requirement assessment EXAMPLE-BASELINE-2026/EX-1.1"));
         var control = document.Controls.ShouldHaveSingleItem();
@@ -72,7 +72,9 @@ public class SspBuilderTests
         document.Roles.Select(r => (r.Role, r.Holder.Value)).ShouldBe([("system_owner", "it@example.com"), ("authorising_official", "ceo@example.com"), ("security_contact", "GRC team")]);
         document.Roles.ShouldAllBe(r => r.Holder.Source.Kind == SspSource.Repo);
         document.Documents.ShouldHaveSingleItem().Value.ShouldBe("MFA policy");
-        document.Sections.Select(s => s.Value).ShouldBe(["ssp/environment.md", "ssp/physical.md", "ssp/personnel.md"]);
+        document.Sections.Select(s => (s.Name, s.Value.Value)).ShouldBe(
+            [("purpose", "ssp/purpose.md"), ("environment", "ssp/environment.md"), ("management", "ssp/management.md"), ("laws_and_policies", "ssp/laws-and-policies.md")]);
+        (document.Classification.Value, document.OperationalStatus.Value, document.SystemType.Value).ShouldBe(("OFFICIAL", "operational", "general support system"));
         (document.Framework.Value, document.Audit.Value, document.Perimeter.Value).ShouldBe((ScopeFixture.FrameworkUrn, "EXAMPLE-BASELINE-2026", "Example baseline"));
     }
 
@@ -89,6 +91,17 @@ public class SspBuilderTests
         row["status"]!["value"]!.GetValue<string>().ShouldBe("Implemented");
         row["gaps"]!.AsArray().ShouldBeEmpty();
         JsonNode.Parse(json)!["gaps"]!.AsArray().ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void The_annex_lists_each_control_in_the_programme_groups_by_parent()
+    {
+        var annex = SspBuilder.Build(Ssp(), SspFixture.Parse().Scope, SspFixture.Held(), ScopeFixture.Snapshot).Annex;
+
+        // The programme reports against groups 1 and 2, so EX-2.1 is in the annex too, not yet assessed and on the POA&M.
+        annex.Select(a => (a.Control, a.Status.Value, a.Poam)).ShouldBe(
+            [("EX-1.1", "Implemented", null), ("EX-1.2", "Partially implemented", "POAM-EX-1.2"), ("EX-2.1", "Not implemented", "POAM-EX-2.1")]);
+        annex[0].Parents.ShouldBe(["(top level)"]);
     }
 
     private static SspDocument Build() => SspBuilder.Build(Ssp(), SspFixture.Parse().Scope, SspFixture.Held());

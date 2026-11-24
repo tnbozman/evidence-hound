@@ -24,9 +24,10 @@ public sealed class SspCommandTests : IDisposable
               authorising_official: it@example.com
               security_contact: it@example.com
             sections:
+              purpose: ssp/purpose.md
               environment: ssp/environment.md
-              physical: ssp/physical.md
-              personnel: ssp/personnel.md
+              management: ssp/management.md
+              laws_and_policies: ssp/laws-and-policies.md
         """;
 
     private readonly StringWriter _output = new();

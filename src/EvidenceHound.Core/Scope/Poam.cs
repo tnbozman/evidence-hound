@@ -4,7 +4,11 @@ using System.Text;
 namespace EvidenceHound.Core.Scope;
 
 /// <summary>One line of the plan of action and milestones: a requirement not yet met and a control that answers it.</summary>
-public sealed record PoamItem(SspValue Requirement, SspValue Status, SspValue Control, SspValue Owner, SspValue Eta, SspValue ControlStatus);
+public sealed record PoamItem(SspValue Requirement, SspValue Status, SspValue Control, SspValue Owner, SspValue Eta, SspValue ControlStatus)
+{
+    /// <summary>The item's id, which the annex links to: one per requirement.</summary>
+    public string Id => throw new NotImplementedException();
+}
 
 /// <summary>
 /// The POA&amp;M, from the same model as the plan (s11-03): every Partially implemented, Planned or Not implemented requirement, one line per

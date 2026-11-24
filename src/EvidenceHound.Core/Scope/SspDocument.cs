@@ -42,6 +42,24 @@ public sealed record SspRequirement(SspValue Ref, SspValue Result, SspValue Obse
 /// <summary>A requirement the plan cannot yet state fully, and why.</summary>
 public sealed record SspGap(string Requirement, string Reason);
 
+/// <summary>A named value, such as a hand-written section and its file.</summary>
+public sealed record SspNamed(string Name, SspValue Value);
+
+/// <summary>
+/// One control in the annex: the control (an ISM control for the Essential Eight), the parent nodes it is listed under (strategies), and its
+/// applicability, status, statement, responsible party and evidence, with the POA&amp;M item that carries it when it is not yet met.
+/// </summary>
+public sealed record SspAnnexRow(
+    string Control,
+    string Title,
+    IReadOnlyList<string> Parents,
+    SspValue Applicability,
+    SspValue Status,
+    SspValue Statement,
+    SspValue Responsible,
+    SspValue Evidence,
+    string? Poam);
+
 /// <summary>A role and who holds it.</summary>
 public sealed record SspRoleValue(string Role, SspValue Holder);
 
@@ -60,8 +78,20 @@ public sealed record SspDocument(
     IReadOnlyList<SspControl> Controls,
     IReadOnlyList<SspRequirement> Requirements,
     IReadOnlyList<SspValue> Documents,
-    IReadOnlyList<SspValue> Sections)
+    IReadOnlyList<SspNamed> Sections)
 {
+    /// <summary>The system's categorisation: for the ISM, its classification (SP 800-18 section 2).</summary>
+    public SspValue Classification { get; init; } = new(null, SystemName.Source);
+
+    /// <summary>Operational, under development or undergoing a major modification (SP 800-18 section 7).</summary>
+    public SspValue OperationalStatus { get; init; } = new(null, SystemName.Source);
+
+    /// <summary>Major application or general support system (SP 800-18 section 8).</summary>
+    public SspValue SystemType { get; init; } = new(null, SystemName.Source);
+
+    /// <summary>The controls annex (s11-04): one row per control in the programme's groups; empty when built without the framework snapshot.</summary>
+    public IReadOnlyList<SspAnnexRow> Annex { get; init; } = [];
+
     /// <summary>Every gap, by requirement in the document's order: listed at the front of the draft, and fatal with <c>--strict</c>.</summary>
     public IReadOnlyList<SspGap> Gaps => [.. Requirements.SelectMany(r => r.Gaps.Select(g => new SspGap(r.Ref.Value ?? "", g)))];
 }

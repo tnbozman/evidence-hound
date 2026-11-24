@@ -41,7 +41,7 @@ public static class SspJson
                 ["gaps"] = new JsonArray([.. r.Gaps.Select(g => JsonValue.Create(g))]),
             })]),
             ["documents"] = new JsonArray([.. document.Documents.Select(Value)]),
-            ["sections"] = new JsonArray([.. document.Sections.Select(Value)]),
+            ["sections"] = new JsonArray([.. document.Sections.Select(s => new JsonObject { ["name"] = s.Name, ["file"] = Value(s.Value) })]),
         }.ToJsonString(Indented) + "\n";
     }
 

@@ -7,7 +7,7 @@ namespace EvidenceHound.Core.Yaml;
 public static partial class ScopeLoader
 {
     private static readonly string[] SspFileKeys = ["ssps"];
-    private static readonly string[] SspKeys = ["programme", "profile", "system_name", "perimeter", "version", "roles", "documents", "sections"];
+    private static readonly string[] SspKeys = ["programme", "profile", "system_name", "perimeter", "version", "classification", "operational_status", "system_type", "roles", "documents", "sections"];
     private static readonly string[] SspProfiles = [.. SspProfile.Names];
     private static readonly string[] SspRoleNames = [.. SspProfile.Roles];
 

@@ -24,9 +24,10 @@ public sealed class SspFunctionalTests(CisoAssistantFixture ciso)
               security_contact: IT team
             documents: [identity-policy]
             sections:
+              purpose: ssp/purpose.md
               environment: ssp/environment.md
-              physical: ssp/physical.md
-              personnel: ssp/personnel.md
+              management: ssp/management.md
+              laws_and_policies: ssp/laws-and-policies.md
         """;
 
     [Fact]

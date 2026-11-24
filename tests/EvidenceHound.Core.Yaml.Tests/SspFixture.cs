@@ -28,15 +28,19 @@ internal static class SspFixture
             system_name: Example corporate IT
             perimeter: Example baseline
             version: "0.1"
+            classification: OFFICIAL
+            operational_status: operational
+            system_type: general support system
             roles:
               system_owner: it@example.com
               authorising_official: ceo@example.com
               security_contact: GRC team
             documents: [mfa-policy]
             sections:
+              purpose: ssp/purpose.md
               environment: ssp/environment.md
-              physical: ssp/physical.md
-              personnel: ssp/personnel.md
+              management: ssp/management.md
+              laws_and_policies: ssp/laws-and-policies.md
         """;
 
     /// <summary>The fixture's setup with the baseline programme, and Example 365 provided by a supplier's solution.</summary>
@@ -75,6 +79,7 @@ internal static class SspFixture
         Object(ScopeKind.Control, "AC-BACKUP", ("name", "Daily backups"), ("systems", "Example laptops")),
         Object(ScopeKind.Assessment, "EXAMPLE-BASELINE-2026/EX-1.1", ("status", "done"), ("result", "compliant"), ("observation", "All 12 accounts use MFA."), ("controls", "AC-MFA"), ("documents", "mfa-policy")),
         Object(ScopeKind.Assessment, "EXAMPLE-BASELINE-2026/EX-1.2", ("status", "done"), ("result", "partially_compliant"), ("controls", "AC-MFA")),
+        Object(ScopeKind.Assessment, "EXAMPLE-BASELINE-2026/EX-2.1", ("status", "to_do"), ("result", "not_assessed")),
         Object(ScopeKind.Assessment, "OTHER-AUDIT/EX-1.1", ("result", "non_compliant")),
     ];
 

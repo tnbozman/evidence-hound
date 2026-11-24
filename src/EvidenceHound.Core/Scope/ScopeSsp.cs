@@ -13,7 +13,17 @@ public sealed record ScopeSsp(
     IReadOnlyList<SspRole> Roles,
     IReadOnlyList<ScopeRef> Documents,
     IReadOnlyList<SspSection> Sections,
-    SourceLine At);
+    SourceLine At)
+{
+    /// <summary>The system's classification, such as OFFICIAL or PROTECTED.</summary>
+    public string? Classification { get; init; }
+
+    /// <summary>operational, under development, or undergoing a major modification.</summary>
+    public string? OperationalStatus { get; init; }
+
+    /// <summary>major application or general support system.</summary>
+    public string? SystemType { get; init; }
+}
 
 /// <summary>A role in the plan, such as the authorising official, held by a user (by email) or a team from <c>access.yaml</c>.</summary>
 public sealed record SspRole(string Role, ScopeRef Holder);
