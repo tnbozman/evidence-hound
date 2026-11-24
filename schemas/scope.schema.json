@@ -246,6 +246,9 @@
         "supplied_through": {
           "$ref": "#/$defs/text",
           "description": "The ref_id of the reseller or provider the contract is with, when not the solution's own supplier; it must be approved too."
+        },
+        "data": {
+          "$ref": "#/$defs/sensitiveData"
         }
       }
     },
@@ -1013,6 +1016,9 @@
                 "maximum": 4,
                 "description": "How critical the solution is (1-4).",
                 "pattern": "^[1-4]$"
+              },
+              "data": {
+                "$ref": "#/$defs/solutionData"
               }
             }
           }
@@ -1408,6 +1414,96 @@
                 }
               }
             ]
+          }
+        }
+      }
+    },
+    "sensitiveData": {
+      "type": "array",
+      "description": "The sensitive data a system handles.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "role"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "cui",
+              "pii",
+              "export_controlled",
+              "classified"
+            ],
+            "description": "cui, pii, export_controlled (ITAR, EAR, DSGL) or classified (PSPF, US classified)."
+          },
+          "detail": {
+            "type": "string",
+            "description": "Which, such as CUI//SP-CTI, ITAR, EAR, DSGL or PROTECTED. Needed for export_controlled and classified."
+          },
+          "role": {
+            "enum": [
+              "stores",
+              "processes",
+              "transmits",
+              "protects"
+            ]
+          }
+        }
+      }
+    },
+    "solutionData": {
+      "type": "array",
+      "description": "The sensitive data a solution handles, each with what approves it.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "role"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "cui",
+              "pii",
+              "export_controlled",
+              "classified"
+            ],
+            "description": "cui, pii, export_controlled (ITAR, EAR, DSGL) or classified (PSPF, US classified)."
+          },
+          "detail": {
+            "type": "string",
+            "description": "Which, such as CUI//SP-CTI, ITAR, EAR, DSGL or PROTECTED. Needed for export_controlled and classified."
+          },
+          "role": {
+            "enum": [
+              "stores",
+              "processes",
+              "transmits",
+              "protects"
+            ]
+          },
+          "authority": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name"
+            ],
+            "description": "What approves the solution for this data, such as FedRAMP Moderate, an IRAP assessment, an ISO 27001 certificate, an export licence or DISP membership.",
+            "properties": {
+              "name": {
+                "$ref": "#/$defs/text"
+              },
+              "evidence": {
+                "type": "string",
+                "description": "A document in the repo that shows it."
+              },
+              "expires": {
+                "$ref": "#/$defs/date"
+              }
+            }
           }
         }
       }

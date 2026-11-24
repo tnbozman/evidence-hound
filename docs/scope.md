@@ -56,7 +56,7 @@ A prompt for a ref ID (`hound add system`, `hound add control`, `hound onboard <
 | `libraries` | Other libraries to load by URN, such as the mapping set between the Essential Eight and the Essentials. |
 | `domains` | Folders. Each has a `name`, a `description`, its `perimeters` (or a single `perimeter`) and its `systems`. |
 | perimeter | `name`, optional `ref_id` and `description`. |
-| system | `name`, `type` (`primary` or `supporting`), optional `ref_id`, `description`, `owner`, `parents` (other systems by name), `tags` (per-framework labels such as `essentials_domain: identity` or `cui: "true"`), `solution` (the third-party solution that provides it, by `ref_id`) and `supplied_through` (a reseller or managed service provider, by the third party's `ref_id`). A system with either is registered only once those suppliers are approved: see [Supplier approval](#supplier-approval). |
+| system | `name`, `type` (`primary` or `supporting`), optional `ref_id`, `description`, `owner`, `parents` (other systems by name), `tags` (per-framework labels such as `essentials_domain: identity` or `cui: "true"`), `solution` (the third-party solution that provides it, by `ref_id`) `supplied_through` (a reseller or managed service provider, by the third party's `ref_id`) and `data` (the [sensitive data](#sensitive-data) it handles). A system with either supplier key is registered only once those suppliers are approved: see [Supplier approval](#supplier-approval). |
 
 ## controls.yaml
 
@@ -141,6 +141,44 @@ representatives:
 Validation reports a country or currency code CISO Assistant does not accept (`supplier.country_invalid`, `supplier.currency_invalid`; the lists come from the pinned release), a level outside its range (`supplier.level_invalid`), a contract that ends before it starts (`supplier.contract_dates_invalid`), a contract covering a solution the entity does not provide (`supplier.solution_unknown`), a repeated `ref_id` or email, an unknown `parent` or `domain`, and an `active` contract whose end date has passed (`supplier.contract_lapsed`): renew it and record the new end date, or set it to `expired` or `terminated`. Turning off the `tprm` or `contracts` feature flag in settings.yaml while third parties or contracts are declared is an error. CISO Assistant ships with `contracts` off, so set `contracts: true` in settings.yaml to see contracts in its interface.
 
 Objects are matched by `ref_id` (representatives by email), and the organisation's own entity, which CISO Assistant makes itself, is never touched. `scope plan` shows a renewed contract's new end date as a one-field update.
+
+### Sensitive data
+
+A solution and a system may list the sensitive data they handle, so a supplier handling data it is not approved for is reported and the
+list a prime or an auditor asks for comes from the repo. The list is framework-neutral:
+
+```yaml
+solutions:
+  - ref_id: SOL-EXCLOUD-HOST
+    name: Managed hosting
+    data:
+      - kind: cui                       # cui, pii, export_controlled or classified
+        detail: CUI//SP-CTI             # which: needed for export_controlled and classified
+        role: stores                    # stores, processes, transmits or protects
+        authority:                      # on a solution only: what approves it
+          name: FedRAMP Moderate equivalent
+          evidence: documents/suppliers/example-cloud-fedramp.pdf
+          expires: "2027-06-30"
+```
+
+| Kind | Australian example | US example |
+| --- | --- | --- |
+| `cui` | Information a US prime marks as CUI under a subcontract | Controlled technical information, `CUI//SP-CTI` |
+| `pii` | Personal information under the Privacy Act 1988 | Personal information under a state privacy law |
+| `export_controlled` | Technology on the Defence and Strategic Goods List (`DSGL`) | Technical data under `ITAR` or `EAR` |
+| `classified` | Security-classified information under the PSPF (`PROTECTED`; `OFFICIAL: Sensitive` is not classified but can be recorded here) | Classified national security information |
+
+Validation reports a system that handles a kind through its `solution`, or through `supplied_through` when it names no solution, whose
+data does not list that kind (`data.supplier_not_authorised`); an authority past `expires` (`data.authority_expired`); and
+export-controlled or classified data with no `detail` (`data.detail_missing`).
+
+`scope apply` uses CISO Assistant's own features only: each kind is a filtering label `data-<kind>` (`data-cui`, `data-export-controlled`;
+CISO Assistant's labels take letters, digits, `_` and `-`) on the solution's and the system's records, and each solution's description
+ends with its data and authorities. `hound supplier list --data cui` prints each supplier's solution handling a kind, with its role,
+authority, evidence, expiry and the systems that hold it, as Markdown for a prime or `--json` for an agent.
+
+`hound` does not decide whether information is CUI, export controlled or classified: that is the owner's call with the prime, the
+contract and, where it applies, the export licence. It records what they decided and checks the suppliers against it.
 
 ### Supplier reviews and tiers
 

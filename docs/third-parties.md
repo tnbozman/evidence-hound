@@ -56,6 +56,18 @@ in each supplier's `description` and keep the provider's authorisation documents
 - **Tiers.** CISO Assistant computes each supplier's tier from its levels. If you decide a tier yourself, set `forced_tier` with a
   reason, and the plan tells you when CISO Assistant's tier differs.
 
+## Sensitive data and who may hold it
+
+A prime, an auditor or the security committee will ask which suppliers handle CUI, personal information, export-controlled data or
+classified information, and on what authority. Record it on each solution's `data` (and on each system that holds it), with the
+authority and its expiry, and `hound scope validate` reports a system holding data through a supplier that is not approved for it, and
+an authority that has lapsed. `hound supplier list --data <kind>` prints the list to send. The keys, the four kinds with an Australian and
+a US example of each, and what `hound` leaves to the owner and the prime are in
+[scope.md](scope.md#sensitive-data).
+
+An agent drafting a supplier records the kinds a trust centre or contract names with `hound supplier draft --data <kind>:<role>[:<detail>]`
+and leaves the authority empty: a person adds it once the certificate, assessment or licence is in the repo.
+
 ## Representatives are personal data
 
 `representatives` (people at the supplier, by email) are optional. They are personal data, so keep them in CISO Assistant instead
