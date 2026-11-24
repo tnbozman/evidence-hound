@@ -33,7 +33,7 @@ Risks, exceptions and risk acceptances in the reports are read from CISO Assista
 - Functional check: `hound mapping coverage mappings/essential-eight-2023.yaml --framework frameworks/essential-eight-2023.json --groups 1,2 --manual examples/manual-sources/essential-eight --manual examples/example-essential-eight.yaml` printed 16 rows (8 strategies at ML1 and ML2) and `Total: 46 automated, 109 manual, 0 uncovered`. The ML2 audit filled by `hound run` against CISO Assistant is `E8RunFunctionalTests.Run_fills_the_ml2_audit_and_every_row_of_a_repeated_control`, run by CI's functional job: CISO Assistant's images cannot be pulled in this cloud session (the proxy blocks GitHub's container blob host).
 
 ### s12-02 Spreadsheet migration guide (no code)
-- [ ] Done
+- [x] Done
 
 **Story:** As an organisation moving from spreadsheets, I want a step-by-step guide using CISO Assistant's own import templates, so that I can migrate without custom code.
 
@@ -58,7 +58,7 @@ Risks, exceptions and risk acceptances in the reports are read from CISO Assista
   arrived and `hound scope validate` passes, and that the guide's reconciliation table matches the sample counts.
 
 ### s12-03 Operating guides and training
-- [ ] Done
+- [x] Done
 
 **Story:** As a small team without a CISO, I want role-based guides and short training, so that system owners and the committee can run the process.
 
@@ -163,7 +163,7 @@ reference template, agenda, roles, recording decisions in CISO Assistant).
 **Guide (2026-11-24):** `docs/govern/board-reporting.md` (risk appetite template, roll-up, recording the board's decisions).
 
 ### s12-07 Drafting reports with Claude
-- [ ] Done
+- [x] Done
 
 **Story:** As the authorising official, I want to refine report drafts with Claude using live CISO Assistant data, so that the narrative is accurate and fast to produce.
 
@@ -219,7 +219,7 @@ answers, so that I know my gap before I pay for an assessment.
   `test-results/reports/`.
 
 ### s12-09 Rehearse trial, onboarding and sustaining GRC (standing, every sprint)
-- [ ] Done
+- [x] Done
 
 Standing task from 2026-11-24 at the maintainer's request: Claude does this every sprint, not the maintainer. See [the sprint lifecycle](README.md#lifecycle).
 
@@ -278,7 +278,7 @@ Not proven here (CI or a real tenant): `scope plan`/`apply` for the migration, `
 crosswalk with today's results, mail reminders and task occurrences, `hound status` after real runs and credential rotation.
 
 ### s12-10 Improve: quality and flow (standing, about 15% of each sprint)
-- [ ] Done
+- [x] Done
 
 Standing task from 2026-11-24, after the maintainer asked for 10 to 20% of effort on refactoring, cleanup, guides and quality (the DevOps Three Ways: flow, feedback, continual learning).
 
@@ -290,6 +290,29 @@ Standing task from 2026-11-24, after the maintainer asked for 10 to 20% of effor
 
 **Functional check**
 - The items done and the retro are recorded under this task.
+
+**Done (2026-11-24)**
+- Triage of s11's Discovered work:
+  - NAIC template notes (three items): dropped. They are recommendations already written into `docs/ai-grc.md`.
+  - Placeholder AI policy document for the example AI6 audit: scheduled for s13, with the release docs.
+  - ISM-1899 against ISM-1900 in the SSP annex: scheduled for s14, with the next CISO Assistant library version.
+  - `hound ssp build` with an audit series: scheduled for s13, to check before the release.
+  - Parent node titles in snapshots: scheduled for s13. The committee and board reports still show short codes such as `mfa` and
+    `rb`, which a board reader will not know.
+  - Sensitive-data labels on `scope export`: stays in s14.
+  - Local seed config: dropped for now; the trial is the local path.
+- Improvements made:
+  - Private constants now follow the naming rule, and whitespace is formatted. CI's lint had failed on several pushes because of them.
+  - Report snapshots are read without a blocking `.Result`.
+  - The README links the new guides.
+  - The manual-attestation gap found by the rehearsal is closed.
+- Retro:
+  - **What slowed the sprint:** lint ran only in CI. Several pushes in a row failed `dotnet format` and the naming rule, and each
+    newer push cancelled the run before. Next sprint: run `make lint-dotnet` before every push. The git hook (`make hooks`) does
+    this in a dev container.
+  - **What helped:** the rehearsal found 16 problems in one pass, including a real integrity gap. Keep it every sprint, and give it
+    the new guides first.
+  - **Change next sprint:** batch pushes, so one CI run finishes per task rather than being cancelled.
 
 ## Carried from s09 to s12
 
@@ -325,3 +348,13 @@ s09-29, s09-39) stay open until one is available.
 - Cloud sessions cannot pull CISO Assistant's images (ghcr.io blobs are blocked by the proxy), so functional checks against CISO Assistant run in CI's functional job; dev servers and `--dry-run` runs work locally.
 
 ## Sprint review
+
+**2026-11-24.** The Essential Eight mapping covers every ML1 and ML2 requirement, with coverage counts per strategy and level (`hound
+mapping coverage`). Reporting comes in two tiers: posture snapshots (`hound report snapshot`), the monthly committee report and the
+quarterly board report, each built only from snapshots. A light NIST SP 800-171 crosswalk (`hound mapping crosswalk`) shows US primes'
+asks against today's Essential Eight evidence: 1 answered, 30 partly answered and 79 open, advisory until s17. The adoption guides cover
+moving off spreadsheets, a guide per role, training, the committee and board, AI-assisted reporting, a continuous compliance procedure,
+and answering a prime's questionnaire. The first standing rehearsal found 16 problems; 13 were fixed here and the rest carried.
+
+Open at review: s12-04, s12-05, s12-06 and s12-08 are ticked once CI's functional job has run their CISO Assistant checks on the final
+head. The carried human trials need a real tenant or firewall and do not block release 1.
