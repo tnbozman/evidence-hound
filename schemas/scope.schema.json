@@ -1366,6 +1366,7 @@
               },
               "every": {
                 "enum": [
+                  "1 week",
                   "3 months",
                   "6 months",
                   "12 months"

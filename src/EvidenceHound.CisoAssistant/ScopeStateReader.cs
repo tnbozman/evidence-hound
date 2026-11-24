@@ -265,17 +265,11 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
     /// <summary>An evidence item of the evidence plan: its ref_id follows the EV- convention. Any other evidence item is a document.</summary>
     private static bool IsPlanned(JsonNode evidence) => Text(evidence["ref_id"]) is { } refId && RefIds.Follows(RefIdKind.Evidence, refId);
 
-    /// <summary>A task schedule as the evidence plan writes it: "every N months", a yearly schedule as 12.</summary>
+    /// <summary>A task schedule as the evidence plan writes it: "every 1 week" or "every N months", a yearly schedule as 12.</summary>
     private static string? Schedule(JsonNode? schedule)
     {
         var interval = schedule?["interval"] is JsonValue i && i.TryGetValue<int>(out var n) ? n : 1;
-        return Text(schedule?["frequency"]) switch
-        {
-            "MONTHLY" => $"every {interval} months",
-            "YEARLY" => $"every {12 * interval} months",
-            null => null,
-            var other => $"{other.ToLowerInvariant()} {interval}",
-        };
+        return Text(schedule?["frequency"]) is { } frequency ? TaskSchedules.Text(new TaskSchedule(frequency, interval)) : null;
     }
 
     private static Dictionary<string, string> Names(List<JsonNode> objects, string field) =>

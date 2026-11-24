@@ -9,7 +9,6 @@ public static partial class ScopeLoader
     private static readonly string[] EvidencePlanKeys = ["grc_team", "evidence"];
     private static readonly string[] EvidenceRowKeys = ["ref_id", "control", "requirements", "method", "collector", "owner", "grc_team", "every", "runbook"];
     private static readonly string[] EvidenceMethods = ["automated", "manual", "hybrid"];
-    private static readonly string[] Intervals = ["3 months", "6 months", "12 months"];
 
     private static ScopeEvidencePlan ReadEvidencePlan(YamlMappingNode root, FileReader file)
     {
@@ -30,7 +29,7 @@ public static partial class ScopeLoader
             "hybrid" => EvidenceMethod.Hybrid,
             _ => (EvidenceMethod?)null,
         };
-        var every = file.OneOf(item, "every", Intervals, required: false);
+        var every = file.OneOf(item, "every", [.. EvidenceInterval.Allowed], required: false);
         if (refId is null || control is null || method is null)
         {
             return null;
@@ -42,7 +41,7 @@ public static partial class ScopeLoader
             Collector = file.Ref(item, "collector"),
             Owner = file.Ref(item, "owner"),
             GrcTeam = file.Ref(item, "grc_team") ?? grcTeam,
-            EveryMonths = every is null ? null : int.Parse(every.AsSpan(0, every.IndexOf(' ', StringComparison.Ordinal)), System.Globalization.CultureInfo.InvariantCulture),
+            Every = EvidenceInterval.Parse(every),
             Runbook = file.Text(item, "runbook"),
         };
         RowNeeds(row, item, file);
@@ -61,7 +60,7 @@ public static partial class ScopeLoader
         }
 
         Need(row.NeedsPerson && row.Owner is null, "owner", "evidence_plan.owner_missing", "Name the team that provides the evidence: a team in scope/access.yaml, such as an owner contact with an email.");
-        Need(row.NeedsPerson && row.EveryMonths is null, "every", "evidence_plan.every_missing", "Say how often it is due: '3 months', '6 months' or '12 months'.");
+        Need(row.NeedsPerson && row.Every is null, "every", "evidence_plan.every_missing", "Say how often it is due: '1 week', '3 months', '6 months' or '12 months'.");
         Need(row.NeedsPerson && row.Runbook is null, "runbook", "evidence_plan.runbook_missing", "Point 'runbook' at a Markdown file that says what to export, from where, and how to send it to the GRC team.");
         Need(row.NeedsCollector && row.Collector is null, "collector", "evidence_plan.collector_missing", "Name the collector instance from hound.yaml that gathers this evidence.");
     }

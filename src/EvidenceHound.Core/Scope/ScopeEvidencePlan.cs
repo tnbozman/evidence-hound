@@ -15,7 +15,7 @@ public enum EvidenceMethod
 public sealed record ScopeEvidencePlan(ScopeRef? GrcTeam, IReadOnlyList<ScopeEvidenceRow> Rows, SourceLine At);
 
 /// <summary>
-/// One row of the evidence plan. <see cref="GrcTeam"/> is the row's own or the file's default. <see cref="EveryMonths"/> is 3, 6 or 12,
+/// One row of the evidence plan. <see cref="GrcTeam"/> is the row's own or the file's default. <see cref="Every"/> is a week or 3, 6 or 12 months,
 /// and <see cref="Runbook"/> a Markdown file relative to the compliance repo.
 /// </summary>
 public sealed record ScopeEvidenceRow(string RefId, ScopeRef Control, EvidenceMethod Method, SourceLine At)
@@ -28,7 +28,7 @@ public sealed record ScopeEvidenceRow(string RefId, ScopeRef Control, EvidenceMe
 
     public ScopeRef? GrcTeam { get; init; }
 
-    public int? EveryMonths { get; init; }
+    public EvidenceInterval? Every { get; init; }
 
     public string? Runbook { get; init; }
 

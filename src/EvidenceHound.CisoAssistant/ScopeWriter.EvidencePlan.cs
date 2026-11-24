@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text.Json.Nodes;
 using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Publishing;
@@ -95,15 +94,15 @@ internal sealed partial class ScopeWriter
         });
     }
 
-    /// <summary>A schedule as CISO Assistant holds it, from "every N months".</summary>
+    /// <summary>A schedule as CISO Assistant holds it, from "every 1 week" or "every N months".</summary>
     private static Result<JsonObject> Schedule(string? every)
     {
-        if (every?.Split(' ') is not ["every", var n, "months"] || !int.TryParse(n, NumberStyles.None, CultureInfo.InvariantCulture, out var months))
+        if (EvidenceInterval.Parse(every) is not { } interval)
         {
-            return Result.Fail<JsonObject>(new Problem("scope.value_invalid", $"'{every}' is not a task schedule; use every 3, 6 or 12 months."));
+            return Result.Fail<JsonObject>(new Problem("scope.value_invalid", $"'{every}' is not a task schedule; use every 1 week, or every 3, 6 or 12 months."));
         }
 
-        var schedule = TaskSchedules.Of(months);
+        var schedule = TaskSchedules.Of(interval);
         return Result.Ok(new JsonObject
         {
             ["interval"] = schedule.Interval,

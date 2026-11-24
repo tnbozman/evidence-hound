@@ -73,15 +73,15 @@ public static partial class ScopeDesired
             yield return new ScopeObject(ScopeKind.Evidence, row.RefId, Fields(
                 ("name", Name(row, control)), ("domain", domain), ("owner", row.Owner?.Value), ("controls", row.Control.Value),
                 ("labels", Joined(new[] { row.Method.ToString().ToLowerInvariant(), row.Collector?.Value }.OfType<string>().Where(IsLabel)))));
-            if (row.NeedsPerson && row.EveryMonths is { } months)
+            if (row.NeedsPerson && row.Every is { } every)
             {
                 yield return new ScopeObject(ScopeKind.TaskTemplate, row.RefId, Fields(
                     ("name", Name(row, control)), ("description", row.Runbook is { } runbook ? inputs.Runbooks.GetValueOrDefault(runbook)?.TrimEnd() : null), ("domain", domain),
                     ("assignees", Joined(new[] { row.Owner?.Value, row.GrcTeam?.Value }.OfType<string>().Distinct(StringComparer.Ordinal))),
-                    ("schedule", $"every {months} months"), ("evidence", row.RefId), ("controls", row.Control.Value),
+                    ("schedule", every.Text), ("evidence", row.RefId), ("controls", row.Control.Value),
                     ("requirements", Joined(Rows(scope, row))), ("enabled", "true")))
                 {
-                    Initial = Fields(("first_due", inputs.Today?.AddMonths(months).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture))),
+                    Initial = Fields(("first_due", (inputs.Today is { } today ? every.After(today) : (DateOnly?)null)?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture))),
                 };
             }
         }

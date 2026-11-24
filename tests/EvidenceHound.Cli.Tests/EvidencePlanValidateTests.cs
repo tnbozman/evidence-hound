@@ -75,7 +75,7 @@ public sealed class EvidencePlanValidateTests : IDisposable
 
         var runbook = await File.ReadAllTextAsync(Path.Combine(_root, "manual-sources", "backup-restore-test.md"), _ct);
         checkedScope.Inputs.Runbooks["manual-sources/backup-restore-test.md"].ShouldBe(runbook);
-        checkedScope.Inputs.Runbooks.Keys.ShouldBe(["manual-sources/backup-restore-test.md", "manual-sources/mfa-exceptions-review.md"], ignoreOrder: true);
+        checkedScope.Inputs.Runbooks.Keys.ShouldBe(["manual-sources/backup-restore-test.md", "manual-sources/mfa-exceptions-review.md", "manual-sources/weekly-compliance-review.md"], ignoreOrder: true);
     }
 
     public void Dispose()

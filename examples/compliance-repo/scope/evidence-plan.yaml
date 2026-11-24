@@ -26,3 +26,11 @@ evidence:
     owner: IT team
     every: 12 months
     runbook: manual-sources/mfa-exceptions-review.md
+
+  # Each week the GRC team clears its review queue in one sitting: 'hound review' walks every decision waiting on a person.
+  - ref_id: EV-WEEKLY-REVIEW
+    control: AC-AUTO-EVIDENCE
+    method: manual
+    owner: IT team
+    every: 1 week
+    runbook: manual-sources/weekly-compliance-review.md
