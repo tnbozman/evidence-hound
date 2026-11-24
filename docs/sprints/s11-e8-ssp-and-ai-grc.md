@@ -59,7 +59,7 @@ Result (2026-11-24): `make run ARGS="programme list --scope examples/compliance-
 What CISO Assistant offers today (checked in the v4.3.4 source, not yet run live): each audit has a Word and PDF report (`word_report`, profiles `full` and `attestation`) listing requirements with result, observation, evidence names and applied controls, and an action plan export (PDF, Excel, CSV). Custom Word templates (`CustomWordTemplate`) exist but are a paid-edition feature, and there is no SSP or system-description document. So `hound` assembles the SSP from CISO Assistant's API, the same way the s12 reports will, and attaches CISO Assistant's own audit report as an appendix rather than re-creating it.
 
 **Acceptance criteria**
-- `scope/ssp.yaml` declares one SSP per programme (s11-01): `programme`, `profile` (`nist-800-171` or `ism`, s17-03 and s11-04), `system_name`, `perimeter` (the boundary), `version`, `roles` (system owner, authorising official, security contact: teams or users from `access.yaml`), `documents` (boundary and network diagrams, data flow diagrams, policies and procedures, by document id from the audit, s06), and optional `sections` (Markdown files for the parts that cannot be generated: environment description, physical and personnel arrangements).
+- `scope/ssp.yaml` declares one SSP per programme (s11-01): `programme`, `profile` (the controls annex: `ism` or `nist-800-171`, s11-04 and s17-03; the layout is always SP 800-18), `system_name`, `perimeter` (the boundary), `version`, `roles` (system owner, authorising official, security contact: teams or users from `access.yaml`), `documents` (boundary and network diagrams, data flow diagrams, policies and procedures, by document id from the audit, s06), and optional `sections` (Markdown files for the parts that cannot be generated: environment description, physical and personnel arrangements).
 - A pure function builds an `SspDocument` from a read of CISO Assistant (the programme's audit rows, built so that the s12-04 posture snapshot reuses the same reads), the perimeter's assets with their owners (and custom fields once s11-12 exists), the suppliers and solutions linked to those assets (s09-19), the applied controls with owners, status and descriptions, and the requirement assessments with result, observation and evidence names. No live calls inside the core; the shell reads CISO Assistant once per generation.
 - Every value in the SSP traces to a CISO Assistant object or a file in the repo; the JSON form of the document records the source of each value.
 - Validation: the programme, perimeter, roles and documents exist; a profile's required sections are present.
@@ -97,25 +97,28 @@ Result (2026-11-24): no CISO Assistant can run in the cloud session, so the chec
 **Functional check**
 - On the example repo, `make run ARGS="ssp build --programme essential-eight --strict"` exits non-zero and lists the example's gaps; after adding the missing control description it exits zero.
 
-### s11-04 ISM-style profile for the Essential Eight
+### s11-04 One SSP layout (NIST SP 800-18), with an ISM annex for the Essential Eight
 - [ ] Done
 
-**Story:** As an Australian defence supplier, I want an SSP in the shape the ISM expects for the Essential Eight programme, so that the same data serves DISP and CMMC.
+**Story:** As an Australian defence supplier, I want one system security plan layout that meets the ISM now and CMMC later, so that the same data and the same template serve DISP and CMMC.
+
+**Decision (maintainer, 2026-11-24):** hound supports one SSP layout, the NIST SP 800-18 Rev 1 Appendix A structure (https://nvlpubs.nist.gov/nistpubs/legacy/sp/nistspecialpublication800-18r1.pdf), linked to the POA&M (s11-03). Only its controls annex switches by framework. This meets ISM-0041, which asks for an overview covering the system's purpose, its boundary and how it is managed, plus an annex of the applicable ISM controls and any others identified and implemented. The ASD Blueprint SSP is not a separate layout.
 
 **Acceptance criteria**
-- Sources (maintainer, 2026-11-24): ISM-0041 (a system security plan has an overview covering the system's purpose, its boundary and how it is managed, and an annex covering the applicable ISM controls and any others identified and implemented), modelled on the ASD Blueprint for Secure Cloud SSP (https://blueprint.asd.gov.au/security-and-governance/system-security-plan/) and its SSP annex (https://blueprint.asd.gov.au/security-and-governance/annex/, an .xlsx template). The profile cites both in `docs/ssp.md` and keeps the ISM version it follows.
-- The `ism` profile has two parts, as ISM-0041 requires:
-  - **Overview**, in the Blueprint's order: system information (name, classification, operational status); system purpose; system overview with the boundary (the boundary diagram document, and what is out of scope with its own plan); risk assessment (a pointer to the risk management plan, s15); system delivery (roles, the teams that deliver and support it, and external service providers from suppliers and solutions); then the inventory. Purpose, how the system is managed, classification, operational status and out-of-scope systems come from `ssp.yaml` and its Markdown sections; the required sections of the `ism` profile change from environment, physical and personnel to purpose, management and out of scope (physical and personnel security are ISM topics the annex covers).
-  - **Annex (SSP-A)**: each ISM control in the programme's selected groups with applicability, implementation status, statement, responsible party and evidence, grouped by Essential Eight strategy (or Essentials domain for that programme). Its columns follow the Blueprint annex template where its .xlsx can be read; if they differ from these, the difference is listed under "Discovered work" with a recommendation. An `--xlsx`-shaped CSV of the annex is a follow-up, not in this task.
+- The plan follows SP 800-18 Rev 1 Appendix A in order: system name and identifier; categorisation (for the ISM, the classification); system owner; authorising official; other designated contacts; assignment of security responsibility; operational status; system type; general description and purpose; system environment (with the boundary, its diagram and the inventory); interconnections and external service providers (suppliers and solutions); applicable laws, regulations and policies; the controls annex; completion and approval dates (s11-05); ongoing plan maintenance.
+- `profile` in `ssp.yaml` now names the annex: `ism` lists each ISM control in the programme's selected groups with applicability, implementation status, statement, responsible party and evidence, grouped by Essential Eight strategy (or Essentials domain for that programme); `nist-800-171` is built in s17-03. Each annex row links to its POA&M item when it has one.
 - An ISM control the Essential Eight lists under several strategies appears once, with the strategies it serves (the mapping's `rows: all` rule).
+- The sections a person writes follow the layout: purpose, environment, management (how the system is managed and maintained), laws and policies; the required list in `SspProfile` changes to match, for every profile.
+- `docs/ssp.md` cites SP 800-18 Rev 1 and ISM-0041 and says which section of the plan meets each part of ISM-0041.
 
 **Tests first**
-- `IsmSspTests.Overview_follows_the_blueprint_order`
-- `IsmSspTests.Repeated_ism_control_appears_once_with_strategies`
-- `IsmSspTests.Renders_expected_markdown_from_fixture` (golden file)
+- `SspLayoutTests.Sections_follow_sp_800_18_appendix_a`
+- `IsmAnnexTests.Repeated_ism_control_appears_once_with_strategies`
+- `IsmAnnexTests.Annex_row_links_its_poam_item`
+- `SspLayoutTests.Renders_expected_markdown_from_fixture` (golden file)
 
 **Functional check**
-- Generate the ISM-style SSP for the example Essential Eight ML2 audit on the local stack.
+- Generate the SSP for the example Essential Eight ML2 audit on the local stack and read it against the Appendix A section list and ISM-0041.
 
 ### s11-05 Review, approval and versions
 - [ ] Done

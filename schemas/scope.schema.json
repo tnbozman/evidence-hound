@@ -1584,7 +1584,7 @@
                 "$ref": "#/$defs/text"
               },
               "profile": {
-                "description": "The layout: ism (the Essential Eight in the shape the ISM expects) or nist-800-171.",
+                "description": "The controls annex: ism (ISM controls grouped by Essential Eight strategy) or nist-800-171. The layout is always NIST SP 800-18 Rev 1.",
                 "enum": [
                   "ism",
                   "nist-800-171"

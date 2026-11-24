@@ -280,7 +280,7 @@ One system security plan (SSP) per programme. Optional. `hound ssp build --progr
 | Key | Meaning |
 | --- | --- |
 | `programme` | The programme's `id` from `setup.yaml`. One plan per programme. |
-| `profile` | The layout: `ism` (the Essential Eight in the shape the ISM expects) or `nist-800-171`. |
+| `profile` | The controls annex: `ism` (ISM controls grouped by Essential Eight strategy) or `nist-800-171` (CMMC, s17). The layout is always NIST SP 800-18 Rev 1, which also meets ISM-0041. |
 | `system_name`, `version` | The system's name as the plan gives it, and the plan's version. |
 | `perimeter` | The boundary: a perimeter in `setup.yaml`. The inventory is the systems the audits on that perimeter cover, as CISO Assistant holds them, with their owners. |
 | `roles` | `system_owner`, `authorising_official` and `security_contact`, each a user's email or a team from `access.yaml`. All three are required. |
