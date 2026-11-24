@@ -71,6 +71,9 @@ public sealed record ScopeSystem(
     /// <summary>The supplier's solution the system is, from <c>scope/third-parties/</c>; its supplier must be approved before the system is registered.</summary>
     public ScopeRef? Solution { get; init; }
 
+    /// <summary>The sensitive data the system handles (s10-06).</summary>
+    public IReadOnlyList<SensitiveData> Data { get; init; } = [];
+
     /// <summary>The reseller or provider the contract is with, when not the solution's own supplier; it must be approved too.</summary>
     public ScopeRef? SuppliedThrough { get; init; }
 }
