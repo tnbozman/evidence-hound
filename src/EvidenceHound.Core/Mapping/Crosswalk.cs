@@ -22,8 +22,15 @@ public sealed record CrosswalkLink(string TargetRef, string SourceRef, Crosswalk
 /// <summary>A requirement of the target framework, by ref_id and title.</summary>
 public sealed record CrosswalkTarget(string RefId, string Title);
 
+/// <summary>Who checked every link of a crosswalk, and when.</summary>
+public sealed record CrosswalkReview(string By, DateOnly On);
+
 /// <summary>A crosswalk between two frameworks: the target's requirements and the links to the source's, and where it came from.</summary>
-public sealed record CrosswalkDefinition(string FromUrn, string ToUrn, IReadOnlyList<CrosswalkTarget> Targets, IReadOnlyList<CrosswalkLink> Links, string Origin);
+public sealed record CrosswalkDefinition(string FromUrn, string ToUrn, IReadOnlyList<CrosswalkTarget> Targets, IReadOnlyList<CrosswalkLink> Links, string Origin)
+{
+    /// <summary>The review of every link, or null while nobody has reviewed it (the crosswalk is then advisory only).</summary>
+    public CrosswalkReview? Review { get; init; }
+}
 
 /// <summary>What answers a source requirement today: its checks (from the mapping), which of them people attest, and its current result.</summary>
 public sealed record SourceAnswer(string SourceRef, IReadOnlyList<string> Checks, IReadOnlyList<string> ManualChecks, ComplianceResult? Result);

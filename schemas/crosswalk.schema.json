@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/tnbozman/evidence-hound/schemas/crosswalk.schema.json",
+  "title": "Evidence Hound crosswalk",
+  "description": "Which requirements of a target framework the evidence for a source framework answers. Advisory: hound reads it and writes nothing.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "from",
+    "to",
+    "requirements"
+  ],
+  "properties": {
+    "from": {
+      "description": "URN of the source framework (the one you collect evidence for).",
+      "type": "string",
+      "pattern": "^urn:"
+    },
+    "to": {
+      "description": "URN of the target framework (the one you are asked about).",
+      "type": "string",
+      "pattern": "^urn:"
+    },
+    "reviewed": {
+      "description": "Who checked every link, and when. Leave it out until a person has.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "by",
+        "on"
+      ],
+      "properties": {
+        "by": {
+          "type": "string",
+          "minLength": 1
+        },
+        "on": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        }
+      }
+    },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/target"
+      }
+    }
+  },
+  "$defs": {
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ref",
+        "title"
+      ],
+      "properties": {
+        "ref": {
+          "description": "ref_id of the target requirement.",
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string"
+        },
+        "answered_by": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/link"
+          }
+        }
+      }
+    },
+    "link": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ref",
+        "relationship"
+      ],
+      "properties": {
+        "ref": {
+          "description": "ref_id of the source requirement.",
+          "type": "string",
+          "minLength": 1
+        },
+        "relationship": {
+          "description": "CISO Assistant's mapping vocabulary: equal, superset (the source asks for more), subset (it asks for less), intersect.",
+          "enum": [
+            "equal",
+            "superset",
+            "subset",
+            "intersect"
+          ]
+        }
+      }
+    }
+  }
+}
