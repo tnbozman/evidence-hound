@@ -1,0 +1,9 @@
+{
+  "name": "evidence-hound-markdown-lint",
+  "private": true,
+  "description": "Pinned Markdown lint for the docs (make lint-docs). Not part of the product.",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "markdownlint-cli2": "0.18.1"
+  }
+}

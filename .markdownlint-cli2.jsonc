@@ -1,0 +1,16 @@
+// Markdown lint for the published docs (s13-02). Sprint plans and their evidence logs are working notes and are not linted.
+{
+  "config": {
+    "default": true,
+    // Prose is wrapped by hand near 140 characters; tables and commands run longer.
+    "MD013": false,
+    // A console example shows the prompt even where the output is left out.
+    "MD014": false,
+    // Short HTML (a <br> in a table cell, <details>) is allowed.
+    "MD033": false,
+    // A bold line such as **Story:** labels a paragraph; it is not a heading.
+    "MD036": false
+  },
+  "globs": ["*.md", "docs/**/*.md", "deploy/**/*.md", "examples/**/*.md", "frameworks/*.md", "mappings/**/*.md", "profiles/**/*.md", "templates/**/*.md"],
+  "ignores": ["docs/sprints/**", "docs/evidence/**", "**/bin/**", "**/obj/**", "**/node_modules/**", ".dev/**"]
+}

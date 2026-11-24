@@ -10,7 +10,7 @@ CA_COMPOSE := dev/ciso-assistant/compose.yml
 CA_ENV := HOUND_CA_SECRET_KEY="$$(scripts/ca-secret-key.sh)"
 SHELL_SCRIPTS := $(wildcard scripts/*.sh scripts/lib/*.sh deploy/compose/*.sh .devcontainer/*.sh dev/ciso-assistant/seed/*.sh) .githooks/pre-commit
 
-.PHONY: help restore build test test-functional test-profiles test-template test-scripts test-terraform coverage image test-image test-compose compose-smoke lint lint-dotnet lint-shell format run m365-dev sophos-dev iac-dev scan-dev hooks ca-up ca-up-kafka ca-down trial trial-clean
+.PHONY: help lint-docs test-docs restore build test test-functional test-profiles test-template test-scripts test-terraform coverage image test-image test-compose compose-smoke lint lint-dotnet lint-shell format run m365-dev sophos-dev iac-dev scan-dev hooks ca-up ca-up-kafka ca-down trial trial-clean
 
 help: ## List targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-16s %s\n", $$1, $$2}'
@@ -61,10 +61,18 @@ compose-smoke: ## Bring the reference stack up, wait for health, run the runner 
 test-image: image ## Build the runner image, then check it starts, runs as non-root, has no shell and runs read-only
 	HOUND_IMAGE=$(HOUND_IMAGE) bats tests/image
 
-lint: lint-dotnet lint-shell ## All linters (analysers also run on every build)
+lint: lint-dotnet lint-shell lint-docs ## All linters (analysers also run on every build)
 
 lint-dotnet: restore ## Formatting and code-style check
 	dotnet format --verify-no-changes --no-restore
+
+lint-docs: ## Markdown lint (pinned markdownlint-cli2) and relative link check of the published docs
+	npm ci --prefix tools/markdown --no-audit --no-fund --silent
+	tools/markdown/node_modules/.bin/markdownlint-cli2
+	python3 -I scripts/check-links.py .
+
+test-docs: ## Tests of the docs tools (link checker)
+	bats tests/docs
 
 lint-shell: ## ShellCheck on every script and the git hook
 	shellcheck -x $(SHELL_SCRIPTS)
