@@ -49,10 +49,10 @@ internal static class SspFixture
         "        owner: it@example.com\n        solution: SOL-EXCLOUD-HOST\n        tags:",
         StringComparison.Ordinal) + "\nprogrammes:\n" + ProgrammeScopeTests.Programme();
 
-    public static ScopeParse Parse(string ssp = Ssp, string setup = "") =>
+    public static ScopeParse Parse(string ssp = Ssp, string setup = "", string controls = "") =>
         ScopeLoader.Parse(
             new ScopeSource("scope/setup.yaml", setup.Length == 0 ? Setup : setup),
-            new ScopeSource("scope/controls.yaml", ScopeFixture.Controls),
+            new ScopeSource("scope/controls.yaml", controls.Length == 0 ? ScopeFixture.Controls : controls),
             [new ScopeSource(ScopeFixture.AuditPath, ScopeFixture.Audit)],
             access: new ScopeSource("scope/access.yaml", Access),
             thirdParties: [new ScopeSource("scope/third-parties/sup-excloud.yaml", SupplierScopeTests.Supplier)],

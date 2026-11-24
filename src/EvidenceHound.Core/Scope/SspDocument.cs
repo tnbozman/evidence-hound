@@ -21,6 +21,12 @@ public sealed record SspControl(SspValue RefId, SspValue Name, SspValue Owner, S
 {
     /// <summary>When the control is due to be in place, for the POA&amp;M (s11-03).</summary>
     public SspValue Eta { get; init; } = new(null, RefId.Source);
+
+    /// <summary>The systems the control covers, as CISO Assistant holds them (s11-16).</summary>
+    public IReadOnlyList<string> Systems { get; init; } = [];
+
+    /// <summary>Who implements the control when <c>controls.yaml</c> says so (s11-16); null to infer it.</summary>
+    public SspValue? ResponsibleEntity { get; init; }
 }
 
 /// <summary>A requirement row of the programme's audit.</summary>
@@ -58,7 +64,23 @@ public sealed record SspAnnexRow(
     SspValue Statement,
     SspValue Responsible,
     SspValue Evidence,
-    string? Poam);
+    string? Poam)
+{
+    /// <summary>The control's full text (s11-16).</summary>
+    public string Description { get; init; } = "";
+
+    /// <summary>The implementation groups the control is in: for the Essential Eight, its maturity levels.</summary>
+    public IReadOnlyList<string> MaturityLevels { get; init; } = [];
+
+    /// <summary>Policy, Procedure, Technical or Documentation, from the framework's reference controls.</summary>
+    public IReadOnlyList<string> ControlTypes { get; init; } = [];
+
+    /// <summary>Who implements the control, in the ASD SSP annex template's terms: Consumer, Shared, Outsourced service provider, Cloud service provider or Not applicable.</summary>
+    public SspValue ResponsibleEntity { get; init; } = new(null, Status.Source);
+
+    /// <summary>The implementation status in the ASD SSP annex template's terms, such as Effective or Not assessed.</summary>
+    public SspValue AsdStatus { get; init; } = new(null, Status.Source);
+}
 
 /// <summary>A role and who holds it.</summary>
 public sealed record SspRoleValue(string Role, SspValue Holder);

@@ -104,6 +104,30 @@ public class SspBuilderTests
         annex[0].Parents.ShouldBe(["(top level)"]);
     }
 
+    [Fact]
+    public void Responsible_entity_is_shared_for_a_supplier_system_unless_controls_yaml_says_otherwise()
+    {
+        // s11-16: AC-MFA covers Example 365, which a supplier's solution provides, so EX-1.1 is shared; controls.yaml can name the entity.
+        var shared = SspBuilder.Build(Ssp(), SspFixture.Parse().Scope, SspFixture.Held(), ScopeFixture.Snapshot).Annex.Single(a => a.Control == "EX-1.1");
+        shared.ResponsibleEntity.Value.ShouldBe("Shared");
+
+        var controls = ScopeFixture.Controls.Replace("    systems: [Example 365]\n", "    systems: [Example 365]\n    responsible_entity: cloud_service_provider\n", StringComparison.Ordinal);
+        var parsed = SspFixture.Parse(controls: controls);
+        parsed.Problems.ShouldBeEmpty();
+        var overridden = SspBuilder.Build(parsed.Scope.Ssps.Single(), parsed.Scope, SspFixture.Held(), ScopeFixture.Snapshot).Annex.Single(a => a.Control == "EX-1.1");
+
+        overridden.ResponsibleEntity.Value.ShouldBe("Cloud service provider");
+        overridden.ResponsibleEntity.Source.Reference.ShouldStartWith("scope/controls.yaml line ");
+    }
+
+    [Fact]
+    public void An_unknown_responsible_entity_is_a_problem()
+    {
+        var controls = ScopeFixture.Controls.Replace("    systems: [Example 365]\n", "    systems: [Example 365]\n    responsible_entity: the cloud\n", StringComparison.Ordinal);
+
+        SspFixture.Parse(controls: controls).Problems.ShouldContain(p => p.Message.Contains("responsible_entity", StringComparison.Ordinal) && p.Message.Contains("the cloud", StringComparison.Ordinal));
+    }
+
     private static SspDocument Build() => SspBuilder.Build(Ssp(), SspFixture.Parse().Scope, SspFixture.Held());
 
     private static ScopeSsp Ssp() => SspFixture.Parse().Scope.Ssps.Single();

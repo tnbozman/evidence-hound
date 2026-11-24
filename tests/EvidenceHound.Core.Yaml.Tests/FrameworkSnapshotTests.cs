@@ -30,6 +30,35 @@ public class FrameworkSnapshotTests
     }
 
     [Fact]
+    public void Keeps_reference_controls_and_description()
+    {
+        // s11-16: the annex's control type comes from the reference controls, and its description column from the full text.
+        var snapshot = FrameworkLibraryReader.Snapshot(RepoFiles.RepeatedLibrary, Source).Value();
+
+        var backup = snapshot.Nodes.Single(n => n.RefId == "ACT-02");
+        backup.Description.ShouldBe("Backups of boundary services are restored and tested.");
+        backup.ReferenceControls.ShouldBe(["urn:example:risk:function:example-doc-pol:pol.backup", "urn:example:risk:function:example-doc-pol:tech.backup"]);
+        snapshot.Nodes[0].Description.ShouldBe("Multi-factor authentication is enforced for every remote access path into the boundary services of the organisation.");
+        snapshot.Nodes[0].ReferenceControls.ShouldBeEmpty();
+
+        var read = FrameworkSnapshotJson.Read(FrameworkSnapshotJson.Write(snapshot), "snapshot.json").Value().Nodes.Single(n => n.RefId == "ACT-02");
+        (read.Description, read.ReferenceControls.Count).ShouldBe((backup.Description, 2));
+    }
+
+    [Fact]
+    public void A_snapshot_without_descriptions_still_loads()
+    {
+        const string json = """
+            {"library_urn": "urn:example:risk:library:x", "framework_urn": "urn:example:risk:framework:x", "version": 1, "groups": [],
+             "nodes": [{"urn": "urn:example:risk:req_node:x:a", "ref_id": "A", "parent_urn": null, "groups": [], "title": "A title"}]}
+            """;
+
+        var node = FrameworkSnapshotJson.Read(json, "old.json").Value().Nodes.ShouldHaveSingleItem();
+
+        (node.Description, node.ReferenceControls.Count).ShouldBe(("", 0));
+    }
+
+    [Fact]
     public void Snapshot_round_trips_through_json()
     {
         var snapshot = FrameworkLibraryReader.Snapshot(RepoFiles.RepeatedLibrary, Source).Value();

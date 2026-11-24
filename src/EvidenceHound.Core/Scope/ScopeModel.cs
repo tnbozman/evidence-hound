@@ -104,7 +104,11 @@ public sealed record ScopeControl(
     IReadOnlyList<ScopeRef> Systems,
     string? ReferenceControl,
     IReadOnlyList<ScopeRef> Documents,
-    SourceLine At);
+    SourceLine At)
+{
+    /// <summary>Who implements the control, for the SSP annex (s11-16): consumer, shared, outsourced_service_provider, cloud_service_provider or not_applicable; null to infer it.</summary>
+    public string? ResponsibleEntity { get; init; }
+}
 
 /// <summary>How the auditor and respondent roles see one requirement field: <c>edit</c>, <c>read</c> or <c>hidden</c>.</summary>
 public sealed record FieldAccess(string? Auditor, string? Respondent, SourceLine At);
