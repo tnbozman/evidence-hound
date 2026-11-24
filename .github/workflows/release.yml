@@ -18,6 +18,7 @@ on:
       - .github/workflows/release.yml
       - scripts/release-build.sh
       - scripts/check-packages.sh
+      - scripts/check-org-data.sh
       - scripts/changelog.sh
       - cliff.toml
       - Directory.Build.props
@@ -44,6 +45,10 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0 # MinVer and the release notes read the tags
+      - name: No organisation data anywhere in the history (every commit's changes and message)
+        env:
+          ORG_DENYLIST: ${{ secrets.ORG_DENYLIST }}
+        run: scripts/check-org-data.sh --history
       - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
           global-json-file: global.json

@@ -38,7 +38,8 @@ The version comes from the tag (MinVer). Between releases, builds are pre-releas
    $ git push origin v1.0.0
    ```
 
-4. The release workflow's `verify` job builds and checks everything. Then approve the `release` environment in the run.
+4. The release workflow's `verify` job first scans every commit in the history for organisation data (`scripts/check-org-data.sh
+   --history`, with the `ORG_DENYLIST` secret), then builds and checks everything. Then approve the `release` environment in the run.
 5. Check the result:
 
    ```console
