@@ -147,7 +147,7 @@ Compared on 2026-11-24 (Essential Eight sheet against CISO Assistant's `essentia
 - `SspAnnexTests.Asd_status_maps_from_result`
 
 **Functional check**
-- Regenerate the snapshot from the local CISO Assistant, build the example SSP, and check that ISM-1504's row reads Policy and Technical with the expected responsible entity.
+- Regenerate the snapshot from the local CISO Assistant, build the example SSP, and check that ISM-1504's row reads Technical (its reference control is `tech.mfa`) with the expected responsible entity.
 
 ### s11-05 Review, approval and versions
 - [ ] Done
