@@ -103,10 +103,14 @@ Result (2026-11-24): no CISO Assistant can run in the cloud session, so the chec
 **Story:** As an Australian defence supplier, I want an SSP in the shape the ISM expects for the Essential Eight programme, so that the same data serves DISP and CMMC.
 
 **Acceptance criteria**
-- The `ism` profile lays out: system overview and boundary, roles, the inventory, external services, then each ISM control in the programme's selected groups with applicability, implementation status and statement, grouped by Essential Eight strategy (or Essentials domain for that programme).
+- Sources (maintainer, 2026-11-24): ISM-0041 (a system security plan has an overview covering the system's purpose, its boundary and how it is managed, and an annex covering the applicable ISM controls and any others identified and implemented), modelled on the ASD Blueprint for Secure Cloud SSP (https://blueprint.asd.gov.au/security-and-governance/system-security-plan/) and its SSP annex (https://blueprint.asd.gov.au/security-and-governance/annex/, an .xlsx template). The profile cites both in `docs/ssp.md` and keeps the ISM version it follows.
+- The `ism` profile has two parts, as ISM-0041 requires:
+  - **Overview**, in the Blueprint's order: system information (name, classification, operational status); system purpose; system overview with the boundary (the boundary diagram document, and what is out of scope with its own plan); risk assessment (a pointer to the risk management plan, s15); system delivery (roles, the teams that deliver and support it, and external service providers from suppliers and solutions); then the inventory. Purpose, how the system is managed, classification, operational status and out-of-scope systems come from `ssp.yaml` and its Markdown sections; the required sections of the `ism` profile change from environment, physical and personnel to purpose, management and out of scope (physical and personnel security are ISM topics the annex covers).
+  - **Annex (SSP-A)**: each ISM control in the programme's selected groups with applicability, implementation status, statement, responsible party and evidence, grouped by Essential Eight strategy (or Essentials domain for that programme). Its columns follow the Blueprint annex template where its .xlsx can be read; if they differ from these, the difference is listed under "Discovered work" with a recommendation. An `--xlsx`-shaped CSV of the annex is a follow-up, not in this task.
 - An ISM control the Essential Eight lists under several strategies appears once, with the strategies it serves (the mapping's `rows: all` rule).
 
 **Tests first**
+- `IsmSspTests.Overview_follows_the_blueprint_order`
 - `IsmSspTests.Repeated_ism_control_appears_once_with_strategies`
 - `IsmSspTests.Renders_expected_markdown_from_fixture` (golden file)
 
