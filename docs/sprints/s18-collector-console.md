@@ -54,6 +54,16 @@ Stack: ASP.NET Core minimal API in `src/EvidenceHound.Console.Api`, Vue 3 + Vite
 **Functional check**
 - Register the manual collector from the UI and see its first run.
 
+### s18-04 Rehearse trial, onboarding and sustaining GRC (standing, every sprint)
+- [ ] Done
+
+As [s12-09](s12-e8-mapping-and-adoption.md#s12-09-rehearse-trial-onboarding-and-sustaining-grc-standing-every-sprint), including this sprint's new commands and guides.
+
+### s18-05 Improve: quality and flow (standing, about 15% of each sprint)
+- [ ] Done
+
+As [s12-10](s12-e8-mapping-and-adoption.md#s12-10-improve-quality-and-flow-standing-about-15-of-each-sprint).
+
 ## Discovered work
 
 ## Sprint review

@@ -9,7 +9,7 @@ Reporting is per **programme** (amended by s11-01, Nov 2026): a programme is a f
 Risks, exceptions and risk acceptances in the reports are read from CISO Assistant, whether entered there by hand or, from release 2 (s15), applied from configuration. The ASD Essentials mapping, planned here before the release 1 reorder, is now [s14](s14-essentials-mapping.md).
 
 ### s12-01 Essential Eight mapping completed
-- [ ] Done
+- [x] Done
 
 **Story:** As a compliance owner whose audit of record is Essential Eight ML2, I want every ML1 and ML2 requirement either evidenced by a check or assigned to a named manual source, so that the audit has no row that nobody owns.
 
@@ -26,6 +26,11 @@ Risks, exceptions and risk acceptances in the reports are read from CISO Assista
 
 **Functional check**
 - Against the local CISO Assistant with `essential-eight-2023` loaded: `hound run` with recordings fills the example ML2 audit; the coverage report matches the audit, with no `not_assessed` row that lacks a manual source.
+
+**Progress (2026-11-24)**
+- The mapping already covered every ML1 and ML2 requirement after s09 and s10 (`E8MappingTests`; the test planned as `Every_ml1_and_ml2_requirement_is_covered_or_manual` was renamed to match). Every requirement without a collector is mapped to a check a person attests through a manual source; `manual_only` stays empty.
+- New: `hound mapping coverage <mapping> --framework <snapshot> [--groups 1,2] [--manual <config, template or folder>]... [--json]` (`MappingCoverage.Count` in the core, `ManualSourceChecks` reads `type: manual` collectors). Documented in `docs/mapping-files.md` and the cheat sheet.
+- Functional check: `hound mapping coverage mappings/essential-eight-2023.yaml --framework frameworks/essential-eight-2023.json --groups 1,2 --manual examples/manual-sources/essential-eight --manual examples/example-essential-eight.yaml` printed 16 rows (8 strategies at ML1 and ML2) and `Total: 46 automated, 109 manual, 0 uncovered`. The ML2 audit filled by `hound run` against CISO Assistant is `E8RunFunctionalTests.Run_fills_the_ml2_audit_and_every_row_of_a_repeated_control`, run by CI's functional job: CISO Assistant's images cannot be pulled in this cloud session (the proxy blocks GitHub's container blob host).
 
 ### s12-02 Spreadsheet migration guide (no code)
 - [ ] Done
@@ -174,10 +179,48 @@ answers, so that I know my gap before I pay for an assessment.
 **Functional check**
 - `hound mapping crosswalk` against the local CISO Assistant with the example Essential Eight audit prints the 800-171 gap list.
 
+### s12-09 Rehearse trial, onboarding and sustaining GRC (standing, every sprint)
+- [ ] Done
+
+Standing task from 2026-11-24 at the maintainer's request: Claude does this every sprint, not the maintainer. See [the sprint lifecycle](README.md#lifecycle).
+
+**Story:** As a busy maintainer, I want the agent to follow our own trial, onboarding and upkeep guides end to end every sprint, so that errors in the docs and in hound are found and fixed before a real small team meets them.
+
+**Acceptance criteria**
+- A subagent with only what an organisation's agent would have (the repo's docs, skills and example files, the dev servers and the local CISO Assistant) follows the guides literally, as the small defence-industry Cyber GRC team persona (2 to 8 hours a week, leaning on AI):
+    1. Trial: `docs/tutorials/local-trial.md` (`make trial`).
+    2. Onboarding: `docs/tutorials/first-deployment.md`, the onboarding tutorial and agent-driven onboarding with the skills (`docs/onboarding.md`).
+    3. Sustaining GRC: the weekly review, manual evidence and `hound run` upkeep (`docs/manual-evidence.md`, `docs/running.md`, the guided review).
+    4. The AI governance walkthrough (`docs/tutorials/ai-governance.md`, the carried s11-08 trial).
+    5. This sprint's new commands and guides.
+- The rehearsal never runs `hound approve` or `hound manual approve` for a person; the trial's committed approved copies stand in.
+- Every error in a doc or in hound is recorded under "Discovered work" with the step that hit it, then fixed in this sprint (red, green as usual), or carried with a reason.
+- Docs are updated for anything this sprint changed.
+- Steps that only a real tenant, firewall or machine can prove are listed, not blocked on.
+
+**Functional check**
+- The rehearsal log (steps followed, errors found, fixes and their commits) is recorded under this task.
+
+### s12-10 Improve: quality and flow (standing, about 15% of each sprint)
+- [ ] Done
+
+Standing task from 2026-11-24, after the maintainer asked for 10 to 20% of effort on refactoring, cleanup, guides and quality (the DevOps Three Ways: flow, feedback, continual learning).
+
+**Acceptance criteria**
+- At sprint start, triage the previous sprint's "Discovered work": fix, schedule or drop each item, with a reason.
+- One or two improvement items, chosen from: docs drift (every schema key and command mentioned in the docs exists, and every command is documented), duplicate files that must match (for example copies of mappings and frameworks under `examples/`), legacy files no longer used, slow or flaky tests, CI feedback time.
+- Before release 1 (s13): remove legacy files and stale references.
+- A short retro in the sprint review: what slowed the sprint, what to change next sprint.
+
+**Functional check**
+- The items done and the retro are recorded under this task.
+
 ## Carried from s09 to s12
 
-Human trials and onboarding tests, moved from s11 on 2026-11-24 at the maintainer's request. Built and tested in CI; each waits on a
-person, tenant or machine, not on code. Details stay under each task in its own sprint file.
+Human trials and onboarding tests, moved from s11 on 2026-11-24 at the maintainer's request. Built and tested in CI. Details stay under
+each task in its own sprint file. From 2026-11-24 Claude's rehearsal (s12-09) closes the ones a person's own environment is not needed
+for (s11-08, s09-38, s09-40 to s09-42, s09-54, s09-57); only the real tenant and firewall items (s09-01, s09-15, s09-17, s09-29, s09-39)
+wait on the maintainer.
 - [ ] s11-08 AI governance walkthrough: someone who has not read AI6 follows `docs/tutorials/ai-governance.md` on the local stack without help, and notes anything unclear under Discovered work.
 - [ ] s09-01 Application control policies from Intune: a real Graph export for the App Control for Business setting IDs.
 - [ ] s09-15 Firewall firmware update timeliness: whether the read-only role may call the firmware upgrade check, and a dry run on the maintainer's tenant.
@@ -187,5 +230,7 @@ person, tenant or machine, not on code. Details stay under each task in its own 
 - [ ] s09-54 and s09-57 `make trial` on the maintainer's machine.
 
 ## Discovered work
+
+- Cloud sessions cannot pull CISO Assistant's images (ghcr.io blobs are blocked by the proxy), so functional checks against CISO Assistant run in CI's functional job; dev servers and `--dry-run` runs work locally.
 
 ## Sprint review

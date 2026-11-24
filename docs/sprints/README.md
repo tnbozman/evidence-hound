@@ -31,9 +31,10 @@ Release 1 is ordered to put Essential Eight evidence on a schedule as early as p
 
 1. **Start.** Run the *Start sprint* workflow (Actions tab, input `sNN`) or `scripts/start-sprint.sh sNN`. It creates `sprint/sNN-<slug>` from `main`, sets the sprint file to `Status: In progress`, and opens a draft PR whose description is the task checklist.
 2. **Implement.** In the dev container, open Claude Code and run `/next-task`. Each task follows red, green, refactor, functional check, as in `CLAUDE.md`.
-3. **Feedback.** After each task, `/check-feedback` reads CI and security results; fix before moving on.
-4. **Review.** When all tasks are ticked and checks are green, add the sprint review note, mark the PR ready, review and merge.
-5. **Close.** In the last commit before merging, set `Status: Done`. Unfinished tasks move to the next sprint file under "Carried over".
+3. **Rehearse and improve (every sprint).** Claude, not the maintainer, follows the trial, onboarding and sustaining-GRC guides end to end on the local stack as a small, stretched Cyber GRC team would, records every doc or hound error under "Discovered work" and fixes it in the sprint. About 15% of each sprint goes to an Improve task: triage the last sprint's discovered work, fix docs drift and legacy files, speed up feedback, and a short retro. Each sprint file has these two standing tasks.
+4. **Feedback.** After each task, `/check-feedback` reads CI and security results; fix before moving on.
+5. **Review.** When all tasks are ticked and checks are green, add the sprint review note, mark the PR ready, review and merge.
+6. **Close.** In the last commit before merging, set `Status: Done`. Unfinished tasks move to the next sprint file under "Carried over".
 
 ## Task format
 

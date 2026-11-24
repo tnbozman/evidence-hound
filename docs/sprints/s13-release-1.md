@@ -94,6 +94,16 @@ Tasks s13-01 and s13-02 were s08-04 and s08-05 before the release 1 reorder.
 **Functional check**
 - Tag `v1.0.0` (`git tag -a v1.0.0 -m "Release 1"` and push it), approve the release environment, then check that GitHub shows release `v1.0.0` as the latest release with its assets, and that `ghcr.io/tnbozman/evidence-hound:1.0.0` pulls.
 
+### s13-07 Rehearse trial, onboarding and sustaining GRC (standing, every sprint)
+- [ ] Done
+
+As [s12-09](s12-e8-mapping-and-adoption.md#s12-09-rehearse-trial-onboarding-and-sustaining-grc-standing-every-sprint), against the release candidate: follow the install, trial, onboarding and upkeep guides from the release notes and the docs site as a new user would.
+
+### s13-08 Improve: quality and flow (standing, about 15% of each sprint)
+- [ ] Done
+
+As [s12-10](s12-e8-mapping-and-adoption.md#s12-10-improve-quality-and-flow-standing-about-15-of-each-sprint), with the legacy-file cleanup done before the release is tagged.
+
 ## Discovered work
 
 ## Sprint review

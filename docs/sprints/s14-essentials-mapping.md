@@ -58,6 +58,16 @@ expectations held as an audit beside the Essential Eight, so that one place show
 **Functional check**
 - Apply the example DISP audit to the local CISO Assistant; one `hound run` fills its cyber rows from the Essential Eight evidence.
 
+### s14-03 Rehearse trial, onboarding and sustaining GRC (standing, every sprint)
+- [ ] Done
+
+As [s12-09](s12-e8-mapping-and-adoption.md#s12-09-rehearse-trial-onboarding-and-sustaining-grc-standing-every-sprint), including this sprint's new commands and guides.
+
+### s14-04 Improve: quality and flow (standing, about 15% of each sprint)
+- [ ] Done
+
+As [s12-10](s12-e8-mapping-and-adoption.md#s12-10-improve-quality-and-flow-standing-about-15-of-each-sprint).
+
 ## Discovered work
 
 ## Sprint review

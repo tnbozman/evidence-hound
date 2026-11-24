@@ -247,6 +247,16 @@ Builds on: the SSP model and layout (s11-02 to s11-05), the POA&M (s11-03), the 
 **Functional check**
 - Following `docs/documents.md` verbatim, build and package the example documents.
 
+### s19-13 Rehearse trial, onboarding and sustaining GRC (standing, every sprint)
+- [ ] Done
+
+As [s12-09](s12-e8-mapping-and-adoption.md#s12-09-rehearse-trial-onboarding-and-sustaining-grc-standing-every-sprint), including this sprint's new commands and guides.
+
+### s19-14 Improve: quality and flow (standing, about 15% of each sprint)
+- [ ] Done
+
+As [s12-10](s12-e8-mapping-and-adoption.md#s12-10-improve-quality-and-flow-standing-about-15-of-each-sprint).
+
 ## Discovered work
 
 ## Sprint review
