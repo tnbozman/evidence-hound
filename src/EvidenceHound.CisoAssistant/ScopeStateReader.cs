@@ -130,6 +130,9 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
         var assets = await reading.ObjectsInAsync("assets", inScope);
         var audits = await reading.ObjectsInAsync("compliance-assessments", inScope);
         var evidences = await reading.ObjectsInAsync("evidences", inScope);
+        var planned = evidences.Where(IsPlanned).ToArray();
+        var labels = planned.Length > 0 ? Names(await reading.ListAsync("filtering-labels/"), "label") : [];
+        var tasks = query.EvidencePlan ? (await reading.ListAsync("task-templates/")).Where(t => RelationId(t["folder"]) is { } f && inScope.Contains(f)).ToArray() : [];
         var controls = await reading.ObjectsInAsync("applied-controls", inScope);
         var hashes = await HashesAsync(reading, evidences);
         var access = query.Access ? await AccessAsync(reading, folders, userList, inScope) : [];
@@ -164,6 +167,7 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
             return Result.Fail<HeldState>(reading.Problems);
         }
 
+        var rowKeys = rows.GroupBy(r => Id(r.Row), StringComparer.Ordinal).ToDictionary(g => g.Key, g => g.First().Key, StringComparer.Ordinal);
         var names = new Lookups(
             domainObjects.ToDictionary(Id, d => Text(d["name"]) ?? Id(d), StringComparer.Ordinal),
             Text(root["name"]) ?? query.RootFolder,
@@ -186,7 +190,14 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
                 ("domain", names.Domain(a)), ("perimeter", Lookup(a["perimeter"], names.Perimeters)), ("eta", Text(a["eta"])), ("due_date", Text(a["due_date"])),
                 ("authors", Joined(a["authors"], names.Users)), ("reviewers", Joined(a["reviewers"], names.Users)), ("status", Text(a["status"])),
                 ("locked", IsLocked(a) ? "true" : null)) with { Locked = IsLocked(a) }),
-            .. evidences.Select(e => Marked(ScopeKind.Document, RefIdOrName(ScopeKind.Document, e), e, ("name", Text(e["name"])), ("domain", names.Domain(e)), ("hashes", hashes.GetValueOrDefault(Id(e))))),
+            .. planned.Select(e => Marked(ScopeKind.Evidence, Text(e["ref_id"]), e,
+                ("name", Text(e["name"])), ("domain", names.Domain(e)), ("owner", Joined(e["owner"], names.Users)), ("controls", Joined(e["applied_controls"], names.Controls)),
+                ("labels", Joined(e["filtering_labels"], labels)))),
+            .. tasks.Select(t => Marked(ScopeKind.TaskTemplate, Text(t["ref_id"]), t,
+                ("name", Text(t["name"])), ("domain", names.Domain(t)), ("assignees", Joined(t["assigned_to"], names.Users)), ("schedule", Schedule(t["schedule"])),
+                ("evidence", Joined(t["evidences"], names.Evidence)), ("controls", Joined(t["applied_controls"], names.Controls)),
+                ("requirements", Joined(t["requirement_assessments"], rowKeys)), ("enabled", t["enabled"] is JsonValue e && e.TryGetValue<bool>(out var enabled) && !enabled ? "false" : "true"))),
+            .. evidences.Where(e => !IsPlanned(e)).Select(e => Marked(ScopeKind.Document, RefIdOrName(ScopeKind.Document, e), e, ("name", Text(e["name"])), ("domain", names.Domain(e)), ("hashes", hashes.GetValueOrDefault(Id(e))))),
             .. controls.Select(c => Marked(ScopeKind.Control, RefIdOrName(ScopeKind.Control, c), c,
                 ("name", Text(c["name"])), ("domain", names.Domain(c)), ("owner", Joined(c["owner"], names.Users)), ("priority", Text(c["priority"])),
                 ("category", Text(c["category"])), ("eta", Text(c["eta"])), ("systems", Joined(c["assets"], names.Assets)), ("documents", Joined(c["evidences"], names.Evidence)))),
@@ -228,7 +239,8 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
                     state);
             }),
             .. teams.Select(t => Marked(ScopeKind.Team, Text(t["name"]), t,
-                ("domain", Lookup(t["folder"], folderNames)), ("leader", Lookup(t["leader"], emails)), ("members", Joined(t["members"], emails)))),
+                ("domain", Lookup(t["folder"], folderNames)), ("leader", Lookup(t["leader"], emails)), ("members", Joined(t["members"], emails)),
+                ("email", Text(t["team_email"])))),
         ];
     }
 
@@ -244,6 +256,22 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
             .. flags.Where(f => f.Value is JsonValue v && v.TryGetValue<bool>(out _)).Select(f => Setting(ScopeKind.FeatureFlag, f.Key, f.Value!.GetValue<bool>() ? "true" : "false")),
             .. general.Select(g => Setting(ScopeKind.Setting, g.Key, CisoAssistantSettings.Json(g.Value))),
         ];
+    }
+
+    /// <summary>An evidence item of the evidence plan: its ref_id follows the EV- convention. Any other evidence item is a document.</summary>
+    private static bool IsPlanned(JsonNode evidence) => Text(evidence["ref_id"]) is { } refId && RefIds.Follows(RefIdKind.Evidence, refId);
+
+    /// <summary>A task schedule as the evidence plan writes it: "every N months", a yearly schedule as 12.</summary>
+    private static string? Schedule(JsonNode? schedule)
+    {
+        var interval = schedule?["interval"] is JsonValue i && i.TryGetValue<int>(out var n) ? n : 1;
+        return Text(schedule?["frequency"]) switch
+        {
+            "MONTHLY" => $"every {interval} months",
+            "YEARLY" => $"every {12 * interval} months",
+            null => null,
+            var other => $"{other.ToLowerInvariant()} {interval}",
+        };
     }
 
     private static Dictionary<string, string> Names(List<JsonNode> objects, string field) =>

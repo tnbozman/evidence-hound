@@ -8,7 +8,7 @@ namespace EvidenceHound.Core.Yaml.Tests;
 /// </summary>
 public class TaskTemplatePlanTests
 {
-    private const string Runbook = "# Admin review\n\nExport the admin list and send it to the GRC team.\n";
+    private static readonly string Runbook = "# Admin review\n\nExport the admin list and send it to the GRC team.\n";
 
     [Fact]
     public void Interval_becomes_recurring_schedule()
@@ -20,7 +20,8 @@ public class TaskTemplatePlanTests
         task.Fields.ShouldBe(new Dictionary<string, string>
         {
             ["name"] = "EV-ADMIN-REVIEW: Multi-factor authentication",
-            ["description"] = Runbook,
+            // Without the trailing line break CISO Assistant drops when it reads a description back, so an unchanged runbook compares equal.
+            ["description"] = Runbook.TrimEnd(),
             ["domain"] = "Example Pty Ltd",
             ["assignees"] = "Example 365 owners, GRC team",
             ["schedule"] = "every 3 months",

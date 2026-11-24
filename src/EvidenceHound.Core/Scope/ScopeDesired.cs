@@ -76,7 +76,7 @@ public static class ScopeDesired
             if (row.NeedsPerson && row.EveryMonths is { } months)
             {
                 yield return new ScopeObject(ScopeKind.TaskTemplate, row.RefId, Fields(
-                    ("name", Name(row, control)), ("description", row.Runbook is { } runbook ? inputs.Runbooks.GetValueOrDefault(runbook) : null), ("domain", domain),
+                    ("name", Name(row, control)), ("description", row.Runbook is { } runbook ? inputs.Runbooks.GetValueOrDefault(runbook)?.TrimEnd() : null), ("domain", domain),
                     ("assignees", Joined(new[] { row.Owner?.Value, row.GrcTeam?.Value }.OfType<string>().Distinct(StringComparer.Ordinal))),
                     ("schedule", $"every {months} months"), ("evidence", row.RefId), ("controls", row.Control.Value),
                     ("requirements", Joined(Rows(scope, row))), ("enabled", "true")))

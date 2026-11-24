@@ -10,7 +10,7 @@ namespace EvidenceHound.CisoAssistant.Tests;
 /// </summary>
 public sealed class TaskTemplateClientTests : IDisposable
 {
-    private const string Runbook = "# Admin review\n\nExport the admin list and send it to the GRC team.\n";
+    private static readonly string Runbook = "# Admin review\n\nExport the admin list and send it to the GRC team.\n";
 
     private readonly FakeCisoAssistant _ca = new();
     private readonly CancellationToken _ct = TestContext.Current.CancellationToken;
@@ -32,8 +32,12 @@ public sealed class TaskTemplateClientTests : IDisposable
             new JsonObject { ["id"] = "t-grc", ["name"] = "GRC team", ["folder"] = Ref("f-example", "Example Pty Ltd"), ["members"] = new JsonArray(), ["deputies"] = new JsonArray() },
             new JsonObject
             {
-                ["id"] = "t-owners", ["name"] = "Example 365 owners", ["folder"] = Ref("f-example", "Example Pty Ltd"), ["team_email"] = "owners-365@example.com",
-                ["members"] = new JsonArray(), ["deputies"] = new JsonArray(),
+                ["id"] = "t-owners",
+                ["name"] = "Example 365 owners",
+                ["folder"] = Ref("f-example", "Example Pty Ltd"),
+                ["team_email"] = "owners-365@example.com",
+                ["members"] = new JsonArray(),
+                ["deputies"] = new JsonArray(),
             }));
         Respond("GET", "/api/actors/", SupplierClientTests.List(
             new JsonObject { ["id"] = "a-grc", ["type"] = "team", ["specific"] = "t-grc", ["str"] = "GRC team" },
@@ -44,30 +48,69 @@ public sealed class TaskTemplateClientTests : IDisposable
         Respond("GET", "/api/evidences/", SupplierClientTests.List(
             new JsonObject
             {
-                ["id"] = "ev-admin", ["ref_id"] = "EV-ADMIN-REVIEW", ["name"] = "EV-ADMIN-REVIEW: Multi-factor authentication", ["folder"] = Ref("f-example", "Example Pty Ltd"),
-                ["owner"] = new JsonArray(Ref("a-owners", "Example 365 owners")), ["filtering_labels"] = new JsonArray(Ref("l-manual", "method:manual")),
-                ["applied_controls"] = new JsonArray(Ref("ac-mfa", "Multi-factor authentication")), ["description"] = "[hound scope 0123456789abcdef]",
+                ["id"] = "ev-admin",
+                ["ref_id"] = "EV-ADMIN-REVIEW",
+                ["name"] = "EV-ADMIN-REVIEW: Multi-factor authentication",
+                ["folder"] = Ref("f-example", "Example Pty Ltd"),
+                ["owner"] = new JsonArray(Ref("a-owners", "Example 365 owners")),
+                ["filtering_labels"] = new JsonArray(Ref("l-manual", "method:manual")),
+                ["applied_controls"] = new JsonArray(Ref("ac-mfa", "Multi-factor authentication")),
+                ["description"] = "[hound scope 0123456789abcdef]",
             },
             new JsonObject { ["id"] = "ev-doc", ["ref_id"] = "identity-policy", ["name"] = "Identity policy", ["folder"] = Ref("f-example", "Example Pty Ltd") }));
         Respond("GET", "/api/evidences/ev-doc/object/", new JsonObject { ["id"] = "ev-doc", ["ref_id"] = "identity-policy", ["name"] = "Identity policy", ["folder"] = "f-example", ["description"] = "" });
-        Respond("GET", "/api/evidences/ev-admin/object/", new JsonObject { ["id"] = "ev-admin", ["ref_id"] = "EV-ADMIN-REVIEW", ["folder"] = "f-example", ["description"] = "[hound scope 0123456789abcdef]" });
+        Respond("GET", "/api/evidences/ev-admin/object/", new JsonObject
+        {
+            ["id"] = "ev-admin",
+            ["ref_id"] = "EV-ADMIN-REVIEW",
+            ["name"] = "EV-ADMIN-REVIEW: Multi-factor authentication",
+            ["folder"] = "f-example",
+            ["owner"] = new JsonArray("a-owners"),
+            ["filtering_labels"] = new JsonArray("l-manual"),
+            ["applied_controls"] = new JsonArray("ac-mfa"),
+            ["description"] = "[hound scope 0123456789abcdef]",
+        });
+        Respond("GET", "/api/teams/t-grc/object/", new JsonObject { ["id"] = "t-grc", ["name"] = "GRC team", ["folder"] = "f-example", ["members"] = new JsonArray(), ["description"] = "" });
+        Respond("GET", "/api/teams/t-owners/object/", new JsonObject
+        {
+            ["id"] = "t-owners",
+            ["name"] = "Example 365 owners",
+            ["folder"] = "f-example",
+            ["team_email"] = "owners-365@example.com",
+            ["members"] = new JsonArray(),
+            ["description"] = "",
+        });
+        Respond("GET", "/api/user-groups/", SupplierClientTests.List());
+        Respond("GET", "/api/applied-controls/ac-mfa/object/", new JsonObject { ["id"] = "ac-mfa", ["ref_id"] = "AC-MFA", ["name"] = "Multi-factor authentication", ["folder"] = "f-example", ["description"] = "" });
+        Respond("GET", "/api/compliance-assessments/ca-1/object/", new JsonObject { ["id"] = "ca-1", ["ref_id"] = "EXAMPLE-BASELINE-2026", ["name"] = "Example baseline 2026", ["folder"] = "f-example", ["selected_implementation_groups"] = new JsonArray("1") });
         Respond("GET", "/api/evidence-revisions/", SupplierClientTests.List());
         Respond("GET", "/api/compliance-assessments/", SupplierClientTests.List(new JsonObject { ["id"] = "ca-1", ["ref_id"] = "EXAMPLE-BASELINE-2026", ["folder"] = Ref("f-example", "Example Pty Ltd") }));
-        Respond("GET", "/api/compliance-assessments/ca-1/object/", new JsonObject { ["id"] = "ca-1", ["ref_id"] = "EXAMPLE-BASELINE-2026", ["selected_implementation_groups"] = new JsonArray("1") });
         Respond("GET", "/api/requirement-assessments/", SupplierClientTests.List(new JsonObject
         {
-            ["id"] = "ra-12", ["compliance_assessment"] = Ref("ca-1", "EXAMPLE-BASELINE-2026"),
+            ["id"] = "ra-12",
+            ["compliance_assessment"] = Ref("ca-1", "EXAMPLE-BASELINE-2026"),
             ["requirement"] = new JsonObject { ["urn"] = "urn:example:risk:req_node:example-baseline:ex-1.2", ["ref_id"] = "EX-1.2", ["implementation_groups"] = new JsonArray("1", "2") },
         }));
         Respond("GET", "/api/task-templates/", SupplierClientTests.List(new JsonObject
         {
-            ["id"] = "tt-1", ["ref_id"] = "EV-ADMIN-REVIEW", ["name"] = "EV-ADMIN-REVIEW: Multi-factor authentication", ["description"] = Runbook + "\n[hound scope 0123456789abcdef]",
-            ["folder"] = Ref("f-example", "Example Pty Ltd"), ["assigned_to"] = new JsonArray(Ref("a-owners", "Example 365 owners"), Ref("a-grc", "GRC team")),
-            ["is_recurrent"] = true, ["task_date"] = "2027-02-23", ["enabled"] = true,
+            ["id"] = "tt-1",
+            ["ref_id"] = "EV-ADMIN-REVIEW",
+            ["name"] = "EV-ADMIN-REVIEW: Multi-factor authentication",
+            ["description"] = Runbook + "\n[hound scope 0123456789abcdef]",
+            ["folder"] = Ref("f-example", "Example Pty Ltd"),
+            ["assigned_to"] = new JsonArray(Ref("a-owners", "Example 365 owners"), Ref("a-grc", "GRC team")),
+            ["is_recurrent"] = true,
+            ["task_date"] = "2027-02-23",
+            ["enabled"] = true,
             ["schedule"] = new JsonObject { ["interval"] = 3, ["frequency"] = "MONTHLY", ["days_of_week"] = new JsonArray(), ["weeks_of_month"] = new JsonArray(), ["months_of_year"] = new JsonArray() },
-            ["evidences"] = new JsonArray(Ref("ev-admin", "EV-ADMIN-REVIEW")), ["applied_controls"] = new JsonArray(Ref("ac-mfa", "Multi-factor authentication")),
+            ["evidences"] = new JsonArray(Ref("ev-admin", "EV-ADMIN-REVIEW")),
+            ["applied_controls"] = new JsonArray(Ref("ac-mfa", "Multi-factor authentication")),
             ["requirement_assessments"] = new JsonArray(Ref("ra-12", "EX-1.2")),
-            ["next_occurrence"] = "2027-02-23", ["next_occurrence_status"] = "pending", ["last_occurrence_status"] = "completed", ["status"] = null, ["observation"] = "",
+            ["next_occurrence"] = "2027-02-23",
+            ["next_occurrence_status"] = "pending",
+            ["last_occurrence_status"] = "completed",
+            ["status"] = null,
+            ["observation"] = "",
         }));
         foreach (var resource in new[] { "evidences", "task-templates", "teams" })
         {
@@ -122,7 +165,7 @@ public sealed class TaskTemplateClientTests : IDisposable
     [Fact]
     public async Task Reads_task_templates_and_evidence_items_but_never_an_occurrence()
     {
-        var query = new ScopeStateQuery("Global", [], new Dictionary<string, IReadOnlyList<RequirementKey>>()) { EvidencePlan = true, Access = true };
+        var query = new ScopeStateQuery("Global", [], new Dictionary<string, IReadOnlyList<RequirementKey>>()) { EvidencePlan = true, Access = true, AllRowsOf = new HashSet<string>(StringComparer.Ordinal) { "EXAMPLE-BASELINE-2026" } };
 
         var held = (await _ca.Scope.ReadAsync(query, _ct)).Value();
 
@@ -131,7 +174,7 @@ public sealed class TaskTemplateClientTests : IDisposable
         task.Fields.ShouldBe(new Dictionary<string, string>
         {
             ["name"] = "EV-ADMIN-REVIEW: Multi-factor authentication",
-            ["description"] = Runbook,
+            ["description"] = Runbook.TrimEnd(),
             ["domain"] = "Example Pty Ltd",
             ["assignees"] = "Example 365 owners, GRC team",
             ["schedule"] = "every 3 months",

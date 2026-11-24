@@ -15,6 +15,9 @@ public sealed record ScopeStateQuery(string RootFolder, IReadOnlyList<string> Fr
     /// <summary>Whether to read entities, solutions, contracts and representatives: only when the scope declares third parties.</summary>
     public bool ThirdParties { get; init; }
 
+    /// <summary>Whether to read the evidence plan's recurring task templates: only when the scope declares an evidence plan.</summary>
+    public bool EvidencePlan { get; init; }
+
     /// <summary>Whether to read the organisation's own entity (the builtin main entity): only when setup declares it.</summary>
     public bool Organisation { get; init; }
 
@@ -45,6 +48,7 @@ public sealed record ScopeStateQuery(string RootFolder, IReadOnlyList<string> Fr
             Settings = scope.Settings.FeatureFlags.Count > 0 || scope.Settings.General.Count > 0,
             ThirdParties = scope.ThirdParties.Count > 0,
             Organisation = scope.Setup.Organisation is not null,
+            EvidencePlan = scope.EvidencePlan is not null,
             AllRowsOf = declared.Where(d => d.Kind == ScopeKind.Audit).Select(d => d.Key).ToHashSet(StringComparer.Ordinal),
         };
     }
