@@ -1,6 +1,7 @@
 using EvidenceHound.Core.Checks;
 using EvidenceHound.Core.Frameworks;
 using EvidenceHound.Core.Mapping;
+using EvidenceHound.Core.Scope;
 
 namespace EvidenceHound.Core.Yaml.Tests;
 
@@ -78,4 +79,15 @@ public class Ai6MappingTests
 
     private static CheckResult Result(string check, CheckOutcome outcome) =>
         CheckResult.Create(CheckId.Create(check).Value(), outcome, "fixture", [], DateTimeOffset.UnixEpoch, "fixture").Value();
+
+    [Fact]
+    public void Register_checks_name_a_sub_practice_they_are_mapped_to()
+    {
+        foreach (var check in AiRegisterChecks.CheckIds)
+        {
+            var mapped = Mapping.Mapping.Requirements.Where(r => r.Checks.Any(c => c.Value == check)).Select(r => r.RequirementRef).ToArray();
+            var named = Snapshot.Nodes.Where(n => mapped.Contains(n.RefId)).Select(n => $"{n.RefId} {n.Title}");
+            named.ShouldContain(AiRegisterChecks.Practice(check), check);
+        }
+    }
 }
