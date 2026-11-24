@@ -11,8 +11,8 @@ and monitor, and keep people in control. Evidence Hound handles them with what C
 | AI6 asks for | Kept in | How it is checked |
 | --- | --- | --- |
 | A register of AI systems, each with an owner | The `ai` block of each AI system in `scope/setup.yaml`, shown in CISO Assistant as an asset labelled `ai-system` | `ai-register` collector |
-| Screening into a risk tier, and an impact assessment before a medium or high tier system goes live | The same `ai` block: `tier`, `screened_on`, `impact_assessment`, `impact_assessed_on`, `in_use_from` | `ai-register` collector |
-| The risks of medium and high tier systems | Risk scenarios in CISO Assistant, linked to the system's asset | `ciso-assistant` profile |
+| Screening with the National AI Centre's questions, and an approved impact assessment before an elevated system goes live | The same `ai` block: `screening`, `screening_yes`, `screened_on`, `impact_assessment`, `impact_assessed_on`, `in_use_from` | `ai-register` collector |
+| The risks of elevated systems | Risk scenarios in CISO Assistant, linked to the system's asset | `ciso-assistant` profile |
 | Human oversight | `oversight` and `oversight_note` in the `ai` block | `ai-register` collector |
 | Testing, and testing again in proportion to risk | `last_tested_on` in the `ai` block, with the test result as evidence | `ai-register` collector |
 | Suppliers of third-party AI | The supplier's solution, entity assessment and contract in CISO Assistant (as for any supplier) | `ciso-assistant` profile |
@@ -20,7 +20,7 @@ and monitor, and keep people in control. Evidence Hound handles them with what C
 | The self-assessment | An audit of the AI6 framework, group `F` (Foundations) | `mappings/ai6.yaml` turns every check into AI6 results |
 
 CISO Assistant's custom fields are an Enterprise feature, so the register entry lives in the repo and reaches CISO Assistant as
-filtering labels (`ai-tier-medium`, `ai-use-third-party`, `ai-oversight-on-the-loop`, `ai-retired`) and as lines in the asset's
+filtering labels (`ai-screening-elevated`, `ai-use-third-party`, `ai-oversight-on-the-loop`, `ai-retired`) and as lines in the asset's
 description. Filtering the asset list by `ai-system` gives the register; CISO Assistant's own Excel export saves it.
 
 ## Who sets each field
@@ -30,12 +30,13 @@ keys and what `hound scope validate` reports.
 
 | Field | Set by | When |
 | --- | --- | --- |
-| `tier`, `screened_on` | The GRC team, from the [screening runbook](../examples/compliance-repo/runbooks/ai-screening.md) | When a system is proposed, and again when its use changes |
-| `use` | The GRC team | At screening |
+| `screening`, `screening_yes`, `screened_on` | The GRC team, from the [screening runbook](../examples/compliance-repo/runbooks/ai-screening.md) | When a system is proposed, and again when its use changes |
+| `registered_on` | The GRC team | When the system is approved and added to the register |
+| `version`, `use`, `purpose`, `intended_uses`, `limitations`, `misuse`, `data_sources`, `stakeholders` | The system's owner, reviewed by the GRC team | At screening, and when the system or its use changes |
 | `oversight`, `oversight_note` | The system's owner, reviewed by the GRC team | At screening, and when the arrangement changes |
-| `impact_assessment`, `impact_assessed_on` | The GRC team, once the assessment is approved | Before a medium or high tier system goes live |
+| `impact_assessment`, `impact_assessed_on` | The GRC team, once the assessment is approved | Before an elevated system goes live |
 | `in_use_from`, `retired_on` | The system's owner | At go-live and when the system is switched off |
-| `last_tested_on` | The system's owner, with the test result kept as evidence | Before go-live, then at least every 12 months (6 for high tier) |
+| `last_tested_on` | The system's owner, with the test result kept as evidence | Before go-live, then at least every 12 months (6 for an elevated system) |
 
 A third-party AI system also names its supplier's `solution`, and its supplier is approved before the system is registered, as for any
 other system.
@@ -48,10 +49,77 @@ checks what only CISO Assistant holds (risk scenarios, supplier assessments and 
 in words and says what to do. Checks a person attests come from two manual sources, copied from
 [`examples/manual-sources/ai6/`](../examples/manual-sources/ai6/): `ai-governance` once a year and `ai-operations` each quarter.
 
+## The National AI Centre's templates
+
+The register, the screening and the AI policy follow the National AI Centre's own templates, so an assessor sees the government's terms.
+
+| Template | Published | How it is used |
+| --- | --- | --- |
+| *AI register template* (Word and Excel) | ai.gov.au; the copies used here were last changed in June 2026 (Word) and May 2026 (Excel) | Its 12 columns are the `ai` block's keys (traced below). Each run's `ai-register.json` holds every column for every AI system, ready to give an assessor. |
+| *AI screening questions* (PDF) | ai.gov.au; last changed July 2026 | Its seven questions are the [screening runbook](../examples/compliance-repo/runbooks/ai-screening.md), and its outcome is `screening`. |
+| *AI policy guide and template* (Word) | ai.gov.au; last changed June 2026 | The source for your AI policy, which the AI6 audit lists as a document (AI6-1.4, AI6-3.1). See [the AI policy](#the-ai-policy). |
+
+None of the three states a licence or a version number, so this repo does not copy their text: the tables below summarise them in our own
+words. Download them from [ai.gov.au](https://www.ai.gov.au/) and keep your filled-in copies with your own records.
+
+## The National AI Centre's register template
+
+Every column of the template, and where the register keeps it. `ai.` keys are in the system's `ai` block in `scope/setup.yaml`; they
+reach CISO Assistant in the asset's description, and `ai.register_complete` fails while one is empty.
+
+| Template column | Kept as | Notes |
+| --- | --- | --- |
+| Name and version | The system's `name`, and `ai.version` | `version` is optional, for systems that have one. |
+| Owner | The system's `owner` | The accountable person (AI6-1.1); checked by `ai.owner_assigned`. |
+| Status | Worked out each run from `ai.in_use_from` and `ai.retired_on` | Pilot until it goes live, operational while in use, decommissioned once retired; written to `ai-register.json` as `status`. Kept as dates so a status cannot be forgotten. |
+| Source | `ai.use`, and for a supplier's product the system's `solution` | `built` is the internal team; `third_party` names the supplier's solution, so the supplier is approved first. |
+| Purpose/business goals | `ai.purpose` | |
+| Intended use case(s) | `ai.intended_uses` | A list. |
+| Known limitations and prohibited use | `ai.limitations` | |
+| Any foreseeable misuse | `ai.misuse` | Write "None identified." when there is none. |
+| Data sources and type | `ai.data_sources` | A list, each with its type, such as "Past proposals (text)". Sensitive data is also recorded in the system's `data` (CUI, PII and so on). |
+| Registered date | `ai.registered_on` | |
+| Screening outcome | `ai.screening`, with `ai.screening_yes` | `normal`, `elevated` or `unacceptable`, as the template's drop-down; the answers show the reasoning. |
+| Key stakeholders affected | `ai.stakeholders` | A list. |
+
+## The National AI Centre's screening questions
+
+The seven questions, in brief. A yes to any of them makes the outcome **elevated**; no to all of them makes it **normal**. **Unacceptable**
+is the AI governance committee's decision for a use the organisation will not accept, whatever the answers. `hound scope validate`
+reports `ai.screening_disagrees` when the outcome and the answers do not match.
+
+| Question | In brief | A yes means |
+| --- | --- | --- |
+| 1 | It uses personal, sensitive or confidential information, in training, operation or prompts. | Elevated: also record the data in the system's `data` |
+| 2 | It talks directly to people with freedom to answer without a person checking. | Elevated |
+| 3 | It acts on its own at scale, or would be hard to stop or correct. | Elevated: think about `oversight` |
+| 4 | It makes or supports decisions about people in vulnerable or under-represented groups. | Elevated |
+| 5 | It works in a regulated area or can have legal effects on people. | Elevated |
+| 6 | Harm from a wrong decision would be hard to contest, reverse or put right. | Elevated |
+| 7 | It is general purpose, or easily used beyond what it was meant for. | Elevated |
+
+An **elevated** system needs more before and after it goes live, and the checks enforce it: an approved impact assessment before
+`in_use_from` (`ai.impact_assessment_before_use`), its risks as risk scenarios in CISO Assistant (`ai.risks_in_register`), a person in or on
+the loop (`ai.human_oversight_documented`), and a test at least every 6 months instead of 12 (`ai.test_results_current`). The template
+says to consult senior leadership or the governance committee before planning an elevated system in detail; the runbook makes that the
+approval of the impact assessment. An **unacceptable** system in use fails `ai.screening_recorded`.
+
+## The AI policy
+
+The policy template sets out a policy's purpose and scope, what counts as an AI system, the policy statements (human-centred use,
+accountability, risk and impact assessment, testing, fairness, transparency and human oversight), the roles (policy owner, approvers,
+compliance monitor, governance committee, system owners and all staff), screening new use cases, incidents and yearly review.
+
+Write your own policy from it, approve it, and list it under `documents` in your AI6 audit for AI6-1.4 and AI6-3.1, the way the
+example's Essential Eight audit lists its identity policy. The yearly `ai-governance` source attests it was approved (`ai.policy_approved`). Two things to match up when
+you write it: the template's screening outcomes are *normal*, *elevated* and *prohibited* in one place and *unacceptable* in another
+(the register uses *unacceptable*); and it asks for a risk and impact assessment for every AI system, where the register asks for an
+approved one only for elevated systems. Choose one rule for your policy, and say so in it.
+
 ## Adopting at Foundations
 
 1. Add the AI6 library to `scope/setup.yaml` (as `examples/compliance-repo/scope/setup.yaml` does), an audit for group `F`, and an `ai6`
-   programme with `register: { of: ai_systems, by: [tier, use] }`.
+   programme with `register: { of: ai_systems, by: [screening, use] }`.
 2. Register each AI system you use with an `ai` block, after screening it.
 3. Add the `ai-register` collector, the `ciso-assistant` profile and the two manual sources to `hound.yaml`, and `mappings/ai6.yaml` as a
    target for the AI6 audit.
@@ -59,7 +127,7 @@ in words and says what to do. Checks a person attests come from two manual sourc
 5. `hound scope plan`, review, `hound scope apply`, then `hound run`.
 
 If your team uses its own coding agent with `hound onboard` or `hound manual propose`, that agent is AI use too: screen it and register it
-like any other AI system (usually low tier, human in the loop, because a person approves every proposal).
+like any other AI system (a person approves every proposal, so it is human in the loop; it reads your repo, so expect question 1 to be yes).
 
 The example compliance repo has all of this for two fictional AI systems; one is deliberately not tested yet, so a run shows AI6-4.1
 (the register) met and AI6-5.1 (testing before use) not met.

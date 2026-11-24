@@ -50,7 +50,7 @@ public static class RegisterItems
     public const string AiSystems = "ai_systems";
     public const string Systems = "systems";
 
-    private static readonly string[] AiFields = ["tier", "use", "oversight"];
+    private static readonly string[] AiFields = ["screening", "use", "oversight"];
     private static readonly string[] SystemFields = ["type"];
 
     public static IReadOnlyList<string> Names { get; } = [AiSystems, Systems];
@@ -80,7 +80,7 @@ public static class RegisterItems
         name,
         new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            ["tier"] = Snake(ai.Tier),
+            ["screening"] = Snake(ai.Screening),
             ["use"] = Snake(ai.Use),
             ["oversight"] = Snake(ai.Oversight),
         },

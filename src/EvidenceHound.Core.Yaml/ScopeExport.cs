@@ -122,17 +122,36 @@ public static class ScopeExport
             return;
         }
 
+        const string Indent = "          ";
         yaml.Append("        ai:\n")
-            .Append(CultureInfo.InvariantCulture, $"          tier: {Snake(ai.Tier)}\n")
-            .Append(CultureInfo.InvariantCulture, $"          screened_on: {Scalar(Day(ai.ScreenedOn))}\n")
-            .Append(CultureInfo.InvariantCulture, $"          use: {Snake(ai.Use)}\n")
-            .Append(CultureInfo.InvariantCulture, $"          oversight: {Snake(ai.Oversight)}\n")
-            .Append(CultureInfo.InvariantCulture, $"          oversight_note: {Scalar(ai.OversightNote)}\n");
-        Optional(yaml, "          ", "impact_assessment", ai.ImpactAssessment is { } impact ? Snake(impact) : null);
-        Optional(yaml, "          ", "impact_assessed_on", ai.ImpactAssessedOn is { } assessed ? Day(assessed) : null);
-        Optional(yaml, "          ", "in_use_from", ai.InUseFrom is { } from ? Day(from) : null);
-        Optional(yaml, "          ", "last_tested_on", ai.LastTestedOn is { } tested ? Day(tested) : null);
-        Optional(yaml, "          ", "retired_on", ai.RetiredOn is { } retired ? Day(retired) : null);
+            .Append(CultureInfo.InvariantCulture, $"{Indent}screening: {Snake(ai.Screening)}\n")
+            .Append(CultureInfo.InvariantCulture, $"{Indent}screening_yes: [{string.Join(", ", ai.ScreeningYes)}]\n")
+            .Append(CultureInfo.InvariantCulture, $"{Indent}screened_on: {Scalar(Day(ai.ScreenedOn))}\n");
+        Optional(yaml, Indent, "registered_on", ai.RegisteredOn is { } registered ? Day(registered) : null);
+        Optional(yaml, Indent, "version", ai.Version);
+        yaml.Append(CultureInfo.InvariantCulture, $"{Indent}use: {Snake(ai.Use)}\n");
+        Optional(yaml, Indent, "purpose", ai.Purpose);
+        InOrder(yaml, Indent, "intended_uses", ai.IntendedUses);
+        Optional(yaml, Indent, "limitations", ai.Limitations);
+        Optional(yaml, Indent, "misuse", ai.Misuse);
+        InOrder(yaml, Indent, "data_sources", ai.DataSources);
+        InOrder(yaml, Indent, "stakeholders", ai.Stakeholders);
+        yaml.Append(CultureInfo.InvariantCulture, $"{Indent}oversight: {Snake(ai.Oversight)}\n")
+            .Append(CultureInfo.InvariantCulture, $"{Indent}oversight_note: {Scalar(ai.OversightNote)}\n");
+        Optional(yaml, Indent, "impact_assessment", ai.ImpactAssessment is { } impact ? Snake(impact) : null);
+        Optional(yaml, Indent, "impact_assessed_on", ai.ImpactAssessedOn is { } assessed ? Day(assessed) : null);
+        Optional(yaml, Indent, "in_use_from", ai.InUseFrom is { } from ? Day(from) : null);
+        Optional(yaml, Indent, "last_tested_on", ai.LastTestedOn is { } tested ? Day(tested) : null);
+        Optional(yaml, Indent, "retired_on", ai.RetiredOn is { } retired ? Day(retired) : null);
+    }
+
+    /// <summary>A list in the order it was written, since the register entry's description keeps that order.</summary>
+    private static void InOrder(StringBuilder yaml, string indent, string key, IReadOnlyList<string> values)
+    {
+        if (values.Count > 0)
+        {
+            yaml.Append(CultureInfo.InvariantCulture, $"{indent}{key}: [{string.Join(", ", values.Select(Scalar))}]\n");
+        }
     }
 
     private static string Snake<T>(T value)

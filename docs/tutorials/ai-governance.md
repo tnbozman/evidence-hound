@@ -39,8 +39,8 @@ mkdir -p .dev/ai-walkthrough && cp -R examples/compliance-repo .dev/ai-walkthrou
 hound programme list --scope .dev/ai-walkthrough/repo/scope
 ```
 
-The AI programme's line ends with `Register: 2 AI systems. tier: low 1, medium 1. use: built 1, customised 1.` In CISO Assistant, open
-**Assets** and filter by the label `ai-system`: the same two systems, each with its tier, use and oversight as labels and its register
+The AI programme's line ends with `Register: 2 AI systems. screening: elevated 1, normal 1. use: built 1, customised 1.` In CISO Assistant, open
+**Assets** and filter by the label `ai-system`: the same two systems, each with its screening outcome, use and oversight as labels and its register
 entry at the end of its description.
 
 ## 3. Decide whether it is an AI system, and who supplies it
@@ -54,20 +54,21 @@ it would name the supplier's approved solution as `solution` ([third parties](..
 
 ## 4. Answer the screening questions
 
-**What it is for:** the answers set the risk tier, and the tier decides how much assurance the system needs.
+**What it is for:** the answers set the screening outcome, and the outcome decides how much assurance the system needs.
 
-Answer the six questions in section 3 of the runbook. For the search assistant:
+Answer the National AI Centre's seven questions in section 3 of the runbook. For the search assistant:
 
 | # | Question, in short | Answer |
 | --- | --- | --- |
-| 1 | Forbidden use? | No |
-| 2 | Decisions about people? | No: it answers questions, people decide |
-| 3 | Sensitive or personal information? | **Yes**: staff records |
-| 4 | Acts without a person reviewing each output? | No: staff read each answer |
-| 5 | Could a wrong output cause harm or a reportable incident? | No |
-| 6 | Decisions about people and no review? | No |
+| 1 | Personal, sensitive or confidential information? | **Yes**: staff records |
+| 2 | Talks to people without a person checking? | No: staff read each answer before acting on it |
+| 3 | Acts by itself at scale, or hard to stop? | No: it only answers questions |
+| 4 | Affects people in vulnerable circumstances? | No |
+| 5 | Regulated area or legal effects? | No |
+| 6 | Harm hard to undo? | No |
+| 7 | General purpose or easily repurposed? | **Yes**: it is built on a general-purpose language model |
 
-One yes at question 3 gives **medium**. Keep the answers for the pull request.
+Any yes makes it **elevated**; here, questions 1 and 7. Keep the answers for the pull request.
 
 ## 5. Register it
 
@@ -83,9 +84,17 @@ assistant:
         description: Answers staff questions from company documents, including HR policies and staff records.
         owner: it@example.com
         ai:
-          tier: medium
+          screening: elevated
+          screening_yes: [1, 7]
           screened_on: "2026-11-24"
+          registered_on: "2026-11-24"
           use: customised
+          purpose: Help staff find answers in company documents without asking HR or IT.
+          intended_uses: [Answer staff questions about company policies]
+          limitations: Not for decisions about a person; answers about pay or leave must be checked with HR.
+          misuse: Asking it about another staff member's records.
+          data_sources: [Company policies (text), HR policies (text), Staff records (structured)]
+          stakeholders: [All staff, HR team]
           oversight: human_in_the_loop
           oversight_note: Staff read every answer before acting on it; the IT lead can switch it off in its admin console.
           impact_assessment: not_started
@@ -115,16 +124,17 @@ hound scope plan .dev/ai-walkthrough/repo/scope --config .dev/ai-walkthrough/rep
 hound scope apply .dev/ai-walkthrough/repo/scope --config .dev/ai-walkthrough/repo/hound.yaml
 ```
 
-The plan creates the asset Example knowledge search with the labels `ai-system`, `ai-tier-medium`, `ai-use-customised` and
+The plan creates the asset Example knowledge search with the labels `ai-system`, `ai-screening-elevated`, `ai-use-customised` and
 `ai-oversight-in-the-loop`, and adds it to the audit. Filter **Assets** by `ai-system` again: there are three.
 
 ## 7. Record the impact assessment
 
-**What it is for:** a medium tier system needs an approved impact assessment before it goes live (AI6-2 and AI6-3).
+**What it is for:** an elevated system needs an approved impact assessment before it goes live (AI6-2 and AI6-3).
 
-The owner writes the impact assessment: who it affects, what could go wrong, and how they will know. For a medium tier system, record
+The owner writes the impact assessment: who it affects, what could go wrong, and how they will know. For an elevated system, record
 its main risks as risk scenarios in CISO Assistant (**Risk assessments**, then a risk scenario linked to the asset Example knowledge
-search). Once the owner and the GRC team approve it, change the entry:
+search). The screening template says to consult senior leadership or your governance committee about an elevated system; here that is
+their approval of the impact assessment. Once they approve it, change the entry:
 
 ```yaml
           impact_assessment: approved
@@ -176,11 +186,11 @@ hound run --config .dev/ai-walkthrough/run.yaml
 
 The dry run shows the updates without sending them. After the real run, open the audit **AI6 Foundations 2026** in CISO Assistant:
 
-- **AI6-4.1** (Maintain an AI register) is compliant: every AI system has an impact assessment status and an owner.
+- **AI6-4.1** (Maintain an AI register) is compliant: every AI system has the National AI Centre register template's columns, an impact assessment status and an
+  owner.
 - **AI6-5.1** (Pre-deployment testing) is not compliant, and its observation names Example proposal assistant, which went live with no
   `last_tested_on`. Your new system passes. The fix is the same as step 8, for that system.
-- **AI6-3.2** (Assess AI system risks) shows whether each system in use was screened before it went live, and each medium or high tier
-  one had its impact assessment approved first.
+- **AI6-3.2** (Assess AI system risks) shows whether each system in use was screened before it went live, and each elevated one had its impact assessment approved first.
 
 The evidence (`.dev/ai-walkthrough/evidence/`) holds `ai-register.json`: every entry, whether it is in use, and the SHA-256 of the
 `setup.yaml` it read, so a result traces back to the reviewed file.
@@ -193,7 +203,7 @@ The evidence (`.dev/ai-walkthrough/evidence/`) holds `ai-register.json`: every e
 hound programme list --scope .dev/ai-walkthrough/repo/scope
 ```
 
-The register line now reads `Register: 3 AI systems. tier: low 1, medium 2. use: built 1, customised 2.` Together with the AI6 rows
+The register line now reads `Register: 3 AI systems. screening: elevated 2, normal 1. use: built 1, customised 2.` Together with the AI6 rows
 that are not met, that is the AI part of the monthly report. The committee report itself arrives in sprint s12.
 
 ## 11. Clean up

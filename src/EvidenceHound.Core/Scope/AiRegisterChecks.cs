@@ -26,9 +26,10 @@ public static class AiRegisterChecks
         ("ai.register_complete", "AI6-4.1 Maintain an AI register", (all, _) => Over(
             all,
             "AI system",
-            e => e.Ai.ImpactAssessment is null,
-            "has its impact assessment status recorded",
-            $"Add 'impact_assessment' to the ai block of each in {Setup} (not_required for a low tier system).")),
+            e => Missing(e.Ai).Length > 0,
+            "has the National AI Centre register template's columns and an impact assessment status",
+            $"Fill in the missing keys in the ai block of each in {Setup} (impact_assessment is not_required for a normal system).",
+            e => $"{e.System} (no {string.Join(", ", Missing(e.Ai))})")),
         ("ai.owner_assigned", "AI6-1.1 Accountable people", (all, _) => Over(
             all,
             "AI system",
@@ -38,13 +39,13 @@ public static class AiRegisterChecks
         ("ai.screening_recorded", "AI6-3.2 Assess AI system risks", (all, today) => Over(
             InUse(all, today),
             "AI system in use",
-            e => e.Ai.Tier == AiRiskTier.Prohibited || e.Ai.ScreenedOn > e.Ai.InUseFrom,
-            "was screened before use and is not prohibited",
-            "Stop using a prohibited system and record 'retired_on'; screen a system before it goes into use.",
-            e => e.Ai.Tier == AiRiskTier.Prohibited ? $"{e.System} (prohibited)" : $"{e.System} (screened {Day(e.Ai.ScreenedOn)}, after going into use)")),
+            e => e.Ai.Screening == AiScreening.Unacceptable || e.Ai.ScreenedOn > e.Ai.InUseFrom,
+            "was screened before use and is not unacceptable",
+            "Stop using an unacceptable system and record 'retired_on'; screen a system before it goes into use.",
+            e => e.Ai.Screening == AiScreening.Unacceptable ? $"{e.System} (unacceptable)" : $"{e.System} (screened {Day(e.Ai.ScreenedOn)}, after going into use)")),
         ("ai.impact_assessment_before_use", "AI6-3.2 Assess AI system risks", (all, today) => Over(
-            [.. InUse(all, today).Where(e => e.Ai.Tier is AiRiskTier.Medium or AiRiskTier.High)],
-            "medium or high tier AI system in use",
+            [.. InUse(all, today).Where(e => e.Ai.Screening == AiScreening.Elevated)],
+            "elevated AI system in use",
             e => e.Ai.ImpactAssessment != AiImpactAssessment.Approved || e.Ai.ImpactAssessedOn is not { } on || on > e.Ai.InUseFrom,
             "had its impact assessment approved before going into use",
             $"Approve the impact assessment, then set 'impact_assessment: approved' and 'impact_assessed_on' in {Setup}.",
@@ -54,10 +55,10 @@ public static class AiRegisterChecks
         ("ai.human_oversight_documented", "AI6-6.1 Maintain human oversight and control", (all, today) => Over(
             InUse(all, today),
             "AI system in use",
-            e => e.Ai.Tier == AiRiskTier.High && e.Ai.Oversight == AiOversight.HumanOutOfLoop,
-            "has a person in or on the loop where its tier needs one",
-            "Put a person in or on the loop of each high tier system, and describe it in 'oversight_note'.",
-            e => $"{e.System} (high tier, human out of the loop)")),
+            e => e.Ai.Screening == AiScreening.Elevated && e.Ai.Oversight == AiOversight.HumanOutOfLoop,
+            "has a person in or on the loop where its screening needs one",
+            "Put a person in or on the loop of each elevated system, and describe it in 'oversight_note'.",
+            e => $"{e.System} (elevated, human out of the loop)")),
         ("ai.tested_before_use", "AI6-5.1 Pre-deployment testing", (all, today) => Over(
             InUse(all, today),
             "AI system in use",
@@ -67,8 +68,8 @@ public static class AiRegisterChecks
         ("ai.test_results_current", "AI6-5.3 Conduct additional testing proportionate to risk", (all, today) => Over(
             InUse(all, today),
             "AI system in use",
-            e => e.Ai.LastTestedOn is not { } tested || tested < today.AddMonths(-TestMonths(e.Ai.Tier)),
-            "was tested within 6 months (high tier) or 12 months (otherwise)",
+            e => e.Ai.LastTestedOn is not { } tested || tested < today.AddMonths(-TestMonths(e.Ai.Screening)),
+            "was tested within 6 months (elevated) or 12 months (normal)",
             $"Test each again, keep the result as evidence, and update 'last_tested_on' in {Setup}.",
             e => e.Ai.LastTestedOn is { } tested ? $"{e.System} (last tested {Day(tested)})" : $"{e.System} (never tested)")),
     ];
@@ -96,6 +97,16 @@ public static class AiRegisterChecks
     {
         ArgumentNullException.ThrowIfNull(ai);
         return ai.InUseFrom is { } from && from <= today && !(ai.RetiredOn is { } retired && retired <= today);
+    }
+
+    /// <summary>
+    /// The system's status in the National AI Centre register template's terms: decommissioned once retired, operational while in use, and pilot
+    /// while registered but not yet in use.
+    /// </summary>
+    public static string Status(AiRegistration ai, DateOnly today)
+    {
+        ArgumentNullException.ThrowIfNull(ai);
+        return ai.RetiredOn is { } retired && retired <= today ? "decommissioned" : IsInUse(ai, today) ? "operational" : "pilot";
     }
 
     private static AiRegisterFinding Finding(string checkId, string practice, Outcome outcome) =>
@@ -128,7 +139,20 @@ public static class AiRegisterChecks
     private static string Plural(string noun, int count) =>
         count == 1 ? noun : noun.Replace("AI system", "AI systems", StringComparison.Ordinal);
 
-    private static int TestMonths(AiRiskTier tier) => tier == AiRiskTier.High ? 6 : 12;
+    private static int TestMonths(AiScreening screening) => screening == AiScreening.Elevated ? 6 : 12;
+
+    /// <summary>The register template's columns an entry leaves empty (s11-11), and its impact assessment status, in words.</summary>
+    private static string[] Missing(AiRegistration ai) =>
+    [
+        .. ai.Purpose is null ? ["purpose"] : Array.Empty<string>(),
+        .. ai.IntendedUses.Count == 0 ? ["intended uses"] : Array.Empty<string>(),
+        .. ai.Limitations is null ? ["limitations"] : Array.Empty<string>(),
+        .. ai.Misuse is null ? ["misuse"] : Array.Empty<string>(),
+        .. ai.DataSources.Count == 0 ? ["data sources"] : Array.Empty<string>(),
+        .. ai.Stakeholders.Count == 0 ? ["stakeholders"] : Array.Empty<string>(),
+        .. ai.RegisteredOn is null ? ["registered date"] : Array.Empty<string>(),
+        .. ai.ImpactAssessment is null ? ["impact assessment status"] : Array.Empty<string>(),
+    ];
 
     private static string Words(AiImpactAssessment? status) =>
         status is { } s ? AiRegister.Code(s).Replace('-', ' ') : "not recorded";

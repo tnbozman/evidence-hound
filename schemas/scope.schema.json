@@ -167,13 +167,13 @@
                 ]
               },
               "register": {
-                "description": "The register the programme's reports summarise (s11-14): ai_systems (by tier, use, oversight) or systems (by type).",
+                "description": "The register the programme's reports summarise (s11-14): ai_systems (by screening, use, oversight) or systems (by type).",
                 "type": "object",
                 "additionalProperties": false,
                 "required": ["of"],
                 "properties": {
                   "of": { "enum": ["ai_systems", "systems"] },
-                  "by": { "type": "array", "items": { "enum": ["tier", "use", "oversight", "type"] } }
+                  "by": { "type": "array", "items": { "enum": ["screening", "use", "oversight", "type"] } }
                 }
               }
             }
@@ -310,14 +310,23 @@
           "$ref": "#/$defs/sensitiveData"
         },
         "ai": {
-          "description": "The system's entry in the AI register (s11-12): written to CISO Assistant as filtering labels and in the description. See docs/scope.md.",
+          "description": "The system's entry in the AI register (s11-12), with the National AI Centre register template's columns (s11-11): written to CISO Assistant as filtering labels and in the description. See docs/scope.md.",
           "type": "object",
           "additionalProperties": false,
-          "required": ["tier", "screened_on", "use", "oversight", "oversight_note"],
+          "required": ["screening", "screening_yes", "screened_on", "use", "oversight", "oversight_note"],
           "properties": {
-            "tier": { "enum": ["low", "medium", "high", "prohibited"], "description": "The result of screening. A prohibited system is not used." },
+            "screening": { "enum": ["normal", "elevated", "unacceptable"], "description": "The outcome of the National AI Centre's AI screening questions: normal when every answer is no, elevated when any is yes, unacceptable when it is not to be used." },
+            "screening_yes": { "type": "array", "items": { "type": ["integer", "string"], "pattern": "^[1-7]$", "minimum": 1, "maximum": 7 }, "uniqueItems": true, "description": "The screening questions (1 to 7) answered yes; [] when every answer was no." },
             "screened_on": { "$ref": "#/$defs/date", "description": "When the screening questions were answered." },
+            "registered_on": { "$ref": "#/$defs/date", "description": "When the system was first added to the register." },
+            "version": { "$ref": "#/$defs/text", "description": "The system's version, where it is needed." },
             "use": { "enum": ["built", "customised", "third_party"], "description": "Built in-house, customised, or a supplier's product (needs 'solution')." },
+            "purpose": { "$ref": "#/$defs/text", "description": "Why the system exists and what it aims to achieve." },
+            "intended_uses": { "type": "array", "items": { "$ref": "#/$defs/text" }, "description": "The specific ways it is meant to be used." },
+            "limitations": { "$ref": "#/$defs/text", "description": "What it cannot or should not do: known limitations and prohibited use." },
+            "misuse": { "$ref": "#/$defs/text", "description": "Foreseeable ways it might be misused, or 'None identified.'" },
+            "data_sources": { "type": "array", "items": { "$ref": "#/$defs/text" }, "description": "What data it learns from or processes, with its type (text, structured, image, audio)." },
+            "stakeholders": { "type": "array", "items": { "$ref": "#/$defs/text" }, "description": "Who might be affected by it." },
             "oversight": { "enum": ["human_in_the_loop", "human_on_the_loop", "human_out_of_loop"], "description": "How people oversee it." },
             "oversight_note": { "$ref": "#/$defs/text", "description": "Who can override or switch it off, and the fallback." },
             "impact_assessment": { "enum": ["not_started", "in_progress", "approved", "not_required"] },

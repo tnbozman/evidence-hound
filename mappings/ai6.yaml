@@ -52,13 +52,13 @@ requirements:
     checks:
       - ai.risk_method_documented
       - ai.policy_approved
-  # Assess AI system risks. Register: every AI system screened; medium and high tier assessed before use.
+  # Assess AI system risks. Register: every AI system screened before use; elevated systems' impact assessments approved before use.
   - ref: AI6-3.2
     rule: all_pass
     checks:
       - ai.screening_recorded
       - ai.impact_assessment_before_use
-  # Implement controls for AI system risks. Register: medium and high tier systems have risk scenarios (with their controls).
+  # Implement controls for AI system risks. Register: elevated systems have risk scenarios (with their controls).
   - ref: AI6-3.3
     rule: all_pass
     checks:
@@ -68,7 +68,7 @@ requirements:
     rule: all_pass
     checks:
       - ai.incidents_reviewed
-  # Maintain an AI register. Register: every AI system recorded with tier, use, oversight, stage and owner.
+  # Maintain an AI register. Register: every AI system recorded with the National AI Centre template's columns, screening, use, oversight and owner.
   - ref: AI6-4.1
     rule: all_pass
     checks:
@@ -99,7 +99,7 @@ requirements:
     rule: all_pass
     checks:
       - ai.performance_monitored
-  # Conduct additional testing proportionate to risk. Register: tests within 6 months for high tier, 12 months otherwise.
+  # Conduct additional testing proportionate to risk. Register: tests within 6 months for elevated systems, 12 months otherwise.
   - ref: AI6-5.3
     rule: all_pass
     checks:
@@ -109,7 +109,7 @@ requirements:
     rule: all_pass
     checks:
       - ai.data_and_cyber_covered
-  # Maintain human oversight and control. Register: every AI system's oversight arrangement and override points; a high tier system has a person in or on the loop.
+  # Maintain human oversight and control. Register: every AI system's oversight arrangement and override points; an elevated system has a person in or on the loop.
   - ref: AI6-6.1
     rule: all_pass
     checks:

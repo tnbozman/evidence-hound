@@ -28,7 +28,7 @@ public class AiRegisterChecksTests
             ImpactAssessment = AiImpactAssessment.Approved,
             ImpactAssessedOn = new(2026, 3, 20),
             InUseFrom = new(2026, 4, 1),
-            LastTestedOn = new(2026, 3, 25),
+            LastTestedOn = new(2026, 9, 1),
         }));
 
     [Fact]

@@ -1,11 +1,11 @@
 # CISO Assistant itself, read with a read-only API token (s11-13): what only CISO Assistant holds about the AI register and
-# suppliers. The AI register entries (tier, use, oversight, dates) live in the compliance repo and are checked by the built-in
+# suppliers. The AI register entries (screening, use, oversight, dates) live in the compliance repo and are checked by the built-in
 # ai-register collector; `hound scope apply` copies them to CISO Assistant as filtering labels, which this profile reads to find
-# the AI systems. It checks that medium and high tier AI systems are linked to a risk scenario, and that suppliers' solutions have
+# the AI systems. It checks that elevated AI systems are linked to a risk scenario, and that suppliers' solutions have
 # a current assessment and an active contract. See docs/collectors/ciso-assistant.md.
 # Token: a CISO Assistant API token for a user whose role can only read (for example the built-in Reader role) on the domains checked.
 profile: ciso-assistant
-version: "1.0.0"
+version: "1.1.0"
 source: evidence-hound/profiles/ciso-assistant.yaml
 description: CISO Assistant's AI systems, risk scenarios, supplier assessments and contracts, read with a read-only token.
 requires:
@@ -70,10 +70,10 @@ datasets:
     where:
       - { field: $.status, equals: active }
       - { field: $.end_date, older_than: P0D, negate: true, missing: pass }
-  # AI systems that screening put at medium or high tier, with the risk scenarios linked to them.
+  # AI systems the screening questions put at elevated, with the risk scenarios linked to them.
   ai_risk_assets:
     from: assets
-    where: { field: "$.filtering_labels[*].str", any_matches: "^ai-tier-(medium|high)$" }
+    where: { field: "$.filtering_labels[*].str", any_matches: "^ai-screening-elevated$" }
     join:
       - with: risk_scenarios
         on: { left: $.id, right: "$.assets[*].id" }
@@ -102,12 +102,12 @@ datasets:
 
 checks:
   - id: ai.risks_in_register
-    title: Medium and high tier AI systems have their risks in the risk register
+    title: Elevated AI systems have their risks in the risk register
     over: ai_risk_assets
     each: { field: "$.risks[0].id", exists: true, missing: fail }
     require: all
     when_empty: not_applicable
-    describe: "AI6-3.3 Implement controls for AI system risks: {passed} of {matched} medium or high tier AI systems are linked to a risk scenario. Record each one's risks as risk scenarios linked to its asset in CISO Assistant."
+    describe: "AI6-3.3 Implement controls for AI system risks: {passed} of {matched} elevated AI systems are linked to a risk scenario. Record each one's risks as risk scenarios linked to its asset in CISO Assistant."
 
   - id: ai.suppliers_assessed
     title: Third-party AI suppliers have a current assessment

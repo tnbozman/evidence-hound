@@ -26,13 +26,13 @@ applicable** when there are none.
 
 | Check | Passes when |
 | --- | --- |
-| `ai.register_complete` | every AI system has an impact assessment status (`not_required` for a low tier system) |
+| `ai.register_complete` | every AI system has the National AI Centre register template's columns and an impact assessment status (`not_required` for a normal system) |
 | `ai.owner_assigned` | every AI system has an owner |
 | `ai.screening_recorded` | no system in use is `prohibited`, and each was screened before it went into use |
-| `ai.impact_assessment_before_use` | each `medium` or `high` tier system in use had its impact assessment approved on or before going into use |
-| `ai.human_oversight_documented` | no `high` tier system in use is `human_out_of_loop` |
+| `ai.impact_assessment_before_use` | each `elevated` system in use had its impact assessment approved on or before going into use |
+| `ai.human_oversight_documented` | no `elevated` system in use is `human_out_of_loop` |
 | `ai.tested_before_use` | each system in use has a `last_tested_on` date |
-| `ai.test_results_current` | each system in use was tested within 6 months (`high` tier) or 12 months (otherwise) |
+| `ai.test_results_current` | each system in use was tested within 6 months (`elevated`) or 12 months (`normal`) |
 
 Each run saves `ai-register.json`: every AI system's entry, whether it is in use, and the SHA-256 of `scope/setup.yaml`, so a result
 can be traced to the reviewed file. A `setup.yaml` that does not load is an error (`ai_register.scope_invalid`), never a fail: run
@@ -59,7 +59,7 @@ check. It is not the token `hound` publishes with.
 
 | Check | Passes when |
 | --- | --- |
-| `ai.risks_in_register` | every asset labelled `ai-tier-medium` or `ai-tier-high` is linked to at least one risk scenario |
+| `ai.risks_in_register` | every asset labelled `ai-screening-elevated` is linked to at least one risk scenario |
 | `ai.suppliers_assessed` | every solution providing an asset labelled `ai-use-third-party` comes from a supplier with an entity assessment concluded *ok* whose expiry date has not passed |
 | `ai.supplier_contracts_current` | each of those solutions has an *active* contract not past its end date |
 | `supplier.assessments_current` | the same, for every supplier's solution |

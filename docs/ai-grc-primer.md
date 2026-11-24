@@ -21,10 +21,10 @@ The example uses Foundations. In CISO Assistant the AI6 framework has both, as t
 
 ## How the work fits the tools you already use
 
-- **CISO Assistant stays the system of record.** Each AI system is an asset, labelled `ai-system`, with its owner. Its register entry (its risk tier, how people oversee it, when it was screened, assessed and tested) is shown in the asset's labels and description. AI risks are risk scenarios linked to the asset. A third-party AI product is a solution of a supplier, as for any other supplier.
+- **CISO Assistant stays the system of record.** Each AI system is an asset, labelled `ai-system`, with its owner. Its register entry (its screening outcome, how people oversee it, when it was screened, assessed and tested) is shown in the asset's labels and description. AI risks are risk scenarios linked to the asset. A third-party AI product is a solution of a supplier, as for any other supplier.
 - **The register is CISO Assistant's asset list**, filtered by the `ai-system` label. You export it with CISO Assistant's own Excel export. There is no separate spreadsheet.
-- **Your repo holds what you decide**: which AI systems exist, who owns them, their tier, oversight arrangement and dates, in an `ai` block on each system. Changes go through pull requests like the rest of your scope, and `hound scope apply` copies them to CISO Assistant.
-- **hound checks the register on every run**: a system with no owner, a medium or high tier system with no impact assessment, a test date that has gone stale. Those checks fill the AI6 rows that can be checked; the rest are manual evidence with an owner and a reminder, as for the Essential Eight.
+- **Your repo holds what you decide**: which AI systems exist, who owns them, their screening outcome, the National AI Centre register template's columns, oversight arrangement and dates, in an `ai` block on each system. Changes go through pull requests like the rest of your scope, and `hound scope apply` copies them to CISO Assistant.
+- **hound checks the register on every run**: a system with no owner, an elevated system with no approved impact assessment, a test date that has gone stale. Those checks fill the AI6 rows that can be checked; the rest are manual evidence with an owner and a reminder, as for the Essential Eight.
 
 ## The six practices, with Example Pty Ltd
 
@@ -44,9 +44,9 @@ Before using an AI system, think about who it affects and how. Give people a way
 
 ### 3. Measure and manage risks
 
-Screen each AI system with a short set of questions to sort it into a risk tier: low, medium, high or prohibited. Record the risks of medium and high tier systems, and the controls for them.
+Screen each AI system with the National AI Centre's seven yes-or-no screening questions. No to every question means **normal**: carry on with your usual steps. Yes to any question means **elevated**: senior leadership or a governance committee looks at it before it goes ahead, and its risks and the controls for them are recorded. The committee can also find a system **unacceptable**, and then it is not used.
 
-**Example Pty Ltd:** Alex answers the screening questions for Example Chat. It makes no decisions about people, handles no sensitive personal data by design, and its output is always checked, so it is **low** tier. A few months later, the sales team asks to switch on an AI feature in the customer system that scores leads. That one ranks people, so screening puts it at **medium**: Alex records a risk scenario in CISO Assistant ("leads from some regions are scored unfairly low") with its control (a monthly spot check of low-scored leads), and an impact assessment is done before it goes live.
+**Example Pty Ltd:** Alex answers the screening questions for Example Chat. It makes no decisions about people, handles no sensitive personal data by design, and its output is always checked, but it is built on a general-purpose language model that takes open-ended instructions, so question 7 is a yes and it is **elevated**. That surprises Alex; it is common, and it means a short impact assessment the CTO approves, one risk scenario ("staff paste confidential client details into a prompt") and a test every 6 months. A few months later, the sales team asks to switch on an AI feature in the customer system that scores leads. It uses customer details (question 1) and a wrong score is hard to put right (question 6), so it is **elevated** too: Alex records a risk scenario in CISO Assistant ("leads from some regions are scored unfairly low") with its control (a monthly spot check of low-scored leads), and its impact assessment is approved before it goes live. A rules-based ticket router with no personal data would answer no to everything and be **normal**.
 
 ### 4. Share essential information
 
@@ -58,26 +58,26 @@ Keep a register of AI systems. Tell people when they are dealing with AI or with
 
 Check that an AI system works as intended before relying on it, and keep checking. The riskier the system, the more often.
 
-**Example Pty Ltd:** before switching on lead scoring, the sales lead compares its scores with last quarter's actual sales for 50 leads and records the result as evidence; Alex sets the test date in the system's `ai` block. hound checks that date on every run: a medium tier system tested more than 12 months ago (6 for high tier) shows as a failing check, and the AI6 row for testing follows it.
+**Example Pty Ltd:** before switching on lead scoring, the sales lead compares its scores with last quarter's actual sales for 50 leads and records the result as evidence; Alex sets the test date in the system's `ai` block. hound checks that date on every run: an elevated system tested more than 6 months ago (12 for a normal one) shows as a failing check, and the AI6 row for testing follows it.
 
 ### 6. Maintain human control
 
 Make sure a person can oversee, override or switch off the system, and know how you would stop using it.
 
-**Example Pty Ltd:** Example Chat is *human in the loop*: a person approves every output before it is used. Lead scoring is *human on the loop*: it runs by itself, and the sales lead watches the monthly spot check and can switch the feature off in the customer system's settings. Alex writes both arrangements in the oversight note of each system's `ai` block. hound fails the oversight check if a high tier system has nobody in or on the loop.
+**Example Pty Ltd:** Example Chat is *human in the loop*: a person approves every output before it is used. Lead scoring is *human on the loop*: it runs by itself, and the sales lead watches the monthly spot check and can switch the feature off in the customer system's settings. Alex writes both arrangements in the oversight note of each system's `ai` block. hound fails the oversight check if an elevated system has nobody in or on the loop.
 
 ## What the committee sees
 
-The monthly security committee report gains an AI section: how many AI systems there are by tier, which were added or retired this month, which fail a check, and the AI6 rows that are not yet met. The quarterly board report shows the AI6 self-assessment beside the Essential Eight. For Example Pty Ltd that is a few lines: two systems (one low, one medium), nothing failing, and the next step on the plan.
+The monthly security committee report gains an AI section: how many AI systems there are by screening outcome, which were added or retired this month, which fail a check, and the AI6 rows that are not yet met. The quarterly board report shows the AI6 self-assessment beside the Essential Eight. For Example Pty Ltd that is a few lines: two systems (both elevated), nothing failing, and the next step on the plan.
 
 ## What you do not need to do at Foundations
 
 - You do not need the 21 sub-practices or their detailed actions. Those are Implementation, for organisations that build AI or use it for higher-risk decisions.
 - You do not need to test or audit a supplier's model. For a third-party product, check what the supplier tells you and how you use it.
 - You do not need a separate AI risk method. Use your existing risk register, with AI risks as risk scenarios.
-- You do not need an impact assessment for a low tier system. Screening is enough, and you redo it when the use changes.
+- You do not need an impact assessment for a normal system. Screening is enough, and you redo it when the use changes. (The National AI Centre's policy template asks for one for every system; if your policy keeps that, follow your policy.)
 - You do not need a certificate or an external audit. AI6 is a self-assessment.
-- You do not need a separate register spreadsheet. CISO Assistant's asset list is the register.
+- You do not need a separate register spreadsheet. CISO Assistant's asset list is the register, with the National AI Centre register template's columns in each asset's description.
 
 ## Glossary
 
@@ -87,9 +87,9 @@ The monthly security committee report gains an AI section: how many AI systems t
 | AI6 | The six practices of the Australian Government's *Guidance for AI Adoption* (National AI Centre, 2025). |
 | Foundations | The short version of AI6, for organisations starting out or using AI in low-risk ways. |
 | Implementation | The detailed version of AI6, with 21 sub-practices, for organisations that build AI or use it for higher-risk decisions. |
-| Screening | A short questionnaire that sorts an AI system into a risk tier. |
-| Risk tier | Low, medium, high or prohibited. A prohibited system is not used. |
-| Impact assessment | A fuller review of who a medium or high tier system affects and how, done before it goes live. |
+| Screening | The National AI Centre's seven yes-or-no questions about an AI system's use. |
+| Screening outcome | Normal (no to every question), elevated (yes to any) or unacceptable (the committee's decision; not used). |
+| Impact assessment | A fuller review of who an elevated system affects and how, approved before it goes live. |
 | Human in the loop | A person approves each output before it is used. |
 | Human on the loop | The system acts by itself while a person watches and can step in. |
 | Human out of the loop | Nobody reviews the system's outputs as it works; only afterwards, if at all. |

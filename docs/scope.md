@@ -58,7 +58,7 @@ A prompt for a ref ID (`hound add system`, `hound add control`, `hound onboard <
 | `domains` | Folders. Each has a `name`, a `description`, its `perimeters` (or a single `perimeter`) and its `systems`. |
 | perimeter | `name`, optional `ref_id` and `description`. |
 | system | `name`, `type` (`primary` or `supporting`), optional `ref_id`, `description`, `owner`, `parents` (other systems by name), `tags` (per-framework labels such as `essentials_domain: identity` or `cui: "true"`), `solution` (the third-party solution that provides it, by `ref_id`) `supplied_through` (a reseller or managed service provider, by the third party's `ref_id`) `data` (the [sensitive data](#sensitive-data) it handles) and `ai` (its [AI register entry](#ai-systems), when it is an AI system). A system with either supplier key is registered only once those suppliers are approved: see [Supplier approval](#supplier-approval). |
-| `programmes` | Optional. The compliance programmes the reports are organised by, such as the Essential Eight and later AI6. Each has `id` (a lowercase slug such as `essential-eight`, unique), `name`, `framework` (a framework URN declared above, with a `snapshot`), `groups` (the implementation groups reported against, which must exist in the snapshot), `audit` (the `ref_id` of the audit, or audit series, of record) and optional `group_by` (`parent`, the default: requirements are grouped under their parent node, such as the Essential Eight strategy), and optional `register`, the register its reports summarise: `of` (`ai_systems`, the [AI systems](#ai-systems), or `systems`, every system) and `by` (the fields to count by: `tier`, `use` and `oversight` for AI systems, `type` for systems), such as `register: { of: ai_systems, by: [tier, use] }`. An audit belongs to at most one programme. Programmes create nothing in CISO Assistant and never appear in `hound scope plan`. `hound programme list` shows each one with its requirement counts per group and per parent node, from the snapshot alone, and its register's counts from the scope. |
+| `programmes` | Optional. The compliance programmes the reports are organised by, such as the Essential Eight and later AI6. Each has `id` (a lowercase slug such as `essential-eight`, unique), `name`, `framework` (a framework URN declared above, with a `snapshot`), `groups` (the implementation groups reported against, which must exist in the snapshot), `audit` (the `ref_id` of the audit, or audit series, of record) and optional `group_by` (`parent`, the default: requirements are grouped under their parent node, such as the Essential Eight strategy), and optional `register`, the register its reports summarise: `of` (`ai_systems`, the [AI systems](#ai-systems), or `systems`, every system) and `by` (the fields to count by: `screening`, `use` and `oversight` for AI systems, `type` for systems), such as `register: { of: ai_systems, by: [screening, use] }`. An audit belongs to at most one programme. Programmes create nothing in CISO Assistant and never appear in `hound scope plan`. `hound programme list` shows each one with its requirement counts per group and per parent node, from the snapshot alone, and its register's counts from the scope. |
 
 ### AI systems
 
@@ -74,22 +74,37 @@ systems:
     owner: sales@example.com
     solution: SOL-EXCRM-SCORING          # needed for a third-party AI system
     ai:
-      tier: medium                       # low, medium, high or prohibited: the result of screening
+      screening: elevated                # normal, elevated or unacceptable: the National AI Centre's screening outcome
+      screening_yes: [1, 5]              # the screening questions answered yes, by number; [] for none
       screened_on: "2026-03-02"
+      registered_on: "2026-03-04"        # the rest are the National AI Centre register template's columns
+      version: "2026.1"
+      purpose: Focus the sales team on the leads most likely to buy.
+      intended_uses: [Rank new leads each morning]
+      limitations: Not for decisions about credit or pricing.
+      misuse: Using scores to drop leads from some regions.
+      data_sources: [CRM lead records (structured)]
+      stakeholders: [Prospective customers, Sales team]
       use: third_party                   # built, customised or third_party
       oversight: human_on_the_loop       # human_in_the_loop, human_on_the_loop or human_out_of_loop
       oversight_note: The sales lead reviews a monthly sample of low scores and can switch scoring off.
-      impact_assessment: approved        # optional: not_started, in_progress, approved or not_required
+      impact_assessment: approved        # not_started, in_progress, approved or not_required
       impact_assessed_on: "2026-03-20"   # only with approved
-      in_use_from: "2026-04-01"          # left out while it is being considered
+      in_use_from: "2026-04-01"          # left out while it is a pilot
       last_tested_on: "2026-03-25"
       # retired_on: "2026-10-31"         # when it stopped being used
 ```
 
-In CISO Assistant the asset gets the labels `ai-system`, `ai-tier-medium`, `ai-use-third-party` and `ai-oversight-on-the-loop` (and
-`ai-retired` once retired), and its description gains the entry in words, such as "AI register: medium tier, third party, human on the
-loop." `hound scope validate` reports `ai.impact_date_without_approval`, `ai.retired_before_use`, and `ai.solution_missing` for a
-third-party AI system with no `solution`.
+`screening`, `screening_yes`, `screened_on`, `use`, `oversight` and `oversight_note` are required. The register check
+`ai.register_complete` fails an entry without `purpose`, `intended_uses`, `limitations`, `misuse`, `data_sources`, `stakeholders`,
+`registered_on` or `impact_assessment`. The template's *Status* follows from the dates (pilot, operational, decommissioned).
+[AI governance](ai-grc.md#the-national-ai-centres-register-template) traces each template column to its key.
+
+In CISO Assistant the asset gets the labels `ai-system`, `ai-screening-elevated`, `ai-use-third-party` and `ai-oversight-on-the-loop`
+(and `ai-retired` once retired), and its description gains the entry in words, starting "AI register: elevated screening (yes to
+questions 1, 5), third party, human on the loop." `hound scope validate` reports `ai.screening_disagrees` (normal with a yes, or
+elevated with none), `ai.impact_date_without_approval`, `ai.retired_before_use`, and `ai.solution_missing` for a third-party AI system
+with no `solution`.
 
 ## controls.yaml
 

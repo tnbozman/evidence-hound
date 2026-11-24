@@ -31,7 +31,7 @@ controls:
     category: process
   - ref_id: AC-AI-REGISTER
     name: AI system register
-    description: Every AI system is registered with its owner, risk tier and oversight; the register is checked on every run.
+    description: Every AI system is registered with its owner, screening outcome and oversight; the register is checked on every run.
     domain: Example Pty Ltd
     owner: it@example.com
     status: to_do

@@ -75,8 +75,18 @@ public sealed class AiRegisterCollector : ICollector
             {
                 ["name"] = e.System,
                 ["owner"] = e.Owner,
-                ["tier"] = Snake(e.Ai.Tier),
+                ["version"] = e.Ai.Version,
+                ["status"] = AiRegisterChecks.Status(e.Ai, today),
+                ["registered_on"] = Day(e.Ai.RegisteredOn),
+                ["screening"] = Snake(e.Ai.Screening),
+                ["screening_yes"] = new JsonArray([.. e.Ai.ScreeningYes.Select(q => (JsonNode)q)]),
                 ["use"] = Snake(e.Ai.Use),
+                ["purpose"] = e.Ai.Purpose,
+                ["intended_uses"] = Texts(e.Ai.IntendedUses),
+                ["limitations"] = e.Ai.Limitations,
+                ["misuse"] = e.Ai.Misuse,
+                ["data_sources"] = Texts(e.Ai.DataSources),
+                ["stakeholders"] = Texts(e.Ai.Stakeholders),
                 ["oversight"] = Snake(e.Ai.Oversight),
                 ["oversight_note"] = e.Ai.OversightNote,
                 ["screened_on"] = Day(e.Ai.ScreenedOn),
@@ -88,6 +98,8 @@ public sealed class AiRegisterCollector : ICollector
                 ["in_use"] = AiRegisterChecks.IsInUse(e.Ai, today),
             })]),
         }.ToJsonString();
+
+    private static JsonArray Texts(IEnumerable<string> values) => new([.. values.Select(v => (JsonNode)v)]);
 
     private static string Snake<T>(T value)
         where T : struct, Enum =>

@@ -48,16 +48,26 @@ domains:
         type: supporting
         description: Daily backups of Example 365 and the laptops.
         owner: it@example.com
-      # AI systems: an ai block is the system's entry in the AI register (docs/scope.md#ai-systems). Both are made up.
+      # AI systems: an ai block is the system's entry in the AI register (docs/scope.md#ai-systems), with the National AI Centre
+      # register template's columns. screening is the outcome of its seven screening questions (runbooks/ai-screening.md). Both are made up.
       - name: Example ticket triage
         ref_id: SYS-AI-TRIAGE
         type: supporting
         description: Suggests a category and priority for each new IT ticket; the IT team confirms it.
         owner: it@example.com
         ai:
-          tier: low
+          screening: normal
+          screening_yes: []
           screened_on: "2026-01-12"
+          registered_on: "2026-01-14"
+          version: "1.0"
           use: built
+          purpose: Get IT tickets to the right person sooner.
+          intended_uses: [Suggest a category and priority for a new ticket]
+          limitations: Reads only the ticket's subject and category text, never who raised it; not for security incidents.
+          misuse: None identified.
+          data_sources: [Past ticket subjects and categories (text)]
+          stakeholders: [IT team, Staff who raise tickets]
           oversight: human_in_the_loop
           oversight_note: The IT team confirms or changes every suggestion before the ticket is assigned.
           impact_assessment: not_required
@@ -69,9 +79,18 @@ domains:
         description: Drafts proposal text from past proposals; staff edit every draft before it is sent.
         owner: ceo@example.com
         ai:
-          tier: medium
+          # Yes to question 1 (past proposals are company confidential) and 7 (built on a general-purpose language model).
+          screening: elevated
+          screening_yes: [1, 7]
           screened_on: "2026-03-02"
+          registered_on: "2026-03-04"
           use: customised
+          purpose: Cut the time it takes to draft a proposal.
+          intended_uses: [Draft proposal sections, Summarise past bids for a new one]
+          limitations: Not for pricing, legal terms or claims about delivery dates.
+          misuse: Pasting a customer's confidential documents into it.
+          data_sources: [Past proposals (text)]
+          stakeholders: [Sales team, Prospective customers]
           oversight: human_in_the_loop
           oversight_note: The proposal owner reads and edits every draft; the CEO can switch the assistant off in its settings.
           impact_assessment: approved
@@ -93,4 +112,4 @@ programmes:
     audit: EX-AI6-2026
     register:
       of: ai_systems
-      by: [tier, use]
+      by: [screening, use]

@@ -40,5 +40,5 @@ Attest each check as pass, partial or fail, and say why in a sentence.
 | `ai.stakeholders_identified` | AI6-2.1 Identify and engage stakeholders | Every AI system in use has the people it affects recorded. |
 | `ai.systemic_issues_reviewed` | AI6-2.3 Monitor for systemic issues | This quarter's feedback about AI outcomes was reviewed for patterns. |
 | `ai.incidents_reviewed` | AI6-3.4 Monitor and report incidents | Every AI incident this quarter was recorded, investigated and learned from. |
-| `ai.performance_monitored` | AI6-5.2 Monitor system performance | Every AI system in use was watched this quarter in proportion to its risk tier. |
+| `ai.performance_monitored` | AI6-5.2 Monitor system performance | Every AI system in use was watched this quarter in proportion to its screening outcome. |
 | `ai.data_and_cyber_covered` | AI6-5.4 Data and cybersecurity measures | Every AI system's data and accounts are in scope of the cyber programme. |
