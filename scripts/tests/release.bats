@@ -54,3 +54,9 @@ setup() {
   secrets="$(grep -o 'secrets\.[A-Z_]*' "$wf" | sort -u | tr '\n' ' ')"
   [ "$secrets" = "secrets.GITHUB_TOKEN secrets.NUGET_API_KEY " ]
 }
+
+@test "the documentation site is built strictly and published to GitHub Pages with the release" {
+  publish="$(sed -n '/^  publish:/,/^  [a-z-]*:$/p' "$wf")"
+  grep -q 'make docs' <<<"$publish"
+  grep -q 'mkdocs gh-deploy' <<<"$publish"
+}

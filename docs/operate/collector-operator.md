@@ -26,7 +26,7 @@ Run `hound run --config hound.yaml --only <name>` and read its output:
 
 | What you see | Likely cause | Do |
 | --- | --- | --- |
-| An HTTP `401` or `403` from the service | The collector's credential expired or lost a permission | Rotate it (below); check the permissions in its collector guide under [`docs/collectors/`](../collectors/) |
+| An HTTP `401` or `403` from the service | The collector's credential expired or lost a permission | Rotate it (below); check the permissions in its collector guide under [collectors](../collectors/README.md) |
 | A timeout | The service was down or the network blocked it | Run it again; check the firewall allows the host |
 | `0 sent` in the PUBLISHED column for weeks | Nothing changed; that is normal. Only changes are sent | Nothing |
 | Publishing to CISO Assistant fails | CISO Assistant is down, or hound's token expired | `hound config validate hound.yaml --check-secrets`; renew the token in CISO Assistant |

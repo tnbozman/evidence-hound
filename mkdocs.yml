@@ -1,0 +1,128 @@
+# s13-05: the documentation site, built from docs/ with MkDocs Material (make docs; strict: warnings fail) and published
+# to GitHub Pages by the release workflow. Sprint plans and their evidence logs stay in the repository, not on the site.
+site_name: Evidence Hound
+site_description: Continuous compliance evidence for CISO Assistant, for small teams in the defence industry.
+site_url: https://tnbozman.github.io/evidence-hound/
+repo_url: https://github.com/tnbozman/evidence-hound
+repo_name: tnbozman/evidence-hound
+edit_uri: edit/main/docs/
+copyright: Evidence Hound contributors. Apache-2.0.
+docs_dir: docs
+strict: true
+
+exclude_docs: |
+  sprints/
+  evidence/
+  *.pdf
+
+hooks:
+  - tools/docs/hooks/repo_links.py
+
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+  anchors: warn
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - content.code.copy
+    - search.suggest
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle: { icon: material/brightness-7, name: Dark mode }
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle: { icon: material/brightness-4, name: Light mode }
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
+
+nav:
+  - Home: index.md
+  - Getting started:
+      - getting-started.md
+      - Local trial: tutorials/local-trial.md
+      - First deployment: tutorials/first-deployment.md
+      - Guided setup: guided-setup.md
+      - Cheat sheet: cheatsheet.md
+  - Deploy:
+      - Configuration: configuration.md
+      - Running collectors: running.md
+      - Publishing: publishing.md
+      - Backups and restore tests: deploy/backups.md
+      - Harden the host: deploy/hardening.md
+      - Keep it up to date: deploy/updates.md
+      - CISO Assistant configuration: ciso-assistant-configuration.md
+  - Collectors:
+      - collectors/README.md
+      - Microsoft 365: collectors/m365.md
+      - REST profiles: collectors/rest.md
+      - Sophos Central: collectors/sophos.md
+      - Vulnerability scans: collectors/vuln-scan.md
+      - Terraform tests: collectors/terraform-tests.md
+      - Terraform drift: collectors/terraform-drift.md
+      - CISO Assistant: collectors/ciso-assistant.md
+      - Manual evidence: manual-evidence.md
+      - Manual templates: collectors/manual-templates.md
+  - Write a collector:
+      - Write a profile: tutorials/write-a-profile.md
+      - Write a collector: tutorials/write-a-collector.md
+      - Mapping files: mapping-files.md
+  - Adopt:
+      - Onboarding: onboarding.md
+      - Scope files: scope.md
+      - Third parties: third-parties.md
+      - Move off spreadsheets: adopt/migrate-from-spreadsheets.md
+      - Answer a prime's questionnaire: adopt/answer-a-prime-questionnaire.md
+      - Onboarding tutorial: examples/onboarding-tutorial.md
+      - Essential Eight to ASD Essentials: migrations/essential-eight-to-asd-essentials.md
+  - Operate:
+      - operate/README.md
+      - GRC member: operate/grc-member.md
+      - System owner: operate/system-owner.md
+      - Collector operator: operate/collector-operator.md
+      - Committee member: operate/committee-member.md
+  - Govern:
+      - Reporting: reporting.md
+      - Security committee: govern/security-committee.md
+      - Board reporting: govern/board-reporting.md
+      - AI-assisted reporting: govern/ai-assisted-reporting.md
+      - Continuous compliance procedure: govern/continuous-compliance-procedure.md
+      - System security plan: ssp.md
+      - Writing the SSP: govern/system-security-plan.md
+      - Audit plan: audit-plan.md
+      - AI governance primer: ai-grc-primer.md
+      - AI governance: ai-grc.md
+      - AI governance tutorial: tutorials/ai-governance.md
+  - Training:
+      - training/README.md
+      - System owners: training/system-owners.md
+      - Committee: training/committee.md
+      - Board: training/board.md
+      - AI governance: training/ai-governance.md
+  - Architecture:
+      - Plan: plan.md
+      - Engineering: engineering.md
+      - Closed loop: closed-loop.md
+      - Releasing: releasing.md
+      - REST collector design: design/rest-collector.md
+      - Agent-driven onboarding: design/agent-driven-onboarding.md
+      - Onboarding assistant: design/onboarding-assistant.md
+      - Guided review: design/guided-review.md
+      - Dev servers:
+          - Microsoft 365: tutorials/m365-dev-server.md
+          - Sophos Central: tutorials/sophos-dev-server.md
+          - IaC pipeline: tutorials/iac-dev-server.md
+          - Vulnerability scans: tutorials/scan-dev.md
