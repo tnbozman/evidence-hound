@@ -1,3 +1,7 @@
+using EvidenceHound.Core.Checks;
+using EvidenceHound.Core.Frameworks;
+using EvidenceHound.Core.Planning;
+
 namespace EvidenceHound.Core.Mapping;
 
 /// <summary>How a source requirement relates to a target requirement, in CISO Assistant's mapping vocabulary.</summary>
@@ -62,6 +66,11 @@ public static class Crosswalks
             .Concat(crosswalk.Links.Select(l => l.TargetRef).Where(r => !listed.Contains(r)).Distinct(StringComparer.Ordinal).Select(r => new CrosswalkTarget(r, "")));
         return [.. targets.Select(target => Row(target, crosswalk.Links.Where(l => l.TargetRef == target.RefId), answers))];
     }
+
+    /// <summary>What answers each source requirement today, by ref_id: the mapping's checks and the worst current result of its audit rows.</summary>
+    public static IReadOnlyDictionary<string, SourceAnswer> Answers(
+        FrameworkMapping mapping, FrameworkSnapshot snapshot, IReadOnlySet<CheckId> manualChecks, IReadOnlyList<CurrentRow> rows) =>
+        new Dictionary<string, SourceAnswer>(StringComparer.Ordinal);
 
     /// <summary>The crosswalk to use: a mapping library loaded in CISO Assistant first, then the reviewed file, else none.</summary>
     public static CrosswalkDefinition? Choose(CrosswalkDefinition? library, CrosswalkDefinition? file) => library ?? file;

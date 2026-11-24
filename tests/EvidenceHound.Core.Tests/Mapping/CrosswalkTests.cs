@@ -1,4 +1,8 @@
+using EvidenceHound.Core.Checks;
+using EvidenceHound.Core.Frameworks;
 using EvidenceHound.Core.Mapping;
+using EvidenceHound.Core.Planning;
+using EvidenceHound.Core.Tests.Checks;
 
 namespace EvidenceHound.Core.Tests.Mapping;
 
@@ -55,5 +59,64 @@ public class CrosswalkTests
         var crosswalk = File with { Targets = [], Links = [new("3.5.3", "ISM-1504", CrosswalkRelationship.Equal)] };
 
         Crosswalks.Build(crosswalk, Answers).Single().Target.ShouldBe(new CrosswalkTarget("3.5.3", ""));
+    }
+
+    [Fact]
+    public void Answers_take_each_source_checks_from_the_mapping_and_the_worst_result_of_its_rows()
+    {
+        var mapping = FrameworkMapping.Create(
+            "urn:example:framework:e8",
+            [
+                RequirementMapping.Create(RequirementKey.Ref("ISM-1504", allRows: true), [Id("identity.mfa.users")], MappingRule.AllPass).Value(),
+                RequirementMapping.Create(RequirementKey.Ref("ISM-1511"), [Id("backup.performed"), Id("backup.restore_tested")], MappingRule.AllPass).Value(),
+            ]).Value();
+        CurrentRow[] rows =
+        [
+            Row("ra-1", "urn:e8:mfa:ism-1504", "ISM-1504", ComplianceResult.Compliant),
+            Row("ra-2", "urn:e8:apps:ism-1504", "ISM-1504", ComplianceResult.PartiallyCompliant),
+            Row("ra-3", "urn:e8:rb:ism-1511", "ISM-1511", ComplianceResult.NotAssessed),
+            Row("ra-4", "urn:e8:rb:ism-1515", "ISM-1515", ComplianceResult.NonCompliant),
+        ];
+
+        var answers = Crosswalks.Answers(mapping, Snapshot(), new HashSet<CheckId> { Id("backup.restore_tested") }, rows);
+
+        answers["ISM-1504"].ShouldBe(new SourceAnswer("ISM-1504", ["identity.mfa.users"], [], ComplianceResult.PartiallyCompliant), new AnswerComparer());
+        answers["ISM-1511"].Checks.ShouldBe(["backup.performed", "backup.restore_tested"]);
+        answers["ISM-1511"].ManualChecks.ShouldBe(["backup.restore_tested"]);
+        answers["ISM-1511"].Result.ShouldBe(ComplianceResult.NotAssessed);
+        answers["ISM-1515"].Checks.ShouldBeEmpty(); // in the audit, not in the mapping: a person records it
+        answers["ISM-1515"].Result.ShouldBe(ComplianceResult.NonCompliant);
+    }
+
+    [Fact]
+    public void Answers_name_requirements_mapped_by_urn_by_their_ref_and_without_an_audit_have_no_result()
+    {
+        var mapping = FrameworkMapping.Create(
+            "urn:example:framework:e8",
+            [RequirementMapping.Create(RequirementKey.Urn("urn:e8:mfa:ism-1504"), [Id("identity.mfa.users")], MappingRule.AllPass).Value()]).Value();
+
+        var answers = Crosswalks.Answers(mapping, Snapshot(), new HashSet<CheckId>(), []);
+
+        answers["ISM-1504"].Checks.ShouldBe(["identity.mfa.users"]);
+        answers["ISM-1504"].Result.ShouldBeNull();
+    }
+
+    private static CheckId Id(string id) => CheckId.Create(id).Value();
+
+    private static CurrentRow Row(string id, string urn, string refId, ComplianceResult result) => new(id, urn, refId, ["1"], result, "", []);
+
+    private static FrameworkSnapshot Snapshot() => new(
+        "urn:example:library:e8",
+        "urn:example:framework:e8",
+        1,
+        [new("1", "ML1")],
+        [new("urn:e8:mfa:ism-1504", "ISM-1504", "urn:e8:mfa", ["1"], "MFA"), new("urn:e8:apps:ism-1504", "ISM-1504", "urn:e8:apps", ["1"], "MFA")]);
+
+    private sealed class AnswerComparer : IEqualityComparer<SourceAnswer>
+    {
+        public bool Equals(SourceAnswer? x, SourceAnswer? y) =>
+            x is not null && y is not null && x.SourceRef == y.SourceRef && x.Checks.SequenceEqual(y.Checks) && x.ManualChecks.SequenceEqual(y.ManualChecks) && x.Result == y.Result;
+
+        public int GetHashCode(SourceAnswer obj) => obj.SourceRef.GetHashCode(StringComparison.Ordinal);
     }
 }
