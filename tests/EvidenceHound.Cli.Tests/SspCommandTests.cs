@@ -79,6 +79,38 @@ public sealed class SspCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Prints_the_sp_800_18_layout_with_section_files_and_the_annex()
+    {
+        await WriteScopeAsync(Ssp);
+        Directory.CreateDirectory(Path.Combine(_workDir, "ssp"));
+        await File.WriteAllTextAsync(Path.Combine(_workDir, "ssp", "purpose.md"), "Example corporate IT runs the company's mail and files.\n", _ct);
+        Instance();
+
+        (await Build()).ShouldBe(ExitCodes.Ok, _error.ToString());
+
+        var markdown = _output.ToString();
+        markdown.ShouldContain("## 9. General description and purpose\n\nExample corporate IT runs the company's mail and files.");
+        markdown.ShouldContain("## 13. Security controls (annex)");
+        markdown.ShouldContain("| EX-1.1 |");
+        markdown.ShouldContain("_Section `environment` is not written yet._");
+    }
+
+    [Fact]
+    public async Task Json_carries_the_annex_with_poam_links()
+    {
+        await WriteScopeAsync(Ssp);
+        Instance();
+
+        (await Build("--json")).ShouldBe(ExitCodes.Ok, _error.ToString());
+
+        var plan = JsonNode.Parse(_output.ToString())!;
+        var row = plan["annex"]!.AsArray().ShouldHaveSingleItem()!;
+        row["control"]!.GetValue<string>().ShouldBe("EX-1.1");
+        row["status"]!["value"].ShouldNotBeNull();
+        plan["classification"]!["value"].ShouldBeNull();
+    }
+
+    [Fact]
     public async Task A_scope_problem_stops_before_ciso_assistant_is_read()
     {
         await WriteScopeAsync(Ssp.Replace("perimeter: Example baseline", "perimeter: Nowhere", StringComparison.Ordinal));
