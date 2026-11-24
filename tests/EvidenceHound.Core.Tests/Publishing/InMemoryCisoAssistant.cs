@@ -104,6 +104,9 @@ internal sealed class InMemoryCisoAssistant : ICisoAssistantClient
             : Result.Ok(_evidenceByRefId.GetOrAdd(refId, id => new RemoteEvidence($"uuid-{id}", null))));
     }
 
+    public Task<Result<EvidenceFile>> DownloadAuditReportAsync(string complianceAssessmentRefId, CancellationToken cancellationToken) =>
+        Task.FromResult(Result.Ok(new EvidenceFile($"{complianceAssessmentRefId}-audit-report.docx", new byte[] { 1 })));
+
     public Task<Result<Unit>> UploadEvidenceRevisionAsync(string evidenceId, EvidenceFile file, CancellationToken cancellationToken)
     {
         var refId = _evidenceByRefId.Single(e => e.Value.Id == evidenceId).Key;

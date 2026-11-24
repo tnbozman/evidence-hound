@@ -227,3 +227,10 @@ public static class SspDiff
     private static string Cell(string? value) =>
         value is null ? "-" : value.Replace("|", "\\|", StringComparison.Ordinal).Replace("\n", "<br>", StringComparison.Ordinal);
 }
+
+/// <summary>The evidence revision <c>hound ssp publish</c> uploads (s11-05): one zip with fixed timestamps, so the same inputs give the same bytes. Pure.</summary>
+public static class SspPackage
+{
+    public static EvidenceHound.Core.Publishing.EvidenceFile Zip(string programme, string version, string plan, string poam, string snapshot, EvidenceHound.Core.Publishing.EvidenceFile? report) =>
+        throw new NotImplementedException();
+}
