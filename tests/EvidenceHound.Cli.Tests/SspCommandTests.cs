@@ -56,6 +56,28 @@ public sealed class SspCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Strict_passes_without_gaps_and_the_poam_is_printed()
+    {
+        await WriteScopeAsync(Ssp);
+        Instance();
+
+        (await Build("--strict")).ShouldBe(ExitCodes.Ok, _error.ToString());
+        _output.ToString().ShouldContain("No gaps.");
+        _output.GetStringBuilder().Clear();
+
+        var exit = await HoundCli.RunAsync(
+            ["ssp", "poam", "--programme", "baseline", "--scope", ScopeDir, "--json"],
+            _output,
+            _error,
+            logging => logging.AddProvider(_logs),
+            new Dictionary<string, string?> { ["HOUND_CA_URL"] = $"{_ca.Url}/api/", ["HOUND_CA_TOKEN"] = Token },
+            _ct);
+
+        exit.ShouldBe(ExitCodes.Ok, _error.ToString());
+        JsonNode.Parse(_output.ToString())!["items"]!.AsArray().ShouldBeEmpty();
+    }
+
+    [Fact]
     public async Task A_scope_problem_stops_before_ciso_assistant_is_read()
     {
         await WriteScopeAsync(Ssp.Replace("perimeter: Example baseline", "perimeter: Nowhere", StringComparison.Ordinal));

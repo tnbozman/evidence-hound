@@ -50,6 +50,18 @@ public class SspBuilderTests
         var control = document.Controls.ShouldHaveSingleItem();
         (control.RefId.Value, control.Owner.Value, control.Status.Value).ShouldBe(("AC-MFA", "it@example.com", "active"));
         control.Description.Value.ShouldBe("Every account uses MFA.");
+        control.Eta.Value.ShouldBe("2026-12-31");
+    }
+
+    [Fact]
+    public void Requirements_carry_their_status_statement_and_owner()
+    {
+        var document = Build();
+
+        var row = document.Requirements[0];
+        (row.Status.Value, row.Statement.Value, row.Responsible.Value).ShouldBe(("Implemented", "AC-MFA: Every account uses MFA.\nAll 12 accounts use MFA.", "it@example.com"));
+        document.Requirements[1].Status.Value.ShouldBe("Partially implemented");
+        document.Gaps.ShouldBeEmpty();
     }
 
     [Fact]
@@ -73,6 +85,10 @@ public class SspBuilderTests
         values.ShouldNotBeEmpty();
         values.ShouldAllBe(v => v["source"]!["kind"] != null && v["source"]!["reference"] != null);
         values.Select(v => v["source"]!["kind"]!.GetValue<string>()).Distinct().Order().ShouldBe(["ciso_assistant", "repo"]);
+        var row = JsonNode.Parse(json)!["requirements"]![0]!;
+        row["status"]!["value"]!.GetValue<string>().ShouldBe("Implemented");
+        row["gaps"]!.AsArray().ShouldBeEmpty();
+        JsonNode.Parse(json)!["gaps"]!.AsArray().ShouldBeEmpty();
     }
 
     private static SspDocument Build() => SspBuilder.Build(Ssp(), SspFixture.Parse().Scope, SspFixture.Held());

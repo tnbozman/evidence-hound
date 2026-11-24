@@ -68,7 +68,7 @@ internal static class SspFixture
         Object(ScopeKind.System, "Somebody else's server", ("type", "primary"), ("owner", "it@example.com")),
         Object(ScopeKind.Entity, "SUP-EXCLOUD", ("name", "Example Cloud Pty Ltd"), ("country", "AU")),
         Object(ScopeKind.Solution, "SOL-EXCLOUD-HOST", ("name", "Managed hosting"), ("entity", "SUP-EXCLOUD"), ("criticality", "3")),
-        Object(ScopeKind.Control, "AC-MFA", ("name", "Multi-factor authentication"), ("owner", "it@example.com"), ("systems", "Example 365"), ("description", "Every account uses MFA.")) with
+        Object(ScopeKind.Control, "AC-MFA", ("name", "Multi-factor authentication"), ("owner", "it@example.com"), ("systems", "Example 365"), ("description", "Every account uses MFA."), ("eta", "2026-12-31")) with
         {
             Observed = new Dictionary<string, string> { ["status"] = "active" },
         },
