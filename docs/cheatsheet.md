@@ -1,53 +1,159 @@
 # hound cheat sheet
 
-Every command takes `--help`. `--json` makes a command prompt-free for an agent. Commands marked **person** refuse an agent or a pipe.
-CISO Assistant calls need `HOUND_CA_URL` and `HOUND_CA_TOKEN`.
-
-## Typical paths
-
-| Goal | Steps |
-| --- | --- |
-| **Start a repo** | `hound init ./compliance --org "Example Pty Ltd"` → `hound agent setup` → `hound config validate hound.yaml --check-secrets` |
-| **Onboard a supplier and system** | `hound supplier draft ...` → `hound onboard <system> pending --json` → `hound onboard <system> decide <req> --kind ...` (agent) → `hound approve` (**person**) → `hound scope validate scope --config hound.yaml` |
-| **Write config to CISO Assistant** | `hound scope plan scope --config hound.yaml` → `hound explain <plan>` → `hound scope apply scope --config hound.yaml` |
-| **Collect evidence** | `hound run --config hound.yaml --dry-run` once, then `hound serve --config hound.yaml` (scheduled) and `hound status --config hound.yaml` |
-| **Manual evidence** | owner sends the export → `hound manual upload <file> --config hound.yaml --source <src>` → `hound manual propose <src> <file> --config hound.yaml` (agent) → `hound manual approve --config hound.yaml` (**person**) → next `run` publishes |
-| **New REST collector** | `hound onboard profile <system>` → `hound profile validate <name>` → `hound profile test <name>` → `hound add collector rest --config hound.yaml` |
-| **From a spreadsheet** | `hound scope import <workbook.xlsx> --audit <AUD-REF>` → `hound scope validate` → `plan` → `apply` |
+Every command takes `--help`. `--json` makes a command prompt-free for an agent. **Person** marks a command that refuses an agent or a
+pipe. CISO Assistant calls need `HOUND_CA_URL` and `HOUND_CA_TOKEN`. `(req)` marks a required option. The PDF is rendered from this
+file by `scripts/cheatsheet/render.sh`.
 
 ## Commands
 
-| Command | Does | Main options |
-| --- | --- | --- |
-| `hound init <folder>` | New compliance repo: config, scope, an E8 audit and mapping | `--org --code --url --time-zone --level --interval --owner --evidence-root --assistant -y --json` |
-| `hound agent setup` | Set up Claude Code or Copilot in the repo | `--assistant --repo` |
-| `hound add system` / `hound add control` | Add a system or control to the scope | `--scope` (req), `--domain --name --ref-id --owner --audit -y`; system: `--type --parents`; control: `--category --systems --requirements` |
-| `hound add collector <type>` | Add a collector to `hound.yaml` | `--config` (req), `--name --schedule --set --secrets-dir --secret-file -y` |
-| `hound supplier draft` | Draft a supplier, solution, contract and review | `--ref --name --solution-ref --solution-name --contract-ref --contract-name` (req), `--kind msp\|reseller\|vendor --for --system --level --document --start --end --annual-expense --currency --json` |
-| `hound onboard <system>` | Onboard a system interactively | `--repo --framework --group --spec` |
-| `hound onboard pending` / `hound onboard decide <req>` (after `<system>`) | Agent: what is undecided / record one decision | `--json`; decide: `--kind api_check\|manual\|not_applicable\|other_system --reasoning` (req), `--source --other-system --justification` |
-| `hound onboard environment`, `hound onboard environment pending`, `hound onboard environment decide <mitigation>` | The environment's capability map | `--signals --graph --deployment --microsoft-system`; decide: `--provided-by gap\|manual\|system --reason` (req), `--system --supplier --owner --evidence --route` |
-| `hound onboard profile <system>` | Draft a REST profile from an API spec | `--profiles --name --set --secret --sample` |
-| `hound approve` | **Person**: approve drafts one at a time | `--repo` |
-| `hound audit draft` | Draft an audit | `--ref --name --framework` (req), `--group --domain --perimeter --system --due --json` |
-| `hound scope validate <scope>` | Check scope files offline | `--config --format json\|text --json` |
-| `hound scope plan <scope>` | What would change in CISO Assistant (reads only) | `--config --format json\|markdown --prune --show-unmanaged --detailed-exitcode --out` |
-| `hound scope apply <scope>` | Write the scope to CISO Assistant | `--config --dry-run --prune` |
-| `hound scope new-audit` | Write an audit file for a framework | `--framework --ref-id` (req), `--groups --out` |
-| `hound scope export` / `hound scope import <workbook>` | Export CISO Assistant to files / import an audit workbook | export: `--out` (req), `--root-folder --with-files`; import: `--audit` (req), `--repo --sheet --column --json` |
-| `hound explain <files>` | Plain-English review of a plan or config change | `--repo --json` |
-| `hound run` | Collect, store, map, plan and publish | `--config` (req), `--only --dry-run --no-publish` |
-| `hound serve` | Run each collector on its schedule | `--config` (req) |
-| `hound status` | Latest run of each collector | `--config` (req) |
-| `hound collect` / `hound plan` / `hound publish` | The steps of `run`, one at a time | `--config` (req), `--dry-run`; plan, publish: `--checks` (req); publish: `--evidence-dir` (req) |
-| `hound manual upload <file>` | Drop a file into a manual source | `--config --source` (req) |
-| `hound manual propose <source> <file>` | Agent: propose a result with supporting extract | `--config` (req), `--result --check --observation --supports --json` |
-| `hound manual approve` | **Person**: attest proposals | `--config` (req), `--source` |
-| `hound config validate <file>` | Check `hound.yaml` | `--check-secrets` |
-| `hound collectors list` | Collector types in this build | |
-| `hound profile validate` / `hound profile test` / `hound profile diff <name>` | Check, try or compare a REST profile | `--profiles`; diff: `--library` |
-| `hound mapping validate <file>` / `hound mapping apply <mapping> <checks>` | Check a mapping / map check results | validate: `--framework` |
-| `hound framework snapshot <library>` | Snapshot a framework library | `--out` |
-| `hound skill list` / `hound skill new` / `hound skill add` / `hound skill validate` / `hound skill draft` | Onboarding skills | `--skills`; draft: `--only` |
+### Set up a repo
+- `hound init <folder>`: new compliance repo: config, scope, an Essential Eight audit and its mapping
+  - `--org --code --url --time-zone --level --interval --owner --evidence-root --assistant -y --json`
+- `hound agent setup`: set up Claude Code or Copilot in the repo
+  - `--assistant --repo`
+- `hound config validate <file>`: check `hound.yaml`
+  - `--check-secrets`
+- `hound collectors list`: collector types in this build
 
-Coming in s10-07: `hound review pending --json` and `hound review --for 60m`, one guided weekly session for every approval.
+### Suppliers, systems and audits
+- `hound supplier draft`: draft a supplier, its solution, contract and review
+  - `--ref --name --solution-ref --solution-name --contract-ref --contract-name` (req)
+  - `--kind msp|reseller|vendor --for --system --level --document --description --start --end --annual-expense --currency --json`
+- `hound add system`: add a system to the scope
+  - `--scope` (req) `--domain --name --ref-id --type --owner --description --parents --audit -y`
+- `hound add control`: add an applied control
+  - `--scope` (req) `--ref-id --name --domain --owner --category --systems --audit --requirements -y`
+- `hound audit draft`: draft an audit
+  - `--ref --name --framework` (req) `--group --domain --perimeter --system --due --json`
+
+### Onboard
+- `hound onboard <system>`: onboard a system: supplier, applicability, files
+  - `--repo --framework --group --spec`
+- `hound onboard pending`: agent: what is still undecided (`hound onboard <system> pending`)
+  - `--json --owner --product --solution`
+- `hound onboard decide <req>`: agent: record one decision (`hound onboard <system> decide`)
+  - `--kind api_check|manual|not_applicable|other_system --reasoning` (req) `--source --other-system --justification --json`
+- `hound onboard environment`: the environment's capability map
+  - `--signals --graph --deployment --microsoft-system`
+- `hound onboard environment pending`: agent: undecided mitigations
+- `hound onboard environment decide <mitigation>`: agent: record one
+  - `--provided-by gap|manual|system --reason` (req) `--system --supplier --owner --evidence --route`
+- `hound approve`: **Person**: approve every draft, one at a time
+  - `--repo`
+
+### Scope: CISO Assistant as config
+- `hound scope validate <scope>`: check scope files offline
+  - `--config --format json|text --json`
+- `hound scope plan <scope>`: what would change (reads only)
+  - `--config --format json|markdown --prune --show-unmanaged --detailed-exitcode --out`
+- `hound explain <files>`: plain-English review of a plan or config change
+  - `--repo --json`
+- `hound scope apply <scope>`: write the scope to CISO Assistant
+  - `--config --dry-run --prune`
+- `hound scope new-audit`: write an audit file for a framework
+  - `--framework --ref-id` (req) `--groups --out`
+- `hound scope import <workbook>`: import an audit workbook
+  - `--audit` (req) `--repo --sheet --column --json`
+- `hound scope export`: export CISO Assistant to scope files
+  - `--out` (req) `--root-folder --with-files`
+
+### Collect and publish
+- `hound run`: collect, store evidence, map, plan, publish
+  - `--config` (req) `--only --dry-run --no-publish`
+- `hound serve`: run each collector on its schedule
+  - `--config` (req)
+- `hound status`: latest run of each collector
+  - `--config` (req)
+- `hound collect`: step 1 of run: collect into the evidence store
+  - `--config` (req) `--dry-run`
+- `hound plan`: step 2: what a run would update
+  - `--config --checks` (req) `--dry-run`
+- `hound publish`: step 3: publish a run's results
+  - `--config --checks --evidence-dir` (req) `--dry-run`
+
+### Manual evidence
+- `hound manual upload <file>`: drop an export into a manual source
+  - `--config --source` (req)
+- `hound manual propose <source> <file>`: agent: propose a result and its extract
+  - `--config` (req) `--result --check --observation --supports --json`
+- `hound manual approve`: **Person**: attest the proposals
+  - `--config` (req) `--source`
+
+### Collectors and REST profiles
+- `hound add collector <type>`: add a collector to `hound.yaml`
+  - `--config` (req) `--name --schedule --set --secrets-dir --secret-file -y`
+- `hound onboard profile <system>`: draft a REST profile from an API spec
+  - `--profiles --name --set --secret --sample`
+- `hound profile validate <name>`: check a profile
+  - `--profiles`
+- `hound profile test <name>`: try a profile against recordings
+  - `--profiles`
+- `hound profile diff <name>`: compare with the library copy
+  - `--profiles --library`
+
+### Frameworks, mappings and skills
+- `hound framework snapshot <library>`: snapshot a framework library
+  - `--out`
+- `hound mapping validate <file>`: check a mapping file
+  - `--framework`
+- `hound mapping apply <mapping> <checks>`: map check results to requirements
+- `hound skill list`: onboarding skills, hound's and yours
+- `hound skill new <name>`: start a skill
+- `hound skill add <file>`: add a skill file
+- `hound skill validate`: check the skills
+- `hound skill draft`: agent: draft skills
+  - `--skills` on every skill command; draft: `--only`
+
+### Coming in s10-07
+- `hound review pending --json`: agent: everything waiting on a person
+- `hound review --for 60m`: **Person**: one guided weekly session
+
+## Typical paths
+
+### Start a repo
+1. `hound init ./compliance --org "Example Pty Ltd"`
+2. `hound agent setup --assistant claude`
+3. `hound config validate hound.yaml --check-secrets`
+4. `hound scope validate scope --config hound.yaml`
+
+### Onboard a supplier and a system
+1. Agent: `hound supplier draft --ref ... --name ...`
+2. Agent: `hound onboard <system> pending --json`
+3. Agent: `hound onboard <system> decide <req> --kind ... --reasoning ...`
+4. **Person**: `hound approve`
+5. `hound scope validate scope --config hound.yaml`
+
+### Write config to CISO Assistant
+1. `hound scope plan scope --config hound.yaml --out plan.json`
+2. `hound explain plan.json`
+3. `hound scope apply scope --config hound.yaml`
+
+### Collect evidence on a schedule
+1. `hound run --config hound.yaml --dry-run`
+2. `hound run --config hound.yaml`
+3. `hound serve --config hound.yaml` (the runner container)
+4. `hound status --config hound.yaml`
+
+### Manual evidence each period
+1. CISO Assistant emails the owner the runbook
+2. `hound manual upload <file> --config hound.yaml --source <src>`
+3. Agent: `hound manual propose <src> <file> --config hound.yaml`
+4. **Person**: `hound manual approve --config hound.yaml`
+5. The next `hound run` publishes it
+
+### Add a REST collector
+1. `hound onboard profile <system> --sample`
+2. `hound profile validate <name>`
+3. `hound profile test <name>`
+4. `hound add collector rest --config hound.yaml`
+
+### Move off a spreadsheet
+1. `hound scope import audit.xlsx --audit <AUDIT-REF>`
+2. `hound scope validate scope`
+3. `hound scope plan scope`, then `hound scope apply scope`
+
+### Weekly review (from s10-07)
+1. Agent: `hound review pending --json`, drafts each recommendation
+2. CISO Assistant's weekly task alerts the GRC member
+3. **Person**: `hound review --for 60m`: read, accept or challenge
+4. Accepted items are applied in one batch
