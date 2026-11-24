@@ -41,7 +41,16 @@ public sealed record ScopeSetup(string RootFolder, IReadOnlyList<ScopeFramework>
 
     /// <summary>The organisation's own entity (CISO Assistant's main entity), from <c>organisation.entity</c>. It is only ever updated.</summary>
     public ScopeEntity? Organisation { get; init; }
+
+    /// <summary>The compliance programmes the organisation reports on (s11-01): each a framework, its groups and the audit of record.</summary>
+    public IReadOnlyList<ScopeProgramme> Programmes { get; init; } = [];
 }
+
+/// <summary>
+/// A compliance programme, such as the Essential Eight or AI6: the framework, the implementation groups reported against, and the audit (or
+/// audit series) of record. Reports are organised by programme. A programme creates nothing in CISO Assistant.
+/// </summary>
+public sealed record ScopeProgramme(string Id, string Name, ScopeRef Framework, IReadOnlyList<string> Groups, ScopeRef Audit, string GroupBy, SourceLine At);
 
 /// <summary>A framework to load: its URN, and its library by URN or as a custom library file. A snapshot makes it checkable offline.</summary>
 public sealed record ScopeFramework(string Urn, string? LibraryUrn, string? LibraryFile, string? Snapshot, SourceLine At);
