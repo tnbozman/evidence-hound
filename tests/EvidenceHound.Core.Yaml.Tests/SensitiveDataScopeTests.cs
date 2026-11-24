@@ -11,7 +11,7 @@ public class SensitiveDataScopeTests
     private static readonly DateOnly Today = new(2026, 11, 22);
 
     // A solution's keys sit at four spaces in SupplierScopeTests.Supplier, a system's at eight in ScopeFixture.Setup.
-    private const string SolutionData =
+    private static readonly string SolutionData =
         "    criticality: 3\n" +
         "    data:\n" +
         "      - kind: cui\n" +
@@ -24,7 +24,7 @@ public class SensitiveDataScopeTests
         "      - kind: pii\n" +
         "        role: stores\n";
 
-    private const string SystemData =
+    private static readonly string SystemData =
         "        owner: it@example.com\n" +
         "        solution: SOL-EXCLOUD-HOST\n" +
         "        supplied_through: SUP-EXCLOUD\n" +
