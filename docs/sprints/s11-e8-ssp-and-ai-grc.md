@@ -52,7 +52,7 @@ The reports themselves are built in s12. This task declares programmes in config
 Result (2026-11-24): `make run ARGS="programme list --scope examples/compliance-repo/scope"` prints the `essential-eight` programme (framework version 3, audit of record EX-E8-2026) with 8 parent nodes (pa, pos, mfa, rap, ac, rmom, uah, rb) at groups 1 and 2: 48 requirements at Maturity Level One, 107 at Maturity Level Two. The AI6 line waits for s11-15. Also built: `scope.programme_id` (slug), duplicate ids (`scope.duplicate`), `scope.programme_framework_unknown`, `scope.programme_group_unknown`, `scope.programme_audit_unknown`, `scope.programme_audit_framework`, `scope.programme_audit_shared`, `scope.programme_needs_snapshot`; the schema and both example repos gained the programme.
 
 ### s11-02 SSP model and declaration
-- [ ] Done
+- [x] Done
 
 **Story:** As the authorising official, I want an SSP assembled from the scope, systems, suppliers, controls and results we already keep in CISO Assistant, so that the plan matches what is actually recorded and does not go stale in a separate document.
 
@@ -73,6 +73,8 @@ What CISO Assistant offers today (checked in the v4.3.4 source, not yet run live
 
 **Functional check**
 - `make run ARGS="ssp build --programme essential-eight --json"` against the local CISO Assistant with the example repo prints the document model with the example systems, suppliers and controls.
+
+Result (2026-11-24): no CISO Assistant can run in the cloud session, so the check is `SspFunctionalTests.Builds_the_essential_eight_plan_from_the_seeded_records`, which runs `hound ssp build --programme essential-eight --json` against CISO Assistant v4.3.4 seeded from the example repo, with a `scope/ssp.yaml` for the Essential Eight programme. It passed in CI (functional job, run 45337444001): the inventory is Example 365, Example laptops and Example backup service with their owners from CISO Assistant, AC-MFA is among the controls, ISM-1486 reads compliant, and the document is the identity and access policy; the plan is kept in `test-results/ssp/`. The example has no suppliers yet, so external services are covered by `SspBuilderTests` until s11-07 adds them. Also built: `ssp.role_missing`, the `ssps` schema, and control status read from CISO Assistant as an observed value (never compared or written).
 
 ### s11-03 Requirement statements, gaps and POA&M
 - [ ] Done
@@ -473,6 +475,8 @@ environment, not on code. Details stay under the task in `s09-e8-gap-collectors.
 - [ ] s09-54 and s09-57 `make trial` on the maintainer's machine.
 
 ## Discovered work
+
+- s11-02: a programme whose audit of record is an audit series (with a cycle) has rows under each period's ref_id; `hound ssp build` reads rows under the series ref_id only. Pick the current period's audit before s11-05 versions the plan.
 
 - s11-01: framework snapshots hold parent node URNs but not their titles, so `hound programme list` shows a strategy as its short code (`mfa`, `rap`). The s12 reports need the name ("Multi-factor authentication"): add parent titles to the snapshot (`hound framework snapshot`) before s12-05.
 
