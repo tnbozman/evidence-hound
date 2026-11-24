@@ -103,7 +103,7 @@ How it works, using CISO Assistant's own features only (checked against the v4.3
 - Deviations: `hound manual template` is not built; the decided flow is `hound manual propose` (agent) and `hound manual approve` (person) from s09-42. Evidence labels are the method and the collector's name (such as `manual`, `example-m365`), not `method:manual`, because CISO Assistant takes labels only as `^[\w-]{1,36}$`.
 
 ### s10-05 Rehearse the lifecycle as a small defence supplier (added 2026-11-23)
-- [ ] Done
+- [x] Done
 
 Added at the maintainer's request (2026-11-23): "trial, onboard and maintain evidence" with small defence-industry teams in mind, because heavy AI support across the cyber GRC and AI GRC lifecycle is the point. That is why configuration is text and the inputs are agent-readable: OpenAPI specifications, vendor documents, digital trust centres, skills and agent files.
 
@@ -120,6 +120,8 @@ Added at the maintainer's request (2026-11-23): "trial, onboard and maintain evi
 
 **Functional check**
 - The rehearsal notes themselves, under each task, and the CI trial job green.
+
+**Functional check result (2026-11-24):** the rehearsals below; CI green on b9a57bb, the trial job included.
 
 **Rehearsal (2026-11-24), persona: five-person machine shop going for CMMC Level 2 (continues the s10-03 repo)**
 - s10-06: the agent recorded CUI on the backup, managed IT and the prime's portal from `suppliers.csv`, with no authority (none is on
