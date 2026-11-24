@@ -11,7 +11,7 @@ namespace EvidenceHound.Core.Yaml.Tests;
 /// </summary>
 public class Ai6MappingTests
 {
-    /// <summary>The register checks the ciso-assistant profile runs (s11-13).</summary>
+    /// <summary>The register checks from the ai-register collector and the ciso-assistant profile (s11-13).</summary>
     private static readonly string[] RegisterChecks =
     [
         "ai.register_complete", "ai.owner_assigned", "ai.screening_recorded", "ai.impact_assessment_before_use", "ai.risks_in_register",

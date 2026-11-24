@@ -1,7 +1,8 @@
 # yaml-language-server: $schema=../schemas/mapping.schema.json
 # AI6 (Guidance for AI Adoption, National AI Centre, v1.0, October 2025): every sub-practice, from two kinds of check.
-# - Register checks (ai.register_complete and nine more) come from the ciso-assistant REST profile (s11-13), which reads the AI
-#   systems registered in CISO Assistant as assets of the class "AI system".
+# - Register checks (ai.register_complete and nine more, s11-13): seven come from the built-in ai-register collector, which reads
+#   the ai blocks of systems in scope/setup.yaml; ai.risks_in_register and the two supplier checks come from the ciso-assistant
+#   REST profile, which reads risk scenarios, suppliers and contracts in CISO Assistant.
 # - Every other check is attested by a person through a manual source in examples/manual-sources/ai6/ (ai-governance, yearly;
 #   ai-operations, quarterly): an agent may propose a result with `hound manual propose`, the owner attests it with
 #   `hound manual approve`, and the next run publishes it (s10-04). `manual_only` would list a requirement no manual source covers;

@@ -21,9 +21,9 @@ The example uses Foundations. In CISO Assistant the AI6 framework has both, as t
 
 ## How the work fits the tools you already use
 
-- **CISO Assistant stays the system of record.** Each AI system is an asset of the class *AI system*, with an owner and a few extra fields: its risk tier, how people oversee it, when it was screened, assessed and tested. AI risks are risk scenarios linked to the asset. A third-party AI product is a solution of a supplier, as for any other supplier.
-- **The register is CISO Assistant's asset list**, filtered to AI systems. You export it with CISO Assistant's own Excel export. There is no separate spreadsheet.
-- **Your repo holds what you decide**: which AI systems exist, who owns them, their tier and oversight arrangement. Changes go through pull requests like the rest of your scope.
+- **CISO Assistant stays the system of record.** Each AI system is an asset, labelled `ai-system`, with its owner. Its register entry (its risk tier, how people oversee it, when it was screened, assessed and tested) is shown in the asset's labels and description. AI risks are risk scenarios linked to the asset. A third-party AI product is a solution of a supplier, as for any other supplier.
+- **The register is CISO Assistant's asset list**, filtered by the `ai-system` label. You export it with CISO Assistant's own Excel export. There is no separate spreadsheet.
+- **Your repo holds what you decide**: which AI systems exist, who owns them, their tier, oversight arrangement and dates, in an `ai` block on each system. Changes go through pull requests like the rest of your scope, and `hound scope apply` copies them to CISO Assistant.
 - **hound checks the register on every run**: a system with no owner, a medium or high tier system with no impact assessment, a test date that has gone stale. Those checks fill the AI6 rows that can be checked; the rest are manual evidence with an owner and a reminder, as for the Essential Eight.
 
 ## The six practices, with Example Pty Ltd
@@ -40,7 +40,7 @@ Name one senior person accountable for AI overall, and an owner for each AI syst
 
 Before using an AI system, think about who it affects and how. Give people a way to raise a concern or ask for a decision to be reviewed by a person.
 
-**Example Pty Ltd:** Example Chat drafts text that a staff member always reads before sending, so it affects customers only through what staff choose to send. Alex records that in a short impact note on the asset. The existing complaints address on the website is the feedback route; Alex adds a line saying a person reviews any complaint about AI-drafted content.
+**Example Pty Ltd:** Example Chat drafts text that a staff member always reads before sending, so it affects customers only through what staff choose to send. Alex records that in a short impact note on the system. The existing complaints address on the website is the feedback route; Alex adds a line saying a person reviews any complaint about AI-drafted content.
 
 ### 3. Measure and manage risks
 
@@ -52,19 +52,19 @@ Screen each AI system with a short set of questions to sort it into a risk tier:
 
 Keep a register of AI systems. Tell people when they are dealing with AI or with AI-generated content, and know what your suppliers tell you about their AI.
 
-**Example Pty Ltd:** the register is the list of *AI system* assets in CISO Assistant, two entries by now. The proposal template gains a footer line saying drafts may be prepared with AI assistance and are reviewed by staff. The supplier of the customer system is already a third party in CISO Assistant; its assessment now includes a question about its AI feature.
+**Example Pty Ltd:** the register is the list of assets labelled `ai-system` in CISO Assistant, two entries by now. The proposal template gains a footer line saying drafts may be prepared with AI assistance and are reviewed by staff. The supplier of the customer system is already a third party in CISO Assistant; its assessment now includes a question about its AI feature.
 
 ### 5. Test and monitor
 
 Check that an AI system works as intended before relying on it, and keep checking. The riskier the system, the more often.
 
-**Example Pty Ltd:** before switching on lead scoring, the sales lead compares its scores with last quarter's actual sales for 50 leads and records the result as evidence; Alex sets the test date on the asset. hound checks that date on every run: a medium tier system tested more than 12 months ago (6 for high tier) shows as a failing check, and the AI6 row for testing follows it.
+**Example Pty Ltd:** before switching on lead scoring, the sales lead compares its scores with last quarter's actual sales for 50 leads and records the result as evidence; Alex sets the test date in the system's `ai` block. hound checks that date on every run: a medium tier system tested more than 12 months ago (6 for high tier) shows as a failing check, and the AI6 row for testing follows it.
 
 ### 6. Maintain human control
 
 Make sure a person can oversee, override or switch off the system, and know how you would stop using it.
 
-**Example Pty Ltd:** Example Chat is *human in the loop*: a person approves every output before it is used. Lead scoring is *human on the loop*: it runs by itself, and the sales lead watches the monthly spot check and can switch the feature off in the customer system's settings. Alex writes both arrangements in the oversight note on each asset. hound fails the oversight check if a high tier system has nobody in or on the loop.
+**Example Pty Ltd:** Example Chat is *human in the loop*: a person approves every output before it is used. Lead scoring is *human on the loop*: it runs by itself, and the sales lead watches the monthly spot check and can switch the feature off in the customer system's settings. Alex writes both arrangements in the oversight note of each system's `ai` block. hound fails the oversight check if a high tier system has nobody in or on the loop.
 
 ## What the committee sees
 
@@ -93,7 +93,7 @@ The monthly security committee report gains an AI section: how many AI systems t
 | Human in the loop | A person approves each output before it is used. |
 | Human on the loop | The system acts by itself while a person watches and can step in. |
 | Human out of the loop | Nobody reviews the system's outputs as it works; only afterwards, if at all. |
-| Register | The list of AI systems, kept in CISO Assistant as assets of the class *AI system*. |
+| Register | The list of AI systems: the `ai` blocks in your repo's scope, shown in CISO Assistant as assets labelled `ai-system`. |
 | Third-party AI | An AI product or feature you use but did not build, recorded with its supplier. |
 
 ## Where to go next
