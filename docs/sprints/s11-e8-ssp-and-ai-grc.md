@@ -278,9 +278,12 @@ Done first in Part 2, so the person reviewing the AI tasks has the background.
 **Progress (2026-11-24)**
 - The primer is written: `docs/ai-grc-primer.md` (about 1,800 words), checked by `ExampleRepoTests.Ai_grc_primer_gives_each_practice_a_worked_example_and_a_glossary`.
 - The walkthrough, the training outline and the message wording need the register, screening fields and checks, so they are written after s11-14, and this task is ticked then.
+- Written after s11-14: `docs/tutorials/ai-governance.md` (11 steps on the local stack: register a customised, medium tier search assistant, screen it, apply, record the impact assessment and test, run `hound`, read AI6-4.1, AI6-5.1 and AI6-3.2, and the register line) and `docs/training/ai-governance.md` (a 30-minute session built on it). `ExampleRepoTests.Ai_governance_walkthrough_says_why_before_what_and_the_training_builds_on_it` checks each step opens with what it is for. `Ai6MappingTests.Ciso_assistant_profile_observations_name_the_practice_in_words` stands in for `CisoAssistantProfileTests.Observations_name_the_practice_in_words`; `Register_checks_name_a_sub_practice_they_are_mapped_to` covers the `ai-register` checks.
+- Checked offline: on a copy of the example repo, the step 5 entry validates (`scope valid: 1 domain(s), 5 control(s), 4 audit(s)`), the deliberate mistake reports `ai.impact_date_without_approval`, `programme list` prints `Register: 3 AI systems. tier: low 1, medium 2. use: built 1, customised 2.`, and the step 9 config runs the collector and saves `ai-register.json`.
+- Open: the functional check needs someone who has not read AI6 to follow the walkthrough on the local stack. Left unticked until then.
 
 ### s11-09 AI6 framework library and snapshot
-- [ ] Done
+- [x] Done
 
 **Story:** As the Cyber GRC team, I want AI6 as a framework in CISO Assistant, so that AI governance is assessed in audits like any other framework.
 
@@ -305,9 +308,10 @@ Done first in Part 2, so the person reviewing the AI tasks has the background.
 **Progress (2026-11-24)**
 - Library, snapshot, trace table and tests are done. The Foundations actions were read from the guidance PDF (v1.0, October 2025); it prints no licence, so the trace table summarises them in our own words. 20 of the 21 sub-practices are in `F`; only AI6-4.4 is not.
 - The functional check (apply to the local CISO Assistant, an AI6 audit for group `F`) runs once the example scope declares AI6 (s11-15), because the functional tests share one seeded instance.
+- Functional check: CI run 45418984060 (functional job, 36 of 36 functional tests passed). `AiGovernanceFunctionalTests.Seed_registers_the_ai_systems_with_their_labels_and_the_foundations_audit`: the seed's `scope apply` uploads and loads the library, and the audit `EX-AI6-2026` selects only group `F` (read from its object endpoint). CISO Assistant keeps a row for every requirement, AI6-4.4 included, and filters by the selected groups; runs skip rows outside them.
 
 ### s11-10 AI6 mapping
-- [ ] Done
+- [x] Done
 
 **Story:** As a compliance owner, I want a mapping from framework-neutral `ai.*` checks to AI6 requirements, so that AI6 audit rows are filled by runs where a check exists and owned by a named manual source where none does.
 
@@ -376,7 +380,7 @@ Done before s11-12, because the register fields and the screening runbook follow
 - Export the example AI systems from the local CISO Assistant with its asset Excel export and confirm every template column the trace table says is kept is present and filled for the example systems.
 
 ### s11-12 AI system register in CISO Assistant
-- [ ] Done
+- [x] Done
 
 **Story:** As the Cyber GRC team, I want every AI system recorded with its owner, risk tier, impact assessment status and human-oversight arrangement, so that the register can be checked and reported on, and anyone in CISO Assistant can find the AI systems.
 
@@ -422,10 +426,11 @@ Done before s11-12, because the register fields and the screening runbook follow
 **Progress (2026-11-24)**
 - Built: the `ai` block, its validation, the labels and the description (`AiRegisterScopeTests`, `AiRegisterPlanTests`, `ScopeSchemaTests`), and the `scope.schema.json` and `docs/scope.md` entries. The writer needed no change: systems already send labels and descriptions.
 - The functional check runs with s11-15, which adds the example AI systems, because the functional tests share one seeded CISO Assistant.
+- Functional check: CI run 45418984060 (functional job, 36 of 36 functional tests passed). The seed applies the example scope: Example ticket triage carries `ai-oversight-in-the-loop`, `ai-system`, `ai-tier-low` and `ai-use-built` with "AI register: low tier, built, human in the loop." in its description; Example proposal assistant carries `ai-tier-medium`; Example 365 has no `ai-system`. `ScopeExportFunctionalTests` shows export then plan is empty: `hound scope export` now reads each entry back from the labels and description (`ScopeExportTests.An_ai_system_exports_its_register_entry_from_its_labels_and_description`).
 - For s11-13: the register fields now live in the scope files, so the `ai.*` checks read the register from the scope (as the supplier and sensitive-data checks do) and read only owners, risk scenarios, solutions, contracts and assessments from CISO Assistant. The check table there still uses the old custom field names and is rewritten when s11-13 starts.
 
 ### s11-13 AI checks from the register and CISO Assistant
-- [ ] Done
+- [x] Done
 
 **Story:** As a compliance owner, I want the AI register checked on every run, so that missing owners, unassessed systems and stale tests show up as failing checks rather than at the next audit.
 
@@ -471,10 +476,10 @@ Done before s11-12, because the register fields and the screening runbook follow
 - Built: `AiRegisterChecks` (pure, 18 tests), the built-in `ai-register` collector (contract suite and `AiRegisterCollectorTests`), and the `ciso-assistant` profile with four recorded test cases (`hound profile test ciso-assistant --profiles profiles`: all four pass). Guide: `docs/collectors/ciso-assistant.md`.
 - Checked against the CISO Assistant v4.3.4 serializers: related objects read as `{"str", "id"}`, so labels are matched on `filtering_labels[*].str`; an entity assessment's `conclusion` is `blocker`, `warning`, `ok` or `not_applicable`, with `expiry_date` saying when it stops being valid.
 - `Ai6MappingTests.Register_checks_name_a_sub_practice_they_are_mapped_to` keeps each observation's practice in step with the mapping.
-- The functional check runs with s11-15, once the example has AI systems.
+- Functional check: CI run 45418984060 (functional job, 36 of 36 functional tests passed). `AiGovernanceFunctionalTests.A_run_fills_the_ai6_rows_from_the_register_and_ciso_assistant` runs the `ai-register` collector and the `ciso-assistant` profile against the seeded instance and publishes with `mappings/ai6.yaml`: AI6-4.1 compliant, AI6-5.1 non-compliant naming Example proposal assistant, AI6-3.3 non-compliant ("0 of 1 medium or high tier AI systems are linked to a risk scenario").
 
 ### s11-14 Register summary for programme reports
-- [ ] Done
+- [x] Done
 
 **Story:** As the security committee, I want each programme's report section to summarise its register (for AI6: AI systems by tier, new this period, and gaps), so that the AI section answers "what AI do we use and is it governed" as well as "which AI6 rows pass".
 
@@ -502,10 +507,10 @@ Done before s11-12, because the register fields and the screening runbook follow
 
 **Progress (2026-11-24)**
 - Built: `ProgrammeRegister`, `RegisterItems`, `RegisterSummary`, the failing systems on each `AiRegisterFinding`, the `register` key with `scope.programme_register_unknown`, the schema, and the register line in `hound programme list` (text and `--json`). `ProgrammeCommandTests.List_shows_the_register_counts` runs it on the example repo with a register of systems: "Register: 5 systems. type: primary 1, supporting 4."
-- The functional check with the AI6 programme's register runs with s11-15.
+- Functional check: `hound programme list --scope examples/compliance-repo/scope` prints the AI6 line with "Register: 2 AI systems. tier: low 1, medium 1. use: built 1, customised 1." (also `AiGovernanceFunctionalTests.Programme_list_shows_the_ai_register`, CI run 45418984060 (functional job, 36 of 36 functional tests passed)).
 
 ### s11-15 Documentation and example repo
-- [ ] Done
+- [x] Done
 
 **Acceptance criteria**
 - `docs/ai-grc.md`: what AI6 asks, how it maps to CISO Assistant (assets, custom fields, risk scenarios, suppliers, audits), the field set and who sets each field, the checks, the Foundations trace table (s11-09), adopting at Foundations and moving to Implementation, and the limits (no model testing or monitoring collectors, no AI incident workflow, manual practices).
@@ -524,7 +529,9 @@ Done before s11-12, because the register fields and the screening runbook follow
 - Example repo: the AI6 library and snapshot (copies, kept identical by `ExampleRepoTests`), the `ai6` programme with its register, two AI systems (*Example ticket triage*, built, low; *Example proposal assistant*, customised, medium, not yet tested), the audit `EX-AI6-2026` (group `F`), the controls `AC-AI-REGISTER` and `AC-AI-GOVERNANCE`, evidence plan rows for the register and both manual sources, their runbooks, and `hound.yaml` with the three AI collectors and `targets` for both audits. The onboarding tutorial's `setup.yaml` and `hound.yaml` were regenerated from the template.
 - Deviation: neither example AI system is third party, because a third-party system needs an approved supplier, and the shared functional seed has no approved supplier. The supplier checks are covered by the `ciso-assistant` profile's recorded tests.
 - Docs: `docs/ai-grc.md` (what AI6 asks and where each part lives, who sets each field, the checks, adopting at Foundations, moving to Implementation, limits), `examples/compliance-repo/runbooks/ai-screening.md` (questions from the AI6 text until s11-11 brings the NAIC template), README.
-- Functional checks (`AiGovernanceFunctionalTests`, also covering s11-09, s11-12, s11-13 and s11-14): the seed writes the labels and the Foundations audit without AI6-4.4; a run of both AI collectors fills AI6-4.1 compliant, AI6-5.1 and AI6-3.3 non-compliant; `programme list` shows the AI register. Waiting on CI.
+- Functional checks (`AiGovernanceFunctionalTests`, also covering s11-09, s11-12, s11-13 and s11-14): CI run 45418984060 (functional job, 36 of 36 functional tests passed). The seed writes the labels and the Foundations audit; a run of both AI collectors fills AI6-4.1 compliant, AI6-5.1 and AI6-3.3 non-compliant; `programme list` shows the AI register.
+- Fixed on the way: `make ca-up`, the functional fixture and `scripts/check-scope-plans.sh` now apply the example scope with the example repo's own `hound.yaml`, because its evidence plan names the AI collectors (`EvidencePlanValidateTests.Make_ca_up_applies_the_example_scope_with_a_config_it_validates_against`). The Essential Eight SSP's inventory now lists the two AI systems, since the boundary is the perimeter and the AI6 audit is in Corporate IT.
+- The verbatim walkthrough (registering a third AI system) became `docs/tutorials/ai-governance.md` (s11-08); its offline steps were run, and the apply-and-run steps are the ones `AiGovernanceFunctionalTests` exercises.
 
 ## Changes to other sprints
 
@@ -581,5 +588,9 @@ environment, not on code. Details stay under the task in `s09-e8-gap-collectors.
 - s11-02: a programme whose audit of record is an audit series (with a cycle) has rows under each period's ref_id; `hound ssp build` reads rows under the series ref_id only. Pick the current period's audit before s11-05 versions the plan.
 
 - s11-01: framework snapshots hold parent node URNs but not their titles, so `hound programme list` shows a strategy as its short code (`mfa`, `rap`). The s12 reports need the name ("Multi-factor authentication"): add parent titles to the snapshot (`hound framework snapshot`) before s12-05.
+
+- s11-12: `hound scope export` now reads an AI system's register entry back from its labels and description, but a system's sensitive-data labels (`data-cui` and so on, s10-06) are still not exported, so a scope whose systems record `data` would plan label removals after an export. Export them the same way before s14.
+
+- s11-15: the local seed (`make ca-up`) now applies the example scope with the example repo's own `hound.yaml`, while `examples/example-essential-eight.yaml` stays the Essential Eight-only config for runs. Consider whether the local stack should run with the repo's config too, so the AI collectors run there by default.
 
 ## Sprint review
