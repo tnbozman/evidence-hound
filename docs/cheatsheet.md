@@ -34,6 +34,10 @@ file by `scripts/cheatsheet/render.sh`.
 - `hound ssp diff <before> <after>`: what changed between two signed versions' snapshots, boundary and inventory first
 - `hound ssp publish`: upload a signed version (plan, POA&M, snapshot, audit report) as a new evidence revision
   - `--programme --snapshot` (req) `--scope --config`
+- `hound ssp suggest`: JSON brief for your own agent: controls with no description behind an implemented requirement (no model)
+  - `--programme` (req) `--scope --config --from-snapshot`
+- `hound ssp describe`: write a control description drafted with AI into controls.yaml, marked for review
+  - `--control --text` (req) `--scope --config`
 - `hound ssp poam`: the plan of action and milestones: requirements not yet met, with control, owner, ETA and status
   - `--programme` (req) `--scope --config --json`
 

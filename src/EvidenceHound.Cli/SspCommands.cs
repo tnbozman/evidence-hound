@@ -1,5 +1,6 @@
 using System.CommandLine;
 using EvidenceHound.CisoAssistant;
+using EvidenceHound.Cli.Setup;
 using EvidenceHound.Core.Frameworks;
 using EvidenceHound.Core.Publishing;
 using EvidenceHound.Core.Results;
@@ -17,6 +18,8 @@ namespace EvidenceHound.Cli;
 /// </summary>
 internal static class SspCommands
 {
+    private static readonly string DraftedWithAi = "drafted with AI: review before merging";
+
     public static Command Build(TextWriter output, ILoggerFactory loggers, IConfiguration configuration, CollectorRegistry registry)
     {
         var logger = loggers.CreateLogger("hound.ssp");
@@ -117,7 +120,77 @@ internal static class SspCommands
         return new Command("ssp", "System security plans: one per programme, assembled from CISO Assistant and the repo.")
         {
             build, poam, Diff(output, logger), Publish(loggers, logger, configuration, registry, programme, scope, config),
+            Suggest(output, loggers, logger, configuration, registry, programme, scope, config, fromSnapshot), Describe(registry, configuration, logger, scope, config),
         };
+    }
+
+    /// <summary>
+    /// <c>hound ssp suggest</c> (s11-06): the brief for the person's own agent to draft control descriptions from. hound has no model and
+    /// sends nothing; the brief holds names only, never evidence content.
+    /// </summary>
+    private static Command Suggest(
+        TextWriter output, ILoggerFactory loggers, ILogger logger, IConfiguration configuration, CollectorRegistry registry,
+        Option<string> programme, Option<DirectoryInfo> scope, Option<FileInfo?> config, Option<FileInfo?> fromSnapshot)
+    {
+        var suggest = new Command("suggest", "List, as JSON for your own agent, the controls with no description that leave an implemented requirement without a statement. No model; sends nothing.")
+        {
+            programme, scope, config, fromSnapshot,
+        };
+        suggest.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var (exit, checkedScope, ssp) = await CheckAsync(parseResult, programme, scope, config, configuration, registry, logger, cancellationToken);
+            if (ssp is null)
+            {
+                return exit;
+            }
+
+            var (readExit, snapshot) = parseResult.GetValue(fromSnapshot) is { } from
+                ? await ReadSnapshotAsync(from, logger, cancellationToken)
+                : await LiveSnapshotAsync(parseResult, scope, config, configuration, registry, checkedScope!, ssp, loggers, logger, cancellationToken);
+            if (snapshot is null)
+            {
+                return readExit;
+            }
+
+            await output.WriteAsync(SspSuggest.Json(ssp.Programme.Value, SspSuggest.Brief(snapshot.Document)));
+            return ExitCodes.Ok;
+        });
+        return suggest;
+    }
+
+    /// <summary>
+    /// <c>hound ssp describe</c> (s11-06): writes a control's description into the scope file that declares it, under a
+    /// <c># drafted with AI</c> comment, for review in a pull request. Never writes to CISO Assistant.
+    /// </summary>
+    private static Command Describe(CollectorRegistry registry, IConfiguration configuration, ILogger logger, Option<DirectoryInfo> scope, Option<FileInfo?> config)
+    {
+        var control = new Option<string>("--control") { Description = "The applied control's ref_id, declared in scope/controls.yaml.", Required = true };
+        var text = new Option<string>("--text") { Description = "The description: what the control does and on which systems.", Required = true };
+        var describe = new Command("describe", "Write a control description drafted with AI into scope/controls.yaml, marked for review in the pull request. Writes nothing to CISO Assistant.")
+        {
+            control, text, scope, config,
+        };
+        describe.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var checkedScope = await ScopeCommands.ValidateAsync(Scope(parseResult, scope), parseResult.GetValue(config), registry, AuditSeries.Today(configuration), cancellationToken);
+            var refId = parseResult.GetRequiredValue(control);
+            if (checkedScope.Scope.Controls.FirstOrDefault(c => c.RefId == refId) is not { } declared)
+            {
+                return Log.Problems(logger, [new Problem("ssp.control_not_in_scope", $"control '{refId}' is not declared in the scope; describe a control from scope/controls.yaml.")]);
+            }
+
+            var file = Path.GetFullPath(declared.At.File, Scope(parseResult, scope).FullName);
+            var description = string.Join(' ', parseResult.GetRequiredValue(text).Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+            var edited = YamlEdit.WriteScalar(await File.ReadAllTextAsync(file, cancellationToken), $"controls[ref_id={refId}].description", description, DraftedWithAi);
+            if (edited is Result<string>.Fail failed)
+            {
+                return Log.Problems(logger, failed.Errors);
+            }
+
+            await File.WriteAllTextAsync(file, ((Result<string>.Ok)edited).Value, cancellationToken);
+            return ExitCodes.Ok;
+        });
+        return describe;
     }
 
     /// <summary><c>hound ssp diff</c>: what changed between two versions' snapshots, boundary and inventory first. Reads only the two files.</summary>

@@ -221,7 +221,11 @@ public sealed class SspCommandTests : IDisposable
 
         exit.ShouldBe(ExitCodes.Ok, _error.ToString());
         var controls = await File.ReadAllTextAsync(Path.Combine(ScopeDir, "controls.yaml"), _ct);
-        controls.ShouldContain("    # drafted with AI: review before merging\n    description: Every user signs in to Example 365 with MFA.\n", Case.Sensitive, controls);
+        var lines = controls.Split('\n');
+        var at = Array.FindIndex(lines, l => l.TrimStart() == "description: Every user signs in to Example 365 with MFA.");
+        at.ShouldBeGreaterThan(0, controls);
+        lines[at - 1].ShouldBe(lines[at][..(lines[at].Length - lines[at].TrimStart().Length)] + "# drafted with AI: review before merging", controls);
+        lines[at - 1].Length.ShouldBeGreaterThan(lines[at - 1].TrimStart().Length, controls);
         _ca.LogEntries.ShouldBeEmpty();
         (await HoundCli.RunAsync(["scope", "validate", ScopeDir], _output, _error, logging => logging.AddProvider(_logs), new Dictionary<string, string?>(), _ct)).ShouldBe(ExitCodes.Ok, _error.ToString());
     }

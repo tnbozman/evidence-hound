@@ -88,3 +88,13 @@ The plan is a controlled document. Until the authorising official signs a versio
 5. **Publish.** `hound ssp publish --programme <id> --snapshot ssp-<id>-1.0.json` uploads `ssp-<id>-1.0.zip` (the signed plan, its POA&M, the snapshot, and CISO Assistant's own Word audit report for the programme's audit) as a new revision of the evidence `SSP-<ID>`, "System security plan: <system name>". It refuses a version with no sign-off (`ssp.not_signed`). If the audit report cannot be downloaded, the package goes without it and the log says why.
 
 `--format docx --out <file>` also writes the plan as a Word file (headings, lists and tables from the same text). The same plan gives the same file.
+
+## Control descriptions drafted by your own agent
+
+A requirement that is implemented but has no implementation statement is a gap, usually because its controls have no description. hound has no model, but your own coding agent can draft the descriptions:
+
+1. `hound ssp suggest --programme <id>` prints a JSON brief: each control with no description behind such a gap, with its name, owner and systems, and the requirements it serves (description, status and evidence names). It holds names only, never evidence content, and sends nothing anywhere. `--from-snapshot` reads a snapshot instead of CISO Assistant.
+2. The agent drafts each description and writes it with `hound ssp describe --control <ref> --text "<description>"`. That puts the text in `scope/controls.yaml` under a `# drafted with AI: review before merging` comment. Nothing goes to CISO Assistant.
+3. A person accepts, edits or rejects each description in the pull request. Once merged, `hound scope apply` sends the accepted text to CISO Assistant, and the next `ssp build` uses it as the statement.
+
+Neither command runs on a schedule.
