@@ -1,5 +1,7 @@
 # System security plans
 
+For a walkthrough, see [Your system security plan](govern/system-security-plan.md).
+
 `hound ssp build --programme <id>` prints a programme's system security plan (SSP). It uses one layout for every framework: **NIST SP 800-18 Rev 1, Appendix A** ([Guide for Developing Security Plans for Federal Information Systems](https://nvlpubs.nist.gov/nistpubs/legacy/sp/nistspecialpublication800-18r1.pdf)). The only part that changes with the framework is the controls annex (section 13):
 
 | `profile` in `ssp.yaml` | Annex |

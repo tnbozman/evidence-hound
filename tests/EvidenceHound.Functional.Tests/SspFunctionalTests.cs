@@ -108,8 +108,10 @@ public sealed class SspFunctionalTests(CisoAssistantFixture ciso)
     public async Task Signs_publishes_and_diffs_two_versions_of_the_plan()
     {
         // s11-05: sign 1.0, publish it, change the plan's purpose, sign 1.1 and publish it: two revisions of one evidence item, and a diff of what changed.
+        // s11-07: with the example's own scope/ssp.yaml, as docs/govern/system-security-plan.md walks through it.
         var ct = TestContext.Current.CancellationToken;
         var scope = CopyOfExampleScope();
+        var example = await File.ReadAllTextAsync(Path.Combine(scope, "ssp.yaml"), ct);
         var sections = Directory.CreateDirectory(Path.Combine(Directory.GetParent(scope)!.FullName, "ssp")).FullName;
         var purpose = Path.Combine(sections, "purpose.md");
         var output = Directory.CreateDirectory(Path.Combine(CisoAssistantFixture.RepoRoot, "test-results", "ssp")).FullName;
@@ -118,7 +120,7 @@ public sealed class SspFunctionalTests(CisoAssistantFixture ciso)
         async Task<string> SignAsync(string version, string purposeText)
         {
             await File.WriteAllTextAsync(purpose, purposeText, ct);
-            var plan = Ssp.Replace("version: \"0.1\"", $"version: \"{version}\"", StringComparison.Ordinal);
+            var plan = example.Replace("version: \"0.1\"", $"version: \"{version}\"", StringComparison.Ordinal);
             await File.WriteAllTextAsync(Path.Combine(scope, "ssp.yaml"), plan + Lines(signOffs), ct);
             var snapshot = Path.Combine(output, $"ssp-essential-eight-{version}.snapshot.json");
             var (buildExit, draft, _) = await RunWithLogAsync(["ssp", "build", "--programme", "essential-eight", "--scope", scope, "--snapshot-out", snapshot], ct);

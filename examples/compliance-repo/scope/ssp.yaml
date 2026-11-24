@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../../schemas/scope.schema.json
+# The fictional Example Pty Ltd's system security plan for its Essential Eight programme. Everything here is made up.
+# Guide: docs/govern/system-security-plan.md. Build the draft with: hound ssp build --programme essential-eight
+# The generated plan holds the organisation's system details: publish it to CISO Assistant (hound ssp publish), never commit it.
+ssps:
+  - programme: essential-eight
+    profile: ism
+    system_name: Example corporate IT
+    perimeter: Corporate IT
+    version: "0.1"
+    classification: OFFICIAL
+    operational_status: operational
+    system_type: general support system
+    roles:
+      system_owner: it@example.com
+      authorising_official: ceo@example.com
+      security_contact: IT team
+    documents: [identity-policy, backup-procedure]
+    # The parts people write: Markdown files in this repo, reviewed by pull request like the rest of the scope.
+    sections:
+      purpose: ssp/purpose.md
+      environment: ssp/environment.md
+      management: ssp/management.md
+      laws_and_policies: ssp/laws-and-policies.md
+    # Signed versions go here, added by pull request when the authorising official approves a draft:
+    # sign_offs:
+    #   - {version: "1.0", by: ceo@example.com, date: "2026-12-01", sha256: <draft SHA-256>, snapshot: <snapshot SHA-256>}

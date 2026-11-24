@@ -29,3 +29,7 @@ exports/
 # Saved scope plans (hound scope plan --out): apply them, then delete them
 plan.json
 *.plan.json
+
+# Generated system security plans, snapshots and Word files (hound ssp build): they hold the organisation's system details.
+# Publish them to CISO Assistant with hound ssp publish; never commit them.
+ssp-*

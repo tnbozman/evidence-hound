@@ -1,0 +1,1 @@
+Example corporate IT is everything Example Pty Ltd's twelve staff use to do their work: mail, files and identity in Example 365, the staff laptops, and the backup service that protects both. It holds the company's contracts, designs and staff records, classified OFFICIAL. Nothing in it is classified above OFFICIAL.
