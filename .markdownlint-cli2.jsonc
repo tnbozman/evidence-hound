@@ -1,4 +1,5 @@
-// Markdown lint for the published docs (s13-02). Sprint plans and their evidence logs are working notes and are not linted.
+// Markdown lint for the published docs (s13-02). Sprint plans and their evidence logs are working notes, and the SSP section
+// fragments and recorded onboarding sessions are inputs and outputs of hound, so none of them is linted.
 {
   "config": {
     "default": true,
@@ -9,8 +10,10 @@
     // Short HTML (a <br> in a table cell, <details>) is allowed.
     "MD033": false,
     // A bold line such as **Story:** labels a paragraph; it is not a heading.
-    "MD036": false
+    "MD036": false,
+    // The cheat sheet repeats a topic (such as "Weekly review") under different sections.
+    "MD024": { "siblings_only": true }
   },
   "globs": ["*.md", "docs/**/*.md", "deploy/**/*.md", "examples/**/*.md", "frameworks/*.md", "mappings/**/*.md", "profiles/**/*.md", "templates/**/*.md"],
-  "ignores": ["docs/sprints/**", "docs/evidence/**", "**/bin/**", "**/obj/**", "**/node_modules/**", ".dev/**"]
+  "ignores": ["docs/sprints/**", "docs/evidence/**", "examples/compliance-repo/ssp/**", "examples/onboarding-tutorial/onboarding/**", "**/bin/**", "**/obj/**", "**/node_modules/**", ".dev/**"]
 }

@@ -4,7 +4,7 @@ A compliance repo declares the organisation's structure in CISO Assistant as fil
 
 A complete fictional compliance repo is in [`examples/compliance-repo/`](../examples/compliance-repo/): copy it to a new private repository to start your own (see [The review workflow](#the-review-workflow)). The schema is [`schemas/scope.schema.json`](../schemas/scope.schema.json); add `# yaml-language-server: $schema=…` to the top of each file for editor help.
 
-```
+```text
 compliance-repo/
   hound.yaml            the deployment config (docs/configuration.md)
   scope/
@@ -262,6 +262,7 @@ assessments:
           by: Sam Example
           on: "2026-04-02"
   ```
+
 - A contract can carry `approved_by` and `approved_on`: who approved the supplier by making the contract `active` with `hound approve`, and when. They are this repo's record and are not sent to CISO Assistant.
 - With `review_every`, each review is keyed `<ref_id>-<yyyy-MM>` by its due date, and once today reaches a review's due date the plan opens the next one, a cycle later. Without it, the review is the one object `<ref_id>`.
 - `forced_tier` needs a `reason`. `hound` never writes the tier; the plan lists a tier in CISO Assistant that differs from the forced one.
@@ -346,12 +347,12 @@ External services are the solutions the scope links the boundary's systems to (`
 | `framework`, `groups` | The framework URN and the implementation groups it assesses, such as `["1", "2"]` for Essential Eight ML2. |
 | `domain`, `perimeter` | Where the audit sits. |
 | `eta`, `due_date`, `authors`, `reviewers` | Optional audit fields (dates as `YYYY-MM-DD`). |
-| `field_visibility` | Optional, per field: `{auditor: edit|read|hidden, respondent: …}`. `result`, `observation` and `evidences` must stay `edit` for the auditor, because CISO Assistant silently ignores writes to fields the writer can only read. |
+| `field_visibility` | Optional, per field: `{auditor: edit\|read\|hidden, respondent: …}`.`result`,`observation` and `evidences` must stay `edit` for the auditor, because CISO Assistant silently ignores writes to fields the writer can only read. |
 | `systems` | The systems in scope. |
 | `documents` | Static evidence such as policies and reports: `id`, `name`, `files` (paths or globs, relative to the compliance repo, the scope folder's parent), `systems` and `requirements` it supports. A document is linked to the rows it cites in its own audit, and in every other audit of the same framework that shares one of its systems. |
 | `controls` | The applied controls this audit relies on, by `ref_id`, each with the `requirements` it supports in this framework. |
 | `assessments` | Hand-written results for requirements no check covers: `ref` (or `urn`), `status` (`to_do`, `in_progress`, `in_review`, `done`), `result`, `observation`, and `provided_by` (the systems that meet it, when another system does: the row stays open, never `not_applicable`, and `hound scope plan` lists it under "Open dependencies" with that system's audit and its result there). |
-| `cycle`, `sign_offs` | Optional, for an audit that runs in periods: `cycle: {period: month|quarter, starts: YYYY-MM-DD, close: sign_off|auto}` and `sign_offs: [{period, by, date}]`. See [Audit periods](#audit-periods). |
+| `cycle`, `sign_offs` | Optional, for an audit that runs in periods: `cycle: {period: month\|quarter, starts: YYYY-MM-DD, close: sign_off\|auto}` and `sign_offs: [{period, by, date}]`. See [Audit periods](#audit-periods). |
 | `unlisted` | Required. What happens to in-group requirements the file does not list: `{result: not_assessed}`, or `{result: not_applicable, reason: …}` for an audit scoped to one system. Nothing is marked not applicable silently. It is applied only with `--config`, because the deployment's mappings say which rows a run computes, and those are left alone. |
 
 A requirement is named by its ref_id, or by its URN when the value starts with `urn:` (needed when a framework repeats a ref).

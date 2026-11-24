@@ -103,7 +103,7 @@ The GRC platform's network, backups and hosting controls are Terraform ([`infra/
 3. It copies the tutorial's mapping for the system, `mappings/grc-platform-essential-eight-2023.yaml`, and adds a target for `EX-E8-GRC-PLATFORM` to `hound.yaml`, so the results reach the system's own audit. No hound command writes these yet.
 4. It adds two rest collectors with a placeholder token, `grc-infra-controls` (the tutorial's per-control copy of `terraform-tests`) and `grc-infra-drift` (`terraform-drift`), then validates, dry-runs and, after asking, publishes each.
 
-Each backup row (ISM-1811, ISM-1705, ISM-1812, ISM-1707, ISM-1814) needs its control test **and** no drift: the test proves the code declares the control, and the drift check proves the cloud still matches the code. The trial then offers to restart the dev server with the `drift` deviation and collect again: the backup rows now fail. The system's other rows stay manual, with the controls from step 8 and it@example.com as their owner.
+Each backup row (ISM-1811, ISM-1705, ISM-1812, ISM-1707, ISM-1814) needs its control test **and** no drift: the test proves the code declares the control, and the drift check proves the cloud still matches the code. The trial then offers to restart the dev server with the `drift` deviation and collect again: the backup rows now fail. The system's other rows stay manual, with the controls from step 8 and <it@example.com> as their owner.
 
 ## 13. OFFICE-FIREWALL's evidence: Sophos Central, a fictional tenant on this machine or your own
 

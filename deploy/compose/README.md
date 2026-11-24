@@ -64,11 +64,11 @@ The first start migrates the database and loads CISO Assistant's libraries, whic
 3. Issue the runner's token: `sudo ./runner-token.sh hound-runner@example.com /etc/evidence-hound/secrets`.
 4. Apply your scope and run the collectors once:
 
-```bash
-docker compose run --rm runner scope apply /config/scope --config /config/hound.yaml
-docker compose run --rm runner run --config /config/hound.yaml
-docker compose run --rm runner status --config /config/hound.yaml
-```
+   ```bash
+   docker compose run --rm runner scope apply /config/scope --config /config/hound.yaml
+   docker compose run --rm runner run --config /config/hound.yaml
+   docker compose run --rm runner status --config /config/hound.yaml
+   ```
 
 5. Start the schedule: `docker compose up -d runner`. The runner runs `hound serve`, which runs each collector on its `schedule` in `scheduler.time_zone` ([running collectors](../../docs/running.md#on-a-schedule)); `docker compose logs runner` shows each collector's next run. To use the host's cron or a systemd timer instead, see the same page.
 

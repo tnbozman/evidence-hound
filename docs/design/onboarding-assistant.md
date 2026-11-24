@@ -37,7 +37,7 @@ The model helps a person onboard systems and suppliers. It never takes part in c
 
 `hound onboard <system> --framework <framework file>` is a guided session in the terminal, in the same style as the `hound add` wizards. It works in the organisation's config repo working copy and writes files there; the person commits them through a pull request.
 
-```
+```text
 0. Supplier          1. Describe     2. Read the system   3. Decide applicability   4. Draft profile   5. Sample and test   6. Write files
 vendor and reseller  system, owner,  API spec or docs     per requirement: API /    queries, datasets, one read-only run,   profile, tests,
 registered; stop     product                              manual / not applicable   checks             validate + test      mappings, scope,

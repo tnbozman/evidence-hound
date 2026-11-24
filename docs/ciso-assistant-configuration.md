@@ -62,7 +62,9 @@ Workflows, quick forms, campaigns, EBIOS RM studies and quantitative risk studie
 Each answer comes from `answers.json`, produced by `scripts/ca-inventory.sh` against v4.3.4 in the functional CI job (run [44906131552](https://github.com/tnbozman/evidence-hound/actions/runs/44906131552), step "Show the CISO Assistant inventory").
 
 ### Q1. Does locking an audit also freeze the applied controls linked to it? (s06-10)
+
 No. With a locked audit (`PATCH is_locked: true` → 200):
+
 - `PATCH` of a linked applied control's status → **200**, and the status changes to `active`.
 - `PATCH` of a row → **400** "Cannot modify the requirement when the audit is locked."
 - `PATCH` of another audit field → **400** "Cannot modify the audit attributes when it is locked. Only the 'Locked' field can be modified."
@@ -70,18 +72,23 @@ No. With a locked audit (`PATCH is_locked: true` → 200):
 So closing a period must record the controls' state itself; the lock alone does not.
 
 ### Q2. Does replacing an evidence file create a revision with its SHA-256 hash, and can the API read it? (s06-04)
+
 Yes. Two uploads to one evidence item → **201, 201**, and `GET /api/evidence-revisions/?evidence=<id>` lists versions 2 and 1, each with `attachment_hash` equal to the file's SHA-256 (`97b413bc…`). `hound` compares that hash before uploading.
 
 ### Q3. Which audit fields hold status, start and end dates, and how is an audit created from a baseline? (s06-10)
+
 The write fields are `status`, `eta` and `due_date` (plus `ref_id`, `authors`, `reviewers`, `field_visibility`, `is_locked`, `baseline`); there are no start or end date fields. `POST /api/compliance-assessments/` with `baseline: <audit id>` → **201**, and the compliant row of the baseline was copied to the new audit (1 of 1).
 
 ### Q4. Are writes to a field the service account's role can only read ignored silently? (s06-06)
+
 Yes. On an audit whose `field_visibility` makes `observation` read-only for the auditor, `PATCH` of a row with `observation` and `result` → **200**; afterwards `result` is `compliant` (written) and `observation` is empty (dropped). The scope plan must warn about such fields rather than expect an error.
 
 ### Q5. Can the API upload a custom library, update the main entity, and set feature flags? (s06-09, s10-01)
+
 - Feature flags: `GET /api/settings/feature-flags/` → 200 and `PATCH` → **200**. 62 flags, including `tprm`, `metrology`, `bia`, `policy_documents` and `outgoing_webhooks`.
 - Main entity: `GET /api/entities/?builtin=true` finds it, and `PATCH` → **200**.
 - Custom library: the only upload path is `POST /api/stored-libraries/upload/`, which uses DRF's `FileUploadParser`: the body is the raw YAML file, named by a `Content-Disposition: attachment; filename=…` header. Sent that way, the probe library uploads → **201** and is returned as a stored library with its URN (run [44907514706](https://github.com/tnbozman/evidence-hound/actions/runs/44907514706)). A multipart form is refused with 400 "Missing filename. Request should include a Content-Disposition header with a filename parameter."
 
 ### Q6. Do BIAs, entity assessments and metric instances have a `ref_id`, and can entity assessments be revised through the API? (s15-04, s10-02)
+
 All three have `ref_id` in both their read and write schemas (`BusinessImpactAnalysis*`, `EntityAssessment*`, `MetricInstance*`). No path in the schema matches an entity assessment revision, and the tprm models have no revision model, so a new assessment period is a new entity assessment with its own `ref_id`.

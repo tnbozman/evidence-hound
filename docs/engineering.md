@@ -2,7 +2,7 @@
 
 ## Architecture: functional core, imperative shell
 
-```
+```text
             +-------------------------- composition root (CLI / runner) --------------------------+
             |                                                                                     |
  Collector  |  collect (I/O)  ->  evaluate (pure)  ->  map to framework (pure)  ->  plan (pure)   |  publish (I/O)
