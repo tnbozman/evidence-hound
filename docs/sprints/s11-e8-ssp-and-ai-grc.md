@@ -122,6 +122,33 @@ Result (2026-11-24): `SspFunctionalTests.Strict_lists_the_example_gaps_and_the_p
 **Functional check**
 - Generate the SSP for the example Essential Eight ML2 audit on the local stack and read it against the Appendix A section list and ISM-0041.
 
+### s11-16 Annex columns from the ASD Blueprint SSP annex template (added 2026-11-24, do after s11-04)
+- [ ] Done
+
+Added at the maintainer's request (2026-11-24). The ASD Blueprint *System Security Plan Annex Template (June 2026)* (https://github.com/ASD-Blueprint/ASD-Blueprint-for-Secure-Cloud/blob/main/static/content/files/Blueprint%20System%20Security%20Plan%20Annex%20Template%20(June%202026).xlsx) is the annex assessors use for the ISM. The layout stays NIST SP 800-18 (s11-04). Only the ISM annex's columns follow the template.
+
+Compared on 2026-11-24 (Essential Eight sheet against CISO Assistant's `essential-eight-2023` library):
+- Both list 126 distinct ISM controls. They differ by one: the template has ISM-1899 (network devices outside administrative infrastructure cannot initiate connections to it), and the library has ISM-1900 (fortnightly vulnerability scanning under patch operating systems). Check this against the current ISM and the library's newer version, and record it under "Discovered work" for s12.
+- The template's columns are Identifier, Description, Related Essential Eight controls and strategies, Org responsibility, Technology addressed, Responsible entity, Implementation status, Implementation comments, and applicability (NC, OS, P, S, TS, ML1 to ML3).
+- Policy versus technical: CISO Assistant has this detail. Each requirement in the library links to reference controls from its `doc-pol` library, whose ids are prefixed `pol.` (policy), `proc.` (procedure), `tech.` (technical) or `doc.` (documentation). Every ISM control has one or two (pol 74, proc 73, tech 69, doc 4). The template's "Technology addressed" column means "covered by the Blueprint's Microsoft 365 design", not "is a technical control", so it is not the same split.
+- hound's framework snapshot keeps only ref, parent, groups and title, so it drops the reference controls and full descriptions today.
+
+**Acceptance criteria**
+- The snapshot (`hound framework snapshot`) keeps each node's full description and its reference control ids. Older snapshots still load, with those fields empty.
+- The `ism` annex columns become: Control, Description, Strategies, Maturity levels, Control type (Policy, Procedure, Technical, Documentation, from the reference controls), Responsible entity, Implementation status, Statement, Responsible, Evidence, POA&M.
+- Responsible entity uses the template's values. It is Consumer by default, and Shared or Outsourced service provider when the control's linked systems are provided by a supplier's solution (s11-02 external services). It can be overridden per control in `controls.yaml`.
+- Implementation status uses the template's vocabulary (Effective, Alternate control, Ineffective, No visibility, Not implemented, Not applicable, Not assessed), next to the SP 800-18 status already shown. The mapping from CISO Assistant results is written down in `docs/ssp.md`. A result of `partially_compliant` maps to Ineffective, and that choice is flagged for the maintainer at review.
+- `hound ssp build --annex-xlsx <file>` is out of scope; Markdown and JSON only.
+
+**Tests first**
+- `FrameworkSnapshotTests.Keeps_reference_controls_and_description`
+- `SspAnnexTests.Control_type_comes_from_reference_control_prefixes`
+- `SspAnnexTests.Supplier_provided_system_makes_responsibility_shared`
+- `SspAnnexTests.Asd_status_maps_from_result`
+
+**Functional check**
+- Regenerate the snapshot from the local CISO Assistant, build the example SSP, and check that ISM-1504's row reads Policy and Technical with the expected responsible entity.
+
 ### s11-05 Review, approval and versions
 - [ ] Done
 
