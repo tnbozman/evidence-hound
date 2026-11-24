@@ -359,7 +359,7 @@ Done first in Part 2, so the person reviewing the AI tasks has the background.
 - Functional check: `hound mapping validate mappings/ai6.yaml --framework frameworks/ai6.json` printed `valid: 21 requirements` (8 from register checks, 12 from manual sources, and AI6-1.1 from both).
 
 ### s11-11 NAIC templates: register, screening questions and policy
-- [ ] Done
+- [x] Done
 
 Done before s11-12, because the register fields and the screening runbook follow from it.
 
@@ -379,8 +379,17 @@ Done before s11-12, because the register fields and the screening runbook follow
 **Functional check**
 - Export the example AI systems from the local CISO Assistant with its asset Excel export and confirm every template column the trace table says is kept is present and filled for the example systems.
 
+**Progress (Nov 24)**
+- The person supplied the four templates (register as Word and Excel, screening questions as PDF, policy guide as Word). None prints a version or licence, so `docs/ai-grc.md` records where each came from and when it last changed, and summarises them in our own words (decision 1). The person chose the NAIC screening outcome and its seven questions over our own tiers.
+- The `ai` block replaces `tier` with `screening` (`normal`, `elevated`, `unacceptable`) and `screening_yes` (the questions answered yes), and gains the register columns: `registered_on`, `version`, `purpose`, `intended_uses`, `limitations`, `misuse`, `data_sources`, `stakeholders`. *Status* (pilot, operational, decommissioned) follows from the dates; *Source* is `use` with `solution`. Custom fields stay out (Enterprise only), so the trace table maps each column to an `ai` key, shown in the asset's labels and description, instead of `scope/fields.yaml`.
+- `ai.screening_disagrees` flags normal with a yes, or elevated with none. The runbook asks the seven questions in our words; consulting leadership for an elevated system is the approval of its impact assessment.
+- Tests: `AiRegisterTemplateTests.Every_template_column_is_traced` and `Every_screening_question_is_traced`, plus the reworked register, scope, plan, export, schema, collector and summary tests. Unit suite: 1754 passed. Profile tests: 4 passed.
+- Functional check (offline; the Excel export needs the local stack, which this environment cannot run, and the CI functional job checks the labels and description): `hound run --config run.yaml --dry-run` with the `ai-register` collector over the example scope saves `ai-register.json` with every column filled for both example systems (`status: operational`, `screening: elevated`, `screening_yes: [1, 7]` for Example proposal assistant), apart from the optional `version` on the proposal assistant.
+
 ### s11-12 AI system register in CISO Assistant
 - [x] Done
+
+**Reworked in s11-11 (Nov 24):** the label `ai-tier-<tier>` is now `ai-screening-<outcome>`, and the description carries the screening answers and the register template's columns.
 
 **Story:** As the Cyber GRC team, I want every AI system recorded with its owner, risk tier, impact assessment status and human-oversight arrangement, so that the register can be checked and reported on, and anyone in CISO Assistant can find the AI systems.
 
@@ -431,6 +440,8 @@ Done before s11-12, because the register fields and the screening runbook follow
 
 ### s11-13 AI checks from the register and CISO Assistant
 - [x] Done
+
+**Reworked in s11-11 (Nov 24):** tiers became the NAIC outcome. `ai.register_complete` now also needs the template's columns; `ai.screening_recorded` fails an unacceptable system in use; `ai.impact_assessment_before_use`, `ai.human_oversight_documented`, `ai.risks_in_register` and the 6-month test interval apply to elevated systems; the profile filters `ai-screening-elevated` (version 1.1.0).
 
 **Story:** As a compliance owner, I want the AI register checked on every run, so that missing owners, unassessed systems and stale tests show up as failing checks rather than at the next audit.
 
@@ -582,6 +593,11 @@ environment, not on code. Details stay under the task in `s09-e8-gap-collectors.
 - [ ] s09-54 and s09-57 `make trial` on the maintainer's machine.
 
 ## Discovered work
+
+- **s11-11, NAIC policy template.** Its screening outcomes say *prohibited* in one place and *unacceptable* in another; the register uses *unacceptable*. Recommendation: say *unacceptable* in your own policy.
+- **s11-11, NAIC policy template.** It asks for a risk and impact assessment for every AI system, where the screening tool and our checks ask for an approved one only for elevated systems. Recommendation: keep the check as is, and have each organisation's policy state which rule it follows (`docs/ai-grc.md` says so).
+- **s11-11, NAIC register template (Word).** Its field descriptions sit one row below the field they describe from *Data sources* down; the Excel version is right. We followed the Excel version.
+- **s11-11, the policy document in the example.** The example AI6 audit lists no `documents` yet. Add a placeholder AI policy for AI6-1.4 and AI6-3.1 with the s12 adoption guides.
 
 - (s11-16, for s12) The ASD Blueprint SSP annex template (June 2026) lists ISM-1899 under the Essential Eight where CISO Assistant's `essential-eight-2023` library (v3, CISO Assistant v4.3.4) lists ISM-1900. Check both against the current Essential Eight maturity model and ISM, and against a newer library version, while completing the mapping.
 
