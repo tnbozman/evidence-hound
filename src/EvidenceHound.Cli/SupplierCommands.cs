@@ -51,10 +51,15 @@ internal static class SupplierCommands
         var expense = new Option<decimal?>("--annual-expense") { Description = "The contract's annual expense, a plain number." };
         var currency = new Option<string?>("--currency") { Description = "The annual expense's currency, ISO 4217 such as AUD or USD." };
         var json = new Option<bool>("--json") { Description = "Answer in JSON, for an agent." };
+        var data = new Option<string[]>("--data")
+        {
+            Description = "Sensitive data the solution handles, as <kind>:<role>[:<detail>], such as cui:stores:CUI//SP-CTI. Kinds: cui, pii, export_controlled, classified. Roles: stores, processes, transmits, protects. Repeat for more.",
+            AllowMultipleArgumentsPerToken = false,
+        };
         var draft = new Command("draft", "Draft a third party's file under scope/third-parties/ with a draft contract and an open review. A person approves it with 'hound approve'.")
         {
             repo, system, entityRef, entityName, solutionRef, solutionName, contractRef, contractName, levels, kind, standsFor, documents,
-            description, start, end, expense, currency, json,
+            description, start, end, expense, currency, data, json,
         };
         draft.SetAction(async (parseResult, cancellationToken) =>
         {
@@ -80,8 +85,9 @@ internal static class SupplierCommands
                 parseResult.GetValue(expense)?.ToString(CultureInfo.InvariantCulture), parseResult.GetValue(currency)?.ToUpperInvariant());
             var written = await Levels(parseResult.GetValue(levels) ?? [])
                 .Bind(read => Terms(given).Map(terms => (read, terms)))
+                .Bind(read => Data(parseResult.GetValue(data) ?? []).Map(found => (read.read, terms: read.terms, found)))
                 .BindAsync(async read => (await NotesAsync(root, role, parseResult.GetValue(standsFor), parseResult.GetValue(documents) ?? [], cancellationToken))
-                    .Bind(notes => Result.Ok((read: read.read, notes: notes with { Description = parseResult.GetValue(description) ?? notes.Description, Terms = read.terms }))))
+                    .Bind(notes => Result.Ok((read: read.read, notes: notes with { Description = parseResult.GetValue(description) ?? notes.Description, Terms = read.terms, Data = read.found }))))
                 .BindAsync(read => DraftAsync(root, choice, read.read, read.notes, parseResult.GetValue(system), AuditSeries.Today(configuration), cancellationToken));
             return await written.Match(
                 async file =>
@@ -221,6 +227,38 @@ internal static class SupplierCommands
         return problems.Count > 0
             ? Result.Fail<IReadOnlyList<LevelProposal>>([.. problems.Select(p => new Problem("supplier.level_invalid", $"{p}."))])
             : Result.Ok<IReadOnlyList<LevelProposal>>(levels);
+    }
+
+    private static readonly string[] DataRoles = ["stores", "processes", "transmits", "protects"];
+
+    /// <summary>Each <c>kind:role[:detail]</c> as sensitive data; classified and export-controlled data name which. Every problem is reported. Pure.</summary>
+    internal static Result<IReadOnlyList<DraftedData>> Data(IReadOnlyList<string> given)
+    {
+        var problems = new List<Problem>();
+        var found = new List<DraftedData>();
+        foreach (var text in given)
+        {
+            var parts = text.Split(':', 3);
+            var (kind, role, detail) = (parts[0].Trim(), parts.Length > 1 ? parts[1].Trim() : "", parts.Length > 2 ? parts[2].Trim() : null);
+            if (SensitiveDataList.Kind(kind) is not { } known)
+            {
+                problems.Add(new Problem("data.kind_invalid", $"'{kind}' is not a kind of sensitive data; use cui, pii, export_controlled or classified."));
+            }
+            else if (!DataRoles.Contains(role))
+            {
+                problems.Add(new Problem("data.role_invalid", $"--data {text} has no role; write it as {kind}:<role>, with stores, processes, transmits or protects."));
+            }
+            else if (known is SensitiveDataKind.Classified or SensitiveDataKind.ExportControlled && string.IsNullOrEmpty(detail))
+            {
+                problems.Add(new Problem("data.detail_missing", $"{kind} needs a detail, such as ITAR, EAR, DSGL or PROTECTED: write it as {kind}:{role}:<detail>."));
+            }
+            else
+            {
+                found.Add(new DraftedData(kind, role, string.IsNullOrEmpty(detail) ? null : detail));
+            }
+        }
+
+        return problems.Count > 0 ? Result.Fail<IReadOnlyList<DraftedData>>(problems) : Result.Ok<IReadOnlyList<DraftedData>>(found);
     }
 
     /// <summary>The contract's dates are yyyy-MM-dd and the end is not before the start. Pure.</summary>
