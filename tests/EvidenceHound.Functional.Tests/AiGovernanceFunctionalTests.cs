@@ -32,7 +32,9 @@ public sealed class AiGovernanceFunctionalTests(CisoAssistantFixture ciso) : IDi
         (await RowsAsync("AI6-5.1", ct)).Count.ShouldBe(1);
         // CISO Assistant makes a row for every requirement and filters by the selected groups, so AI6-4.4 (Implementation only) is
         // outside the audit's groups rather than missing; runs skip such rows when publishing.
-        audit["selected_implementation_groups"]!.AsArray().Select(g => g!.GetValue<string>()).ShouldBe(["F"], audit.ToJsonString());
+        // The read serializer lists the selected groups by name; the object endpoint has their ref_ids.
+        var groups = (await GetAsync($"compliance-assessments/{audit["id"]!.GetValue<string>()}/object/", ct))["selected_implementation_groups"]!;
+        groups.AsArray().Select(g => g!.GetValue<string>()).ShouldBe(["F"], groups.ToJsonString());
     }
 
     [Fact]
