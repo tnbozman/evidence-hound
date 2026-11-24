@@ -19,6 +19,10 @@ public static class StandingApprovals
     public static bool Covers(
         StandingApproval rule, ReviewKind kind, string source, IReadOnlyDictionary<string, CheckOutcome> proposed, IReadOnlyDictionary<string, CheckOutcome>? last, DateOnly today)
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(rule);
+        ArgumentNullException.ThrowIfNull(proposed);
+        return rule.Rule == UnchangedReattestation && kind == ReviewKind.ManualEvidence && rule.Source == source && today <= rule.Expires
+            && last is not null && proposed.Count == last.Count
+            && proposed.All(p => last.TryGetValue(p.Key, out var before) && before == p.Value);
     }
 }
