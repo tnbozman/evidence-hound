@@ -57,6 +57,14 @@ public class SspStatementTests
     }
 
     [Fact]
+    public void A_requirement_not_implemented_is_on_the_poam_not_a_gap()
+    {
+        // Nothing is in place to describe yet; the POA&M carries it. A Planned row still needs someone responsible.
+        SspStatements.Complete(Row("ISM-1", "not_assessed", null), Controls()).Gaps.ShouldBeEmpty();
+        SspStatements.Complete(Row("ISM-1", "non_compliant", null, "AC-A"), Controls(Control("AC-A", null, null, "2026-12-31"))).Gaps.ShouldBe(["no responsible party"]);
+    }
+
+    [Fact]
     public void The_document_lists_its_gaps_by_requirement()
     {
         var document = Document(
