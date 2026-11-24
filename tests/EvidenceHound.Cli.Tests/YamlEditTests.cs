@@ -97,6 +97,25 @@ public sealed class YamlEditTests
     }
 
     [Fact]
+    public void Writes_a_value_with_a_comment_above_it_and_replaces_it_later()
+    {
+        // s11-06: an agent's control description goes in marked, so the pull request shows it was drafted with AI.
+        const string yaml = "controls:\n  - ref_id: AC-A\n    name: A\n    owner: it@example.com\n  - ref_id: AC-B\n    name: B\n";
+
+        var first = Ok(YamlEdit.WriteScalar(yaml, "controls[ref_id=AC-A].description", "Admins use: separate accounts.", "drafted with AI: review before merging"));
+        var second = Ok(YamlEdit.WriteScalar(first, "controls[ref_id=AC-A].description", "Admins use separate accounts.", "drafted with AI: review before merging"));
+
+        first.ShouldBe("controls:\n  - ref_id: AC-A\n    name: A\n    owner: it@example.com\n    # drafted with AI: review before merging\n    description: \"Admins use: separate accounts.\"\n  - ref_id: AC-B\n    name: B\n");
+        second.ShouldBe("controls:\n  - ref_id: AC-A\n    name: A\n    owner: it@example.com\n    # drafted with AI: review before merging\n    description: Admins use separate accounts.\n  - ref_id: AC-B\n    name: B\n");
+    }
+
+    [Fact]
+    public void Writing_to_a_missing_list_item_is_a_problem()
+    {
+        YamlEdit.WriteScalar("controls:\n  - ref_id: AC-A\n", "controls[ref_id=AC-X].description", "x", "c").ShouldBeOfType<Result<string>.Fail>();
+    }
+
+    [Fact]
     public void Replaces_an_empty_flow_list()
     {
         var edited = Ok(YamlEdit.AppendItem("collectors: []   # none yet\ntarget: x\n", "collectors", Collector));

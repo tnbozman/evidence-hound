@@ -192,6 +192,51 @@ public sealed class SspCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Suggest_lists_the_gap_controls_as_json_for_your_own_agent()
+    {
+        // s11-06: hound has no model; it hands the person's agent the facts, here from a snapshot without contacting CISO Assistant.
+        await WriteScopeAsync(Ssp);
+        Instance();
+        var snapshot = Path.Combine(_workDir, "ssp-0.1.json");
+        (await Build("--snapshot-out", snapshot)).ShouldBe(ExitCodes.Ok, _error.ToString());
+        _output.GetStringBuilder().Clear();
+        _ca.Reset();
+
+        var exit = await HoundCli.RunAsync(
+            ["ssp", "suggest", "--programme", "baseline", "--scope", ScopeDir, "--from-snapshot", snapshot], _output, _error, logging => logging.AddProvider(_logs), new Dictionary<string, string?>(), _ct);
+
+        exit.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var brief = JsonNode.Parse(_output.ToString())!;
+        brief["programme"]!.GetValue<string>().ShouldBe("baseline");
+        brief["controls"]!.AsArray().ShouldBeEmpty();
+        _ca.LogEntries.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task Describe_writes_to_controls_yaml_not_ciso_assistant()
+    {
+        await WriteScopeAsync(Ssp);
+
+        var exit = await Describe("AC-MFA", "Every user signs in to Example 365 with MFA.");
+
+        exit.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var controls = await File.ReadAllTextAsync(Path.Combine(ScopeDir, "controls.yaml"), _ct);
+        controls.ShouldContain("    # drafted with AI: review before merging\n    description: Every user signs in to Example 365 with MFA.\n", Case.Sensitive, controls);
+        _ca.LogEntries.ShouldBeEmpty();
+        (await HoundCli.RunAsync(["scope", "validate", ScopeDir], _output, _error, logging => logging.AddProvider(_logs), new Dictionary<string, string?>(), _ct)).ShouldBe(ExitCodes.Ok, _error.ToString());
+    }
+
+    [Fact]
+    public async Task Describe_refuses_a_control_the_scope_does_not_declare()
+    {
+        await WriteScopeAsync(Ssp);
+
+        (await Describe("AC-UNKNOWN", "Anything.")).ShouldBe(ExitCodes.Configuration);
+
+        ErrorCodes().ShouldContain("ssp.control_not_in_scope");
+    }
+
+    [Fact]
     public async Task Diff_lists_what_changed_between_two_snapshots()
     {
         await WriteScopeAsync(Ssp);
@@ -290,6 +335,9 @@ public sealed class SspCommandTests : IDisposable
             logging => logging.AddProvider(_logs),
             new Dictionary<string, string?> { ["HOUND_CA_URL"] = $"{_ca.Url}/api/", ["HOUND_CA_TOKEN"] = Token },
             _ct);
+
+    private Task<int> Describe(string control, string text) =>
+        HoundCli.RunAsync(["ssp", "describe", "--control", control, "--text", text, "--scope", ScopeDir], _output, _error, logging => logging.AddProvider(_logs), new Dictionary<string, string?>(), _ct);
 
     private string[] ErrorCodes() =>
         [.. _logs.Entries.Where(e => e.Level == LogLevel.Error).SelectMany(e => e.State).Where(kv => kv.Key == "Code").Select(kv => (string)kv.Value!)];

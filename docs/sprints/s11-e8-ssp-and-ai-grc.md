@@ -171,25 +171,26 @@ Compared on 2026-11-24 (Essential Eight sheet against CISO Assistant's `essentia
 **Functional check**
 - Sign version 1.0 of the example SSP, publish it to the local CISO Assistant, change one control description, regenerate as 1.1 and confirm the diff and both evidence revisions.
 
-### s11-06 Suggested control descriptions with the model (optional, last)
+### s11-06 Control descriptions drafted by your own agent (optional, last)
 - [ ] Done
 
-Comes after the deterministic SSP tasks, following the person's rule: deterministic code first, a model only afterwards and only to propose text for people to review.
+Comes after the deterministic SSP tasks, following the person's rule: deterministic code first, a model only afterwards and only to propose text for people to review. **Decided Nov 2026 (person):** hound has no model, so the person's own coding agent drafts the descriptions; hound gives it the facts and writes its text where review happens.
 
-**Story:** As the Cyber GRC team, I want help writing the control descriptions the SSP is built from, so that a plan with many gaps can be closed quickly, without the model ever writing the SSP itself.
+**Story:** As the Cyber GRC team, I want help writing the control descriptions the SSP is built from, so that a plan with many gaps can be closed quickly, without a model ever writing the SSP itself.
 
 **Acceptance criteria**
-- `hound ssp suggest --programme <id>` uses the onboarding model port (s09-21, with its key, provider and outbound guard) to propose descriptions for applied controls that the gap list names, from the control, its requirements, the checks and evidence names that back it, and the system list. It sends no evidence content.
-- Proposals are written as edits to `scope/controls.yaml` for a pull request, each marked as drafted with AI, never to CISO Assistant directly and never into a generated SSP. A person accepts, edits or rejects each one in review.
-- It is never run by the scheduled runner and needs no key for any other command (the person's rule: no model in evidence collection).
+- `hound ssp suggest --programme <id>` lists, as JSON, the applied controls with no description that leave an implemented requirement with no implementation statement: each control's name, owner and systems, and the requirements it serves with their description, status and evidence names. It sends nothing anywhere and holds no evidence content. `--from-snapshot` reads a snapshot instead of CISO Assistant.
+- `hound ssp describe --control <ref> --text <description>` writes the description into `scope/controls.yaml` with a `# drafted with AI` comment above it, for a pull request. It never writes to CISO Assistant or into a generated SSP. A person accepts, edits or rejects each one in review; `scope apply` carries the accepted text to CISO Assistant.
+- No model, no key and nothing scheduled: the scheduled runner never calls either command.
 
 **Tests first**
-- `SspSuggestTests.Only_gap_controls_are_sent`
-- `SspSuggestTests.Writes_proposals_as_scope_edits_not_to_ciso_assistant`
-- `SspSuggestTests.Outbound_guard_blocks_evidence_content`
+- `SspSuggestTests.Only_gap_controls_are_listed`
+- `SspSuggestTests.The_brief_holds_names_not_evidence_content`
+- `ControlDescriptionEditTests.Writes_the_description_marked_as_drafted_with_ai`
+- CLI: `SspCommandTests.Describe_writes_to_controls_yaml_not_ciso_assistant`
 
 **Functional check**
-- With a test key, suggest descriptions for the example repo's gaps, accept one in a branch, and see that gap close in `ssp build`.
+- Suggest for the example repo's gaps, describe one control, apply the scope, and see that gap close in `ssp build`.
 
 ### s11-07 SSP documentation and example
 - [ ] Done
