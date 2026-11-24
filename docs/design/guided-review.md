@@ -61,6 +61,8 @@ sound on its own, but together they ask the person to know where to look and whe
 - `hound review pending --json` lists what `hound approve` and `hound manual approve` would ask, in one shape. Items that become ready
   only once another is accepted (a system after its supplier and not-applicable decisions) are asked in the same session, marked
   "now ready", rather than listed beforehand.
+- The agent records its recommendation for any item with `hound review recommend` (kept in `review/recommendations.json`), and answers
+  a challenge the same way. A supplier review joins the queue 14 days before it is due (s10-05).
 - The one standing rule is `unchanged_reattestation`, for 12 months, per manual source. It is offered after a person accepts an
   unchanged attestation.
 - Scope changes waiting to be applied are not items: the session ends by showing the plan and applying it after a confirmation.

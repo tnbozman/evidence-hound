@@ -121,6 +121,42 @@ Added at the maintainer's request (2026-11-23): "trial, onboard and maintain evi
 **Functional check**
 - The rehearsal notes themselves, under each task, and the CI trial job green.
 
+**Rehearsal (2026-11-24), persona: five-person machine shop going for CMMC Level 2 (continues the s10-03 repo)**
+- s10-06: the agent recorded CUI on the backup, managed IT and the prime's portal from `suppliers.csv`, with no authority (none is on
+  file), and added the file server and cloud mail as systems holding CUI. `hound scope validate` reported the decisive fact at once:
+  cloud mail holds CUI through a plan that does not list it (`data.supplier_not_authorised`). `hound supplier list --data cui` gave the
+  prime's list. But the finding is an error, so every later `hound add`, plan and apply refused until the agent commented the mail's
+  data out: the repo then hid the one thing the prime most needs to know. Listed under Discovered work for a decision.
+- s10-04: the agent copied the Essential Eight backups runbook and source, wrote `scope/access.yaml` and the evidence plan (a quarterly
+  backup row and the weekly review row), and proposed a result for a fictional backup report (five checks pass, the two privileged
+  checks partial, with the extracts). `hound add control AC-BACKUP` refused while the evidence plan named it (fixed by adding the control
+  first).
+- s10-07: the queue held six suppliers and the backup export, 65 minutes. **Gap fixed here:** the agent could not give a supplier a
+  recommendation, so the person would have read six suppliers with none; `hound review recommend` now records one for any item (accept
+  or decline, or a review's conclusion), with reasons and sources, shown in the session and cleared once accepted. The agent recommended
+  declining the cloud mail contract (its trust centre says the plan is not authorised for CUI) and accepting the rest. The session, with
+  recorded answers as the owner: five accepted, the managed IT supplier challenged ("can its remote tool reach the drawings share?"),
+  the mail skipped; the backup export was attested in the drop folder. **Gap fixed here:** each accepted supplier's first review, due in a
+  month, was then asked at once and would have topped the next session; a supplier review now joins the queue 14 days before it is due.
+  The agent answered the challenge with `hound review recommend`; the next session showed the note and the answer side by side, the
+  owner accepted, and only the declined mail contract stayed queued.
+- Upkeep not run here: a lapsed source and a later run need the clock moved or a CISO Assistant; the manual collector's overdue and
+  changed-file results are covered by its unit tests, and the plan against CISO Assistant by CI's functional suite.
+
+**Rehearsal (2026-11-24), persona: an 18-person Australian defence supplier at Essential Eight ML2, moving to the Essential Series**
+- Inputs: a fictional four-row supplier list (cloud office, managed endpoint security, payroll, a cloud ERP hosted offshore) and the
+  owner's note (DISP member, DSGL drawings, OFFICIAL: Sensitive email from the prime, four hours a week).
+- `hound init --assistant claude` wrote the repo and the agent's files. **Gap fixed here:** a new repo had no evidence plan, so nothing
+  would remind the owner of the weekly review; `hound init` now writes `scope/access.yaml` (the owner and a GRC team) and the evidence
+  plan with the weekly review task and its runbook.
+- The agent drafted all four suppliers in one command each with `--data` (DSGL `export_controlled`, `OFFICIAL: Sensitive` under
+  `classified`, `pii`), added the privileged access review source with `hound add collector manual --set ...`, and proposed a result for a
+  fictional admin role export. It recommended declining the ERP contract (DSGL drawings stored offshore with no assessment: ask Defence
+  Export Controls first) and flagged the endpoint supplier's ISO 27001 certificate expiring on 2026-12-15. The queue was 45 minutes; the
+  session (`--for 45m`) accepted four and skipped the ERP.
+- The Essential Series itself cannot be rehearsed yet: hound has no Essential Series framework or mapping (s14). The checks are
+  framework-neutral, so the attested backup and privileged access results will map to it once the mapping exists.
+
 ### s10-06 Sensitive data on suppliers and systems (added 2026-11-23)
 - [x] Done
 
@@ -226,7 +262,19 @@ Built and tested in CI; each waits on a run in the maintainer's own environment,
 - From s10-04: the reference Compose stack (`deploy/`) does not pass `EMAIL_*` to CISO Assistant, so task reminders cannot be sent or tested end to end. Wire it with a local SMTP catcher in the compose smoke test.
 - From s10-07: the weekly task's email is CISO Assistant's task reminder with the runbook. Putting the queue's size and the time it needs
   in it would need hound to update the task description before each week; left for s12-03 (operating guide).
-- From s10-07: a challenge holds the person's note only. If the agent's answer should travel with it, add an `answer` field the session
-  shows.
+- From the s10-05 rehearsals:
+  - Machine shop, scope kept tight around CUI: a sensitive-data finding (`data.supplier_not_authorised`, `data.authority_expired`) is an
+    error, so recording the truth (CUI in a mail plan not authorised for it) blocks every `hound add`, plan and apply until it is fixed,
+    and an agent hides it to carry on. Decide whether these findings warn (in validate, plan, the review queue and the committee report)
+    rather than block.
+  - Both personas: a solution holding CUI or DSGL data with no authority recorded is listed as "no authority recorded" but never
+    reported; nor is a supplier's country, so offshore DSGL storage is found only by reading the notes.
+  - Both personas: no command adds `data` to a supplier already drafted, or `solution`, `supplied_through` and `data` to a system
+    (`hound add system` takes none of them): the agent edits YAML by hand.
+  - Essential Series persona: an Essential Eight manual source template brings no control, so the evidence plan row borrows the health
+    control. Ship a control with each template, or let `hound add control` take one from it.
+  - Essential Series persona: a recommendation to decline leaves the item queued every week (skip is the only way to leave it); show it
+    as "declined, waiting on <what>" rather than asking again.
+  - `hound manual upload` waits for an answer when no terminal is attached instead of refusing.
 
 ## Sprint review
