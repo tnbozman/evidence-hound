@@ -88,3 +88,39 @@ teardown() {
   [ "$status" -eq 0 ]
   [[ "$output" == *"Usage:"* ]]
 }
+
+@test "a failed restore result says where it failed" {
+  run restore_result failed ciso-assistant-20261124T020000Z.tar.age abc123 0 "" "" 20261125T030000Z 12 "checking the backup's checksums"
+  [[ "$output" == *"Restore test: failed"* ]]
+  [[ "$output" == *"Failed at: checking the backup's checksums"* ]]
+  run restore_result passed b.tar.age abc 200 3 3 20261125T030000Z 4
+  [[ "$output" != *"Failed at:"* ]]
+}
+
+@test "restore-test.sh still drops a failed result when the backup cannot be decrypted" {
+  # Stubs: age fails; docker answers the Compose questions and records every call.
+  mkdir "$work/bin"
+  printf '#!/bin/sh\necho "age: no identity matched" >&2\nexit 1\n' >"$work/bin/age"
+  cat >"$work/bin/docker" <<'STUB'
+#!/bin/sh
+echo "$*" >>"$STUB_LOG"
+case "$*" in
+  "compose config --images postgres") echo postgres:16 ;;
+  "compose config") echo "name: example" ;;
+  run*) cat >/dev/null 2>&1 || true ;;
+esac
+exit 0
+STUB
+  chmod +x "$work/bin/age" "$work/bin/docker"
+  echo "AGE-SECRET-KEY-EXAMPLE" >"$work/identity"
+  echo "not a backup" >"$work/ciso-assistant-20261124T020000Z.tar.age"
+
+  STUB_LOG="$work/docker.log" PATH="$work/bin:$PATH" HOUND_BACKUP_IDENTITY="$work/identity" HOUND_RESTORE_SOURCE=backup-restore-test \
+    run "$dir/restore-test.sh" "$work/ciso-assistant-20261124T020000Z.tar.age"
+
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"Restore test: failed"* ]]
+  [[ "$output" == *"Failed at: decrypting the backup"* ]]
+  [[ "$output" == *"dropped restore-test-"* ]]
+  grep -q 'example_runner-data:/data' "$work/docker.log"
+}
