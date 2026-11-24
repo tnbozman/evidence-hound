@@ -32,6 +32,8 @@ dev/ciso-assistant/db/
 *.pdf
 !examples/**/*.xlsx
 !examples/**/*.csv
+# The command cheat sheet, rendered from docs/cheatsheet.md by scripts/cheatsheet/render.sh
+!docs/cheatsheet.pdf
 !tests/fixtures/**/*.csv
 !examples/**/*.pdf
 
