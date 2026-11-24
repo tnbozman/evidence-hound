@@ -5,6 +5,7 @@ using EvidenceHound.Collectors.Manual;
 using EvidenceHound.Core;
 using EvidenceHound.Core.Checks;
 using EvidenceHound.Core.Results;
+using EvidenceHound.Core.Review;
 using EvidenceHound.Runtime.Collectors;
 using EvidenceHound.Runtime.Configuration;
 using Microsoft.Extensions.Logging;
@@ -75,6 +76,30 @@ internal static class ManualProposalCommands
         });
         return approve;
     }
+
+    /// <summary>Every pending proposal as an item of the review queue, read from the deployment config's manual sources.</summary>
+    internal static async Task<Result<IReadOnlyList<ReviewItem>>> PendingAsync(FileInfo config, CollectorRegistry registry, CancellationToken cancellationToken)
+    {
+        var sources = (await ConfigCommands.LoadAsync(config, registry, cancellationToken)).Bind(deployment => Sources(deployment, null));
+        var waiting = await sources.BindAsync(found => WaitingAsync(found, cancellationToken));
+        return waiting.Map(all => (IReadOnlyList<ReviewItem>)[.. all.Select(Item)]);
+    }
+
+    private static ReviewItem Item(Waiting waiting) => new(
+        ReviewKind.ManualEvidence,
+        $"manual_evidence:{waiting.Source}/{waiting.File}",
+        $"[manual evidence] {waiting.Source} {waiting.File}: proposed by {waiting.Proposal.ProposedBy}: {Outcomes(waiting.Proposal.Outcomes)}. {waiting.Proposal.Observation}",
+        "Attested evidence is published as the requirement's result on the next run; only a person attests it, so the result can be trusted.",
+        "The file is attested as proposed, in your name, and the next 'hound run' publishes it.",
+        5)
+    {
+        Recommendation = new ReviewRecommendation("attest", waiting.Proposal.Observation, waiting.Proposal.Supports),
+        File = waiting.Path,
+    };
+
+    private static string Outcomes(IReadOnlyDictionary<string, CheckOutcome> outcomes) => outcomes.Values.Distinct().ToArray() is [var one]
+        ? Attestation.NameOf(one)
+        : string.Join(", ", outcomes.Select(o => $"{o.Key} {Attestation.NameOf(o.Value)}"));
 
     /// <summary>What the agent gave on the command line.</summary>
     private sealed record Given(string? Result, string[] Checks, string? Observation, string[] Supports);
@@ -300,9 +325,7 @@ internal static class ManualProposalCommands
             _attested++;
         }
 
-        private static string Summary(IReadOnlyDictionary<string, CheckOutcome> outcomes) => outcomes.Values.Distinct().ToArray() is [var one]
-            ? Attestation.NameOf(one)
-            : string.Join(", ", outcomes.Select(o => $"{o.Key} {Attestation.NameOf(o.Value)}"));
+        private static string Summary(IReadOnlyDictionary<string, CheckOutcome> outcomes) => Outcomes(outcomes);
 
         private Task SayAsync(string line, CancellationToken cancellationToken) => terminal.Error.WriteLineAsync(line.AsMemory(), cancellationToken);
 

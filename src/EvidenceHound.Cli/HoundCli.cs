@@ -203,6 +203,7 @@ public static class HoundCli
             SkillCommands.Build(terminal, loggers, configuration),
             SupplierCommands.Build(terminal, loggers, configuration),
             ApproveCommand.Build(terminal, loggers, configuration),
+            ReviewCommand.Build(terminal, loggers, configuration, registry),
             AgentCommands.Build(terminal, loggers),
             AuditCommands.Build(terminal, loggers, configuration),
             PlanCommand.Build(output, loggers, configuration, registry),
