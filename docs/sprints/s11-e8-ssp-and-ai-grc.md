@@ -264,6 +264,10 @@ Done first in Part 2, so the person reviewing the AI tasks has the background.
 **Functional check**
 - Someone who has not read AI6 follows the walkthrough on the local stack without help, and notes anything unclear under "Discovered work".
 
+**Progress (2026-11-24)**
+- The primer is written: `docs/ai-grc-primer.md` (about 1,800 words), checked by `ExampleRepoTests.Ai_grc_primer_gives_each_practice_a_worked_example_and_a_glossary`.
+- The walkthrough, the training outline and the message wording need the register, screening fields and checks, so they are written after s11-14, and this task is ticked then.
+
 ### s11-09 AI6 framework library and snapshot
 - [ ] Done
 
