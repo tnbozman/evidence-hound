@@ -39,6 +39,19 @@ public sealed class AddControlCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Systems_may_be_given_by_ref_id_and_are_written_by_name()
+    {
+        // s13-07 rehearsal: --systems SYS-365 was refused, while supplier draft --system and onboard take ref IDs.
+        TestFiles.CopyExampleRepo(Repo);
+
+        var exitCode = await Run(
+            "", "add", "control", "--scope", Scope, "--yes", "--ref-id", "AC-FIREWALL", "--name", "Firewall rules", "--owner", "it@example.com", "--systems", "SYS-365");
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        (await File.ReadAllTextAsync(Path.Combine(Scope, "controls.yaml"), TestContext.Current.CancellationToken)).ShouldContain("    systems: [Example 365]\n");
+    }
+
+    [Fact]
     public async Task Ref_id_prompt_shows_the_prefix_and_takes_the_rest()
     {
         TestFiles.CopyExampleRepo(Repo);

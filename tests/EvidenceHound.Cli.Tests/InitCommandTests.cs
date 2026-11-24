@@ -25,6 +25,18 @@ public sealed class InitCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Says_to_make_it_a_git_repository_and_names_the_command_that_lists_collector_types()
+    {
+        // s13-07 rehearsal: hound init writes no git repository, and the config comment named 'hound collectors', which needs a subcommand.
+        (await Run("", "init", Repo, "--yes")).ShouldBe(ExitCodes.Ok, _error.ToString());
+
+        _output.ToString().ShouldContain("git init");
+        (await File.ReadAllTextAsync(Path.Combine(Repo, "README.md"), TestContext.Current.CancellationToken)).ShouldContain("git init");
+        var config = await File.ReadAllTextAsync(Path.Combine(Repo, "hound.yaml"), TestContext.Current.CancellationToken);
+        config.ShouldContain("hound collectors list lists the types");
+    }
+
+    [Fact]
     public async Task Writes_the_weekly_review_task_for_the_compliance_owner_from_the_start()
     {
         // s10-05 rehearsal: a new repo had no evidence plan, so nothing reminded the person of the weekly review.

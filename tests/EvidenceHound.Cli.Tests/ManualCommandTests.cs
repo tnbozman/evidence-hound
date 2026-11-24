@@ -44,6 +44,9 @@ public sealed class ManualCommandTests : IDisposable
         Directory.GetFiles(Drop).Select(Path.GetFileName).ShouldBe(["firewall-export.txt"]);
         _error.ToString().ShouldNotContain("Attest this file now?");
         _logs.Messages.ShouldContain(m => m.Contains("not attested", StringComparison.Ordinal) && m.Contains("hound manual approve", StringComparison.Ordinal));
+
+        // s13-07 rehearsal: the upload succeeded, so the next step is information, not an error.
+        _logs.Entries.Single(e => e.Message.Contains("not attested", StringComparison.Ordinal)).Level.ShouldBe(LogLevel.Information);
     }
 
     [Fact]
