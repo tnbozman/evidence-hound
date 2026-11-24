@@ -218,9 +218,11 @@ an audit workbook, write a profile and review a plan before you apply it. Withou
 
 With `both`, the skills are written once, under `.claude/skills/`, which Copilot in VS Code reads too.
 
-- **Six skills, from one source.** Onboard a system with hound, assess a supplier, read an API specification, import an audit workbook,
-  write a profile, review before apply. Each is the steps for driving `hound`, followed by hound's default guidance for that step (the
-  same text `hound skill list` shows).
+- **Fifteen skills, from one source.** Onboarding: onboard the organisation, the environment, a third party, a system and an audit;
+  assess a supplier; read an API specification; import an audit workbook; write a profile. Upkeep: process manual evidence, prepare
+  the weekly review, review before apply. Adoption and reporting: move registers from spreadsheets, prepare the committee and board
+  reports, answer a prime's questionnaire. Each is the steps for driving `hound`, linking the guide it follows, and where hound has
+  default guidance for that step (the same text `hound skill list` shows), that guidance too.
 - **Two agents, with the least tools each needs.** `hound-onboarding` reads, searches, edits and runs commands. `hound-review` reads,
   searches and runs commands; it cannot edit a file.
 - **Every file opens with the same rules:** organisation data stays in this private repo; never open `secrets/`; never approve on the
