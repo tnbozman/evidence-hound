@@ -125,7 +125,7 @@ Result (2026-11-24): `SspFunctionalTests.Strict_lists_the_example_gaps_and_the_p
 Result (2026-11-24): `SspFunctionalTests.Renders_the_sp_800_18_plan_with_the_ism_annex_by_strategy` passed in CI against CISO Assistant v4.3.4 seeded from the example (head 3af8ae0). `hound ssp build --programme essential-eight` prints sections 1 to 15 of SP 800-18 Rev 1 Appendix A, with the gaps first and the POA&M as an appendix. The purpose section is read from its file, and the classification comes from `ssp.yaml`. ISM-1815 appears once in the annex, listed under `mfa, rap, ac, uah`. The output is kept in `test-results/ssp/ssp-essential-eight.md`. `docs/ssp.md` maps ISM-0041's purpose, boundary, management and annex to the plan's sections. Deviation: the listed `IsmAnnexTests` cases were written in `SspLayoutTests`, beside the layout they exercise. A missing section file prints as "not written yet", so a draft still builds; `ssp.section_missing` still catches an undeclared one.
 
 ### s11-16 Annex columns from the ASD Blueprint SSP annex template (added 2026-11-24, do after s11-04)
-- [ ] Done
+- [x] Done
 
 Added at the maintainer's request (2026-11-24). The ASD Blueprint *System Security Plan Annex Template (June 2026)* (https://github.com/ASD-Blueprint/ASD-Blueprint-for-Secure-Cloud/blob/main/static/content/files/Blueprint%20System%20Security%20Plan%20Annex%20Template%20(June%202026).xlsx) is the annex assessors use for the ISM. The layout stays NIST SP 800-18 (s11-04). Only the ISM annex's columns follow the template.
 
@@ -151,8 +151,10 @@ Compared on 2026-11-24 (Essential Eight sheet against CISO Assistant's `essentia
 **Functional check**
 - Regenerate the snapshot from the local CISO Assistant, build the example SSP, and check that ISM-1504's row reads Technical (its reference control is `tech.mfa`) with the expected responsible entity.
 
+**Result (2026-11-24):** the snapshot was regenerated from the CISO Assistant v4.3.4 library (`hound framework snapshot`, identical to main apart from the new descriptions and reference controls). `SspFunctionalTests.Renders_the_sp_800_18_plan_with_the_ism_annex_by_strategy` built the example plan against the seeded CISO Assistant in CI (functional job, run 45387466690, passed): ISM-1504's row reads `| Technical |` with a responsible entity and an ASD implementation status.
+
 ### s11-05 Review, approval and versions
-- [ ] Done
+- [x] Done
 
 **Story:** As the authorising official, I want to review, approve and version the SSP like any other controlled document, so that what we give an assessor is the version we signed.
 
@@ -170,6 +172,9 @@ Compared on 2026-11-24 (Essential Eight sheet against CISO Assistant's `essentia
 
 **Functional check**
 - Sign version 1.0 of the example SSP, publish it to the local CISO Assistant, change one control description, regenerate as 1.1 and confirm the diff and both evidence revisions.
+
+
+**Result (2026-11-24):** `SspFunctionalTests.Signs_publishes_and_diffs_two_versions_of_the_plan` ran in CI against the seeded CISO Assistant (functional job, run 45387466690, passed): version 1.0 of the example plan built with `--snapshot-out`, signed by the authorising official, rebuilt from its snapshot as the approved plan and published with CISO Assistant's own Word audit report attached; the purpose section changed, version 1.1 signed and published; `ssp diff` listed the section change; evidence `SSP-ESSENTIAL-EIGHT` has two revisions. Changing a section stands in for changing a control description, so the shared instance keeps its seeded controls.
 
 ### s11-06 Control descriptions drafted by your own agent (optional, last)
 - [ ] Done
