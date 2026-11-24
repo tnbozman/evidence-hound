@@ -27,12 +27,21 @@ internal static class SspCommands
         var strict = new Option<bool>("--strict") { Description = "Exit non-zero while any gap remains: a requirement with no statement, no owner, or not applicable without a justification." };
         var snapshotOut = new Option<FileInfo?>("--snapshot-out") { Description = "Also write what the plan was built from to this file, and log the draft's SHA-256 for the sign-off." };
         var fromSnapshot = new Option<FileInfo?>("--from-snapshot") { Description = "Build from a snapshot file instead of CISO Assistant: the signed version when its sign-off matches, else an error." };
+        var format = new Option<string>("--format") { Description = "markdown (the default) or docx: docx also writes the plan as a Word file to --out.", DefaultValueFactory = _ => "markdown" };
+        format.AcceptOnlyFromAmong("markdown", "docx");
+        var outFile = new Option<FileInfo?>("--out") { Description = "With --format docx, the Word file to write. Keep it out of the repo: it holds the organisation's system details." };
         var build = new Command("build", "Assemble a programme's system security plan from CISO Assistant and the repo, gaps first. Reads only; writes nothing to CISO Assistant.")
         {
-            programme, scope, config, json, strict, snapshotOut, fromSnapshot,
+            programme, scope, config, json, strict, snapshotOut, fromSnapshot, format, outFile,
         };
         build.SetAction(async (parseResult, cancellationToken) =>
         {
+            var docx = parseResult.GetValue(format) == "docx";
+            if (docx && parseResult.GetValue(outFile) is null)
+            {
+                return Log.Problems(logger, [new Problem("ssp.out_required", "--format docx needs --out <file> for the Word file.")]);
+            }
+
             var (exit, checkedScope, ssp) = await CheckAsync(parseResult, programme, scope, config, configuration, registry, logger, cancellationToken);
             if (ssp is null)
             {
@@ -58,6 +67,7 @@ internal static class SspCommands
             }
 
             var plan = draft;
+            var approved = false;
             if (ssp.SignOffs.FirstOrDefault(s => s.Version == snapshot.Document.Version.Value) is { } signOff)
             {
                 var signed = SspVersion.Sign(snapshot, signOff);
@@ -66,11 +76,17 @@ internal static class SspCommands
                     return Log.Problems(logger, failed.Errors);
                 }
 
+                approved = signed is Result<string>.Ok;
                 plan = signed.Match(text => text, _ =>
                 {
                     Log.SspSignedButChanged(logger, signOff.Version);
                     return draft;
                 });
+            }
+
+            if (docx)
+            {
+                await File.WriteAllBytesAsync(parseResult.GetValue(outFile)!.FullName, SspWord.Docx(plan, draft: !approved), cancellationToken);
             }
 
             await output.WriteAsync(parseResult.GetValue(json) ? SspJson.Write(snapshot.Document) : plan);

@@ -9,7 +9,7 @@ public class SspWordTests
 {
     private static readonly XNamespace W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
 
-    private const string Plan = """
+    private static readonly string Plan = """
         # System security plan: Example corporate IT (DRAFT)
 
         > **DRAFT.** Not approved: version 0.1 has no sign-off in `scope/ssp.yaml`.
