@@ -48,7 +48,7 @@ Moved to s09 as s09-20 on 2026-11-22, with a supplier approval gate added. The r
 - Functional: no CISO Assistant in the cloud session; supplier apply is covered by CI's functional suite (s09-19, s09-20).
 
 ### s10-04 Evidence plan and manual evidence tasks
-- [ ] Done
+- [x] Done
 
 **Story:** As the Cyber GRC team, I want the evidence plan declared in the repo and applied as recurring CISO Assistant tasks, so that system owners are emailed their runbook before evidence is due and the committee can see who is not providing it, without owners needing a CISO Assistant login.
 
@@ -95,6 +95,12 @@ How it works, using CISO Assistant's own features only (checked against the v4.3
 
 **Functional check**
 - Apply the fictional plan to the local CISO Assistant: both task templates appear with their next due date and both assignees; re-applying writes nothing. With mail pointed at a local SMTP catcher and a due date within 7 days, the owner contact's team email receives the reminder with the runbook text; with a past due date and `task_node_overdue` disabled, no email is sent.
+
+**Functional check (2026-11-24, CI run 411 on a08d31a, all jobs green)**
+- `make test-functional`: `ScopePlanFunctionalTests.The_seed_applies_every_kind_then_plan_lists_no_changes_and_apply_writes_nothing` applies the example evidence plan to CISO Assistant v4.3.4 with every other kind: evidence items and task templates are written with no failures (213 changes in run 410), a re-plan lists no changes and a second apply writes nothing. `TaskTemplateClientTests` hold the recorded v4.3.4 shape (from the CI probe of `/api/task-templates/`).
+- `trial` job: the trial applies its scope, including the evidence plan, unattended, and a second run plans nothing new.
+- Not checked: the email legs (owner reminder via an SMTP catcher, no overdue email). The reference Compose stack does not pass `EMAIL_*` to CISO Assistant yet; listed under Discovered work.
+- Deviations: `hound manual template` is not built; the decided flow is `hound manual propose` (agent) and `hound manual approve` (person) from s09-42. Evidence labels are the method and the collector's name (such as `manual`, `example-m365`), not `method:manual`, because CISO Assistant takes labels only as `^[\w-]{1,36}$`.
 
 ### s10-05 Rehearse the lifecycle as a small defence supplier (added 2026-11-23)
 - [ ] Done
@@ -199,5 +205,6 @@ Built and tested in CI; each waits on a run in the maintainer's own environment,
   - `hound init` writes no `settings.yaml`, so a repo with suppliers has the `contracts` flag off in CISO Assistant without a word. Say so when the first supplier is drafted.
   - On a refused option, `--json` commands print plain text rather than JSON.
   - Cost: nothing totals `annual_expense` or shows what compliance adds (here, moving to a CUI-authorised mail plan).
+- From s10-04: the reference Compose stack (`deploy/`) does not pass `EMAIL_*` to CISO Assistant, so task reminders cannot be sent or tested end to end. Wire it with a local SMTP catcher in the compose smoke test.
 
 ## Sprint review
