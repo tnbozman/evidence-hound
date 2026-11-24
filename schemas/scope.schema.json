@@ -298,6 +298,24 @@
         },
         "data": {
           "$ref": "#/$defs/sensitiveData"
+        },
+        "ai": {
+          "description": "The system's entry in the AI register (s11-12): written to CISO Assistant as filtering labels and in the description. See docs/scope.md.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["tier", "screened_on", "use", "oversight", "oversight_note"],
+          "properties": {
+            "tier": { "enum": ["low", "medium", "high", "prohibited"], "description": "The result of screening. A prohibited system is not used." },
+            "screened_on": { "$ref": "#/$defs/date", "description": "When the screening questions were answered." },
+            "use": { "enum": ["built", "customised", "third_party"], "description": "Built in-house, customised, or a supplier's product (needs 'solution')." },
+            "oversight": { "enum": ["human_in_the_loop", "human_on_the_loop", "human_out_of_loop"], "description": "How people oversee it." },
+            "oversight_note": { "$ref": "#/$defs/text", "description": "Who can override or switch it off, and the fallback." },
+            "impact_assessment": { "enum": ["not_started", "in_progress", "approved", "not_required"] },
+            "impact_assessed_on": { "$ref": "#/$defs/date", "description": "When the impact assessment was approved." },
+            "in_use_from": { "$ref": "#/$defs/date", "description": "Go-live date; leave out while it is being considered." },
+            "last_tested_on": { "$ref": "#/$defs/date", "description": "The last test or evaluation, on evidence." },
+            "retired_on": { "$ref": "#/$defs/date", "description": "When it stopped being used." }
+          }
         }
       }
     },

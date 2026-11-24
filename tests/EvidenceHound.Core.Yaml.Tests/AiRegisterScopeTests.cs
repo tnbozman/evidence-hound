@@ -9,7 +9,7 @@ namespace EvidenceHound.Core.Yaml.Tests;
 public class AiRegisterScopeTests
 {
     // A system's keys sit at eight spaces in ScopeFixture.Setup.
-    private const string Block =
+    private static readonly string Block =
         "        owner: it@example.com\n" +
         "        ai:\n" +
         "          tier: medium\n" +

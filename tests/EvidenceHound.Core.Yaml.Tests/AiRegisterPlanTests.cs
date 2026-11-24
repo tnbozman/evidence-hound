@@ -10,7 +10,7 @@ public class AiRegisterPlanTests
     {
         var system = ScopeDesired.From(AiRegisterScopeTests.Parse(AiRegisterScopeTests.Setup()).Scope).Single(o => o.Kind == ScopeKind.System && o.Key == "Example 365");
 
-        system.Fields["labels"].ShouldBe("ai-system, ai-tier-medium, ai-use-customised, ai-oversight-on-the-loop");
+        system.Fields["labels"].ShouldBe("ai-oversight-on-the-loop, ai-system, ai-tier-medium, ai-use-customised");
         system.Fields["description"].ShouldStartWith("Mail, files and identity.");
         system.Fields["description"].ShouldContain("AI register: medium tier, customised, human on the loop.");
         system.Fields["description"].ShouldContain("Oversight: The sales lead reviews a monthly sample and can switch scoring off.");
@@ -24,7 +24,7 @@ public class AiRegisterPlanTests
 
         var system = ScopeDesired.From(AiRegisterScopeTests.Parse(setup).Scope).Single(o => o.Kind == ScopeKind.System && o.Key == "Example 365");
 
-        system.Fields["labels"].ShouldEndWith(", ai-retired");
+        system.Fields["labels"].Split(", ").ShouldContain("ai-retired");
         system.Fields["description"].ShouldContain("retired 2026-10-31");
     }
 
