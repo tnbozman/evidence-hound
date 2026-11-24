@@ -21,6 +21,9 @@ public sealed class ReportCommitteeCommandTests : IDisposable
             evidence:
               root: {Path.Combine(_dir, "evidence")}
             collectors: []
+            target:
+              mapping: {Path.Combine(ExampleRepoTests.RepoRoot, "mappings", "example.yaml")}
+              compliance_assessment: EXAMPLE-BASELINE-2026
             """);
         Directory.CreateDirectory(Path.Combine(_dir, "evidence", "reports"));
     }

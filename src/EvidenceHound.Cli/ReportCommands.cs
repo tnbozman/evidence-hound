@@ -41,7 +41,70 @@ internal static class ReportCommands
             configuration,
             registry,
             cancellationToken));
-        return new Command("report", "Posture snapshots, and the monthly committee and quarterly board reports built from them.") { snapshot };
+        var month = new Option<string>("--month") { Description = "The month, YYYY-MM.", Required = true };
+        var reportConfig = new Option<FileInfo>("--config") { Description = "The deployment config: where the evidence store keeps the snapshots.", Required = true };
+        var outFile = new Option<FileInfo?>("--out") { Description = "Write the report (Markdown) to this file instead of the output." };
+        var committee = new Command(
+            "committee",
+            "The monthly security committee report (Markdown) from the month's snapshot and the previous month's. Reads no CISO Assistant.")
+        {
+            month, reportConfig, outFile,
+        };
+        committee.SetAction((parseResult, cancellationToken) => CommitteeAsync(
+            parseResult.GetRequiredValue(month), parseResult.GetRequiredValue(reportConfig), parseResult.GetValue(outFile), output, logger, registry, cancellationToken));
+        return new Command("report", "Posture snapshots, and the monthly committee and quarterly board reports built from them.") { snapshot, committee };
+    }
+
+    private static async Task<int> CommitteeAsync(
+        string monthText, FileInfo configFile, FileInfo? outFile, TextWriter output, ILogger logger, CollectorRegistry registry, CancellationToken cancellationToken)
+    {
+        var period = ReportingPeriod.Parse(monthText).Bind(p => p.Kind == PeriodKind.Month
+            ? Result.Ok(p)
+            : Result.Fail<ReportingPeriod>(new Problem("report.period_not_month", $"'{monthText}' is a quarter: the committee report is monthly (YYYY-MM); the board report is quarterly.")));
+        var deployment = await ConfigCommands.LoadAsync(configFile, registry, cancellationToken);
+        var loaded = await period.Bind(p => deployment.Map(d => (Period: p, Root: d.Evidence.Root))).BindAsync(async x =>
+            (await ReadSnapshotAsync(x.Root, x.Period, cancellationToken))
+                .Bind(current => ReadSnapshotsAsync(x.Root, [x.Period.Previous()], cancellationToken).Result.Map(previous => (Current: current, Previous: previous.SingleOrDefault()))));
+        return await loaded.Match(
+            async snapshots => await WriteReportAsync(CommitteeReport.Render(snapshots.Current, snapshots.Previous), outFile, output, cancellationToken),
+            problems => Task.FromResult(Log.Problems(logger, problems)));
+    }
+
+    /// <summary>A period's snapshot from the evidence store's <c>reports/</c> folder; an error that says how to take it when there is none.</summary>
+    internal static async Task<Result<PostureSnapshot>> ReadSnapshotAsync(string root, ReportingPeriod period, CancellationToken cancellationToken)
+    {
+        var file = SnapshotFile(root, period);
+        return File.Exists(file)
+            ? PostureSnapshotJson.Read(await File.ReadAllTextAsync(file, cancellationToken), file)
+            : Result.Fail<PostureSnapshot>(new Problem(
+                "report.snapshot_missing", $"No snapshot for {period} in {Path.GetDirectoryName(file)}. Take it with: hound report snapshot --period {period} --config <hound.yaml>"));
+    }
+
+    /// <summary>The snapshots of those <paramref name="periods"/> the evidence store holds, in order; missing ones are skipped.</summary>
+    internal static async Task<Result<IReadOnlyList<PostureSnapshot>>> ReadSnapshotsAsync(string root, IEnumerable<ReportingPeriod> periods, CancellationToken cancellationToken)
+    {
+        var found = new List<Result<PostureSnapshot>>();
+        foreach (var period in periods.Where(p => File.Exists(SnapshotFile(root, p))))
+        {
+            found.Add(await ReadSnapshotAsync(root, period, cancellationToken));
+        }
+
+        return Result.Combine(found);
+    }
+
+    private static string SnapshotFile(string root, ReportingPeriod period) => Path.Combine(root, "reports", SnapshotName(period) + ".json");
+
+    private static async Task<int> WriteReportAsync(string report, FileInfo? outFile, TextWriter output, CancellationToken cancellationToken)
+    {
+        if (outFile is null)
+        {
+            await output.WriteAsync(report);
+            return ExitCodes.Ok;
+        }
+
+        await File.WriteAllTextAsync(outFile.FullName, report, cancellationToken);
+        await output.WriteLineAsync($"wrote {outFile.FullName}");
+        return ExitCodes.Ok;
     }
 
     /// <summary>The snapshot's file name in the evidence store's <c>reports/</c> folder, and its evidence ref_id after <c>hound-report/</c>.</summary>
@@ -84,7 +147,10 @@ internal static class ReportCommands
         var records = await posture.ReadAsync(cancellationToken);
         var collectors = await new FileRunRecordStore(setup.Deployment.Evidence.Root).LatestAsync(cancellationToken);
         var built = Result.Combine(programmes).Bind(p => records.Bind(r => collectors.Map(c => new PostureSnapshot(
-            period, DateTimeOffset.UtcNow, p, r.Controls, r.Acceptances, r.Remediation, r.Incidents, r.Risks, [.. c.Select(Health)], r.Due))));
+            period, DateTimeOffset.UtcNow, p, r.Controls, r.Acceptances, r.Remediation, r.Incidents, r.Risks, [.. c.Select(Health)], r.Due)
+        {
+            Warnings = [.. checkedScope.Warnings.Select(w => new ScopeWarning(w.Code, w.ToProblem().Message))],
+        })));
         if (built is not Result<PostureSnapshot>.Ok { Value: var taken })
         {
             return Log.Problems(logger, built.Match(_ => [], ps => ps));

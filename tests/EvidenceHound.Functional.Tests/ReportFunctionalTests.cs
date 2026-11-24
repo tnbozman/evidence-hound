@@ -30,6 +30,9 @@ public sealed class ReportFunctionalTests(CisoAssistantFixture ciso) : IDisposab
             evidence:
               root: {{Path.Combine(_workDir, "evidence")}}
             collectors: []
+            target:
+              mapping: {{Path.Combine(AppContext.BaseDirectory, "files", "mappings", "essential-eight-2023.yaml")}}
+              compliance_assessment: EX-E8-2026
             """, ct);
         var row = await RowAsync("EX-E8-2026", "ISM-1511", ct);
         var was = row["result"]!.GetValue<string>();
