@@ -51,6 +51,9 @@ public sealed record ProgrammePosture(
 
     /// <summary>Whether the audit was closed (signed off and locked) when the snapshot was taken, so its figures no longer change.</summary>
     public bool Closed { get; init; }
+
+    /// <summary>How the mapping answers each parent and group: by collectors, by people or not at all (s12-01); empty when no mapping is configured for the audit.</summary>
+    public IReadOnlyList<CoverageCount> Coverage { get; init; } = [];
 }
 
 /// <summary>A parent node, such as an Essential Eight strategy or an AI6 practice, by URN and short name.</summary>
