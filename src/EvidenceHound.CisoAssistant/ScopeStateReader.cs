@@ -131,7 +131,6 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
         var audits = await reading.ObjectsInAsync("compliance-assessments", inScope);
         var evidences = await reading.ObjectsInAsync("evidences", inScope);
         var planned = evidences.Where(IsPlanned).ToArray();
-        var labels = planned.Length > 0 ? Names(await reading.ListAsync("filtering-labels/"), "label") : [];
         var tasks = query.EvidencePlan ? (await reading.ListAsync("task-templates/")).Where(t => RelationId(t["folder"]) is { } f && inScope.Contains(f)).ToArray() : [];
         var controls = await reading.ObjectsInAsync("applied-controls", inScope);
         var hashes = await HashesAsync(reading, evidences);
@@ -145,6 +144,8 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
                 Tiers = await reading.ListAsync("tiers/"),
             }
             : null;
+        var labelled = planned.Length > 0 || assets.Concat(thirdParties?.Solutions ?? []).Any(o => o["filtering_labels"] is JsonArray { Count: > 0 });
+        var labels = labelled ? Names(await reading.ListAsync("filtering-labels/"), "label") : [];
         var auditedFrameworks = audits.Select(a => Lookup(a["framework"], frameworks)).OfType<string>().Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
         if (allRows)
         {
@@ -175,7 +176,10 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
             assets.ToDictionary(Id, a => Text(a["name"]) ?? Id(a), StringComparer.Ordinal),
             perimeters.ToDictionary(Id, p => Text(p["name"]) ?? Id(p), StringComparer.Ordinal),
             evidences.ToDictionary(Id, e => Text(e["ref_id"]) ?? Id(e), StringComparer.Ordinal),
-            controls.ToDictionary(Id, c => Text(c["ref_id"]) ?? Id(c), StringComparer.Ordinal));
+            controls.ToDictionary(Id, c => Text(c["ref_id"]) ?? Id(c), StringComparer.Ordinal))
+        {
+            Labels = labels,
+        };
         IReadOnlyList<ActualObject> objects =
         [
             .. Frameworks(query, frameworkList, libraries),
@@ -184,7 +188,7 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
                 ("name", Text(p["name"])), ("ref_id", Text(p["ref_id"])), ("domain", names.Domain(p)))),
             .. assets.Select(a => Marked(ScopeKind.System, Text(a["name"]), a,
                 ("ref_id", Text(a["ref_id"])), ("type", AssetType(Text(a["type"]))), ("owner", Joined(a["owner"], names.Users)), ("domain", names.Domain(a)),
-                ("parents", Joined(a["parent_assets"], names.Assets)))),
+                ("parents", Joined(a["parent_assets"], names.Assets)), ("labels", Joined(a["filtering_labels"], labels)))),
             .. audits.Select(a => Marked(ScopeKind.Audit, AuditKey(a), a,
                 ("name", Text(a["name"])), ("framework", Lookup(a["framework"], frameworks)), ("groups", ScopeDesired.Joined(Strings(a["selected_implementation_groups"]))),
                 ("domain", names.Domain(a)), ("perimeter", Lookup(a["perimeter"], names.Perimeters)), ("eta", Text(a["eta"])), ("due_date", Text(a["due_date"])),
@@ -391,7 +395,8 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
                 Observed = Fields(("conclusion", Choice(Text(a["conclusion"]))), ("expiry_date", Text(a["expiry_date"]))),
             }),
             .. lists.Solutions.Where(s => RelationId(s["provider_entity"]) is { } id && entityRefs.ContainsKey(id)).Select(s => Marked(ScopeKind.Solution, Text(s["ref_id"]), s,
-                ("name", Text(s["name"])), ("entity", Lookup(s["provider_entity"], entityRefs)), ("criticality", Text(s["criticality"])))),
+                ("name", Text(s["name"])), ("entity", Lookup(s["provider_entity"], entityRefs)), ("criticality", Text(s["criticality"])),
+                ("labels", Joined(s["filtering_labels"], names.Labels)))),
             .. lists.Contracts.Select(c => Marked(ScopeKind.Contract, Text(c["ref_id"]), c,
                 ("name", Text(c["name"])), ("entity", Lookup(c["provider_entity"], entityRefs)), ("domain", names.Domain(c)), ("status", Choice(Text(c["status"]))),
                 ("start_date", Text(c["start_date"])), ("end_date", Text(c["end_date"])), ("annual_expense", ScopeDesired.Amount(Text(c["annual_expense"]))),
@@ -483,6 +488,9 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
         Dictionary<string, string> Evidence,
         Dictionary<string, string> Controls)
     {
+        /// <summary>Filtering labels by ID, read only when something in scope carries one.</summary>
+        public Dictionary<string, string> Labels { get; init; } = [];
+
         public string? Domain(JsonNode held) => RelationId(held["folder"]) is { } id ? Domains.GetValueOrDefault(id) : null;
     }
 

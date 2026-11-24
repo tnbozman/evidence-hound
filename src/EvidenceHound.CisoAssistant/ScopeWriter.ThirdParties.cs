@@ -93,17 +93,21 @@ internal sealed partial class ScopeWriter
                 return await DeleteAsync("solutions", existing, write, cancellationToken);
             }
 
-            return await Resolve(Split(Field(declared, "entity")), ByRefId(all[0].Where(e => !IsBuiltin(e))), "third party").BindAsync(async entity =>
+            var entity = Resolve(Split(Field(declared, "entity")), ByRefId(all[0].Where(e => !IsBuiltin(e))), "third party");
+            var labels = await LabelsAsync(Split(Field(declared, "labels")), cancellationToken);
+            return await Result.Combine([entity.Map(e => (JsonNode)e), labels.Map(l => (JsonNode)l)]).BindAsync(async resolved =>
             {
                 var body = new JsonObject
                 {
                     ["name"] = Field(declared, "name"),
                     ["ref_id"] = declared.Key,
                     ["description"] = Described(declared, write.Change),
-                    ["provider_entity"] = entity[0]!.DeepClone(),
+                    ["provider_entity"] = resolved[0]![0]!.DeepClone(),
                     ["criticality"] = WholeNumber(declared, "criticality"),
+                    ["filtering_labels"] = Labelled(declared, write.Change) ? resolved[1].DeepClone() : null,
                 };
                 Drop(body, write.Change, "criticality");
+                Drop(body, "filtering_labels");
                 return write.Change.Action == ScopeAction.Create
                     ? await SendAsync(HttpMethod.Post, "solutions/", body, $"to create solution {declared.Key}", cancellationToken)
                     : await UpdateAsync("solutions", existing, body, write, cancellationToken);
