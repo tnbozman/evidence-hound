@@ -462,7 +462,23 @@ internal static class ScopeCommands
             problems,
             string.Create(CultureInfo.InvariantCulture, $"scope valid: {scope.Setup.Domains.Count} domain(s), {scope.Controls.Count} control(s), {scope.Audits.Count} audit(s){ThirdPartyCount(scope)}"),
             scope,
-            new ScopeInputs(snapshots.Loaded, configFile is null ? null : targets.Match(t => t, _ => []), files.Found) { Today = today });
+            new ScopeInputs(snapshots.Loaded, configFile is null ? null : targets.Match(t => t, _ => []), files.Found) { Today = today, Runbooks = await RunbooksAsync(scope, repoDir, cancellationToken) });
+    }
+
+    /// <summary>Each runbook the evidence plan names that is in the repo, by its path as the plan names it: the text of its task.</summary>
+    private static async Task<Dictionary<string, string>> RunbooksAsync(ScopeDocument scope, string repoDir, CancellationToken cancellationToken)
+    {
+        var runbooks = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var path in (scope.EvidencePlan?.Rows ?? []).Select(r => r.Runbook).OfType<string>().Distinct(StringComparer.Ordinal))
+        {
+            var full = Path.GetFullPath(path, repoDir);
+            if (File.Exists(full))
+            {
+                runbooks[path] = await File.ReadAllTextAsync(full, cancellationToken);
+            }
+        }
+
+        return runbooks;
     }
 
     /// <summary>Each evidence plan runbook must be a file in the compliance repo (the folder that holds the scope folder).</summary>
