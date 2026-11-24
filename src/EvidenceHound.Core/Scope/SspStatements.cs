@@ -3,7 +3,8 @@ namespace EvidenceHound.Core.Scope;
 /// <summary>
 /// Each requirement's status, statement and responsible party, mapped the same way every time (s11-03). The status follows the result; a
 /// requirement not met whose controls have an ETA is Planned. The statement is the linked controls' descriptions in ref order, then the
-/// observation. Pure.
+/// observation. A row in place without a statement, a row in place or planned without an owner, and a row not applicable without a
+/// justification are gaps; a row not yet implemented is not, as the POA&amp;M carries it. Pure.
 /// </summary>
 public static class SspStatements
 {
@@ -50,9 +51,16 @@ public static class SspStatements
             Status = new SspValue(status, row.Result.Source),
             Statement = new SspValue(parts.Length == 0 ? null : string.Join('\n', parts), statementSource),
             Responsible = new SspValue(owners.Length == 0 ? null : string.Join(", ", owners), linked.Length == 0 ? row.Result.Source : new SspSource(SspSource.CisoAssistant, $"applied controls {controlRefs}")),
-            Gaps = [.. parts.Length == 0 ? ["no implementation statement"] : Array.Empty<string>(), .. owners.Length == 0 ? ["no responsible party"] : Array.Empty<string>()],
+            Gaps =
+            [
+                .. parts.Length == 0 && InPlace(status) ? ["no implementation statement"] : Array.Empty<string>(),
+                .. owners.Length == 0 && status != NotImplemented ? ["no responsible party"] : Array.Empty<string>(),
+            ],
         };
     }
+
+    /// <summary>Something is in place to describe: the row needs an implementation statement. A row not yet implemented is on the POA&amp;M instead.</summary>
+    private static bool InPlace(string status) => status == Implemented || status == PartiallyImplemented;
 
     /// <summary>The row's controls as the plan holds them, in ref order; a control CISO Assistant does not hold is left out.</summary>
     internal static SspControl[] Linked(SspRequirement row, IReadOnlyDictionary<string, SspControl> controls) =>
