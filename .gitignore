@@ -53,3 +53,5 @@ Thumbs.db
 *.tfstate
 *.tfstate.*
 node_modules/
+site/
+.venv-docs/

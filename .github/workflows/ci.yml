@@ -203,7 +203,7 @@ jobs:
         run: make test-scripts
 
   docs:
-    # s13-02: Markdown lint and relative link check of the published docs (no external fetches).
+    # s13-02: Markdown lint and relative link check of the published docs (no external fetches); s13-05: the site builds strictly.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -215,6 +215,8 @@ jobs:
         run: make test-docs
       - name: Markdown lint and link check
         run: make lint-docs
+      - name: Documentation site, strict (warnings fail)
+        run: make docs
 
   terraform:
     # s09-55: the tutorial's control tests, with mock providers. No cloud account or credentials.
