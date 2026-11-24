@@ -2,6 +2,80 @@
 
 This is the reference for how Evidence Hound and CISO Assistant support AI governance with the Australian Government's *Guidance for AI Adoption* (AI6). New to AI governance? Read the [primer](ai-grc-primer.md) first.
 
+## What AI6 asks, and where each part lives
+
+AI6 asks six things: decide who is accountable, understand the impacts, measure and manage the risks, share essential information, test
+and monitor, and keep people in control. Evidence Hound handles them with what CISO Assistant already has, plus your repo:
+
+| AI6 asks for | Kept in | How it is checked |
+| --- | --- | --- |
+| A register of AI systems, each with an owner | The `ai` block of each AI system in `scope/setup.yaml`, shown in CISO Assistant as an asset labelled `ai-system` | `ai-register` collector |
+| Screening into a risk tier, and an impact assessment before a medium or high tier system goes live | The same `ai` block: `tier`, `screened_on`, `impact_assessment`, `impact_assessed_on`, `in_use_from` | `ai-register` collector |
+| The risks of medium and high tier systems | Risk scenarios in CISO Assistant, linked to the system's asset | `ciso-assistant` profile |
+| Human oversight | `oversight` and `oversight_note` in the `ai` block | `ai-register` collector |
+| Testing, and testing again in proportion to risk | `last_tested_on` in the `ai` block, with the test result as evidence | `ai-register` collector |
+| Suppliers of third-party AI | The supplier's solution, entity assessment and contract in CISO Assistant (as for any supplier) | `ciso-assistant` profile |
+| Policy, training, redress, disclosure, monitoring and incident reviews | Records a person keeps and attests | `ai-governance` (yearly) and `ai-operations` (quarterly) manual sources |
+| The self-assessment | An audit of the AI6 framework, group `F` (Foundations) | `mappings/ai6.yaml` turns every check into AI6 results |
+
+CISO Assistant's custom fields are an Enterprise feature, so the register entry lives in the repo and reaches CISO Assistant as
+filtering labels (`ai-tier-medium`, `ai-use-third-party`, `ai-oversight-on-the-loop`, `ai-retired`) and as lines in the asset's
+description. Filtering the asset list by `ai-system` gives the register; CISO Assistant's own Excel export saves it.
+
+## Who sets each field
+
+Everything in the `ai` block is changed by pull request, so each change is reviewed. The [scope guide](scope.md#ai-systems) lists the
+keys and what `hound scope validate` reports.
+
+| Field | Set by | When |
+| --- | --- | --- |
+| `tier`, `screened_on` | The GRC team, from the [screening runbook](../examples/compliance-repo/runbooks/ai-screening.md) | When a system is proposed, and again when its use changes |
+| `use` | The GRC team | At screening |
+| `oversight`, `oversight_note` | The system's owner, reviewed by the GRC team | At screening, and when the arrangement changes |
+| `impact_assessment`, `impact_assessed_on` | The GRC team, once the assessment is approved | Before a medium or high tier system goes live |
+| `in_use_from`, `retired_on` | The system's owner | At go-live and when the system is switched off |
+| `last_tested_on` | The system's owner, with the test result kept as evidence | Before go-live, then at least every 12 months (6 for high tier) |
+
+A third-party AI system also names its supplier's `solution`, and its supplier is approved before the system is registered, as for any
+other system.
+
+## The checks
+
+The [collector guide](collectors/ciso-assistant.md) lists each check and when it passes. In short: the `ai-register` collector checks the
+entries in your repo every night (owners, screening, impact assessments before use, oversight, test dates) and the `ciso-assistant` profile
+checks what only CISO Assistant holds (risk scenarios, supplier assessments and contracts). Every observation names the AI6 sub-practice
+in words and says what to do. Checks a person attests come from two manual sources, copied from
+[`examples/manual-sources/ai6/`](../examples/manual-sources/ai6/): `ai-governance` once a year and `ai-operations` each quarter.
+
+## Adopting at Foundations
+
+1. Add the AI6 library to `scope/setup.yaml` (as `examples/compliance-repo/scope/setup.yaml` does), an audit for group `F`, and an `ai6`
+   programme with `register: { of: ai_systems, by: [tier, use] }`.
+2. Register each AI system you use with an `ai` block, after screening it.
+3. Add the `ai-register` collector, the `ciso-assistant` profile and the two manual sources to `hound.yaml`, and `mappings/ai6.yaml` as a
+   target for the AI6 audit.
+4. Add evidence plan rows for the manual sources, so their owners are reminded.
+5. `hound scope plan`, review, `hound scope apply`, then `hound run`.
+
+If your team uses its own coding agent with `hound onboard` or `hound manual propose`, that agent is AI use too: screen it and register it
+like any other AI system (usually low tier, human in the loop, because a person approves every proposal).
+
+The example compliance repo has all of this for two fictional AI systems; one is deliberately not tested yet, so a run shows AI6-4.1
+(the register) met and AI6-5.1 (testing before use) not met.
+
+## Moving to Implementation
+
+Change the audit's and the programme's group from `F` to `I`. AI6-4.4 (AI-generated content transparency) joins the audit; it is filled
+by `ai.generated_content_labelled` from the `ai-governance` manual source. Implementation expects more depth in each record a person
+attests: read the *Implementation practices* for each sub-practice and widen your runbooks.
+
+## What Evidence Hound does not do
+
+- It does not test, evaluate or monitor a model. `last_tested_on` records that a test was done; the test itself is yours.
+- It has no AI incident workflow. AI incidents go through your incident process; the `ai-operations` source attests they were reviewed.
+- It does not screen a system for you. Screening is a person's judgement, recorded in the repo and reviewed by pull request.
+- It has no model of its own. An agent may draft a register entry or a manual result; a person reviews it before it counts.
+
 ## The AI6 framework library
 
 [`frameworks/ai6.yaml`](../frameworks/ai6.yaml) is a CISO Assistant library for AI6, and [`frameworks/ai6.json`](../frameworks/ai6.json) its snapshot.
