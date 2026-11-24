@@ -67,6 +67,17 @@ public sealed class EvidencePlanValidateTests : IDisposable
         _error.ToString().ShouldContain("ISM-1486");
     }
 
+    [Fact]
+    public async Task Each_runbook_is_read_from_the_repo_for_its_task_description()
+    {
+        // The registry is only read with --config.
+        var checkedScope = await ScopeCommands.ValidateAsync(new DirectoryInfo(Path.Combine(_root, "scope")), null, null!, new DateOnly(2026, 11, 24), _ct);
+
+        var runbook = await File.ReadAllTextAsync(Path.Combine(_root, "manual-sources", "backup-restore-test.md"), _ct);
+        checkedScope.Inputs.Runbooks["manual-sources/backup-restore-test.md"].ShouldBe(runbook);
+        checkedScope.Inputs.Runbooks.Keys.ShouldBe(["manual-sources/backup-restore-test.md", "manual-sources/mfa-exceptions-review.md"], ignoreOrder: true);
+    }
+
     public void Dispose()
     {
         _output.Dispose();
