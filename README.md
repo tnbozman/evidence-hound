@@ -1,5 +1,11 @@
 # Evidence Hound
 
+[![CI](https://github.com/tnbozman/evidence-hound/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/tnbozman/evidence-hound/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/tnbozman/evidence-hound/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/tnbozman/evidence-hound/security/code-scanning)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/tnbozman/evidence-hound/badge)](https://scorecard.dev/viewer/?uri=github.com/tnbozman/evidence-hound)
+[![Licence: Apache-2.0](https://img.shields.io/github/license/tnbozman/evidence-hound)](LICENSE)
+[![Latest release](https://img.shields.io/github/v/release/tnbozman/evidence-hound)](https://github.com/tnbozman/evidence-hound/releases/latest)
+
 *Sniffs out compliance evidence from your systems and fetches it into CISO Assistant, on schedule, every time.*
 
 Small businesses in the defence industry must reach and then sustain cyber compliance, such as Essential Eight Maturity Level 2 (DISP, Australia) or NIST SP 800-171 (CMMC, US), usually without a dedicated CISO or GRC team.
@@ -12,6 +18,8 @@ This project shows how to do that with open-source tools:
 
 It is designed to be built and run by an ordinary in-house IT and software team, with AI-assisted development doing most of the build and automation doing most of the upkeep.
 
+> **Install and docs:** the [documentation site](https://tnbozman.github.io/evidence-hound/) starts with [getting started](docs/getting-started.md); each [release](https://github.com/tnbozman/evidence-hound/releases) lists the install commands.
+>
 > **`hound` cheat sheet:** every command and its options on one page, the typical paths on the next. [PDF](docs/cheatsheet.pdf) · [Markdown](docs/cheatsheet.md)
 
 ## What this repo provides
