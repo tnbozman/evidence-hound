@@ -72,7 +72,7 @@ public class SspStatementTests
     {
         string?[] resultCodes = ["compliant", "partially_compliant", "non_compliant", "not_assessed", "not_applicable", null];
         var controls = Controls(Control("AC-A", "Does A.", "it@example.com", "2026-12-31"), Control("AC-B", null, null));
-        SspDocument Make() => Document([.. Enumerable.Range(0, Math.Min(results.Length, owners.Length)).Select(i => SspStatements.Complete(
+        SspDocument Make() => Document(controls, [.. Enumerable.Range(0, Math.Min(results.Length, owners.Length)).Select(i => SspStatements.Complete(
             Row($"ISM-{i}", resultCodes[results[i] % resultCodes.Length], owners[i] % 3 == 0 ? null : "Seen.", owners[i] % 2 == 0 ? ["AC-A"] : ["AC-B", "AC-A"]),
             controls))]);
 
@@ -102,10 +102,12 @@ public class SspStatementTests
 
     internal static IReadOnlyDictionary<string, SspControl> Controls(params SspControl[] controls) => controls.ToDictionary(c => c.RefId.Value!);
 
-    internal static SspDocument Document(params SspRequirement[] rows)
+    internal static SspDocument Document(params SspRequirement[] rows) => Document(Controls(), rows);
+
+    internal static SspDocument Document(IReadOnlyDictionary<string, SspControl> controls, params SspRequirement[] rows)
     {
         var repo = new SspSource(SspSource.Repo, "scope/ssp.yaml line 2");
         SspValue Repo(string value) => new(value, repo);
-        return new SspDocument("essential-eight", "ism", Repo("Example corporate IT"), Repo("0.1"), Repo("urn:x"), Repo("EX"), Repo("Corporate IT"), [], [], [], [], rows, [], []);
+        return new SspDocument("essential-eight", "ism", Repo("Example corporate IT"), Repo("0.1"), Repo("urn:x"), Repo("EX"), Repo("Corporate IT"), [], [], [], [.. controls.Values], rows, [], []);
     }
 }

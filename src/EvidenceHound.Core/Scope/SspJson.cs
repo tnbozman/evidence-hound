@@ -14,6 +14,7 @@ public static class SspJson
         return new JsonObject
         {
             ["programme"] = document.Programme,
+            ["gaps"] = new JsonArray([.. document.Gaps.Select(g => new JsonObject { ["requirement"] = g.Requirement, ["reason"] = g.Reason })]),
             ["profile"] = document.Profile,
             ["system_name"] = Value(document.SystemName),
             ["version"] = Value(document.Version),
@@ -31,14 +32,30 @@ public static class SspJson
             })]),
             ["controls"] = new JsonArray([.. document.Controls.Select(c => new JsonObject
             {
-                ["ref_id"] = Value(c.RefId), ["name"] = Value(c.Name), ["owner"] = Value(c.Owner), ["status"] = Value(c.Status), ["description"] = Value(c.Description),
+                ["ref_id"] = Value(c.RefId), ["name"] = Value(c.Name), ["owner"] = Value(c.Owner), ["status"] = Value(c.Status), ["eta"] = Value(c.Eta), ["description"] = Value(c.Description),
             })]),
             ["requirements"] = new JsonArray([.. document.Requirements.Select(r => new JsonObject
             {
                 ["ref"] = Value(r.Ref), ["result"] = Value(r.Result), ["observation"] = Value(r.Observation), ["evidence"] = Value(r.Evidence), ["controls"] = Value(r.Controls),
+                ["status"] = Value(r.Status), ["statement"] = Value(r.Statement), ["responsible"] = Value(r.Responsible),
+                ["gaps"] = new JsonArray([.. r.Gaps.Select(g => JsonValue.Create(g))]),
             })]),
             ["documents"] = new JsonArray([.. document.Documents.Select(Value)]),
             ["sections"] = new JsonArray([.. document.Sections.Select(Value)]),
+        }.ToJsonString(Indented) + "\n";
+    }
+
+    /// <summary>The POA&amp;M as JSON, each value with its source.</summary>
+    public static string Write(IReadOnlyList<PoamItem> items)
+    {
+        ArgumentNullException.ThrowIfNull(items);
+        return new JsonObject
+        {
+            ["items"] = new JsonArray([.. items.Select(i => new JsonObject
+            {
+                ["requirement"] = Value(i.Requirement), ["status"] = Value(i.Status), ["control"] = Value(i.Control), ["owner"] = Value(i.Owner),
+                ["eta"] = Value(i.Eta), ["control_status"] = Value(i.ControlStatus),
+            })]),
         }.ToJsonString(Indented) + "\n";
     }
 

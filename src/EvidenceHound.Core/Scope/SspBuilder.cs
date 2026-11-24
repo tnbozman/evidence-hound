@@ -23,6 +23,13 @@ public static class SspBuilder
             .ToArray();
         ActualObject? Find(ScopeKind kind, string? key) => key is not null && objects.TryGetValue((kind, key), out var found) ? found : null;
 
+        SspControl[] controls =
+        [
+            .. rows.SelectMany(r => Split(r.Held.Fields.GetValueOrDefault("controls"))).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)
+                .Select(c => Control(c, Find(ScopeKind.Control, c))),
+        ];
+        var byRef = controls.ToDictionary(c => c.RefId.Value!, StringComparer.Ordinal);
+
         return new SspDocument(
             programme.Id,
             ssp.Profile,
@@ -34,9 +41,8 @@ public static class SspBuilder
             [.. ssp.Roles.Select(r => new SspRoleValue(r.Role, Repo(r.Holder)))],
             [.. inBoundary.Select(s => Inventory(s, Find(ScopeKind.System, s.Value)))],
             [.. inBoundary.Select(s => systems.GetValueOrDefault(s.Value)).OfType<ScopeSystem>().Where(s => s.Solution is not null).Select(s => Service(s, Find))],
-            [.. rows.SelectMany(r => Split(r.Held.Fields.GetValueOrDefault("controls"))).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)
-                .Select(c => Control(c, Find(ScopeKind.Control, c)))],
-            [.. rows.Select(Requirement)],
+            controls,
+            [.. rows.Select(r => SspStatements.Complete(Requirement(r), byRef))],
             [.. ssp.Documents.Select(d => new SspValue(scope.Audits.SelectMany(a => a.Documents).FirstOrDefault(x => x.Id == d.Value)?.Name ?? d.Value, RepoSource(d.At)))],
             [.. ssp.Sections.Select(s => Repo(s.File, s.At))]);
     }
@@ -73,7 +79,10 @@ public static class SspBuilder
             Field(held, "name", source),
             Field(held, "owner", source),
             new SspValue(held?.Observed.GetValueOrDefault("status"), source),
-            Field(held, "description", source));
+            Field(held, "description", source))
+        {
+            Eta = Field(held, "eta", source),
+        };
     }
 
     private static SspRequirement Requirement(ActualObject row)

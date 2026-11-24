@@ -29,7 +29,9 @@ file by `scripts/cheatsheet/render.sh`.
   - `--ref --name --framework` (req) `--group --domain --perimeter --system --due --json`
 - `hound programme list`: programmes with framework, groups, audit of record and requirement counts
   - `--scope --json`
-- `hound ssp build`: a programme's system security plan from CISO Assistant and the repo, each value with its source
+- `hound ssp build`: a programme's system security plan from CISO Assistant and the repo, gaps first, each value with its source
+  - `--programme` (req) `--scope --config --json --strict`
+- `hound ssp poam`: the plan of action and milestones: requirements not yet met, with control, owner, ETA and status
   - `--programme` (req) `--scope --config --json`
 
 ### Onboard
