@@ -1,6 +1,8 @@
 using System.CommandLine;
 using System.Text;
 using EvidenceHound.CisoAssistant;
+using EvidenceHound.Core.Checks;
+using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Publishing;
 using EvidenceHound.Core.Reporting;
 using EvidenceHound.Core.Results;
@@ -52,7 +54,18 @@ internal static class ReportCommands
         };
         committee.SetAction((parseResult, cancellationToken) => CommitteeAsync(
             parseResult.GetRequiredValue(month), parseResult.GetRequiredValue(reportConfig), parseResult.GetValue(outFile), output, logger, registry, cancellationToken));
-        return new Command("report", "Posture snapshots, and the monthly committee and quarterly board reports built from them.") { snapshot, committee };
+        var quarter = new Option<string>("--quarter") { Description = "The quarter, YYYY-Qn.", Required = true };
+        var boardConfig = new Option<FileInfo>("--config") { Description = "The deployment config: where the evidence store keeps the snapshots.", Required = true };
+        var boardOut = new Option<FileInfo?>("--out") { Description = "Write the report (Markdown) to this file instead of the output." };
+        var board = new Command(
+            "board",
+            "The quarterly board report (Markdown) from the snapshots of the last month of this quarter and the three before it. Reads no CISO Assistant.")
+        {
+            quarter, boardConfig, boardOut,
+        };
+        board.SetAction((parseResult, cancellationToken) => BoardAsync(
+            parseResult.GetRequiredValue(quarter), parseResult.GetRequiredValue(boardConfig), parseResult.GetValue(boardOut), output, logger, registry, cancellationToken));
+        return new Command("report", "Posture snapshots, and the monthly committee and quarterly board reports built from them.") { snapshot, committee, board };
     }
 
     private static async Task<int> CommitteeAsync(
@@ -67,6 +80,28 @@ internal static class ReportCommands
                 .Bind(current => ReadSnapshotsAsync(x.Root, [x.Period.Previous()], cancellationToken).Result.Map(previous => (Current: current, Previous: previous.SingleOrDefault()))));
         return await loaded.Match(
             async snapshots => await WriteReportAsync(CommitteeReport.Render(snapshots.Current, snapshots.Previous), outFile, output, cancellationToken),
+            problems => Task.FromResult(Log.Problems(logger, problems)));
+    }
+
+    private static async Task<int> BoardAsync(
+        string quarterText, FileInfo configFile, FileInfo? outFile, TextWriter output, ILogger logger, CollectorRegistry registry, CancellationToken cancellationToken)
+    {
+        var period = ReportingPeriod.Parse(quarterText).Bind(p => p.Kind == PeriodKind.Quarter
+            ? Result.Ok(p)
+            : Result.Fail<ReportingPeriod>(new Problem("report.period_not_quarter", $"'{quarterText}' is a month: the board report is quarterly (YYYY-Qn); the committee report is monthly.")));
+        var deployment = await ConfigCommands.LoadAsync(configFile, registry, cancellationToken);
+        var loaded = await period.Bind(p => deployment.Map(d => (Quarter: p, Root: d.Evidence.Root))).BindAsync(async x =>
+        {
+            var ends = Enumerable.Range(0, BoardReport.TrendQuarters)
+                .Select(i => new ReportingPeriod(PeriodKind.Month, x.Quarter.End.AddMonths(-3 * i).Year, x.Quarter.End.AddMonths(-3 * i).Month))
+                .Reverse()
+                .ToList();
+            return (await ReadSnapshotAsync(x.Root, ends[^1], cancellationToken))
+                .Bind(_ => ReadSnapshotsAsync(x.Root, ends, cancellationToken).Result)
+                .Map(snapshots => (x.Quarter, Snapshots: snapshots));
+        });
+        return await loaded.Match(
+            async x => await WriteReportAsync(BoardReport.Render(x.Quarter, x.Snapshots), outFile, output, cancellationToken),
             problems => Task.FromResult(Log.Problems(logger, problems)));
     }
 
@@ -141,7 +176,9 @@ internal static class ReportCommands
         var programmes = new List<Result<ProgrammePosture>>();
         foreach (var programme in checkedScope.Scope.Setup.Programmes)
         {
-            programmes.Add(await ProgrammeAsync(programme, checkedScope, cycles, period, client, posture, cancellationToken));
+            var coverage = await CoverageAsync(programme, checkedScope, setup.Deployment, cancellationToken);
+            programmes.Add((await ProgrammeAsync(programme, checkedScope, cycles, period, client, posture, cancellationToken))
+                .Bind(p => coverage.Map(c => p with { Coverage = c })));
         }
 
         var records = await posture.ReadAsync(cancellationToken);
@@ -191,6 +228,26 @@ internal static class ReportCommands
             Closed = a.Closed,
             Register = Register(programme, checkedScope.Scope.Setup, period),
         }));
+    }
+
+    /// <summary>How the config's mapping for the programme's audit answers each parent and group; none when no target maps that audit.</summary>
+    private static async Task<Result<IReadOnlyList<CoverageCount>>> CoverageAsync(
+        ScopeProgramme programme, ScopeCommands.CheckedScope checkedScope, DeploymentConfig deployment, CancellationToken cancellationToken)
+    {
+        if (deployment.Targets.FirstOrDefault(t => t.ComplianceAssessmentRefId == programme.Audit.Value) is not { } target)
+        {
+            return Result.Ok<IReadOnlyList<CoverageCount>>([]);
+        }
+
+        var manual = deployment.Collectors
+            .Where(c => c.Type == "manual" && c.Settings.ContainsKey("checks"))
+            .SelectMany(c => c.Settings["checks"].Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
+            .Select(CheckId.Create)
+            .SelectMany(r => r.Match(id => new[] { id }, _ => []))
+            .ToHashSet();
+        var framework = checkedScope.Inputs.Snapshots[programme.Framework.Value];
+        return (await MappingCommands.LoadAsync(new FileInfo(target.MappingPath), cancellationToken))
+            .Map(loaded => MappingCoverage.Count(framework, loaded.Mapping, loaded.ManualOnly.Select(m => m.Key), manual, programme.Groups));
     }
 
     private static RegisterSnapshot? Register(ScopeProgramme programme, ScopeSetup setup, ReportingPeriod period)

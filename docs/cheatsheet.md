@@ -131,7 +131,8 @@ file by `scripts/cheatsheet/render.sh`.
 - `hound report snapshot --period 2026-11`: the period's posture per programme, from CISO Assistant and the run store, to the evidence store
   - `--config` (req) `--scope --control`
 - `hound report committee --month 2026-11`: the monthly security committee report from the month's and last month's snapshots
-  - `--config` (req) `--out`
+- `hound report board --quarter 2026-Q4`: the quarterly board report from the last four quarter-end snapshots
+  - both: `--config` (req) `--out`
 
 ## Typical paths
 
