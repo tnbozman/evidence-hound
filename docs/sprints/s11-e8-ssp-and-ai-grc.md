@@ -501,6 +501,7 @@ Decided by the person on 2026-11-22:
   2. CMMC Level 2 uses CISO Assistant's built-in `cmmc-2.0` framework; a NIST SP 800-171 Rev 3 mapping is optional.
   3. Output is Markdown, with an option to generate Word.
   4. Model-suggested control descriptions are kept, as proposals people review (s11-06), and come after the deterministic tasks: deterministic code first, a model only afterwards, and never in evidence collection.
+     Updated by the person on 2026-11-24 (s11-06): the person's own agent drafts them from `hound ssp suggest`; hound has no model.
 
 ## Carried from s09 and s10
 

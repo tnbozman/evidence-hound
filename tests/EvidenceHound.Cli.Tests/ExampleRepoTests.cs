@@ -56,6 +56,26 @@ public sealed partial class ExampleRepoTests : IDisposable
     }
 
     [Fact]
+    public void Ai_grc_primer_gives_each_practice_a_worked_example_and_a_glossary()
+    {
+        // s11-08: readable in 15 minutes (about 3,000 words at most), one Example Pty Ltd example per AI6 practice.
+        var primer = File.ReadAllText(Path.Combine(RepoRoot, "docs", "ai-grc-primer.md"));
+        string[] practices = ["Decide who is accountable", "Understand impacts and plan accordingly", "Measure and manage risks", "Share essential information", "Test and monitor", "Maintain human control"];
+        for (var i = 0; i < practices.Length; i++)
+        {
+            var section = primer.Split($"### {i + 1}. {practices[i]}")[1].Split("### ")[0];
+            section.ShouldContain("**Example Pty Ltd:**", Case.Sensitive, practices[i]);
+        }
+
+        foreach (var heading in new[] { "## Glossary", "## What you do not need to do at Foundations" })
+        {
+            primer.ShouldContain(heading, Case.Sensitive);
+        }
+
+        primer.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Length.ShouldBeLessThan(3000);
+    }
+
+    [Fact]
     public void Ssp_guide_covers_what_people_write_and_how_a_version_is_approved()
     {
         var guide = File.ReadAllText(Path.Combine(RepoRoot, "docs", "govern", "system-security-plan.md"));
