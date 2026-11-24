@@ -41,8 +41,25 @@ public static class ReviewOrder
 
     /// <summary>Most urgent first: by deadline (none last), then by kind, then by key.</summary>
     public static IReadOnlyList<ReviewItem> Order(IEnumerable<ReviewItem> items) =>
-        throw new NotImplementedException();
+        [.. items.OrderBy(i => i.Deadline ?? DateOnly.MaxValue).ThenBy(i => i.Kind).ThenBy(i => i.Key, StringComparer.Ordinal)];
 
     /// <summary>The items that fit in <paramref name="minutes"/>, in order; the first always, so a short session still does something.</summary>
-    public static IReadOnlyList<ReviewItem> Within(IReadOnlyList<ReviewItem> ordered, int minutes) => throw new NotImplementedException();
+    public static IReadOnlyList<ReviewItem> Within(IReadOnlyList<ReviewItem> ordered, int minutes)
+    {
+        ArgumentNullException.ThrowIfNull(ordered);
+        var taken = new List<ReviewItem>();
+        var used = 0;
+        foreach (var item in ordered)
+        {
+            if (taken.Count > 0 && used + item.Minutes > minutes)
+            {
+                break;
+            }
+
+            taken.Add(item);
+            used += item.Minutes;
+        }
+
+        return taken;
+    }
 }
