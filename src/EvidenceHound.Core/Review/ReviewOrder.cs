@@ -28,6 +28,12 @@ public sealed record ReviewItem(ReviewKind Kind, string Key, string Title, strin
 
     /// <summary>The person's last challenge, waiting for the agent's answer.</summary>
     public ReviewChallenge? Challenge { get; init; }
+
+    /// <summary>The standing approval that accepts this item without a question, if one does.</summary>
+    public StandingApproval? CoveredBy { get; init; }
+
+    /// <summary>For a manual source's re-attestation with the same checks and results as its last: the source a standing approval could cover.</summary>
+    public string? Renewable { get; init; }
 }
 
 /// <summary>A person's question or objection to an item, kept until the item is accepted.</summary>

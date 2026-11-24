@@ -78,11 +78,43 @@ internal static class ManualProposalCommands
     }
 
     /// <summary>Every pending proposal as an item of the review queue, read from the deployment config's manual sources.</summary>
-    internal static async Task<Result<IReadOnlyList<ReviewItem>>> PendingAsync(FileInfo config, CollectorRegistry registry, CancellationToken cancellationToken)
+    internal static async Task<Result<IReadOnlyList<ReviewItem>>> PendingAsync(
+        FileInfo config, CollectorRegistry registry, IReadOnlyList<StandingApproval> standing, DateOnly today, CancellationToken cancellationToken)
     {
         var sources = (await ConfigCommands.LoadAsync(config, registry, cancellationToken)).Bind(deployment => Sources(deployment, null));
         var waiting = await sources.BindAsync(found => WaitingAsync(found, cancellationToken));
-        return waiting.Map(all => (IReadOnlyList<ReviewItem>)[.. all.Select(Item)]);
+        return await waiting.BindAsync(async all =>
+        {
+            var items = new List<ReviewItem>();
+            foreach (var one in all)
+            {
+                var last = await LastAsync(one.Manual.DropFolder, cancellationToken);
+                var unchanged = last is not null && StandingApprovals.Covers(
+                    StandingApprovals.Unchanged(one.Source, "", today), ReviewKind.ManualEvidence, one.Source, one.Proposal.Outcomes, last, today);
+                items.Add(Item(one) with
+                {
+                    Renewable = unchanged ? one.Source : null,
+                    CoveredBy = standing.FirstOrDefault(r => StandingApprovals.Covers(r, ReviewKind.ManualEvidence, one.Source, one.Proposal.Outcomes, last, today)),
+                });
+            }
+
+            return Result.Ok<IReadOnlyList<ReviewItem>>(items);
+        });
+    }
+
+    /// <summary>The outcomes of the source's most recent attestation, or null when nothing in its drop folder is attested yet.</summary>
+    private static async Task<IReadOnlyDictionary<string, CheckOutcome>?> LastAsync(string dropFolder, CancellationToken cancellationToken)
+    {
+        Attestation? last = null;
+        foreach (var path in Directory.Exists(dropFolder) ? Directory.EnumerateFiles(dropFolder, "*" + Attestation.Suffix) : [])
+        {
+            if (Attestation.Parse(await File.ReadAllTextAsync(path, cancellationToken), Path.GetFileName(path)) is Result<Attestation>.Ok { Value: var one } && (last is null || one.Date > last.Date))
+            {
+                last = one;
+            }
+        }
+
+        return last?.Outcomes;
     }
 
     /// <summary>

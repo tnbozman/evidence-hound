@@ -98,8 +98,9 @@ internal static class ReviewCommand
         var listing = new ApproveCommand.Listing();
         var walked = await new ApproveCommand.Walk(repo, terminal, new Prompt(terminal), today, listing).RunAsync(cancellationToken);
         var deployment = config ?? new FileInfo(Path.Combine(repo, "hound.yaml"));
+        var standing = await StandingApprovalFile.ReadAsync(repo, cancellationToken);
         var manual = deployment.Exists
-            ? await ManualProposalCommands.PendingAsync(deployment, registry, cancellationToken)
+            ? await ManualProposalCommands.PendingAsync(deployment, registry, standing, today, cancellationToken)
             : Result.Ok<IReadOnlyList<ReviewItem>>([]);
         var challenges = await Challenges.ReadAsync(repo, cancellationToken);
         return walked.Bind(_ => manual).Map(proposals => ReviewOrder.Order([.. listing.Items, .. proposals]).Select(i => i with { Challenge = challenges.GetValueOrDefault(i.Key) }).ToArray())
@@ -123,6 +124,9 @@ internal static class ReviewCommand
                 ? new JsonObject { ["answer"] = r.Answer, ["reasons"] = r.Reasons, ["sources"] = new JsonArray([.. r.Sources.Select(s => (JsonNode)s)]) }
                 : null,
             ["challenge"] = i.Challenge is { } c ? new JsonObject { ["note"] = c.Note, ["by"] = c.By, ["on"] = c.On } : null,
+            ["covered_by"] = i.CoveredBy is { } a
+                ? new JsonObject { ["rule"] = a.Rule, ["source"] = a.Source, ["approved_by"] = a.ApprovedBy, ["expires"] = StandingApprovalFile.Day(a.Expires) }
+                : null,
         })]),
     }.ToJsonString(OnboardAgentCommand.Indented);
 
@@ -140,6 +144,7 @@ internal static class ReviewCommand
         private readonly Dictionary<string, string> _answers = new(StringComparer.Ordinal);
         private readonly List<(string Key, string Note)> _challenged = [];
         private readonly List<string> _skipped = [];
+        private readonly List<string> _standing = [];
         private readonly Prompt _prompt = new(terminal);
         private string? _person;
         private bool _quit;
@@ -161,8 +166,20 @@ internal static class ReviewCommand
                 return Result.Ok(Unit.Value);
             }
 
-            var chosen = ReviewOrder.Within(all, minutes);
+            var covered = all.Where(i => i.CoveredBy is not null).ToArray();
+            foreach (var item in covered)
+            {
+                _answers[item.Key] = "attest";
+                _standing.Add(item.Key);
+            }
+
+            var chosen = ReviewOrder.Within([.. all.Where(i => i.CoveredBy is null)], minutes);
             await SayAsync(string.Create(CultureInfo.InvariantCulture, $"{all.Count} item(s) wait on you, about {all.Sum(i => i.Minutes)} minutes. This session takes {chosen.Count}, about {chosen.Sum(i => i.Minutes)} minutes, most urgent first."), cancellationToken);
+            if (covered.Length > 0)
+            {
+                await SayAsync(string.Create(CultureInfo.InvariantCulture, $"{covered.Length} item(s) are accepted by a standing approval you signed; they are listed in the summary."), cancellationToken);
+            }
+
             _person = await _prompt.AskUntilAnsweredAsync("Your name, recorded with today's date on everything you accept", cancellationToken);
             if (_person is null)
             {
@@ -172,6 +189,17 @@ internal static class ReviewCommand
             for (var i = 0; i < chosen.Count && !_quit; i++)
             {
                 await AskAsync(chosen[i], string.Create(CultureInfo.InvariantCulture, $"[{i + 1}/{chosen.Count}]"), cancellationToken);
+            }
+
+            // A re-attestation with the same checks and results can be covered from now on, for a year, if the person signs the rule.
+            foreach (var source in chosen.Where(i => i.Renewable is not null && _answers.ContainsKey(i.Key)).Select(i => i.Renewable!).Distinct(StringComparer.Ordinal))
+            {
+                var answer = await _prompt.AskAsync(
+                    $"Accept {source}'s future exports without review for 12 months, when they have the same checks and results as the last attestation (y, n)", cancellationToken);
+                if (answer?.ToLowerInvariant() == "y")
+                {
+                    await StandingApprovalFile.AddAsync(repo, StandingApprovals.Unchanged(source, _person, today), cancellationToken);
+                }
             }
 
             // Apply in one batch: approvals as hound approve writes them (asking about anything they unblock), then manual evidence.
@@ -194,9 +222,16 @@ internal static class ReviewCommand
 
             await Challenges.WriteAsync(repo, _challenged, _answers.Keys, _person, today, cancellationToken);
             var record = await SignOffAsync(cancellationToken);
-            await terminal.Output.WriteLineAsync(string.Create(
+            var rules = await StandingApprovalFile.ReadAsync(repo, cancellationToken);
+            var summary = string.Create(
                 CultureInfo.InvariantCulture,
-                $"Accepted {_answers.Count}, challenged {_challenged.Count}, skipped {_skipped.Count}. Sign-off recorded in {record}.{(_challenged.Count > 0 ? " Your agent answers each challenge before the next session." : "")}").AsMemory(), cancellationToken);
+                $"Accepted {_answers.Count}{(_standing.Count > 0 ? $" ({_standing.Count} by standing approval)" : "")}, challenged {_challenged.Count}, skipped {_skipped.Count}. Sign-off recorded in {record}.{(_challenged.Count > 0 ? " Your agent answers each challenge before the next session." : "")}");
+            if (rules.Count > 0)
+            {
+                summary += $"\nStanding approvals: {string.Join("; ", rules.Select(StandingApprovalFile.Describe))}.";
+            }
+
+            await terminal.Output.WriteLineAsync(summary.AsMemory(), cancellationToken);
             return Result.Ok(Unit.Value);
         }
 
@@ -266,7 +301,8 @@ internal static class ReviewCommand
             var text = $"# One review session: who signed off, when, and every item they accepted.\nperson: {Quote(_person!)}\non: \"{today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}\"\nat: \"{at.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture)}\"\n"
                 + $"accepted:{(_answers.Count == 0 ? " []" : List(_answers.Keys))}\n"
                 + $"challenged:{(_challenged.Count == 0 ? " []" : string.Concat(_challenged.Select(c => $"\n  - key: {Quote(c.Key)}\n    note: {Quote(c.Note)}")))}\n"
-                + $"skipped:{(_skipped.Count == 0 ? " []" : List(_skipped))}\n";
+                + $"skipped:{(_skipped.Count == 0 ? " []" : List(_skipped))}\n"
+                + $"standing:{(_standing.Count == 0 ? " []" : List(_standing))}\n";
             await File.WriteAllTextAsync(file, text, cancellationToken);
             return relative;
         }
