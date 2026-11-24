@@ -31,7 +31,7 @@ public static class SspBuilder
         ];
         var byRef = controls.ToDictionary(c => c.RefId.Value!, StringComparer.Ordinal);
 
-        return new SspDocument(
+        var document = new SspDocument(
             programme.Id,
             ssp.Profile,
             Repo(ssp.SystemName, ssp.At),
@@ -45,7 +45,13 @@ public static class SspBuilder
             controls,
             [.. rows.Select(r => SspStatements.Complete(Requirement(r), byRef))],
             [.. ssp.Documents.Select(d => new SspValue(scope.Audits.SelectMany(a => a.Documents).FirstOrDefault(x => x.Id == d.Value)?.Name ?? d.Value, RepoSource(d.At)))],
-            [.. ssp.Sections.Select(s => new SspNamed(s.Name, Repo(s.File, s.At)))]);
+            [.. ssp.Sections.Select(s => new SspNamed(s.Name, Repo(s.File, s.At)))])
+        {
+            Classification = Repo(ssp.Classification, ssp.At),
+            OperationalStatus = Repo(ssp.OperationalStatus, ssp.At),
+            SystemType = Repo(ssp.SystemType, ssp.At),
+        };
+        return snapshot is null ? document : document with { Annex = SspAnnex.Of(document, snapshot, programme.Groups) };
     }
 
     private static SspSystem Inventory(ScopeRef system, ActualObject? held)
@@ -103,7 +109,7 @@ public static class SspBuilder
 
     private static SspValue Repo(ScopeRef reference) => Repo(reference.Value, reference.At);
 
-    private static SspValue Repo(string value, SourceLine at) => new(value, RepoSource(at));
+    private static SspValue Repo(string? value, SourceLine at) => new(value, RepoSource(at));
 
     private static SspSource RepoSource(SourceLine at) => new(SspSource.Repo, $"{at.File} line {at.Line.ToString(CultureInfo.InvariantCulture)}");
 

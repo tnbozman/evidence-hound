@@ -27,7 +27,7 @@ public sealed record ProgrammeOutline(ScopeProgramme Programme, int Version, IRe
     }
 
     /// <summary>A parent's short name: the last part of its URN, such as <c>mfa</c> for the Essential Eight's multi-factor authentication.</summary>
-    private static string Name(string? parentUrn) => parentUrn is null ? TopLevel : parentUrn[(parentUrn.LastIndexOf(':') + 1)..];
+    internal static string Name(string? parentUrn) => parentUrn is null ? TopLevel : parentUrn[(parentUrn.LastIndexOf(':') + 1)..];
 }
 
 /// <summary>One implementation group of a programme: its assessable requirement count, and the same per parent node.</summary>

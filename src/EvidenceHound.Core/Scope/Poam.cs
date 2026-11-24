@@ -7,7 +7,10 @@ namespace EvidenceHound.Core.Scope;
 public sealed record PoamItem(SspValue Requirement, SspValue Status, SspValue Control, SspValue Owner, SspValue Eta, SspValue ControlStatus)
 {
     /// <summary>The item's id, which the annex links to: one per requirement.</summary>
-    public string Id => throw new NotImplementedException();
+    public string Id => For(Requirement.Value);
+
+    /// <summary>The POA&amp;M id of a requirement.</summary>
+    public static string For(string? requirement) => $"POAM-{requirement}";
 }
 
 /// <summary>

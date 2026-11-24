@@ -1600,6 +1600,18 @@
               "version": {
                 "$ref": "#/$defs/text"
               },
+              "classification": {
+                "description": "SP 800-18 section 2, system categorisation: for the ISM, the highest classification the system processes, such as OFFICIAL or OFFICIAL: Sensitive.",
+                "$ref": "#/$defs/text"
+              },
+              "operational_status": {
+                "description": "SP 800-18 section 7: operational, under development or undergoing a major modification.",
+                "$ref": "#/$defs/text"
+              },
+              "system_type": {
+                "description": "SP 800-18 section 8: major application or general support system.",
+                "$ref": "#/$defs/text"
+              },
               "roles": {
                 "type": "object",
                 "additionalProperties": false,
@@ -1624,7 +1636,7 @@
                 }
               },
               "sections": {
-                "description": "The parts that cannot be generated, as Markdown files in the repo, by section name: environment, physical, personnel.",
+                "description": "The parts that cannot be generated, as Markdown files in the repo, by section name: purpose, environment, management and laws_and_policies (SP 800-18 sections 9, 10, 6 and 12).",
                 "type": "object",
                 "additionalProperties": {
                   "$ref": "#/$defs/text"

@@ -45,6 +45,11 @@ public static partial class ScopeLoader
                     ? [.. sections.Children.Where(c => c.Key is YamlScalarNode { Value: not null } && c.Value is YamlScalarNode { Value: not null })
                         .Select(c => new SspSection(((YamlScalarNode)c.Key).Value!, ((YamlScalarNode)c.Value).Value!, file.At(c.Key)))]
                     : [],
-                file.At(item));
+                file.At(item))
+            {
+                Classification = file.Text(item, "classification"),
+                OperationalStatus = file.Text(item, "operational_status"),
+                SystemType = file.Text(item, "system_type"),
+            };
     }
 }
