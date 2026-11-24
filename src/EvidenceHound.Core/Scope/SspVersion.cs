@@ -160,3 +160,14 @@ public static class SspSnapshotJson
     private static string[] Strings(JsonObject parent, string key) =>
         [.. (parent[key] as JsonArray ?? []).Select(v => v?.GetValue<string>() ?? "")];
 }
+
+/// <summary>One change between two versions of a plan: its area (boundary, inventory, supplier, status, statement, section), the item, and the values.</summary>
+public sealed record SspChange(string Area, string Item, string? Before, string? After);
+
+/// <summary>What changed between two versions (s11-05), boundary and inventory first. Pure.</summary>
+public static class SspDiff
+{
+    public static IReadOnlyList<SspChange> Of(SspSnapshot before, SspSnapshot after) => throw new NotImplementedException();
+
+    public static string Markdown(string from, string to, IReadOnlyList<SspChange> changes) => throw new NotImplementedException();
+}
