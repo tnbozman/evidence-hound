@@ -58,3 +58,33 @@ setup() {
   [ "$status" -eq 0 ]
   [[ "$output" == *"as expected"* ]]
 }
+
+@test "--history finds a term that was added and later removed, naming the commit but not the term" {
+  echo "Hosted at AcmeWidgets" > notes.txt
+  git add notes.txt
+  git commit -q -m "add notes"
+  leaked="$(git rev-parse --short=12 HEAD)"
+  git rm -q notes.txt
+  git commit -q -m "remove notes"
+  ORG_DENYLIST="acmewidgets" run "$script" "$base..HEAD"
+  [ "$status" -eq 0 ]
+  ORG_DENYLIST="acmewidgets" run "$script" --history
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"$leaked"* ]]
+  [[ "$output" != *"cmeWidgets"* && "$output" != *"acmewidgets"* ]]
+}
+
+@test "--history finds a term in any commit message on any branch" {
+  git checkout -q -b side
+  git commit -q --allow-empty -m "for acmewidgets"
+  git checkout -q main
+  ORG_DENYLIST="acmewidgets" run "$script" --history
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"commit message"* ]]
+}
+
+@test "--history passes a clean history" {
+  ORG_DENYLIST="acmewidgets" run "$script" --history
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"clean"* ]]
+}
