@@ -177,7 +177,7 @@ Compared on 2026-11-24 (Essential Eight sheet against CISO Assistant's `essentia
 **Result (2026-11-24):** `SspFunctionalTests.Signs_publishes_and_diffs_two_versions_of_the_plan` ran in CI against the seeded CISO Assistant (functional job, run 45387466690, passed): version 1.0 of the example plan built with `--snapshot-out`, signed by the authorising official, rebuilt from its snapshot as the approved plan and published with CISO Assistant's own Word audit report attached; the purpose section changed, version 1.1 signed and published; `ssp diff` listed the section change; evidence `SSP-ESSENTIAL-EIGHT` has two revisions. Changing a section stands in for changing a control description, so the shared instance keeps its seeded controls.
 
 ### s11-06 Control descriptions drafted by your own agent (optional, last)
-- [ ] Done
+- [x] Done
 
 Comes after the deterministic SSP tasks, following the person's rule: deterministic code first, a model only afterwards and only to propose text for people to review. **Decided Nov 2026 (person):** hound has no model, so the person's own coding agent drafts the descriptions; hound gives it the facts and writes its text where review happens.
 
@@ -197,8 +197,11 @@ Comes after the deterministic SSP tasks, following the person's rule: determinis
 **Functional check**
 - Suggest for the example repo's gaps, describe one control, apply the scope, and see that gap close in `ssp build`.
 
+
+**Result (2026-11-24):** `SspFunctionalTests.Suggest_briefs_your_agent_and_describe_feeds_the_next_scope_plan` passed in CI against the seeded CISO Assistant (run on 411d39e): the brief lists no control the example already describes; `ssp describe` wrote AC-BACKUP's description to a copy of the example's `controls.yaml` under the "drafted with AI" comment, and `scope plan` showed the change for AC-BACKUP with that text. It was not applied, so the shared instance keeps the example's state; applying it is the ordinary `scope apply`.
+
 ### s11-07 SSP documentation and example
-- [ ] Done
+- [x] Done
 
 **Acceptance criteria**
 - `docs/govern/system-security-plan.md`: what the SSP is built from, the ISM-style profile, what cannot be generated and must be written or drawn by people (boundary and network diagrams, data flows, policies and procedures, physical and personnel arrangements, signatures), the review and approval flow, versions, and the optional drafting step.
@@ -210,6 +213,9 @@ Comes after the deterministic SSP tasks, following the person's rule: determinis
 
 **Functional check**
 - Following the guide verbatim, produce, sign and publish the example SSP on the local stack.
+
+
+**Result (2026-11-24):** `SspFunctionalTests.Signs_publishes_and_diffs_two_versions_of_the_plan` now uses the example's own `scope/ssp.yaml` and follows `docs/govern/system-security-plan.md`: build with `--snapshot-out`, sign, rebuild from the snapshot, publish with the audit report, then a second version and `ssp diff`. It passed in CI (run on 411d39e). `ExampleRepoTests` checks the example plan, its written sections and boundary diagram, and that no generated plan is committed.
 
 ## Part 2: AI governance
 
