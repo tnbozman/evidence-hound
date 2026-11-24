@@ -92,6 +92,16 @@ public static class ReviewOrder
         return problems.Length > 0 ? Result.Fail<ReviewRecommendation>(problems) : Result.Ok(new ReviewRecommendation(answer!, reason!, sources));
     }
 
+    /// <summary>Days before its due date that a supplier review joins the queue: two weekly sessions to do it in.</summary>
+    public static int ReviewLeadDays => 14;
+
+    /// <summary>Whether a session can act on the item now: a supplier review from <see cref="ReviewLeadDays"/> before it is due, anything else always.</summary>
+    public static bool Ready(ReviewItem item, DateOnly today)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        return item.Kind != ReviewKind.SupplierReview || item.Deadline is not { } due || due <= today.AddDays(ReviewLeadDays);
+    }
+
     public static IReadOnlyList<ReviewItem> Order(IEnumerable<ReviewItem> items) =>
         [.. items.OrderBy(i => i.Deadline ?? DateOnly.MaxValue).ThenBy(i => i.Kind).ThenBy(i => i.Key, StringComparer.Ordinal)];
 

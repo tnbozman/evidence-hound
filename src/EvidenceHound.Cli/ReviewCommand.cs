@@ -129,7 +129,7 @@ internal static class ReviewCommand
             : Result.Ok<IReadOnlyList<ReviewItem>>([]);
         var challenges = await Challenges.ReadAsync(repo, cancellationToken);
         var recommendations = await Recommendations.ReadAsync(repo, cancellationToken);
-        return walked.Bind(_ => manual).Map(proposals => ReviewOrder.Order([.. listing.Items, .. proposals])
+        return walked.Bind(_ => manual).Map(proposals => ReviewOrder.Order([.. listing.Items, .. proposals]).Where(i => ReviewOrder.Ready(i, today))
                 .Select(i => i with { Challenge = challenges.GetValueOrDefault(i.Key), Recommendation = recommendations.GetValueOrDefault(i.Key) ?? i.Recommendation }).ToArray())
             .Map(items => (IReadOnlyList<ReviewItem>)items);
     }
@@ -316,6 +316,8 @@ internal static class ReviewCommand
 
         public string Person => _person!;
 
+        public DateOnly Today => today;
+
         public bool Decided(string key) => _answers.ContainsKey(key) || _skipped.Contains(key) || _challenged.Any(c => c.Key == key);
 
         public string? Answer(string key) => _answers.GetValueOrDefault(key);
@@ -348,7 +350,7 @@ internal static class ReviewCommand
 
         public async Task<ApproveCommand.Verdict> DecideAsync(ReviewItem item, string question, string[] answers, CancellationToken cancellationToken)
         {
-            if (!session.Decided(item.Key) && !session.Quit)
+            if (!session.Decided(item.Key) && !session.Quit && ReviewOrder.Ready(item, session.Today))
             {
                 await session.AskAsync(item, "[now ready]", cancellationToken);
             }
