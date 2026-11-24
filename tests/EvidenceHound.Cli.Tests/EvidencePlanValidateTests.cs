@@ -48,7 +48,7 @@ public sealed class EvidencePlanValidateTests : IDisposable
         (await Hound("scope", "validate", scope, "--config", config)).ShouldBe(ExitCodes.Ok, _error.ToString());
 
         var text = await File.ReadAllTextAsync(config, _ct);
-        await File.WriteAllTextAsync(config, text.Replace("\ntarget:", """
+        await File.WriteAllTextAsync(config, text.Replace("\ntargets:", """
 
               - name: user-application-hardening
                 type: manual
@@ -59,7 +59,7 @@ public sealed class EvidencePlanValidateTests : IDisposable
                   due_days: 183
                   owner: Example endpoint owner
 
-            target:
+            targets:
             """, StringComparison.Ordinal), _ct);
 
         (await Hound("scope", "validate", scope, "--config", config)).ShouldNotBe(ExitCodes.Ok);
@@ -75,7 +75,12 @@ public sealed class EvidencePlanValidateTests : IDisposable
 
         var runbook = await File.ReadAllTextAsync(Path.Combine(_root, "manual-sources", "backup-restore-test.md"), _ct);
         checkedScope.Inputs.Runbooks["manual-sources/backup-restore-test.md"].ShouldBe(runbook);
-        checkedScope.Inputs.Runbooks.Keys.ShouldBe(["manual-sources/backup-restore-test.md", "manual-sources/mfa-exceptions-review.md", "manual-sources/weekly-compliance-review.md"], ignoreOrder: true);
+        checkedScope.Inputs.Runbooks.Keys.ShouldBe(
+            [
+                "manual-sources/backup-restore-test.md", "manual-sources/mfa-exceptions-review.md", "manual-sources/weekly-compliance-review.md",
+                "manual-sources/ai-governance.md", "manual-sources/ai-operations.md",
+            ],
+            ignoreOrder: true);
     }
 
     public void Dispose()

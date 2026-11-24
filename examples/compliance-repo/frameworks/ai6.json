@@ -1,0 +1,247 @@
+{
+  "library_urn": "urn:evidence-hound:risk:library:ai6",
+  "framework_urn": "urn:evidence-hound:risk:framework:ai6",
+  "version": 1,
+  "groups": [
+    {
+      "ref_id": "F",
+      "name": "Foundations"
+    },
+    {
+      "ref_id": "I",
+      "name": "Implementation"
+    }
+  ],
+  "nodes": [
+    {
+      "urn": "urn:evidence-hound:risk:req_node:ai6:ai6-1.1",
+      "ref_id": "AI6-1.1",
+      "parent_urn": "urn:evidence-hound:risk:req_node:ai6:ai6-1",
+      "groups": [
+        "F",
+        "I"
+      ],
+      "title": "Accountable people",
+      "description": "A senior person is accountable for AI governance overall, and each AI system in use has a named owner. Guidance: https://www.ai.gov.au/staying-safe-and-responsible/essential-ai-practices/guidance-ai-adoption-foundations"
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:ai6:ai6-1.2",
+      "ref_id": "AI6-1.2",
+      "parent_urn": "urn:evidence-hound:risk:req_node:ai6:ai6-1",
+      "groups": [
+        "F",
+        "I"
+      ],
+      "title": "Supply chain accountabilities",
+      "description": "Responsibilities are agreed with the suppliers, developers and integrators of each AI system. Guidance: https://www.ai.gov.au/staying-safe-and-responsible/essential-ai-practices/guidance-ai-adoption-foundations"
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:ai6:ai6-1.3",
+      "ref_id": "AI6-1.3",
+      "parent_urn": "urn:evidence-hound:risk:req_node:ai6:ai6-1",
+      "groups": [
+        "F",
+        "I"
+      ],
+      "title": "AI literacy and training",
+      "description": "The people accountable for, using or overseeing AI are trained to understand its risks and limits. Guidance: https://www.ai.gov.au/staying-safe-and-responsible/essential-ai-practices/guidance-ai-adoption-foundations"
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:ai6:ai6-1.4",
+      "ref_id": "AI6-1.4",
+      "parent_urn": "urn:evidence-hound:risk:req_node:ai6:ai6-1",
+      "groups": [
+        "F",
+        "I"
+      ],
+      "title": "AI governance framework",
+      "description": "An AI policy, growing into a governance framework of policies and procedures, sets how AI is used. Guidance: https://www.ai.gov.au/staying-safe-and-responsible/essential-ai-practices/guidance-ai-adoption-foundations"
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:ai6:ai6-2.1",
+      "ref_id": "AI6-2.1",
+      "parent_urn": "urn:evidence-hound:risk:req_node:ai6:ai6-2",
+      "groups": [
+        "F",
+        "I"
+      ],
+      "title": "Identify and engage stakeholders",
+      "description": "The people an AI system affects are identified, with its possible harms, and engaged through its life. Guidance: https://www.ai.gov.au/staying-safe-and-responsible/essential-ai-practices/guidance-ai-adoption-foundations"
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:ai6:ai6-2.2",
+      "ref_id": "AI6-2.2",
+      "parent_urn": "urn:evidence-hound:risk:req_node:ai6:ai6-2",
+      "groups": [
+        "F",
+        "I"
+      ],
+      "title": "Establish feedback and redress processes",
+      "description": "People can question or challenge an AI decision, and harms can be put right, in proportion to the impact. Guidance: https://www.ai.gov.au/staying-safe-and-responsible/essential-ai-practices/guidance-ai-adoption-foundations"
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:ai6:ai6-2.3",
+      "ref_id": "AI6-2.3",
+      "parent_urn": "urn:evidence-hound:risk:req_node:ai6:ai6-2",
+      "groups": [
+        "F",
+        "I"
+      ],
+      "title": "Monitor for systemic issues",
+      "description": "Feedback and outcomes are watched for patterns of unwanted impact across the system. Guidance: https://www.ai.gov.au/staying-safe-and-responsible/essential-ai-practices/guidance-ai-adoption-foundations"
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:ai6:ai6-3.1",
+      "ref_id": "AI6-3.1",
+      "parent_urn": "urn:evidence-hound:risk:req_node:ai6:ai6-3",
+      "groups": [
+        "F",
+        "I"
+      ],
+      "title": "Establish a fit-for-purpose risk management framework",
+      "description": "The risk method suits the kinds of AI in use, from simple features to general-purpose and agentic AI. Guidance: https://www.ai.gov.au/staying-safe-and-responsible/essential-ai-practices/guidance-ai-adoption-foundations"
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:ai6:ai6-3.2",
+      "ref_id": "AI6-3.2",
+      "parent_urn": "urn:evidence-hound:risk:req_node:ai6:ai6-3",
+      "groups": [
+        "F",
+        "I"
+      ],
+      "title": "Assess AI system risks",
+      "description": "Each AI system or use is screened, and the riskier ones are assessed with a plan to reduce their risks. Guidance: https://www.ai.gov.au/staying-safe-and-responsible/essential-ai-practices/guidance-ai-adoption-foundations"
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:ai6:ai6-3.3",
+      "ref_id": "AI6-3.3",
+      "parent_urn": "urn:evidence-hound:risk:req_node:ai6:ai6-3",
+      "groups": [
+        "F",
+        "I"
+      ],
+      "title": "Implement controls for AI system risks",
+      "description": "Controls are applied in proportion to each AI use\u0027s risk. Guidance: https://www.ai.gov.au/staying-safe-and-responsible/essential-ai-practices/guidance-ai-adoption-foundations"
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:ai6:ai6-3.4",
+      "ref_id": "AI6-3.4",
+      "parent_urn": "urn:evidence-hound:risk:req_node:ai6:ai6-3",
+      "groups": [
+        "F",
+        "I"
+      ],
+      "title": "Monitor and report incidents",
+      "description": "AI incidents are recorded, investigated and learned from. Guidance: https://www.ai.gov.au/staying-safe-and-responsible/essential-ai-practices/guidance-ai-adoption-foundations"
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:ai6:ai6-4.1",
+      "ref_id": "AI6-4.1",
+      "parent_urn": "urn:evidence-hound:risk:req_node:ai6:ai6-4",
+      "groups": [
+        "F",
+        "I"
+      ],
+      "title": "Maintain an AI register",
+      "description": "A register lists every AI system, built or bought, including AI inside other products. Guidance: https://www.ai.gov.au/staying-safe-and-responsible/essential-ai-practices/guidance-ai-adoption-foundations"
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:ai6:ai6-4.2",
+      "ref_id": "AI6-4.2",
+      "parent_urn": "urn:evidence-hound:risk:req_node:ai6:ai6-4",
+      "groups": [
+        "F",
+        "I"
+      ],
+      "title": "AI system transparency and explainability",
+      "description": "People are told when AI is used, what it can and cannot do, and why it gave an outcome, in proportion to the stakes. Guidance: https://www.ai.gov.au/staying-safe-and-responsible/essential-ai-practices/guidance-ai-adoption-foundations"
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:ai6:ai6-4.3",
+      "ref_id": "AI6-4.3",
+      "parent_urn": "urn:evidence-hound:risk:req_node:ai6:ai6-4",
+      "groups": [
+        "F",
+        "I"
+      ],
+      "title": "Supply chain transparency",
+      "description": "What each AI system is built from, including its components and data sources, is known along the supply chain. Guidance: https://www.ai.gov.au/staying-safe-and-responsible/essential-ai-practices/guidance-ai-adoption-foundations"
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:ai6:ai6-4.4",
+      "ref_id": "AI6-4.4",
+      "parent_urn": "urn:evidence-hound:risk:req_node:ai6:ai6-4",
+      "groups": [
+        "I"
+      ],
+      "title": "AI-generated content transparency",
+      "description": "Content made by AI is identifiable as such where that matters. Guidance: https://www.ai.gov.au/staying-safe-and-responsible/essential-ai-practices/guidance-ai-adoption-foundations"
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:ai6:ai6-5.1",
+      "ref_id": "AI6-5.1",
+      "parent_urn": "urn:evidence-hound:risk:req_node:ai6:ai6-5",
+      "groups": [
+        "F",
+        "I"
+      ],
+      "title": "Pre-deployment testing",
+      "description": "Each AI system is tested, or its supplier\u0027s testing is checked, before it is relied on. Guidance: https://www.ai.gov.au/staying-safe-and-responsible/essential-ai-practices/guidance-ai-adoption-foundations"
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:ai6:ai6-5.2",
+      "ref_id": "AI6-5.2",
+      "parent_urn": "urn:evidence-hound:risk:req_node:ai6:ai6-5",
+      "groups": [
+        "F",
+        "I"
+      ],
+      "title": "Monitor system performance",
+      "description": "Each AI system in use is monitored in proportion to its risk, watching for new risks. Guidance: https://www.ai.gov.au/staying-safe-and-responsible/essential-ai-practices/guidance-ai-adoption-foundations"
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:ai6:ai6-5.3",
+      "ref_id": "AI6-5.3",
+      "parent_urn": "urn:evidence-hound:risk:req_node:ai6:ai6-5",
+      "groups": [
+        "F",
+        "I"
+      ],
+      "title": "Conduct additional testing proportionate to risk",
+      "description": "Riskier AI systems get further testing, such as stress tests or independent testing, before and after major changes. Guidance: https://www.ai.gov.au/staying-safe-and-responsible/essential-ai-practices/guidance-ai-adoption-foundations"
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:ai6:ai6-5.4",
+      "ref_id": "AI6-5.4",
+      "parent_urn": "urn:evidence-hound:risk:req_node:ai6:ai6-5",
+      "groups": [
+        "F",
+        "I"
+      ],
+      "title": "Implement robust data and cybersecurity measures",
+      "description": "Data governance and cyber security practices cover the needs of AI systems. Guidance: https://www.ai.gov.au/staying-safe-and-responsible/essential-ai-practices/guidance-ai-adoption-foundations"
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:ai6:ai6-6.1",
+      "ref_id": "AI6-6.1",
+      "parent_urn": "urn:evidence-hound:risk:req_node:ai6:ai6-6",
+      "groups": [
+        "F",
+        "I"
+      ],
+      "title": "Maintain human oversight and control",
+      "description": "Oversight matches each system\u0027s autonomy and stakes, with points where a person can pause, override or stop it. Guidance: https://www.ai.gov.au/staying-safe-and-responsible/essential-ai-practices/guidance-ai-adoption-foundations"
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:ai6:ai6-6.2",
+      "ref_id": "AI6-6.2",
+      "parent_urn": "urn:evidence-hound:risk:req_node:ai6:ai6-6",
+      "groups": [
+        "F",
+        "I"
+      ],
+      "title": "Decommission when appropriate",
+      "description": "An AI system can be retired safely, with another way to keep critical work going. Guidance: https://www.ai.gov.au/staying-safe-and-responsible/essential-ai-practices/guidance-ai-adoption-foundations"
+    }
+  ]
+}

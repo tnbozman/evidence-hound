@@ -55,13 +55,13 @@ public sealed class ProgrammeCommandTests : IDisposable
         var (exit, output, error) = await RunAsync(["programme", "list", "--scope", Scope]);
 
         exit.ShouldBe(ExitCodes.Ok, error);
-        output.ShouldContain("Register: 3 systems. type: primary 1, supporting 2.");
+        output.ShouldContain("Register: 5 systems. type: primary 1, supporting 4.");
         (exit, output, error) = await RunAsync(["programme", "list", "--scope", Scope, "--json"]);
         exit.ShouldBe(ExitCodes.Ok, error);
         var register = JsonNode.Parse(output)!["programmes"]!.AsArray().Single(p => p!["id"]!.GetValue<string>() == "essential-eight")!["register"]!;
-        (register["of"]!.GetValue<string>(), register["total"]!.GetValue<int>()).ShouldBe(("systems", 3));
+        (register["of"]!.GetValue<string>(), register["total"]!.GetValue<int>()).ShouldBe(("systems", 5));
         register["counts"]!.AsArray().Select(c => (c!["field"]!.GetValue<string>(), c["value"]!.GetValue<string>(), c["count"]!.GetValue<int>()))
-            .ShouldBe([("type", "primary", 1), ("type", "supporting", 2)]);
+            .ShouldBe([("type", "primary", 1), ("type", "supporting", 4)]);
     }
 
     private Task<(int Exit, string Output, string Error)> RunAsync(string[] args) => OnboardAgentCommandTests.RunAsync(args, "", terminal: false, _root, _ct);

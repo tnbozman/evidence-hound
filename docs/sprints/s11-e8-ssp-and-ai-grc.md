@@ -501,7 +501,7 @@ Done before s11-12, because the register fields and the screening runbook follow
 - `make run ARGS="programme list --scope examples/compliance-repo/scope"` shows the AI6 programme's register: the two example AI systems by tier and use (with s11-15, which adds them). The report output itself is checked in s12.
 
 **Progress (2026-11-24)**
-- Built: `ProgrammeRegister`, `RegisterItems`, `RegisterSummary`, the failing systems on each `AiRegisterFinding`, the `register` key with `scope.programme_register_unknown`, the schema, and the register line in `hound programme list` (text and `--json`). `ProgrammeCommandTests.List_shows_the_register_counts` runs it on the example repo with a register of systems: "Register: 3 systems. type: primary 1, supporting 2."
+- Built: `ProgrammeRegister`, `RegisterItems`, `RegisterSummary`, the failing systems on each `AiRegisterFinding`, the `register` key with `scope.programme_register_unknown`, the schema, and the register line in `hound programme list` (text and `--json`). `ProgrammeCommandTests.List_shows_the_register_counts` runs it on the example repo with a register of systems: "Register: 5 systems. type: primary 1, supporting 4."
 - The functional check with the AI6 programme's register runs with s11-15.
 
 ### s11-15 Documentation and example repo

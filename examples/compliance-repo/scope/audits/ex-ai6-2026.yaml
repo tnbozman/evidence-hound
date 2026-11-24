@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=../../../../schemas/scope.schema.json
+# Example Pty Ltd's AI6 self-assessment at Foundations (group F). Everything here is made up. AI6 is a self-assessment: there is
+# no audit body. Results come from the ai-register collector and the AI governance and operations manual sources (docs/ai-grc.md).
+ref_id: EX-AI6-2026
+name: AI6 Foundations 2026
+framework: urn:evidence-hound:risk:framework:ai6
+groups: ["F"]
+domain: Example Pty Ltd
+perimeter: Corporate IT
+eta: "2026-12-31"
+due_date: "2027-01-31"
+authors: [it@example.com]
+reviewers: [ceo@example.com]
+systems: [Example ticket triage, Example proposal assistant]
+unlisted:
+  result: not_assessed

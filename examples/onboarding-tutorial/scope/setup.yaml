@@ -14,6 +14,11 @@ frameworks:
   - urn: urn:example:risk:framework:example-baseline
     library: urn:example:risk:library:example-baseline
     file: ../frameworks/example-baseline.yaml
+  # AI6, the National AI Centre's Guidance for AI Adoption, as a custom library (docs/ai-grc.md).
+  - urn: urn:evidence-hound:risk:framework:ai6
+    library: urn:evidence-hound:risk:library:ai6
+    file: ../frameworks/ai6.yaml
+    snapshot: ../frameworks/ai6.json
 # Other libraries to load, such as the mapping between the Essential Eight and the Essentials.
 libraries:
   - urn:intuitem:risk:library:mapping-essential-eight-2023-and-asd-essentials-enterprise-it
@@ -43,6 +48,36 @@ domains:
         type: supporting
         description: Daily backups of Example 365 and the laptops.
         owner: it@example.com
+      # AI systems: an ai block is the system's entry in the AI register (docs/scope.md#ai-systems). Both are made up.
+      - name: Example ticket triage
+        ref_id: SYS-AI-TRIAGE
+        type: supporting
+        description: Suggests a category and priority for each new IT ticket; the IT team confirms it.
+        owner: it@example.com
+        ai:
+          tier: low
+          screened_on: "2026-01-12"
+          use: built
+          oversight: human_in_the_loop
+          oversight_note: The IT team confirms or changes every suggestion before the ticket is assigned.
+          impact_assessment: not_required
+          in_use_from: "2026-02-02"
+          last_tested_on: "2026-01-28"
+      - name: Example proposal assistant
+        ref_id: SYS-AI-PROPOSALS
+        type: supporting
+        description: Drafts proposal text from past proposals; staff edit every draft before it is sent.
+        owner: ceo@example.com
+        ai:
+          tier: medium
+          screened_on: "2026-03-02"
+          use: customised
+          oversight: human_in_the_loop
+          oversight_note: The proposal owner reads and edits every draft; the CEO can switch the assistant off in its settings.
+          impact_assessment: approved
+          impact_assessed_on: "2026-03-20"
+          # No last_tested_on yet: the ai-register collector fails ai.tested_before_use, so AI6-5.1 shows as not met.
+          in_use_from: "2026-04-01"
       - name: GRC-PLATFORM
         ref_id: SYS-GRC-PLATFORM
         type: primary
@@ -63,3 +98,11 @@ programmes:
     framework: urn:intuitem:risk:framework:essential-eight-2023
     groups: ["1", "2"]
     audit: EX-E8-2026
+  - id: ai6
+    name: AI governance (AI6 Foundations)
+    framework: urn:evidence-hound:risk:framework:ai6
+    groups: ["F"]
+    audit: EX-AI6-2026
+    register:
+      of: ai_systems
+      by: [tier, use]
