@@ -70,6 +70,47 @@ manual_only:
 
 A `manual_only` entry names a requirement by `ref` or `urn`, as in `requirements`; `hound mapping validate --framework` checks that it exists in the framework, as for mapped requirements. hound writes nothing to its row: CISO Assistant keeps whatever the GRC team records there. `manual_only: []` says none is left.
 
+## Coverage
+
+`hound mapping coverage` shows how an audit's requirements are answered, per parent node (an Essential Eight strategy, an AI6 practice) and implementation group (a maturity level), so you can see that no row is left without an owner:
+
+```console
+$ hound mapping coverage mappings/essential-eight-2023.yaml --framework frameworks/essential-eight-2023.json --groups 1,2 \
+    --manual examples/manual-sources/essential-eight --manual examples/example-essential-eight.yaml
+| Parent | Group | Automated | Manual | Uncovered |
+| --- | --- | --- | --- | --- |
+| pa | 1 | 7 | 2 | 0 |
+...
+Total: 46 automated, 109 manual, 0 uncovered (one per requirement row and group).
+```
+
+- **Automated**: at least one of the requirement's checks comes from a collector.
+- **Manual**: every check is attested by a person through a manual source, or the requirement is under `manual_only`.
+- **Uncovered**: nothing answers it. Map it to a check or a manual source.
+
+`--manual` takes your hound config, a manual source template or a folder of them; the checks of every `type: manual` collector in them count as manual. Without `--manual`, every mapped requirement counts as automated. `--groups` is the audit's selected groups (default: all of the framework's), and `--json` prints the same counts for an agent.
+
+## Crosswalks to another framework
+
+A crosswalk says which requirements of another framework your evidence for one programme already answers. hound carries one from the Essential Eight (ML1 and ML2) to NIST SP 800-171 Rev 2, for suppliers who hold CUI, in [`mappings/crosswalks/`](../mappings/crosswalks/). It is advisory: it was drafted with AI from the requirement texts and nobody has reviewed it yet, and hound writes nothing to CISO Assistant from it. Full CMMC Level 2 comes later, with its own mapping and audit.
+
+```console
+$ hound mapping crosswalk --from essential-eight --config hound.yaml
+# Crosswalk: Essential Eight to urn:intuitem:risk:framework:nist-sp-800-171-rev2
+...
+Total: 1 answered, 30 partly answered, 79 open, of 110 requirements.
+
+| Requirement | Status | Answered by: today |
+| --- | --- | --- |
+| 3.1.6 Use non-privileged accounts or roles for non-security functions | answered | ISM-0445 (equal, 1 check): compliant; ISM-1175 (subset, 1 check): compliant |
+...
+```
+
+- `--from` is a programme id from `scope/setup.yaml`. Its checks come from the config target for its audit; today's results from that audit in CISO Assistant. `--offline` skips CISO Assistant and shows only what would answer each requirement. `--json` prints the same for an agent.
+- **Answered**: an Essential Eight requirement that says the same (`equal`) or asks for more (`superset`) has checks behind it. **Partly answered**: only overlapping (`intersect`) or narrower (`subset`) requirements link to it, or the linked one has no checks. **Open**: nothing in the Essential Eight answers it; you need other evidence.
+- hound uses `--file` if you give one, else a crosswalk in `mappings/crosswalks/` next to `hound.yaml`, else its own. Copy its file there to correct links, and once a person has checked every link, add `reviewed: {by: <name or role>, on: YYYY-MM-DD}`. The schema is [`schemas/crosswalk.schema.json`](../schemas/crosswalk.schema.json).
+- CISO Assistant v4.3.4 has no API that lists a mapping library's links, so hound cannot read one yet; its file is used.
+
 ## Framework snapshots
 
 A framework snapshot lets you check a mapping without CISO Assistant. It lists the framework's URN, version and implementation groups, and each assessable requirement's URN, `ref_id`, parent, groups and a short title. Make one from a CISO Assistant library file and commit it under `frameworks/`:

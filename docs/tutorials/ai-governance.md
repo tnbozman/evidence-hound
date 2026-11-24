@@ -192,7 +192,7 @@ The dry run shows the updates without sending them. After the real run, open the
   `last_tested_on`. Your new system passes. The fix is the same as step 8, for that system.
 - **AI6-3.2** (Assess AI system risks) shows whether each system in use was screened before it went live, and each elevated one had its impact assessment approved first.
 
-The evidence (`.dev/ai-walkthrough/evidence/`) holds `ai-register.json`: every entry, whether it is in use, and the SHA-256 of the
+The evidence store (`.dev/ai-walkthrough/evidence/example-ai-register/<run id>/`) holds `ai-register.json`: every entry, whether it is in use, and the SHA-256 of the
 `setup.yaml` it read, so a result traces back to the reviewed file.
 
 ## 10. Show the committee
@@ -204,7 +204,7 @@ hound programme list --scope .dev/ai-walkthrough/repo/scope
 ```
 
 The register line now reads `Register: 3 AI systems. screening: elevated 2, normal 1. use: built 1, customised 2.` Together with the AI6 rows
-that are not met, that is the AI part of the monthly report. The committee report itself arrives in sprint s12.
+that are not met, that is the AI part of the monthly report: `hound report committee` puts them in its section 3 ([reporting](../reporting.md)).
 
 ## 11. Clean up
 

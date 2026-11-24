@@ -1998,6 +1998,41 @@
       "get": {
         "operationId": "users_language_retrieve"
       }
+    },
+    "/api/risk-acceptances/": {
+      "get": {
+        "operationId": "risk_acceptances_list"
+      }
+    },
+    "/api/security-exceptions/": {
+      "get": {
+        "operationId": "security_exceptions_list"
+      }
+    },
+    "/api/findings/": {
+      "get": {
+        "operationId": "findings_list"
+      }
+    },
+    "/api/incidents/": {
+      "get": {
+        "operationId": "incidents_list"
+      }
+    },
+    "/api/risk-scenarios/": {
+      "get": {
+        "operationId": "risk_scenarios_list"
+      }
+    },
+    "/api/task-nodes/": {
+      "get": {
+        "operationId": "task_nodes_list"
+      }
+    },
+    "/api/entity-assessments/": {
+      "get": {
+        "operationId": "entity_assessments_list"
+      }
     }
   }
 }

@@ -103,7 +103,7 @@ public class E8MappingTests
     }
 
     [Fact]
-    public void Every_ml1_and_ml2_requirement_is_mapped_or_manual_only()
+    public void Every_ml1_and_ml2_requirement_is_covered_or_manual()
     {
         var covered = Mapping.Mapping.Requirements.Select(r => r.RequirementRef).Concat(Mapping.ManualOnly.Select(m => m.Key.Value)).ToHashSet(StringComparer.Ordinal);
 

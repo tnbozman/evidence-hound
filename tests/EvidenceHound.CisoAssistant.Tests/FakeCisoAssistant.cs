@@ -24,6 +24,7 @@ internal sealed class FakeCisoAssistant : IDisposable
         Scope = _services.GetRequiredService<IScopeStateSource>();
         Export = _services.GetRequiredService<IScopeExportSource>();
         Writer = _services.GetRequiredService<IScopeWriter>();
+        Posture = _services.GetRequiredService<EvidenceHound.Core.Reporting.IPostureSource>();
     }
 
     public WireMockServer Server { get; }
@@ -37,6 +38,8 @@ internal sealed class FakeCisoAssistant : IDisposable
     public IScopeExportSource Export { get; }
 
     public IScopeWriter Writer { get; }
+
+    public EvidenceHound.Core.Reporting.IPostureSource Posture { get; }
 
     public void Dispose()
     {

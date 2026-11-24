@@ -1,0 +1,211 @@
+# yaml-language-server: $schema=../../schemas/crosswalk.schema.json
+# Essential Eight (November 2023) ML1 and ML2 to NIST SP 800-171 Rev 2: which 800-171 requirements Essential Eight evidence answers.
+# s12-08. ADVISORY: drafted with AI (Claude) from the requirement texts on 2026-11-24 and not yet reviewed by an assessor. Review it
+# before you rely on it, and record the review below. Titles are summaries in our own words; NIST SP 800-171 Rev 2 has the full text.
+#
+# relationship (CISO Assistant's mapping vocabulary): equal (same ask), superset (the Essential Eight requirement asks for more),
+# subset (it asks for less), intersect (they overlap). `hound mapping crosswalk` counts a requirement as answered only through equal or
+# superset links with checks behind them; subset and intersect links make it partly answered. Most links here are partial on purpose:
+# the Essential Eight is narrower in scope (for example workstations or online services only) than 800-171 (every system holding CUI).
+from: urn:intuitem:risk:framework:essential-eight-2023
+to: urn:intuitem:risk:framework:nist-sp-800-171-rev2
+# reviewed: {by: <name or role>, on: YYYY-MM-DD}   # add once a person has checked every link
+requirements:
+  - {ref: "3.1.1", title: "Limit system access to authorised users, processes acting for them, and devices", answered_by: [{ref: ISM-1507, relationship: intersect}]}
+  - {ref: "3.1.2", title: "Limit system access to the transactions and functions authorised users may run"}
+  - {ref: "3.1.3", title: "Control the flow of CUI as approved"}
+  - {ref: "3.1.4", title: "Separate the duties of individuals to reduce the risk of malicious activity"}
+  - ref: "3.1.5"
+    title: "Use least privilege, including for specific security functions and privileged accounts"
+    answered_by:
+      - {ref: ISM-1507, relationship: intersect}
+      - {ref: ISM-1647, relationship: intersect}
+      - {ref: ISM-1648, relationship: intersect}
+      - {ref: ISM-1883, relationship: intersect}
+  - {ref: "3.1.6", title: "Use non-privileged accounts or roles for non-security functions", answered_by: [{ref: ISM-0445, relationship: equal}, {ref: ISM-1175, relationship: subset}]}
+  - ref: "3.1.7"
+    title: "Prevent non-privileged users running privileged functions, and log privileged functions"
+    answered_by:
+      - {ref: ISM-1509, relationship: intersect}
+      - {ref: ISM-1650, relationship: intersect}
+  - {ref: "3.1.8", title: "Limit unsuccessful logon attempts"}
+  - {ref: "3.1.9", title: "Show privacy and security notices consistent with CUI rules"}
+  - {ref: "3.1.10", title: "Lock sessions with pattern-hiding displays after inactivity"}
+  - {ref: "3.1.11", title: "End user sessions automatically after a defined condition"}
+  - {ref: "3.1.12", title: "Monitor and control remote access sessions"}
+  - {ref: "3.1.13", title: "Protect remote access sessions with cryptography"}
+  - {ref: "3.1.14", title: "Route remote access through managed access control points"}
+  - {ref: "3.1.15", title: "Authorise remote running of privileged commands and remote access to security information", answered_by: [{ref: ISM-1387, relationship: intersect}]}
+  - {ref: "3.1.16", title: "Authorise wireless access before allowing connections"}
+  - {ref: "3.1.17", title: "Protect wireless access with authentication and encryption"}
+  - {ref: "3.1.18", title: "Control the connection of mobile devices"}
+  - {ref: "3.1.19", title: "Encrypt CUI on mobile devices and mobile computing platforms"}
+  - {ref: "3.1.20", title: "Verify and control or limit connections to and use of external systems"}
+  - {ref: "3.1.21", title: "Limit use of portable storage devices on external systems"}
+  - {ref: "3.1.22", title: "Control CUI posted or processed on publicly accessible systems"}
+  - {ref: "3.2.1", title: "Make managers, administrators and users aware of security risks and applicable policies"}
+  - {ref: "3.2.2", title: "Train personnel for their security duties"}
+  - {ref: "3.2.3", title: "Train on recognising and reporting insider threat indicators"}
+  - ref: "3.3.1"
+    title: "Create and keep system audit logs to monitor, analyse, investigate and report unlawful or unauthorised activity"
+    answered_by:
+      - {ref: ISM-1509, relationship: subset}
+      - {ref: ISM-1650, relationship: subset}
+      - {ref: ISM-1683, relationship: subset}
+      - {ref: ISM-1660, relationship: subset}
+      - {ref: ISM-1623, relationship: subset}
+      - {ref: ISM-1889, relationship: subset}
+  - {ref: "3.3.2", title: "Trace the actions of individual users so they can be held accountable", answered_by: [{ref: ISM-1509, relationship: intersect}]}
+  - {ref: "3.3.3", title: "Review and update logged events"}
+  - {ref: "3.3.4", title: "Alert when audit logging fails"}
+  - {ref: "3.3.5", title: "Correlate audit record review, analysis and reporting", answered_by: [{ref: ISM-1228, relationship: intersect}, {ref: ISM-1906, relationship: intersect}]}
+  - {ref: "3.3.6", title: "Provide audit record reduction and report generation"}
+  - {ref: "3.3.7", title: "Synchronise system clocks with an authoritative time source"}
+  - {ref: "3.3.8", title: "Protect audit information and logging tools from unauthorised access, change and deletion", answered_by: [{ref: ISM-1815, relationship: intersect}]}
+  - {ref: "3.3.9", title: "Limit management of audit logging to a subset of privileged users"}
+  - {ref: "3.4.1", title: "Establish and keep baseline configurations and inventories of systems", answered_by: [{ref: ISM-1807, relationship: subset}]}
+  - ref: "3.4.2"
+    title: "Establish and enforce security configuration settings"
+    answered_by:
+      - {ref: ISM-1412, relationship: subset}
+      - {ref: ISM-1859, relationship: subset}
+      - {ref: ISM-1860, relationship: subset}
+      - {ref: ISM-1671, relationship: subset}
+      - {ref: ISM-1489, relationship: subset}
+  - {ref: "3.4.3", title: "Track, review, approve and log changes to systems"}
+  - {ref: "3.4.4", title: "Analyse the security impact of changes before implementing them"}
+  - {ref: "3.4.5", title: "Define, document, approve and enforce access restrictions for changes"}
+  - ref: "3.4.6"
+    title: "Employ least functionality: only essential capabilities"
+    answered_by:
+      - {ref: ISM-1654, relationship: subset}
+      - {ref: ISM-1486, relationship: subset}
+      - {ref: ISM-1485, relationship: subset}
+  - {ref: "3.4.7", title: "Restrict, disable or prevent nonessential programs, functions, ports, protocols and services", answered_by: [{ref: ISM-0843, relationship: intersect}]}
+  - ref: "3.4.8"
+    title: "Apply deny-by-exception or permit-by-exception to running software"
+    answered_by:
+      - {ref: ISM-0843, relationship: intersect}
+      - {ref: ISM-1490, relationship: intersect}
+      - {ref: ISM-1657, relationship: intersect}
+      - {ref: ISM-1544, relationship: subset}
+  - {ref: "3.4.9", title: "Control and monitor user-installed software", answered_by: [{ref: ISM-0843, relationship: intersect}, {ref: ISM-1870, relationship: intersect}]}
+  - {ref: "3.5.1", title: "Identify system users, processes acting for them, and devices"}
+  - {ref: "3.5.2", title: "Authenticate users, processes and devices before allowing access", answered_by: [{ref: ISM-0974, relationship: intersect}, {ref: ISM-1173, relationship: intersect}]}
+  - ref: "3.5.3"
+    title: "Use multifactor authentication for privileged accounts and for network access to non-privileged accounts"
+    answered_by:
+      - {ref: ISM-1173, relationship: subset}
+      - {ref: ISM-0974, relationship: subset}
+      - {ref: ISM-1504, relationship: intersect}
+  - {ref: "3.5.4", title: "Use replay-resistant authentication for network access to accounts", answered_by: [{ref: ISM-1682, relationship: intersect}, {ref: ISM-1872, relationship: intersect}]}
+  - {ref: "3.5.5", title: "Prevent reuse of identifiers for a defined period"}
+  - {ref: "3.5.6", title: "Disable identifiers after a defined period of inactivity", answered_by: [{ref: ISM-1648, relationship: subset}]}
+  - {ref: "3.5.7", title: "Enforce minimum password complexity and change of characters"}
+  - {ref: "3.5.8", title: "Prohibit password reuse for a number of generations"}
+  - {ref: "3.5.9", title: "Allow temporary passwords only with an immediate change"}
+  - {ref: "3.5.10", title: "Store and send only cryptographically protected passwords"}
+  - {ref: "3.5.11", title: "Obscure feedback of authentication information"}
+  - ref: "3.6.1"
+    title: "Set up an incident handling capability: preparation, detection, analysis, containment, recovery and user response"
+    answered_by:
+      - {ref: ISM-1819, relationship: intersect}
+      - {ref: ISM-1228, relationship: intersect}
+  - ref: "3.6.2"
+    title: "Track, document and report incidents to designated officials and authorities"
+    answered_by:
+      - {ref: ISM-0123, relationship: intersect}
+      - {ref: ISM-0140, relationship: intersect}
+  - {ref: "3.6.3", title: "Test the incident response capability"}
+  - {ref: "3.7.1", title: "Perform maintenance on systems"}
+  - {ref: "3.7.2", title: "Control the tools, techniques, mechanisms and personnel used for maintenance"}
+  - {ref: "3.7.3", title: "Sanitise equipment removed for off-site maintenance of any CUI"}
+  - {ref: "3.7.4", title: "Check media with diagnostic and test programs for malicious code before use"}
+  - {ref: "3.7.5", title: "Use multifactor authentication for nonlocal maintenance sessions and end them when complete", answered_by: [{ref: ISM-1173, relationship: intersect}]}
+  - {ref: "3.7.6", title: "Supervise maintenance by personnel without required access authorisation"}
+  - {ref: "3.8.1", title: "Protect paper and digital media containing CUI"}
+  - {ref: "3.8.2", title: "Limit access to CUI on media to authorised users"}
+  - {ref: "3.8.3", title: "Sanitise or destroy media containing CUI before disposal or reuse"}
+  - {ref: "3.8.4", title: "Mark media with CUI markings and distribution limits"}
+  - {ref: "3.8.5", title: "Control access to media with CUI and keep accountability during transport"}
+  - {ref: "3.8.6", title: "Use cryptography to protect CUI on digital media during transport"}
+  - {ref: "3.8.7", title: "Control the use of removable media on system components"}
+  - {ref: "3.8.8", title: "Prohibit portable storage devices with no identifiable owner"}
+  - ref: "3.8.9"
+    title: "Protect the confidentiality of backup CUI at storage locations"
+    answered_by:
+      - {ref: ISM-1811, relationship: intersect}
+      - {ref: ISM-1812, relationship: intersect}
+      - {ref: ISM-1705, relationship: intersect}
+  - {ref: "3.9.1", title: "Screen individuals before authorising access to systems with CUI"}
+  - {ref: "3.9.2", title: "Protect CUI and systems during and after personnel actions such as terminations and transfers"}
+  - {ref: "3.10.1", title: "Limit physical access to systems, equipment and operating environments to authorised individuals"}
+  - {ref: "3.10.2", title: "Protect and monitor the physical facility and support infrastructure"}
+  - {ref: "3.10.3", title: "Escort and monitor visitors"}
+  - {ref: "3.10.4", title: "Keep audit logs of physical access"}
+  - {ref: "3.10.5", title: "Control and manage physical access devices"}
+  - {ref: "3.10.6", title: "Enforce safeguarding measures for CUI at alternate work sites"}
+  - {ref: "3.11.1", title: "Periodically assess the risk to operations, assets and individuals from processing CUI"}
+  - ref: "3.11.2"
+    title: "Scan for vulnerabilities periodically and when new vulnerabilities are identified"
+    answered_by:
+      - {ref: ISM-1808, relationship: intersect}
+      - {ref: ISM-1698, relationship: intersect}
+      - {ref: ISM-1699, relationship: intersect}
+      - {ref: ISM-1700, relationship: intersect}
+      - {ref: ISM-1701, relationship: intersect}
+      - {ref: ISM-1702, relationship: intersect}
+  - ref: "3.11.3"
+    title: "Remediate vulnerabilities in line with risk assessments"
+    answered_by:
+      - {ref: ISM-1876, relationship: intersect}
+      - {ref: ISM-1690, relationship: intersect}
+      - {ref: ISM-1691, relationship: intersect}
+      - {ref: ISM-1693, relationship: intersect}
+      - {ref: ISM-1877, relationship: intersect}
+      - {ref: ISM-1694, relationship: intersect}
+      - {ref: ISM-1695, relationship: intersect}
+  - {ref: "3.12.1", title: "Periodically assess security controls for effectiveness"}
+  - {ref: "3.12.2", title: "Develop and carry out plans of action to correct deficiencies and reduce vulnerabilities"}
+  - {ref: "3.12.3", title: "Monitor security controls on an ongoing basis"}
+  - {ref: "3.12.4", title: "Develop, document and periodically update system security plans"}
+  - {ref: "3.13.1", title: "Monitor, control and protect communications at external and key internal boundaries"}
+  - {ref: "3.13.2", title: "Use architectural designs, development techniques and engineering principles that promote security"}
+  - {ref: "3.13.3", title: "Separate user functionality from system management functionality", answered_by: [{ref: ISM-1380, relationship: intersect}, {ref: ISM-1387, relationship: intersect}]}
+  - {ref: "3.13.4", title: "Prevent unauthorised and unintended information transfer through shared system resources"}
+  - {ref: "3.13.5", title: "Put publicly accessible system components in separated subnetworks"}
+  - {ref: "3.13.6", title: "Deny network traffic by default and allow by exception"}
+  - {ref: "3.13.7", title: "Prevent split tunnelling for remote devices"}
+  - {ref: "3.13.8", title: "Use cryptography to prevent unauthorised disclosure of CUI in transmission"}
+  - {ref: "3.13.9", title: "End network connections at the end of sessions or after inactivity"}
+  - {ref: "3.13.10", title: "Establish and manage cryptographic keys"}
+  - {ref: "3.13.11", title: "Use FIPS-validated cryptography to protect the confidentiality of CUI"}
+  - {ref: "3.13.12", title: "Prohibit remote activation of collaborative computing devices and show when in use"}
+  - ref: "3.13.13"
+    title: "Control and monitor the use of mobile code"
+    answered_by:
+      - {ref: ISM-1488, relationship: intersect}
+      - {ref: ISM-1671, relationship: intersect}
+      - {ref: ISM-1486, relationship: intersect}
+  - {ref: "3.13.14", title: "Control and monitor the use of Voice over IP"}
+  - {ref: "3.13.15", title: "Protect the authenticity of communications sessions"}
+  - {ref: "3.13.16", title: "Protect the confidentiality of CUI at rest"}
+  - ref: "3.14.1"
+    title: "Identify, report and correct system flaws in a timely way"
+    answered_by:
+      - {ref: ISM-1691, relationship: intersect}
+      - {ref: ISM-1693, relationship: intersect}
+      - {ref: ISM-1694, relationship: intersect}
+      - {ref: ISM-1695, relationship: intersect}
+      - {ref: ISM-1501, relationship: intersect}
+      - {ref: ISM-1905, relationship: intersect}
+  - {ref: "3.14.2", title: "Protect against malicious code at designated locations", answered_by: [{ref: ISM-0843, relationship: intersect}, {ref: ISM-1672, relationship: subset}]}
+  - {ref: "3.14.3", title: "Monitor security alerts and advisories and act on them"}
+  - {ref: "3.14.4", title: "Update malicious code protection when new releases are available"}
+  - {ref: "3.14.5", title: "Run periodic scans and real-time scans of files from external sources"}
+  - ref: "3.14.6"
+    title: "Monitor systems, including inbound and outbound traffic, to detect attacks"
+    answered_by:
+      - {ref: ISM-1228, relationship: intersect}
+      - {ref: ISM-1906, relationship: intersect}
+  - {ref: "3.14.7", title: "Identify unauthorised use of systems", answered_by: [{ref: ISM-1228, relationship: intersect}]}

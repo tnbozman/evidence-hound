@@ -20,7 +20,7 @@ public sealed class ManualCommandTests : IDisposable
     {
         var export = await ExportAsync("firewall-export.txt", "rule 1: allow https from any to web-01.example.com");
 
-        var exitCode = await Run("y\n\npass\nfail\nReviewed with the network team.\n", "manual", "upload", "--config", await ConfigAsync(), "--source", "example-firewall-config", export);
+        var exitCode = await RunAtTerminal("y\n\npass\nfail\nReviewed with the network team.\n", "manual", "upload", "--config", await ConfigAsync(), "--source", "example-firewall-config", export);
 
         exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
         var copied = Path.Combine(Drop, "firewall-export.txt");
@@ -31,6 +31,19 @@ public sealed class ManualCommandTests : IDisposable
         attestation.Note.ShouldBe("Reviewed with the network team.");
         _output.ToString().ShouldContain(copied);
         _error.ToString().ShouldContain("network.firewall.rules_reviewed");
+    }
+
+    [Fact]
+    public async Task Upload_through_a_pipe_or_by_an_agent_copies_the_file_but_never_attests_it()
+    {
+        var export = await ExportAsync("firewall-export.txt", "rule 1: allow https");
+
+        var exitCode = await Run("y\n\npass\npass\n\n", "manual", "upload", "--config", await ConfigAsync(), "--source", "example-firewall-config", export);
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        Directory.GetFiles(Drop).Select(Path.GetFileName).ShouldBe(["firewall-export.txt"]);
+        _error.ToString().ShouldNotContain("Attest this file now?");
+        _logs.Messages.ShouldContain(m => m.Contains("not attested", StringComparison.Ordinal) && m.Contains("hound manual approve", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -105,7 +118,7 @@ public sealed class ManualCommandTests : IDisposable
     {
         var export = await ExportAsync("firewall-export.txt", "rule 1: allow https");
 
-        var exitCode = await Run("y\n\nmaybe\n", "manual", "upload", "--config", await ConfigAsync(), "--source", "example-firewall-config", export);
+        var exitCode = await RunAtTerminal("y\n\nmaybe\n", "manual", "upload", "--config", await ConfigAsync(), "--source", "example-firewall-config", export);
 
         exitCode.ShouldBe(ExitCodes.Usage);
         _error.ToString().ShouldContain("maybe");
@@ -156,6 +169,9 @@ public sealed class ManualCommandTests : IDisposable
             """, TestContext.Current.CancellationToken);
         return path;
     }
+
+    private Task<int> RunAtTerminal(string input, params string[] args) =>
+        HoundCli.RunAsync(args, new StringReader(input), _output, _error, new Dictionary<string, string?>(), terminal: true, TestContext.Current.CancellationToken);
 
     private Task<int> Run(string input, params string[] args) =>
         HoundCli.RunAsync(args, new StringReader(input), _output, _error, logging => logging.AddProvider(_logs), TestContext.Current.CancellationToken);

@@ -1,0 +1,5 @@
+name,ref_id,type,owner,description,parents
+Example engineering file share,SYS-ENG-FILES,primary,eng@example.com,"Drawings and specifications for customer contracts, some marked CUI.",
+Example CAD workstations,SYS-CAD,supporting,eng@example.com,Four Windows workstations that run the CAD software.,Example engineering file share
+Example accounting system,SYS-ACCOUNTS,primary,finance@example.com,Cloud accounting and payroll.,
+Example office firewall,SYS-FIREWALL,supporting,it@example.com,The office internet firewall and VPN.,

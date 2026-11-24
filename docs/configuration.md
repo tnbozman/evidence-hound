@@ -127,7 +127,7 @@ outcomes:
   network.firewall.config_exported: pass
 ```
 
-`hound manual upload` copies a file into a source's drop folder and asks whether to attest it. Prompts go to stderr; the copied file's path goes to stdout.
+`hound manual upload` copies a file into a source's drop folder and, for a person at a terminal, asks whether to attest it. Through a pipe or from an agent it copies the file without attesting it; a person attests it later with `hound manual approve` or in the weekly review. Prompts go to stderr; the copied file's path goes to stdout.
 
 ```
 $ hound manual upload --config hound.yaml --source example-firewall-config firewall-export.txt

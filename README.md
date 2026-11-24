@@ -20,12 +20,13 @@ It is designed to be built and run by an ordinary in-house IT and software team,
 | --- | --- |
 | Core library | One standard way to update a CISO Assistant audit: evidence, framework-neutral check results, applied control status. Maps to CISO Assistant's dispatcher messages (`upload_attachment`, `update_requirement_assessment`, `update_applied_control`). |
 | Publisher | Sends updates to the CISO Assistant REST API (Kafka and the official dispatcher optional). |
-| Framework mappings | One file per framework turns neutral checks into requirement results. Essential Eight first; NIST SP 800-171 next. |
+| Framework mappings | One file per framework turns neutral checks into requirement results. Essential Eight first, with an advisory crosswalk to NIST SP 800-171 ([mapping files](docs/mapping-files.md), [answering a prime's questionnaire](docs/adopt/answer-a-prime-questionnaire.md)). |
 | Collector SDK | A plugin interface, template and test kit. A collector only talks to its target system. |
 | Manual-upload collector | For systems without a usable API: schedule, upload, same audit updates. |
 | Reference collectors | Microsoft 365; Sophos Central as a REST profile; Veeam Backup & Replication next. |
 | AI governance | The Australian *Guidance for AI Adoption* (AI6) as a programme beside cyber compliance: an AI system register kept in your repo and shown in CISO Assistant, checked on every run. See the [primer](docs/ai-grc-primer.md) and [docs/ai-grc.md](docs/ai-grc.md). |
-| Reporting | Monthly security committee report (operational) and quarterly board report (governance), generated from CISO Assistant data. |
+| Reporting | Monthly security committee report (operational) and quarterly board report (governance), generated from CISO Assistant data ([reporting](docs/reporting.md), [committee](docs/govern/security-committee.md), [board](docs/govern/board-reporting.md)). |
+| Adoption and operation | [Moving registers out of spreadsheets](docs/adopt/migrate-from-spreadsheets.md), [guides per role](docs/operate/README.md), [training outlines](docs/training/README.md) and a [continuous compliance procedure](docs/govern/continuous-compliance-procedure.md). |
 | Reference deployment | Docker Compose for CISO Assistant plus the collector runner, with backups and hardening notes. |
 
 Your organisation's configuration (system names, tenant IDs, audit IDs, mappings with real observations) never goes in this repo. Keep it in a private deployment repo.

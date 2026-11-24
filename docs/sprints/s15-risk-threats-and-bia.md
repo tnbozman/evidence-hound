@@ -229,6 +229,16 @@ suppliers change.
 - Build the example programme's plan against the local CISO Assistant; it lists the fictional CUI system's DFARS 72-hour report and the
   supplier contacts, and reports no gaps once the example judgement sections are present.
 
+### s15-10 Rehearse trial, onboarding and sustaining GRC (standing, every sprint)
+- [ ] Done
+
+As [s12-09](s12-e8-mapping-and-adoption.md#s12-09-rehearse-trial-onboarding-and-sustaining-grc-standing-every-sprint), including this sprint's new commands and guides.
+
+### s15-11 Improve: quality and flow (standing, about 15% of each sprint)
+- [ ] Done
+
+As [s12-10](s12-e8-mapping-and-adoption.md#s12-10-improve-quality-and-flow-standing-about-15-of-each-sprint).
+
 ## Discovered work
 
 ## Sprint review

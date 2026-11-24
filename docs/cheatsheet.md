@@ -87,7 +87,7 @@ file by `scripts/cheatsheet/render.sh`.
   - `--config --checks --evidence-dir` (req) `--dry-run`
 
 ### Manual evidence
-- `hound manual upload <file>`: drop an export into a manual source
+- `hound manual upload <file>`: drop an export into a manual source; only a **Person** at a terminal is asked to attest it
   - `--config --source` (req)
 - `hound manual propose <source> <file>`: agent: propose a result and its extract
   - `--config` (req) `--result --check --observation --supports --json`
@@ -112,6 +112,10 @@ file by `scripts/cheatsheet/render.sh`.
 - `hound mapping validate <file>`: check a mapping file
   - `--framework`
 - `hound mapping apply <mapping> <checks>`: map check results to requirements
+- `hound mapping coverage <mapping>`: automated, manual and uncovered counts per parent and group
+  - `--framework --groups --manual --json`
+- `hound mapping crosswalk`: which NIST SP 800-171 (or other) requirements a programme's evidence answers today (advisory)
+  - `--from --config` (req) `--to --file --scope --offline --json`
 - `hound skill list`: onboarding skills, hound's and yours
 - `hound skill new <name>`: start a skill
 - `hound skill add <file>`: add a skill file
@@ -124,6 +128,13 @@ file by `scripts/cheatsheet/render.sh`.
 - `hound review recommend <key> --answer ... --reason ... --source ...`: agent: its recommendation
 - `hound review --for 60m`: **Person**: one guided weekly session
   - `--no-apply`: stop at the files
+
+### Reports
+- `hound report snapshot --period 2026-11`: the period's posture per programme, from CISO Assistant and the run store, to the evidence store
+  - `--config` (req) `--scope --control`
+- `hound report committee --month 2026-11`: the monthly security committee report from the month's and last month's snapshots
+- `hound report board --quarter 2026-Q4`: the quarterly board report from the last four quarter-end snapshots
+  - both: `--config` (req) `--out`
 
 ## Typical paths
 

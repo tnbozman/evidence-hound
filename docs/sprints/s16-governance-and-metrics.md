@@ -87,6 +87,16 @@ Changed in the AI governance planning PR (Nov 2026): s11-05 builds the `ciso-ass
 **Functional check**
 - Following the guides verbatim, add a metric to the example repo and apply it.
 
+### s16-05 Rehearse trial, onboarding and sustaining GRC (standing, every sprint)
+- [ ] Done
+
+As [s12-09](s12-e8-mapping-and-adoption.md#s12-09-rehearse-trial-onboarding-and-sustaining-grc-standing-every-sprint), including this sprint's new commands and guides.
+
+### s16-06 Improve: quality and flow (standing, about 15% of each sprint)
+- [ ] Done
+
+As [s12-10](s12-e8-mapping-and-adoption.md#s12-10-improve-quality-and-flow-standing-about-15-of-each-sprint).
+
 ## Discovered work
 
 ## Sprint review
