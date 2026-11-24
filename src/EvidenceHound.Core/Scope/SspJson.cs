@@ -21,6 +21,9 @@ public static class SspJson
             ["framework"] = Value(document.Framework),
             ["audit"] = Value(document.Audit),
             ["perimeter"] = Value(document.Perimeter),
+            ["classification"] = Value(document.Classification),
+            ["operational_status"] = Value(document.OperationalStatus),
+            ["system_type"] = Value(document.SystemType),
             ["roles"] = new JsonArray([.. document.Roles.Select(r => new JsonObject { ["role"] = r.Role, ["holder"] = Value(r.Holder) })]),
             ["inventory"] = new JsonArray([.. document.Inventory.Select(s => new JsonObject
             {
@@ -42,6 +45,12 @@ public static class SspJson
             })]),
             ["documents"] = new JsonArray([.. document.Documents.Select(Value)]),
             ["sections"] = new JsonArray([.. document.Sections.Select(s => new JsonObject { ["name"] = s.Name, ["file"] = Value(s.Value) })]),
+            ["annex"] = new JsonArray([.. document.Annex.Select(a => new JsonObject
+            {
+                ["control"] = a.Control, ["title"] = a.Title, ["listed_under"] = new JsonArray([.. a.Parents.Select(p => JsonValue.Create(p))]),
+                ["applicability"] = Value(a.Applicability), ["status"] = Value(a.Status), ["statement"] = Value(a.Statement),
+                ["responsible"] = Value(a.Responsible), ["evidence"] = Value(a.Evidence), ["poam"] = a.Poam,
+            })]),
         }.ToJsonString(Indented) + "\n";
     }
 

@@ -1,7 +1,6 @@
 using System.CommandLine;
-using System.Globalization;
-using System.Text;
 using EvidenceHound.CisoAssistant;
+using EvidenceHound.Core.Frameworks;
 using EvidenceHound.Core.Results;
 using EvidenceHound.Core.Scope;
 using EvidenceHound.Runtime.Collectors;
@@ -37,7 +36,8 @@ internal static class SspCommands
                 return exit;
             }
 
-            await output.WriteAsync(parseResult.GetValue(json) ? SspJson.Write(document) : Markdown(document));
+            var repo = Path.GetDirectoryName(Path.GetFullPath(Scope(parseResult, scope).FullName))!;
+            await output.WriteAsync(parseResult.GetValue(json) ? SspJson.Write(document) : SspLayout.Markdown(document, await SectionsAsync(document, repo, cancellationToken)));
             return parseResult.GetValue(strict) && document.Gaps.Count > 0 ? ExitCodes.SspGaps : ExitCodes.Ok;
         });
         var poam = new Command("poam", "The plan of action and milestones for a programme: every requirement not yet met, with its control, owner, ETA and status. Reads only.")
@@ -64,7 +64,7 @@ internal static class SspCommands
         ParseResult parseResult, Option<string> programme, Option<DirectoryInfo> scope, Option<FileInfo?> config, IConfiguration configuration, CollectorRegistry registry,
         ILoggerFactory loggers, ILogger logger, CancellationToken cancellationToken)
     {
-        var dir = parseResult.GetValue(scope) ?? new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "scope"));
+        var dir = Scope(parseResult, scope);
         var configFile = parseResult.GetValue(config);
         var checkedScope = await ScopeCommands.ValidateAsync(dir, configFile, registry, AuditSeries.Today(configuration), cancellationToken);
         if (checkedScope.Problems.Count > 0)
@@ -96,43 +96,32 @@ internal static class SspCommands
         };
         var held = await services.GetRequiredService<IScopeStateSource>().ReadAsync(query, cancellationToken);
         return held.Match<(int, SspDocument?)>(
-            objects => (ExitCodes.Ok, SspBuilder.Build(ssp, checkedScope.Scope, objects)),
+            objects => (ExitCodes.Ok, SspBuilder.Build(ssp, checkedScope.Scope, objects, Snapshot(checkedScope, audit))),
             problems => (Log.Problems(logger, problems), null));
     }
 
-    /// <summary>The gaps first, then a short summary for a person; the profile's full layout comes with s11-04.</summary>
-    private static string Markdown(SspDocument document)
+    private static DirectoryInfo Scope(ParseResult parseResult, Option<DirectoryInfo> scope) =>
+        parseResult.GetValue(scope) ?? new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "scope"));
+
+    private static FrameworkSnapshot? Snapshot(ScopeCommands.CheckedScope checkedScope, string audit)
     {
-        var text = new StringBuilder()
-            .AppendLine(CultureInfo.InvariantCulture, $"## System security plan: {document.SystemName.Value} (version {document.Version.Value})")
-            .AppendLine()
-            .AppendLine(CultureInfo.InvariantCulture, $"Programme {document.Programme}, profile {document.Profile}, boundary {document.Perimeter.Value}, audit of record {document.Audit.Value}.")
-            .AppendLine()
-            .AppendLine("### Gaps")
-            .AppendLine();
-        if (document.Gaps.Count == 0)
+        var framework = checkedScope.Scope.Setup.Programmes.Single(p => p.Audit.Value == audit).Framework.Value;
+        return checkedScope.Inputs.Snapshots.GetValueOrDefault(framework);
+    }
+
+    /// <summary>The hand-written sections' text, read from their files relative to the repo (the scope folder's parent); a missing file reads as empty.</summary>
+    private static async Task<Dictionary<string, string>> SectionsAsync(SspDocument document, string repo, CancellationToken cancellationToken)
+    {
+        var texts = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var section in document.Sections)
         {
-            text.AppendLine("No gaps.");
+            var path = section.Value.Value is { } file ? Path.GetFullPath(file, repo) : null;
+            if (path is not null && path.StartsWith(repo + Path.DirectorySeparatorChar, StringComparison.Ordinal) && File.Exists(path))
+            {
+                texts[section.Name] = await File.ReadAllTextAsync(path, cancellationToken);
+            }
         }
 
-        foreach (var gap in document.Gaps)
-        {
-            text.AppendLine(CultureInfo.InvariantCulture, $"- {gap.Requirement}: {gap.Reason}");
-        }
-
-        text.AppendLine()
-            .AppendLine("### Inventory")
-            .AppendLine()
-            .AppendLine("| System | Type | Owner |")
-            .AppendLine("| --- | --- | --- |");
-        foreach (var system in document.Inventory)
-        {
-            text.AppendLine(CultureInfo.InvariantCulture, $"| {system.Name.Value} | {system.Type.Value ?? "-"} | {system.Owner.Value ?? "-"} |");
-        }
-
-        return text
-            .AppendLine()
-            .AppendLine(CultureInfo.InvariantCulture, $"{document.ExternalServices.Count} external service(s), {document.Controls.Count} control(s), {document.Requirements.Count} requirement row(s). Use --json for every value with its source.")
-            .ToString();
+        return texts;
     }
 }
