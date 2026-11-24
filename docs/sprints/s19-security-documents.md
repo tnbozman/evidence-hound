@@ -15,7 +15,7 @@ What the guideline requires:
 - Per system: a system security plan (ISM-0041), a cyber security incident response plan (ISM-0043), a change and configuration management plan (ISM-0912), a continuous monitoring plan (ISM-1163), a security assessment report produced by the assessor (ISM-1563), and a plan of action and milestones produced by the system owner after the assessment (ISM-1564).
 - It also points to registers, policies and procedures in other guidelines: system registers, incident registers, approved supplier lists, managed service and outsourced cloud service registers, software registers, AI agent registers, awareness training registers, and usage policies (system, email, web, mobile devices, general-purpose AI, and others). s19-04 and s19-11 cover the ones hound has data for.
 
-The ASD SSP annex template the guideline points to is used for the ISM annex (s11-16). Where this company has no CISO, the CTO approves organisation-level documents as the CISO's delegate, and the register records who approved.
+The ASD SSP annex template the guideline points to is used for the ISM annex (s11-16). Small and medium businesses often have no CISO. hound therefore names the approver of organisation-level documents as a configurable role, `cyber_grc_lead`: the person responsible for cyber GRC. That is the CISO, or an appropriate manager the chief security officer (CSO) or equivalent has delegated, such as a CTO or IT manager. The register records who approved and under which delegation.
 
 Builds on: the SSP model and layout (s11-02 to s11-05), the POA&M (s11-03), the incident response plan (s15-09), the evidence plan (s10-04), risk and BIA as configuration (s15), suppliers and flow-down (s10, s15-08), metrics (s16) and the CMMC mapping (s17).
 
@@ -118,7 +118,7 @@ Builds on: the SSP model and layout (s11-02 to s11-05), the POA&M (s11-03), the 
 ### s19-05 Risk assessment report
 - [ ] Done
 
-**Story:** As the CTO, I want the risk assessment written up from the risk register, so that the periodic risk assessment requirement is met without a separate spreadsheet.
+**Story:** As the person responsible for cyber GRC, I want the risk assessment written up from the risk register, so that the periodic risk assessment requirement is met without a separate spreadsheet.
 
 **Acceptance criteria**
 - From s15: the risk matrix used, the threats considered, each scenario with inherent and residual rating, treatment, owner and linked controls, and the exceptions accepted with their expiry.
@@ -168,7 +168,8 @@ Builds on: the SSP model and layout (s11-02 to s11-05), the POA&M (s11-03), the 
 **Story:** As a GRC team member, I want each document's version, approval and next review tracked for me, so that nothing lapses and the review is one item in my weekly session.
 
 **Acceptance criteria**
-- Every generated document's approved versions, approval date and approver as recorded in CISO Assistant, and the "current as at" date printed in each document (ISM-0888). The approver is checked against the document's level: the CISO (or delegate) for organisation-level documents, and the system's authorising officer for system-specific ones (ISM-0047).
+- Every generated document's approved versions, approval date and approver as recorded in CISO Assistant, and the "current as at" date printed in each document (ISM-0888). The approver is checked against the document's level (ISM-0047): the `cyber_grc_lead` for organisation-level documents, and the system's authorising officer for system-specific ones.
+- `scope/access.yaml` declares the `cyber_grc_lead` role with its holder and, when the holder is not a CISO, a `delegated_by` (the CSO or equivalent) and the delegation's date. A delegate with no `delegated_by` is a validation problem (`access.grc_lead_delegation_missing`). The role's title in documents is configurable (for example "Chief Information Security Officer" or "IT Manager (delegated by the CSO)"), and nothing in the repo names a real person or business.
 - On approval, a change notice (what changed since the last version) is drafted for stakeholders and recorded as sent (ISM-1602). hound drafts it, and a person sends it.
 - A document past its review interval is an item in the weekly review (s10-07), where the agent drafts what changed since the last version.
 - The register is itself published as evidence for the documentation review controls the catalogue names.
@@ -177,6 +178,7 @@ Builds on: the SSP model and layout (s11-02 to s11-05), the POA&M (s11-03), the 
 - `DocumentRegisterTests.Document_past_review_interval_joins_the_weekly_review`
 - `DocumentRegisterTests.Every_document_prints_current_as_at`
 - `DocumentRegisterTests.Wrong_level_approver_is_a_gap`
+- `AccessScopeTests.Grc_lead_delegate_needs_delegated_by`
 - `DocumentRegisterTests.Approval_drafts_a_change_notice`
 
 **Functional check**
