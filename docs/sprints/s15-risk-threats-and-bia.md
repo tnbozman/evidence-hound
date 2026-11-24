@@ -183,6 +183,38 @@ against my own suppliers' contracts, so that I can show a prime what I flow down
 **Functional check**
 - The machine-shop rehearsal records its prime's DFARS clauses and finds the one supplier contract that does not carry them.
 
+### s15-09 Incident response plan document (added 2026-11-24)
+- [ ] Done
+
+Added at the maintainer's request (2026-11-24): both regimes require a written incident response plan (ISM-0043; NIST SP 800-171
+family 3.6, with DFARS 252.204-7012's 72-hour report for CMMC Level 2), and a small team should not have to write one from a blank page.
+
+**Story:** As a GRC team member with a few hours a week, I want `hound` to build the incident response plan from what CISO Assistant
+and the configuration repo already hold, so that I write only the judgement parts and the plan stays current when contacts, systems or
+suppliers change.
+
+**Acceptance criteria**
+- Same document approach as the SSP (s11-02, s11-04): `scope/irp.yaml` names the programme, the roles (incident manager, deputy,
+  executive contact, legal or privacy contact) and the judgement section files; `hound irp build --programme <id>` writes the plan as
+  Markdown and JSON, every derived value with its source.
+- Derived, not typed: contacts from the roles' holders, the systems in scope with their data kinds (s10-06), suppliers and their incident
+  contacts and contract clauses (s09-19, s15-08), and the reporting obligations with their deadlines from `scope/reporting.yaml`
+  (s15-07), for example DFARS 7012 within 72 hours, Defence for DISP, and the Notifiable Data Breaches assessment within 30 days.
+- Judgement sections the person writes: severity definitions, escalation decisions, containment priorities, communication approach and
+  lessons learned. A missing section or role is a gap, reported like the SSP's gaps; `--strict` exits non-zero on gaps.
+- The plan cites ISM-0043 and NIST SP 800-171 3.6.1 to 3.6.3, and its annual test (s15-07's manual source) records the plan version
+  it tested.
+
+**Tests first**
+- `IrpBuilderTests.Contacts_come_from_role_holders_with_sources`
+- `IrpBuilderTests.Reporting_obligations_list_each_deadline`
+- `IrpValidatorTests.Missing_judgement_section_is_a_gap`
+- `IrpCommandTests.Strict_build_with_gaps_exits_non_zero`
+
+**Functional check**
+- Build the example programme's plan against the local CISO Assistant; it lists the fictional CUI system's DFARS 72-hour report and the
+  supplier contacts, and reports no gaps once the example judgement sections are present.
+
 ## Discovered work
 
 ## Sprint review
