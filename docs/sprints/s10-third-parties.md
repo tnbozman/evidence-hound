@@ -1,6 +1,6 @@
 # s10 Third parties as configuration
 
-Status: In progress
+Status: Done
 
 **Goal:** suppliers, their solutions and contracts, and supplier assessments live in the private configuration repo and are applied to CISO Assistant by `hound`, replacing the third-party spreadsheet. The evidence plan (which controls are evidenced automatically or manually, by whom and how often) is applied the same way, as recurring CISO Assistant tasks, so manual evidence and supplier reviews are chased by CISO Assistant's own reminders.
 
@@ -243,13 +243,8 @@ batch.
 
 ### Carried from s09 (2026-11-23)
 
-Built and tested in CI; each waits on a run in the maintainer's own environment, not on code. Details stay under the task in `s09-e8-gap-collectors.md`.
-- [ ] s09-01 Application control policies from Intune: a real Graph export for the App Control for Business setting IDs.
-- [ ] s09-15 Firewall firmware update timeliness: whether the read-only role may call the firmware upgrade check, and a dry run on the maintainer's tenant.
-- [ ] s09-17 The Sophos trial on a real tenant.
-- [ ] s09-29 Microsoft 365 checks follow the capability map: a run against the maintainer's tenant.
-- [ ] s09-38 to s09-42 Agent-driven onboarding and manual evidence: the maintainer's own run with their agent, including s09-39, their XGS firewall.
-- [ ] s09-54 and s09-57 `make trial` on the maintainer's machine.
+Moved to s11 on 2026-11-24, at the maintainer's request, so s10 can close: each waits on a run in the maintainer's own environment, not
+on code. See "Carried from s09 and s10" in `s11-e8-ssp-and-ai-grc.md`.
 
 ## Discovered work
 
@@ -281,3 +276,26 @@ Built and tested in CI; each waits on a run in the maintainer's own environment,
   - `hound manual upload` waits for an answer when no terminal is attached instead of refusing.
 
 ## Sprint review
+
+**2026-11-24.** Closed at the maintainer's request. Five tasks done (s10-01 and s10-02 moved to s09 as s09-19 and s09-20), each with red
+and green commits; CI green on every job, the functional and trial jobs included.
+
+- **Third parties and the evidence plan as configuration** (s10-03, s10-04): the documentation and example repo for suppliers, and the
+  evidence plan applied as CISO Assistant evidence items and recurring tasks, with a runbook per manual source and the Essential Eight
+  manual-source templates.
+- **Sensitive data** (s10-06): CUI, personal information, export-controlled and classified data on solutions and systems, with
+  authority and expiry; filtering labels in CISO Assistant; `hound supplier list --data` for the prime's list. Findings warn and join the
+  weekly review rather than block (maintainer's decision, s10-05).
+- **One guided weekly review** (s10-07): `hound review pending`, `hound review recommend`, the `hound review` session with one sign-off,
+  standing approvals for unchanged re-attestations, a weekly task from `hound init`, and the `weekly-review` skill.
+- **Persona rehearsals** (s10-03, s10-05):
+  - *Machine shop going for CMMC Level 2.* An agent can carry the supplier register, the sensitive-data record and the prime's list,
+    the evidence plan, manual evidence proposals and the weekly queue; the owner's part is about an hour a week in `hound review`. Still
+    needs the person or a consultant: whether data is CUI (the owner and the prime), moving CUI off the commercial mail plan, and a CMMC
+    Level 2 / NIST SP 800-171 audit, which hound does not have until s17.
+  - *Essential Eight ML2 supplier moving to the Essential Series.* An agent can carry suppliers with DSGL and OFFICIAL: Sensitive data,
+    manual sources and the weekly queue in about 45 minutes a week. Still needs the person: export permits for offshore DSGL storage, and
+    the Essential Series itself, which waits on its framework and mapping (s14).
+
+Moved to s11, waiting on the maintainer's own environment: s09-01, s09-15, s09-17, s09-29, s09-38 to s09-42, s09-54 and s09-57.
+Open findings are under Discovered work.

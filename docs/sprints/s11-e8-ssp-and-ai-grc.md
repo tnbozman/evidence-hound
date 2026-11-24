@@ -459,6 +459,17 @@ Decided by the person on 2026-11-22:
   3. Output is Markdown, with an option to generate Word.
   4. Model-suggested control descriptions are kept, as proposals people review (s11-06), and come after the deterministic tasks: deterministic code first, a model only afterwards, and never in evidence collection.
 
+## Carried from s09 and s10
+
+Moved from s10 on 2026-11-24, at the maintainer's request. Built and tested in CI; each waits on a run in the maintainer's own
+environment, not on code. Details stay under the task in `s09-e8-gap-collectors.md`.
+- [ ] s09-01 Application control policies from Intune: a real Graph export for the App Control for Business setting IDs.
+- [ ] s09-15 Firewall firmware update timeliness: whether the read-only role may call the firmware upgrade check, and a dry run on the maintainer's tenant.
+- [ ] s09-17 The Sophos trial on a real tenant.
+- [ ] s09-29 Microsoft 365 checks follow the capability map: a run against the maintainer's tenant.
+- [ ] s09-38 to s09-42 Agent-driven onboarding and manual evidence: the maintainer's own run with their agent, including s09-39, their XGS firewall.
+- [ ] s09-54 and s09-57 `make trial` on the maintainer's machine.
+
 ## Discovered work
 
 ## Sprint review
