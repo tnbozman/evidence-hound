@@ -250,6 +250,25 @@ public sealed partial class ExampleRepoTests : IDisposable
     }
 
     [Fact]
+    public void Deployments_pin_one_released_version_not_dev_or_main()
+    {
+        // s13-07 rehearsal: the template ran the runner image's dev tag and built hound from main, under comments that said to pin a release.
+        static string Setting(string file, string key) =>
+            File.ReadLines(file).Single(l => l.StartsWith(key + "=", StringComparison.Ordinal))[(key.Length + 1)..];
+        var image = Setting(Path.Combine(Repo, "deploy", "deploy.env"), "HOUND_RUNNER_IMAGE");
+        var reference = Setting(Path.Combine(RepoRoot, "deploy", "compose", ".env.example"), "HOUND_RUNNER_IMAGE");
+        var workflow = File.ReadLines(Path.Combine(Repo, ".github", "workflows", "compliance.yml")).Single(l => l.Contains("EVIDENCE_HOUND_REF: ", StringComparison.Ordinal));
+        var tutorial = File.ReadAllText(Path.Combine(RepoRoot, "docs", "tutorials", "first-deployment.md"));
+
+        image.ShouldMatch(@"^ghcr\.io/tnbozman/evidence-hound:\d+\.\d+\.\d+$");
+        reference.ShouldBe(image);
+        var version = image[(image.LastIndexOf(':') + 1)..];
+        workflow.Trim().ShouldBe($"EVIDENCE_HOUND_REF: v{version}");
+        tutorial.ShouldNotContain("evidence-hound:dev");
+        tutorial.ShouldContain($"evidence-hound:{version}");
+    }
+
+    [Fact]
     public void The_apply_job_applies_the_plan_it_saved()
     {
         var workflow = File.ReadAllText(Path.Combine(Repo, ".github", "workflows", "compliance.yml"));
