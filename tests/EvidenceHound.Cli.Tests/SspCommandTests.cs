@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using EvidenceHound.Core.Frameworks;
+using EvidenceHound.Core.Scope;
 using Microsoft.Extensions.Logging;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
@@ -115,6 +116,111 @@ public sealed class SspCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Snapshot_out_rebuilds_the_same_draft_without_ciso_assistant()
+    {
+        // s11-05: the reviewed draft is reproducible from its snapshot, so a signed version can be checked by hash.
+        await WriteScopeAsync(Ssp);
+        Instance();
+        var snapshot = Path.Combine(_workDir, "ssp-0.1.json");
+
+        (await Build("--snapshot-out", snapshot)).ShouldBe(ExitCodes.Ok, _error.ToString());
+        var draft = _output.ToString();
+        _logs.Messages.ShouldContain(m => m.Contains($"draft SHA-256 {SspVersion.Hash(draft)}", StringComparison.Ordinal));
+        _output.GetStringBuilder().Clear();
+        var calls = _ca.LogEntries.Count;
+
+        (await Build("--from-snapshot", snapshot)).ShouldBe(ExitCodes.Ok, _error.ToString());
+
+        _output.ToString().ShouldBe(draft);
+        draft.ShouldContain("(DRAFT)");
+        _ca.LogEntries.Count.ShouldBe(calls);
+    }
+
+    [Fact]
+    public async Task A_signed_snapshot_builds_the_approved_plan()
+    {
+        await WriteScopeAsync(Ssp);
+        Instance();
+        var snapshot = Path.Combine(_workDir, "ssp-0.1.json");
+        (await Build("--snapshot-out", snapshot)).ShouldBe(ExitCodes.Ok, _error.ToString());
+        await WriteScopeAsync(Ssp + SignOff(SspVersion.Hash(_output.ToString())));
+        _output.GetStringBuilder().Clear();
+
+        (await Build("--from-snapshot", snapshot)).ShouldBe(ExitCodes.Ok, _error.ToString());
+
+        _output.ToString().ShouldNotContain("(DRAFT)");
+        _output.ToString().ShouldContain("> Approved by it@example.com on 2026-11-24.");
+    }
+
+    [Fact]
+    public async Task A_snapshot_that_is_not_the_reviewed_draft_is_refused()
+    {
+        await WriteScopeAsync(Ssp + SignOff(new string('0', 64)));
+        Instance();
+        var snapshot = Path.Combine(_workDir, "ssp-0.1.json");
+        (await Build("--snapshot-out", snapshot)).ShouldBe(ExitCodes.Ok, _error.ToString());
+
+        (await Build("--from-snapshot", snapshot)).ShouldBe(ExitCodes.Configuration);
+
+        _error.ToString().ShouldContain("ssp.signoff_hash_mismatch");
+    }
+
+    [Fact]
+    public async Task Diff_lists_what_changed_between_two_snapshots()
+    {
+        await WriteScopeAsync(Ssp);
+        Instance();
+        var before = Path.Combine(_workDir, "ssp-0.1.json");
+        var after = Path.Combine(_workDir, "ssp-0.2.json");
+        (await Build("--snapshot-out", before)).ShouldBe(ExitCodes.Ok, _error.ToString());
+        await File.WriteAllTextAsync(after, (await File.ReadAllTextAsync(before, _ct)).Replace("\"Example baseline\"", "\"Example baseline and warehouse\"", StringComparison.Ordinal), _ct);
+        _output.GetStringBuilder().Clear();
+
+        var exit = await HoundCli.RunAsync(["ssp", "diff", before, after], _output, _error, logging => logging.AddProvider(_logs), new Dictionary<string, string?>(), _ct);
+
+        exit.ShouldBe(ExitCodes.Ok, _error.ToString());
+        _output.ToString().ShouldContain("| boundary | perimeter | Example baseline | Example baseline and warehouse |");
+    }
+
+    [Fact]
+    public async Task Publish_uploads_the_signed_plan_with_the_audit_report_as_a_new_revision()
+    {
+        await WriteScopeAsync(Ssp);
+        Instance();
+        var snapshot = Path.Combine(_workDir, "ssp-0.1.json");
+        (await Build("--snapshot-out", snapshot)).ShouldBe(ExitCodes.Ok, _error.ToString());
+        await WriteScopeAsync(Ssp + SignOff(SspVersion.Hash(_output.ToString())));
+        _ca.Reset();
+        List("compliance-assessments", new JsonObject { ["id"] = "ca-1", ["ref_id"] = "EXAMPLE-BASELINE-2026" });
+        _ca.Given(Request.Create().WithPath("/api/compliance-assessments/ca-1/word_report/").UsingGet()).RespondWith(Response.Create().WithStatusCode(200).WithBody([1, 2, 3]));
+        List("evidences");
+        _ca.Given(Request.Create().WithPath("/api/evidences/").UsingPost()).RespondWith(Response.Create().WithStatusCode(201).WithBody("""{"id": "ev-ssp"}"""));
+        _ca.Given(Request.Create().WithPath("/api/evidence-revisions/").UsingPost()).RespondWith(Response.Create().WithStatusCode(201).WithBody("""{"id": "rev-1"}"""));
+
+        var exit = await Publish(snapshot);
+
+        exit.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var upload = _ca.LogEntries.Select(e => e.RequestMessage!).Single(r => r.Path == "/api/evidence-revisions/" && r.Method == "POST");
+        upload.Body!.ShouldContain("filename=ssp-baseline-0.1.zip");
+        _ca.LogEntries.Select(e => e.RequestMessage!).Single(r => r.Path == "/api/evidences/" && r.Method == "POST").Body!.ShouldContain("SSP-BASELINE");
+    }
+
+    [Fact]
+    public async Task Publish_refuses_an_unsigned_plan()
+    {
+        await WriteScopeAsync(Ssp);
+        Instance();
+        var snapshot = Path.Combine(_workDir, "ssp-0.1.json");
+        (await Build("--snapshot-out", snapshot)).ShouldBe(ExitCodes.Ok, _error.ToString());
+        _ca.Reset();
+
+        (await Publish(snapshot)).ShouldBe(ExitCodes.Configuration);
+
+        _error.ToString().ShouldContain("ssp.not_signed");
+        _ca.LogEntries.ShouldBeEmpty();
+    }
+
+    [Fact]
     public async Task A_scope_problem_stops_before_ciso_assistant_is_read()
     {
         await WriteScopeAsync(Ssp.Replace("perimeter: Example baseline", "perimeter: Nowhere", StringComparison.Ordinal));
@@ -149,6 +255,18 @@ public sealed class SspCommandTests : IDisposable
     }
 
     private Task<int> Build(params string[] args) => BuildFor("baseline", args);
+
+    private Task<int> Publish(string snapshot) =>
+        HoundCli.RunAsync(
+            ["ssp", "publish", "--programme", "baseline", "--scope", ScopeDir, "--snapshot", snapshot],
+            _output,
+            _error,
+            logging => logging.AddProvider(_logs),
+            new Dictionary<string, string?> { ["HOUND_CA_URL"] = $"{_ca.Url}/api/", ["HOUND_CA_TOKEN"] = Token },
+            _ct);
+
+    private static string SignOff(string sha256) =>
+        $"\n    sign_offs:\n      - {{version: \"0.1\", by: it@example.com, date: \"2026-11-24\", sha256: {sha256}}}\n";
 
     private Task<int> BuildFor(string programme, params string[] args) =>
         HoundCli.RunAsync(
