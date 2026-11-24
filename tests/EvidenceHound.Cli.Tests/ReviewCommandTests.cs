@@ -99,7 +99,46 @@ public sealed class ReviewCommandTests : IDisposable
         item["challenge"]!["note"]!.GetValue<string>().ShouldBe("Is the asset inventory really only administered by the supplier?");
     }
 
+    [Fact]
+    public async Task An_unchanged_reattestation_is_covered_once_a_standing_approval_is_signed()
+    {
+        // The first attestation of a source is always reviewed, and offers no rule.
+        await ProposeAsync("january.txt");
+        var (exit, output, error) = await RunAsync(["review", "--repo", Repo, "--no-apply"], terminal: true, "Sam Example\na\n");
+        exit.ShouldBe(ExitCodes.Ok, error);
+        error.ShouldNotContain("without review");
+
+        // The next export has the same checks and results: accepting it offers the rule, for twelve months.
+        await ProposeAsync("february.txt");
+        (exit, output, error) = await RunAsync(["review", "--repo", Repo, "--no-apply"], terminal: true, "Sam Example\na\ny\n");
+        exit.ShouldBe(ExitCodes.Ok, error);
+        error.ShouldContain("without review for 12 months");
+        (await File.ReadAllTextAsync(Path.Combine(Repo, "review", "standing-approvals.json"), _ct)).ShouldContain("\"source\": \"example-firewall-config\"");
+
+        // From then on an unchanged export is listed as covered and attested in the session without a question.
+        await ProposeAsync("march.txt");
+        (exit, output, error) = await RunAsync(["review", "pending", "--json", "--repo", Repo], terminal: false);
+        exit.ShouldBe(ExitCodes.Ok, error);
+        JsonNode.Parse(output)!["items"]!.AsArray().ShouldHaveSingleItem()!["covered_by"]!["approved_by"]!.GetValue<string>().ShouldBe("Sam Example");
+        (exit, output, error) = await RunAsync(["review", "--repo", Repo, "--no-apply"], terminal: true, "Sam Example\n");
+        exit.ShouldBe(ExitCodes.Ok, error);
+        error.ShouldNotContain("a accept, c challenge");
+        output.ShouldContain("1 by standing approval");
+        output.ShouldContain("Standing approvals: unchanged re-attestation of example-firewall-config, signed by Sam Example");
+        File.Exists(Path.Combine(Repo, "manual", "firewall", "march.txt.attest.yaml")).ShouldBeTrue();
+        var signOff = Directory.GetFiles(Path.Combine(Repo, "review", "sign-offs"), "*.yaml").Order(StringComparer.Ordinal).Last();
+        (await File.ReadAllTextAsync(signOff, _ct)).ShouldContain("standing:");
+    }
+
     public void Dispose() => Directory.Delete(_root, recursive: true);
+
+    private async Task ProposeAsync(string name)
+    {
+        var export = Path.Combine(_root, name);
+        await File.WriteAllTextAsync(export, $"{name}\nrule 14: deny any any\n", _ct);
+        var (exit, _, error) = await ManualProposeTests.ProposeAsync(Repo, export, "--result", "pass", "--observation", "The last rule denies any to any.", "--supports", "rule 14: deny any any");
+        exit.ShouldBe(ExitCodes.Ok, error);
+    }
 
     private string Repo => Path.Combine(_root, "repo");
 
