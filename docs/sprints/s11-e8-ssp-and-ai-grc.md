@@ -467,6 +467,12 @@ Done before s11-12, because the register fields and the screening runbook follow
 **Functional check**
 - Against the local CISO Assistant with the example AI systems, `make run ARGS="run --dry-run"` produces the ten checks with the expected outcomes (one example system is deliberately missing a test date), and `mapping apply mappings/ai6.yaml` on the output fills AI6-4.1 compliant and AI6-5.1 non-compliant.
 
+**Progress (2026-11-24)**
+- Built: `AiRegisterChecks` (pure, 18 tests), the built-in `ai-register` collector (contract suite and `AiRegisterCollectorTests`), and the `ciso-assistant` profile with four recorded test cases (`hound profile test ciso-assistant --profiles profiles`: all four pass). Guide: `docs/collectors/ciso-assistant.md`.
+- Checked against the CISO Assistant v4.3.4 serializers: related objects read as `{"str", "id"}`, so labels are matched on `filtering_labels[*].str`; an entity assessment's `conclusion` is `blocker`, `warning`, `ok` or `not_applicable`, with `expiry_date` saying when it stops being valid.
+- `Ai6MappingTests.Register_checks_name_a_sub_practice_they_are_mapped_to` keeps each observation's practice in step with the mapping.
+- The functional check runs with s11-15, once the example has AI systems.
+
 ### s11-14 Register summary for programme reports
 - [ ] Done
 

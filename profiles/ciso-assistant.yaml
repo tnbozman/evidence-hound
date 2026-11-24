@@ -1,0 +1,142 @@
+# CISO Assistant itself, read with a read-only API token (s11-13): what only CISO Assistant holds about the AI register and
+# suppliers. The AI register entries (tier, use, oversight, dates) live in the compliance repo and are checked by the built-in
+# ai-register collector; `hound scope apply` copies them to CISO Assistant as filtering labels, which this profile reads to find
+# the AI systems. It checks that medium and high tier AI systems are linked to a risk scenario, and that suppliers' solutions have
+# a current assessment and an active contract. See docs/collectors/ciso-assistant.md.
+# Token: a CISO Assistant API token for a user whose role can only read (for example the built-in Reader role) on the domains checked.
+profile: ciso-assistant
+version: "1.0.0"
+source: evidence-hound/profiles/ciso-assistant.yaml
+description: CISO Assistant's AI systems, risk scenarios, supplier assessments and contracts, read with a read-only token.
+requires:
+  hound: ">=0.1"
+
+parameters:
+  base_url:
+    type: url
+    required: true
+    description: CISO Assistant's API, ending in /api/, for example https://ciso.example.com/api/.
+
+secrets:
+  token:
+    required: true
+    description: An API token of a CISO Assistant user who can only read.
+
+connection:
+  base_url: ${base_url}
+  allowed_hosts: ["${base_url}"]
+  auth: { type: api_key, in: header, name: Authorization, value: "Token ${secrets.token}" }
+  rate_limit:
+    per_second: 5
+    max_retries: 3
+
+queries:
+  assets:
+    get: assets/
+    paging: { style: offset, offset_param: offset, limit_param: limit, limit: 100, total: $.count }
+    items: $.results
+    keep: [id, name, ref_id, filtering_labels, solutions]
+  risk_scenarios:
+    get: risk-scenarios/
+    paging: { style: offset, offset_param: offset, limit_param: limit, limit: 100, total: $.count }
+    items: $.results
+    keep: [id, ref_id, name, assets]
+  solutions:
+    get: solutions/
+    paging: { style: offset, offset_param: offset, limit_param: limit, limit: 100, total: $.count }
+    items: $.results
+    keep: [id, ref_id, name, provider_entity, assets]
+  entity_assessments:
+    get: entity-assessments/
+    paging: { style: offset, offset_param: offset, limit_param: limit, limit: 100, total: $.count }
+    items: $.results
+    keep: [id, name, entity, conclusion, expiry_date]
+  contracts:
+    get: contracts/
+    paging: { style: offset, offset_param: offset, limit_param: limit, limit: 100, total: $.count }
+    items: $.results
+    keep: [id, ref_id, name, status, end_date, solutions]
+
+datasets:
+  # Assessments concluded ok whose conclusion has not expired (no expiry date counts as current).
+  current_assessments:
+    from: entity_assessments
+    where:
+      - { field: $.conclusion, equals: ok }
+      - { field: $.expiry_date, older_than: P0D, negate: true, missing: pass }
+  # Active contracts not past their end date (no end date counts as current).
+  current_contracts:
+    from: contracts
+    where:
+      - { field: $.status, equals: active }
+      - { field: $.end_date, older_than: P0D, negate: true, missing: pass }
+  # AI systems that screening put at medium or high tier, with the risk scenarios linked to them.
+  ai_risk_assets:
+    from: assets
+    where: { field: "$.filtering_labels[*].str", any_matches: "^ai-tier-(medium|high)$" }
+    join:
+      - with: risk_scenarios
+        on: { left: $.id, right: "$.assets[*].id" }
+        as: risks
+        optional: true
+  # Every supplier's solution, with its supplier's current assessments, its current contracts and the assets it provides.
+  supplier_solutions:
+    from: solutions
+    join:
+      - with: current_assessments
+        on: { left: $.provider_entity.id, right: $.entity.id }
+        as: assessments
+        optional: true
+      - with: current_contracts
+        on: { left: $.id, right: "$.solutions[*].id" }
+        as: contracts
+        optional: true
+      - with: assets
+        on: { left: "$.assets[*].id", right: $.id }
+        as: provided
+        optional: true
+  # The solutions that provide a third-party AI system.
+  ai_supplier_solutions:
+    from: supplier_solutions
+    where: { field: "$.provided[*].filtering_labels[*].str", any_matches: "^ai-use-third-party$" }
+
+checks:
+  - id: ai.risks_in_register
+    title: Medium and high tier AI systems have their risks in the risk register
+    over: ai_risk_assets
+    each: { field: "$.risks[0].id", exists: true, missing: fail }
+    require: all
+    when_empty: not_applicable
+    describe: "AI6-3.3 Implement controls for AI system risks: {passed} of {matched} medium or high tier AI systems are linked to a risk scenario. Record each one's risks as risk scenarios linked to its asset in CISO Assistant."
+
+  - id: ai.suppliers_assessed
+    title: Third-party AI suppliers have a current assessment
+    over: ai_supplier_solutions
+    each: { field: "$.assessments[0].id", exists: true, missing: fail }
+    require: all
+    when_empty: not_applicable
+    describe: "AI6-4.3 Supply chain transparency: {passed} of {matched} solutions providing a third-party AI system come from a supplier with a current assessment concluded ok. Review the supplier, including what it tells you about its AI."
+
+  - id: ai.supplier_contracts_current
+    title: Third-party AI solutions have an active contract
+    over: ai_supplier_solutions
+    each: { field: "$.contracts[0].id", exists: true, missing: fail }
+    require: all
+    when_empty: not_applicable
+    describe: "AI6-1.2 Supply chain accountabilities: {passed} of {matched} solutions providing a third-party AI system have an active contract not past its end date. Renew the contract, or record the current one in the supplier's file."
+
+  - id: supplier.assessments_current
+    title: Suppliers have a current assessment
+    over: supplier_solutions
+    each: { field: "$.assessments[0].id", exists: true, missing: fail }
+    require: all
+    when_empty: not_applicable
+    describe: "{passed} of {total} suppliers' solutions come from a supplier with a current assessment concluded ok."
+
+  - id: supplier.contracts_current
+    title: Suppliers' solutions have an active contract
+    over: supplier_solutions
+    each: { field: "$.contracts[0].id", exists: true, missing: fail }
+    require: all
+    when_empty: not_applicable
+    describe: "{passed} of {total} suppliers' solutions have an active contract not past its end date."
