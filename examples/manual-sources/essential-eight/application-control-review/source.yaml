@@ -1,0 +1,10 @@
+# Application control review: paste this under 'collectors:' in hound.yaml, then set the owner and the drop folder.
+# The runbook is README.md beside this file; point an evidence plan row at your copy of it.
+- name: application-control-review
+  type: manual
+  schedule: "0 6 * * *"
+  settings:
+    drop_folder: /var/lib/evidence-hound/manual/application-control-review
+    checks: appcontrol.rulesets_validated, appcontrol.internet_facing_servers, appcontrol.user_profiles_and_temp, appcontrol.all_other_locations, appcontrol.microsoft_blocklist
+    due_days: 366
+    owner: Example endpoint owner

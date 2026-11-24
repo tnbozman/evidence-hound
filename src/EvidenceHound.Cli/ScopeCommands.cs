@@ -37,7 +37,7 @@ internal static class ScopeCommands
         validate.SetAction(async (parseResult, cancellationToken) =>
         {
             var checkedScope = await ValidateAsync(parseResult.GetRequiredValue(dir), parseResult.GetValue(config), registry, AuditSeries.Today(configuration), cancellationToken);
-            return await ReportAsync(checkedScope.Problems, checkedScope.Summary, parseResult.GetValue(validateJson) ? "json" : parseResult.GetRequiredValue(format), output, logger);
+            return await ReportAsync(checkedScope.Problems, checkedScope.Summary, parseResult.GetValue(validateJson) ? "json" : parseResult.GetRequiredValue(format), output, logger, checkedScope.Warnings);
         });
 
         var framework = new Option<FileInfo>("--framework") { Description = "The framework snapshot (from hound framework snapshot).", Required = true };
@@ -70,6 +70,11 @@ internal static class ScopeCommands
         {
             var detailed = parseResult.GetValue(detailedExitCode);
             var checkedScope = await ValidateAsync(parseResult.GetRequiredValue(dir), parseResult.GetValue(config), registry, AuditSeries.Today(configuration), cancellationToken);
+            if (!parseResult.GetValue(planJson) && parseResult.GetRequiredValue(planFormat) != "json")
+            {
+                await WarnAsync(checkedScope.Warnings, output);
+            }
+
             var exitCode = checkedScope.Problems.Count > 0
                 ? await ReportAsync(checkedScope.Problems, checkedScope.Summary, "text", output, logger)
                 : await (await PublishCommand.ConnectionAsync(configuration, parseResult.GetValue(config), registry, cancellationToken)).Match(
@@ -108,6 +113,7 @@ internal static class ScopeCommands
             }
 
             var checkedScope = await ValidateAsync(new DirectoryInfo(target), parseResult.GetValue(config), registry, AuditSeries.Today(configuration), cancellationToken);
+            await WarnAsync(checkedScope.Warnings, output);
             if (checkedScope.Problems.Count > 0)
             {
                 return await ReportAsync(checkedScope.Problems, checkedScope.Summary, "text", output, logger);
@@ -132,6 +138,29 @@ internal static class ScopeCommands
             problems => Task.FromResult(Log.Problems(logger, problems))));
 
         return new Command("scope", "Work with a compliance repo's scope files.") { validate, newAudit, plan, apply, export, ScopeImportCommand.Build(output, logger) };
+    }
+
+    /// <summary>For the review session: shows the plan for the scope folder, and applies it once <paramref name="confirm"/> says so.</summary>
+    internal static async Task<int> PlanThenApplyAsync(
+        DirectoryInfo scope, FileInfo? config, IConfiguration configuration, CollectorRegistry registry, ILoggerFactory loggers, TextWriter output,
+        Func<CancellationToken, Task<bool>> confirm, CancellationToken cancellationToken)
+    {
+        var logger = loggers.CreateLogger("hound.scope");
+        var checkedScope = await ValidateAsync(scope, config, registry, AuditSeries.Today(configuration), cancellationToken);
+        if (checkedScope.Problems.Count > 0)
+        {
+            return await ReportAsync(checkedScope.Problems, checkedScope.Summary, "text", output, logger);
+        }
+
+        return await (await PublishCommand.ConnectionAsync(configuration, config, registry, cancellationToken)).Match(
+            async connection =>
+            {
+                var planned = await ApplyAsync(checkedScope, connection, prune: false, dryRun: true, loggers, output, logger, cancellationToken);
+                return planned != ExitCodes.Ok || !await confirm(cancellationToken)
+                    ? planned
+                    : await ApplyAsync(checkedScope, connection, prune: false, dryRun: false, loggers, output, logger, cancellationToken);
+            },
+            problems => Task.FromResult(Log.Problems(logger, problems)));
     }
 
     private static async Task<int> ApplyAsync(
@@ -404,7 +433,11 @@ internal static class ScopeCommands
     }
 
     /// <summary>A checked scope: its problems, a one-line summary, the parsed files, and what planning it needs from outside them.</summary>
-    internal sealed record CheckedScope(IReadOnlyList<ScopeProblem> Problems, string Summary, ScopeDocument Scope, ScopeInputs Inputs);
+    /// <summary>A checked scope: its <see cref="Problems"/> block plan and apply; its <see cref="Warnings"/> are reported and block nothing.</summary>
+    internal sealed record CheckedScope(IReadOnlyList<ScopeProblem> Problems, string Summary, ScopeDocument Scope, ScopeInputs Inputs)
+    {
+        public IReadOnlyList<ScopeProblem> Warnings { get; init; } = [];
+    }
 
     /// <summary>
     /// Checks the scope folder offline. <paramref name="edits"/> stands in for files by full path, so a wizard checks its change before
@@ -430,6 +463,7 @@ internal static class ScopeCommands
         var thirdPartiesDir = Path.Combine(dir.ToString(), "third-parties");
         var thirdParties = Directory.Exists(thirdPartiesDir) ? Directory.GetFiles(thirdPartiesDir, "*.yaml").Order(StringComparer.Ordinal).ToArray() : [];
         var capabilitiesPath = Path.Combine(dir.ToString(), "capabilities.yaml");
+        var planPath = Path.Combine(dir.ToString(), "evidence-plan.yaml");
         var parsed = ScopeLoader.Parse(
             await ReadAsync(setupPath, cancellationToken),
             File.Exists(controlsPath) ? await ReadAsync(controlsPath, cancellationToken) : null,
@@ -437,12 +471,15 @@ internal static class ScopeCommands
             File.Exists(accessPath) ? await ReadAsync(accessPath, cancellationToken) : null,
             File.Exists(settingsPath) ? await ReadAsync(settingsPath, cancellationToken) : null,
             [.. await Task.WhenAll(thirdParties.Select(t => ReadAsync(t, cancellationToken)))],
-            File.Exists(capabilitiesPath) ? await ReadAsync(capabilitiesPath, cancellationToken) : null);
+            File.Exists(capabilitiesPath) ? await ReadAsync(capabilitiesPath, cancellationToken) : null,
+            File.Exists(planPath) ? await ReadAsync(planPath, cancellationToken) : null);
 
         var snapshots = await SnapshotsAsync(parsed.Scope.Setup.Frameworks, Path.GetDirectoryName(Path.GetFullPath(setupPath))!, cancellationToken);
-        var targets = configFile is null ? Result.Ok<IReadOnlyList<ScopeTarget>>([]) : await TargetsAsync(configFile, registry, cancellationToken);
+        var deployment = configFile is null ? Result.Ok(Deployment.None) : await DeploymentAsync(configFile, registry, cancellationToken);
+        var targets = deployment.Map(d => d.Targets);
         var scope = parsed.Scope;
-        var files = await FilesAsync(scope, Path.GetDirectoryName(Path.GetFullPath(dir.ToString().TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)))!, Path.GetDirectoryName(Path.GetFullPath(setupPath))!, cancellationToken);
+        var repoDir = Path.GetDirectoryName(Path.GetFullPath(dir.ToString().TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)))!;
+        var files = await FilesAsync(scope, repoDir, Path.GetDirectoryName(Path.GetFullPath(setupPath))!, cancellationToken);
         IReadOnlyList<ScopeProblem> problems =
         [
             .. parsed.Problems,
@@ -451,13 +488,44 @@ internal static class ScopeCommands
             .. targets.Match(_ => [], ps => ps.Select(p => new ScopeProblem(p.Code, new SourceLine(configFile!.ToString(), 0), p.Message, "Fix the deployment config first."))),
             .. ScopeValidator.Validate(scope, snapshots.Loaded, targets.Match(t => t, _ => [])),
             .. SupplierValidator.Validate(scope, today),
+            .. RunbooksMissing(scope, repoDir),
+            .. configFile is null ? [] : deployment.Match(d => EvidencePlanValidator.Collectors(scope, d.Collectors), _ => []),
         ];
         return new(
-            problems,
+            [.. problems.Where(p => !p.Warning)],
             string.Create(CultureInfo.InvariantCulture, $"scope valid: {scope.Setup.Domains.Count} domain(s), {scope.Controls.Count} control(s), {scope.Audits.Count} audit(s){ThirdPartyCount(scope)}"),
             scope,
-            new ScopeInputs(snapshots.Loaded, configFile is null ? null : targets.Match(t => t, _ => []), files.Found) { Today = today });
+            new ScopeInputs(snapshots.Loaded, configFile is null ? null : targets.Match(t => t, _ => []), files.Found) { Today = today, Runbooks = await RunbooksAsync(scope, repoDir, cancellationToken) })
+        {
+            Warnings = [.. problems.Where(p => p.Warning)],
+        };
     }
+
+    /// <summary>Each runbook the evidence plan names that is in the repo, by its path as the plan names it: the text of its task.</summary>
+    private static async Task<Dictionary<string, string>> RunbooksAsync(ScopeDocument scope, string repoDir, CancellationToken cancellationToken)
+    {
+        var runbooks = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var path in (scope.EvidencePlan?.Rows ?? []).Select(r => r.Runbook).OfType<string>().Distinct(StringComparer.Ordinal))
+        {
+            var full = Path.GetFullPath(path, repoDir);
+            if (File.Exists(full))
+            {
+                runbooks[path] = await File.ReadAllTextAsync(full, cancellationToken);
+            }
+        }
+
+        return runbooks;
+    }
+
+    /// <summary>Each evidence plan runbook must be a file in the compliance repo (the folder that holds the scope folder).</summary>
+    private static IEnumerable<ScopeProblem> RunbooksMissing(ScopeDocument scope, string repoDir) =>
+        (scope.EvidencePlan?.Rows ?? [])
+            .Where(r => r.Runbook is { } runbook && !File.Exists(Path.GetFullPath(runbook, repoDir)))
+            .Select(r => new ScopeProblem(
+                "evidence_plan.runbook_file_missing",
+                r.At,
+                $"evidence row '{r.RefId}' names the runbook {r.Runbook}, which is not in the compliance repo.",
+                "Add the runbook (what to export, from where, and how to send it to the GRC team), or fix the path: it is relative to the folder that holds scope/."));
 
     /// <summary>", N third party(ies)" when the scope declares any, so a scope without them reads as before.</summary>
     private static string ThirdPartyCount(ScopeDocument scope) =>
@@ -574,37 +642,40 @@ internal static class ScopeCommands
     }
 
     /// <summary>The deployment's targets: each audit, the requirements its mapping computes, and every control it names.</summary>
-    private static async Task<Result<IReadOnlyList<ScopeTarget>>> TargetsAsync(FileInfo configFile, CollectorRegistry registry, CancellationToken cancellationToken)
+    /// <summary>What scope validation needs from the deployment config: its targets, and its collector instances by name.</summary>
+    private sealed record Deployment(IReadOnlyList<ScopeTarget> Targets, IReadOnlyList<string> Collectors)
+    {
+        public static Deployment None { get; } = new([], []);
+    }
+
+    private static async Task<Result<Deployment>> DeploymentAsync(FileInfo configFile, CollectorRegistry registry, CancellationToken cancellationToken)
     {
         var config = await ConfigCommands.LoadAsync(configFile, registry, cancellationToken);
         return await config.Match(
-            async c => (await PlanCommand.LoadMappingsAsync(c.Targets, cancellationToken)).Map(loaded => (IReadOnlyList<ScopeTarget>)
+            async c => (await PlanCommand.LoadMappingsAsync(c.Targets, cancellationToken)).Map(loaded => new Deployment(
             [
                 .. loaded.Select(t => new ScopeTarget(
                     t.Target.ComplianceAssessmentRefId,
-                    [.. t.Mapping.Requirements.Select(r => r.Key)],
+                    ReportedChecks.Computed(t.Mapping, c, registry.Descriptions),
                     [.. t.Target.Controls.Values.Append(t.Target.HealthControlRefId).OfType<string>().Distinct(StringComparer.Ordinal)],
                     new SourceLine(configFile.ToString(), 0))),
-            ]),
-            problems => Task.FromResult(Result.Fail<IReadOnlyList<ScopeTarget>>(problems)));
+            ],
+            [.. c.Collectors.Select(i => i.Name)])),
+            problems => Task.FromResult(Result.Fail<Deployment>(problems)));
     }
 
-    private static async Task<int> ReportAsync(IReadOnlyList<ScopeProblem> problems, string summary, string format, TextWriter output, ILogger logger)
+    private static async Task<int> ReportAsync(
+        IReadOnlyList<ScopeProblem> problems, string summary, string format, TextWriter output, ILogger logger, IReadOnlyList<ScopeProblem>? warnings = null)
     {
+        warnings ??= [];
         if (format == "json")
         {
-            var json = new JsonArray([.. problems.Select(p => new JsonObject
-            {
-                ["code"] = p.Code,
-                ["file"] = p.At.File,
-                ["line"] = p.At.Line,
-                ["message"] = p.Message,
-                ["hint"] = p.Hint,
-            })]);
+            var json = new JsonArray([.. problems.Select(p => Json(p, "error")), .. warnings.Select(p => Json(p, "warning"))]);
             await output.WriteLineAsync(json.ToJsonString(Indented));
             return problems.Count == 0 ? ExitCodes.Ok : ExitCodes.Configuration;
         }
 
+        await WarnAsync(warnings, output);
         if (problems.Count == 0)
         {
             await output.WriteLineAsync(summary);
@@ -613,6 +684,25 @@ internal static class ScopeCommands
 
         return Log.Problems(logger, problems.Select(p => new Problem(p.Code, $"{Where(p.At)}: {p.Message} [{p.Code}] {p.Hint}")));
     }
+
+    /// <summary>Each warning on its own line: a finding to act on, which blocks nothing and joins the weekly review.</summary>
+    internal static async Task WarnAsync(IReadOnlyList<ScopeProblem> warnings, TextWriter output)
+    {
+        foreach (var w in warnings)
+        {
+            await output.WriteLineAsync($"warning: {Where(w.At)}: {w.Message} [{w.Code}] {w.Hint}");
+        }
+    }
+
+    private static JsonObject Json(ScopeProblem p, string severity) => new()
+    {
+        ["code"] = p.Code,
+        ["severity"] = severity,
+        ["file"] = p.At.File,
+        ["line"] = p.At.Line,
+        ["message"] = p.Message,
+        ["hint"] = p.Hint,
+    };
 
     private static string Where(SourceLine at) =>
         at.Line > 0 ? string.Create(CultureInfo.InvariantCulture, $"{at.File} line {at.Line}") : at.File;

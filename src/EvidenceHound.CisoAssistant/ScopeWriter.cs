@@ -44,6 +44,8 @@ internal sealed partial class ScopeWriter(HttpClient http, ICisoAssistantClient 
         ScopeKind.Contract => ContractAsync(write, folders, cancellationToken),
         ScopeKind.Representative => RepresentativeAsync(write, cancellationToken),
         ScopeKind.EntityAssessment => EntityAssessmentAsync(write, folders, cancellationToken),
+        ScopeKind.Evidence => EvidenceAsync(write, folders, cancellationToken),
+        ScopeKind.TaskTemplate => TaskTemplateAsync(write, folders, cancellationToken),
         var kind => Task.FromResult(Result.Fail<Unit>(new Problem("scope.kind_not_applied", $"This version of hound does not write {kind.ToString().ToLowerInvariant()}s yet."))),
     };
 
@@ -106,7 +108,8 @@ internal sealed partial class ScopeWriter(HttpClient http, ICisoAssistantClient 
             var parents = Resolve(Split(Field(declared, "parents")), byName, "parent system");
             var owners = await ActorsAsync(Split(Field(declared, "owner")), cancellationToken);
             var folder = folders.FolderOf(declared);
-            return await Result.Combine([folder.Map(f => (JsonNode)f), parents.Map(p => (JsonNode)p), owners.Map(o => (JsonNode)o)]).BindAsync(async resolved =>
+            var labels = await LabelsAsync(Split(Field(declared, "labels")), cancellationToken);
+            return await Result.Combine([folder.Map(f => (JsonNode)f), parents.Map(p => (JsonNode)p), owners.Map(o => (JsonNode)o), labels.Map(l => (JsonNode)l)]).BindAsync(async resolved =>
             {
                 var body = new JsonObject
                 {
@@ -117,8 +120,9 @@ internal sealed partial class ScopeWriter(HttpClient http, ICisoAssistantClient 
                     ["folder"] = resolved[0].DeepClone(),
                     ["parent_assets"] = resolved[1].DeepClone(),
                     ["owner"] = resolved[2].DeepClone(),
+                    ["filtering_labels"] = Labelled(declared, write.Change) ? resolved[3].DeepClone() : null,
                 };
-                Drop(body, "ref_id");
+                Drop(body, "ref_id", "filtering_labels");
                 return write.Change.Action == ScopeAction.Create
                     ? await SendAsync(HttpMethod.Post, "assets/", body, $"to create system {declared.Key}", cancellationToken)
                     : await UpdateAsync("assets", existing, body, write, cancellationToken);
@@ -195,6 +199,10 @@ internal sealed partial class ScopeWriter(HttpClient http, ICisoAssistantClient 
             body.Remove(field);
         }
     }
+
+    /// <summary>Whether to send the labels: when the scope declares some or has just removed them, so labels added in the UI are otherwise kept.</summary>
+    private static bool Labelled(ScopeObject declared, ScopeChange change) =>
+        Field(declared, "labels") is not null || change.Fields.Any(f => f.Field == "labels");
 
     private static string? Field(ScopeObject declared, string name) => declared.Fields.GetValueOrDefault(name);
 

@@ -12,7 +12,7 @@ namespace EvidenceHound.Functional.Tests;
 public sealed class CisoAssistantInventoryFunctionalTests(CisoAssistantFixture ciso)
 {
     private static readonly string[] Questions =
-        ["schema", "setup", "lock_freezes_controls", "audit_fields", "read_only_write", "evidence_revision_hash", "api_configuration", "ref_ids"];
+        ["schema", "setup", "lock_freezes_controls", "audit_fields", "read_only_write", "evidence_revision_hash", "api_configuration", "ref_ids", "task_templates"];
 
     [Fact]
     public async Task Inventory_script_answers_every_question_and_saves_the_schema()
@@ -37,6 +37,8 @@ public sealed class CisoAssistantInventoryFunctionalTests(CisoAssistantFixture c
         answers.Select(a => a.Key).ShouldBe(Questions, ignoreOrder: true, stdout);
         answers["setup"]!.ToJsonString().ShouldBe("""{"perimeter":true,"folder":true,"framework":true}""", stdout);
         answers["schema"]!["paths"]!.GetValue<int>().ShouldBeGreaterThan(100, stdout);
+        // s10-04: the evidence plan writes recurring task templates, so their fields and a probe's answer are recorded.
+        answers["task_templates"]!["paths"]!.AsArray().Select(p => p!.GetValue<string>()).ShouldContain("/api/task-templates/", stdout);
     }
 
     private static string RepoRoot()

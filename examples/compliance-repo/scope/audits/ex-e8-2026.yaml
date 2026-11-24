@@ -32,7 +32,8 @@ controls:
   - ref_id: AC-BACKUP
     requirements: [ISM-1511, ISM-1515]
 assessments:
-  # Web browsers do not process Java from the internet. The mapping lists this as manual only: no collector covers it yet.
+  # Web browsers do not process Java from the internet. The mapping names a manual source for it (user-application-hardening);
+  # until hound.yaml configures that source, no run writes this row and the GRC team writes it here.
   - ref: ISM-1486
     status: done
     result: compliant

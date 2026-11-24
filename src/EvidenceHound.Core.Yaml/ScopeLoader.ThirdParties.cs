@@ -20,7 +20,7 @@ public static partial class ScopeLoader
 
     private static readonly string[] OrganisationEntityKeys = ["name", "description", "mission", "country", "currency", "identifiers"];
 
-    private static readonly string[] SolutionKeys = ["ref_id", "name", "description", "criticality"];
+    private static readonly string[] SolutionKeys = ["ref_id", "name", "description", "criticality", "data"];
     private static readonly string[] ContractKeys = ["ref_id", "name", "description", "status", "start", "end", "annual_expense", "currency", "solutions", "approved_by", "approved_on"];
     private static readonly string[] ContractStatuses = ["draft", "active", "expired", "terminated"];
     private static readonly string[] RepresentativeKeys = ["email", "first_name", "last_name", "role", "phone"];
@@ -89,7 +89,10 @@ public static partial class ScopeLoader
         file.Keys(item, SolutionKeys);
         var refId = file.Required(item, "ref_id");
         var name = file.Required(item, "name");
-        return refId is null || name is null ? null : new ScopeSolution(refId, name, file.Text(item, "description"), Whole(item, "criticality", file), file.At(item));
+        return refId is null || name is null ? null : new ScopeSolution(refId, name, file.Text(item, "description"), Whole(item, "criticality", file), file.At(item))
+        {
+            Data = ReadData(item, file, authority: true),
+        };
     }
 
     private static ScopeContract? ReadContract(YamlMappingNode item, FileReader file)

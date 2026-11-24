@@ -5,6 +5,7 @@ using EvidenceHound.Collectors.Manual;
 using EvidenceHound.Core;
 using EvidenceHound.Core.Checks;
 using EvidenceHound.Core.Results;
+using EvidenceHound.Core.Review;
 using EvidenceHound.Runtime.Collectors;
 using EvidenceHound.Runtime.Configuration;
 using Microsoft.Extensions.Logging;
@@ -75,6 +76,91 @@ internal static class ManualProposalCommands
         });
         return approve;
     }
+
+    /// <summary>Every pending proposal as an item of the review queue, read from the deployment config's manual sources.</summary>
+    internal static async Task<Result<IReadOnlyList<ReviewItem>>> PendingAsync(
+        FileInfo config, CollectorRegistry registry, IReadOnlyList<StandingApproval> standing, DateOnly today, CancellationToken cancellationToken)
+    {
+        var sources = (await ConfigCommands.LoadAsync(config, registry, cancellationToken)).Bind(deployment => Sources(deployment, null));
+        var waiting = await sources.BindAsync(found => WaitingAsync(found, cancellationToken));
+        return await waiting.BindAsync(async all =>
+        {
+            var items = new List<ReviewItem>();
+            foreach (var one in all)
+            {
+                var last = await LastAsync(one.Manual.DropFolder, cancellationToken);
+                var unchanged = last is not null && StandingApprovals.Covers(
+                    StandingApprovals.Unchanged(one.Source, "", today), ReviewKind.ManualEvidence, one.Source, one.Proposal.Outcomes, last, today);
+                items.Add(Item(one) with
+                {
+                    Renewable = unchanged ? one.Source : null,
+                    CoveredBy = standing.FirstOrDefault(r => StandingApprovals.Covers(r, ReviewKind.ManualEvidence, one.Source, one.Proposal.Outcomes, last, today)),
+                });
+            }
+
+            return Result.Ok<IReadOnlyList<ReviewItem>>(items);
+        });
+    }
+
+    /// <summary>The outcomes of the source's most recent attestation, or null when nothing in its drop folder is attested yet.</summary>
+    private static async Task<IReadOnlyDictionary<string, CheckOutcome>?> LastAsync(string dropFolder, CancellationToken cancellationToken)
+    {
+        Attestation? last = null;
+        foreach (var path in Directory.Exists(dropFolder) ? Directory.EnumerateFiles(dropFolder, "*" + Attestation.Suffix) : [])
+        {
+            if (Attestation.Parse(await File.ReadAllTextAsync(path, cancellationToken), Path.GetFileName(path)) is Result<Attestation>.Ok { Value: var one } && (last is null || one.Date > last.Date))
+            {
+                last = one;
+            }
+        }
+
+        return last?.Outcomes;
+    }
+
+    /// <summary>
+    /// Attests each pending proposal whose review key is in <paramref name="keys"/>, as proposed, in <paramref name="who"/>'s name. A file that
+    /// changed after the proposal is left, as <c>hound manual approve</c> leaves it. Returns the keys attested.
+    /// </summary>
+    internal static async Task<Result<IReadOnlyList<string>>> AttestAsync(
+        FileInfo config, CollectorRegistry registry, IReadOnlySet<string> keys, string who, IClock clock, CancellationToken cancellationToken)
+    {
+        var sources = (await ConfigCommands.LoadAsync(config, registry, cancellationToken)).Bind(deployment => Sources(deployment, null));
+        var waiting = await sources.BindAsync(found => WaitingAsync(found, cancellationToken));
+        return await waiting.BindAsync(async all =>
+        {
+            var attested = new List<string>();
+            foreach (var one in all.Where(w => keys.Contains(Item(w).Key)))
+            {
+                var proposal = one.Proposal;
+                if (!string.Equals(Convert.ToHexStringLower(SHA256.HashData(await File.ReadAllBytesAsync(one.Path, cancellationToken))), proposal.FileSha256, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                await File.WriteAllTextAsync(one.Path + Attestation.Suffix, proposal.Attest(who, clock.UtcNow, proposal.Outcomes, proposal.Observation).ToYaml(), cancellationToken);
+                File.Delete(one.Path + Proposal.Suffix);
+                attested.Add(Item(one).Key);
+            }
+
+            return Result.Ok<IReadOnlyList<string>>(attested);
+        });
+    }
+
+    private static ReviewItem Item(Waiting waiting) => new(
+        ReviewKind.ManualEvidence,
+        $"manual_evidence:{waiting.Source}/{waiting.File}",
+        $"[manual evidence] {waiting.Source} {waiting.File}: proposed by {waiting.Proposal.ProposedBy}: {Outcomes(waiting.Proposal.Outcomes)}. {waiting.Proposal.Observation}",
+        "Attested evidence is published as the requirement's result on the next run; only a person attests it, so the result can be trusted.",
+        "The file is attested as proposed, in your name, and the next 'hound run' publishes it.",
+        5)
+    {
+        Recommendation = new ReviewRecommendation("attest", waiting.Proposal.Observation, waiting.Proposal.Supports),
+        File = waiting.Path,
+    };
+
+    private static string Outcomes(IReadOnlyDictionary<string, CheckOutcome> outcomes) => outcomes.Values.Distinct().ToArray() is [var one]
+        ? Attestation.NameOf(one)
+        : string.Join(", ", outcomes.Select(o => $"{o.Key} {Attestation.NameOf(o.Value)}"));
 
     /// <summary>What the agent gave on the command line.</summary>
     private sealed record Given(string? Result, string[] Checks, string? Observation, string[] Supports);
@@ -300,9 +386,7 @@ internal static class ManualProposalCommands
             _attested++;
         }
 
-        private static string Summary(IReadOnlyDictionary<string, CheckOutcome> outcomes) => outcomes.Values.Distinct().ToArray() is [var one]
-            ? Attestation.NameOf(one)
-            : string.Join(", ", outcomes.Select(o => $"{o.Key} {Attestation.NameOf(o.Value)}"));
+        private static string Summary(IReadOnlyDictionary<string, CheckOutcome> outcomes) => Outcomes(outcomes);
 
         private Task SayAsync(string line, CancellationToken cancellationToken) => terminal.Error.WriteLineAsync(line.AsMemory(), cancellationToken);
 

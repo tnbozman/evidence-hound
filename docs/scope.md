@@ -40,6 +40,7 @@ Every ref ID reads the same way whoever wrote it: its kind's prefix, then upper 
 | control | `AC-` | `AC-BACKUP` |
 | perimeter | `PER-` | `PER-CORP` |
 | supplier assessment | `EA-` | `EA-SUP-EXAMPLE` |
+| evidence plan row | `EV-` | `EV-BACKUP-RESTORE` |
 
 An audit has no prefix. An audit that runs in periods, as `hound init` writes it, is a series `<CODE>-<FRAMEWORK>`, such as `EX-E8`, or `<CODE>-<FRAMEWORK>-<SYSTEM>` for one system; each period reads `<CODE>-<FRAMEWORK>-<INTERVAL>-<YEAR>FY[-<SYSTEM>]`, such as `EX-E8-Q2-2027FY` ([Audit periods](#audit-periods)). An audit without a cycle reads `<CODE>-<FRAMEWORK>-<YEAR>`, such as `EX-E8-2026`.
 
@@ -55,7 +56,7 @@ A prompt for a ref ID (`hound add system`, `hound add control`, `hound onboard <
 | `libraries` | Other libraries to load by URN, such as the mapping set between the Essential Eight and the Essentials. |
 | `domains` | Folders. Each has a `name`, a `description`, its `perimeters` (or a single `perimeter`) and its `systems`. |
 | perimeter | `name`, optional `ref_id` and `description`. |
-| system | `name`, `type` (`primary` or `supporting`), optional `ref_id`, `description`, `owner`, `parents` (other systems by name), `tags` (per-framework labels such as `essentials_domain: identity` or `cui: "true"`), `solution` (the third-party solution that provides it, by `ref_id`) and `supplied_through` (a reseller or managed service provider, by the third party's `ref_id`). A system with either is registered only once those suppliers are approved: see [Supplier approval](#supplier-approval). |
+| system | `name`, `type` (`primary` or `supporting`), optional `ref_id`, `description`, `owner`, `parents` (other systems by name), `tags` (per-framework labels such as `essentials_domain: identity` or `cui: "true"`), `solution` (the third-party solution that provides it, by `ref_id`) `supplied_through` (a reseller or managed service provider, by the third party's `ref_id`) and `data` (the [sensitive data](#sensitive-data) it handles). A system with either supplier key is registered only once those suppliers are approved: see [Supplier approval](#supplier-approval). |
 
 ## controls.yaml
 
@@ -66,7 +67,7 @@ A prompt for a ref ID (`hound add system`, `hound add control`, `hound onboard <
 Who can do what in CISO Assistant, so access changes are reviewed as pull requests and a rebuilt instance gets the same access. The file is optional; without it `hound` neither reads nor changes users.
 
 - `users`: `email` (the key, compared without case), `first_name`, `last_name`, `active` (default `true`), and `service_account` for an account that is not a person: `publish` (or `true`) for the collector runner, `apply` for an account that applies the scope.
-- `teams`: `name`, `description`, `domain` (left out for the root folder), `leader` and `members` by email.
+- `teams`: `name`, `description`, `domain` (left out for the root folder), `leader` and `members` by email, and `email`, the team's address for CISO Assistant's task reminders. A team with an `email` and no leader or members is an owner contact: it is reminded and has no login, so it holds no role ([Manual evidence](manual-evidence.md#owner-contacts)).
 - `roles`: a `role` on a `domain` (or the root folder, `Global`, for the whole organisation), for `users` and for every leader and member of `teams`. Built-in roles are `administrator`, `domain_manager`, `analyst`, `approver`, `auditor` (CISO Assistant calls it Reader) and `baseline_reader`; list user groups you created in CISO Assistant under `custom_roles` to use them as roles.
 
 `hound` never sets or reads a password and never creates an API token: a key such as `password` or `api_token` anywhere in the file is an error (`scope.secret_in_file`) whose message never shows the value. A new user gets CISO Assistant's own invitation and sets their password there. Validation also reports duplicate or malformed emails, unknown roles, domains, users and teams, and any domain without an active user who can approve (an approver, domain manager or administrator on it or on `Global`), because risk acceptances and period sign-offs need one.
@@ -96,7 +97,7 @@ Names are checked offline against the settings snapshot of the CISO Assistant re
 
 ## third-parties/&lt;entity&gt;.yaml
 
-The supplier register, one file per supplier or other third party, so a new supplier or a renewed contract is a reviewed pull request. Each file is a CISO Assistant entity with the solutions it provides to the organisation, the contracts covering them and, optionally, its representatives. The folder is optional; without it `hound` neither reads nor changes third parties.
+The supplier register, one file per supplier or other third party, so a new supplier or a renewed contract is a reviewed pull request. How to move a supplier spreadsheet here with your agent, and keep it current: [third-parties.md](third-parties.md). Each file is a CISO Assistant entity with the solutions it provides to the organisation, the contracts covering them and, optionally, its representatives. The folder is optional; without it `hound` neither reads nor changes third parties.
 
 ```yaml
 ref_id: SUP-EXCLOUD
@@ -140,6 +141,49 @@ representatives:
 Validation reports a country or currency code CISO Assistant does not accept (`supplier.country_invalid`, `supplier.currency_invalid`; the lists come from the pinned release), a level outside its range (`supplier.level_invalid`), a contract that ends before it starts (`supplier.contract_dates_invalid`), a contract covering a solution the entity does not provide (`supplier.solution_unknown`), a repeated `ref_id` or email, an unknown `parent` or `domain`, and an `active` contract whose end date has passed (`supplier.contract_lapsed`): renew it and record the new end date, or set it to `expired` or `terminated`. Turning off the `tprm` or `contracts` feature flag in settings.yaml while third parties or contracts are declared is an error. CISO Assistant ships with `contracts` off, so set `contracts: true` in settings.yaml to see contracts in its interface.
 
 Objects are matched by `ref_id` (representatives by email), and the organisation's own entity, which CISO Assistant makes itself, is never touched. `scope plan` shows a renewed contract's new end date as a one-field update.
+
+### Sensitive data
+
+A solution and a system may list the sensitive data they handle, so a supplier handling data it is not approved for is reported and the
+list a prime or an auditor asks for comes from the repo. The list is framework-neutral:
+
+```yaml
+solutions:
+  - ref_id: SOL-EXCLOUD-HOST
+    name: Managed hosting
+    data:
+      - kind: cui                       # cui, pii, export_controlled or classified
+        detail: CUI//SP-CTI             # which: needed for export_controlled and classified
+        role: stores                    # stores, processes, transmits or protects
+        authority:                      # on a solution only: what approves it
+          name: FedRAMP Moderate equivalent
+          evidence: documents/suppliers/example-cloud-fedramp.pdf
+          expires: "2027-06-30"
+```
+
+| Kind | Australian example | US example |
+| --- | --- | --- |
+| `cui` | Information a US prime marks as CUI under a subcontract | Controlled technical information, `CUI//SP-CTI` |
+| `pii` | Personal information under the Privacy Act 1988 | Personal information under a state privacy law |
+| `export_controlled` | Technology on the Defence and Strategic Goods List (`DSGL`) | Technical data under `ITAR` or `EAR` |
+| `classified` | Security-classified information under the PSPF (`PROTECTED`; `OFFICIAL: Sensitive` is not classified but can be recorded here) | Classified national security information |
+
+Validation reports a system that handles a kind through its `solution`, or through `supplied_through` when it names no solution, whose
+data does not list that kind (`data.supplier_not_authorised`); an authority past `expires` (`data.authority_expired`); and
+export-controlled or classified data with no `detail` (`data.detail_missing`).
+
+The first two are **warnings**: findings about the organisation, not mistakes in the files. They are printed by `scope validate` (and
+`--json` gives them `"severity": "warning"`), `scope plan` and `scope apply`, and listed in the weekly review (`hound review`) every week
+until they are fixed, but they block nothing. Record the truth while the data moves or the authority is renewed; never hide it to get a
+clean validate.
+
+`scope apply` uses CISO Assistant's own features only: each kind is a filtering label `data-<kind>` (`data-cui`, `data-export-controlled`;
+CISO Assistant's labels take letters, digits, `_` and `-`) on the solution's and the system's records, and each solution's description
+ends with its data and authorities. `hound supplier list --data cui` prints each supplier's solution handling a kind, with its role,
+authority, evidence, expiry and the systems that hold it, as Markdown for a prime or `--json` for an agent.
+
+`hound` does not decide whether information is CUI, export controlled or classified: that is the owner's call with the prime, the
+contract and, where it applies, the export licence. It records what they decided and checks the suppliers against it.
 
 ### Supplier reviews and tiers
 
@@ -215,6 +259,17 @@ error: it is waiting to be onboarded. `hound scope plan` lists each gap under "C
 requirements no system's audit answers. It lists each requirement an audit leaves open for another system under "Open dependencies" (JSON
 `dependencies`): the audit, the requirement, the system that meets it, that system's audit if it has one, and the result there (as the scope
 declares it, "from collectors" when that audit's mapping computes it, or "no audit yet").
+
+## evidence-plan.yaml
+
+How each control's evidence arrives, from whom and how often. Optional. The guide is [Manual evidence](manual-evidence.md).
+
+| Key | Meaning |
+| --- | --- |
+| `grc_team` | The team (in `access.yaml`) that receives and reviews evidence, for rows that do not name their own. |
+| `evidence` | One row per control: `ref_id` (`EV-`), `control`, `requirements` (optional), `method` (`automated`, `manual` or `hybrid`), `collector` (a collector in `hound.yaml`, for automated and hybrid rows), `owner` (a team, for manual and hybrid rows), `grc_team`, `every` (`3 months`, `6 months` or `12 months`) and `runbook` (a Markdown file in the repo). |
+
+Each row becomes an evidence item labelled `method:` and `collector:`; each manual and hybrid row also becomes a recurring task for the owner and the GRC team, with the runbook as its description. Problems: `evidence_plan.owner_missing`, `evidence_plan.every_missing`, `evidence_plan.runbook_missing`, `evidence_plan.runbook_file_missing`, `evidence_plan.collector_missing`, `evidence_plan.collector_unknown`, `evidence_plan.team_unknown`, `evidence_plan.control_unknown` and `evidence_plan.owner_contact_has_role`.
 
 ## audits/&lt;audit&gt;.yaml
 

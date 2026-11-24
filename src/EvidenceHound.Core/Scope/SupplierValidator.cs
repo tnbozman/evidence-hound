@@ -18,6 +18,7 @@ public static class SupplierValidator
         [
             .. scope.Setup.Organisation is { } organisation ? EntityProblems(organisation, today) : [],
             .. scope.ThirdParties.SelectMany(entity => EntityProblems(entity, today)),
+            .. SensitiveDataValidator.Validate(scope, today),
         ];
     }
 

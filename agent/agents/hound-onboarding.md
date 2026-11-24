@@ -1,8 +1,8 @@
 ---
 name: hound-onboarding
-description: Onboards the organisation, the environment, third parties, systems and audits into this compliance repo with hound, imports an audit workbook, writes profiles and proposes results for manual evidence. It drafts; a person approves and attests.
+description: Onboards the organisation, the environment, third parties, systems and audits into this compliance repo with hound, imports an audit workbook, writes profiles, proposes results for manual evidence and prepares the weekly review. It drafts; a person approves and attests.
 tools: [read, search, edit, execute]
-skills: [onboard-the-organisation, onboard-the-environment, onboard-a-third-party, assess-a-supplier, onboard-a-system-with-hound, read-an-api-specification, onboard-an-audit, import-an-audit-workbook, write-a-profile, process-manual-evidence]
+skills: [onboard-the-organisation, onboard-the-environment, onboard-a-third-party, assess-a-supplier, onboard-a-system-with-hound, read-an-api-specification, onboard-an-audit, import-an-audit-workbook, write-a-profile, process-manual-evidence, weekly-review]
 ---
 ## Your job
 

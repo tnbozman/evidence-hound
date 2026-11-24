@@ -59,10 +59,21 @@ public class E8MappingTests
     }
 
     [Fact]
-    public void Office_macro_antivirus_scanning_is_manual_because_sophos_reads_network_devices_only()
+    public void Office_macro_antivirus_scanning_is_a_manual_check_because_sophos_reads_network_devices_only()
     {
-        Mapping.Mapping.Requirements.ShouldNotContain(r => r.RequirementRef == "ISM-1672");
-        Mapping.ManualOnly.ShouldContain(m => m.Key.Value == "ISM-1672");
+        var requirement = Mapping.Mapping.Requirements.Single(r => r.RequirementRef == "ISM-1672");
+
+        requirement.Checks.ShouldAllBe(c => ExampleManualSources.Checks().Contains(c));
+    }
+
+    [Fact]
+    public void Every_requirement_without_a_collector_is_mapped_to_an_example_manual_source()
+    {
+        // s10-04 (maintainer, 2026-11-23): manual checks are mapped, attested with 'hound manual approve' and published by runs; only a
+        // requirement no manual source covers would stay manual_only, and none does.
+        Mapping.ManualOnly.ShouldBeEmpty();
+        var manual = ExampleManualSources.Checks().ToHashSet();
+        Mapping.Mapping.Requirements.Where(r => r.Checks.Any(manual.Contains)).Select(r => r.RequirementRef).ShouldContain("ISM-1507");
     }
 
     [Fact]
@@ -142,7 +153,8 @@ public class E8MappingTests
         Config().Collectors
             .Where(c => c.Type == "manual")
             .SelectMany(c => c.Settings["checks"].Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
-            .Select(c => CheckId.Create(c).Value());
+            .Select(c => CheckId.Create(c).Value())
+            .Concat(ExampleManualSources.Checks());
 
     private static DeploymentConfig Config() =>
         ConfigLoader.Parse(File.ReadAllText(Path.Combine(Files, "examples", "example-essential-eight.yaml")), "examples/example-essential-eight.yaml", Registry().Descriptions).Value();

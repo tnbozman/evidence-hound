@@ -88,6 +88,32 @@ public sealed partial class ExampleRepoTests : IDisposable
     }
 
     [Fact]
+    public void Example_evidence_plan_has_owner_rows_an_owner_contact_their_runbooks_and_a_weekly_review()
+    {
+        // s10-04: the plan is read by Example_compliance_repo_validates; here, that it shows what a small team needs.
+        var scope = Path.Combine(Repo, "scope");
+        var parsed = ScopeLoader.Parse(
+            new ScopeSource("setup.yaml", File.ReadAllText(Path.Combine(scope, "setup.yaml"))), null, [],
+            new ScopeSource("access.yaml", File.ReadAllText(Path.Combine(scope, "access.yaml"))),
+            evidencePlan: new ScopeSource("evidence-plan.yaml", File.ReadAllText(Path.Combine(scope, "evidence-plan.yaml"))));
+
+        parsed.Problems.ShouldBeEmpty();
+        var manual = parsed.Scope.EvidencePlan!.Rows.Where(r => r.Method == EvidenceMethod.Manual).ToArray();
+        manual.Length.ShouldBe(3);
+        var contacts = parsed.Scope.Access.Teams.Where(t => t.IsOwnerContact).Select(t => t.Name).ToArray();
+        manual.ShouldContain(r => contacts.Contains(r.Owner!.Value));
+
+        // s10-07: the GRC team's own weekly review is a weekly task whose runbook starts the guided session.
+        var weekly = manual.Single(r => r.Every == new EvidenceInterval(1, IntervalUnit.Week));
+        File.ReadAllText(Path.Combine(Repo, weekly.Runbook!)).ShouldContain("hound review");
+        foreach (var runbook in manual.Except([weekly]).Select(r => File.ReadAllText(Path.Combine(Repo, r.Runbook!))))
+        {
+            runbook.ShouldContain("## What to export");
+            runbook.ShouldContain("## Send it to the GRC team");
+        }
+    }
+
+    [Fact]
     public void Deploy_env_sets_only_documented_non_secret_settings_and_every_one_the_stack_requires()
     {
         var documented = Settings(Path.Combine(RepoRoot, "deploy", "compose", ".env.example"));

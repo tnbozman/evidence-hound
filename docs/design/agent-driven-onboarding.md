@@ -1,6 +1,6 @@
 # Design: onboarding driven by the person's own coding agent
 
-Status: Agreed (Nov 23). Changes the [onboarding assistant design](onboarding-assistant.md): the model moves out of `hound` and into the coding agent the person already uses. The build is tasks s09-36 to s09-42 in [the s09 sprint](../sprints/s09-e8-gap-collectors.md).
+Status: Agreed (Nov 23). Approvals are gathered into one guided weekly session by [one guided review a week](guided-review.md) (Proposed, Nov 24). Changes the [onboarding assistant design](onboarding-assistant.md): the model moves out of `hound` and into the coding agent the person already uses. The build is tasks s09-36 to s09-42 in [the s09 sprint](../sprints/s09-e8-gap-collectors.md).
 
 ## Why
 

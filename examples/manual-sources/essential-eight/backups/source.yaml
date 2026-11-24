@@ -1,0 +1,10 @@
+# Backups: paste this under 'collectors:' in hound.yaml, then set the owner and the drop folder.
+# The runbook is README.md beside this file; point an evidence plan row at your copy of it.
+- name: backups
+  type: manual
+  schedule: "0 6 * * *"
+  settings:
+    drop_folder: /var/lib/evidence-hound/manual/backups
+    checks: backup.performed_and_retained, backup.synchronised, backup.retained_securely, backup.unprivileged_cannot_read_others, backup.privileged_cannot_read, backup.unprivileged_cannot_change, backup.privileged_cannot_change
+    due_days: 92
+    owner: Example backup owner

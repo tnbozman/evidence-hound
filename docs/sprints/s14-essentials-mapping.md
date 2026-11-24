@@ -31,6 +31,33 @@ See [the migration plan](../migrations/essential-eight-to-asd-essentials.md).
 **Functional check**
 - Against the local CISO Assistant with both libraries loaded: `hound run` with recordings fills the example Essentials and Essential Eight 2023 audits; the coverage report matches the audits.
 
+### s14-02 DISP membership readiness beyond the Essential Eight (added 2026-11-24)
+- [ ] Done
+
+Added at the maintainer's request (2026-11-24): Defence checks DISP membership itself, which covers governance, personnel and physical
+security as well as cyber security.
+
+**Story:** As a small supplier applying for or keeping DISP membership, I want the governance, personnel, physical and cyber security
+expectations held as an audit beside the Essential Eight, so that one place shows what Defence will check and what evidence answers it.
+
+**Acceptance criteria**
+- A custom framework library in `libraries/` for DISP membership readiness, written from the public Defence Security Principles
+  Framework control areas (governance, personnel, physical, information and cyber security), with requirement text paraphrased and the
+  source cited; loaded through the scope like any custom library.
+- A mapping reuses existing evidence where it applies: the Essential Eight checks for the cyber area, supplier records (s10) for the
+  supply chain, and the incident register (s15-07) for reporting.
+- Manual source templates for what no system holds: security officer appointment, clearances register review, security awareness
+  training records, facility and visitor controls, and the annual security report to Defence.
+- `hound init --framework disp` adds the audit beside the Essential Eight one.
+
+**Tests first**
+- `DispLibraryTests.Every_requirement_has_a_source_area_and_no_copied_text`
+- `DispMappingTests.Cyber_area_reuses_essential_eight_checks`
+- `ExampleManualSourcesTests.Every_template_config_validates` (new templates)
+
+**Functional check**
+- Apply the example DISP audit to the local CISO Assistant; one `hound run` fills its cyber rows from the Essential Eight evidence.
+
 ## Discovered work
 
 ## Sprint review

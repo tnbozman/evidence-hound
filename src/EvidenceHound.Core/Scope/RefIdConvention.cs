@@ -13,6 +13,7 @@ public enum RefIdKind
     Perimeter,
     EntityAssessment,
     Audit,
+    Evidence,
 }
 
 /// <summary>How one kind's ref IDs read: the kind as scope problems name it, its prefix (empty for an audit) and an example.</summary>
@@ -34,6 +35,7 @@ public static partial class RefIds
         new(RefIdKind.Perimeter, "perimeter", "PER-", "PER-CORP"),
         new(RefIdKind.EntityAssessment, "supplier assessment", "EA-", "EA-SUP-EXAMPLE"),
         new(RefIdKind.Audit, "audit", "", "EX-E8-2026"),
+        new(RefIdKind.Evidence, "evidence plan row", "EV-", "EV-BACKUP-RESTORE"),
     ];
 
     public static RefIdConvention For(RefIdKind kind) => Table.First(c => c.Kind == kind);

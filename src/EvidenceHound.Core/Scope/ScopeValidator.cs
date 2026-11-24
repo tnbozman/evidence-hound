@@ -38,6 +38,7 @@ public static class ScopeValidator
             .. SettingsValidator.Validate(scope, CisoAssistantSettings.Current),
             .. SupplierValidator.References(scope),
             .. CapabilityMap.Validate(scope, snapshots),
+            .. EvidencePlanValidator.Validate(scope),
             .. scope.Audits.SelectMany(OtherSystemProblems),
             .. RefIdValidator.Validate(scope),
         ];

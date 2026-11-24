@@ -28,6 +28,9 @@ public sealed record ScopeDocument(ScopeSetup Setup, IReadOnlyList<ScopeControl>
 
     /// <summary><c>scope/capabilities.yaml</c>: which system provides each mitigation; null when the repo has no such file.</summary>
     public ScopeCapabilityMap? Capabilities { get; init; }
+
+    /// <summary><c>scope/evidence-plan.yaml</c>: how each control's evidence arrives, from whom and how often; null when the repo has no such file.</summary>
+    public ScopeEvidencePlan? EvidencePlan { get; init; }
 }
 
 /// <summary><c>scope/setup.yaml</c>: the root folder, the frameworks to load and the domains.</summary>
@@ -67,6 +70,9 @@ public sealed record ScopeSystem(
 {
     /// <summary>The supplier's solution the system is, from <c>scope/third-parties/</c>; its supplier must be approved before the system is registered.</summary>
     public ScopeRef? Solution { get; init; }
+
+    /// <summary>The sensitive data the system handles (s10-06).</summary>
+    public IReadOnlyList<SensitiveData> Data { get; init; } = [];
 
     /// <summary>The reseller or provider the contract is with, when not the solution's own supplier; it must be approved too.</summary>
     public ScopeRef? SuppliedThrough { get; init; }

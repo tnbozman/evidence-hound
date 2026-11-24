@@ -37,6 +37,10 @@ public class ScopeSchemaTests
         Errors(SupplierScopeTests.OrganisationSetup).ShouldBeEmpty();
         Errors(CapabilityLoaderTests.Capabilities).ShouldBeEmpty();
         Errors(OpenDependencyTests.WaitingAudit).ShouldBeEmpty();
+        Errors(EvidencePlanScopeTests.Access).ShouldBeEmpty();
+        Errors(EvidencePlanScopeTests.Plan).ShouldBeEmpty();
+        Errors(SensitiveDataScopeTests.Supplier()).ShouldBeEmpty();
+        Errors(SensitiveDataScopeTests.Setup()).ShouldBeEmpty();
     }
 
     [Fact]
@@ -58,6 +62,8 @@ public class ScopeSchemaTests
     [InlineData("users:\n  - {email: it@example.com, service_account: robot}\n")]
     [InlineData("roles:\n  - {role: approver, users: [it@example.com]}\n")]
     [InlineData("teams:\n  - {name: IT team, colour: blue}\n")]
+    [InlineData("grc_team: GRC team\nevidence:\n  - {ref_id: EV-A, control: AC-1, method: manual, every: 2 months}\n")]
+    [InlineData("evidence:\n  - {ref_id: EV-A, control: AC-1, method: by hand}\n")]
     [InlineData("feature_flags:\n  third_parties: true\n")]
     [InlineData("feature_flags:\n  tprm: yes\n")]
     [InlineData("general:\n  openai_api_key: not-a-real-secret\n")]
@@ -68,6 +74,8 @@ public class ScopeSchemaTests
     [InlineData("organisation:\n  entity:\n    description: No name.\n")]
     [InlineData("ref_id: SUP-1\nname: N\ncontracts:\n  - {ref_id: C-1, name: N, status: signed}\n")]
     [InlineData("ref_id: SUP-1\nname: N\nrepresentatives:\n  - {email: sam@example.com, password: not-a-real-secret}\n")]
+    [InlineData("ref_id: SUP-1\nname: N\nsolutions:\n  - {ref_id: S-1, name: N, data: [{kind: secret_sauce, role: stores}]}\n")]
+    [InlineData("domains:\n  - name: D\n    systems: [{name: S, type: primary, data: [{kind: cui, role: stores, authority: {name: A}}]}]\n")]
     [InlineData("framework: urn:x\nmitigations:\n  - {mitigation: ac, provided_by: hope, approved_by: GRC lead}\n")]
     [InlineData("framework: urn:x\nmitigations:\n  - {mitigation: ac, provided_by: gap, colour: blue}\n")]
     public void Invalid_scope_files_fail_the_schema(string yaml)

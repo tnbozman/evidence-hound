@@ -130,6 +130,8 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
         var assets = await reading.ObjectsInAsync("assets", inScope);
         var audits = await reading.ObjectsInAsync("compliance-assessments", inScope);
         var evidences = await reading.ObjectsInAsync("evidences", inScope);
+        var planned = evidences.Where(IsPlanned).ToArray();
+        var tasks = query.EvidencePlan ? (await reading.ListAsync("task-templates/")).Where(t => RelationId(t["folder"]) is { } f && inScope.Contains(f)).ToArray() : [];
         var controls = await reading.ObjectsInAsync("applied-controls", inScope);
         var hashes = await HashesAsync(reading, evidences);
         var access = query.Access ? await AccessAsync(reading, folders, userList, inScope) : [];
@@ -142,6 +144,8 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
                 Tiers = await reading.ListAsync("tiers/"),
             }
             : null;
+        var labelled = planned.Length > 0 || assets.Concat(thirdParties?.Solutions ?? []).Any(o => o["filtering_labels"] is JsonArray { Count: > 0 });
+        var labels = labelled ? Names(await reading.ListAsync("filtering-labels/"), "label") : [];
         var auditedFrameworks = audits.Select(a => Lookup(a["framework"], frameworks)).OfType<string>().Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
         if (allRows)
         {
@@ -164,6 +168,7 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
             return Result.Fail<HeldState>(reading.Problems);
         }
 
+        var rowKeys = rows.GroupBy(r => Id(r.Row), StringComparer.Ordinal).ToDictionary(g => g.Key, g => g.First().Key, StringComparer.Ordinal);
         var names = new Lookups(
             domainObjects.ToDictionary(Id, d => Text(d["name"]) ?? Id(d), StringComparer.Ordinal),
             Text(root["name"]) ?? query.RootFolder,
@@ -171,7 +176,10 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
             assets.ToDictionary(Id, a => Text(a["name"]) ?? Id(a), StringComparer.Ordinal),
             perimeters.ToDictionary(Id, p => Text(p["name"]) ?? Id(p), StringComparer.Ordinal),
             evidences.ToDictionary(Id, e => Text(e["ref_id"]) ?? Id(e), StringComparer.Ordinal),
-            controls.ToDictionary(Id, c => Text(c["ref_id"]) ?? Id(c), StringComparer.Ordinal));
+            controls.ToDictionary(Id, c => Text(c["ref_id"]) ?? Id(c), StringComparer.Ordinal))
+        {
+            Labels = labels,
+        };
         IReadOnlyList<ActualObject> objects =
         [
             .. Frameworks(query, frameworkList, libraries),
@@ -180,13 +188,20 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
                 ("name", Text(p["name"])), ("ref_id", Text(p["ref_id"])), ("domain", names.Domain(p)))),
             .. assets.Select(a => Marked(ScopeKind.System, Text(a["name"]), a,
                 ("ref_id", Text(a["ref_id"])), ("type", AssetType(Text(a["type"]))), ("owner", Joined(a["owner"], names.Users)), ("domain", names.Domain(a)),
-                ("parents", Joined(a["parent_assets"], names.Assets)))),
+                ("parents", Joined(a["parent_assets"], names.Assets)), ("labels", Joined(a["filtering_labels"], labels)))),
             .. audits.Select(a => Marked(ScopeKind.Audit, AuditKey(a), a,
                 ("name", Text(a["name"])), ("framework", Lookup(a["framework"], frameworks)), ("groups", ScopeDesired.Joined(Strings(a["selected_implementation_groups"]))),
                 ("domain", names.Domain(a)), ("perimeter", Lookup(a["perimeter"], names.Perimeters)), ("eta", Text(a["eta"])), ("due_date", Text(a["due_date"])),
                 ("authors", Joined(a["authors"], names.Users)), ("reviewers", Joined(a["reviewers"], names.Users)), ("status", Text(a["status"])),
                 ("locked", IsLocked(a) ? "true" : null)) with { Locked = IsLocked(a) }),
-            .. evidences.Select(e => Marked(ScopeKind.Document, RefIdOrName(ScopeKind.Document, e), e, ("name", Text(e["name"])), ("domain", names.Domain(e)), ("hashes", hashes.GetValueOrDefault(Id(e))))),
+            .. planned.Select(e => Marked(ScopeKind.Evidence, Text(e["ref_id"]), e,
+                ("name", Text(e["name"])), ("domain", names.Domain(e)), ("owner", Joined(e["owner"], names.Users)), ("controls", Joined(e["applied_controls"], names.Controls)),
+                ("labels", Joined(e["filtering_labels"], labels)))),
+            .. tasks.Select(t => Marked(ScopeKind.TaskTemplate, Text(t["ref_id"]), t,
+                ("name", Text(t["name"])), ("domain", names.Domain(t)), ("assignees", Joined(t["assigned_to"], names.Users)), ("schedule", Schedule(t["schedule"])),
+                ("evidence", Joined(t["evidences"], names.Evidence)), ("controls", Joined(t["applied_controls"], names.Controls)),
+                ("requirements", Joined(t["requirement_assessments"], rowKeys)), ("enabled", t["enabled"] is JsonValue e && e.TryGetValue<bool>(out var enabled) && !enabled ? "false" : "true"))),
+            .. evidences.Where(e => !IsPlanned(e)).Select(e => Marked(ScopeKind.Document, RefIdOrName(ScopeKind.Document, e), e, ("name", Text(e["name"])), ("domain", names.Domain(e)), ("hashes", hashes.GetValueOrDefault(Id(e))))),
             .. controls.Select(c => Marked(ScopeKind.Control, RefIdOrName(ScopeKind.Control, c), c,
                 ("name", Text(c["name"])), ("domain", names.Domain(c)), ("owner", Joined(c["owner"], names.Users)), ("priority", Text(c["priority"])),
                 ("category", Text(c["category"])), ("eta", Text(c["eta"])), ("systems", Joined(c["assets"], names.Assets)), ("documents", Joined(c["evidences"], names.Evidence)))),
@@ -228,7 +243,8 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
                     state);
             }),
             .. teams.Select(t => Marked(ScopeKind.Team, Text(t["name"]), t,
-                ("domain", Lookup(t["folder"], folderNames)), ("leader", Lookup(t["leader"], emails)), ("members", Joined(t["members"], emails)))),
+                ("domain", Lookup(t["folder"], folderNames)), ("leader", Lookup(t["leader"], emails)), ("members", Joined(t["members"], emails)),
+                ("email", Text(t["team_email"])))),
         ];
     }
 
@@ -244,6 +260,16 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
             .. flags.Where(f => f.Value is JsonValue v && v.TryGetValue<bool>(out _)).Select(f => Setting(ScopeKind.FeatureFlag, f.Key, f.Value!.GetValue<bool>() ? "true" : "false")),
             .. general.Select(g => Setting(ScopeKind.Setting, g.Key, CisoAssistantSettings.Json(g.Value))),
         ];
+    }
+
+    /// <summary>An evidence item of the evidence plan: its ref_id follows the EV- convention. Any other evidence item is a document.</summary>
+    private static bool IsPlanned(JsonNode evidence) => Text(evidence["ref_id"]) is { } refId && RefIds.Follows(RefIdKind.Evidence, refId);
+
+    /// <summary>A task schedule as the evidence plan writes it: "every 1 week" or "every N months", a yearly schedule as 12.</summary>
+    private static string? Schedule(JsonNode? schedule)
+    {
+        var interval = schedule?["interval"] is JsonValue i && i.TryGetValue<int>(out var n) ? n : 1;
+        return Text(schedule?["frequency"]) is { } frequency ? TaskSchedules.Text(new TaskSchedule(frequency, interval)) : null;
     }
 
     private static Dictionary<string, string> Names(List<JsonNode> objects, string field) =>
@@ -363,7 +389,8 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
                 Observed = Fields(("conclusion", Choice(Text(a["conclusion"]))), ("expiry_date", Text(a["expiry_date"]))),
             }),
             .. lists.Solutions.Where(s => RelationId(s["provider_entity"]) is { } id && entityRefs.ContainsKey(id)).Select(s => Marked(ScopeKind.Solution, Text(s["ref_id"]), s,
-                ("name", Text(s["name"])), ("entity", Lookup(s["provider_entity"], entityRefs)), ("criticality", Text(s["criticality"])))),
+                ("name", Text(s["name"])), ("entity", Lookup(s["provider_entity"], entityRefs)), ("criticality", Text(s["criticality"])),
+                ("labels", Joined(s["filtering_labels"], names.Labels)))),
             .. lists.Contracts.Select(c => Marked(ScopeKind.Contract, Text(c["ref_id"]), c,
                 ("name", Text(c["name"])), ("entity", Lookup(c["provider_entity"], entityRefs)), ("domain", names.Domain(c)), ("status", Choice(Text(c["status"]))),
                 ("start_date", Text(c["start_date"])), ("end_date", Text(c["end_date"])), ("annual_expense", ScopeDesired.Amount(Text(c["annual_expense"]))),
@@ -455,6 +482,9 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
         Dictionary<string, string> Evidence,
         Dictionary<string, string> Controls)
     {
+        /// <summary>Filtering labels by ID, read only when something in scope carries one.</summary>
+        public Dictionary<string, string> Labels { get; init; } = [];
+
         public string? Domain(JsonNode held) => RelationId(held["folder"]) is { } id ? Domains.GetValueOrDefault(id) : null;
     }
 

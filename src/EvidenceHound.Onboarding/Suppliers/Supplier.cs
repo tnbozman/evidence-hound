@@ -83,7 +83,20 @@ public enum SupplierDrafter
 /// What a draft says beyond the choice and the levels: the third party's description (such as which vendor a reseller stands for), and the
 /// documents that were read and kept in the repo, each with its SHA-256.
 /// </summary>
-public sealed record SupplierNotes(string? Description, IReadOnlyList<(string Path, string Sha256)> Documents);
+public sealed record SupplierNotes(string? Description, IReadOnlyList<(string Path, string Sha256)> Documents)
+{
+    /// <summary>The contract's terms as the supplier's records give them; each left out when unknown.</summary>
+    public ContractTerms? Terms { get; init; }
+
+    /// <summary>The sensitive data the solution handles, as a trust centre or contract says; the authority is left for a person to add.</summary>
+    public IReadOnlyList<DraftedData> Data { get; init; } = [];
+}
+
+/// <summary>A kind of sensitive data (<c>cui</c>, <c>pii</c>, <c>export_controlled</c> or <c>classified</c>), what the solution does with it, and which.</summary>
+public sealed record DraftedData(string Kind, string Role, string? Detail);
+
+/// <summary>A contract's start and end (yyyy-MM-dd), its annual expense as a plain number, and that expense's ISO 4217 currency.</summary>
+public sealed record ContractTerms(string? Start, string? End, string? AnnualExpense, string? Currency);
 
 /// <summary>Writes the drafted supplier as <c>scope/third-parties/&lt;entity&gt;.yaml</c>: levels with their reasons as comments, and a draft contract.</summary>
 public static class SupplierFile
@@ -129,7 +142,30 @@ public static class SupplierFile
 
         text.Append(CultureInfo.InvariantCulture, $"solutions:\n  - ref_id: {Quote(choice.SolutionRef)}\n    name: {Quote(choice.SolutionName)}\n");
         Level(text, "    ", "criticality", 1, 4, levels);
+        if (notes is { Data.Count: > 0 })
+        {
+            text.Append("    # Add each authority (name, evidence, expires) once a document in the repo shows it.\n    data:\n");
+            foreach (var data in notes.Data)
+            {
+                text.Append(CultureInfo.InvariantCulture, $"      - kind: {data.Kind}\n");
+                if (data.Detail is not null)
+                {
+                    text.Append(CultureInfo.InvariantCulture, $"        detail: {Quote(data.Detail)}\n");
+                }
+
+                text.Append(CultureInfo.InvariantCulture, $"        role: {data.Role}\n");
+            }
+        }
+
         text.Append(CultureInfo.InvariantCulture, $"contracts:\n  - ref_id: {Quote(choice.ContractRef)}\n    name: {Quote(choice.ContractName)}\n    status: draft\n");
+        foreach (var (key, value) in new[] { ("start", notes?.Terms?.Start), ("end", notes?.Terms?.End), ("annual_expense", notes?.Terms?.AnnualExpense), ("currency", notes?.Terms?.Currency) })
+        {
+            if (value is { Length: > 0 })
+            {
+                text.Append(CultureInfo.InvariantCulture, $"    {key}: {(key == "annual_expense" ? value : Quote(value))}\n");
+            }
+        }
+
         text.Append(CultureInfo.InvariantCulture, $"    solutions: [{Quote(choice.SolutionRef)}]\n");
         if (place is null)
         {

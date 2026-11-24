@@ -2,6 +2,7 @@ using System.CommandLine;
 using System.Globalization;
 using EvidenceHound.Cli.Setup;
 using EvidenceHound.Core.Results;
+using EvidenceHound.Core.Review;
 using EvidenceHound.Core.Scope;
 using EvidenceHound.Core.Yaml;
 using EvidenceHound.Onboarding.Decisions;
@@ -35,15 +36,81 @@ internal static class ApproveCommand
                 return ExitCodes.Usage;
             }
 
-            var walk = new Walk(parseResult.GetValue(repo)?.FullName ?? Directory.GetCurrentDirectory(), terminal, new Prompt(terminal), AuditSeries.Today(configuration));
+            var prompt = new Prompt(terminal);
+            var walk = new Walk(parseResult.GetValue(repo)?.FullName ?? Directory.GetCurrentDirectory(), terminal, prompt, AuditSeries.Today(configuration), new PromptApprovals(terminal, prompt));
             var walked = await walk.RunAsync(cancellationToken);
+            if (walked is Result<Unit>.Ok)
+            {
+                var waiting = string.Concat(walk.Waiting.Select(w => $"\n{w}"));
+                await terminal.Output.WriteLineAsync((walk.Asked == 0
+                    ? $"Nothing is waiting for approval.{waiting}"
+                    : $"Approved {walk.Approved} of {walk.Asked}.{waiting}\nNext: review the changes in a pull request, then run 'hound scope validate scope', 'hound scope plan scope' and 'hound scope apply scope'. Apply writes what you approved to CISO Assistant.").AsMemory(), cancellationToken);
+            }
+
             return walked.Match(_ => ExitCodes.Ok, problems => Log.Problems(logger, problems));
         });
         return command;
     }
 
+    /// <summary>What decides each item: a person at the prompt, a review session's answers, or a listing that decides nothing.</summary>
+    internal interface IApprovals
+    {
+        /// <summary>The name recorded with everything approved; null stops the walk.</summary>
+        Task<string?> ApproverAsync(CancellationToken cancellationToken);
+
+        /// <summary>One of <paramref name="answers"/>, null to leave the item as it is, or a stop.</summary>
+        Task<Verdict> DecideAsync(ReviewItem item, string question, string[] answers, CancellationToken cancellationToken);
+    }
+
+    /// <summary>An answer, or none; <see cref="Stop"/> ends the walk without counting the item.</summary>
+    internal readonly record struct Verdict(string? Answer, bool Stop = false);
+
+    /// <summary>A person at the terminal, asked about each item as <c>hound approve</c> has always asked.</summary>
+    internal sealed class PromptApprovals(Terminal terminal, Prompt prompt) : IApprovals
+    {
+        public Task<string?> ApproverAsync(CancellationToken cancellationToken) =>
+            prompt.AskUntilAnsweredAsync("Your name, recorded with today's date on everything you approve", cancellationToken);
+
+        public async Task<Verdict> DecideAsync(ReviewItem item, string question, string[] answers, CancellationToken cancellationToken)
+        {
+            await terminal.Error.WriteLineAsync($"\n{item.Title}".AsMemory(), cancellationToken);
+            while (true)
+            {
+                var answer = (await prompt.AskAsync($"{question} ({string.Join(", ", answers)}; n no, s stop)", cancellationToken))?.ToLowerInvariant();
+                if (answer is null or "s")
+                {
+                    return new Verdict(null, Stop: true);
+                }
+
+                if (answer == "n")
+                {
+                    return new Verdict(null);
+                }
+
+                if (answers.Contains(answer, StringComparer.Ordinal))
+                {
+                    return new Verdict(answer);
+                }
+            }
+        }
+    }
+
+    /// <summary>Lists every item and decides nothing, so nothing is written: the review queue's view of what waits.</summary>
+    internal sealed class Listing : IApprovals
+    {
+        public List<ReviewItem> Items { get; } = [];
+
+        public Task<string?> ApproverAsync(CancellationToken cancellationToken) => Task.FromResult<string?>("listing");
+
+        public Task<Verdict> DecideAsync(ReviewItem item, string question, string[] answers, CancellationToken cancellationToken)
+        {
+            Items.Add(item);
+            return Task.FromResult(new Verdict(null));
+        }
+    }
+
     /// <summary>One run through the pending approvals: who is approving, what was asked and approved, and what still waits.</summary>
-    private sealed class Walk(string repo, Terminal terminal, Prompt prompt, DateOnly today)
+    internal sealed class Walk(string repo, Terminal terminal, Prompt prompt, DateOnly today, IApprovals approvals)
     {
         private readonly List<string> _waiting = [];
         private string? _approver;
@@ -53,26 +120,25 @@ internal static class ApproveCommand
 
         private string Day => today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
+        public IReadOnlyList<string> Waiting => _waiting;
+
+        public int Asked => _asked;
+
+        public int Approved => _approved;
+
+        public string? Approver => _approver;
+
         public async Task<Result<Unit>> RunAsync(CancellationToken cancellationToken)
         {
             var walked = await CapabilitiesAsync(cancellationToken);
             walked = await walked.BindAsync(_ => SuppliersAsync(cancellationToken));
             walked = await walked.BindAsync(_ => SystemsAsync(cancellationToken));
             walked = await walked.BindAsync(_ => AuditsAsync(cancellationToken));
-            walked = await walked.BindAsync(_ => ImportsAsync(cancellationToken));
-            if (walked is Result<Unit>.Ok)
-            {
-                var waiting = string.Concat(_waiting.Select(w => $"\n{w}"));
-                await terminal.Output.WriteLineAsync((_asked == 0
-                    ? $"Nothing is waiting for approval.{waiting}"
-                    : $"Approved {_approved} of {_asked}.{waiting}\nNext: review the changes in a pull request, then run 'hound scope validate scope', 'hound scope plan scope' and 'hound scope apply scope'. Apply writes what you approved to CISO Assistant.").AsMemory(), cancellationToken);
-            }
-
-            return walked;
+            return await walked.BindAsync(_ => ImportsAsync(cancellationToken));
         }
 
-        /// <summary>Shows one item and asks for one of <paramref name="answers"/>. Null when the person declines; the walk stops on s or when input ends.</summary>
-        private async Task<string?> AskAsync(string item, string question, string[] answers, CancellationToken cancellationToken)
+        /// <summary>Puts one item to the approvals and returns its answer. Null when it is declined; the walk stops on a stop.</summary>
+        private async Task<string?> AskAsync(ReviewItem item, string question, string[] answers, CancellationToken cancellationToken)
         {
             if (_stopped)
             {
@@ -81,7 +147,7 @@ internal static class ApproveCommand
 
             if (_approver is null)
             {
-                _approver = await prompt.AskUntilAnsweredAsync("Your name, recorded with today's date on everything you approve", cancellationToken);
+                _approver = await approvals.ApproverAsync(cancellationToken);
                 if (_approver is null)
                 {
                     _stopped = true;
@@ -90,31 +156,24 @@ internal static class ApproveCommand
             }
 
             _asked++;
-            await terminal.Error.WriteLineAsync($"\n{item}".AsMemory(), cancellationToken);
-            while (true)
+            var verdict = await approvals.DecideAsync(item, question, answers, cancellationToken);
+            if (verdict.Stop)
             {
-                var answer = (await prompt.AskAsync($"{question} ({string.Join(", ", answers)}; n no, s stop)", cancellationToken))?.ToLowerInvariant();
-                if (answer is null or "s")
-                {
-                    _stopped = true;
-                    _asked--;
-                    return null;
-                }
-
-                if (answer == "n")
-                {
-                    return null;
-                }
-
-                if (answers.Contains(answer, StringComparer.Ordinal))
-                {
-                    _approved++;
-                    return answer;
-                }
+                _stopped = true;
+                _asked--;
+                return null;
             }
+
+            if (verdict.Answer is null)
+            {
+                return null;
+            }
+
+            _approved++;
+            return verdict.Answer;
         }
 
-        private Task<string?> ApproveAsync(string item, string question, CancellationToken cancellationToken) => AskAsync(item, question, ["y"], cancellationToken);
+        private Task<string?> ApproveAsync(ReviewItem item, string question, CancellationToken cancellationToken) => AskAsync(item, question, ["y"], cancellationToken);
 
         /// <summary>Environment capabilities with no approver: the person's name and today's date are written to scope/capabilities.yaml.</summary>
         private async Task<Result<Unit>> CapabilitiesAsync(CancellationToken cancellationToken)
@@ -130,7 +189,14 @@ internal static class ApproveCommand
             foreach (var capability in (map?.Mitigations ?? []).Where(m => string.IsNullOrWhiteSpace(m.ApprovedBy)))
             {
                 var provided = capability.ProvidedBy == CapabilityProvision.System ? $"provided by {string.Join(", ", capability.Systems.Select(s => s.Value))}" : $"provided by: {capability.ProvidedBy.ToString().ToLowerInvariant()}";
-                var item = $"[capability] {capability.Mitigation} {capability.Name}: {provided}. {capability.Reason}".TrimEnd();
+                var item = new ReviewItem(
+                    ReviewKind.Capability, $"capability:{capability.Mitigation}", $"[capability] {capability.Mitigation} {capability.Name}: {provided}. {capability.Reason}".TrimEnd(),
+                    "The capability map says which system, supplier or person covers each mitigation; onboarding and collection follow it.",
+                    "Your name and today's date are recorded on the decision in scope/capabilities.yaml.", 3)
+                {
+                    Recommendation = new ReviewRecommendation("y", capability.Reason ?? "", []),
+                    File = "scope/capabilities.yaml",
+                };
                 if (await ApproveAsync(item, "Approve this capability decision", cancellationToken) is null)
                 {
                     continue;
@@ -170,8 +236,15 @@ internal static class ApproveCommand
                 {
                     var levels = string.Join(", ", new[] { ("dependency", drafted.Dependency), ("penetration", drafted.Penetration), ("maturity", drafted.Maturity), ("trust", drafted.Trust) }
                         .Where(l => l.Item2 is not null).Select(l => string.Create(CultureInfo.InvariantCulture, $"{l.Item1} {l.Item2}")));
-                    var item = $"[supplier] {drafted.RefId} {drafted.Name}: contract {contract.RefId} ({contract.Name}) is a draft, covering {string.Join(", ", contract.Solutions.Select(s => s.Value))}."
-                        + $"{(levels.Length > 0 ? $" Levels: {levels}." : "")} Read {relative} before you answer.";
+                    var item = new ReviewItem(
+                        ReviewKind.Supplier, $"supplier:{drafted.RefId}/{contract.RefId}",
+                        $"[supplier] {drafted.RefId} {drafted.Name}: contract {contract.RefId} ({contract.Name}) is a draft, covering {string.Join(", ", contract.Solutions.Select(s => s.Value))}."
+                        + $"{(levels.Length > 0 ? $" Levels: {levels}." : "")} Read {relative} before you answer.",
+                        "A supplier is approved before any system it provides is registered, so nothing enters the scope through a supplier no one has looked at.",
+                        $"Contract {contract.RefId} becomes active with your name and today's date; the next scope apply writes the supplier to CISO Assistant.", 10)
+                    {
+                        File = relative,
+                    };
                     if (await ApproveAsync(item, $"Approve {drafted.RefId} and make the contract active", cancellationToken) is null)
                     {
                         continue;
@@ -200,7 +273,16 @@ internal static class ApproveCommand
                     var reviews = ScopeDesired.Reviews(new ScopeDocument(new ScopeSetup("Global", [], []), [], []) { ThirdParties = [entity with { Assessments = [assessment] }] }, today);
                     foreach (var review in reviews.Where(r => !r.Fields.ContainsKey("conclusion")))
                     {
-                        var item = $"[review] {review.Key} of {entity.RefId} {entity.Name}, due {review.Fields.GetValueOrDefault("due_date") ?? "on no set date"}. Conclude it only once the review is done.";
+                        var due = review.Fields.GetValueOrDefault("due_date");
+                        var item = new ReviewItem(
+                            ReviewKind.SupplierReview, $"review:{review.Key}",
+                            $"[review] {review.Key} of {entity.RefId} {entity.Name}, due {due ?? "on no set date"}. Conclude it only once the review is done.",
+                            "A periodic supplier review shows the organisation still has reason to trust the supplier; an assessor asks for the latest one.",
+                            "The conclusion is recorded in the supplier's file with your name and today's date; the next scope apply writes it to CISO Assistant.", 15)
+                        {
+                            Deadline = DateOnly.TryParseExact(due, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var by) ? by : null,
+                            File = relative,
+                        };
                         if (await AskAsync(item, "Conclude this review", Conclusions, cancellationToken) is not { } result)
                         {
                             continue;
@@ -241,8 +323,16 @@ internal static class ApproveCommand
                 foreach (var draft in session.Drafts.Where(d => d.Kind == DecisionKind.NotApplicable).ToArray())
                 {
                     var title = session.Proposals.FirstOrDefault(p => p.Key == draft.Key)?.Title;
-                    var item = $"[not applicable] {session.System} {draft.Key}: {title}\n  Reasoning: {draft.Reasoning}\n  Justification: {draft.Justification}"
-                        + (draft.Sources.Count > 0 ? $"\n  Sources: {string.Join(", ", draft.Sources)}" : "");
+                    var item = new ReviewItem(
+                        ReviewKind.NotApplicable, $"not_applicable:{session.System}/{draft.Key}",
+                        $"[not applicable] {session.System} {draft.Key}: {title}\n  Reasoning: {draft.Reasoning}\n  Justification: {draft.Justification}"
+                        + (draft.Sources.Count > 0 ? $"\n  Sources: {string.Join(", ", draft.Sources)}" : ""),
+                        $"A not-applicable requirement is left out of {session.System}'s audit; an assessor will ask why, so a person signs each one.",
+                        "The decision is recorded as approved by you today; it is never covered by a standing approval.", 5)
+                    {
+                        Recommendation = new ReviewRecommendation("y", $"{draft.Reasoning} {draft.Justification}".Trim(), draft.Sources),
+                        File = $"onboarding/{session.System}/session.json",
+                    };
                     if (await ApproveAsync(item, "Approve that this requirement is not applicable", cancellationToken) is not null)
                     {
                         session = session.Decide(Applicability.Approve(draft, _approver!, today));
@@ -275,7 +365,15 @@ internal static class ApproveCommand
                 var decisions = session.Decisions;
                 var lines = string.Concat(session.Drafts.Select(d => $"\n  {d.Key} {Applicability.Name(d.Kind)}{(d.OtherSystem is { } other ? $" ({other})" : "")}: {d.Reasoning}"));
                 var summary = string.Create(CultureInfo.InvariantCulture, $"[system] {session.System} ({session.Product}, owner {session.Owner}): {decisions.Count} decisions drafted by an agent: {Count(decisions, DecisionKind.ApiCheck)} API check(s), {Count(decisions, DecisionKind.Manual)} manual, {Count(decisions, DecisionKind.NotApplicable)} not applicable, {Count(decisions, DecisionKind.OtherSystem)} for another system.{lines}");
-                if (await ApproveAsync(summary, $"Approve these decisions and write the audit for {session.System}", cancellationToken) is null)
+                var system = new ReviewItem(
+                    ReviewKind.System, $"system:{session.System}", summary,
+                    "Approving writes the system's audit with these decisions; evidence collection and the plan start from it.",
+                    $"The decisions are approved by you today and {session.System}'s audit is written to scope/audits/.", 10)
+                {
+                    Recommendation = new ReviewRecommendation("y", "Each decision was drafted by an agent with its reasoning, listed above.", []),
+                    File = $"onboarding/{session.System}/session.json",
+                };
+                if (await ApproveAsync(system, $"Approve these decisions and write the audit for {session.System}", cancellationToken) is null)
                 {
                     continue;
                 }
@@ -308,8 +406,15 @@ internal static class ApproveCommand
                     continue;
                 }
 
-                var item = $"[audit] {audit.RefId} {audit.Name}: {audit.Framework.Value}, groups {(audit.Groups.Count > 0 ? string.Join(", ", audit.Groups.Select(g => g.Value)) : "all")}, "
-                    + $"in {audit.Domain.Value} / {audit.Perimeter.Value}, for {string.Join(", ", audit.Systems.Select(s => s.Value))}, due {audit.DueDate ?? "on no set date"}.";
+                var item = new ReviewItem(
+                    ReviewKind.Audit, $"audit:{audit.RefId}",
+                    $"[audit] {audit.RefId} {audit.Name}: {audit.Framework.Value}, groups {(audit.Groups.Count > 0 ? string.Join(", ", audit.Groups.Select(g => g.Value)) : "all")}, "
+                    + $"in {audit.Domain.Value} / {audit.Perimeter.Value}, for {string.Join(", ", audit.Systems.Select(s => s.Value))}, due {audit.DueDate ?? "on no set date"}.",
+                    "An audit sets what is assessed, for which systems and by when; the plan creates it in CISO Assistant.",
+                    $"The audit moves into scope/audits/ with your name and today's date.", 5)
+                {
+                    File = Path.GetRelativePath(repo, file).Replace('\\', '/'),
+                };
                 if (await ApproveAsync(item, $"Approve this audit and add it to the scope", cancellationToken) is null)
                 {
                     continue;
@@ -353,8 +458,15 @@ internal static class ApproveCommand
                 var left = draft.Rows.ToList();
                 foreach (var row in draft.Rows)
                 {
-                    var item = $"[imported row] {draft.Audit} {row.Requirement}: {row.Result}. {row.Observation}\n  From {draft.Workbook}, row {row.Row}, where no one is recorded as approving it."
-                        + (row.Evidence.Length > 0 ? $"\n  Evidence: {row.Evidence}" : "");
+                    var item = new ReviewItem(
+                        ReviewKind.ImportedRow, $"imported_row:{draft.Audit}/{row.Requirement}/{row.Row}",
+                        $"[imported row] {draft.Audit} {row.Requirement}: {row.Result}. {row.Observation}\n  From {draft.Workbook}, row {row.Row}, where no one is recorded as approving it."
+                        + (row.Evidence.Length > 0 ? $"\n  Evidence: {row.Evidence}" : ""),
+                        "A result moved from a workbook becomes the audit's own result, so a person vouches for it once.",
+                        $"The result is written to {draft.Audit}'s assessments with your name and today's date.", 2)
+                    {
+                        Recommendation = new ReviewRecommendation("y", $"The workbook gives {row.Result}.", [$"{draft.Workbook} row {row.Row}"]),
+                    };
                     if (await ApproveAsync(item, "Approve this result as the audit's", cancellationToken) is null)
                     {
                         continue;

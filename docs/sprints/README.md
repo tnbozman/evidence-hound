@@ -14,14 +14,14 @@ Releases are delivered in one-week sprints. Each sprint has its own file, `sNN-<
 | [s07](s07-thin-deployment.md) | Runner image, Compose stack and scheduling, so Microsoft 365 evidence runs nightly; users and settings as configuration; tutorial for the private compliance repo and first deployment | 1 |
 | [s08](s08-sophos-veeam-collectors.md) | Sophos Central reference collector, and the local trial with Sophos and Microsoft 365 | 1 |
 | [s09](s09-e8-gap-collectors.md) | Essential Eight gap collectors: application control from Intune and Defender, vulnerability scan import, manual-upload templates, Veeam, and the Sophos and Microsoft 365 work moved from s08 | 1 |
-| [s10](s10-third-parties.md) | Third-party documentation; the evidence plan as recurring CISO Assistant tasks; s09 tasks carried over that wait on the maintainer's own environment | 1 |
+| [s10](s10-third-parties.md) | Third-party documentation; the evidence plan as recurring CISO Assistant tasks; sensitive data on suppliers and systems; one guided weekly review; s09 tasks carried over that wait on the maintainer's own environment | 1 |
 | [s11](s11-e8-ssp-and-ai-grc.md) | Reporting per programme; Essential Eight system security plan and POA&M drafted from CISO Assistant records; AI governance: AI6 framework and mapping, AI system register in CISO Assistant, `ai.*` checks | 1 |
-| [s12](s12-e8-mapping-and-adoption.md) | Essential Eight mapping completed, adoption guides, committee and board reporting | 1 |
+| [s12](s12-e8-mapping-and-adoption.md) | Essential Eight mapping completed, adoption guides, committee and board reporting, NIST SP 800-171 crosswalk | 1 |
 | [s13](s13-release-1.md) | Backups, hardening guide, packaging, release pipeline, docs site | 1 |
-| [s14](s14-essentials-mapping.md) | ASD Essentials mapping for the migration | 2 |
-| [s15](s15-risk-threats-and-bia.md) | Risk matrices, threats, risk register, security exceptions and BIA as configuration | 2 |
+| [s14](s14-essentials-mapping.md) | ASD Essentials mapping for the migration; DISP membership readiness | 2 |
+| [s15](s15-risk-threats-and-bia.md) | Risk matrices, threats, risk register, security exceptions and BIA as configuration; incident reporting deadlines; supply-chain flow-down | 2 |
 | [s16](s16-governance-and-metrics.md) | Risk and recovery checks in the `ciso-assistant` profile; metrics as configuration and from runs | 2 |
-| [s17](s17-nist-800-171.md) | CMMC Level 2 (NIST SP 800-171 Rev 2) mapping and SSP layout; Rev 3 optional | 2 |
+| [s17](s17-nist-800-171.md) | CMMC Level 2 (NIST SP 800-171 Rev 2) mapping and SSP layout; SPRS score, annual affirmation, DFARS 7012 reporting; Rev 3 optional | 2 |
 | [s18](s18-collector-console.md) | Collector console (optional) | 2 |
 
 Release 1 is ordered to put Essential Eight evidence on a schedule as early as possible: the thin deployment (s07) comes straight after s06, and the rest of the deployment work (backups and hardening) joins the release sprint (s13).

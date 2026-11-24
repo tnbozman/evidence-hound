@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
 using EvidenceHound.Core.Frameworks;
 using EvidenceHound.Core.Mapping;
 
@@ -13,7 +14,7 @@ namespace EvidenceHound.Core.Scope;
 /// document by its id (used as the evidence's <c>ref_id</c>), and a hand-written assessment as <c>audit/requirement</c>. A document declared
 /// by several audits is one object, from its first declaration.
 /// </remarks>
-public static class ScopeDesired
+public static partial class ScopeDesired
 {
     public static IReadOnlyList<ScopeObject> From(ScopeDocument scope) => From(scope, ScopeInputs.None);
 
@@ -34,7 +35,7 @@ public static class ScopeDesired
                 ScopeKind.Perimeter, PerimeterKey(d.Name, p.Name), Fields(("name", p.Name), ("ref_id", p.RefId), ("description", p.Description), ("domain", d.Name))))),
             .. setup.Domains.SelectMany(d => d.Systems.Select(s => new ScopeObject(ScopeKind.System, s.Name, Fields(
                 ("ref_id", s.RefId), ("type", s.Type == SystemType.Primary ? "primary" : "supporting"), ("description", s.Description), ("owner", s.Owner),
-                ("domain", d.Name), ("parents", Joined(s.Parents.Select(p => p.Value))))))),
+                ("domain", d.Name), ("parents", Joined(s.Parents.Select(p => p.Value))), ("labels", DataLabels(s.Data)))))),
             .. scope.Audits.Select(a => new ScopeObject(ScopeKind.Audit, a.RefId, Fields(
                 ("name", a.Name), ("framework", a.Framework.Value), ("groups", Joined(a.Groups.Select(g => g.Value))), ("domain", a.Domain.Value),
                 ("perimeter", a.Perimeter.Value), ("eta", a.Eta), ("due_date", a.DueDate), ("authors", Joined(a.Authors)), ("reviewers", Joined(a.Reviewers)),
@@ -54,8 +55,51 @@ public static class ScopeDesired
             .. setup.Organisation is { } organisation ? [Organisation(organisation)] : Array.Empty<ScopeObject>(),
             .. scope.ThirdParties.SelectMany(ThirdParty),
             .. Reviews(scope, inputs.Today),
+            .. EvidencePlan(scope, inputs),
         ];
     }
+
+    /// <summary>
+    /// Each evidence plan row as an evidence item, labelled with its method and collector, and each row a person provides as a recurring
+    /// task template that reminds the owner and the GRC team with the runbook. The first due date is written once, when the task is created.
+    /// </summary>
+    private static IEnumerable<ScopeObject> EvidencePlan(ScopeDocument scope, ScopeInputs inputs)
+    {
+        var controls = scope.Controls.ToDictionary(c => c.RefId, StringComparer.Ordinal);
+        foreach (var row in scope.EvidencePlan?.Rows ?? [])
+        {
+            var control = controls.GetValueOrDefault(row.Control.Value);
+            var domain = control?.Domain?.Value ?? scope.Setup.RootFolder;
+            yield return new ScopeObject(ScopeKind.Evidence, row.RefId, Fields(
+                ("name", Name(row, control)), ("domain", domain), ("owner", row.Owner?.Value), ("controls", row.Control.Value),
+                ("labels", Joined(new[] { row.Method.ToString().ToLowerInvariant(), row.Collector?.Value }.OfType<string>().Where(IsLabel)))));
+            if (row.NeedsPerson && row.Every is { } every)
+            {
+                yield return new ScopeObject(ScopeKind.TaskTemplate, row.RefId, Fields(
+                    ("name", Name(row, control)), ("description", row.Runbook is { } runbook ? inputs.Runbooks.GetValueOrDefault(runbook)?.TrimEnd() : null), ("domain", domain),
+                    ("assignees", Joined(new[] { row.Owner?.Value, row.GrcTeam?.Value }.OfType<string>().Distinct(StringComparer.Ordinal))),
+                    ("schedule", every.Text), ("evidence", row.RefId), ("controls", row.Control.Value),
+                    ("requirements", Joined(Rows(scope, row))), ("enabled", "true")))
+                {
+                    Initial = Fields(("first_due", (inputs.Today is { } today ? every.After(today) : (DateOnly?)null)?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture))),
+                };
+            }
+        }
+    }
+
+    /// <summary>
+    /// The audit rows a row's evidence supports: in each audit that lists the row's control, the requirements the control supports there,
+    /// narrowed to the row's own when it names any.
+    /// </summary>
+    private static IEnumerable<string> Rows(ScopeDocument scope, ScopeEvidenceRow row) =>
+        scope.Audits.SelectMany(audit => audit.Controls
+            .Where(c => c.Control.Value == row.Control.Value)
+            .SelectMany(c => c.Requirements)
+            .Where(r => row.Requirements.Count == 0 || row.Requirements.Any(wanted => wanted.Key.Value == r.Key.Value))
+            .Select(r => AssessmentKey(audit.RefId, r.Key)))
+        .Distinct(StringComparer.Ordinal);
+
+    private static string Name(ScopeEvidenceRow row, ScopeControl? control) => control is null ? row.RefId : $"{row.RefId}: {control.Name}";
 
     /// <summary>Every supplier review the scope declares on <paramref name="today"/>, each with its conclusion when the scope records one.</summary>
     public static IReadOnlyList<ScopeObject> Reviews(ScopeDocument scope, DateOnly? today)
@@ -83,7 +127,8 @@ public static class ScopeDesired
             ("parent", entity.Parent?.Value), ("domain", entity.Domain?.Value), ("dependency", Whole(entity.Dependency)), ("penetration", Whole(entity.Penetration)),
             ("maturity", Whole(entity.Maturity)), ("trust", Whole(entity.Trust)), ("identifiers", Identifiers(entity.Identifiers)))),
         .. entity.Solutions.Select(s => new ScopeObject(ScopeKind.Solution, s.RefId, Fields(
-            ("name", s.Name), ("description", s.Description), ("entity", entity.RefId), ("criticality", Whole(s.Criticality))))),
+            ("name", s.Name), ("description", SolutionDescription(s)), ("entity", entity.RefId), ("criticality", Whole(s.Criticality)),
+            ("labels", DataLabels(s.Data))))),
         .. entity.Contracts.Select(c => new ScopeObject(ScopeKind.Contract, c.RefId, Fields(
             ("name", c.Name), ("description", c.Description), ("entity", entity.RefId), ("domain", entity.Domain?.Value), ("status", c.Status),
             ("start_date", c.Start), ("end_date", c.End), ("annual_expense", Amount(c.AnnualExpense)), ("currency", c.Currency),
@@ -158,7 +203,7 @@ public static class ScopeDesired
                 ("first_name", u.FirstName), ("last_name", u.LastName), ("active", u.Active ? "true" : "false"),
                 ("roles", Roles(roles[u.Email].Select(Role)))))),
             .. access.Teams.Select(t => new ScopeObject(ScopeKind.Team, t.Name, Fields(
-                ("description", t.Description), ("domain", t.Domain?.Value ?? rootFolder), ("leader", t.Leader?.Value), ("members", Joined(t.Members.Select(m => m.Value)))))),
+                ("description", t.Description), ("domain", t.Domain?.Value ?? rootFolder), ("leader", t.Leader?.Value), ("members", Joined(t.Members.Select(m => m.Value))), ("email", t.Email)))),
         ];
     }
 
@@ -299,6 +344,38 @@ public static class ScopeDesired
         return $"{auditRefId}/{requirement.Value}";
     }
 
+    /// <summary>The kinds of sensitive data as filtering labels, such as <c>data-cui</c>.</summary>
+    private static string? DataLabels(IEnumerable<SensitiveData> data) =>
+        Joined(data.Select(d => $"data-{SensitiveData.Code(d.Kind).Replace('_', '-')}").Distinct());
+
+    /// <summary>A solution's description, then each kind of data it handles with what authorises it, so a reader sees it in CISO Assistant.</summary>
+    private static string? SolutionDescription(ScopeSolution solution)
+    {
+        if (solution.Data.Count == 0)
+        {
+            return solution.Description;
+        }
+
+        var lines = solution.Data.Select(d =>
+            $"- {SensitiveData.Code(d.Kind)}{(d.Detail is null ? "" : $" ({d.Detail})")}, {d.Role.ToString().ToLowerInvariant()}: {Authority(d.Authority)}");
+        return $"{(solution.Description is null ? "" : solution.Description + "\n\n")}Sensitive data:\n{string.Join('\n', lines)}";
+    }
+
+    private static string Authority(DataAuthority? authority) => authority is null
+        ? "no authority recorded"
+        : string.Join(", ", new[]
+        {
+            authority.Name,
+            authority.Evidence is null ? null : $"evidence {authority.Evidence}",
+            authority.Expires is { } expires ? $"expires {expires.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}" : null,
+        }.OfType<string>());
+
+    /// <summary>Whether CISO Assistant takes the text as a filtering label: letters, digits, underscores and hyphens, at most 36.</summary>
+    public static bool IsLabel(string text) => LabelPattern().IsMatch(text);
+
+    [GeneratedRegex(@"^[\w-]{1,36}$", RegexOptions.CultureInvariant)]
+    private static partial Regex LabelPattern();
+
     /// <summary>A list as one field value: sorted, joined with ", ", and null when empty.</summary>
     public static string? Joined(IEnumerable<string> values) =>
         values.Order(StringComparer.Ordinal).ToArray() is { Length: > 0 } sorted ? string.Join(", ", sorted) : null;
@@ -319,4 +396,7 @@ public sealed record ScopeInputs(
 
     /// <summary>The day the plan is made, which decides the open period of each audit with a cycle; null opens none.</summary>
     public DateOnly? Today { get; init; }
+
+    /// <summary>Each evidence plan runbook's Markdown, by its path as the plan names it.</summary>
+    public IReadOnlyDictionary<string, string> Runbooks { get; init; } = new Dictionary<string, string>(StringComparer.Ordinal);
 }

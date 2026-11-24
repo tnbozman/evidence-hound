@@ -56,7 +56,11 @@ public sealed record ScopeEntity(string RefId, string Name, SourceLine At)
 }
 
 /// <summary>A product or service the entity provides. Criticality 1 to 4.</summary>
-public sealed record ScopeSolution(string RefId, string Name, string? Description, int? Criticality, SourceLine At);
+public sealed record ScopeSolution(string RefId, string Name, string? Description, int? Criticality, SourceLine At)
+{
+    /// <summary>The sensitive data the solution handles and what authorises it (s10-06).</summary>
+    public IReadOnlyList<SensitiveData> Data { get; init; } = [];
+}
 
 /// <summary>A contract with the entity: <c>draft</c>, <c>active</c>, <c>expired</c> or <c>terminated</c>, with dates as yyyy-MM-dd.</summary>
 public sealed record ScopeContract(string RefId, string Name, string Status, SourceLine At)

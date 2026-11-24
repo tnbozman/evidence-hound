@@ -21,6 +21,8 @@ public enum ScopeKind
     Representative,
     EntityAssessment,
     Assessment,
+    Evidence,
+    TaskTemplate,
 }
 
 /// <summary>

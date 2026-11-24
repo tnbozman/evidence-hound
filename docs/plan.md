@@ -4,7 +4,7 @@ This is the public, generic plan for the project. An adopting organisation keeps
 
 ## Problem
 
-A small defence-industry business has to reach and then sustain cyber compliance, for example Essential Eight Maturity Level 2 under DISP (Australia) or NIST SP 800-171 under CMMC (US). It typically has an IT team and some software developers but no CISO or GRC team, and its compliance evidence lives in spreadsheets that go stale between audits.
+A small defence-industry business has to reach and then sustain cyber compliance, for example Essential Eight Maturity Level 2 under DISP (Australia) or NIST SP 800-171 under CMMC (US). It typically has an IT team and some software developers but no CISO or GRC team, and its compliance evidence lives in spreadsheets that go stale between audits. Whoever looks after compliance has 2 to 8 hours a week for it.
 
 ## Approach
 
@@ -13,13 +13,14 @@ A small defence-industry business has to reach and then sustain cyber compliance
 3. **Build a base, not a collector for everything.** The kit provides one standard way to update an audit. Each system gets a thin collector. Systems without a usable API use the manual-upload collector on a schedule.
 4. **Stay framework-neutral.** Collectors emit neutral check results; one mapping file per framework turns them into requirement results.
 5. **AI-assisted build, automated upkeep.** Claude Code implements sprint tasks by strict TDD inside a dev container; CI and GitHub Advanced Security close the loop. In operation, schedules, health records, backups and dependency updates keep it running with little manual effort.
+6. **AI prepares, a person decides once a week.** The person's own coding agent drafts every decision, proposal and plan through `hound`, and comes as close as it can to approving everything itself; every human review is gathered into one guided weekly session (read, understand, accept or challenge, apply), which is the single place a person signs off. No model collects evidence, and no evidence is accepted without a person or a standing approval they signed ([design](design/guided-review.md)).
 
 ## Releases
 
 | Release | Contents |
 | --- | --- |
-| 1 | Core, publisher, runner, collector SDK and test kit, manual-upload collector, Microsoft 365, Sophos Central and Veeam collectors, CISO Assistant as configuration, a thin reference Docker deployment with scheduled runs (early, so evidence builds history), CISO Assistant users and settings as configuration, a tutorial for the private compliance repo, Essential Eight gap collectors (application control, vulnerability scan import, manual-upload templates), third parties as configuration, an Essential Eight system security plan drafted from CISO Assistant records, AI governance on the Australian AI6 guidance, the completed Essential Eight mapping, adoption guides, committee (operational) and board (governance) reporting, backups and hardening |
-| 2 | ASD Essentials mapping, risk, threats and BIA as configuration, CISO Assistant governance collector and metrics, CMMC Level 2 (NIST SP 800-171) mapping and its SSP and POA&M layout, optional collector console |
+| 1 | Core, publisher, runner, collector SDK and test kit, manual-upload collector, Microsoft 365, Sophos Central and Veeam collectors, CISO Assistant as configuration, a thin reference Docker deployment with scheduled runs (early, so evidence builds history), CISO Assistant users and settings as configuration, a tutorial for the private compliance repo, Essential Eight gap collectors (application control, vulnerability scan import, manual-upload templates), third parties as configuration, the evidence plan as recurring CISO Assistant tasks, one guided weekly review, an Essential Eight system security plan drafted from CISO Assistant records, AI governance on the Australian AI6 guidance, the completed Essential Eight mapping, a NIST SP 800-171 crosswalk, adoption guides, committee (operational) and board (governance) reporting, backups and hardening |
+| 2 | ASD Essentials mapping, DISP membership readiness, risk, threats and BIA as configuration, incident reporting deadlines, supply-chain flow-down, CISO Assistant governance collector and metrics, CMMC Level 2 (NIST SP 800-171) mapping and its SSP and POA&M layout, SPRS score, annual affirmation and DFARS 7012 incident reporting, optional collector console |
 
 Sprints are in [`docs/sprints/`](sprints/README.md).
 

@@ -24,6 +24,8 @@ report="$(dirname "$env_file")/scope-apply.json"
 if ! dotnet run --project "$root/src/EvidenceHound.Cli" -- scope apply "$root/examples/compliance-repo/scope" \
   --config "$root/examples/example-essential-eight.yaml" >"$report"; then
   echo "ca-apply-scope: hound scope apply failed; see $report" >&2
+  # The changes that failed, so a CI log shows why without the report.
+  command -v jq >/dev/null && jq -c '[.. | objects | select((.problems? // []) | length > 0)]' "$report" >&2 || true
   exit 1
 fi
 echo "ca-apply-scope: applied examples/compliance-repo/scope to $HOUND_CA_URL (report: $report)"

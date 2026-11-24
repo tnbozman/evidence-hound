@@ -7,6 +7,8 @@ feature_flags:
   compliance: true
   # Third-party records move here from the spreadsheet.
   tprm: true
+  # Contracts with suppliers, shown in CISO Assistant (off by default there).
+  contracts: true
   # EU regulations Example Pty Ltd is not subject to.
   dora: false
   nis2: false

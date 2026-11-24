@@ -1,0 +1,10 @@
+# Microsoft Office macro settings: paste this under 'collectors:' in hound.yaml, then set the owner and the drop folder.
+# The runbook is README.md beside this file; point an evidence plan row at your copy of it.
+- name: office-macro-settings
+  type: manual
+  schedule: "0 6 * * *"
+  settings:
+    drop_folder: /var/lib/evidence-hound/manual/office-macro-settings
+    checks: office.macros.disabled_without_need, office.macros.antivirus_scanning, office.macros.settings_locked
+    due_days: 183
+    owner: Example endpoint owner

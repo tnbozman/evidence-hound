@@ -74,8 +74,9 @@ internal sealed partial class ScopeWriter
                     ["leader"] = resolved[1].AsArray().FirstOrDefault()?.DeepClone(),
                     ["deputies"] = new JsonArray(),
                     ["members"] = resolved[2].DeepClone(),
+                    ["team_email"] = Field(declared, "email"),
                 };
-                Drop(body, "leader");
+                Drop(body, write.Change, "leader", "team_email");
                 return write.Change.Action == ScopeAction.Create
                     ? await SendAsync(HttpMethod.Post, "teams/", body, $"to create team {declared.Key}", cancellationToken)
                     : await UpdateAsync("teams", existing is null ? null : Id(existing), body, write, cancellationToken);
