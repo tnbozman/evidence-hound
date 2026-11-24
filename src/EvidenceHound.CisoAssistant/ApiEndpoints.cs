@@ -53,5 +53,12 @@ public static class ApiEndpoints
         new("GET", "/api/reference-controls/"),
         new("POST", "/api/applied-controls/"),
         new("DELETE", "/api/applied-controls/{id}/"),
+        new("GET", "/api/risk-acceptances/"),
+        new("GET", "/api/security-exceptions/"),
+        new("GET", "/api/findings/"),
+        new("GET", "/api/incidents/"),
+        new("GET", "/api/risk-scenarios/"),
+        new("GET", "/api/task-nodes/"),
+        new("GET", "/api/entity-assessments/"),
     ];
 }

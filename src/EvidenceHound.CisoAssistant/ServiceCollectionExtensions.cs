@@ -21,6 +21,7 @@ public static class CisoAssistantServiceCollectionExtensions
         Configure(services.AddHttpClient<IScopeStateSource, ScopeStateReader>(), options);
         Configure(services.AddHttpClient<IScopeExportSource, ScopeStateReader>(), options);
         Configure(services.AddHttpClient<IScopeWriter, ScopeWriter>(), options);
+        Configure(services.AddHttpClient<EvidenceHound.Core.Reporting.IPostureSource, PostureReader>(), options);
         return services;
     }
 
