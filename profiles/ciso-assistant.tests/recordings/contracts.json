@@ -1,0 +1,15 @@
+{
+  "count": 1,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": "00000000-0000-4000-8000-0000000c0001",
+      "ref_id": "CON-EXCRM-2026",
+      "name": "Example CRM subscription",
+      "status": "active",
+      "end_date": "2027-03-31",
+      "solutions": [{ "str": "Example CRM lead scoring", "id": "00000000-0000-4000-8000-0000000501e1" }]
+    }
+  ]
+}

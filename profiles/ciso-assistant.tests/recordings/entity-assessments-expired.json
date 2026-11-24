@@ -1,0 +1,14 @@
+{
+  "count": 1,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": "00000000-0000-4000-8000-0000000ea001",
+      "name": "Example CRM review 2025",
+      "entity": { "str": "Example CRM Pty Ltd", "id": "00000000-0000-4000-8000-0000000e0001" },
+      "conclusion": "ok",
+      "expiry_date": "2026-06-30"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+# The token's role cannot read risk scenarios: the risk check is unable to assess, never a fail; the others still run.
+description: A list the token cannot read makes only the checks over it unable to assess.
+now: 2026-11-24T02:00:00Z
+settings:
+  base_url: https://ciso.example.com/api/
+secrets:
+  token: example-test-token
+responses:
+  - { get: /api/assets/, file: recordings/assets.json }
+  - { get: /api/risk-scenarios/, status: "403", body: '{"detail":"You do not have permission to perform this action."}' }
+  - { get: /api/solutions/, file: recordings/solutions.json }
+  - { get: /api/entity-assessments/, file: recordings/entity-assessments.json }
+  - { get: /api/contracts/, file: recordings/contracts.json }
+expect:
+  ai.risks_in_register: unable_to_assess
+  ai.suppliers_assessed: pass

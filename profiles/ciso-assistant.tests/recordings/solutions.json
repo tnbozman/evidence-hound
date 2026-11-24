@@ -1,0 +1,14 @@
+{
+  "count": 1,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": "00000000-0000-4000-8000-0000000501e1",
+      "ref_id": "SOL-EXCRM-SCORING",
+      "name": "Example CRM lead scoring",
+      "provider_entity": { "str": "Example CRM Pty Ltd", "id": "00000000-0000-4000-8000-0000000e0001" },
+      "assets": [{ "str": "Example lead scoring", "id": "00000000-0000-4000-8000-0000000a5e02" }]
+    }
+  ]
+}

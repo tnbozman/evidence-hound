@@ -1,0 +1,16 @@
+# The medium tier AI system has no risk scenario linked to it.
+description: A medium tier AI system with no risk scenario fails.
+now: 2026-11-24T02:00:00Z
+settings:
+  base_url: https://ciso.example.com/api/
+secrets:
+  token: example-test-token
+responses:
+  - { get: /api/assets/, file: recordings/assets.json }
+  - { get: /api/risk-scenarios/, file: recordings/risk-scenarios-none.json }
+  - { get: /api/solutions/, file: recordings/solutions.json }
+  - { get: /api/entity-assessments/, file: recordings/entity-assessments.json }
+  - { get: /api/contracts/, file: recordings/contracts.json }
+expect:
+  ai.risks_in_register: fail
+  ai.suppliers_assessed: pass

@@ -1,0 +1,20 @@
+# Recorded answers from the fictional Example Pty Ltd CISO Assistant: two AI systems (one low tier, one medium tier and third party),
+# the medium one linked to a risk scenario, its supplier assessed as ok until 2027 and its contract active until 2027.
+description: The AI register's risks and suppliers are in order.
+now: 2026-11-24T02:00:00Z
+settings:
+  base_url: https://ciso.example.com/api/
+secrets:
+  token: example-test-token
+responses:
+  - { get: /api/assets/, file: recordings/assets.json }
+  - { get: /api/risk-scenarios/, file: recordings/risk-scenarios.json }
+  - { get: /api/solutions/, file: recordings/solutions.json }
+  - { get: /api/entity-assessments/, file: recordings/entity-assessments.json }
+  - { get: /api/contracts/, file: recordings/contracts.json }
+expect:
+  ai.risks_in_register: pass
+  ai.suppliers_assessed: pass
+  ai.supplier_contracts_current: pass
+  supplier.assessments_current: pass
+  supplier.contracts_current: pass
