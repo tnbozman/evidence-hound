@@ -1,6 +1,6 @@
 # s12 Essential Eight mapping and adoption guides
 
-Status: Planned
+Status: In progress
 
 **Goal:** the Essential Eight ML2 mapping completed, the guides an organisation needs to adopt the kit (moving registers out of spreadsheets, running manual sources, training), and two tiers of reporting: monthly operational reporting to the security committee and quarterly governance reporting to the board.
 
@@ -174,7 +174,7 @@ answers, so that I know my gap before I pay for an assessment.
 **Functional check**
 - `hound mapping crosswalk` against the local CISO Assistant with the example Essential Eight audit prints the 800-171 gap list.
 
-## Carried from s09 to s11
+## Carried from s09 to s12
 
 Human trials and onboarding tests, moved from s11 on 2026-11-24 at the maintainer's request. Built and tested in CI; each waits on a
 person, tenant or machine, not on code. Details stay under each task in its own sprint file.

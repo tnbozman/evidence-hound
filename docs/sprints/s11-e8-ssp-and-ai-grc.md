@@ -282,7 +282,7 @@ Done first in Part 2, so the person reviewing the AI tasks has the background.
 - Checked offline: on a copy of the example repo, the step 5 entry validates (`scope valid: 1 domain(s), 5 control(s), 4 audit(s)`), the deliberate mistake reports `ai.impact_date_without_approval`, `programme list` prints `Register: 3 AI systems. tier: low 1, medium 2. use: built 1, customised 2.`, and the step 9 config runs the collector and saves `ai-register.json`.
 - Open: the functional check needs someone who has not read AI6 to follow the walkthrough on the local stack.
 - Updated with s11-11 (Nov 24): the walkthrough's search assistant is screened with the National AI Centre's questions (yes to 1 and 7, so elevated), and `programme list` now prints `Register: 3 AI systems. screening: elevated 2, normal 1. use: built 1, customised 2.`
-- Moved (Nov 24, at the maintainer's request): the walkthrough trial joins the other human trials and onboarding tests under "Carried from s09 to s11" in [s12](s12-e8-mapping-and-adoption.md), so s11 can close.
+- Moved (Nov 24, at the maintainer's request): the walkthrough trial joins the other human trials and onboarding tests under "Carried from s09 to s12" in [s12](s12-e8-mapping-and-adoption.md), so s11 can close.
 
 ### s11-09 AI6 framework library and snapshot
 - [x] Done
