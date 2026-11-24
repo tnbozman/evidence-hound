@@ -58,6 +58,11 @@ public sealed class ReportSnapshotCommandTests : IDisposable
         snapshot.Programmes[1].Counts[0].Group.ShouldBe("F");
         snapshot.Programmes[1].Register!.Of.ShouldBe("ai_systems");
         snapshot.Acceptances.Single().RefId.ShouldBe("RA-KIOSK");
+
+        // Coverage from the config's target mapping for each audit, with the config's manual collectors counted as manual.
+        e8.Coverage.Where(c => c.Group == "2").Sum(c => c.Automated + c.Manual + c.Uncovered).ShouldBeGreaterThan(0);
+        e8.Coverage.Sum(c => c.Manual).ShouldBeGreaterThan(0);
+        snapshot.Programmes[1].Coverage.Select(c => c.Group).Distinct().ShouldBe(["F"]);
         _ca.LogEntries.ShouldNotContain(e => e.RequestMessage!.Method != "GET");
     }
 

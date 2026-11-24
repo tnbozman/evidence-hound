@@ -72,6 +72,30 @@ public sealed class ReportCommitteeCommandTests : IDisposable
         exitCode.ShouldBe(ExitCodes.Configuration);
     }
 
+    [Fact]
+    public async Task Board_reads_the_quarter_end_snapshots()
+    {
+        await Save(Snapshot("2026-09", "in_progress"));
+        await Save(Snapshot("2026-11", "active"));
+        await Save(Snapshot("2026-12", "active"));
+
+        var exitCode = await Run("report", "board", "--quarter", "2026-Q4", "--config", Path.Combine(_dir, "hound.yaml"));
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        _output.ToString().ShouldStartWith("# Board report: 2026-Q4");
+    }
+
+    [Fact]
+    public async Task Board_without_the_quarter_end_snapshot_says_which_month_to_take()
+    {
+        await Save(Snapshot("2026-11", "active"));
+
+        var exitCode = await Run("report", "board", "--quarter", "2026-Q4", "--config", Path.Combine(_dir, "hound.yaml"));
+
+        exitCode.ShouldBe(ExitCodes.Configuration);
+        _error.ToString().ShouldContain("hound report snapshot --period 2026-12");
+    }
+
     public void Dispose()
     {
         _output.Dispose();
