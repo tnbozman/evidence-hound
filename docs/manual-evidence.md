@@ -42,8 +42,9 @@ evidence:
 file in the repo; an automated or hybrid row names a collector that `hound.yaml` configures; the control and the teams exist; an owner
 contact holds no role. The full reference is in [scope.md](scope.md#ref-id-conventions) and the scope schema.
 
-`hound scope apply` writes, for every row, an evidence item named after the row and its control, labelled `method:<method>` and
-`collector:<name>` so the GRC team can filter by them. For each manual and hybrid row it also writes a recurring task: assigned to the
+`hound scope apply` writes, for every row, an evidence item named after the row and its control, labelled with its method (`automated`,
+`manual` or `hybrid`) and its collector's name so the GRC team can filter by them (CISO Assistant takes a label of letters, digits,
+underscores and hyphens, at most 36 long, so a longer collector name is left out). For each manual and hybrid row it also writes a recurring task: assigned to the
 owner and the GRC team, due every 3 or 6 months (or yearly), with the runbook as its description, linked to the evidence item, the
 control and the requirements. The first due date is set when the task is created, one interval from that day; CISO Assistant moves it
 on after that.

@@ -25,7 +25,7 @@ internal sealed partial class ScopeWriter
                 return await DeleteAsync("evidences", existing, write, cancellationToken);
             }
 
-            var folder = folders.FolderOf(declared);
+            var folder = Folder(folders, declared);
             var owners = await TeamActorsAsync(Split(Field(declared, "owner")), cancellationToken);
             var controls = await IdsAsync("applied-controls/", "ref_id", Split(Field(declared, "controls")), "applied control", cancellationToken);
             var labels = await LabelsAsync(Split(Field(declared, "labels")), cancellationToken);
@@ -59,7 +59,7 @@ internal sealed partial class ScopeWriter
                 return await DeleteAsync("task-templates", existing, write, cancellationToken);
             }
 
-            var folder = folders.FolderOf(declared);
+            var folder = Folder(folders, declared);
             var assignees = await TeamActorsAsync(Split(Field(declared, "assignees")), cancellationToken);
             var evidence = await IdsAsync("evidences/", "ref_id", Split(Field(declared, "evidence")), "evidence item", cancellationToken);
             var controls = await IdsAsync("applied-controls/", "ref_id", Split(Field(declared, "controls")), "applied control", cancellationToken);

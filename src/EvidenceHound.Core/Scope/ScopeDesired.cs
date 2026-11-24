@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
 using EvidenceHound.Core.Frameworks;
 using EvidenceHound.Core.Mapping;
 
@@ -13,7 +14,7 @@ namespace EvidenceHound.Core.Scope;
 /// document by its id (used as the evidence's <c>ref_id</c>), and a hand-written assessment as <c>audit/requirement</c>. A document declared
 /// by several audits is one object, from its first declaration.
 /// </remarks>
-public static class ScopeDesired
+public static partial class ScopeDesired
 {
     public static IReadOnlyList<ScopeObject> From(ScopeDocument scope) => From(scope, ScopeInputs.None);
 
@@ -71,8 +72,7 @@ public static class ScopeDesired
             var domain = control?.Domain?.Value ?? scope.Setup.RootFolder;
             yield return new ScopeObject(ScopeKind.Evidence, row.RefId, Fields(
                 ("name", Name(row, control)), ("domain", domain), ("owner", row.Owner?.Value), ("controls", row.Control.Value),
-                ("labels", Joined(new[] { $"method:{row.Method.ToString().ToLowerInvariant()}", row.Collector is { } c ? $"collector:{c.Value}" : null }
-                    .OfType<string>().Order(StringComparer.Ordinal)))));
+                ("labels", Joined(new[] { row.Method.ToString().ToLowerInvariant(), row.Collector?.Value }.OfType<string>().Where(IsLabel)))));
             if (row.NeedsPerson && row.EveryMonths is { } months)
             {
                 yield return new ScopeObject(ScopeKind.TaskTemplate, row.RefId, Fields(
@@ -344,6 +344,12 @@ public static class ScopeDesired
     }
 
     /// <summary>A list as one field value: sorted, joined with ", ", and null when empty.</summary>
+    /// <summary>Whether CISO Assistant takes the text as a filtering label: letters, digits, underscores and hyphens, at most 36.</summary>
+    public static bool IsLabel(string text) => LabelPattern().IsMatch(text);
+
+    [GeneratedRegex(@"^[\w-]{1,36}$", RegexOptions.CultureInvariant)]
+    private static partial Regex LabelPattern();
+
     public static string? Joined(IEnumerable<string> values) =>
         values.Order(StringComparer.Ordinal).ToArray() is { Length: > 0 } sorted ? string.Join(", ", sorted) : null;
 
