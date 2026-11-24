@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json.Nodes;
 using EvidenceHound.Cli;
 using EvidenceHound.Core.Mapping;
@@ -87,7 +88,9 @@ public sealed class ReportFunctionalTests(CisoAssistantFixture ciso) : IDisposab
     private async Task PatchAsync(string id, string result, CancellationToken ct)
     {
         using var http = Http();
-        using var response = await http.PatchAsJsonAsync(new Uri(ciso.ApiUrl, $"requirement-assessments/{id}/"), new JsonObject { ["result"] = result }, ct);
+        // StringContent, not PatchAsJsonAsync: a chunked body (no Content-Length) reaches Django empty, so the PATCH would change nothing.
+        using var content = new StringContent(new JsonObject { ["result"] = result }.ToJsonString(), Encoding.UTF8, "application/json");
+        using var response = await http.PatchAsync(new Uri(ciso.ApiUrl, $"requirement-assessments/{id}/"), content, ct);
         response.EnsureSuccessStatusCode();
     }
 
