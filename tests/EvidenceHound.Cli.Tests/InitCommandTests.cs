@@ -25,6 +25,24 @@ public sealed class InitCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Writes_the_weekly_review_task_for_the_compliance_owner_from_the_start()
+    {
+        // s10-05 rehearsal: a new repo had no evidence plan, so nothing reminded the person of the weekly review.
+        var ct = TestContext.Current.CancellationToken;
+
+        var exitCode = await Run("", "init", Repo, "--yes", "--owner", "grc@example.com");
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var plan = await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "evidence-plan.yaml"), ct);
+        plan.ShouldContain("ref_id: EV-WEEKLY-REVIEW");
+        plan.ShouldContain("every: 1 week");
+        plan.ShouldContain("runbook: manual-sources/weekly-compliance-review.md");
+        (await File.ReadAllTextAsync(Path.Combine(Repo, "manual-sources", "weekly-compliance-review.md"), ct)).ShouldContain("hound review");
+        (await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "access.yaml"), ct)).ShouldContain("grc@example.com");
+        await ShouldValidateAsync();
+    }
+
+    [Fact]
     public async Task Compliance_owner_defaults_to_the_accountable_executive()
     {
         // s09-43: compliance is owned by the accountable executive, not the IT person who owns systems.
