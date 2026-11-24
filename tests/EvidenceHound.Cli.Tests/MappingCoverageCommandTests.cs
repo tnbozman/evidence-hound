@@ -31,7 +31,7 @@ public sealed class MappingCoverageCommandTests : IDisposable
     }
 
     [Fact]
-    public async Task Without_manual_sources_every_attested_requirement_is_uncovered()
+    public async Task Without_manual_sources_every_mapped_requirement_counts_as_automated()
     {
         var exitCode = await Run(
             "mapping", "coverage", Repo("mappings", "essential-eight-2023.yaml"),
@@ -39,7 +39,7 @@ public sealed class MappingCoverageCommandTests : IDisposable
             "--groups", "1,2");
 
         exitCode.ShouldBe(ExitCodes.Ok);
-        _output.ToString().ShouldMatch(@"(?s).*Total: \d+ automated, 0 manual, [1-9]\d* uncovered.*");
+        _output.ToString().ShouldMatch(@"(?s).*Total: 155 automated, 0 manual, 0 uncovered.*");
     }
 
     [Fact]

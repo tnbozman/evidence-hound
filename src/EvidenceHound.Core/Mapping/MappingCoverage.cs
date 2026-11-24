@@ -20,5 +20,52 @@ public static class MappingCoverage
         FrameworkMapping mapping,
         IEnumerable<RequirementKey> manualOnly,
         IReadOnlySet<CheckId> manualChecks,
-        IReadOnlyList<string> groups) => throw new NotImplementedException();
+        IReadOnlyList<string> groups)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        ArgumentNullException.ThrowIfNull(mapping);
+        ArgumentNullException.ThrowIfNull(manualOnly);
+        ArgumentNullException.ThrowIfNull(manualChecks);
+        ArgumentNullException.ThrowIfNull(groups);
+
+        var kinds = Kinds(snapshot, mapping, manualOnly, manualChecks);
+        return
+        [
+            .. snapshot.Nodes.Select(n => n.ParentUrn ?? "").Distinct(StringComparer.Ordinal).SelectMany(parent => groups.Select(group =>
+                Counted(parent, group, [.. snapshot.Nodes.Where(n => (n.ParentUrn ?? "") == parent && n.Groups.Contains(group)).Select(n => kinds.GetValueOrDefault(n.Urn, CoverageKind.Uncovered))])))
+            .Where(count => count.Automated + count.Manual + count.Uncovered > 0),
+        ];
+    }
+
+    private static Dictionary<string, CoverageKind> Kinds(
+        FrameworkSnapshot snapshot, FrameworkMapping mapping, IEnumerable<RequirementKey> manualOnly, IReadOnlySet<CheckId> manualChecks)
+    {
+        var kinds = new Dictionary<string, CoverageKind>(StringComparer.Ordinal);
+        var answered = mapping.Requirements
+            .Select(r => (r.Key, Kind: r.Checks.All(manualChecks.Contains) ? CoverageKind.Manual : CoverageKind.Automated))
+            .Concat(manualOnly.Select(key => (Key: key, Kind: CoverageKind.Manual)));
+        foreach (var (key, kind) in answered)
+        {
+            foreach (var node in snapshot.Resolve(key))
+            {
+                kinds[node.Urn] = kinds.TryGetValue(node.Urn, out var existing) && existing == CoverageKind.Automated ? existing : kind;
+            }
+        }
+
+        return kinds;
+    }
+
+    private static CoverageCount Counted(string parent, string group, IReadOnlyList<CoverageKind> kinds) => new(
+        parent,
+        group,
+        kinds.Count(k => k == CoverageKind.Automated),
+        kinds.Count(k => k == CoverageKind.Manual),
+        kinds.Count(k => k == CoverageKind.Uncovered));
+
+    private enum CoverageKind
+    {
+        Automated,
+        Manual,
+        Uncovered,
+    }
 }

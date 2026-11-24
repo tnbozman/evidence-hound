@@ -27,7 +27,7 @@ internal static class MappingCommands
         apply.SetAction((parseResult, cancellationToken) =>
             ApplyAsync(parseResult.GetRequiredValue(mappingFile), parseResult.GetRequiredValue(checksFile), output, logger, cancellationToken));
 
-        return new Command("mapping", "Work with framework mapping files.") { validate, apply };
+        return new Command("mapping", "Work with framework mapping files.") { validate, apply, MappingCoverageCommand.Build(output, logger) };
     }
 
     private static async Task<int> ValidateAsync(FileInfo file, FileInfo? framework, TextWriter output, ILogger logger, CancellationToken cancellationToken)
