@@ -33,10 +33,12 @@ restore_outcome() {
 }
 
 # The restore test's result, as the text file a manual source collects and a person attests.
-# Arguments: outcome, backup file name, its SHA-256, health status, audits at backup, audits after restore, restore time, seconds.
+# Arguments: outcome, backup file name, its SHA-256, health status, audits at backup, audits after restore, restore time, seconds,
+# and, for a test that stopped part way, the step it stopped at.
 restore_result() {
+  echo "Restore test: $1"
+  if [[ -n "${9:-}" ]]; then echo "Failed at: $9"; fi
   cat <<EOF
-Restore test: $1
 Backup: $2
 SHA-256: $3
 Health endpoint: $4

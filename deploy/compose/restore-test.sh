@@ -51,43 +51,59 @@ cleanup() {
 }
 trap cleanup EXIT
 
-echo "restore-test: decrypting $(basename "$backup")"
-mkdir "$work/backup"
-age -d -i "$HOUND_BACKUP_IDENTITY" "$backup" | tar -C "$work/backup" -xf -
-(cd "$work/backup" && sha256sum --check --quiet SHA256SUMS) || die "the backup's contents do not match its checksums"
-audits_before="$(sed -n 's/^audits=//p' "$work/backup/manifest.txt")"
+# Each step below returns non-zero on failure instead of exiting, so a test that stops part way still records a failed result.
+failed_at=""
+step() {
+  local what="$1"
+  shift
+  [[ -z "$failed_at" ]] || return 0
+  echo "restore-test: $what"
+  "$@" || failed_at="$what"
+}
+decrypt() { mkdir "$work/backup" && age -d -i "$HOUND_BACKUP_IDENTITY" "$backup" | tar -C "$work/backup" -xf -; }
+checksums() { (cd "$work/backup" && sha256sum --check --quiet SHA256SUMS); }
+scratch_secrets() {
+  mkdir "$work/secrets" &&
+    openssl rand -hex 24 >"$work/secrets/postgres_password" &&
+    openssl rand -hex 32 >"$work/secrets/django_secret_key" &&
+    : >"$work/secrets/hound_ca_token" &&
+    : >"$work/secrets/m365_client_certificate" &&
+    chmod 0444 "$work/secrets/"*
+}
+restore_database() {
+  scratch_compose up -d --wait --wait-timeout 300 postgres &&
+    scratch_compose exec -T postgres sh -c 'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --no-owner --exit-on-error' \
+      <"$work/backup/ciso-assistant.dump"
+}
+restore_volume() {
+  scratch_compose up --no-start backend &&
+    docker run --rm -i -v "${scratch}_ca-data:/data" --entrypoint tar "$tar_image" --numeric-owner -C /data -xpf - \
+      <"$work/backup/ca-data.tar"
+}
+start_backend() { scratch_compose up -d --wait --wait-timeout 600 backend; }
 
-mkdir "$work/secrets"
-openssl rand -hex 24 >"$work/secrets/postgres_password"
-openssl rand -hex 32 >"$work/secrets/django_secret_key"
-: >"$work/secrets/hound_ca_token"
-: >"$work/secrets/m365_client_certificate"
-chmod 0444 "$work/secrets/"*
+step "decrypting the backup" decrypt
+step "checking the backup's checksums" checksums
+audits_before="$(sed -n 's/^audits=//p' "$work/backup/manifest.txt" 2>/dev/null || true)"
+step "making throwaway secrets for project $scratch" scratch_secrets
+step "restoring the database into project $scratch" restore_database
+step "restoring CISO Assistant's data volume" restore_volume
+step "starting CISO Assistant on the restored data" start_backend
 
-echo "restore-test: restoring the database into project $scratch"
-scratch_compose up -d --wait --wait-timeout 300 postgres
-scratch_compose exec -T postgres sh -c 'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --no-owner --exit-on-error' \
-  <"$work/backup/ciso-assistant.dump"
-
-echo "restore-test: restoring CISO Assistant's data volume"
-scratch_compose up --no-start backend
-docker run --rm -i -v "${scratch}_ca-data:/data" --entrypoint tar "$tar_image" --numeric-owner -C /data -xpf - \
-  <"$work/backup/ca-data.tar"
-
-echo "restore-test: starting CISO Assistant on the restored data"
 health=0
-if scratch_compose up -d --wait --wait-timeout 600 backend; then
+audits_after=""
+if [[ -z "$failed_at" ]]; then
   health="$(scratch_compose exec -T backend python3 -c \
     "import urllib.request; print(urllib.request.urlopen('http://localhost:8000/api/health/', timeout=10).status)" \
     2>/dev/null | tr -d '[:space:]' || echo 0)"
+  audits_after="$(scratch_compose exec -T postgres sh -c \
+    'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "select count(*) from core_complianceassessment"' | tr -d '[:space:]' || true)"
 fi
-audits_after="$(scratch_compose exec -T postgres sh -c \
-  'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "select count(*) from core_complianceassessment"' | tr -d '[:space:]' || true)"
 
 finished="$(date -u +%Y%m%dT%H%M%SZ)"
 outcome="$(restore_outcome "$health" "$audits_before" "$audits_after")"
 result="$(restore_result "$outcome" "$(basename "$backup")" "$(sha256sum "$backup" | cut -d' ' -f1)" \
-  "$health" "$audits_before" "$audits_after" "$finished" "$(($(date -u +%s) - started))")"
+  "$health" "$audits_before" "$audits_after" "$finished" "$(($(date -u +%s) - started))" "$failed_at")"
 echo "$result"
 
 if [[ -n "${HOUND_RESTORE_SOURCE:-}" ]]; then
