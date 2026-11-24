@@ -22,7 +22,9 @@ libraries=(
 others=(EvidenceHound.Templates EvidenceHound.Cli)
 
 echo "check-packages: packing into $out"
-dotnet pack "$root/EvidenceHound.slnx" -c "${CONFIGURATION:-Release}" -o "$out" --nologo -v quiet
+# Restore once in locked mode, then pack without restoring, so packing never rewrites a lock file.
+dotnet restore "$root/EvidenceHound.slnx" --locked-mode --nologo -v quiet
+dotnet pack "$root/EvidenceHound.slnx" --no-restore -c "${CONFIGURATION:-Release}" -o "$out" --nologo -v quiet
 
 failures=0
 fail() { echo "check-packages: $*" >&2; failures=$((failures + 1)); }
@@ -57,6 +59,13 @@ grep -q '<packageType name="DotnetTool"' <<<"$(nuspec_of "$(compgen -G "$out/Evi
   || fail "EvidenceHound.Cli: not a .NET tool package"
 grep -q '<packageType name="Template"' <<<"$(nuspec_of "$(compgen -G "$out/EvidenceHound.Templates.[0-9]*.nupkg" | head -n 1)" 2>/dev/null || true)" \
   || fail "EvidenceHound.Templates: not a template package"
+
+# Nothing else: internal libraries (the runtime, the CISO Assistant client, onboarding) ship inside the CLI tool only.
+expected=" ${libraries[*]} ${others[*]} "
+for package in "$out"/*.nupkg; do
+  id="$(basename "$package" | sed -E 's/\.[0-9]+\.[0-9]+\.[0-9]+.*\.nupkg$//')"
+  [[ "$expected" == *" $id "* ]] || fail "$id: packed, but it is not a published package (set IsPackable to false)"
+done
 
 [[ $failures -eq 0 ]] || { echo "check-packages: $failures problems" >&2; exit 1; }
 echo "check-packages: ok ($(find "$out" -name '*.nupkg' | wc -l) packages)"

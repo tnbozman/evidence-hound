@@ -11,6 +11,12 @@
           "librdkafka.redist": "2.15.1"
         }
       },
+      "MinVer": {
+        "type": "Direct",
+        "requested": "[8.0.0, )",
+        "resolved": "8.0.0",
+        "contentHash": "AJy/KVjXgUbgjf6HiI8wAk4DSSq0SCmvXQF8aU6IB+pnIQq+YJvofvMczug2hqO8yEvnQY557ryew66KPpyCsA=="
+      },
       "librdkafka.redist": {
         "type": "Transitive",
         "resolved": "2.15.1",

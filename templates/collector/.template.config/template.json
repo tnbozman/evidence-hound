@@ -37,7 +37,7 @@
   "forms": {
     "lastSegment": {
       "identifier": "replace",
-      "pattern": "^.*\\.",
+      "pattern": "^.*[.]",
       "replacement": ""
     },
     "lower": {

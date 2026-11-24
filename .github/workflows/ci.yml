@@ -194,7 +194,9 @@ jobs:
       - name: Install bats and git-cliff
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq bats
-          pip install --require-hashes -r tools/changelog/requirements.txt
+          python3 -m venv "$RUNNER_TEMP/tools"
+          "$RUNNER_TEMP/tools/bin/pip" install -q --require-hashes -r tools/changelog/requirements.txt
+          echo "$RUNNER_TEMP/tools/bin" >>"$GITHUB_PATH"
       - name: ShellCheck
         run: make lint-shell
       - name: Script tests

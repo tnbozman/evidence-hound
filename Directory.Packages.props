@@ -4,7 +4,6 @@
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
   <ItemGroup Label="Runtime">
-    <!-- Onboarding only (EvidenceHound.Onboarding): the model SDKs never reach the runner, the core or the collectors. -->
     <PackageVersion Include="JsonSchema.Net" Version="9.7.0" />
     <PackageVersion Include="Azure.Identity" Version="1.21.0" />
     <PackageVersion Include="Confluent.Kafka" Version="2.15.1" />
@@ -16,6 +15,10 @@
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.14" />
     <PackageVersion Include="System.CommandLine" Version="2.0.14" />
     <PackageVersion Include="YamlDotNet" Version="18.1.0" />
+  </ItemGroup>
+  <ItemGroup Label="Build">
+    <!-- The version of every assembly and package, from git tags (s13-03). -->
+    <GlobalPackageReference Include="MinVer" Version="8.0.0" />
   </ItemGroup>
   <ItemGroup Label="Test">
     <PackageVersion Include="FsCheck.Xunit.v3" Version="3.6.0" />

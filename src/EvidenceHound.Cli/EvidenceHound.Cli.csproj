@@ -4,7 +4,14 @@
     <AssemblyName>hound</AssemblyName>
     <RootNamespace>EvidenceHound.Cli</RootNamespace>
     <!-- The runner image publishes for one of these, so native libraries for other platforms stay out of it. -->
-    <RuntimeIdentifiers>linux-x64;linux-arm64</RuntimeIdentifiers>
+    <!-- Not when packing: the tool package is framework-dependent and runs wherever .NET runs. -->
+    <RuntimeIdentifiers Condition="'$(_IsPacking)' != 'true'">linux-x64;linux-arm64</RuntimeIdentifiers>
+    <!-- s13-03: also a .NET tool. Installing the EvidenceHound.Cli tool gives the hound command. -->
+    <IsPackable>true</IsPackable>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>hound</ToolCommandName>
+    <PackageId>EvidenceHound.Cli</PackageId>
+    <Description>The hound command: collect evidence, map it to framework requirements and keep CISO Assistant current, with onboarding, reporting and review for a small GRC team.</Description>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" />
@@ -22,9 +29,6 @@
     <EmbeddedResource Include="..\..\frameworks\essential-eight-2023.json" LogicalName="init/frameworks/essential-eight-2023.json" />
     <EmbeddedResource Include="..\..\examples\compliance-repo\.gitignore" LogicalName="init/.gitignore" />
     <EmbeddedResource Include="..\..\examples\compliance-repo\manual-sources\weekly-compliance-review.md" LogicalName="init/manual-sources/weekly-compliance-review.md" />
-  </ItemGroup>
-  <ItemGroup>
-    <!-- hound onboard reads each provider's default model from here; edit it to change model without a new build. -->
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\EvidenceHound.CisoAssistant\EvidenceHound.CisoAssistant.csproj" />

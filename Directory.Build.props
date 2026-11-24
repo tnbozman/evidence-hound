@@ -16,8 +16,29 @@
     <Product>Evidence Hound</Product>
     <Copyright>Copyright Evidence Hound contributors</Copyright>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <Version>0.1.0</Version>
+    <!-- s13-03: the version comes from the latest vX.Y.Z git tag (MinVer); between releases it is a pre-release of the next patch. -->
+    <MinVerTagPrefix>v</MinVerTagPrefix>
+    <MinVerDefaultPreReleaseIdentifiers>alpha.0</MinVerDefaultPreReleaseIdentifiers>
+    <!-- Before the first tag, builds are pre-releases of 1.0.0, so profiles that require hound >=0.1 load. -->
+    <MinVerMinimumMajorMinor>1.0</MinVerMinimumMajorMinor>
+    <!-- Package metadata, SourceLink (built into the SDK) and symbols for every package. -->
+    <PackageProjectUrl>https://github.com/tnbozman/evidence-hound</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/tnbozman/evidence-hound</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PackageTags>compliance;grc;ciso-assistant;essential-eight;evidence</PackageTags>
   </PropertyGroup>
+
+  <!-- Each package carries the README.md next to its project file. -->
+  <PropertyGroup Condition="Exists('$(MSBuildProjectDirectory)/README.md')">
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <ItemGroup Condition="Exists('$(MSBuildProjectDirectory)/README.md')">
+    <None Include="$(MSBuildProjectDirectory)/README.md" Pack="true" PackagePath="/" Visible="false" />
+  </ItemGroup>
 
   <!-- GitHub Actions sets GITHUB_ACTIONS=true; CI can also pass -p:ContinuousIntegrationBuild=true. -->
   <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">

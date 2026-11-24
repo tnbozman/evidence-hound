@@ -20,6 +20,9 @@
     <Project Path="src/Collectors/EvidenceHound.Collectors.Rest/EvidenceHound.Collectors.Rest.csproj" />
     <Project Path="src/Collectors/EvidenceHound.Collectors.VulnScan/EvidenceHound.Collectors.VulnScan.csproj" />
   </Folder>
+  <Folder Name="/templates/">
+    <Project Path="templates/EvidenceHound.Templates.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/EvidenceHound.CisoAssistant.Tests/EvidenceHound.CisoAssistant.Tests.csproj" />
     <Project Path="tests/EvidenceHound.Cli.Tests/EvidenceHound.Cli.Tests.csproj" />

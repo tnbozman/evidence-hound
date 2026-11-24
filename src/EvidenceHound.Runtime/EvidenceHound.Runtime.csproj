@@ -1,5 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <!-- Internal: ships inside the hound CLI tool, not as its own package. -->
+    <IsPackable>false</IsPackable>
     <RootNamespace>EvidenceHound.Runtime</RootNamespace>
   </PropertyGroup>
   <ItemGroup>

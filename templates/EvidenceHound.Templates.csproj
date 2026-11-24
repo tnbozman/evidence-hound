@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- s13-03: the template pack. dotnet new install EvidenceHound.Templates, then dotnet new hound-collector -n <Name>. -->
+  <PropertyGroup>
+    <PackageId>EvidenceHound.Templates</PackageId>
+    <PackageType>Template</PackageType>
+    <Description>dotnet new templates for Evidence Hound: hound-collector, a collector project with its contract tests and a README.</Description>
+    <IsPackable>true</IsPackable>
+    <IncludeContentInPack>true</IncludeContentInPack>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <IncludeSymbols>false</IncludeSymbols>
+    <ContentTargetFolders>content</ContentTargetFolders>
+    <NoDefaultExcludes>true</NoDefaultExcludes>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <!-- A template pack has no lib folder or dependencies. -->
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="collector/**/*" Exclude="collector/**/bin/**;collector/**/obj/**;collector/.template.config/template.json" />
+  </ItemGroup>
+
+  <!-- The template's default HoundVersion is this pack's own version, so a new collector references the packages released with it.
+       WriteLinesToFile turns backslashes into slashes on Linux, so template.json must not contain any (its regex uses [.]). -->
+  <Target Name="StampHoundVersion" BeforeTargets="_GetPackageFiles" DependsOnTargets="MinVer">
+    <PropertyGroup>
+      <_StampedTemplate>$(IntermediateOutputPath)template.json</_StampedTemplate>
+      <_TemplateText>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)collector/.template.config/template.json'))</_TemplateText>
+      <_TemplateText>$(_TemplateText.Replace('"defaultValue": "0.1.0"', '"defaultValue": "$(PackageVersion)"'))</_TemplateText>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(_StampedTemplate)" Lines="$([MSBuild]::Escape($(_TemplateText)))" Overwrite="true" WriteOnlyWhenDifferent="true" />
+    <ItemGroup>
+      <Content Include="$(_StampedTemplate)" PackagePath="content/collector/.template.config/template.json" />
+    </ItemGroup>
+  </Target>
+</Project>

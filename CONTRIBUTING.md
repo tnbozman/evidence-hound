@@ -13,11 +13,12 @@ Thanks for helping. This project is built in small sprints with strict test-driv
 Start from the template and make the shared contract tests pass. Collectors must be read-only and emit framework-neutral check IDs.
 
 ```bash
-dotnet new install ./templates/collector      # once, from a clone of this repo
+dotnet new install EvidenceHound.Templates    # once; or ./templates/collector from a clone of this repo
 dotnet new hound-collector -n Example.Widget  # a collector of type "widget", its tests, a README and a recorded response
 ```
 
-The generated README has the setup steps. The contract kit is documented in [`src/EvidenceHound.Collectors.Testing`](src/EvidenceHound.Collectors.Testing/README.md). `make test-template` (also a CI job) generates a collector against freshly packed SDK packages and checks that it builds and its tests pass unmodified.
+The generated README has the setup steps, and [write a collector](docs/tutorials/write-a-collector.md) covers when to write one and
+how it comes into hound. The contract kit is documented in [`src/EvidenceHound.Collectors.Testing`](src/EvidenceHound.Collectors.Testing/README.md). `make test-template` (also a CI job) generates a collector from the freshly packed template pack and SDK packages and checks that it builds and its tests pass unmodified.
 
 ## AI-assisted contributions
 
