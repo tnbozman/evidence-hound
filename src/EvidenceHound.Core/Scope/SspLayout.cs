@@ -9,12 +9,16 @@ namespace EvidenceHound.Core.Scope;
 /// </summary>
 public static class SspLayout
 {
-    public static string Markdown(SspDocument document, IReadOnlyDictionary<string, string> sections)
+    /// <summary>The plan; a draft, marked as such, unless <paramref name="signOff"/> is the authorising official's sign-off of this draft (s11-05).</summary>
+    public static string Markdown(SspDocument document, IReadOnlyDictionary<string, string> sections, SspSignOff? signOff = null)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(sections);
         var text = new StringBuilder();
-        text.Append(CultureInfo.InvariantCulture, $"# System security plan: {Cell(document.SystemName)}\n\n")
+        text.Append(CultureInfo.InvariantCulture, $"# System security plan: {Cell(document.SystemName)}{(signOff is null ? " (DRAFT)" : "")}\n\n")
+            .Append(signOff is null
+                ? $"> **DRAFT.** Not approved: version {Cell(document.Version)} has no sign-off in `scope/ssp.yaml`.\n\n"
+                : $"> Approved by {signOff.By} on {signOff.Date}. SHA-256 of the reviewed draft: {signOff.Sha256}.\n\n")
             .Append(CultureInfo.InvariantCulture, $"Programme `{document.Programme}`, profile `{document.Profile}`, version {Cell(document.Version)}.\n\n")
             .Append("This plan follows NIST SP 800-18 Rev 1 Appendix A. The overview (sections 1 to 12) and the annex (section 13) meet ISM-0041: ")
             .Append("the system's purpose, its boundary, how it is managed, and the applicable controls.\n\n");
@@ -47,12 +51,14 @@ public static class SspLayout
         Heading(text, "13. Security controls (annex)");
         Annex(text, document);
         Heading(text, "14. Completion and approval dates")
-            .Append(CultureInfo.InvariantCulture, $"Version {Cell(document.Version)}. The authorising official ({Role(document, "authorising_official")}) approves the plan in CISO Assistant; the approval date is recorded there.\n\n");
+            .Append(signOff is null
+                ? $"Version {Cell(document.Version)} is a draft. The authorising official ({Role(document, "authorising_official")}) approves it by recording a sign-off in `scope/ssp.yaml`, through a reviewed pull request.\n\n"
+                : $"Version {Cell(document.Version)} was approved by the authorising official, {signOff.By}, on {signOff.Date}.\n\n");
         Heading(text, "15. Ongoing system security plan maintenance")
             .Append("`hound ssp build` rebuilds this plan from CISO Assistant and the configuration repo. Review it at least once a year and after any significant change to the system.\n\n");
         Heading(text, "Appendix: plan of action and milestones")
             .Append(Poam.Markdown(Poam.Of(document)).Replace("## Plan of action and milestones\n\n", "", StringComparison.Ordinal));
-        return text.ToString();
+        return text.Append(signOff is null ? "\n_DRAFT: not approved._\n" : "").ToString();
     }
 
     private static StringBuilder Heading(StringBuilder text, string title) => text.Append(CultureInfo.InvariantCulture, $"## {title}\n\n");

@@ -7,7 +7,8 @@ namespace EvidenceHound.Core.Yaml;
 public static partial class ScopeLoader
 {
     private static readonly string[] SspFileKeys = ["ssps"];
-    private static readonly string[] SspKeys = ["programme", "profile", "system_name", "perimeter", "version", "classification", "operational_status", "system_type", "roles", "documents", "sections"];
+    private static readonly string[] SspKeys = ["programme", "profile", "system_name", "perimeter", "version", "classification", "operational_status", "system_type", "roles", "documents", "sections", "sign_offs"];
+    private static readonly string[] SspSignOffKeys = ["version", "by", "date", "sha256", "snapshot"];
     private static readonly string[] SspProfiles = [.. SspProfile.Names];
     private static readonly string[] SspRoleNames = [.. SspProfile.Roles];
 
@@ -50,6 +51,19 @@ public static partial class ScopeLoader
                 Classification = file.Text(item, "classification"),
                 OperationalStatus = file.Text(item, "operational_status"),
                 SystemType = file.Text(item, "system_type"),
+                SignOffs = [.. file.Items(item, "sign_offs").Select(s => ReadSspSignOff(s, file)).OfType<SspSignOff>()],
             };
+    }
+
+    private static SspSignOff? ReadSspSignOff(YamlMappingNode item, FileReader file)
+    {
+        file.Keys(item, SspSignOffKeys);
+        var version = file.Required(item, "version");
+        var by = file.Required(item, "by");
+        var date = file.Required(item, "date");
+        var sha256 = file.Required(item, "sha256");
+        return version is null || by is null || date is null || sha256 is null
+            ? null
+            : new SspSignOff(version, by, date, sha256, file.Text(item, "snapshot")) { At = file.At(item) };
     }
 }

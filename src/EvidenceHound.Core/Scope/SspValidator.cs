@@ -36,7 +36,30 @@ public static class SspValidator
             ssp.At,
             $"the {ssp.Profile} profile needs a '{n}' section, which the plan for programme '{ssp.Programme.Value}' does not name.",
             $"Write it as a Markdown file in the repo and name it under 'sections:' as '{n}: <file>'.")),
+        .. ssp.SignOffs.SelectMany(s => SignOffProblems(ssp, s)),
     ];
+
+    /// <summary>A sign-off is the authorising official's, with SHA-256 hashes written as 64 lower-case hex digits.</summary>
+    private static IEnumerable<ScopeProblem> SignOffProblems(ScopeSsp ssp, SspSignOff signOff)
+    {
+        var at = signOff.At ?? ssp.At;
+        var official = ssp.Roles.FirstOrDefault(r => r.Role == "authorising_official")?.Holder.Value;
+        if (official is not null && !string.Equals(official, signOff.By, StringComparison.OrdinalIgnoreCase))
+        {
+            yield return new ScopeProblem(
+                "ssp.signoff_not_authorising_official", at, $"version {signOff.Version} is signed by '{signOff.By}', who is not the plan's authorising official ('{official}').",
+                "Only the authorising official signs the plan (ISM-0047); change 'by' or the role.");
+        }
+
+        foreach (var (name, hash) in new[] { ("sha256", signOff.Sha256), ("snapshot", signOff.Snapshot) }.Where(h => h.Item2 is not null && !IsSha256(h.Item2)))
+        {
+            yield return new ScopeProblem(
+                "ssp.signoff_hash_invalid", at, $"version {signOff.Version}'s {name} '{hash}' is not a SHA-256.",
+                "Copy the hash 'hound ssp build --snapshot-out' printed: 64 lower-case hex digits.");
+        }
+    }
+
+    private static bool IsSha256(string? value) => value is { Length: 64 } && value.All(c => c is (>= '0' and <= '9') or (>= 'a' and <= 'f'));
 
     private static ScopeProblem Unknown(string code, ScopeRef reference, string kind, string hint) =>
         new(code, reference.At, $"{kind} '{reference.Value}' is not declared.", hint);

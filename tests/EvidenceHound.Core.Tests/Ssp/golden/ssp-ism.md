@@ -1,4 +1,6 @@
-# System security plan: Example corporate IT
+# System security plan: Example corporate IT (DRAFT)
+
+> **DRAFT.** Not approved: version 0.1 has no sign-off in `scope/ssp.yaml`.
 
 Programme `essential-eight`, profile `ism`, version 0.1.
 
@@ -121,7 +123,7 @@ Columns follow the ASD SSP annex template. Implementation status uses the ASD SS
 
 ## 14. Completion and approval dates
 
-Version 0.1. The authorising official (ceo@example.com) approves the plan in CISO Assistant; the approval date is recorded there.
+Version 0.1 is a draft. The authorising official (ceo@example.com) approves it by recording a sign-off in `scope/ssp.yaml`, through a reviewed pull request.
 
 ## 15. Ongoing system security plan maintenance
 
@@ -132,3 +134,5 @@ Version 0.1. The authorising official (ceo@example.com) approves the plan in CIS
 | Requirement | Status | Control | Owner | ETA | Control status |
 | --- | --- | --- | --- | --- | --- |
 | ISM-1504 | Planned | AC-ADMIN | it@example.com | 2026-12-31 | in_progress |
+
+_DRAFT: not approved._

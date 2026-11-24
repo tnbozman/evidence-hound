@@ -32,7 +32,7 @@ public class SspVersionTests
 
         SspVersion.Hash(SspLayout.Markdown(reread.Document, reread.Sections)).ShouldBe(signOff.Sha256);
         SspSnapshotJson.Write(reread).ShouldBe(SspSnapshotJson.Write(snapshot));
-        signed.ShouldNotContain("DRAFT");
+        signed.ShouldNotContain("DRAFT", Case.Sensitive);
         signed.Split('\n')[0].ShouldBe("# System security plan: Example corporate IT");
         signed.ShouldContain($"> Approved by ceo@example.com on 2026-11-24. SHA-256 of the reviewed draft: {signOff.Sha256}.");
     }

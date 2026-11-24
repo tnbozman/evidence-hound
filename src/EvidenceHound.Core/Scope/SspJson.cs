@@ -8,7 +8,10 @@ public static class SspJson
 {
     private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
 
-    public static string Write(SspDocument document)
+    public static string Write(SspDocument document) => Object(document).ToJsonString(Indented) + "\n";
+
+    /// <summary>The plan as a JSON object, for the plan file and the snapshot (s11-05).</summary>
+    internal static JsonObject Object(SspDocument document)
     {
         ArgumentNullException.ThrowIfNull(document);
         return new JsonObject
@@ -36,6 +39,8 @@ public static class SspJson
             ["controls"] = new JsonArray([.. document.Controls.Select(c => new JsonObject
             {
                 ["ref_id"] = Value(c.RefId), ["name"] = Value(c.Name), ["owner"] = Value(c.Owner), ["status"] = Value(c.Status), ["eta"] = Value(c.Eta), ["description"] = Value(c.Description),
+                ["systems"] = new JsonArray([.. c.Systems.Select(s => JsonValue.Create(s))]),
+                ["responsible_entity"] = c.ResponsibleEntity is null ? null : Value(c.ResponsibleEntity),
             })]),
             ["requirements"] = new JsonArray([.. document.Requirements.Select(r => new JsonObject
             {
@@ -54,7 +59,7 @@ public static class SspJson
                 ["control_types"] = new JsonArray([.. a.ControlTypes.Select(t => JsonValue.Create(t))]),
                 ["responsible_entity"] = Value(a.ResponsibleEntity), ["asd_status"] = Value(a.AsdStatus),
             })]),
-        }.ToJsonString(Indented) + "\n";
+        };
     }
 
     /// <summary>The POA&amp;M as JSON, each value with its source.</summary>
@@ -71,7 +76,7 @@ public static class SspJson
         }.ToJsonString(Indented) + "\n";
     }
 
-    private static JsonObject Value(SspValue value) => new()
+    internal static JsonObject Value(SspValue value) => new()
     {
         ["value"] = value.Value,
         ["source"] = new JsonObject { ["kind"] = value.Source.Kind, ["reference"] = value.Source.Reference },

@@ -1639,6 +1639,22 @@
                   "$ref": "#/$defs/text"
                 }
               },
+              "sign_offs": {
+                "description": "Signed versions (s11-05): the authorising official's approval of a reviewed draft, by pull request.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["version", "by", "date", "sha256"],
+                  "properties": {
+                    "version": { "$ref": "#/$defs/text" },
+                    "by": { "description": "The authorising official's email.", "$ref": "#/$defs/text" },
+                    "date": { "$ref": "#/$defs/text" },
+                    "sha256": { "description": "SHA-256 of the reviewed draft, as 'hound ssp build --snapshot-out' prints it.", "type": "string", "pattern": "^[0-9a-f]{64}$" },
+                    "snapshot": { "description": "SHA-256 of the snapshot file the draft was built from.", "type": "string", "pattern": "^[0-9a-f]{64}$" }
+                  }
+                }
+              },
               "sections": {
                 "description": "The parts that cannot be generated, as Markdown files in the repo, by section name: purpose, environment, management and laws_and_policies (SP 800-18 sections 9, 10, 6 and 12).",
                 "type": "object",
