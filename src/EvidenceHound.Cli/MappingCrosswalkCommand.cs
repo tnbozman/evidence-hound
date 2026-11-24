@@ -24,7 +24,7 @@ namespace EvidenceHound.Cli;
 internal static class MappingCrosswalkCommand
 {
     /// <summary>Crosswalks hound carries, by embedded resource name under <c>crosswalks/</c>.</summary>
-    private const string BundledPrefix = "crosswalks/";
+    private static readonly string BundledPrefix = "crosswalks/";
 
     public static Command Build(TextWriter output, ILoggerFactory loggers, IConfiguration configuration, CollectorRegistry registry)
     {

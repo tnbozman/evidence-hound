@@ -7,7 +7,7 @@ namespace EvidenceHound.Core.Tests.Reporting;
 /// <summary>Quarter-end snapshots of the fictional Example Pty Ltd for 2025-Q4 to 2026-Q4, for the board report.</summary>
 internal static class BoardFixtures
 {
-    private const string Ca = "https://ciso.example.com";
+    private static readonly string Ca = "https://ciso.example.com";
 
     public static readonly ReportingPeriod Q4 = new(PeriodKind.Quarter, 2026, 4);
 

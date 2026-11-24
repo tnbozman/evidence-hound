@@ -7,7 +7,7 @@ namespace EvidenceHound.Core.Tests.Reporting;
 /// <summary>October and November snapshots of the fictional Example Pty Ltd, for the committee report.</summary>
 internal static class CommitteeFixtures
 {
-    private const string Ca = "https://ciso.example.com";
+    private static readonly string Ca = "https://ciso.example.com";
 
     public static PostureSnapshot October { get; } = Month(
         November.Previous(),

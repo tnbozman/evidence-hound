@@ -12,7 +12,7 @@ public class CrosswalkLoaderTests
 {
     private static readonly string ShippedPath = Path.Combine(AppContext.BaseDirectory, "files", "mappings", "crosswalks", "essential-eight-2023-to-nist-sp-800-171-rev2.yaml");
 
-    private const string Small = """
+    private static readonly string Small = """
         from: urn:example:risk:framework:source
         to: urn:example:risk:framework:target
         reviewed: {by: Security lead, on: 2026-11-20}

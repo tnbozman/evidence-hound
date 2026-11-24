@@ -29,9 +29,14 @@ public sealed class SnapshotTests : IDisposable
         Respond(_ca, "GET", "/api/risk-scenarios/", List(
             new JsonObject
             {
-                ["id"] = "rs-1", ["ref_id"] = "R-1", ["name"] = "Ransomware on file server",
-                ["current_level"] = new JsonObject { ["name"] = "High", ["value"] = 3 }, ["residual_level"] = new JsonObject { ["name"] = "Medium", ["value"] = 2 },
-                ["owner"] = Owners("Example CTO"), ["treatment"] = "mitigate", ["eta"] = "2027-03-31",
+                ["id"] = "rs-1",
+                ["ref_id"] = "R-1",
+                ["name"] = "Ransomware on file server",
+                ["current_level"] = new JsonObject { ["name"] = "High", ["value"] = 3 },
+                ["residual_level"] = new JsonObject { ["name"] = "Medium", ["value"] = 2 },
+                ["owner"] = Owners("Example CTO"),
+                ["treatment"] = "mitigate",
+                ["eta"] = "2027-03-31",
             }));
         Respond(_ca, "GET", "/api/task-nodes/", List(
             new JsonObject { ["id"] = "tn-1", ["task_template"] = Ref("tt-1", "Backups: restore test"), ["due_date"] = "2026-11-20", ["status"] = "pending", ["assigned_to"] = Owners("Example backup owner") }));

@@ -8,8 +8,8 @@ namespace EvidenceHound.Core.Tests.Mapping;
 /// <summary>s12-01: <c>hound mapping coverage</c> counts how each requirement is answered, per parent node and implementation group.</summary>
 public class CoverageTests
 {
-    private const string Mfa = "urn:example:node:mfa";
-    private const string Backups = "urn:example:node:rb";
+    private static readonly string Mfa = "urn:example:node:mfa";
+    private static readonly string Backups = "urn:example:node:rb";
 
     private static readonly string[] Ml2 = ["1", "2"];
 
