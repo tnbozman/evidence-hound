@@ -106,6 +106,10 @@ public sealed class SspCommandTests : IDisposable
         var plan = JsonNode.Parse(_output.ToString())!;
         var row = plan["annex"]!.AsArray().ShouldHaveSingleItem()!;
         row["control"]!.GetValue<string>().ShouldBe("EX-1.1");
+        row["asd_status"]!["value"]!.GetValue<string>().ShouldBe("Effective");
+        row["responsible_entity"]!["value"]!.GetValue<string>().ShouldBe("Consumer");
+        row["control_types"]!.AsArray().ShouldBeEmpty();
+        row["maturity_levels"]!.AsArray().Select(l => l!.GetValue<string>()).ShouldBe(["1"]);
         row["status"]!["value"].ShouldNotBeNull();
         plan["classification"]!["value"].ShouldBeNull();
     }

@@ -40,6 +40,18 @@ public class SspLayoutTests
     }
 
     [Fact]
+    public void Annex_columns_follow_the_asd_ssp_annex_template()
+    {
+        // s11-16: the ASD Blueprint SSP annex template's columns, with the SP 800-18 status kept beside the ASD one.
+        var document = Example() with { Annex = SspAnnex.Of(Example(), EssentialEight, ["1"]) };
+
+        var markdown = SspLayout.Markdown(document, Texts());
+
+        markdown.ShouldContain("| Control | Description | Strategies | Maturity levels | Control type | Responsible entity | Implementation status | SP 800-18 status | Statement | Responsible | POA&M |\n");
+        markdown.ShouldContain("Implementation status uses the ASD SSP annex template's terms");
+    }
+
+    [Fact]
     public void Repeated_ism_control_appears_once_with_strategies()
     {
         var annex = SspAnnex.Of(Example(), EssentialEight, ["1", "2"]);
