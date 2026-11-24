@@ -165,6 +165,16 @@
                 "enum": [
                   "parent"
                 ]
+              },
+              "register": {
+                "description": "The register the programme's reports summarise (s11-14): ai_systems (by tier, use, oversight) or systems (by type).",
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["of"],
+                "properties": {
+                  "of": { "enum": ["ai_systems", "systems"] },
+                  "by": { "type": "array", "items": { "enum": ["tier", "use", "oversight", "type"] } }
+                }
               }
             }
           }

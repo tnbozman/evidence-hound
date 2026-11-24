@@ -99,7 +99,7 @@ public static class AiRegisterChecks
     }
 
     private static AiRegisterFinding Finding(string checkId, string practice, Outcome outcome) =>
-        new(checkId, outcome.Result, $"{practice}: {outcome.Text}");
+        new(checkId, outcome.Result, $"{practice}: {outcome.Text}") { Failing = outcome.Failing };
 
     private static AiRegisterEntry[] InUse(IReadOnlyList<AiRegisterEntry> all, DateOnly today) => [.. all.Where(e => IsInUse(e.Ai, today))];
 
@@ -116,10 +116,13 @@ public static class AiRegisterChecks
             return new(CheckOutcome.NotApplicable, $"no {noun} is registered.");
         }
 
-        var failing = covered.Where(fails).Select(describe ?? (e => e.System)).ToArray();
+        var failing = covered.Where(fails).ToArray();
         return failing.Length == 0
             ? new(CheckOutcome.Pass, covered.Count == 1 ? $"the one {noun} {passes}." : $"each of the {covered.Count} {Plural(noun, covered.Count)} {passes}.")
-            : new(CheckOutcome.Fail, $"{failing.Length} of {covered.Count} {Plural(noun, covered.Count)} fail: {string.Join("; ", failing)}. {fix}");
+            : new(CheckOutcome.Fail, $"{failing.Length} of {covered.Count} {Plural(noun, covered.Count)} fail: {string.Join("; ", failing.Select(describe ?? (e => e.System)))}. {fix}")
+            {
+                Failing = [.. failing.Select(e => e.System)],
+            };
     }
 
     private static string Plural(string noun, int count) =>
@@ -132,5 +135,8 @@ public static class AiRegisterChecks
 
     private static string Day(DateOnly date) => date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
-    private sealed record Outcome(CheckOutcome Result, string Text);
+    private sealed record Outcome(CheckOutcome Result, string Text)
+    {
+        public IReadOnlyList<string> Failing { get; init; } = [];
+    }
 }

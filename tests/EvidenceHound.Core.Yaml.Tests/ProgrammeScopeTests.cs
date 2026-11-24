@@ -104,7 +104,8 @@ public class ProgrammeScopeTests
     {
         var register = "    register:\n      of: ai_systems\n      by: [tier, use]\n";
         var programme = ScopeFixture.Parse(WithProgrammes(Programme() + register)).Scope.Setup.Programmes.ShouldHaveSingleItem();
-        (programme.Register!.Of, programme.Register.By).ShouldBe(("ai_systems", (IReadOnlyList<string>)["tier", "use"]));
+        programme.Register!.Of.ShouldBe("ai_systems");
+        programme.Register.By.ShouldBe(["tier", "use"]);
         Codes(WithProgrammes(Programme() + register)).ShouldNotContain(c => c.StartsWith("scope.programme", StringComparison.Ordinal));
 
         Codes(WithProgrammes(Programme() + register.Replace("of: ai_systems", "of: robots", StringComparison.Ordinal))).ShouldContain("scope.value_invalid");

@@ -21,7 +21,8 @@ public sealed record ScopeParse(ScopeDocument Scope, IReadOnlyList<ScopeProblem>
 public static partial class ScopeLoader
 {
     private static readonly string[] SetupKeys = ["organisation", "frameworks", "libraries", "domains", "programmes"];
-    private static readonly string[] ProgrammeKeys = ["id", "name", "framework", "groups", "audit", "group_by"];
+    private static readonly string[] ProgrammeKeys = ["id", "name", "framework", "groups", "audit", "group_by", "register"];
+    private static readonly string[] RegisterKeys = ["of", "by"];
     private static readonly string[] GroupBys = ["parent"];
     private static readonly string[] OrganisationKeys = ["root_folder", "entity"];
     private static readonly string[] FrameworkKeys = ["urn", "library", "file", "snapshot"];
@@ -238,7 +239,33 @@ public static partial class ScopeLoader
         var groupBy = file.OneOf(item, "group_by", GroupBys, required: false) ?? "parent";
         return id is null || name is null || framework is null || audit is null
             ? null
-            : new ScopeProgramme(id, name, framework, [.. file.Refs(item, "groups").Select(g => g.Value)], audit, groupBy, file.At(item));
+            : new ScopeProgramme(id, name, framework, [.. file.Refs(item, "groups").Select(g => g.Value)], audit, groupBy, file.At(item))
+            {
+                Register = file.Map(item, "register") is { } register ? ReadRegister(register, file) : null,
+            };
+    }
+
+    private static ProgrammeRegister? ReadRegister(YamlMappingNode map, FileReader file)
+    {
+        file.Keys(map, RegisterKeys);
+        var of = file.OneOf(map, "of", [.. RegisterItems.Names], required: true);
+        var by = file.Refs(map, "by");
+        if (of is null)
+        {
+            return null;
+        }
+
+        var fields = RegisterItems.Fields(of);
+        foreach (var unknown in by.Where(b => !fields.Contains(b.Value, StringComparer.Ordinal)))
+        {
+            file.Problem(
+                "scope.programme_register_unknown",
+                unknown.At,
+                $"the {of} register has no field '{unknown.Value}' to count by.",
+                $"Use {string.Join(", ", fields)}.");
+        }
+
+        return new ProgrammeRegister(of, [.. by.Select(b => b.Value)], file.At(map));
     }
 
     private static ScopeFramework? ReadFramework(YamlMappingNode item, FileReader file)
