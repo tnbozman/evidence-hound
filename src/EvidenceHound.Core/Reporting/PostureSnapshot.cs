@@ -23,7 +23,13 @@ public sealed record PostureSnapshot(
 {
     /// <summary>The snapshot format; goes up when a field changes meaning.</summary>
     public int Format { get; init; } = 1;
+
+    /// <summary>Warnings about the organisation from the scope when the snapshot was taken, such as sensitive data findings (s10-06).</summary>
+    public IReadOnlyList<ScopeWarning> Warnings { get; init; } = [];
 }
+
+/// <summary>A warning from the scope: its code and message, for the committee to act on.</summary>
+public sealed record ScopeWarning(string Code, string Message);
 
 /// <summary>A programme (s11-01) in one period: its framework, audit of record, selected groups, every row's result, and the counts.</summary>
 public sealed record ProgrammePosture(
