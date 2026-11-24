@@ -118,7 +118,8 @@ says how to start.
 
 1. Before the session, the agent prepares the queue with the skill "weekly-review": `hound review pending --json` lists every item
    (manual evidence proposals, onboarding decisions, suppliers, supplier reviews, drafted audits and imported rows), and the agent
-   drafts a recommendation for each with its reasons and sources, and answers last week's challenges.
+   records a recommendation for each with its reasons and sources (`hound review recommend`, kept in `review/recommendations.json`),
+   and answers last week's challenges.
 2. The person runs `hound review` in their own terminal (`--for 30m` to stop after half an hour). Most urgent first, each item shows
    what it is, why it matters, the recommendation and what accepting it does. They accept, challenge (with a note the agent answers
    before the next session; the item stays queued) or skip.

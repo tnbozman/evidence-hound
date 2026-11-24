@@ -108,6 +108,7 @@ file by `scripts/cheatsheet/render.sh`.
 
 ### Weekly review
 - `hound review pending --json`: agent: everything waiting on a person
+- `hound review recommend <key> --answer ... --reason ... --source ...`: agent: its recommendation
 - `hound review --for 60m`: **Person**: one guided weekly session
   - `--no-apply`: stop at the files
 

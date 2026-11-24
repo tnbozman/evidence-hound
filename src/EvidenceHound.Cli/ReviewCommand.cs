@@ -39,11 +39,36 @@ internal static class ReviewCommand
                 },
                 problems => Task.FromResult(Log.Problems(logger, problems)));
         });
+        var answer = new Option<string?>("--answer") { Description = "What you recommend: accept or decline; for a supplier review, ok, warning or blocker." };
+        var reason = new Option<string?>("--reason") { Description = "Why, in words the person can check." };
+        var source = new Option<string[]>("--source") { Description = "A file, page or extract the recommendation rests on. Repeat for more.", AllowMultipleArgumentsPerToken = false };
+        var key = new Argument<string>("key") { Description = "The item's key, as hound review pending --json lists it." };
+        var recommend = new Command("recommend", "Record your recommendation for an item waiting on a person, with its reason and sources, for the session to show. Prompt-free, for an agent; it decides nothing.")
+        {
+            key, repo, config, answer, reason, source, json,
+        };
+        recommend.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var root = parseResult.GetValue(repo)?.FullName ?? Directory.GetCurrentDirectory();
+            var itemKey = parseResult.GetValue(key)!;
+            var queue = await QueueAsync(root, parseResult.GetValue(config), terminal, registry, AuditSeries.Today(configuration), cancellationToken);
+            var made = queue.Bind(items => ReviewOrder.Recommend(items, itemKey, parseResult.GetValue(answer), parseResult.GetValue(reason), parseResult.GetValue(source) ?? []));
+            return await made.Match(
+                async recommendation =>
+                {
+                    await Recommendations.WriteAsync(root, new Dictionary<string, ReviewRecommendation>(StringComparer.Ordinal) { [itemKey] = recommendation }, [], cancellationToken);
+                    await terminal.Output.WriteLineAsync((parseResult.GetValue(json)
+                        ? new JsonObject { ["key"] = itemKey, ["answer"] = recommendation.Answer, ["recorded"] = true }.ToJsonString(OnboardAgentCommand.Indented)
+                        : $"Recorded your recommendation for {itemKey}: {recommendation.Answer}. The person decides in hound review.").AsMemory(), cancellationToken);
+                    return ExitCodes.Ok;
+                },
+                problems => Task.FromResult(Log.Problems(logger, problems)));
+        });
         var forTime = new Option<string>("--for") { Description = "How long you have, such as 60m or 2h. The session takes the most urgent items that fit.", DefaultValueFactory = _ => "60m" };
         var noApply = new Option<bool>("--no-apply") { Description = "Stop once the accepted items are written to the repo's files; do not plan or apply them to CISO Assistant." };
         var review = new Command("review", "One guided session: read each item that waits on you, with the agent's recommendation, then accept, challenge or skip it. Accepted items are written and applied in one batch. Needs a person at a terminal.")
         {
-            repo, config, forTime, noApply, pending,
+            repo, config, forTime, noApply, pending, recommend,
         };
         review.SetAction(async (parseResult, cancellationToken) =>
         {
@@ -103,7 +128,9 @@ internal static class ReviewCommand
             ? await ManualProposalCommands.PendingAsync(deployment, registry, standing, today, cancellationToken)
             : Result.Ok<IReadOnlyList<ReviewItem>>([]);
         var challenges = await Challenges.ReadAsync(repo, cancellationToken);
-        return walked.Bind(_ => manual).Map(proposals => ReviewOrder.Order([.. listing.Items, .. proposals]).Select(i => i with { Challenge = challenges.GetValueOrDefault(i.Key) }).ToArray())
+        var recommendations = await Recommendations.ReadAsync(repo, cancellationToken);
+        return walked.Bind(_ => manual).Map(proposals => ReviewOrder.Order([.. listing.Items, .. proposals])
+                .Select(i => i with { Challenge = challenges.GetValueOrDefault(i.Key), Recommendation = recommendations.GetValueOrDefault(i.Key) ?? i.Recommendation }).ToArray())
             .Map(items => (IReadOnlyList<ReviewItem>)items);
     }
 
@@ -148,11 +175,13 @@ internal static class ReviewCommand
         private readonly Prompt _prompt = new(terminal);
         private string? _person;
         private bool _quit;
+        private Dictionary<string, ReviewRecommendation> _recommendations = new(StringComparer.Ordinal);
 
         public IReadOnlyList<string> Accepted => [.. _answers.Keys];
 
         public async Task<Result<Unit>> RunAsync(int minutes, CancellationToken cancellationToken)
         {
+            _recommendations = await Recommendations.ReadAsync(repo, cancellationToken);
             var queue = await QueueAsync(repo, deployment, terminal, registry, today, cancellationToken);
             if (queue is Result<IReadOnlyList<ReviewItem>>.Fail failed)
             {
@@ -221,6 +250,7 @@ internal static class ReviewCommand
             }
 
             await Challenges.WriteAsync(repo, _challenged, _answers.Keys, _person, today, cancellationToken);
+            await Recommendations.WriteAsync(repo, new Dictionary<string, ReviewRecommendation>(StringComparer.Ordinal), _answers.Keys, cancellationToken);
             var record = await SignOffAsync(cancellationToken);
             var rules = await StandingApprovalFile.ReadAsync(repo, cancellationToken);
             var summary = string.Create(
@@ -238,6 +268,7 @@ internal static class ReviewCommand
         /// <summary>Shows one item and records the person's answer. Items a walk raises that were not in the queue are asked the same way.</summary>
         public async Task AskAsync(ReviewItem item, string position, CancellationToken cancellationToken)
         {
+            item = item with { Recommendation = _recommendations.GetValueOrDefault(item.Key) ?? item.Recommendation };
             await SayAsync($"\n{position} {item.Title}", cancellationToken);
             await SayAsync($"  Why it matters: {item.Why}", cancellationToken);
             if (item.Recommendation is { } r)

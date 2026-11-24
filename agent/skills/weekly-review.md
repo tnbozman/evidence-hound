@@ -15,11 +15,15 @@ run in their own terminal. Your job is to have every item ready before they star
    - `supplier`, `supplier_review`: the skills "onboard-a-third-party" and "assess-a-supplier".
    - `audit`, `imported_row`: the skills "onboard-an-audit" and "import-an-audit-workbook".
    - `manual_evidence`: the skill "process-manual-evidence" (`hound manual propose`).
-   Give each recommendation reasons the person can check and the sources you used: a file in the repo, a page of the supplier's
-   trust centre, a line of the export.
+   Then record what you recommend for each item that is not manual evidence (its proposal is already the recommendation):
+   `hound review recommend <key> --repo . --answer <accept|decline> --reason "<why>" --source "<file, page or extract>"... --json`
+   (a supplier review takes `ok`, `warning` or `blocker`). Give reasons the person can check and the sources you used: a file in the
+   repo, a page of the supplier's trust centre, a line of the export. Recommend `decline` when the facts say so, and say what would
+   change your answer.
 3. Answer each challenge. The person's note is in `review/challenges.json` under the item's key. Read it, find out what they asked, then
-   change your draft with the same command, or keep it and say why. Do not edit `review/challenges.json`: the challenge goes once the
-   person accepts the item.
+   change your draft with the same command, or keep it, and record your answer as the item's recommendation with
+   `hound review recommend`, its reason answering their note. Do not edit `review/challenges.json` or `review/recommendations.json`:
+   a challenge and a recommendation go once the person accepts the item.
 4. Run `hound review pending --repo . --config hound.yaml --json` again and check that every item has a recommendation.
 5. Tell the person, in a few lines: how many items, about how long the session takes, what is most urgent and why, and how you answered
    each challenge. Then tell them to run `hound review` in their own terminal (`--for 30m` if they have less time).

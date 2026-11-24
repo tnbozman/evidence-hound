@@ -1,3 +1,5 @@
+using EvidenceHound.Core.Results;
+
 namespace EvidenceHound.Core.Review;
 
 /// <summary>The kinds of item that wait on a person, in the order a session takes them when no deadline decides.</summary>
@@ -52,6 +54,44 @@ public static class ReviewOrder
     };
 
     /// <summary>Most urgent first: by deadline (none last), then by kind, then by key.</summary>
+    /// <summary>
+    /// What an agent may recommend for an item: a supplier review's conclusion, or accept or decline. Manual evidence takes none here;
+    /// its proposal (<c>hound manual propose</c>) is the recommendation.
+    /// </summary>
+    public static IReadOnlyList<string> Answers(ReviewKind kind) => kind switch
+    {
+        ReviewKind.SupplierReview => ["ok", "warning", "blocker"],
+        ReviewKind.ManualEvidence => [],
+        _ => ["accept", "decline"],
+    };
+
+    /// <summary>An agent's recommendation for an item waiting in <paramref name="items"/>, checked: the item, the answer it takes, a reason and a source.</summary>
+    public static Result<ReviewRecommendation> Recommend(IEnumerable<ReviewItem> items, string key, string? answer, string? reason, IReadOnlyList<string> sources)
+    {
+        ArgumentNullException.ThrowIfNull(items);
+        ArgumentNullException.ThrowIfNull(sources);
+        if (items.FirstOrDefault(i => i.Key == key) is not { } item)
+        {
+            return Result.Fail<ReviewRecommendation>(new Problem("review.item_unknown", $"'{key}' is not waiting on a person; list what is with hound review pending --json."));
+        }
+
+        var answers = Answers(item.Kind);
+        if (answers.Count == 0)
+        {
+            return Result.Fail<ReviewRecommendation>(new Problem("review.answer_invalid", $"'{key}' is manual evidence: its proposal is the recommendation; record it with hound manual propose."));
+        }
+
+        Problem[] problems =
+        [
+            .. answer is not null && answers.Contains(answer, StringComparer.Ordinal)
+                ? []
+                : new[] { new Problem("review.answer_invalid", $"'{key}' takes {string.Join(" or ", answers)}, not '{answer}'.") },
+            .. string.IsNullOrWhiteSpace(reason) ? new[] { new Problem("review.reason_missing", "Give the reason with --reason: what the person should know to agree or disagree.") } : [],
+            .. sources.Count == 0 ? new[] { new Problem("review.source_missing", "Give at least one --source: the file, page or extract the recommendation rests on.") } : [],
+        ];
+        return problems.Length > 0 ? Result.Fail<ReviewRecommendation>(problems) : Result.Ok(new ReviewRecommendation(answer!, reason!, sources));
+    }
+
     public static IReadOnlyList<ReviewItem> Order(IEnumerable<ReviewItem> items) =>
         [.. items.OrderBy(i => i.Deadline ?? DateOnly.MaxValue).ThenBy(i => i.Kind).ThenBy(i => i.Key, StringComparer.Ordinal)];
 
