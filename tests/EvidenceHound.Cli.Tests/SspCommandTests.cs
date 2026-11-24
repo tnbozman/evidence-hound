@@ -166,6 +166,32 @@ public sealed class SspCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Format_docx_also_writes_the_plan_as_a_word_file()
+    {
+        await WriteScopeAsync(Ssp);
+        Instance();
+        var docx = Path.Combine(_workDir, "ssp-0.1.docx");
+
+        (await Build("--format", "docx", "--out", docx)).ShouldBe(ExitCodes.Ok, _error.ToString());
+
+        _output.ToString().ShouldContain("(DRAFT)");
+        using var zip = new System.IO.Compression.ZipArchive(File.OpenRead(docx));
+        zip.GetEntry("word/document.xml").ShouldNotBeNull();
+        zip.GetEntry("word/header1.xml").ShouldNotBeNull();
+    }
+
+    [Fact]
+    public async Task Format_docx_needs_a_file_to_write()
+    {
+        await WriteScopeAsync(Ssp);
+        Instance();
+
+        (await Build("--format", "docx")).ShouldBe(ExitCodes.Configuration);
+
+        ErrorCodes().ShouldContain("ssp.out_required");
+    }
+
+    [Fact]
     public async Task Diff_lists_what_changed_between_two_snapshots()
     {
         await WriteScopeAsync(Ssp);
