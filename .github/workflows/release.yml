@@ -3,7 +3,8 @@ name: Release
 # s13-04: a release from a vX.Y.Z tag. `verify` builds, tests and checks everything a release publishes; `publish`
 # waits for a maintainer to approve the `release` environment, then builds it again from the tag and publishes:
 # NuGet packages (when the environment holds NUGET_API_KEY), the runner image on GHCR (amd64 and arm64), build
-# provenance for both, a CycloneDX SBOM, and the GitHub release with notes from the Conventional Commits.
+# provenance for both, a CycloneDX SBOM, the documentation site on GitHub Pages, and the GitHub release with notes
+# from the Conventional Commits.
 # On a pull request that changes the release, `verify` runs as a dry run on a local v0.0.0-test tag: the packages go
 # to a local test feed, hound is installed from it, and nothing is pushed or published.
 # How to cut a release: docs/releasing.md.
@@ -159,6 +160,15 @@ jobs:
           fi
           dotnet nuget push "artifacts/packages/*.nupkg" --api-key "$NUGET_API_KEY" \
             --source https://api.nuget.org/v3/index.json --skip-duplicate
+      - name: Publish the documentation site to GitHub Pages (the gh-pages branch)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          make docs
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          .venv-docs/bin/mkdocs gh-deploy --force --no-history --message "docs: site for ${GITHUB_REF_NAME}"
       - name: Create the GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -11,6 +11,7 @@ published until a maintainer approves the `release` environment, and no long-liv
 | `EvidenceHound.Cli` (the `hound` .NET tool), `EvidenceHound.Templates`, `EvidenceHound.Core`, `EvidenceHound.Collectors.*` | GitHub release assets, and NuGet when the key is set | `scripts/check-packages.sh` (licence, repository and commit, README, symbols); hound installed from them as a test feed; build provenance |
 | CycloneDX SBOM of the CLI | GitHub release asset | |
 | Release notes | GitHub release | generated from the Conventional Commits since the last tag (`scripts/changelog.sh --notes`) |
+| Documentation site | GitHub Pages (`gh-pages` branch) | `make docs`: MkDocs in strict mode, on every pull request too |
 
 The version comes from the tag (MinVer). Between releases, builds are pre-releases of the next version, such as `1.0.1-alpha.0.3`.
 
@@ -18,7 +19,9 @@ The version comes from the tag (MinVer). Between releases, builds are pre-releas
 
 1. **The release environment.** In the repository's Settings > Environments, create `release` and add the maintainers as required
    reviewers. Allow deployments from tags matching `v*` only.
-2. **NuGet (optional).** To publish to nuget.org, create an API key there scoped to *Push* for the `EvidenceHound.*` glob, with an
+2. **GitHub Pages.** In Settings > Pages, serve the site from the `gh-pages` branch, root folder. The release workflow writes that
+   branch; the site is at <https://tnbozman.github.io/evidence-hound/>.
+3. **NuGet (optional).** To publish to nuget.org, create an API key there scoped to *Push* for the `EvidenceHound.*` glob, with an
    expiry, and add it to the `release` environment as the secret `NUGET_API_KEY`. Without it, the packages are attached to the GitHub
    release only. When nuget.org trusted publishing is set up for this repository, the key can be removed.
 
