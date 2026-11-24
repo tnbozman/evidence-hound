@@ -76,6 +76,29 @@ public sealed partial class ExampleRepoTests : IDisposable
     }
 
     [Fact]
+    public void Ai_governance_walkthrough_says_why_before_what_and_the_training_builds_on_it()
+    {
+        // s11-08: register, screen, set the tier, record an impact assessment and a test date, run hound, read the AI6 rows; each step
+        // opens with what it is for. The 30-minute training outline follows the walkthrough.
+        var walkthrough = File.ReadAllText(Path.Combine(RepoRoot, "docs", "tutorials", "ai-governance.md"));
+        var steps = walkthrough.Split("\n## ").Skip(1).Where(s => char.IsAsciiDigit(s[0])).ToArray();
+        steps.Length.ShouldBeGreaterThanOrEqualTo(7);
+        foreach (var step in steps)
+        {
+            step.Split('\n', 3)[2].TrimStart().ShouldStartWith("**What it is for:**", Case.Sensitive, step.Split('\n')[0]);
+        }
+
+        foreach (var command in new[] { "hound scope validate", "hound scope plan", "hound scope apply", "hound run", "hound programme list", "runbooks/ai-screening.md", "AI6-4.1", "AI6-5.1" })
+        {
+            walkthrough.ShouldContain(command, Case.Sensitive);
+        }
+
+        var training = File.ReadAllText(Path.Combine(RepoRoot, "docs", "training", "ai-governance.md"));
+        training.ShouldContain("../tutorials/ai-governance.md", Case.Sensitive);
+        training.ShouldContain("30 minutes", Case.Sensitive);
+    }
+
+    [Fact]
     public void Ssp_guide_covers_what_people_write_and_how_a_version_is_approved()
     {
         var guide = File.ReadAllText(Path.Combine(RepoRoot, "docs", "govern", "system-security-plan.md"));
