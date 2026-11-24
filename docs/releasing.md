@@ -29,6 +29,9 @@ The version comes from the tag (MinVer). Between releases, builds are pre-releas
 
 1. On the sprint branch, write the changelog and commit it with the release's other changes:
    `make changelog VERSION=1.0.0` (needs git-cliff: `pip install --require-hashes -r tools/changelog/requirements.txt`).
+   In the same commit, move the deployments' pins to the new version: `HOUND_RUNNER_IMAGE` in `deploy/compose/.env.example` and
+   `examples/compliance-repo/deploy/deploy.env`, `EVIDENCE_HOUND_REF` in the template's `compliance.yml`, and the image in the first
+   deployment tutorial. A unit test checks that they agree.
 2. Merge the sprint's pull request into `main` when CI is green.
 3. Tag the merge commit and push the tag:
 
