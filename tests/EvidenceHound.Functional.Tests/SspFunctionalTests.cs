@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using EvidenceHound.Cli;
+using EvidenceHound.Core.Scope;
 
 namespace EvidenceHound.Functional.Tests;
 
@@ -101,6 +102,77 @@ public sealed class SspFunctionalTests(CisoAssistantFixture ciso)
         var mfa = markdown.Split('\n').Single(l => l.StartsWith("| ISM-1504 |", StringComparison.Ordinal));
         mfa.ShouldContain("| Technical |", Case.Sensitive, mfa);
         mfa.ShouldMatch(@"\| (Consumer|Shared|Outsourced service provider|Cloud service provider|Not applicable) \| (Effective|Ineffective|Not implemented|Not applicable|Not assessed) \|", mfa);
+    }
+
+    [Fact]
+    public async Task Signs_publishes_and_diffs_two_versions_of_the_plan()
+    {
+        // s11-05: sign 1.0, publish it, change the plan's purpose, sign 1.1 and publish it: two revisions of one evidence item, and a diff of what changed.
+        var ct = TestContext.Current.CancellationToken;
+        var scope = CopyOfExampleScope();
+        var sections = Directory.CreateDirectory(Path.Combine(Directory.GetParent(scope)!.FullName, "ssp")).FullName;
+        var purpose = Path.Combine(sections, "purpose.md");
+        var output = Directory.CreateDirectory(Path.Combine(CisoAssistantFixture.RepoRoot, "test-results", "ssp")).FullName;
+        var signOffs = new List<string>();
+
+        async Task<string> SignAsync(string version, string purposeText)
+        {
+            await File.WriteAllTextAsync(purpose, purposeText, ct);
+            var plan = Ssp.Replace("version: \"0.1\"", $"version: \"{version}\"", StringComparison.Ordinal);
+            await File.WriteAllTextAsync(Path.Combine(scope, "ssp.yaml"), plan + Lines(signOffs), ct);
+            var snapshot = Path.Combine(output, $"ssp-essential-eight-{version}.snapshot.json");
+            var (buildExit, draft, _) = await RunWithLogAsync(["ssp", "build", "--programme", "essential-eight", "--scope", scope, "--snapshot-out", snapshot], ct);
+            buildExit.ShouldBe(ExitCodes.Ok, draft);
+            draft.ShouldContain("(DRAFT)", Case.Sensitive, draft);
+            signOffs.Add($"      - {{version: \"{version}\", by: ceo@example.com, date: \"2026-11-24\", sha256: {SspVersion.Hash(draft)}}}");
+            await File.WriteAllTextAsync(Path.Combine(scope, "ssp.yaml"), plan + Lines(signOffs), ct);
+
+            var (signedExit, signed, _) = await RunWithLogAsync(["ssp", "build", "--programme", "essential-eight", "--scope", scope, "--from-snapshot", snapshot], ct);
+            signedExit.ShouldBe(ExitCodes.Ok, signed);
+            signed.ShouldContain("> Approved by ceo@example.com on 2026-11-24.", Case.Sensitive, signed);
+            var (publishExit, published, log) = await RunWithLogAsync(["ssp", "publish", "--programme", "essential-eight", "--scope", scope, "--snapshot", snapshot], ct);
+            publishExit.ShouldBe(ExitCodes.Ok, published + log);
+            log.ShouldNotContain("No audit report attached", Case.Sensitive, log);
+            return snapshot;
+        }
+
+        var first = await SignAsync("1.0", "Example corporate IT runs mail and files.\n");
+        var second = await SignAsync("1.1", "Example corporate IT runs mail, files and laptops.\n");
+        var (diffExit, diff, _) = await RunWithLogAsync(["ssp", "diff", first, second], ct);
+        await File.WriteAllTextAsync(Path.Combine(output, "ssp-essential-eight-1.0-1.1.diff.md"), diff, ct);
+
+        diffExit.ShouldBe(ExitCodes.Ok, diff);
+        diff.ShouldContain("| section | purpose |", Case.Sensitive, diff);
+        var evidence = (await GetAsync("evidences/?search=SSP-ESSENTIAL-EIGHT", ct))["results"]!.AsArray()
+            .Where(e => e!["ref_id"]!.GetValue<string>() == "SSP-ESSENTIAL-EIGHT").ShouldHaveSingleItem()!;
+        var revisions = await GetAsync($"evidence-revisions/?evidence={evidence["id"]!.GetValue<string>()}", ct);
+        revisions["results"]!.AsArray().Count.ShouldBe(2, revisions.ToJsonString());
+    }
+
+    private static string Lines(List<string> signOffs) => signOffs.Count == 0 ? "" : "\n    sign_offs:\n" + string.Join('\n', signOffs) + "\n";
+
+    private async Task<(int ExitCode, string Output, string Log)> RunWithLogAsync(string[] args, CancellationToken ct)
+    {
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+        var exitCode = await HoundCli.RunAsync(
+            args,
+            output,
+            error,
+            configureLogging: null,
+            new Dictionary<string, string?> { ["HOUND_CA_URL"] = ciso.ApiUrl.ToString(), ["HOUND_CA_TOKEN"] = ciso.Token },
+            ct);
+        return (exitCode, output.ToString(), error.ToString());
+    }
+
+    private async Task<JsonNode> GetAsync(string path, CancellationToken ct)
+    {
+        using var http = new HttpClient();
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri(ciso.ApiUrl, path));
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Token", ciso.Token);
+        using var response = await http.SendAsync(request, ct);
+        response.EnsureSuccessStatusCode();
+        return JsonNode.Parse(await response.Content.ReadAsStringAsync(ct))!;
     }
 
     private static string CopyOfExampleScope()
