@@ -31,6 +31,9 @@ public sealed record ScopeDocument(ScopeSetup Setup, IReadOnlyList<ScopeControl>
 
     /// <summary><c>scope/evidence-plan.yaml</c>: how each control's evidence arrives, from whom and how often; null when the repo has no such file.</summary>
     public ScopeEvidencePlan? EvidencePlan { get; init; }
+
+    /// <summary><c>scope/ssp.yaml</c>: the system security plans, one per programme (s11-02); empty when the repo has no such file.</summary>
+    public IReadOnlyList<ScopeSsp> Ssps { get; init; } = [];
 }
 
 /// <summary><c>scope/setup.yaml</c>: the root folder, the frameworks to load and the domains.</summary>
