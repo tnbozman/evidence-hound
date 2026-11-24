@@ -99,6 +99,17 @@ public sealed partial class ExampleRepoTests : IDisposable
     }
 
     [Fact]
+    public void Ai6_audit_lists_the_ai_policy_document_for_the_governance_and_risk_requirements()
+    {
+        var audit = File.ReadAllText(Path.Combine(Repo, "scope", "audits", "ex-ai6-2026.yaml"));
+
+        audit.ShouldContain("- id: ai-policy");
+        audit.ShouldContain("files: [documents/ai-policy.pdf]");
+        audit.ShouldContain("requirements: [AI6-1.4, AI6-3.1]");
+        File.Exists(Path.Combine(Repo, "documents", "ai-policy.pdf")).ShouldBeTrue();
+    }
+
+    [Fact]
     public void Ssp_guide_covers_what_people_write_and_how_a_version_is_approved()
     {
         var guide = File.ReadAllText(Path.Combine(RepoRoot, "docs", "govern", "system-security-plan.md"));
