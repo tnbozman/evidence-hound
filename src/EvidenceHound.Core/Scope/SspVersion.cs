@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -167,7 +168,62 @@ public sealed record SspChange(string Area, string Item, string? Before, string?
 /// <summary>What changed between two versions (s11-05), boundary and inventory first. Pure.</summary>
 public static class SspDiff
 {
-    public static IReadOnlyList<SspChange> Of(SspSnapshot before, SspSnapshot after) => throw new NotImplementedException();
+    private static readonly string[] BoundaryAreas = ["boundary", "inventory"];
 
-    public static string Markdown(string from, string to, IReadOnlyList<SspChange> changes) => throw new NotImplementedException();
+    public static IReadOnlyList<SspChange> Of(SspSnapshot before, SspSnapshot after)
+    {
+        ArgumentNullException.ThrowIfNull(before);
+        ArgumentNullException.ThrowIfNull(after);
+        var (a, b) = (before.Document, after.Document);
+        return
+        [
+            .. Changed("boundary", "system name", a.SystemName.Value, b.SystemName.Value),
+            .. Changed("boundary", "perimeter", a.Perimeter.Value, b.Perimeter.Value),
+            .. Changed("boundary", "classification", a.Classification.Value, b.Classification.Value),
+            .. Compare("inventory", a.Inventory, b.Inventory, s => s.Name.Value, s => $"{s.Type.Value}; owner {s.Owner.Value}"),
+            .. Compare("supplier", a.ExternalServices, b.ExternalServices, s => s.System.Value, s => $"{s.Solution.Value} from {s.Supplier.Value}"),
+            .. Compare("status", a.Requirements, b.Requirements, r => r.Ref.Value, r => r.Status.Value),
+            .. Compare("statement", a.Requirements, b.Requirements, r => r.Ref.Value, r => r.Statement.Value),
+            .. Compare("section", before.Sections.ToArray(), after.Sections.ToArray(), s => s.Key, s => s.Value),
+        ];
+    }
+
+    public static string Markdown(string from, string to, IReadOnlyList<SspChange> changes)
+    {
+        ArgumentNullException.ThrowIfNull(changes);
+        var text = new StringBuilder().Append(CultureInfo.InvariantCulture, $"## Changes from version {from} to {to}\n\n");
+        if (changes.Count == 0)
+        {
+            return text.Append("No changes.\n").ToString();
+        }
+
+        if (changes.Any(c => BoundaryAreas.Contains(c.Area, StringComparer.Ordinal)))
+        {
+            text.Append("The boundary or inventory changed: this usually needs a new major version.\n\n");
+        }
+
+        text.Append("| Area | Item | Before | After |\n| --- | --- | --- | --- |\n");
+        foreach (var c in changes)
+        {
+            text.Append(CultureInfo.InvariantCulture, $"| {c.Area} | {c.Item} | {Cell(c.Before)} | {Cell(c.After)} |\n");
+        }
+
+        return text.ToString();
+    }
+
+    private static IEnumerable<SspChange> Changed(string area, string item, string? before, string? after) =>
+        before == after ? [] : [new SspChange(area, item, before, after)];
+
+    /// <summary>Items added, removed or changed, by key in ordinal order.</summary>
+    private static IEnumerable<SspChange> Compare<T>(string area, IReadOnlyList<T> before, IReadOnlyList<T> after, Func<T, string?> key, Func<T, string?> value)
+    {
+        var a = before.Where(x => key(x) is not null).GroupBy(x => key(x)!, StringComparer.Ordinal).ToDictionary(g => g.Key, g => value(g.First()), StringComparer.Ordinal);
+        var b = after.Where(x => key(x) is not null).GroupBy(x => key(x)!, StringComparer.Ordinal).ToDictionary(g => g.Key, g => value(g.First()), StringComparer.Ordinal);
+        return a.Keys.Union(b.Keys, StringComparer.Ordinal).Order(StringComparer.Ordinal)
+            .Where(k => !a.TryGetValue(k, out var old) || !b.TryGetValue(k, out var current) || old != current)
+            .Select(k => new SspChange(area, k, a.GetValueOrDefault(k), b.GetValueOrDefault(k)));
+    }
+
+    private static string Cell(string? value) =>
+        value is null ? "-" : value.Replace("|", "\\|", StringComparison.Ordinal).Replace("\n", "<br>", StringComparison.Ordinal);
 }
