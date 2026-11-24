@@ -45,11 +45,21 @@ public class TaskTemplatePlanTests
     {
         var items = Declared().Where(d => d.Kind == ScopeKind.Evidence).ToDictionary(d => d.Key, d => d.Fields);
 
-        items["EV-ADMIN-REVIEW"]["labels"].ShouldBe("method:manual");
+        // CISO Assistant takes a label only as letters, digits, underscores and hyphens, at most 36 (the s10-04 trial's 400s): the method,
+        // and the collector's name when it fits.
+        items["EV-ADMIN-REVIEW"]["labels"].ShouldBe("manual");
         items["EV-ADMIN-REVIEW"]["owner"].ShouldBe("Example 365 owners");
-        items["EV-MFA"]["labels"].ShouldBe("collector:example-m365, method:automated");
+        items["EV-MFA"]["labels"].ShouldBe("automated, example-m365");
         items["EV-MFA"]["controls"].ShouldBe("AC-MFA");
         items["EV-MFA"].ContainsKey("owner").ShouldBeFalse();
+    }
+
+    [Fact]
+    public void A_collector_name_that_is_no_label_is_left_out()
+    {
+        var plan = EvidencePlanScopeTests.Plan.Replace("collector: example-m365", "collector: example-m365-identity-and-device-baseline", StringComparison.Ordinal);
+
+        Declared(plan).Single(d => d.Kind == ScopeKind.Evidence && d.Key == "EV-MFA").Fields["labels"].ShouldBe("automated");
     }
 
     [Fact]
@@ -71,14 +81,14 @@ public class TaskTemplatePlanTests
         Declared().Single(d => d.Kind == ScopeKind.Team && d.Key == "Example 365 owners").Fields["email"].ShouldBe("owners-365@example.com");
     }
 
-    private static IReadOnlyList<ScopeObject> Declared()
+    private static IReadOnlyList<ScopeObject> Declared(string plan = EvidencePlanScopeTests.Plan)
     {
         var parsed = ScopeLoader.Parse(
             new ScopeSource("scope/setup.yaml", ScopeFixture.Setup),
             new ScopeSource("scope/controls.yaml", ScopeFixture.Controls),
             [new ScopeSource(ScopeFixture.AuditPath, ScopeFixture.Audit)],
             new ScopeSource("scope/access.yaml", EvidencePlanScopeTests.Access),
-            evidencePlan: new ScopeSource(EvidencePlanScopeTests.PlanPath, EvidencePlanScopeTests.Plan));
+            evidencePlan: new ScopeSource(EvidencePlanScopeTests.PlanPath, plan));
         parsed.Problems.ShouldBeEmpty();
         var inputs = ScopeInputs.None with
         {

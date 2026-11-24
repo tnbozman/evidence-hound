@@ -42,8 +42,8 @@ public sealed class TaskTemplateClientTests : IDisposable
         Respond("GET", "/api/actors/", SupplierClientTests.List(
             new JsonObject { ["id"] = "a-grc", ["type"] = "team", ["specific"] = "t-grc", ["str"] = "GRC team" },
             new JsonObject { ["id"] = "a-owners", ["type"] = "team", ["specific"] = "t-owners", ["str"] = "Example 365 owners" }));
-        Respond("GET", "/api/filtering-labels/", SupplierClientTests.List(new JsonObject { ["id"] = "l-manual", ["label"] = "method:manual" }));
-        Respond("POST", "/api/filtering-labels/", new JsonObject { ["id"] = "l-new", ["label"] = "collector:example-m365" });
+        Respond("GET", "/api/filtering-labels/", SupplierClientTests.List(new JsonObject { ["id"] = "l-manual", ["label"] = "manual" }));
+        Respond("POST", "/api/filtering-labels/", new JsonObject { ["id"] = "l-new", ["label"] = "example-m365" });
         Respond("GET", "/api/applied-controls/", SupplierClientTests.List(new JsonObject { ["id"] = "ac-mfa", ["ref_id"] = "AC-MFA", ["name"] = "Multi-factor authentication", ["folder"] = Ref("f-example", "Example Pty Ltd") }));
         Respond("GET", "/api/evidences/", SupplierClientTests.List(
             new JsonObject
@@ -53,7 +53,7 @@ public sealed class TaskTemplateClientTests : IDisposable
                 ["name"] = "EV-ADMIN-REVIEW: Multi-factor authentication",
                 ["folder"] = Ref("f-example", "Example Pty Ltd"),
                 ["owner"] = new JsonArray(Ref("a-owners", "Example 365 owners")),
-                ["filtering_labels"] = new JsonArray(Ref("l-manual", "method:manual")),
+                ["filtering_labels"] = new JsonArray(Ref("l-manual", "manual")),
                 ["applied_controls"] = new JsonArray(Ref("ac-mfa", "Multi-factor authentication")),
                 ["description"] = "[hound scope 0123456789abcdef]",
             },
@@ -144,9 +144,9 @@ public sealed class TaskTemplateClientTests : IDisposable
     {
         (await Create(ScopeKind.Evidence, "EV-MFA", [],
             ("name", "EV-MFA: Multi-factor authentication"), ("domain", "Example Pty Ltd"), ("owner", "Example 365 owners"), ("controls", "AC-MFA"),
-            ("labels", "collector:example-m365, method:manual"))).Value();
+            ("labels", "example-m365, manual"))).Value();
 
-        Body("/api/filtering-labels/")["label"]!.GetValue<string>().ShouldBe("collector:example-m365");
+        Body("/api/filtering-labels/")["label"]!.GetValue<string>().ShouldBe("example-m365");
         var body = Body("/api/evidences/");
         (body["ref_id"]!.GetValue<string>(), body["name"]!.GetValue<string>(), body["folder"]!.GetValue<string>()).ShouldBe(("EV-MFA", "EV-MFA: Multi-factor authentication", "f-example"));
         Ids(body, "owner").ShouldBe(["a-owners"]);
@@ -185,7 +185,7 @@ public sealed class TaskTemplateClientTests : IDisposable
         }, ignoreOrder: true);
         held.Single(a => a.Held.Kind == ScopeKind.TaskTemplate).AppliedState.ShouldBe("0123456789abcdef");
         var evidence = held.Single(a => a.Held.Kind == ScopeKind.Evidence).Held;
-        (evidence.Key, evidence.Fields["owner"], evidence.Fields["labels"], evidence.Fields["controls"]).ShouldBe(("EV-ADMIN-REVIEW", "Example 365 owners", "method:manual", "AC-MFA"));
+        (evidence.Key, evidence.Fields["owner"], evidence.Fields["labels"], evidence.Fields["controls"]).ShouldBe(("EV-ADMIN-REVIEW", "Example 365 owners", "manual", "AC-MFA"));
         held.Where(a => a.Held.Kind == ScopeKind.Document).Select(a => a.Held.Key).ShouldBe(["identity-policy"]);
         held.Single(a => a.Held.Kind == ScopeKind.Team && a.Held.Key == "Example 365 owners").Held.Fields["email"].ShouldBe("owners-365@example.com");
         (await _ca.Scope.ReadAsync(query with { EvidencePlan = false }, _ct)).Value().ShouldNotContain(a => a.Held.Kind == ScopeKind.TaskTemplate);
