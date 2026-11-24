@@ -245,6 +245,36 @@ public sealed partial class ExampleRepoTests : IDisposable
     }
 
     [Fact]
+    public void Example_declares_the_ai6_programme_with_two_ai_systems_and_its_audit()
+    {
+        // s11-15: the AI6 programme at Foundations, its register, and two fictional AI systems, one deliberately never tested, so a run
+        // shows AI6-4.1 met and AI6-5.1 not met. The scope validates in Example_compliance_repo_validates.
+        var scope = Path.Combine(Repo, "scope");
+        var parsed = ScopeLoader.Parse(
+            new ScopeSource("setup.yaml", File.ReadAllText(Path.Combine(scope, "setup.yaml"))), null,
+            [new ScopeSource("audits/ex-ai6-2026.yaml", File.ReadAllText(Path.Combine(scope, "audits", "ex-ai6-2026.yaml")))]);
+
+        parsed.Problems.ShouldBeEmpty();
+        var programme = parsed.Scope.Setup.Programmes.Single(p => p.Id == "ai6");
+        (programme.Framework.Value, programme.Audit.Value, programme.Register?.Of).ShouldBe(("urn:evidence-hound:risk:framework:ai6", "EX-AI6-2026", "ai_systems"));
+        programme.Groups.ShouldBe(["F"]);
+        var audit = parsed.Scope.Audits.ShouldHaveSingleItem();
+        audit.Groups.Select(g => g.Value).ShouldBe(["F"]);
+
+        var entries = AiRegisterChecks.Entries(parsed.Scope.Setup);
+        entries.Select(e => (e.System, e.Ai.Tier, e.Ai.Use)).ShouldBe(
+            [("Example ticket triage", AiRiskTier.Low, AiUse.Built), ("Example proposal assistant", AiRiskTier.Medium, AiUse.Customised)]);
+        audit.Systems.Select(s => s.Value).ShouldBe(entries.Select(e => e.System));
+        var findings = AiRegisterChecks.Assess(entries, new DateOnly(2026, 11, 24)).ToDictionary(f => f.CheckId, f => f.Outcome);
+        (findings["ai.register_complete"], findings["ai.owner_assigned"], findings["ai.tested_before_use"]).ShouldBe(
+            (Core.Checks.CheckOutcome.Pass, Core.Checks.CheckOutcome.Pass, Core.Checks.CheckOutcome.Fail));
+
+        var config = File.ReadAllText(Path.Combine(Repo, "hound.yaml"));
+        config.ShouldContain("type: ai-register");
+        config.ShouldContain("compliance_assessment: EX-AI6-2026");
+    }
+
+    [Fact]
     public void Mappings_and_snapshots_are_the_same_as_the_repository_ones()
     {
         foreach (var (copy, original) in new[]
@@ -253,6 +283,9 @@ public sealed partial class ExampleRepoTests : IDisposable
             ("mappings/example.yaml", "mappings/example.yaml"),
             ("frameworks/essential-eight-2023.json", "frameworks/essential-eight-2023.json"),
             ("frameworks/asd-essentials-enterprise-it.json", "frameworks/asd-essentials-enterprise-it.json"),
+            ("mappings/ai6.yaml", "mappings/ai6.yaml"),
+            ("frameworks/ai6.yaml", "frameworks/ai6.yaml"),
+            ("frameworks/ai6.json", "frameworks/ai6.json"),
         })
         {
             WithoutSchemaComment(Path.Combine(Repo, copy)).ShouldBe(WithoutSchemaComment(Path.Combine(RepoRoot, original)), copy);
