@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using EvidenceHound.Core.Frameworks;
 using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Scope;
@@ -59,6 +60,7 @@ public sealed record RequirementPosture(string Urn, string? RefId, string? Paren
 public sealed record ResultCount(
     string Group, string? ParentUrn, int Compliant, int PartiallyCompliant, int NonCompliant, int NotAssessed, int NotApplicable)
 {
+    [JsonIgnore]
     public int Total => Compliant + PartiallyCompliant + NonCompliant + NotAssessed + NotApplicable;
 }
 
@@ -84,6 +86,7 @@ public sealed record AcceptanceItem(AcceptanceKind Kind, string RefId, string Na
     public string? Link { get; init; }
 
     /// <summary>Whether it is in force: accepted or approved, and not revoked, rejected, resolved or expired.</summary>
+    [JsonIgnore]
     public bool Active => State is "accepted" or "approved";
 }
 
@@ -92,6 +95,7 @@ public sealed record RemediationItem(string RefId, string Name, string? Owner, D
 {
     public string? Link { get; init; }
 
+    [JsonIgnore]
     public bool Open => ClosedOn is null && Status is not ("closed" or "resolved" or "done" or "active" or "dismissed" or "deprecated");
 }
 
@@ -125,5 +129,6 @@ public sealed record DueItem(DueKind Kind, string Name, string? Owner, DateOnly 
 {
     public string? Link { get; init; }
 
+    [JsonIgnore]
     public bool Done => Status is "completed" or "cancelled";
 }
