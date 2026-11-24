@@ -122,7 +122,7 @@ Added at the maintainer's request (2026-11-23): "trial, onboard and maintain evi
 - The rehearsal notes themselves, under each task, and the CI trial job green.
 
 ### s10-06 Sensitive data on suppliers and systems (added 2026-11-23)
-- [ ] Done
+- [x] Done
 
 Decided (maintainer, 2026-11-23): add it in s10 and make it broader than CUI. A small defence supplier is asked about four kinds of sensitive data, and a prime, an auditor or the security committee needs to see which suppliers and systems handle each kind and on what authority.
 
@@ -145,6 +145,10 @@ Decided (maintainer, 2026-11-23): add it in s10 and make it broader than CUI. A 
 
 **Functional check**
 - Apply the tutorial's suppliers with data kinds to the local CISO Assistant and filter solutions by `data:cui`; the machine-shop rehearsal produces the prime's list with `hound supplier list --data cui`.
+
+**Functional check (2026-11-24, CI run 45308123901 on 0e92b86, all jobs green)**
+- `SensitiveDataFunctionalTests` applies a fictional supplier whose solution stores CUI (with a FedRAMP Moderate equivalent authority) and personal information to CISO Assistant v4.3.4: the solution carries the `data-cui` and `data-pii` filtering labels, filtering solutions by `data-cui` finds it, its description ends with the data and the authority, a re-plan lists no changes, and `hound supplier list --data cui` prints the prime's row with the authority, evidence and expiry.
+- Deviations: labels are `data-<kind>`, not `data:<kind>`, as CISO Assistant takes labels only as `^[\w-]{1,36}$`. A system supplied through a third party with no `solution` is checked against all of that third party's solutions. The prime's list comes from the functional test, not a separate machine-shop rerun; s10-05 uses it in the persona rehearsal.
 
 ### s10-07 Review queue and guided weekly session (added 2026-11-24)
 - [ ] Done
