@@ -102,15 +102,44 @@ public static class ScopeExport
                     yaml.Append(CultureInfo.InvariantCulture, $"      - name: {Scalar(system.Key)}\n");
                     Optional(yaml, "        ", "ref_id", Field(system, "ref_id"));
                     yaml.Append(CultureInfo.InvariantCulture, $"        type: {Field(system, "type") ?? "primary"}\n");
-                    Optional(yaml, "        ", "description", Field(system, "description"));
+                    var (description, ai) = AiRegister.Read(Field(system, "description"), Split(Field(system, "labels")), new SourceLine("setup.yaml", 0));
+                    Optional(yaml, "        ", "description", description);
                     Optional(yaml, "        ", "owner", Field(system, "owner"));
                     List(yaml, "        ", "parents", Split(Field(system, "parents")));
+                    Ai(yaml, ai);
                 }
             }
         }
 
         return yaml.ToString();
     }
+
+    /// <summary>A system's AI register entry (s11-12), as <see cref="AiRegister.Read"/> recovered it from CISO Assistant.</summary>
+    private static void Ai(StringBuilder yaml, AiRegistration? ai)
+    {
+        if (ai is null)
+        {
+            return;
+        }
+
+        yaml.Append("        ai:\n")
+            .Append(CultureInfo.InvariantCulture, $"          tier: {Snake(ai.Tier)}\n")
+            .Append(CultureInfo.InvariantCulture, $"          screened_on: {Scalar(Day(ai.ScreenedOn))}\n")
+            .Append(CultureInfo.InvariantCulture, $"          use: {Snake(ai.Use)}\n")
+            .Append(CultureInfo.InvariantCulture, $"          oversight: {Snake(ai.Oversight)}\n")
+            .Append(CultureInfo.InvariantCulture, $"          oversight_note: {Scalar(ai.OversightNote)}\n");
+        Optional(yaml, "          ", "impact_assessment", ai.ImpactAssessment is { } impact ? Snake(impact) : null);
+        Optional(yaml, "          ", "impact_assessed_on", ai.ImpactAssessedOn is { } assessed ? Day(assessed) : null);
+        Optional(yaml, "          ", "in_use_from", ai.InUseFrom is { } from ? Day(from) : null);
+        Optional(yaml, "          ", "last_tested_on", ai.LastTestedOn is { } tested ? Day(tested) : null);
+        Optional(yaml, "          ", "retired_on", ai.RetiredOn is { } retired ? Day(retired) : null);
+    }
+
+    private static string Snake<T>(T value)
+        where T : struct, Enum =>
+        AiRegister.Code(value).Replace('-', '_');
+
+    private static string Day(DateOnly day) => day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
     private static string Controls(ScopeObject[] controls, HashSet<string> documentIds)
     {

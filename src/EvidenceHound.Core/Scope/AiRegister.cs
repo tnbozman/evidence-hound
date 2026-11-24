@@ -95,6 +95,77 @@ public static class AiRegister
         return description is null ? entry : $"{description}\n\n{entry}";
     }
 
+    /// <summary>
+    /// The register entry read back from what CISO Assistant holds (for <c>hound scope export</c>): the labels give the tier, use and oversight, and
+    /// the lines <see cref="Description"/> added give the rest. Returns the description without those lines, and null for the entry when the
+    /// system has no <c>ai-system</c> label or its lines are not as hound wrote them.
+    /// </summary>
+    public static (string? Description, AiRegistration? Ai) Read(string? description, IReadOnlyCollection<string> labels, SourceLine at)
+    {
+        ArgumentNullException.ThrowIfNull(labels);
+        if (!labels.Contains(SystemLabel) || description is null)
+        {
+            return (description, null);
+        }
+
+        var start = description.StartsWith("AI register: ", StringComparison.Ordinal) ? 0 : description.LastIndexOf("\n\nAI register: ", StringComparison.Ordinal);
+        var lines = start < 0 ? [] : description[(start == 0 ? 0 : start + 2)..].Split('\n');
+        var ai = lines.Length == 3 && lines[1].StartsWith("Oversight: ", StringComparison.Ordinal) && lines[2].EndsWith('.')
+            ? Entry(labels, lines[1]["Oversight: ".Length..], lines[2][..^1].Split("; "), at)
+            : null;
+        return ai is null ? (description, null) : (start == 0 ? null : description[..start], ai);
+    }
+
+    private static AiRegistration? Entry(IReadOnlyCollection<string> labels, string note, string[] dates, SourceLine at)
+    {
+        var tier = FromLabel<AiRiskTier>(labels, "ai-tier-", "");
+        var use = FromLabel<AiUse>(labels, "ai-use-", "");
+        var oversight = FromLabel<AiOversight>(labels, "ai-oversight-", "human-");
+        if (tier is null || use is null || oversight is null || dates.Length is < 4 or > 5 || DayAfter(dates[0], "Screened ") is not { } screened)
+        {
+            return null;
+        }
+
+        var impact = dates[1] == "impact assessment not recorded" ? null : FromWords<AiImpactAssessment>(dates[1], "impact assessment ");
+        var assessedOn = DayAfter(dates[1], "impact assessment approved ");
+        var inUse = DayAfter(dates[2], "in use from ");
+        var tested = DayAfter(dates[3], "last tested ");
+        var retired = dates.Length == 5 ? DayAfter(dates[4], "retired ") : null;
+        var valid = (impact is not null || dates[1] == "impact assessment not recorded" || assessedOn is not null)
+            && (inUse is not null || dates[2] == "not yet in use")
+            && (tested is not null || dates[3] == "not tested")
+            && (dates.Length == 4 || retired is not null)
+            && (retired is not null) == labels.Contains("ai-retired");
+        return valid
+            ? new AiRegistration(tier.Value, screened, use.Value, oversight.Value, note, at)
+            {
+                ImpactAssessment = assessedOn is null ? impact : AiImpactAssessment.Approved,
+                ImpactAssessedOn = assessedOn,
+                InUseFrom = inUse,
+                LastTestedOn = tested,
+                RetiredOn = retired,
+            }
+            : null;
+    }
+
+    private static T? FromLabel<T>(IReadOnlyCollection<string> labels, string prefix, string codePrefix)
+        where T : struct, Enum =>
+        labels.Where(l => l.StartsWith(prefix, StringComparison.Ordinal)).Select(l => FromCode<T>(codePrefix + l[prefix.Length..])).FirstOrDefault(v => v is not null);
+
+    private static T? FromWords<T>(string text, string prefix)
+        where T : struct, Enum =>
+        text.StartsWith(prefix, StringComparison.Ordinal) ? FromCode<T>(text[prefix.Length..].Replace(' ', '-')) : null;
+
+    private static T? FromCode<T>(string code)
+        where T : struct, Enum =>
+        Enum.GetValues<T>().Where(v => Code(v) == code).Select(v => (T?)v).FirstOrDefault();
+
+    private static DateOnly? DayAfter(string text, string prefix) =>
+        text.StartsWith(prefix, StringComparison.Ordinal)
+        && DateOnly.TryParseExact(text[prefix.Length..], "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var day)
+            ? day
+            : null;
+
     /// <summary>An enum value as the scope files write it, with hyphens: <c>HumanOnTheLoop</c> as <c>human-on-the-loop</c>.</summary>
     public static string Code<T>(T value)
         where T : struct, Enum =>
