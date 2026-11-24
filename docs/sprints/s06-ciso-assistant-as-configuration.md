@@ -4,7 +4,7 @@ Status: Done
 
 **Goal:** an organisation's assurance structure in CISO Assistant is declared in version-controlled YAML, then validated, previewed and applied by `hound` instead of by clicking. One collection run feeds several framework audits, CISO Assistant changes only when a check's state changes, and audits run in periods that close with a sign-off. The errors, schemas and plans are precise enough for a person or an AI assistant to get the configuration right through ordinary pull requests.
 
-**Why now:** Essential Eight ML2 is the audit of record today and needs requirement rows addressed by URN to publish correctly. In a few months the ASD Essentials for enterprise IT replaces it (s13), and a few months after that NIST SP 800-171 runs alongside the Essentials (s16). Both need requirement rows addressed by URN and several audits per run, and both are easier to set up from declared scope than by hand. See [the migration plan](../migrations/essential-eight-to-asd-essentials.md).
+**Why now:** Essential Eight ML2 is the audit of record today and needs requirement rows addressed by URN to publish correctly. In a few months the ASD Essentials for enterprise IT replaces it (s14), and a few months after that NIST SP 800-171 runs alongside the Essentials (s17). Both need requirement rows addressed by URN and several audits per run, and both are easier to set up from declared scope than by hand. See [the migration plan](../migrations/essential-eight-to-asd-essentials.md).
 
 Principles for every task:
 - **Git is the source of truth.** `hound` never deletes what it did not create, and never deletes at all without `--prune`. Changes made in the CISO Assistant UI show up as drift in `scope plan`.
@@ -42,11 +42,11 @@ All examples use the fictional Example Pty Ltd and `example.com`.
 ### s06-02 Essential Eight 2023 ML2 mapping for the checks we have
 - [x] Done
 
-**Story:** As a compliance owner whose audit of record is Essential Eight ML2, I want the checks that exist today mapped to the Essential Eight (November 2023) framework, so that collection runs update my real audit now rather than after s11 (the Essential Eight mapping's completion).
+**Story:** As a compliance owner whose audit of record is Essential Eight ML2, I want the checks that exist today mapped to the Essential Eight (November 2023) framework, so that collection runs update my real audit now rather than after s12 (the Essential Eight mapping's completion).
 
 **Acceptance criteria**
 - `mappings/essential-eight-2023.yaml` targets `urn:intuitem:risk:framework:essential-eight-2023`, never the legacy `essential-eight`. ISM controls repeated across strategies use `rows: all` (s06-01).
-- It maps every check from the M365 collector (s05) and the manual collector to ML1 and ML2 requirements. Requirements no check covers yet are listed under `manual_only` with a suggested manual source. The file grows as each later collector lands (s08, s09) and is completed in s11.
+- It maps every check from the M365 collector (s05) and the manual collector to ML1 and ML2 requirements. Requirements no check covers yet are listed under `manual_only` with a suggested manual source. The file grows as each later collector lands (s08, s09) and is completed in s12.
 - The example config's Essential Eight audit selects maturity levels 1 and 2; ML3-only requirements are skipped, not reported as errors.
 - A framework snapshot for `essential-eight-2023` is committed under `frameworks/`.
 
@@ -62,7 +62,7 @@ All examples use the fictional Example Pty Ltd and `example.com`.
 ### s06-03 Several audits from one run
 - [x] Done
 
-Moved from the NIST sprint (now s16-02), because the Essentials parallel run needs it before 800-171 does.
+Moved from the NIST sprint (now s17-02), because the Essentials parallel run needs it before 800-171 does.
 
 **Story:** As a compliance owner, I want one collection run to update every audit that uses its checks, so that one evidence stream serves the Essential Eight and the Essentials during the migration, then the Essentials and NIST SP 800-171.
 
@@ -114,8 +114,8 @@ Moved from the NIST sprint (now s16-02), because the Essentials parallel run nee
 **Acceptance criteria**
 - `docs/ciso-assistant-configuration.md` lists each object type with: configuration or runtime data; whether `hound` manages it in this sprint, later, or never; its REST endpoint; its stable key; and how create, update, lock and delete behave. It is checked against the local CISO Assistant v4.3.4 and its OpenAPI schema (`/api/schema/`), not only the user guides.
 - In this sprint: libraries (frameworks, mappings, reference controls, risk matrices), domains, perimeters, assets, applied controls, audits (including `ref_id`, ETA, due date, authors, reviewers, field visibility, lock and baseline), evidence and evidence revisions, requirement assessments.
-- Recorded for s14: risk matrices and threats, risk studies and scenarios, risk acceptances, security exceptions, BIAs, and assets' security and recovery objectives.
-- Recorded for s10: entities (including the main entity), solutions, contracts, representatives, entity assessments and revisions, tiers. Recorded for s15: metric definitions and instances, samples, dashboards.
+- Recorded for s15: risk matrices and threats, risk studies and scenarios, risk acceptances, security exceptions, BIAs, and assets' security and recovery objectives.
+- Recorded for s10: entities (including the main entity), solutions, contracts, representatives, entity assessments and revisions, tiers. Recorded for s16: metric definitions and instances, samples, dashboards.
 - Recorded for s07: users, teams and role assignments; feature flags and general settings (such as the default score scale). Recorded for later sprints: task definitions; document templates (CISO Assistant imports these as a zip of Markdown files with frontmatter) and managed documents; webhooks.
 - Recorded as out of scope: workflows, quick forms, campaigns, EBIOS RM and quantitative risk studies, which are authored in CISO Assistant or imported through libraries and the Data Wizard.
 - It answers, with evidence, the questions later tasks depend on:
@@ -124,7 +124,7 @@ Moved from the NIST sprint (now s16-02), because the Essentials parallel run nee
   - Which audit fields hold status, start and end dates, and how is an audit created from a baseline? (s06-10)
   - Are writes to a field the service account's role can only read ignored silently? (s06-06)
   - Can the API upload a custom library, update the main entity, and set feature flags? (s06-09, s10-01)
-  - Do BIAs, entity assessments and metric instances have a `ref_id`, and can entity assessments be revised through the API? (s14-04, s10-02)
+  - Do BIAs, entity assessments and metric instances have a `ref_id`, and can entity assessments be revised through the API? (s15-04, s10-02)
 - A schema snapshot (`tests/fixtures/ciso-assistant/openapi-v4.3.4.json`) is committed, and a test fails when an endpoint `hound` uses disappears from it, so upgrades are checked rather than assumed.
 
 **Tests first**

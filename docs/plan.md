@@ -18,8 +18,8 @@ A small defence-industry business has to reach and then sustain cyber compliance
 
 | Release | Contents |
 | --- | --- |
-| 1 | Core, publisher, runner, collector SDK and test kit, manual-upload collector, Microsoft 365, Sophos Central and Veeam collectors, CISO Assistant as configuration, a thin reference Docker deployment with scheduled runs (early, so evidence builds history), CISO Assistant users and settings as configuration, a tutorial for the private compliance repo, Essential Eight gap collectors (application control, vulnerability scan import, manual-upload templates), third parties as configuration, the completed Essential Eight mapping, adoption guides, committee (operational) and board (governance) reporting, backups and hardening |
-| 2 | ASD Essentials mapping, risk, threats and BIA as configuration, CISO Assistant governance collector and metrics, NIST SP 800-171 mapping, SSP and POA&M drafts, optional collector console |
+| 1 | Core, publisher, runner, collector SDK and test kit, manual-upload collector, Microsoft 365, Sophos Central and Veeam collectors, CISO Assistant as configuration, a thin reference Docker deployment with scheduled runs (early, so evidence builds history), CISO Assistant users and settings as configuration, a tutorial for the private compliance repo, Essential Eight gap collectors (application control, vulnerability scan import, manual-upload templates), third parties as configuration, an Essential Eight system security plan drafted from CISO Assistant records, AI governance on the Australian AI6 guidance, the completed Essential Eight mapping, adoption guides, committee (operational) and board (governance) reporting, backups and hardening |
+| 2 | ASD Essentials mapping, risk, threats and BIA as configuration, CISO Assistant governance collector and metrics, CMMC Level 2 (NIST SP 800-171) mapping and its SSP and POA&M layout, optional collector console |
 
 Sprints are in [`docs/sprints/`](sprints/README.md).
 
@@ -44,7 +44,7 @@ Sprints are in [`docs/sprints/`](sprints/README.md).
 | Supplier owners | Third-party reviews and contract details |
 | Independent reviewer | Periodic external assessment |
 
-Guides and training outlines for each role are delivered in sprint s11.
+Guides and training outlines for each role are delivered in sprint s12.
 
 ## Reporting: operation and governance
 
@@ -59,7 +59,7 @@ Reporting has two tiers with different audiences and questions. Both are generat
 | Owner | Capability owner prepares; committee confirms actions | Authorising official presents; board endorses risk appetite and acceptances |
 | Recorded in CISO Assistant | Actions as tasks and applied controls; exceptions | Risk-acceptance decisions; the report as evidence |
 
-The committee's monthly reports roll up into the board's quarter. Delivered in sprint s11 (tasks s11-04 to s11-07); release 2 adds the Essentials view (s13) and NIST SP 800-171 SSP and POA&M views (s16).
+The committee's monthly reports roll up into the board's quarter. Delivered in sprint s12 (tasks s12-04 to s12-07); release 2 adds the Essentials view (s14) and NIST SP 800-171 SSP and POA&M views (s17).
 
 ## Security of the project itself
 

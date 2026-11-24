@@ -1,5 +1,5 @@
 # Fictional starting point used by the functional tests: two Microsoft 365 checks mapped onto ASD Essentials actions
-# by URN, one row per domain. The real Essentials mapping arrives in s11.
+# by URN, one row per domain. The real Essentials mapping arrives in s14.
 framework_urn: urn:intuitem:risk:framework:asd-essentials-enterprise-it
 requirements:
   - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-13:it.pro-13.5

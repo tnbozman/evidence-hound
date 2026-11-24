@@ -2,7 +2,7 @@
 
 One Compose project for the whole stack on one VM: CISO Assistant (backend, worker, frontend) pinned to a release, PostgreSQL, Caddy serving HTTPS with its internal certificate authority, and the Evidence Hound collector runner. Everything specific to your organisation lives in your private compliance repo; the [first deployment tutorial](../../docs/tutorials/first-deployment.md) walks through both from an empty VM.
 
-Until backups, restore testing and the hardening guide arrive (sprint s12), **snapshot the VM before every upgrade**.
+Until backups, restore testing and the hardening guide arrive (sprint s13), **snapshot the VM before every upgrade**.
 
 | File | What it is |
 | --- | --- |

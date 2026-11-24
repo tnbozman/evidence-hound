@@ -1,4 +1,4 @@
-# s14 Risk, threats and business impact analysis as configuration
+# s15 Risk, threats and business impact analysis as configuration
 
 Status: Planned
 
@@ -16,7 +16,7 @@ What is configuration here, and what is not:
 | --- | --- |
 | Custom risk matrices and threats (as libraries); risk studies and their scenarios, ratings, treatment and justification; security exceptions; BIAs, their asset assessments and escalation thresholds; systems' security and recovery objectives | Risk acceptance and exception approval (the Approver role and validation flows); computed risk levels; EBIOS RM and quantitative risk studies |
 
-### s14-01 Risk matrices and threats from libraries
+### s15-01 Risk matrices and threats from libraries
 - [ ] Done
 
 **Story:** As a risk owner, I want the risk matrix and threat catalogue our studies use declared in the repo, so that every study is rated on the same reviewed scales.
@@ -38,7 +38,7 @@ What is configuration here, and what is not:
 **Functional check**
 - A fictional 4×4 matrix and two fictional threats are uploaded to the local CISO Assistant and appear in its catalog; re-applying with no change writes nothing.
 
-### s14-02 Risk register files
+### s15-02 Risk register files
 - [ ] Done
 
 **Story:** As a risk owner working with an assistant, I want each risk study and its scenarios in a file, so that ratings and treatments are proposed, reviewed and recorded like any other change.
@@ -60,7 +60,7 @@ What is configuration here, and what is not:
 **Functional check**
 - Apply a fictional study with three scenarios to the local CISO Assistant; the matrix view places them as expected; changing one rating in the file produces a one-line plan and a single update.
 
-### s14-03 Security exceptions and risk acceptances
+### s15-03 Security exceptions and risk acceptances
 - [ ] Done
 
 **Story:** As an authorising official, I want exceptions and acceptances requested through the repo but approved only by an approver in CISO Assistant, so that the request is reviewed and versioned and the decision keeps its separation of duties.
@@ -81,7 +81,7 @@ What is configuration here, and what is not:
 **Functional check**
 - Apply a fictional exception, approve it in the local CISO Assistant as an approver, and confirm the next run's observation names it and `scope plan` shows it approved.
 
-### s14-04 Business impact analysis files
+### s15-04 Business impact analysis files
 - [ ] Done
 
 **Story:** As a continuity owner, I want each BIA declared in the repo, so that recovery objectives and impact over time are reviewed and kept with the systems they describe.
@@ -101,7 +101,7 @@ What is configuration here, and what is not:
 **Functional check**
 - Apply a fictional BIA for two systems to the local CISO Assistant; its impact-over-time view matches the file.
 
-### s14-05 Recovery flags from checks
+### s15-05 Recovery flags from checks
 - [ ] Done
 
 **Story:** As a continuity owner, I want "recovery tested" to come from evidence rather than a hand-ticked box, so that the BIA shows what was actually proven.
@@ -118,7 +118,7 @@ What is configuration here, and what is not:
 **Functional check**
 - With the fake collector reporting `backup.restore_tested` as pass, then fail: the flag in the local CISO Assistant follows, with evidence linked.
 
-### s14-06 Documentation and example repo
+### s15-06 Documentation and example repo
 - [ ] Done
 
 **Acceptance criteria**
