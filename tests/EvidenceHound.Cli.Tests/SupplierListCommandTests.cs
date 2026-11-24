@@ -66,6 +66,36 @@ public sealed class SupplierListCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task A_sensitive_data_finding_warns_and_blocks_nothing()
+    {
+        // s10-05 (maintainer's decision, 2026-11-24): recording the truth must not lock the repo. The machine shop's agent hid the finding to keep working.
+        var setup = Path.Combine(Repo, "scope", "setup.yaml");
+        await File.WriteAllTextAsync(setup, (await File.ReadAllTextAsync(setup, _ct)).Replace(
+            "kind: cui\n            detail: CUI//SP-CTI\n            role: processes", "kind: classified\n            detail: PROTECTED\n            role: processes", StringComparison.Ordinal), _ct);
+        var scope = Path.Combine(Repo, "scope");
+
+        var (exit, output, error) = await RunAsync(["scope", "validate", scope]);
+        exit.ShouldBe(ExitCodes.Ok, error);
+        (output + error).ShouldContain("warning: scope/setup.yaml line");
+        (output + error).ShouldContain("[data.supplier_not_authorised]");
+
+        (exit, output, error) = await RunAsync(["scope", "validate", scope, "--json"]);
+        exit.ShouldBe(ExitCodes.Ok, error);
+        var finding = JsonNode.Parse(output)!.AsArray().ShouldHaveSingleItem()!;
+        (finding["code"]!.GetValue<string>(), finding["severity"]!.GetValue<string>()).ShouldBe(("data.supplier_not_authorised", "warning"));
+
+        (exit, _, error) = await RunAsync(["add", "control", "--scope", scope, "--ref-id", "AC-NEW", "--name", "A new control", "--owner", "it@example.com", "-y"]);
+        exit.ShouldBe(ExitCodes.Ok, error);
+
+        // It is not lost: the weekly review lists it until the data moves or the authority is recorded.
+        (exit, output, error) = await RunAsync(["review", "pending", "--repo", Repo, "--json"]);
+        exit.ShouldBe(ExitCodes.Ok, error);
+        var item = JsonNode.Parse(output)!["items"]!.AsArray().Single(i => i!["kind"]!.GetValue<string>() == "finding")!;
+        item["key"]!.GetValue<string>().ShouldStartWith("finding:data.supplier_not_authorised/");
+        item["title"]!.GetValue<string>().ShouldContain("SOL-EXCLOUD-HOST");
+    }
+
+    [Fact]
     public async Task An_unknown_kind_is_refused()
     {
         var (exit, _, error) = await RunAsync(["supplier", "list", "--data", "secret_sauce", "--repo", Repo]);

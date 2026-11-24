@@ -56,7 +56,7 @@ public class SensitiveDataScopeTests
 
         var problem = Problems(supplier, Setup()).ShouldHaveSingleItem();
 
-        (problem.Code, problem.At.File).ShouldBe(("data.supplier_not_authorised", "scope/setup.yaml"));
+        (problem.Code, problem.At.File, problem.Warning).ShouldBe(("data.supplier_not_authorised", "scope/setup.yaml", true));
         problem.Message.ShouldContain("SOL-EXCLOUD-HOST");
         problem.Message.ShouldContain("cui");
     }
@@ -79,7 +79,7 @@ public class SensitiveDataScopeTests
     {
         var problem = Problems(Supplier().Replace("\"2027-06-30\"", "\"2026-06-30\"", StringComparison.Ordinal), Setup()).ShouldHaveSingleItem();
 
-        (problem.Code, problem.At.File).ShouldBe(("data.authority_expired", SupplierScopeTests.SupplierPath));
+        (problem.Code, problem.At.File, problem.Warning).ShouldBe(("data.authority_expired", SupplierScopeTests.SupplierPath, true));
         problem.Message.ShouldContain("2026-06-30");
     }
 
