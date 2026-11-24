@@ -30,7 +30,7 @@ public static partial class ScopeLoader
     private static readonly string[] SystemKeys = ["name", "ref_id", "type", "description", "owner", "parents", "tags", "solution", "supplied_through", "data"];
     private static readonly string[] ControlsKeys = ["controls"];
     private static readonly string[] ControlKeys =
-        ["ref_id", "name", "description", "domain", "owner", "status", "priority", "category", "eta", "systems", "reference_control", "documents"];
+        ["ref_id", "name", "description", "domain", "owner", "status", "priority", "category", "eta", "systems", "reference_control", "documents", "responsible_entity"];
 
     private static readonly string[] AuditKeys =
     [
@@ -322,7 +322,10 @@ public static partial class ScopeLoader
                 file.Refs(item, "systems"),
                 file.Text(item, "reference_control"),
                 file.Refs(item, "documents"),
-                file.At(item));
+                file.At(item))
+            {
+                ResponsibleEntity = file.OneOf(item, "responsible_entity", SspAnnex.ResponsibleEntities, required: false),
+            };
     }
 
     private static ScopeAudit? ReadAudit(YamlMappingNode root, FileReader file)

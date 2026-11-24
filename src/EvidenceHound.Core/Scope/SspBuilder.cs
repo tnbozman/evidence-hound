@@ -27,7 +27,7 @@ public static class SspBuilder
         SspControl[] controls =
         [
             .. rows.SelectMany(r => Split(r.Held.Fields.GetValueOrDefault("controls"))).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)
-                .Select(c => Control(c, Find(ScopeKind.Control, c))),
+                .Select(c => Control(c, Find(ScopeKind.Control, c), scope.Controls.FirstOrDefault(d => d.RefId == c))),
         ];
         var byRef = controls.ToDictionary(c => c.RefId.Value!, StringComparer.Ordinal);
 
@@ -78,7 +78,7 @@ public static class SspBuilder
             Field(solution, "criticality", solutionSource));
     }
 
-    private static SspControl Control(string refId, ActualObject? held)
+    private static SspControl Control(string refId, ActualObject? held, ScopeControl? declared)
     {
         var source = new SspSource(SspSource.CisoAssistant, $"applied control {refId}");
         return new SspControl(
@@ -89,6 +89,8 @@ public static class SspBuilder
             Field(held, "description", source))
         {
             Eta = Field(held, "eta", source),
+            Systems = Split(held?.Held.Fields.GetValueOrDefault("systems")),
+            ResponsibleEntity = declared?.ResponsibleEntity is { } entity ? new SspValue(SspAnnex.EntityName(entity), RepoSource(declared.At)) : null,
         };
     }
 

@@ -368,6 +368,10 @@
           "type": "string",
           "pattern": "^urn:"
         },
+        "responsible_entity": {
+          "description": "Who implements the control, for the SSP annex (ASD SSP annex template). Without it, hound infers shared when the control covers a system a supplier's solution provides, and consumer otherwise.",
+          "enum": ["consumer", "shared", "outsourced_service_provider", "cloud_service_provider", "not_applicable"]
+        },
         "documents": {
           "description": "Ids of documents declared in audit files.",
           "$ref": "#/$defs/names"

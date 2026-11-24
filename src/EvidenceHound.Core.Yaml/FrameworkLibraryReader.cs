@@ -43,12 +43,18 @@ public static partial class FrameworkLibraryReader
         Text(node, "ref_id"),
         Text(node, "parent_urn"),
         [.. (Child(node, "implementation_groups") as YamlSequenceNode ?? []).OfType<YamlScalarNode>().Select(g => g.Value ?? "")],
-        Title(Text(node, "name") ?? Text(node, "description") ?? ""));
+        Title(Text(node, "name") ?? Text(node, "description") ?? ""))
+    {
+        Description = OneLine(Text(node, "description") ?? Text(node, "name") ?? ""),
+        ReferenceControls = [.. (Child(node, "reference_controls") as YamlSequenceNode ?? []).OfType<YamlScalarNode>().Select(r => r.Value ?? "").Where(r => r.Length > 0)],
+    };
+
+    private static string OneLine(string text) => Whitespace().Replace(text, " ").Trim();
 
     /// <summary>The text on one line, cut at a word to at most <see cref="FrameworkSnapshot.TitleLength"/> characters.</summary>
     private static string Title(string text)
     {
-        var line = Whitespace().Replace(text, " ").Trim();
+        var line = OneLine(text);
         if (line.Length <= FrameworkSnapshot.TitleLength)
         {
             return line;
