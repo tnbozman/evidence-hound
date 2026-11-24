@@ -12,5 +12,12 @@ due_date: "2027-01-31"
 authors: [it@example.com]
 reviewers: [ceo@example.com]
 systems: [Example ticket triage, Example proposal assistant]
+documents:
+  # A placeholder. Write yours from the National AI Centre's AI policy guide and template (docs/ai-grc.md#the-ai-policy).
+  - id: ai-policy
+    name: AI policy
+    files: [documents/ai-policy.pdf]
+    systems: [Example ticket triage, Example proposal assistant]
+    requirements: [AI6-1.4, AI6-3.1]
 unlisted:
   result: not_assessed
