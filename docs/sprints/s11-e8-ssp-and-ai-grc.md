@@ -291,6 +291,10 @@ Done first in Part 2, so the person reviewing the AI tasks has the background.
 **Functional check**
 - `make run ARGS="framework snapshot frameworks/ai6.yaml --out /tmp/ai6.json"` reports 21 assessable requirements and matches the committed snapshot. With the example scope pointing at the library, `scope apply` against the local CISO Assistant (`make ca-up`) uploads and loads it, and an AI6 audit with group `F` shows only the Foundations rows.
 
+**Progress (2026-11-24)**
+- Library, snapshot, trace table and tests are done. The Foundations actions were read from the guidance PDF (v1.0, October 2025); it prints no licence, so the trace table summarises them in our own words. 20 of the 21 sub-practices are in `F`; only AI6-4.4 is not.
+- The functional check (apply to the local CISO Assistant, an AI6 audit for group `F`) runs once the example scope declares AI6 (s11-15), because the functional tests share one seeded instance.
+
 ### s11-10 AI6 mapping
 - [ ] Done
 
