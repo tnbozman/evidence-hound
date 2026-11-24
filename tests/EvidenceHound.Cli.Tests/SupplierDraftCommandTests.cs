@@ -95,6 +95,33 @@ public sealed class SupplierDraftCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Sensitive_data_from_a_trust_centre_is_drafted_on_the_solution_with_no_authority()
+    {
+        // s10-06: the agent read the supplier's trust centre: it stores CUI and personal information, but no document backs an authority yet.
+        var (exit, _, error) = await DraftAsync("SUP-EXDATA", "Example Data Pty Ltd", "Document storage", "--data", "cui:stores:CUI//SP-CTI", "--data", "pii:processes");
+
+        exit.ShouldBe(ExitCodes.Ok, error);
+        var file = Path.Combine(Repo, "scope", "third-parties", "sup-exdata.yaml");
+        var parsed = ScopeLoader.Parse(
+            new ScopeSource("setup.yaml", await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "setup.yaml"), _ct)), null, [],
+            thirdParties: [new ScopeSource(file, await File.ReadAllTextAsync(file, _ct))]);
+        parsed.Problems.ShouldBeEmpty();
+        parsed.Scope.ThirdParties.Single().Solutions.Single().Data.Select(d => (d.Kind, d.Role, d.Detail, d.Authority)).ShouldBe(
+        [
+            (Core.Scope.SensitiveDataKind.Cui, Core.Scope.DataRole.Stores, "CUI//SP-CTI", null),
+            (Core.Scope.SensitiveDataKind.Pii, Core.Scope.DataRole.Processes, null, null),
+        ]);
+
+        (exit, _, error) = await DraftAsync("SUP-EXITAR", "Example Export Pty Ltd", "Machining", "--data", "export_controlled:stores");
+        exit.ShouldBe(ExitCodes.Configuration);
+        error.ShouldContain("needs a detail");
+        (exit, _, error) = await DraftAsync("SUP-EXITAR", "Example Export Pty Ltd", "Machining", "--data", "secret:stores");
+        exit.ShouldBe(ExitCodes.Configuration);
+        error.ShouldContain("'secret' is not a kind");
+        File.Exists(Path.Combine(Repo, "scope", "third-parties", "sup-exitar.yaml")).ShouldBeFalse();
+    }
+
+    [Fact]
     public async Task Ref_ids_get_their_prefix_and_one_that_does_not_fit_is_refused()
     {
         var (exit, _, error) = await DraftAsync("example-other", "Example Other Pty Ltd", "Resale");
