@@ -20,6 +20,7 @@
     <EmbeddedResource Include="..\..\mappings\essential-eight-2023.yaml" LogicalName="init/mappings/essential-eight-2023.yaml" />
     <EmbeddedResource Include="..\..\frameworks\essential-eight-2023.json" LogicalName="init/frameworks/essential-eight-2023.json" />
     <EmbeddedResource Include="..\..\examples\compliance-repo\.gitignore" LogicalName="init/.gitignore" />
+    <EmbeddedResource Include="..\..\examples\compliance-repo\manual-sources\weekly-compliance-review.md" LogicalName="init/manual-sources/weekly-compliance-review.md" />
   </ItemGroup>
   <ItemGroup>
     <!-- hound onboard reads each provider's default model from here; edit it to change model without a new build. -->

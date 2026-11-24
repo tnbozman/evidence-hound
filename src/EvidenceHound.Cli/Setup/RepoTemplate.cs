@@ -24,7 +24,11 @@ internal static class RepoTemplate
     public const string Perimeter = "Corporate IT";
 
     /// <summary>The files hound writes from its own copies: the Essential Eight mapping and snapshot, and the template's .gitignore.</summary>
-    public static readonly IReadOnlyList<string> Copied = ["mappings/essential-eight-2023.yaml", "frameworks/essential-eight-2023.json", ".gitignore"];
+    public static readonly IReadOnlyList<string> Copied =
+        ["mappings/essential-eight-2023.yaml", "frameworks/essential-eight-2023.json", ".gitignore", "manual-sources/weekly-compliance-review.md"];
+
+    /// <summary>The team that receives evidence and holds the weekly review: at first, only the compliance owner.</summary>
+    public const string GrcTeam = "GRC team";
 
     public static IReadOnlyDictionary<string, string> Files(NewOrganisation org)
     {
@@ -34,6 +38,8 @@ internal static class RepoTemplate
             ["hound.yaml"] = Config(org),
             ["scope/setup.yaml"] = Setup(org),
             ["scope/controls.yaml"] = Controls(org),
+            ["scope/access.yaml"] = Access(org),
+            ["scope/evidence-plan.yaml"] = EvidencePlan(),
             [org.AuditFile] = Audit(org),
             ["README.md"] = Readme(org),
         };
@@ -91,6 +97,36 @@ internal static class RepoTemplate
         "    status: to_do",
         "    category: process");
 
+    private static string Access(NewOrganisation org) => Lines(
+        "# Who works in CISO Assistant, written by hound init. Guide: docs/scope.md in the Evidence Hound repo.",
+        "# The GRC team receives evidence and holds the weekly review. Add people as they join; owner contacts (a team with an email) need no login.",
+        "users:",
+        $"  - email: {Scalar(org.Owner)}",
+        "teams:",
+        $"  - name: {GrcTeam}",
+        $"    domain: {Scalar(org.Name)}",
+        $"    leader: {Scalar(org.Owner)}",
+        "roles:",
+        "  - role: approver",
+        $"    domain: {Scalar(org.Name)}",
+        $"    users: [{Scalar(org.Owner)}]",
+        "  - role: analyst",
+        $"    domain: {Scalar(org.Name)}",
+        $"    teams: [{GrcTeam}]");
+
+    private static string EvidencePlan() => Lines(
+        "# How each control's evidence arrives, from whom and how often. Guide: docs/manual-evidence.md in the Evidence Hound repo.",
+        "# Rows a person provides become recurring CISO Assistant tasks; the owner is emailed the runbook before each due date.",
+        $"grc_team: {GrcTeam}",
+        "evidence:",
+        "  # Each week the GRC team clears everything that waits on a person in one sitting: hound review.",
+        "  - ref_id: EV-WEEKLY-REVIEW",
+        $"    control: {HealthControl}",
+        "    method: manual",
+        $"    owner: {GrcTeam}",
+        "    every: 1 week",
+        "    runbook: manual-sources/weekly-compliance-review.md");
+
     private static string Audit(NewOrganisation org) => Lines(
         $"# {org.Name}'s Essential Eight (November 2023) maturity level {org.Level.ToString(CultureInfo.InvariantCulture)} audit, by {org.Interval}, written by hound init.",
         "# Collectors publish their results to it. Write results no check covers under assessments; see docs/scope.md.",
@@ -123,6 +159,7 @@ internal static class RepoTemplate
         "4. Check everything offline: `hound config validate hound.yaml` and `hound scope validate scope --config hound.yaml`",
         "5. See what applying would do, then apply: `hound scope plan scope --config hound.yaml` and `hound scope apply scope --config hound.yaml`",
         "6. Run the collectors and see the result: `hound run --config hound.yaml` and `hound status --config hound.yaml`",
+        "7. Each week, sign off everything that waits on you in one sitting: `hound review` (the weekly task in `scope/evidence-plan.yaml` reminds you).",
         "",
         "The Evidence Hound repo's `examples/compliance-repo` has a fuller example, with access, settings and a pull request workflow.");
 
