@@ -149,6 +149,35 @@ public sealed class SspFunctionalTests(CisoAssistantFixture ciso)
         revisions["results"]!.AsArray().Count.ShouldBe(2, revisions.ToJsonString());
     }
 
+    [Fact]
+    public async Task Suggest_briefs_your_agent_and_describe_feeds_the_next_scope_plan()
+    {
+        // s11-06: the brief lists only controls the example leaves undescribed; a description written with 'ssp describe' is a scope change
+        // for review, applied like any other (not applied here, so the shared instance keeps the example's state).
+        var ct = TestContext.Current.CancellationToken;
+        var scope = CopyOfExampleScope();
+        await File.WriteAllTextAsync(Path.Combine(scope, "ssp.yaml"), Ssp, ct);
+        var output = Directory.CreateDirectory(Path.Combine(CisoAssistantFixture.RepoRoot, "test-results", "ssp")).FullName;
+
+        var (exit, brief, log) = await RunWithLogAsync(["ssp", "suggest", "--programme", "essential-eight", "--scope", scope], ct);
+        await File.WriteAllTextAsync(Path.Combine(output, "ssp-essential-eight-suggest.json"), brief, ct);
+
+        exit.ShouldBe(ExitCodes.Ok, brief + log);
+        var described = new[] { "AC-MFA", "AC-AUTO-EVIDENCE" };
+        JsonNode.Parse(brief)!["controls"]!.AsArray().Select(c => c!["ref_id"]!.GetValue<string>()).ShouldNotContain(r => described.Contains(r), brief);
+
+        var text = "Example backup service backs up Example 365 and the laptops daily; restores are tested each quarter.";
+        var (describeExit, _, describeLog) = await RunWithLogAsync(["ssp", "describe", "--control", "AC-BACKUP", "--text", text, "--scope", scope], ct);
+        describeExit.ShouldBe(ExitCodes.Ok, describeLog);
+        (await File.ReadAllTextAsync(Path.Combine(scope, "controls.yaml"), ct)).ShouldContain("# drafted with AI: review before merging", Case.Sensitive);
+        var (planExit, plan, planLog) = await RunWithLogAsync(["scope", "plan", scope, "--format", "json"], ct);
+        await File.WriteAllTextAsync(Path.Combine(output, "ssp-essential-eight-describe-plan.json"), plan, ct);
+
+        planExit.ShouldBe(ExitCodes.Ok, plan + planLog);
+        JsonNode.Parse(plan)!["changes"]!.AsArray().Where(c => c!["key"]!.GetValue<string>() == "AC-BACKUP").ShouldNotBeEmpty(plan);
+        plan.ShouldContain(text, Case.Sensitive, plan);
+    }
+
     private static string Lines(List<string> signOffs) => signOffs.Count == 0 ? "" : "\n    sign_offs:\n" + string.Join('\n', signOffs) + "\n";
 
     private async Task<(int ExitCode, string Output, string Log)> RunWithLogAsync(string[] args, CancellationToken ct)
