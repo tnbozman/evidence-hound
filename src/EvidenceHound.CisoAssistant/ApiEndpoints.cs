@@ -11,6 +11,7 @@ public static class ApiEndpoints
         new("GET", "/api/health/"),
         new("GET", "/api/compliance-assessments/"),
         new("GET", "/api/compliance-assessments/{id}/object/"),
+        new("GET", "/api/compliance-assessments/{id}/word_report/"),
         new("GET", "/api/requirement-assessments/"),
         new("PATCH", "/api/requirement-assessments/{id}/"),
         new("GET", "/api/evidences/"),

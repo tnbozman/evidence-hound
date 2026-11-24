@@ -1,8 +1,10 @@
 using System.Globalization;
+using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using EvidenceHound.Core.Publishing;
 using EvidenceHound.Core.Results;
 
 namespace EvidenceHound.Core.Scope;
@@ -231,6 +233,34 @@ public static class SspDiff
 /// <summary>The evidence revision <c>hound ssp publish</c> uploads (s11-05): one zip with fixed timestamps, so the same inputs give the same bytes. Pure.</summary>
 public static class SspPackage
 {
-    public static EvidenceHound.Core.Publishing.EvidenceFile Zip(string programme, string version, string plan, string poam, string snapshot, EvidenceHound.Core.Publishing.EvidenceFile? report) =>
-        throw new NotImplementedException();
+    private static readonly DateTimeOffset Stamp = new(2000, 1, 1, 0, 0, 0, TimeSpan.Zero);
+
+    public static EvidenceFile Zip(string programme, string version, string plan, string poam, string snapshot, EvidenceFile? report)
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+        ArgumentNullException.ThrowIfNull(poam);
+        ArgumentNullException.ThrowIfNull(snapshot);
+        var name = $"{programme}-{version}";
+        using var buffer = new MemoryStream();
+        using (var zip = new ZipArchive(buffer, ZipArchiveMode.Create, leaveOpen: true))
+        {
+            Add(zip, $"ssp-{name}.md", Encoding.UTF8.GetBytes(plan));
+            Add(zip, $"poam-{name}.md", Encoding.UTF8.GetBytes(poam));
+            Add(zip, $"ssp-{name}.snapshot.json", Encoding.UTF8.GetBytes(snapshot));
+            if (report is not null)
+            {
+                Add(zip, report.FileName, report.Content.ToArray());
+            }
+        }
+
+        return new EvidenceFile($"ssp-{name}.zip", buffer.ToArray());
+    }
+
+    private static void Add(ZipArchive zip, string name, byte[] content)
+    {
+        var entry = zip.CreateEntry(name, CompressionLevel.Optimal);
+        entry.LastWriteTime = Stamp;
+        using var stream = entry.Open();
+        stream.Write(content);
+    }
 }
