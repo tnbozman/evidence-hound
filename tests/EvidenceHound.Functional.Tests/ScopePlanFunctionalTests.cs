@@ -27,7 +27,8 @@ public sealed class ScopePlanFunctionalTests(CisoAssistantFixture ciso)
             .Select(c => (Kind: c!["kind"]!.GetValue<string>(), Key: c["key"]!.GetValue<string>()))
             .ToArray();
         written.Select(c => c.Kind).Distinct().ShouldBe(
-            ["feature_flag", "setting", "framework", "domain", "perimeter", "system", "user", "team", "audit", "document", "control", "assessment"], ignoreOrder: true, ciso.SeedApplyReport);
+            ["feature_flag", "setting", "framework", "domain", "perimeter", "system", "user", "team", "audit", "document", "control", "assessment", "evidence", "tasktemplate"],
+            ignoreOrder: true, ciso.SeedApplyReport);
         written.ShouldContain(("framework", "urn:example:risk:framework:example-baseline"), ciso.SeedApplyReport);
         written.ShouldContain(("audit", "EX-ESSENTIALS-2026"), ciso.SeedApplyReport);
         written.ShouldContain(("document", "identity-policy"), ciso.SeedApplyReport);
