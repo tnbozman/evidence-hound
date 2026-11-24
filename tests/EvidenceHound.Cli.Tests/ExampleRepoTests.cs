@@ -33,6 +33,39 @@ public sealed partial class ExampleRepoTests : IDisposable
     }
 
     [Fact]
+    public void Example_declares_the_essential_eight_plan_with_its_written_sections()
+    {
+        // s11-07: the example's plan validates with the rest of the scope (above); here, that every section it names is written, the
+        // environment carries a boundary diagram, and no generated plan is committed.
+        var ssp = File.ReadAllText(Path.Combine(Repo, "scope", "ssp.yaml"));
+        ssp.ShouldStartWith("# yaml-language-server: $schema=../../../schemas/scope.schema.json");
+        var plan = ScopeLoader.Parse(
+            new ScopeSource("setup.yaml", File.ReadAllText(Path.Combine(Repo, "scope", "setup.yaml"))), null, [], ssp: new ScopeSource("ssp.yaml", ssp)).Scope.Ssps.ShouldHaveSingleItem();
+
+        plan.Programme.Value.ShouldBe("essential-eight");
+        plan.Sections.Select(s => s.Name).ShouldBe(SspProfile.RequiredSections(plan.Profile), ignoreOrder: true);
+        foreach (var section in plan.Sections)
+        {
+            var text = File.ReadAllText(Path.Combine(Repo, section.File));
+            text.ShouldNotBeNullOrWhiteSpace(section.Name);
+        }
+
+        File.ReadAllText(Path.Combine(Repo, plan.Sections.Single(s => s.Name == "environment").File)).ShouldContain("```mermaid");
+        Directory.GetFiles(Repo, "ssp-*", SearchOption.AllDirectories).ShouldBeEmpty();
+        File.ReadAllText(Path.Combine(Repo, ".gitignore")).ShouldContain("ssp-*");
+    }
+
+    [Fact]
+    public void Ssp_guide_covers_what_people_write_and_how_a_version_is_approved()
+    {
+        var guide = File.ReadAllText(Path.Combine(RepoRoot, "docs", "govern", "system-security-plan.md"));
+        foreach (var topic in new[] { "## What the plan is built from", "## What people write or draw", "## Review and approval", "## Versions", "## Drafting descriptions with your own agent", "hound ssp publish" })
+        {
+            guide.ShouldContain(topic, Case.Sensitive);
+        }
+    }
+
+    [Fact]
     public void Scope_guide_documents_the_ref_id_conventions_once_and_the_examples_follow_them()
     {
         var guide = File.ReadAllText(Path.Combine(RepoRoot, "docs", "scope.md"));
