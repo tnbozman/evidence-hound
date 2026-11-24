@@ -41,7 +41,7 @@ public sealed class MappingCrosswalkCommandTests : IDisposable
         text.ShouldContain("Advisory");
         text.ShouldContain("of 110 requirements");
         text.ShouldContain("| 3.1.6 Use non-privileged accounts or roles for non-security functions | answered | ISM-0445 (equal, 1 check): compliant");
-        text.ShouldContain("ISM-1504 (intersect, 2 checks): non compliant");
+        text.ShouldContain("ISM-1504 (intersect, 3 checks): non compliant");
         _ca.LogEntries.ShouldNotBeEmpty();
         _ca.LogEntries.ShouldAllBe(e => e.RequestMessage!.Method == "GET");
     }

@@ -18,6 +18,7 @@
   <ItemGroup>
     <!-- hound init writes these into a new compliance repo. The runner image's build stage copies them in too. -->
     <EmbeddedResource Include="..\..\mappings\essential-eight-2023.yaml" LogicalName="init/mappings/essential-eight-2023.yaml" />
+    <EmbeddedResource Include="..\..\mappings\crosswalks\*.yaml" LogicalName="crosswalks/%(Filename)%(Extension)" />
     <EmbeddedResource Include="..\..\frameworks\essential-eight-2023.json" LogicalName="init/frameworks/essential-eight-2023.json" />
     <EmbeddedResource Include="..\..\examples\compliance-repo\.gitignore" LogicalName="init/.gitignore" />
     <EmbeddedResource Include="..\..\examples\compliance-repo\manual-sources\weekly-compliance-review.md" LogicalName="init/manual-sources/weekly-compliance-review.md" />
