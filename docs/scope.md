@@ -275,17 +275,18 @@ Each row becomes an evidence item labelled `method:` and `collector:`; each manu
 
 ## ssp.yaml
 
-One system security plan (SSP) per programme. Optional. `hound ssp build --programme <id>` assembles the plan from one read of CISO Assistant and the repo, and writes nothing; `--json` gives every value with its source (`ciso_assistant` with the object, or `repo` with the file and line), so each one can be traced.
+One system security plan (SSP) per programme. Optional. `hound ssp build --programme <id>` assembles the plan from one read of CISO Assistant and the repo, and writes nothing. It prints the plan in the layout of NIST SP 800-18 Rev 1 ([ssp.md](ssp.md)); `--json` gives every value with its source (`ciso_assistant` with the object, or `repo` with the file and line), so each one can be traced.
 
 | Key | Meaning |
 | --- | --- |
 | `programme` | The programme's `id` from `setup.yaml`. One plan per programme. |
 | `profile` | The controls annex: `ism` (ISM controls grouped by Essential Eight strategy) or `nist-800-171` (CMMC, s17). The layout is always NIST SP 800-18 Rev 1, which also meets ISM-0041. |
 | `system_name`, `version` | The system's name as the plan gives it, and the plan's version. |
+| `classification`, `operational_status`, `system_type` | SP 800-18 sections 2, 7 and 8: the highest classification the system processes (such as `OFFICIAL`), whether it is operational, under development or being modified, and whether it is a major application or a general support system. Optional; shown as `-` when absent. |
 | `perimeter` | The boundary: a perimeter in `setup.yaml`. The inventory is the systems the audits on that perimeter cover, as CISO Assistant holds them, with their owners. |
 | `roles` | `system_owner`, `authorising_official` and `security_contact`, each a user's email or a team from `access.yaml`. All three are required. |
 | `documents` | Boundary and network diagrams, data flows, policies and procedures, by document `id` from an audit. |
-| `sections` | The parts that cannot be generated, as Markdown files in the repo: `environment`, `physical` and `personnel` are required by both profiles. |
+| `sections` | The parts that cannot be generated, as Markdown files in the repo (paths relative to the folder that holds `scope/`): `purpose`, `environment`, `management` and `laws_and_policies`, all required. See [ssp.md](ssp.md) for where each one goes in the plan. |
 
 Each requirement row gets a status from its result: `compliant` is *Implemented*, `partially_compliant` *Partially implemented*, `not_applicable` *Not applicable*, and `non_compliant` or `not_assessed` *Planned* when a linked control has an ETA, otherwise *Not implemented*. Its statement is the linked controls' descriptions in ref order, then the observation; the responsible party is the controls' owners. A row in place with no statement, a row in place or planned with no owner, and a row not applicable with no justification (its observation) are **gaps**: listed first, in `--json`, and fatal with `--strict` (exit 1). A row not yet implemented is not a gap: `hound ssp poam --programme <id>` lists it, one line per linked control with its owner, ETA and status.
 

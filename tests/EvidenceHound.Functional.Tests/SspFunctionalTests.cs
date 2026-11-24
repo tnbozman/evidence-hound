@@ -74,6 +74,29 @@ public sealed class SspFunctionalTests(CisoAssistantFixture ciso)
         poam.ShouldContain("| Not implemented |", Case.Sensitive, poam);
     }
 
+    [Fact]
+    public async Task Renders_the_sp_800_18_plan_with_the_ism_annex_by_strategy()
+    {
+        // s11-04: one layout, NIST SP 800-18 Rev 1 Appendix A; the annex lists each ISM control once with the strategies it serves.
+        var ct = TestContext.Current.CancellationToken;
+        var scope = CopyOfExampleScope();
+        await File.WriteAllTextAsync(Path.Combine(scope, "ssp.yaml"), Ssp + "\n    classification: OFFICIAL\n", ct);
+        var sections = Directory.CreateDirectory(Path.Combine(Directory.GetParent(scope)!.FullName, "ssp")).FullName;
+        await File.WriteAllTextAsync(Path.Combine(sections, "purpose.md"), "Example corporate IT runs Example Pty Ltd's mail, files and laptops.\n", ct);
+        var output = Directory.CreateDirectory(Path.Combine(CisoAssistantFixture.RepoRoot, "test-results", "ssp")).FullName;
+
+        var (exit, markdown) = await RunAsync(["ssp", "build", "--programme", "essential-eight", "--scope", scope], ct);
+        await File.WriteAllTextAsync(Path.Combine(output, "ssp-essential-eight.md"), markdown, ct);
+
+        exit.ShouldBe(ExitCodes.Ok, markdown);
+        markdown.ShouldContain("## 9. General description and purpose\n\nExample corporate IT runs Example Pty Ltd's mail, files and laptops.", Case.Sensitive, markdown);
+        markdown.ShouldContain("- Classification: OFFICIAL", Case.Sensitive, markdown);
+        markdown.ShouldContain("## 13. Security controls (annex)", Case.Sensitive, markdown);
+        markdown.Split('\n').Count(l => l.StartsWith("| ISM-1815 |", StringComparison.Ordinal)).ShouldBe(1, markdown);
+        markdown.ShouldContain("| mfa, rap, ac, uah |", Case.Sensitive, markdown);
+        markdown.ShouldContain("## Appendix: plan of action and milestones", Case.Sensitive, markdown);
+    }
+
     private static string CopyOfExampleScope()
     {
         var source = Directory.GetParent(CisoAssistantFixture.ExampleScope)!.FullName;
