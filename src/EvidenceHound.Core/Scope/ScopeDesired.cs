@@ -79,13 +79,25 @@ public static class ScopeDesired
                     ("name", Name(row, control)), ("description", row.Runbook is { } runbook ? inputs.Runbooks.GetValueOrDefault(runbook) : null), ("domain", domain),
                     ("assignees", Joined(new[] { row.Owner?.Value, row.GrcTeam?.Value }.OfType<string>().Distinct(StringComparer.Ordinal))),
                     ("schedule", $"every {months} months"), ("evidence", row.RefId), ("controls", row.Control.Value),
-                    ("requirements", Joined(row.Requirements.Select(r => r.Key.Value))), ("enabled", "true")))
+                    ("requirements", Joined(Rows(scope, row))), ("enabled", "true")))
                 {
                     Initial = Fields(("first_due", inputs.Today?.AddMonths(months).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture))),
                 };
             }
         }
     }
+
+    /// <summary>
+    /// The audit rows a row's evidence supports: in each audit that lists the row's control, the requirements the control supports there,
+    /// narrowed to the row's own when it names any.
+    /// </summary>
+    private static IEnumerable<string> Rows(ScopeDocument scope, ScopeEvidenceRow row) =>
+        scope.Audits.SelectMany(audit => audit.Controls
+            .Where(c => c.Control.Value == row.Control.Value)
+            .SelectMany(c => c.Requirements)
+            .Where(r => row.Requirements.Count == 0 || row.Requirements.Any(wanted => wanted.Key.Value == r.Key.Value))
+            .Select(r => AssessmentKey(audit.RefId, r.Key)))
+        .Distinct(StringComparer.Ordinal);
 
     private static string Name(ScopeEvidenceRow row, ScopeControl? control) => control is null ? row.RefId : $"{row.RefId}: {control.Name}";
 
