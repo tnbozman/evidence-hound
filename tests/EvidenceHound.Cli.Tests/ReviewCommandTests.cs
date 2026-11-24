@@ -46,6 +46,59 @@ public sealed class ReviewCommandTests : IDisposable
         (await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "capabilities.yaml"), _ct)).ShouldNotContain("approved_by");
     }
 
+    [Fact]
+    public async Task Refuses_without_a_terminal()
+    {
+        await File.WriteAllTextAsync(Path.Combine(Repo, "scope", "capabilities.yaml"), ApproveCommandTests.Capabilities, _ct);
+
+        var (exit, _, error) = await RunAsync(["review", "--repo", Repo, "--no-apply"], terminal: false, "Sam Example\na\n");
+
+        exit.ShouldBe(ExitCodes.Usage);
+        error.ShouldContain("needs a person at a terminal");
+        (await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "capabilities.yaml"), _ct)).ShouldNotContain("approved_by");
+    }
+
+    [Fact]
+    public async Task Accepted_items_are_written_as_approve_writes_them_and_one_sign_off_is_recorded()
+    {
+        await OnboardAgentCommandTests.DraftEverythingAsync(Repo, _ct);
+        await File.WriteAllTextAsync(Path.Combine(Repo, "scope", "capabilities.yaml"), ApproveCommandTests.Capabilities, _ct);
+        var export = Path.Combine(_root, "firewall-export.txt");
+        await File.WriteAllTextAsync(export, "rule 14: deny any any\n", _ct);
+        (await ManualProposeTests.ProposeAsync(Repo, export, "--result", "pass", "--observation", "The last rule denies any to any.", "--supports", "rule 14: deny any any")).Exit.ShouldBe(ExitCodes.Ok);
+
+        // In order: the capability, the supplier, the not-applicable decision, then the manual evidence. Sam accepts three and challenges the supplier.
+        var (exit, output, error) = await RunAsync(
+            ["review", "--repo", Repo, "--config", Config, "--for", "60m", "--no-apply"], terminal: true,
+            "Sam Example\na\nc\nIs the asset inventory really only administered by the supplier?\na\na\n");
+
+        exit.ShouldBe(ExitCodes.Ok, error);
+        string[] asked = ["[1/4] [capability] EX", "[2/4] [supplier] SUP-EXAMPLE", "[3/4] [not applicable] EXAMPLE-ASSETS EX-2", "[4/4] [manual evidence] example-firewall-config"];
+        asked.Select(a => error.IndexOf(a, StringComparison.Ordinal)).ShouldBeInOrder(SortDirection.Ascending);
+        asked.ShouldAllBe(a => error.Contains(a, StringComparison.Ordinal));
+        error.ShouldContain("Why it matters:");
+        error.ShouldContain("Recommended:");
+        output.ShouldContain("Accepted 3, challenged 1, skipped 0.");
+
+        (await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "capabilities.yaml"), _ct)).ShouldContain("approved_by: Sam Example");
+        (await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "third-parties", "sup-example.yaml"), _ct)).ShouldContain("status: draft");
+        File.Exists(Path.Combine(Repo, "manual", "firewall", "firewall-export.txt.attest.yaml")).ShouldBeTrue();
+
+        var signOff = Directory.GetFiles(Path.Combine(Repo, "review", "sign-offs"), "*.yaml").ShouldHaveSingleItem();
+        var record = await File.ReadAllTextAsync(signOff, _ct);
+        record.ShouldContain("person: Sam Example");
+        record.ShouldContain("capability:EX");
+        record.ShouldContain("not_applicable:EXAMPLE-ASSETS/EX-2");
+        record.ShouldContain("manual_evidence:example-firewall-config/firewall-export.txt");
+
+        // The challenge stays queued, with the note for the agent to answer; nothing else is left.
+        (exit, output, error) = await RunAsync(["review", "pending", "--json", "--repo", Repo, "--config", Config], terminal: false);
+        exit.ShouldBe(ExitCodes.Ok, error);
+        var item = JsonNode.Parse(output)!["items"]!.AsArray().ShouldHaveSingleItem()!;
+        item["key"]!.GetValue<string>().ShouldBe("supplier:SUP-EXAMPLE/CTR-EXAMPLE-ASSETS");
+        item["challenge"]!["note"]!.GetValue<string>().ShouldBe("Is the asset inventory really only administered by the supplier?");
+    }
+
     public void Dispose() => Directory.Delete(_root, recursive: true);
 
     private string Repo => Path.Combine(_root, "repo");
