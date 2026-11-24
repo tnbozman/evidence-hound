@@ -86,13 +86,13 @@ public sealed class CisoAssistantFixture : IAsyncLifetime
 
     public ValueTask DisposeAsync() => _backend.DisposeAsync();
 
-    /// <summary>What <c>scripts/ca-apply-scope.sh</c> does for <c>make ca-up</c>: apply the example scope with the Essential Eight config.</summary>
+    /// <summary>What <c>scripts/ca-apply-scope.sh</c> does for <c>make ca-up</c>: apply the example scope with the example repo's own hound.yaml.</summary>
     private async Task ApplyExampleScopeAsync()
     {
         using var output = new StringWriter();
         using var error = new StringWriter();
         var exitCode = await HoundCli.RunAsync(
-            ["scope", "apply", ExampleScope, "--config", Path.Combine(RepoRoot, "examples", "example-essential-eight.yaml")],
+            ["scope", "apply", ExampleScope, "--config", Path.Combine(RepoRoot, "examples", "compliance-repo", "hound.yaml")],
             output,
             error,
             configureLogging: null,
