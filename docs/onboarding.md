@@ -324,6 +324,10 @@ and the approver in the session and the onboarding record.
 agent proposed a result for, and you attest, change or reject it ([manual sources](configuration.md#manual-sources)). Nothing is approved in CISO Assistant: review the changed files in a pull request, then
 `hound scope plan` and `hound scope apply` write the approved state, including each review's conclusion.
 
+**Or sign off once a week.** `hound review` walks the same items, and manual evidence proposals, in one session: most urgent first, each
+with why it matters and the agent's recommendation, answered accept, challenge or skip. It records one sign-off and applies what you
+accepted. See [the weekly review](manual-evidence.md#the-weekly-review).
+
 ## Explain a change for review
 
 `hound explain` writes a plain-English review summary of a plan or a config change, so you approve only what you understand. It reads

@@ -106,9 +106,10 @@ file by `scripts/cheatsheet/render.sh`.
 - `hound skill draft`: agent: draft skills
   - `--skills` on every skill command; draft: `--only`
 
-### Coming in s10-07
+### Weekly review
 - `hound review pending --json`: agent: everything waiting on a person
 - `hound review --for 60m`: **Person**: one guided weekly session
+  - `--no-apply`: stop at the files
 
 ## Typical paths
 
@@ -154,8 +155,8 @@ file by `scripts/cheatsheet/render.sh`.
 2. `hound scope validate scope`
 3. `hound scope plan scope`, then `hound scope apply scope`
 
-### Weekly review (from s10-07)
-1. Agent: `hound review pending --json`, drafts each recommendation
-2. CISO Assistant's weekly task alerts the GRC member
+### Weekly review
+1. CISO Assistant's weekly task alerts the GRC member
+2. Agent: `hound review pending --json`, drafts each recommendation
 3. **Person**: `hound review --for 60m`: read, accept or challenge
 4. Accepted items are applied in one batch

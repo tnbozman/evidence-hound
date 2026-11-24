@@ -34,7 +34,7 @@ evidence:
     method: manual
     collector: example-backup-restore-test
     owner: Backup owners          # a team in access.yaml (manual and hybrid rows)
-    every: 3 months               # 3 months, 6 months or 12 months
+    every: 3 months               # 1 week, 3 months, 6 months or 12 months
     runbook: manual-sources/backup-restore-test.md
 ```
 
@@ -45,7 +45,7 @@ contact holds no role. The full reference is in [scope.md](scope.md#ref-id-conve
 `hound scope apply` writes, for every row, an evidence item named after the row and its control, labelled with its method (`automated`,
 `manual` or `hybrid`) and its collector's name so the GRC team can filter by them (CISO Assistant takes a label of letters, digits,
 underscores and hyphens, at most 36 long, so a longer collector name is left out). For each manual and hybrid row it also writes a recurring task: assigned to the
-owner and the GRC team, due every 3 or 6 months (or yearly), with the runbook as its description, linked to the evidence item, the
+owner and the GRC team, due every week, every 3 or 6 months, or yearly, with the runbook as its description, linked to the evidence item, the
 control and the requirements. The first due date is set when the task is created, one interval from that day; CISO Assistant moves it
 on after that.
 
@@ -105,10 +105,31 @@ When an owner's evidence arrives:
 1. Check the file is complete and is what the runbook asked for.
 2. If it came by email, upload it: `hound manual upload --config hound.yaml --source <source> <file>`.
 3. Ask your agent to read it and propose a result for each check, with the extract that supports it: `hound manual propose`.
-4. The owner (or the GRC team member the runbook names) attests the proposal at a terminal: `hound manual approve`. An agent or a
-   pipe is refused.
+4. A person attests the proposal at a terminal, in the [weekly review](#the-weekly-review) with everything else that waits on them
+   (`hound review`), or on its own with `hound manual approve`. An agent or a pipe is refused.
 5. After the next run, review the published results in CISO Assistant, attach the file to the task occurrence, and mark the occurrence
    done.
+
+## The weekly review
+
+The GRC team signs off everything that waits on a person in one session a week. The example evidence plan has a row for it: a weekly
+task assigned to the GRC team, whose runbook ([weekly-compliance-review.md](../examples/compliance-repo/manual-sources/weekly-compliance-review.md))
+says how to start.
+
+1. Before the session, the agent prepares the queue with the skill "weekly-review": `hound review pending --json` lists every item
+   (manual evidence proposals, onboarding decisions, suppliers, supplier reviews, drafted audits and imported rows), and the agent
+   drafts a recommendation for each with its reasons and sources, and answers last week's challenges.
+2. The person runs `hound review` in their own terminal (`--for 30m` to stop after half an hour). Most urgent first, each item shows
+   what it is, why it matters, the recommendation and what accepting it does. They accept, challenge (with a note the agent answers
+   before the next session; the item stays queued) or skip.
+3. Accepted items are written as `hound approve` and `hound manual approve` write them. A session records one sign-off under
+   `review/sign-offs/`, naming the person, the time and every item, then shows the plan and applies it after a confirmation
+   (`--no-apply` stops at the files).
+
+**Standing approvals.** When a source's new export has the same checks and the same results as its last attestation, the session
+offers to accept that source's future unchanged exports for 12 months. The rule is written to `review/standing-approvals.json`, listed
+in every session's summary, and expires. Later unchanged exports from that source are accepted without being asked, and counted in the
+summary. A rule never covers a first attestation, a changed result, a not-applicable decision or any other kind of item.
 
 ## Attesting and publishing
 

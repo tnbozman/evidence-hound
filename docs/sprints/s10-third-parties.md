@@ -151,7 +151,7 @@ Decided (maintainer, 2026-11-23): add it in s10 and make it broader than CUI. A 
 - Deviations: labels are `data-<kind>`, not `data:<kind>`, as CISO Assistant takes labels only as `^[\w-]{1,36}$`. A system supplied through a third party with no `solution` is checked against all of that third party's solutions. The prime's list comes from the functional test, not a separate machine-shop rerun; s10-05 uses it in the persona rehearsal.
 
 ### s10-07 Review queue and guided weekly session (added 2026-11-24)
-- [ ] Done
+- [x] Done
 
 Decided (maintainer, 2026-11-24): assume a GRC member with 2 to 8 hours a week, get as close as possible to AI approving everything,
 and gather every human review into one simple process. Design: [one guided review a week](../design/guided-review.md).
@@ -189,6 +189,20 @@ batch.
 - The machine-shop rehearsal (s10-05): the agent prepares a queue with a supplier, a manual export and two onboarding decisions; the
   session, run in a terminal with recorded answers, accepts three and challenges one, and the next plan is empty but for the challenge.
 
+**Functional check result (2026-11-24)**
+- On a copy of `examples/compliance-repo`, after `hound supplier draft --ref SUP-EXAMPLE-MAIL ...`:
+  `hound review pending --repo . --json` listed one `supplier` item (10 minutes, its why, effect and file).
+  `hound review --repo . --no-apply`, run in a pseudo-terminal with the answers "Alex Example", `a`, `s`: accepted the supplier (the
+  contract became `active` with `approved_by` and `approved_on`), then asked its first review "[now ready]", which was skipped, and wrote
+  `review/sign-offs/2026-11-24-025051.yaml` (person, on, at, accepted, skipped). Piped input exits 2 with "hound review needs a person
+  at a terminal". `hound scope validate scope` on the example passes with the weekly row (`every: 1 week`).
+- The full machine-shop rehearsal (agent prepares the queue, three accepted and one challenged, the next plan empty but for the
+  challenge, against CISO Assistant) runs with s10-05.
+- Deviations: the tests are `ReviewCommandTests.Lists_every_pending_kind_in_one_shape` (in the CLI, which reads the repo) and
+  `ReviewQueueTests` for the order and the time limit; scope changes waiting to be applied are not queue items, the session ends by
+  showing the plan and applying it after a confirmation; an item that becomes ready during the session (a system after its supplier) is
+  asked there, marked "now ready", rather than listed beforehand.
+
 ### Carried from s09 (2026-11-23)
 
 Built and tested in CI; each waits on a run in the maintainer's own environment, not on code. Details stay under the task in `s09-e8-gap-collectors.md`.
@@ -210,5 +224,9 @@ Built and tested in CI; each waits on a run in the maintainer's own environment,
   - On a refused option, `--json` commands print plain text rather than JSON.
   - Cost: nothing totals `annual_expense` or shows what compliance adds (here, moving to a CUI-authorised mail plan).
 - From s10-04: the reference Compose stack (`deploy/`) does not pass `EMAIL_*` to CISO Assistant, so task reminders cannot be sent or tested end to end. Wire it with a local SMTP catcher in the compose smoke test.
+- From s10-07: the weekly task's email is CISO Assistant's task reminder with the runbook. Putting the queue's size and the time it needs
+  in it would need hound to update the task description before each week; left for s12-03 (operating guide).
+- From s10-07: a challenge holds the person's note only. If the agent's answer should travel with it, add an `answer` field the session
+  shows.
 
 ## Sprint review

@@ -1,6 +1,6 @@
 # Design: one guided review a week
 
-Status: Proposed (Nov 24). Builds on [onboarding driven by the person's own coding agent](agent-driven-onboarding.md). The build is
+Status: Agreed and built in s10-07 (Nov 24). Builds on [onboarding driven by the person's own coding agent](agent-driven-onboarding.md). The build is
 task s10-07 in [the s10 sprint](../sprints/s10-third-parties.md); later sprints add their own items to the same queue.
 
 ## Why
@@ -56,7 +56,17 @@ sound on its own, but together they ask the person to know where to look and whe
   adding its own command.
 - s12-03: the operating guide is built around the weekly session and the 2 to 8 hour budget.
 
+## As built (s10-07)
+
+- `hound review pending --json` lists what `hound approve` and `hound manual approve` would ask, in one shape. Items that become ready
+  only once another is accepted (a system after its supplier and not-applicable decisions) are asked in the same session, marked
+  "now ready", rather than listed beforehand.
+- The one standing rule is `unchanged_reattestation`, for 12 months, per manual source. It is offered after a person accepts an
+  unchanged attestation.
+- Scope changes waiting to be applied are not items: the session ends by showing the plan and applying it after a confirmation.
+- The weekly task's email is CISO Assistant's own task reminder with the runbook; it does not yet carry the queue's size.
+
 ## Open questions
 
-- How long a standing approval lasts, and who may sign one when the authorising official is not the GRC member.
+- Who may sign a standing approval when the authorising official is not the GRC member.
 - Whether a challenge should reach the system owner as well as the agent.
