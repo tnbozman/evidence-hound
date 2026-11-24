@@ -287,6 +287,8 @@ One system security plan (SSP) per programme. Optional. `hound ssp build --progr
 | `documents` | Boundary and network diagrams, data flows, policies and procedures, by document `id` from an audit. |
 | `sections` | The parts that cannot be generated, as Markdown files in the repo: `environment`, `physical` and `personnel` are required by both profiles. |
 
+Each requirement row gets a status from its result: `compliant` is *Implemented*, `partially_compliant` *Partially implemented*, `not_applicable` *Not applicable*, and `non_compliant` or `not_assessed` *Planned* when a linked control has an ETA, otherwise *Not implemented*. Its statement is the linked controls' descriptions in ref order, then the observation; the responsible party is the controls' owners. A row in place with no statement, a row in place or planned with no owner, and a row not applicable with no justification (its observation) are **gaps**: listed first, in `--json`, and fatal with `--strict` (exit 1). A row not yet implemented is not a gap: `hound ssp poam --programme <id>` lists it, one line per linked control with its owner, ETA and status.
+
 External services are the solutions the scope links the boundary's systems to (`solution:` in `setup.yaml`), with their suppliers as CISO Assistant holds them. Controls and requirement rows come from the programme's audit of record. Problems: `ssp.programme_unknown`, `ssp.perimeter_unknown`, `ssp.role_missing`, `ssp.role_unknown`, `ssp.document_unknown`, `ssp.section_missing`, and `scope.duplicate` for a second plan for the same programme.
 
 ## audits/&lt;audit&gt;.yaml

@@ -52,6 +52,27 @@ public sealed class SspFunctionalTests(CisoAssistantFixture ciso)
         plan["documents"]!.AsArray().ShouldHaveSingleItem()!["value"]!.GetValue<string>().ShouldBe("Identity and access policy", json);
     }
 
+    [Fact]
+    public async Task Strict_lists_the_example_gaps_and_the_poam_lists_what_is_not_met()
+    {
+        // s11-03: ISM-1486 is compliant by hand with no control linked, so nobody is responsible for it: a gap until a control owns it.
+        var ct = TestContext.Current.CancellationToken;
+        var scope = CopyOfExampleScope();
+        await File.WriteAllTextAsync(Path.Combine(scope, "ssp.yaml"), Ssp, ct);
+        var output = Directory.CreateDirectory(Path.Combine(CisoAssistantFixture.RepoRoot, "test-results", "ssp")).FullName;
+
+        var (exit, markdown) = await RunAsync(["ssp", "build", "--programme", "essential-eight", "--scope", scope, "--strict"], ct);
+        await File.WriteAllTextAsync(Path.Combine(output, "ssp-essential-eight-strict.md"), markdown, ct);
+        var (poamExit, poam) = await RunAsync(["ssp", "poam", "--programme", "essential-eight", "--scope", scope], ct);
+        await File.WriteAllTextAsync(Path.Combine(output, "poam-essential-eight.md"), poam, ct);
+
+        exit.ShouldBe(ExitCodes.SspGaps, markdown);
+        markdown.ShouldContain("- ISM-1486: no responsible party", Case.Sensitive, markdown);
+        poamExit.ShouldBe(ExitCodes.Ok, poam);
+        poam.ShouldContain("| Requirement | Status | Control | Owner | ETA | Control status |", Case.Sensitive, poam);
+        poam.ShouldContain("| Not implemented |", Case.Sensitive, poam);
+    }
+
     private static string CopyOfExampleScope()
     {
         var source = Directory.GetParent(CisoAssistantFixture.ExampleScope)!.FullName;
