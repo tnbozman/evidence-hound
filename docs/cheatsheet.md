@@ -19,6 +19,8 @@ file by `scripts/cheatsheet/render.sh`.
 - `hound supplier draft`: draft a supplier, its solution, contract and review
   - `--ref --name --solution-ref --solution-name --contract-ref --contract-name` (req)
   - `--kind msp|reseller|vendor --for --system --level --document --description --start --end --annual-expense --currency --json`
+- `hound supplier list`: who handles a kind of sensitive data, on what authority
+  - `--data cui|pii|export_controlled|classified` (req) `--repo --json`
 - `hound add system`: add a system to the scope
   - `--scope` (req) `--domain --name --ref-id --type --owner --description --parents --audit -y`
 - `hound add control`: add an applied control

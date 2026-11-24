@@ -5,7 +5,7 @@ namespace EvidenceHound.Cli.Tests;
 /// <summary>s10-06: <c>hound supplier list --data</c> prints the list a prime or an auditor asks for: who handles a kind of data, and on what authority.</summary>
 public sealed class SupplierListCommandTests : IDisposable
 {
-    private const string Supplier = """
+    private static readonly string Supplier = """
         ref_id: SUP-EXCLOUD
         name: Example Cloud Pty Ltd
         country: AU

@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using System.Text.Json.Nodes;
 using EvidenceHound.Core.Results;
 using EvidenceHound.Core.Scope;
+using EvidenceHound.Core.Yaml;
 using EvidenceHound.Onboarding.Output;
 using EvidenceHound.Onboarding.Suppliers;
 using Microsoft.Extensions.Configuration;
@@ -92,8 +93,93 @@ internal static class SupplierCommands
                 },
                 problems => Task.FromResult(Log.Problems(logger, problems)));
         });
-        return new Command("supplier", "Work with third parties in a compliance repo.") { draft };
+        return new Command("supplier", "Work with third parties in a compliance repo.") { draft, List(terminal, logger, repo, json) };
     }
+
+    /// <summary><c>hound supplier list --data &lt;kind&gt;</c>: each supplier's solution handling a kind of sensitive data, with its authority.</summary>
+    private static Command List(Terminal terminal, ILogger logger, Option<DirectoryInfo> repo, Option<bool> json)
+    {
+        var data = new Option<string>("--data") { Description = "The kind of sensitive data: cui, pii, export_controlled or classified.", Required = true };
+        var list = new Command("list", "List the suppliers and solutions that handle a kind of sensitive data, with what authorises each: the list a prime or auditor asks for.")
+        {
+            repo, data, json,
+        };
+        list.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var code = parseResult.GetRequiredValue(data);
+            if (SensitiveDataList.Kind(code) is not { } kind)
+            {
+                return Log.Problems(logger, [new Problem("data.kind_invalid", $"'{code}' is not a kind of sensitive data; use cui, pii, export_controlled or classified.")]);
+            }
+
+            var root = parseResult.GetValue(repo)?.FullName ?? Directory.GetCurrentDirectory();
+            var parsed = await ScopeAsync(root, cancellationToken);
+            if (parsed.Problems.Count > 0)
+            {
+                return Log.Problems(logger, parsed.Problems.Select(p => new Problem(p.Code, $"{p.At.File}:{p.At.Line}: {p.Message}")));
+            }
+
+            var holders = SensitiveDataList.Handling(parsed.Scope, kind);
+            var text = parseResult.GetValue(json) ? Json(code, holders) : Markdown(code, holders);
+            await terminal.Output.WriteLineAsync(text.AsMemory(), cancellationToken);
+            return ExitCodes.Ok;
+        });
+        return list;
+    }
+
+    private static async Task<ScopeParse> ScopeAsync(string repo, CancellationToken cancellationToken)
+    {
+        var scope = Path.Combine(repo, "scope");
+        var setup = Path.Combine(scope, "setup.yaml");
+        var thirdParties = Path.Combine(scope, "third-parties");
+        var files = Directory.Exists(thirdParties) ? Directory.GetFiles(thirdParties, "*.yaml").Order(StringComparer.Ordinal).ToArray() : [];
+        return ScopeLoader.Parse(
+            new ScopeSource(setup, File.Exists(setup) ? await File.ReadAllTextAsync(setup, cancellationToken) : ""),
+            null,
+            [],
+            thirdParties: [.. await Task.WhenAll(files.Select(async f => new ScopeSource(Path.GetRelativePath(repo, f).Replace('\\', '/'), await File.ReadAllTextAsync(f, cancellationToken))))]);
+    }
+
+    private static string Json(string kind, IReadOnlyList<SensitiveDataHolder> holders) => new JsonObject
+    {
+        ["data"] = kind,
+        ["solutions"] = new JsonArray([.. holders.Select(h => (JsonNode)new JsonObject
+        {
+            ["supplier"] = h.Supplier,
+            ["supplier_name"] = h.SupplierName,
+            ["solution"] = h.Solution,
+            ["solution_name"] = h.SolutionName,
+            ["role"] = Role(h.Data),
+            ["detail"] = h.Data.Detail,
+            ["authority"] = h.Data.Authority?.Name,
+            ["evidence"] = h.Data.Authority?.Evidence,
+            ["expires"] = Day(h.Data.Authority?.Expires),
+            ["systems"] = new JsonArray([.. h.Systems.Select(s => (JsonNode)s)]),
+        })]),
+    }.ToJsonString(OnboardAgentCommand.Indented);
+
+    private static string Markdown(string kind, IReadOnlyList<SensitiveDataHolder> holders)
+    {
+        static string Cell(string? text) => string.IsNullOrEmpty(text) ? "" : text.Replace("|", "\\|", StringComparison.Ordinal);
+        var lines = new List<string>
+        {
+            $"# Suppliers handling {kind}",
+            "",
+            holders.Count == 0 ? $"No supplier's solution lists {kind} in its data." : "| Supplier | Solution | Role | Detail | Authority | Evidence | Expires | Systems |",
+        };
+        if (holders.Count > 0)
+        {
+            lines.Add("| --- | --- | --- | --- | --- | --- | --- | --- |");
+            lines.AddRange(holders.Select(h =>
+                $"| {h.Supplier} | {h.Solution} | {Role(h.Data)} | {Cell(h.Data.Detail)} | {Cell(h.Data.Authority?.Name ?? "no authority recorded")} | {Cell(h.Data.Authority?.Evidence)} | {Day(h.Data.Authority?.Expires)} | {Cell(string.Join(", ", h.Systems))} |"));
+        }
+
+        return string.Join('\n', lines);
+    }
+
+    private static string Role(SensitiveData data) => data.Role.ToString().ToLowerInvariant();
+
+    private static string? Day(DateOnly? day) => day?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
     /// <summary>Each <c>name=value:reason</c> as a level within its scale, with a reason. Every problem is reported. Pure.</summary>
     internal static Result<IReadOnlyList<LevelProposal>> Levels(IReadOnlyList<string> given)
