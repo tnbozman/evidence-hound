@@ -198,7 +198,7 @@ public static class HoundCli
             ExplainCommand.Build(terminal, loggers),
             OnboardCommands.Build(terminal, loggers, configuration, new GraphAccess(registry.Descriptions, collectorServices.HttpClients, lookup, configuration)),
             ManualCommand.Build(terminal, loggers, registry, new SystemClock()),
-            MappingCommands.Build(output, loggers),
+            MappingCommands.Build(output, loggers, configuration, registry),
             ScopeCommands.Build(output, loggers, configuration, registry),
             SkillCommands.Build(terminal, loggers, configuration),
             SupplierCommands.Build(terminal, loggers, configuration),

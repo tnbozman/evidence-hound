@@ -2,6 +2,8 @@ using System.CommandLine;
 using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Results;
 using EvidenceHound.Core.Yaml;
+using EvidenceHound.Runtime.Collectors;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace EvidenceHound.Cli;
@@ -9,7 +11,7 @@ namespace EvidenceHound.Cli;
 /// <summary>The <c>hound mapping</c> commands: work with framework mapping files.</summary>
 internal static class MappingCommands
 {
-    public static Command Build(TextWriter output, ILoggerFactory loggers)
+    public static Command Build(TextWriter output, ILoggerFactory loggers, IConfiguration configuration, CollectorRegistry registry)
     {
         var logger = loggers.CreateLogger("hound.mapping");
         var file = new Argument<FileInfo>("file") { Description = "Path to a framework mapping file (YAML)." };
@@ -27,7 +29,7 @@ internal static class MappingCommands
         apply.SetAction((parseResult, cancellationToken) =>
             ApplyAsync(parseResult.GetRequiredValue(mappingFile), parseResult.GetRequiredValue(checksFile), output, logger, cancellationToken));
 
-        return new Command("mapping", "Work with framework mapping files.") { validate, apply, MappingCoverageCommand.Build(output, logger) };
+        return new Command("mapping", "Work with framework mapping files.") { validate, apply, MappingCoverageCommand.Build(output, logger), MappingCrosswalkCommand.Build(output, loggers, configuration, registry) };
     }
 
     private static async Task<int> ValidateAsync(FileInfo file, FileInfo? framework, TextWriter output, ILogger logger, CancellationToken cancellationToken)
