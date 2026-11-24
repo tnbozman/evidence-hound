@@ -24,7 +24,7 @@ What is configuration here, and what is not:
 ## Part 1: programmes and the Essential Eight system security plan
 
 ### s11-01 Programmes, and reporting per programme
-- [ ] Done
+- [x] Done
 
 **Story:** As the authorising official, I want reports organised by compliance programme (Essential Eight, AI6, later NIST SP 800-171), so that adding a framework adds a section to the same reports instead of a new report or code that assumes Essential Eight maturity levels.
 
@@ -48,6 +48,8 @@ The reports themselves are built in s12. This task declares programmes in config
 
 **Functional check**
 - `make run ARGS="programme list --scope examples/compliance-repo/scope"` lists the Essential Eight programme with 8 strategies at groups 1 and 2, and (after s11-15) the AI6 programme with 6 practices.
+
+Result (2026-11-24): `make run ARGS="programme list --scope examples/compliance-repo/scope"` prints the `essential-eight` programme (framework version 3, audit of record EX-E8-2026) with 8 parent nodes (pa, pos, mfa, rap, ac, rmom, uah, rb) at groups 1 and 2: 48 requirements at Maturity Level One, 107 at Maturity Level Two. The AI6 line waits for s11-15. Also built: `scope.programme_id` (slug), duplicate ids (`scope.duplicate`), `scope.programme_framework_unknown`, `scope.programme_group_unknown`, `scope.programme_audit_unknown`, `scope.programme_audit_framework`, `scope.programme_audit_shared`, `scope.programme_needs_snapshot`; the schema and both example repos gained the programme.
 
 ### s11-02 SSP model and declaration
 - [ ] Done
@@ -471,5 +473,7 @@ environment, not on code. Details stay under the task in `s09-e8-gap-collectors.
 - [ ] s09-54 and s09-57 `make trial` on the maintainer's machine.
 
 ## Discovered work
+
+- s11-01: framework snapshots hold parent node URNs but not their titles, so `hound programme list` shows a strategy as its short code (`mfa`, `rap`). The s12 reports need the name ("Multi-factor authentication"): add parent titles to the snapshot (`hound framework snapshot`) before s12-05.
 
 ## Sprint review
