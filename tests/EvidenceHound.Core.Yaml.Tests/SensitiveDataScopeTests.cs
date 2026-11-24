@@ -62,6 +62,19 @@ public class SensitiveDataScopeTests
     }
 
     [Fact]
+    public void System_supplied_through_a_third_party_with_no_solution_for_the_kind_is_reported()
+    {
+        var setup = Setup().Replace("        solution: SOL-EXCLOUD-HOST\n", "", StringComparison.Ordinal)
+            .Replace("kind: cui\n            detail: CUI//SP-CTI", "kind: classified\n            detail: PROTECTED", StringComparison.Ordinal);
+
+        var problem = Problems(Supplier(), setup).ShouldHaveSingleItem();
+
+        problem.Code.ShouldBe("data.supplier_not_authorised");
+        problem.Message.ShouldContain("SUP-EXCLOUD");
+        problem.Message.ShouldContain("classified");
+    }
+
+    [Fact]
     public void Expired_authority_is_reported()
     {
         var problem = Problems(Supplier().Replace("\"2027-06-30\"", "\"2026-06-30\"", StringComparison.Ordinal), Setup()).ShouldHaveSingleItem();
@@ -80,11 +93,11 @@ public class SensitiveDataScopeTests
         Problems(Supplier(), Setup().Replace(from, to, StringComparison.Ordinal)).Select(p => p.Code).ShouldContain(code);
     }
 
-    private static string Supplier() => SupplierScopeTests.Supplier.Replace("    criticality: 3\n", SolutionData, StringComparison.Ordinal);
+    internal static string Supplier() => SupplierScopeTests.Supplier.Replace("    criticality: 3\n", SolutionData, StringComparison.Ordinal);
 
-    private static string Setup() => ScopeFixture.Setup.Replace("        owner: it@example.com\n        tags:\n", SystemData, StringComparison.Ordinal);
+    internal static string Setup() => ScopeFixture.Setup.Replace("        owner: it@example.com\n        tags:\n", SystemData, StringComparison.Ordinal);
 
-    private static ScopeParse Parse(string supplier, string setup) =>
+    internal static ScopeParse Parse(string supplier, string setup) =>
         ScopeLoader.Parse(
             new ScopeSource("scope/setup.yaml", setup),
             new ScopeSource("scope/controls.yaml", ScopeFixture.Controls),
