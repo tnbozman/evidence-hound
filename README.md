@@ -12,6 +12,8 @@ This project shows how to do that with open-source tools:
 
 It is designed to be built and run by an ordinary in-house IT and software team, with AI-assisted development doing most of the build and automation doing most of the upkeep.
 
+> **`hound` cheat sheet:** every command and its options on one page, the typical paths on the next. [PDF](docs/cheatsheet.pdf) · [Markdown](docs/cheatsheet.md)
+
 ## What this repo provides
 
 | Part | Purpose |
