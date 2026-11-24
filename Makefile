@@ -10,7 +10,7 @@ CA_COMPOSE := dev/ciso-assistant/compose.yml
 CA_ENV := HOUND_CA_SECRET_KEY="$$(scripts/ca-secret-key.sh)"
 SHELL_SCRIPTS := $(wildcard scripts/*.sh scripts/lib/*.sh deploy/compose/*.sh .devcontainer/*.sh dev/ciso-assistant/seed/*.sh) .githooks/pre-commit
 
-.PHONY: help lint-docs test-docs restore build test test-functional test-profiles test-template test-scripts test-terraform coverage image test-image test-compose compose-smoke lint lint-dotnet lint-shell format run m365-dev sophos-dev iac-dev scan-dev hooks ca-up ca-up-kafka ca-down trial trial-clean
+.PHONY: help lint-docs test-docs test-packages changelog restore build test test-functional test-profiles test-template test-scripts test-terraform coverage image test-image test-compose compose-smoke lint lint-dotnet lint-shell format run m365-dev sophos-dev iac-dev scan-dev hooks ca-up ca-up-kafka ca-down trial trial-clean
 
 help: ## List targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-16s %s\n", $$1, $$2}'
@@ -38,6 +38,12 @@ test-profiles: build ## Run every library profile's offline tests with hound pro
 
 test-template: ## Generate a collector from templates/collector, then build and test it
 	scripts/test-template.sh
+
+test-packages: ## Pack every NuGet package and check its metadata (licence, repository, README, symbols)
+	scripts/check-packages.sh
+
+changelog: ## Regenerate CHANGELOG.md from Conventional Commits, naming unreleased commits VERSION (for example VERSION=1.0.0)
+	scripts/changelog.sh $(VERSION)
 
 test-scripts: ## Shell script tests (bats)
 	bats scripts/tests

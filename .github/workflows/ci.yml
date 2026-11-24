@@ -123,11 +123,14 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0 # MinVer reads the version from tags
       - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
           global-json-file: global.json
       - name: Generate a collector from the template, build and test it
         run: make test-template
+      - name: Pack every NuGet package and check its metadata
+        run: make test-packages
 
   image:
     runs-on: ubuntu-latest
@@ -188,8 +191,10 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Install bats
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq bats
+      - name: Install bats and git-cliff
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq bats
+          pip install --require-hashes -r tools/changelog/requirements.txt
       - name: ShellCheck
         run: make lint-shell
       - name: Script tests
