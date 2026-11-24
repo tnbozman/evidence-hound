@@ -53,7 +53,11 @@ public sealed record ScopeSetup(string RootFolder, IReadOnlyList<ScopeFramework>
 /// A compliance programme, such as the Essential Eight or AI6: the framework, the implementation groups reported against, and the audit (or
 /// audit series) of record. Reports are organised by programme. A programme creates nothing in CISO Assistant.
 /// </summary>
-public sealed record ScopeProgramme(string Id, string Name, ScopeRef Framework, IReadOnlyList<string> Groups, ScopeRef Audit, string GroupBy, SourceLine At);
+public sealed record ScopeProgramme(string Id, string Name, ScopeRef Framework, IReadOnlyList<string> Groups, ScopeRef Audit, string GroupBy, SourceLine At)
+{
+    /// <summary>The register the programme's reports summarise, if any (s11-14).</summary>
+    public ProgrammeRegister? Register { get; init; }
+}
 
 /// <summary>A framework to load: its URN, and its library by URN or as a custom library file. A snapshot makes it checkable offline.</summary>
 public sealed record ScopeFramework(string Urn, string? LibraryUrn, string? LibraryFile, string? Snapshot, SourceLine At);

@@ -7,7 +7,11 @@ namespace EvidenceHound.Core.Scope;
 public sealed record AiRegisterEntry(string System, string? Owner, AiRegistration Ai);
 
 /// <summary>What one register check found, before it becomes a <see cref="CheckResult"/>.</summary>
-public sealed record AiRegisterFinding(string CheckId, CheckOutcome Outcome, string Observation);
+public sealed record AiRegisterFinding(string CheckId, CheckOutcome Outcome, string Observation)
+{
+    /// <summary>The AI systems the check fails, by name.</summary>
+    public IReadOnlyList<string> Failing { get; init; } = [];
+}
 
 /// <summary>
 /// The AI register checks (s11-13): pure functions over the register entries in the scope files and today's date. Each observation

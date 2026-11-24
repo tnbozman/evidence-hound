@@ -478,19 +478,27 @@ Done before s11-12, because the register fields and the screening runbook follow
 
 **Story:** As the security committee, I want each programme's report section to summarise its register (for AI6: AI systems by tier, new this period, and gaps), so that the AI section answers "what AI do we use and is it governed" as well as "which AI6 rows pass".
 
+**Design change (2026-11-24).** The register is the scope's systems (s11-12), not an asset class with custom fields, so a programme names a register kept in the scope.
+
 **Acceptance criteria**
-- A programme (s11-01) may declare `registers`: an asset class and the choice fields to count by (for AI6: class *AI system*, by `ai_risk_tier` and `ai_use`).
-- A pure function `RegisterSummary.Of(assets, register, period)` returns counts by field value, assets added and retired in the period, and assets failing any check that names the class. s12-04's `PostureSnapshot` includes it per programme (s12 amendment).
-- Generic: nothing in the function knows about AI; the Essential Eight programme can declare a register of systems the same way.
+- A programme (s11-01) may declare `register`: `of` (`ai_systems`, the systems with an `ai` block, or `systems`, every system) and `by` (the fields to count by: `tier`, `use` and `oversight` for AI systems, `type` for systems). An unknown register or field is `scope.programme_register_unknown`.
+- `RegisterItems.Of(setup, of)` gives each item's name, its field values, and the dates it was added (an AI system's `in_use_from`) and retired (`retired_on`).
+- A pure function `RegisterSummary.Of(items, by, from, to, failing)` returns the number of items, counts by field value (items retired before the period ends are left out), the items added and retired in the period, and the items a failing check names. `AiRegisterFinding` names the systems it fails. s12-04's `PostureSnapshot` includes the summary per programme (s12 amendment).
+- Generic: nothing in the summary knows about AI; the Essential Eight programme can declare `register: { of: systems, by: [type] }`.
+- `hound programme list` shows each programme's register counts (text and `--json`).
 
 **Tests first**
-- `RegisterSummaryTests.Counts_by_choice_field`
+- `RegisterSummaryTests.Counts_by_field`
 - `RegisterSummaryTests.Added_and_retired_in_period`
 - `RegisterSummaryTests.Empty_register_gives_zero_counts_not_missing_section`
-- `ProgrammeScopeTests.Register_fields_must_be_choice_fields`
+- `RegisterSummaryTests.Failing_lists_the_items_failing_checks_name`
+- `RegisterItemsTests.Ai_systems_give_their_register_fields_and_dates`
+- `ProgrammeScopeTests.Register_must_be_known_with_known_fields`
+- `AiRegisterChecksTests.Findings_name_the_failing_systems`
+- `ProgrammeCommandTests.List_shows_the_register_counts`
 
 **Functional check**
-- A small console check in the test suite prints the example AI register summary; the figures match the two example AI systems. The report output itself is checked in s12.
+- `make run ARGS="programme list --scope examples/compliance-repo/scope"` shows the AI6 programme's register: the two example AI systems by tier and use (with s11-15, which adds them). The report output itself is checked in s12.
 
 ### s11-15 Documentation and example repo
 - [ ] Done

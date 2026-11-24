@@ -175,5 +175,14 @@ public class AiRegisterChecksTests
         AiRegisterChecks.Entries(setup).ShouldBe([new AiRegisterEntry("Example Chat", "it@example.com", Chat.Ai)]);
     }
 
+    [Fact]
+    public void Findings_name_the_failing_systems()
+    {
+        var findings = AiRegisterChecks.Assess([Chat, Scoring with { Owner = null }], Today);
+
+        Find(findings, "ai.owner_assigned").Failing.ShouldBe(["Example lead scoring"]);
+        Find(findings, "ai.tested_before_use").Failing.ShouldBeEmpty();
+    }
+
     private static AiRegisterFinding Find(IEnumerable<AiRegisterFinding> findings, string checkId) => findings.Single(f => f.CheckId == checkId);
 }
