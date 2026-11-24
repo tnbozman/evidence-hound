@@ -38,7 +38,8 @@ setup() {
 @test "the release has an SBOM, provenance for packages and the image, and notes from the changelog" {
   grep -q 'CycloneDX' "$wf"
   [ "$(grep -c 'actions/attest-build-provenance@' "$wf")" -ge 2 ]
-  grep -q 'scripts/changelog.sh --notes' "$wf"
+  grep -q 'scripts/changelog.sh" --notes' "$root/scripts/release-build.sh"
+  grep -q 'artifacts/notes.md' "$wf"
   grep -q 'gh release create' "$wf"
 }
 
