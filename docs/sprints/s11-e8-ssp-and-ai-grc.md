@@ -520,6 +520,12 @@ Done before s11-12, because the register fields and the screening runbook follow
 **Functional check**
 - Following `docs/ai-grc.md` verbatim on the local stack, register a third fictional AI system, apply, run, and see its checks and AI6 rows update.
 
+**Progress (2026-11-24)**
+- Example repo: the AI6 library and snapshot (copies, kept identical by `ExampleRepoTests`), the `ai6` programme with its register, two AI systems (*Example ticket triage*, built, low; *Example proposal assistant*, customised, medium, not yet tested), the audit `EX-AI6-2026` (group `F`), the controls `AC-AI-REGISTER` and `AC-AI-GOVERNANCE`, evidence plan rows for the register and both manual sources, their runbooks, and `hound.yaml` with the three AI collectors and `targets` for both audits. The onboarding tutorial's `setup.yaml` and `hound.yaml` were regenerated from the template.
+- Deviation: neither example AI system is third party, because a third-party system needs an approved supplier, and the shared functional seed has no approved supplier. The supplier checks are covered by the `ciso-assistant` profile's recorded tests.
+- Docs: `docs/ai-grc.md` (what AI6 asks and where each part lives, who sets each field, the checks, adopting at Foundations, moving to Implementation, limits), `examples/compliance-repo/runbooks/ai-screening.md` (questions from the AI6 text until s11-11 brings the NAIC template), README.
+- Functional checks (`AiGovernanceFunctionalTests`, also covering s11-09, s11-12, s11-13 and s11-14): the seed writes the labels and the Foundations audit without AI6-4.4; a run of both AI collectors fills AI6-4.1 compliant, AI6-5.1 and AI6-3.3 non-compliant; `programme list` shows the AI register. Waiting on CI.
+
 ## Changes to other sprints
 
 Applied in the planning PR that adds this sprint:
