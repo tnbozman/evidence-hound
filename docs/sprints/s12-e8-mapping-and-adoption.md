@@ -1,6 +1,6 @@
 # s12 Essential Eight mapping and adoption guides
 
-Status: In progress
+Status: Done
 
 **Goal:** the Essential Eight ML2 mapping completed, the guides an organisation needs to adopt the kit (moving registers out of spreadsheets, running manual sources, training), and two tiers of reporting: monthly operational reporting to the security committee and quarterly governance reporting to the board.
 
@@ -81,7 +81,7 @@ Risks, exceptions and risk acceptances in the reports are read from CISO Assista
 - Docs link check (`DocsLinkTests`) passes. The walk-through is part of the s12-09 rehearsal.
 
 ### s12-04 Report data model and snapshots
-- [ ] Done
+- [x] Done
 
 **Story:** As the capability owner, I want each reporting period's figures captured as a snapshot, so that reports show trends and can be reproduced later.
 
@@ -103,7 +103,7 @@ Risks, exceptions and risk acceptances in the reports are read from CISO Assista
 - Run `hound run` twice with different recordings, take a snapshot after each, and confirm the diff lists the changed requirement.
 
 ### s12-05 Monthly security committee report (operational)
-- [ ] Done
+- [x] Done
 
 **Story:** As the security committee, I want a monthly operational report, so that we can see what changed, what is failing and what is overdue, and assign actions.
 
@@ -134,7 +134,7 @@ Risks, exceptions and risk acceptances in the reports are read from CISO Assista
 reference template, agenda, roles, recording decisions in CISO Assistant).
 
 ### s12-06 Quarterly board report (governance)
-- [ ] Done
+- [x] Done
 
 **Story:** As the board, I want a short quarterly governance report, so that we understand our compliance posture, its direction, the key risks and the risks management has accepted on our behalf.
 
@@ -182,7 +182,7 @@ reference template, agenda, roles, recording decisions in CISO Assistant).
   line. An MCP server is mentioned only as "if your version offers one", since it could not be checked here.
 
 ### s12-08 NIST SP 800-171 crosswalk (added 2026-11-24)
-- [ ] Done
+- [x] Done
 
 Moved earlier from s17 at the maintainer's request (2026-11-24), lightweight: US suppliers have a window while CMMC Phase 2 is paused.
 Full CMMC Level 2 (mapping, SSP layout, POA&M) stays in s17.
@@ -356,5 +356,5 @@ asks against today's Essential Eight evidence: 1 answered, 30 partly answered an
 moving off spreadsheets, a guide per role, training, the committee and board, AI-assisted reporting, a continuous compliance procedure,
 and answering a prime's questionnaire. The first standing rehearsal found 16 problems; 13 were fixed here and the rest carried.
 
-Open at review: s12-04, s12-05, s12-06 and s12-08 are ticked once CI's functional job has run their CISO Assistant checks on the final
-head. The carried human trials need a real tenant or firewall and do not block release 1.
+s12-04, s12-05, s12-06 and s12-08 were ticked when CI's functional job passed their CISO Assistant checks on the final head. The
+last fix was in a test: its PATCH sent a chunked body, which Django reads as empty, so the requirement never changed between snapshots. The carried human trials need a real tenant or firewall and do not block release 1.
