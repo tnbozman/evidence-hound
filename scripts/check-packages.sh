@@ -4,6 +4,7 @@
 # each library. CI runs it on every pull request; the release workflow publishes what it packs.
 #
 # Usage: scripts/check-packages.sh [output-folder]   (make test-packages; default: a temporary folder)
+# Environment: MinVerVersionOverride to pack a given version, such as 0.0.0-test.
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -24,6 +25,7 @@ others=(EvidenceHound.Templates EvidenceHound.Cli)
 echo "check-packages: packing into $out"
 # Restore once in locked mode, then pack without restoring, so packing never rewrites a lock file.
 dotnet restore "$root/EvidenceHound.slnx" --locked-mode --nologo -v quiet
+# MinVerVersionOverride (an MSBuild property, read from the environment) sets the version instead of the git tags, as for a dry run.
 dotnet pack "$root/EvidenceHound.slnx" --no-restore -c "${CONFIGURATION:-Release}" -o "$out" --nologo -v quiet
 
 failures=0

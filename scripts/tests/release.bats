@@ -44,8 +44,9 @@ setup() {
 
 @test "the dry run packs 0.0.0-test into a test feed and installs hound from it" {
   grep -q '0.0.0-test' "$wf"
-  grep -q 'dotnet tool install' "$wf"
-  grep -q -- '--add-source' "$wf"
+  grep -q 'scripts/release-build.sh' "$wf"
+  grep -q 'dotnet tool install' "$root/scripts/release-build.sh"
+  grep -q -- '--add-source "$out/packages"' "$root/scripts/release-build.sh"
 }
 
 @test "the only secret is the optional NuGet key; no long-lived token is needed otherwise" {
