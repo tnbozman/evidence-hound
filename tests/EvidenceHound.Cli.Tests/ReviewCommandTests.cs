@@ -100,6 +100,40 @@ public sealed class ReviewCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task An_agents_recommendation_is_recorded_shown_in_the_session_and_cleared_once_accepted()
+    {
+        // s10-05 rehearsal: a drafted supplier had no recommendation, and the agent had no way to give one.
+        await OnboardAgentCommandTests.DraftEverythingAsync(Repo, _ct);
+        const string Key = "supplier:SUP-EXAMPLE/CTR-EXAMPLE-ASSETS";
+
+        var (exit, _, error) = await RunAsync(
+            ["review", "recommend", Key, "--repo", Repo, "--answer", "accept", "--reason", "Its trust page shows an ISO 27001 certificate valid to 2027.",
+                "--source", "documents/suppliers/sup-example/trust-centre.md", "--json"], terminal: false);
+        exit.ShouldBe(ExitCodes.Ok, error);
+
+        (exit, var output, error) = await RunAsync(["review", "pending", "--json", "--repo", Repo], terminal: false);
+        exit.ShouldBe(ExitCodes.Ok, error);
+        var item = JsonNode.Parse(output)!["items"]!.AsArray().Single(i => i!["key"]!.GetValue<string>() == Key)!;
+        item["recommendation"]!["answer"]!.GetValue<string>().ShouldBe("accept");
+        item["recommendation"]!["reasons"]!.GetValue<string>().ShouldContain("ISO 27001");
+        item["recommendation"]!["sources"]!.AsArray().Select(s => s!.GetValue<string>()).ShouldBe(["documents/suppliers/sup-example/trust-centre.md"]);
+
+        // An item that is not waiting, an answer the item cannot take, and a recommendation without a source are refused.
+        (exit, _, error) = await RunAsync(["review", "recommend", "supplier:SUP-NONE/CTR-NONE", "--repo", Repo, "--answer", "accept", "--reason", "r", "--source", "s"], terminal: false);
+        (exit, error.Contains("is not waiting on a person", StringComparison.Ordinal)).ShouldBe((ExitCodes.Configuration, true));
+        (exit, _, error) = await RunAsync(["review", "recommend", Key, "--repo", Repo, "--answer", "blocker", "--reason", "r", "--source", "s"], terminal: false);
+        (exit, error.Contains("takes accept or decline", StringComparison.Ordinal)).ShouldBe((ExitCodes.Configuration, true));
+        (exit, _, error) = await RunAsync(["review", "recommend", Key, "--repo", Repo, "--answer", "accept", "--reason", "r"], terminal: false);
+        (exit, error.Contains("--source", StringComparison.Ordinal)).ShouldBe((ExitCodes.Configuration, true));
+
+        // The person reads it in the session; once they accept the item, the recommendation goes with it.
+        (exit, _, error) = await RunAsync(["review", "--repo", Repo, "--no-apply"], terminal: true, "Sam Example\na\ns\ns\ns\n");
+        exit.ShouldBe(ExitCodes.Ok, error);
+        error.ShouldContain("Recommended: accept. Its trust page shows an ISO 27001 certificate valid to 2027. (sources: documents/suppliers/sup-example/trust-centre.md)");
+        (await File.ReadAllTextAsync(Path.Combine(Repo, "review", "recommendations.json"), _ct)).ShouldNotContain(Key);
+    }
+
+    [Fact]
     public async Task An_unchanged_reattestation_is_covered_once_a_standing_approval_is_signed()
     {
         // The first attestation of a source is always reviewed, and offers no rule.
