@@ -65,7 +65,14 @@ public sealed record ResultCount(
 }
 
 /// <summary>A programme's register summary in a period (s11-14): its total and the counts by field and value.</summary>
-public sealed record RegisterSnapshot(string Of, int Total, IReadOnlyList<RegisterCount> Counts);
+public sealed record RegisterSnapshot(string Of, int Total, IReadOnlyList<RegisterCount> Counts)
+{
+    /// <summary>Items added in the period.</summary>
+    public IReadOnlyList<string> Added { get; init; } = [];
+
+    /// <summary>Items retired in the period.</summary>
+    public IReadOnlyList<string> Retired { get; init; } = [];
+}
 
 /// <summary>An applied control and its status, owner and target date.</summary>
 public sealed record ControlItem(string RefId, string Name, string Status, string? Owner, DateOnly? Eta)

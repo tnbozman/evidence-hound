@@ -127,6 +127,10 @@ file by `scripts/cheatsheet/render.sh`.
 - `hound review --for 60m`: **Person**: one guided weekly session
   - `--no-apply`: stop at the files
 
+### Reports
+- `hound report snapshot --period 2026-11`: the period's posture per programme, from CISO Assistant and the run store, to the evidence store
+  - `--config` (req) `--scope --control`
+
 ## Typical paths
 
 ### Start a repo
