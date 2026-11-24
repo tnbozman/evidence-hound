@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 # s13-04: the release workflow. Static checks of .github/workflows/release.yml; its dry run runs in CI on pull requests
-# that change it, packing version 0.0.0-test into a local test feed and installing hound from there.
+# that change it, packing version 1.0.0-dry-run into a local test feed and installing hound from there.
 
 setup() {
   root="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
@@ -43,8 +43,10 @@ setup() {
   grep -q 'gh release create' "$wf"
 }
 
-@test "the dry run packs 0.0.0-test into a test feed and installs hound from it" {
-  grep -q '0.0.0-test' "$wf"
+@test "the dry run packs 1.0.0-dry-run into a test feed and installs hound from it" {
+  # A 0.x version would fail the profiles' "requires hound >=0.1" check in the unit tests and the image.
+  grep -q 'version="1.0.0-dry-run"' "$wf"
+  ! grep -q '0.0.0-test' "$wf"
   grep -q 'scripts/release-build.sh' "$wf"
   grep -q 'dotnet tool install' "$root/scripts/release-build.sh"
   grep -q -- '--add-source "$out/packages"' "$root/scripts/release-build.sh"
