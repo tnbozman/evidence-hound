@@ -69,13 +69,13 @@ teardown() {
   run env -u HOUND_BACKUP_DIR -u HOUND_BACKUP_RECIPIENTS "$dir/backup.sh"
   [ "$status" -eq 2 ]
   [[ "$output" == *"HOUND_BACKUP_DIR"* ]]
-  run env HOUND_BACKUP_DIR="$work" -u HOUND_BACKUP_RECIPIENTS "$dir/backup.sh"
+  run env -u HOUND_BACKUP_RECIPIENTS HOUND_BACKUP_DIR="$work" "$dir/backup.sh"
   [ "$status" -eq 2 ]
   [[ "$output" == *"HOUND_BACKUP_RECIPIENTS"* ]]
 }
 
 @test "restore-test.sh refuses to run without the age identity" {
-  run env HOUND_BACKUP_DIR="$work" -u HOUND_BACKUP_IDENTITY "$dir/restore-test.sh"
+  run env -u HOUND_BACKUP_IDENTITY HOUND_BACKUP_DIR="$work" "$dir/restore-test.sh"
   [ "$status" -eq 2 ]
   [[ "$output" == *"HOUND_BACKUP_IDENTITY"* ]]
 }

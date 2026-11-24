@@ -2,7 +2,7 @@
 
 One Compose project for the whole stack on one VM: CISO Assistant (backend, worker, frontend) pinned to a release, PostgreSQL, Caddy serving HTTPS with its internal certificate authority, and the Evidence Hound collector runner. Everything specific to your organisation lives in your private compliance repo; the [first deployment tutorial](../../docs/tutorials/first-deployment.md) walks through both from an empty VM.
 
-Until backups, restore testing and the hardening guide arrive (sprint s13), **snapshot the VM before every upgrade**.
+Back it up daily and test a restore every quarter ([backups](../../docs/deploy/backups.md)); harden the host ([hardening](../../docs/deploy/hardening.md)) and follow the [update procedure](../../docs/deploy/updates.md).
 
 | File | What it is |
 | --- | --- |
@@ -12,7 +12,10 @@ Until backups, restore testing and the hardening guide arrive (sprint s13), **sn
 | [`ca-env.sh`](ca-env.sh) | Mounted into the backend and worker: exports the database password and secret key from the secrets files, then runs the command. |
 | [`manage.sh`](manage.sh) | Runs a CISO Assistant management command in the backend through `ca-env.sh`, such as `./manage.sh createsuperuser`. |
 | [`runner-token.sh`](runner-token.sh) | Creates the runner's service account and writes its token to the `hound_ca_token` secrets file. |
-| [`smoke-test.sh`](smoke-test.sh) | CI's smoke test: brings the stack up, runs the runner once with the fake collector, tears down. |
+| [`backup.sh`](backup.sh) | Encrypted backup (age) of the database and both data volumes to an off-host folder ([backups](../../docs/deploy/backups.md)). |
+| [`restore-test.sh`](restore-test.sh) | Restores a backup into a temporary project, checks health and the audit count, and drops the result into a manual source as evidence. |
+| [`backup-lib.sh`](backup-lib.sh) | The scripts' shared helpers (names, retention, the result). |
+| [`smoke-test.sh`](smoke-test.sh) | CI's smoke test: brings the stack up, backs it up and restores it into a second project, runs the runner once with the fake collector, tears down. |
 
 ## What talks to what
 
@@ -77,6 +80,5 @@ Paths in `hound.yaml` are as the runner sees them: `/config/...` for your repo, 
 
 ## Upgrade
 
-1. Snapshot the VM.
-2. Change `CA_VERSION` or `HOUND_RUNNER_IMAGE` in `.env` (in your private repo, through a pull request).
-3. `docker compose pull && docker compose up -d --wait`.
+Follow [updates](../../docs/deploy/updates.md): back up, change `CA_VERSION` or `HOUND_RUNNER_IMAGE` in `.env` (in your private repo,
+through a pull request), `docker compose pull && docker compose up -d --wait`, then run a restore test.
