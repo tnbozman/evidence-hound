@@ -90,4 +90,26 @@ public class Ai6MappingTests
             named.ShouldContain(AiRegisterChecks.Practice(check), check);
         }
     }
+
+    [Fact]
+    public void Ciso_assistant_profile_observations_name_the_practice_in_words()
+    {
+        // s11-08: each AI check's observation starts with the AI6 sub-practice it is mapped to, by ref and title, and ends with what to do.
+        var yaml = new YamlDotNet.RepresentationModel.YamlStream();
+        yaml.Load(new StringReader(File.ReadAllText(Path.Combine(Files, "profiles", "ciso-assistant.yaml"))));
+        var checks = ((YamlDotNet.RepresentationModel.YamlSequenceNode)((YamlDotNet.RepresentationModel.YamlMappingNode)yaml.Documents[0].RootNode)["checks"]).Children
+            .Cast<YamlDotNet.RepresentationModel.YamlMappingNode>()
+            .Select(c => (Id: c["id"].ToString(), Describe: c["describe"].ToString()))
+            .Where(c => c.Id.StartsWith("ai.", StringComparison.Ordinal))
+            .ToArray();
+
+        checks.Length.ShouldBe(3);
+        foreach (var (id, describe) in checks)
+        {
+            var practice = Mapping.Mapping.Requirements.Where(r => r.Checks.Any(c => c.Value == id))
+                .Select(r => Snapshot.Nodes.Single(n => n.RefId == r.RequirementRef)).Select(n => $"{n.RefId} {n.Title}:");
+            practice.ShouldContain(p => describe.StartsWith(p, StringComparison.Ordinal), $"{id}: {describe}");
+            describe.TrimEnd('.').Split(". ").Length.ShouldBeGreaterThan(1, $"{id} says what to do next");
+        }
+    }
 }

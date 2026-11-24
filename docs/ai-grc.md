@@ -1,6 +1,7 @@
 # AI governance (AI6) in Evidence Hound
 
-This is the reference for how Evidence Hound and CISO Assistant support AI governance with the Australian Government's *Guidance for AI Adoption* (AI6). New to AI governance? Read the [primer](ai-grc-primer.md) first.
+This is the reference for how Evidence Hound and CISO Assistant support AI governance with the Australian Government's *Guidance for AI Adoption* (AI6). New to AI governance? Read the [primer](ai-grc-primer.md) first, then follow [the walkthrough](tutorials/ai-governance.md) on the local
+stack; [the training outline](training/ai-governance.md) turns it into a 30-minute team session.
 
 ## What AI6 asks, and where each part lives
 
