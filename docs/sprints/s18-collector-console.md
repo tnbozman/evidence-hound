@@ -1,16 +1,16 @@
-# s17 Collector console (optional)
+# s18 Collector console (optional)
 
 Status: Planned
 
 Release: 2 (optional)
 
-Was s14 before the release 1 reorder.
+Was s15 before the release 1 reorder.
 
 **Goal:** a small web console to register collectors and see collector and CISO Assistant integration health, built on the run status data from s03. CISO Assistant remains the place for compliance, evidence, risks and third parties.
 
 Stack: ASP.NET Core minimal API in `src/EvidenceHound.Console.Api`, Vue 3 + Vite + TypeScript in `web/console`, EF Core with SQLite (Postgres option), OpenID Connect sign-in.
 
-### s17-01 Console API (read-only)
+### s18-01 Console API (read-only)
 - [ ] Done
 
 **Acceptance criteria**
@@ -26,7 +26,7 @@ Stack: ASP.NET Core minimal API in `src/EvidenceHound.Console.Api`, Vue 3 + Vite
 **Functional check**
 - `curl` with a test token returns the example deployment's status.
 
-### s17-02 Status pages
+### s18-02 Status pages
 - [ ] Done
 
 **Acceptance criteria**
@@ -39,7 +39,7 @@ Stack: ASP.NET Core minimal API in `src/EvidenceHound.Console.Api`, Vue 3 + Vite
 **Functional check**
 - Open the console in the dev container's forwarded port and see the example deployment.
 
-### s17-03 Registration and controls
+### s18-03 Registration and controls
 - [ ] Done
 
 **Acceptance criteria**

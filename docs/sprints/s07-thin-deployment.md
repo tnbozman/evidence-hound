@@ -4,7 +4,7 @@ Status: Done
 
 **Goal:** a small organisation can self-host CISO Assistant and the collector runner on one VM with Docker Compose, with the Microsoft 365 collector running on a schedule, so that evidence starts building history as early as possible. Everything specific to the organisation, from CISO Assistant's deployment settings to its users and the scope from s06, lives in the organisation's own private compliance repo, and a tutorial walks through creating it.
 
-This is the first half of the old s08 reference deployment, moved forward. Backups, restore testing and the hardening and update guide follow in [s12](s12-release-1.md). Until then the guide tells operators to snapshot the VM before upgrades.
+This is the first half of the old s08 reference deployment, moved forward. Backups, restore testing and the hardening and update guide follow in [s13](s13-release-1.md). Until then the guide tells operators to snapshot the VM before upgrades.
 
 Folder: `deploy/compose/`. Fictional names only.
 

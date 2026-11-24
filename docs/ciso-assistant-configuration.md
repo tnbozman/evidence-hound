@@ -33,19 +33,19 @@ Audit fields `hound` writes (from the `ComplianceAssessmentWrite` schema): `ref_
 
 | Object | Sprint | Endpoint | Stable key | Notes |
 | --- | --- | --- | --- | --- |
-| Risk matrix | s14 | `/api/risk-matrices/` | URN | Comes from a library |
-| Threat | s14 | `/api/threats/` | URN or `ref_id` | Library or custom |
-| Risk study (risk assessment) | s14 | `/api/risk-assessments/` | `ref_id` | Uses a risk matrix and a perimeter |
-| Risk scenario | s14 | `/api/risk-scenarios/` | `ref_id` within its study | |
-| Risk acceptance | s14 | `/api/risk-acceptances/` | `ref_id` | |
-| Security exception | s14 | `/api/security-exceptions/` | `ref_id` | Linked from requirement assessments |
-| Business impact analysis | s14 | under `/api/resilience/` | `ref_id` (Q6) | Feature flag `bia` |
-| Asset security and recovery objectives | s14 | `/api/assets/` | Asset `ref_id` | Fields on the asset |
+| Risk matrix | s15 | `/api/risk-matrices/` | URN | Comes from a library |
+| Threat | s15 | `/api/threats/` | URN or `ref_id` | Library or custom |
+| Risk study (risk assessment) | s15 | `/api/risk-assessments/` | `ref_id` | Uses a risk matrix and a perimeter |
+| Risk scenario | s15 | `/api/risk-scenarios/` | `ref_id` within its study | |
+| Risk acceptance | s15 | `/api/risk-acceptances/` | `ref_id` | |
+| Security exception | s15 | `/api/security-exceptions/` | `ref_id` | Linked from requirement assessments |
+| Business impact analysis | s15 | under `/api/resilience/` | `ref_id` (Q6) | Feature flag `bia` |
+| Asset security and recovery objectives | s15 | `/api/assets/` | Asset `ref_id` | Fields on the asset |
 | Entity, including the main entity | s10 | `/api/entities/` | `ref_id`; the main entity is `builtin: true` | The main entity can be read and updated through the API (Q5) |
 | Solution, contract, representative | s10 | `/api/solutions/`, `/api/contracts/`, `/api/representatives/` | `ref_id` (representatives: email) | Feature flag `tprm` (and `contracts`) |
 | Entity assessment | s10 | `/api/entity-assessments/` | `ref_id` (Q6) | No revision endpoint (Q6) |
 | Tier | s10 | `/api/tiers/` | Name | |
-| Metric definition, metric instance, sample, dashboard | s15 | under `/api/metrology/` | Definitions by URN; instances by `ref_id` (Q6) | Feature flag `metrology` |
+| Metric definition, metric instance, sample, dashboard | s16 | under `/api/metrology/` | Definitions by URN; instances by `ref_id` (Q6) | Feature flag `metrology` |
 | Users, teams, roles | s07 | `/api/users/`, `/api/teams/`, `/api/user-groups/` | User email; team name | `scope/access.yaml`. Users are deactivated, never deleted. Role assignments cannot be created through the API (administrators only view them), so a role on a domain is membership of the domain's built-in user group, set in the user's `user_groups`. A folder made through the API gets those groups only with `create_iam_groups: true`, which `hound` sends for every domain. Built-in roles and groups are listed by their translated display name (BI-RL-AUD is "Reader"), so requests ask for English. MFA is reported (`has_mfa_enabled`), not settable per user; `enforce_mfa` requires it for everyone |
 | Feature flags | s07 | `/api/settings/feature-flags/` | Flag name | `scope/settings.yaml`. The endpoint validates the whole body and resets a missing flag to its default, so `hound` sends every flag as held with the one change |
 | General settings (such as `enforce_mfa`) | s07 | `/api/settings/general/` | Setting name | `scope/settings.yaml`, written with `PATCH`, which keeps the settings it leaves out. `openai_api_key` is secret: never in a file, and redacted on `GET` |
@@ -83,5 +83,5 @@ Yes. On an audit whose `field_visibility` makes `observation` read-only for the 
 - Main entity: `GET /api/entities/?builtin=true` finds it, and `PATCH` → **200**.
 - Custom library: the only upload path is `POST /api/stored-libraries/upload/`, which uses DRF's `FileUploadParser`: the body is the raw YAML file, named by a `Content-Disposition: attachment; filename=…` header. Sent that way, the probe library uploads → **201** and is returned as a stored library with its URN (run [44907514706](https://github.com/tnbozman/evidence-hound/actions/runs/44907514706)). A multipart form is refused with 400 "Missing filename. Request should include a Content-Disposition header with a filename parameter."
 
-### Q6. Do BIAs, entity assessments and metric instances have a `ref_id`, and can entity assessments be revised through the API? (s14-04, s10-02)
+### Q6. Do BIAs, entity assessments and metric instances have a `ref_id`, and can entity assessments be revised through the API? (s15-04, s10-02)
 All three have `ref_id` in both their read and write schemas (`BusinessImpactAnalysis*`, `EntityAssessment*`, `MetricInstance*`). No path in the schema matches an entity assessment revision, and the tprm models have no revision model, so a new assessment period is a new entity assessment with its own `ref_id`.
