@@ -424,40 +424,45 @@ Done before s11-12, because the register fields and the screening runbook follow
 - The functional check runs with s11-15, which adds the example AI systems, because the functional tests share one seeded CISO Assistant.
 - For s11-13: the register fields now live in the scope files, so the `ai.*` checks read the register from the scope (as the supplier and sensitive-data checks do) and read only owners, risk scenarios, solutions, contracts and assessments from CISO Assistant. The check table there still uses the old custom field names and is rewritten when s11-13 starts.
 
-### s11-13 AI checks from CISO Assistant
+### s11-13 AI checks from the register and CISO Assistant
 - [ ] Done
 
 **Story:** As a compliance owner, I want the AI register checked on every run, so that missing owners, unassessed systems and stale tests show up as failing checks rather than at the next audit.
 
+**Design change (2026-11-24).** The register entry now lives in the scope files (s11-12), so the checks split by where the data is:
+- **`ai-register`, a built-in collector that reads the compliance repo's scope files.** It checks the register entries, which are the GRC team's declared record, reviewed by pull request. Each run saves the register as evidence (every AI system with its entry and the SHA-256 of `scope/setup.yaml`). The checks are a pure function over the parsed scope and today's date.
+- **The `ciso-assistant` REST profile** (decision 4) reads what only CISO Assistant holds: risk scenarios linked to the AI systems' assets, and the supplier assessments and contracts.
+
 **Acceptance criteria**
-- A REST collector profile `ciso-assistant` in the public profile library (`profiles/ciso-assistant/`, s09-12) reads CISO Assistant with a read-only token: assets of class *AI system* with owners and custom fields, risk scenarios with their assets, and (per decision 4) entities, solutions, contracts and entity assessments. No coded collector.
-- Checks, each over AI systems that are in use unless stated, each evidenced by the saved query results:
+- An AI system is *in use* when `in_use_from` is on or before today and it is not retired on or before today. Each check covers the AI systems in use, unless stated; with none, it is `not_applicable`, never a pass.
 
-| Check | Passes when |
-| --- | --- |
-| `ai.register_complete` | every AI system has `ai_risk_tier`, `ai_use`, `ai_oversight` and a lifecycle stage |
-| `ai.owner_assigned` | every AI system has at least one owner |
-| `ai.screening_recorded` | every AI system has `ai_screened_on`, and none in use is `prohibited` |
-| `ai.impact_assessment_before_use` | every AI system in use with tier `medium` or `high` has `ai_impact_assessment` `approved`, dated on or before `ai_in_use_from` |
-| `ai.risks_in_register` | every AI system with tier `medium` or `high` is linked to at least one risk scenario |
-| `ai.human_oversight_documented` | every AI system has `ai_oversight` and `ai_oversight_note`; a `high` tier system is not `human_out_of_loop` |
-| `ai.tested_before_use` | every AI system in use has `ai_last_tested_on` |
-| `ai.test_results_current` | `ai_last_tested_on` is within 6 months for `high` and 12 months otherwise |
-| `ai.suppliers_assessed` | every `third_party` AI system's solution belongs to an entity with a current assessment (s09-20) |
-| `ai.supplier_contracts_current` | every `third_party` AI system's solution has an active contract not past its end date |
+| Check | Source | Passes when |
+| --- | --- | --- |
+| `ai.register_complete` | `ai-register` | every AI system (in use or not) has an impact assessment status |
+| `ai.owner_assigned` | `ai-register` | every AI system (in use or not) has an owner |
+| `ai.screening_recorded` | `ai-register` | none in use is tier `prohibited`, and each was screened on or before going into use |
+| `ai.impact_assessment_before_use` | `ai-register` | each `medium` or `high` tier system is `approved`, dated on or before `in_use_from` |
+| `ai.human_oversight_documented` | `ai-register` | no `high` tier system is `human_out_of_loop` (the note is required by validation) |
+| `ai.tested_before_use` | `ai-register` | each has `last_tested_on` |
+| `ai.test_results_current` | `ai-register` | `last_tested_on` is within 6 months for `high` and 12 months otherwise |
+| `ai.risks_in_register` | `ciso-assistant` | every asset labelled `ai-tier-medium` or `ai-tier-high` is linked to at least one risk scenario |
+| `ai.suppliers_assessed` | `ciso-assistant` | every asset labelled `ai-use-third-party` is provided by a solution whose entity has a current assessment |
+| `ai.supplier_contracts_current` | `ciso-assistant` | that solution has an active contract not past its end date |
 
-- No AI systems in use gives `not_applicable` for the per-system checks, not a pass. A field the profile cannot read gives *unable to assess*, never a fail.
-- Field-to-field date comparison (`ai.impact_assessment_before_use`) uses the declarative operators if s09-11 supports it; otherwise it is a named code check compiled into `hound`.
-- The profile passes the collector contract suite (s04) and the profile tests (s09-12) with recorded responses.
+- Every observation names the failing AI systems and the AI6 practice in words (s11-08), and says what to do next.
+- `ai-register` settings: `scope` (the scope folder, relative to the config file). A scope that does not load is an error naming the first problems, never a fail.
+- The `ciso-assistant` profile passes the profile tests (s09-12) with recorded, fictional responses; a field it cannot read is *unable to assess*, never a fail. It also carries the generic `supplier.assessments_current` and `supplier.contracts_current`.
 
 **Tests first**
-- `CisoAssistantProfileTests.Ai_system_without_owner_fails_owner_assigned`
-- `CisoAssistantProfileTests.High_tier_without_risk_scenario_fails`
-- `CisoAssistantProfileTests.Impact_assessment_after_go_live_fails`
-- `CisoAssistantProfileTests.Stale_test_uses_tier_interval`
-- `CisoAssistantProfileTests.No_ai_systems_is_not_applicable`
-- `CisoAssistantProfileTests.Unreadable_custom_field_is_unable_to_assess`
-- `CisoAssistantProfileContractTests` (the s04 contract suite)
+- `AiRegisterChecksTests.Ai_system_without_owner_fails_owner_assigned`
+- `AiRegisterChecksTests.Impact_assessment_after_go_live_fails`
+- `AiRegisterChecksTests.Stale_test_uses_tier_interval`
+- `AiRegisterChecksTests.No_ai_systems_in_use_is_not_applicable`
+- `AiRegisterChecksTests.Prohibited_system_in_use_fails_screening`
+- `AiRegisterChecksTests.High_tier_out_of_loop_fails_oversight`
+- `AiRegisterChecksTests.Observations_name_the_practice_in_words`
+- `AiRegisterCollectorContractTests` (the s04 contract suite) and `AiRegisterCollectorTests.Unloadable_scope_is_an_error`
+- `profiles/ciso-assistant.tests`: `High_tier_without_risk_scenario_fails`, `Third_party_without_current_assessment_fails`, `Unreadable_field_is_unable_to_assess`
 
 **Functional check**
 - Against the local CISO Assistant with the example AI systems, `make run ARGS="run --dry-run"` produces the ten checks with the expected outcomes (one example system is deliberately missing a test date), and `mapping apply mappings/ai6.yaml` on the output fills AI6-4.1 compliant and AI6-5.1 non-compliant.
