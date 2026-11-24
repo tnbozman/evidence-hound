@@ -9,7 +9,8 @@ covers the checks, the usual faults and credential rotation.
 $ hound status --config hound.yaml
 ```
 
-Every collector should have a run in the last day or two with outcome `succeeded`. The committee report marks a collector stale after 7
+Every collector should have a run in the last day or two with outcome `succeeded`. `hound status` shows only the outcome and counts; the
+cause of a failure is in the output of `hound run --only <name>`. The committee report marks a collector stale after 7
 days without a run, and that reaches managers. Details: [running collectors](../running.md).
 
 ## Run it by hand
@@ -21,13 +22,15 @@ $ hound run --config hound.yaml --only <name>  # one collector
 
 ## Troubleshoot
 
+Run `hound run --config hound.yaml --only <name>` and read its output:
+
 | What you see | Likely cause | Do |
 | --- | --- | --- |
-| `failed` with `401` or `403` | The collector's credential expired or lost a permission | Rotate it (below); check the permissions in its collector guide under [`docs/collectors/`](../collectors/) |
-| `failed` with a timeout | The service was down or the network blocked it | Run it again with `--only`; check the firewall allows the host |
-| `succeeded` but `0 sent` for weeks | Nothing changed; that is normal. Only changes are sent | Nothing |
-| `publish failed` | CISO Assistant is down, or hound's token expired | `hound config validate hound.yaml --check-secrets`; renew the token in CISO Assistant |
-| A requirement flips between results | Two sources write it, or someone edits it by hand | `hound status` shows drift; ask the GRC member which source is right |
+| An HTTP `401` or `403` from the service | The collector's credential expired or lost a permission | Rotate it (below); check the permissions in its collector guide under [`docs/collectors/`](../collectors/) |
+| A timeout | The service was down or the network blocked it | Run it again; check the firewall allows the host |
+| `0 sent` in the PUBLISHED column for weeks | Nothing changed; that is normal. Only changes are sent | Nothing |
+| Publishing to CISO Assistant fails | CISO Assistant is down, or hound's token expired | `hound config validate hound.yaml --check-secrets`; renew the token in CISO Assistant |
+| A requirement flips between results | Two sources write it, or someone edits it by hand | `hound scope plan scope --config hound.yaml` shows the drift; ask the GRC member which source is right |
 
 ## Rotate a credential
 
@@ -44,5 +47,6 @@ Rotate when a credential is about to expire, when someone who knew it leaves, an
 
 ## Upgrade
 
-Upgrade the runner image by tag, run `hound run --dry-run` first, then let the schedule carry on. When you upgrade CISO Assistant, check
+Upgrade the runner image by tag, run `hound run --config hound.yaml --dry-run` first, then let the schedule carry on. A dry run collects
+and plans but does not prove CISO Assistant is reachable; `hound scope plan scope --config hound.yaml` does. When you upgrade CISO Assistant, check
 the framework snapshots with the GRC member ([mapping files](../mapping-files.md#framework-snapshots)).

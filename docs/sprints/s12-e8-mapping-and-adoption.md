@@ -240,6 +240,43 @@ Standing task from 2026-11-24 at the maintainer's request: Claude does this ever
 **Functional check**
 - The rehearsal log (steps followed, errors found, fixes and their commits) is recorded under this task.
 
+**Rehearsal log (2026-11-24)**
+
+A subagent, as the agent of a small defence-industry Cyber GRC team (one person, 2 to 8 hours a week), followed the guides literally in a
+scratch copy of the example repo with the built CLI. CISO Assistant could not run in the session (images blocked), so steps that need it
+were left to CI. It never ran `hound approve`, `hound manual approve` or `hound review` for a person.
+
+Followed: the migration guide (11 commands, all exit 0; `scope valid: 1 domain(s), 9 control(s), 4 audit(s), 3 third party(ies)`),
+mapping coverage (output as documented), the crosswalk offline (`Total: 1 answered, 30 partly answered, 79 open, of 110 requirements.`),
+the reporting, governance, operate and training guides against the CLI help, manual evidence upkeep (`manual upload`, `manual propose`,
+`review pending --json`), the AI governance walkthrough offline (validation steps 5 to 8 as written), and the cheat sheet (every command
+and all 215 flags exist).
+
+Found and fixed in this sprint:
+
+| # | Where | Problem | Fix |
+| --- | --- | --- | --- |
+| 1 | `hound manual upload` | Piped `y` attested an export, defaulting the attester to the owner and every check to pass | Attests only for a person at a terminal; otherwise copies unattested and says how to attest (`fix(s12-09)`, red then green) |
+| 2 | Committee and board guides | Said committee escalations appear in the board report; the board report does not read actions | Guides say the authorising official adds them to section 6; reading them is carried |
+| 3 | Migration guide | The agent prompt named `docs/...`, which a compliance repo does not have | Links the published guide |
+| 4 | Prime questionnaire guide | Without CISO Assistant the crosswalk fails on the token; `--offline` was not mentioned | Mentions `--offline`; adds `hound supplier list --data cui` |
+| 5 | Migration sample | No sensitive-data column, so CUI suppliers were not recorded; the ordering sentence contradicted itself | `data` column and `--data` in the sample and test; sentence corrected |
+| 6 | Migration guide | Wrong error text for an unknown domain | Quotes the real message |
+| 7 | Reporting guides | Named an AC-REPORTING control the example does not have | Shows the `hound add control` line that creates it |
+| 8 | `docs/reporting.md` | Problems table keyed on codes the CLI does not print | Keyed on the message text |
+| 9, 10 | Collector operator guide | `hound status` has no drift or failure causes; `run --dry-run` lacked `--config` | Points to `run --only` output and `scope plan`; command fixed |
+| 11 | Board training | Named snapshot fixtures that do not exist as files | Takes snapshots from the local stack |
+| 12 | `docs/manual-evidence.md` | Said the owner attests; the GRC team does | Fixed |
+| 13 | AI governance walkthrough | "The committee report arrives in s12"; wrong evidence path | Links reporting; path fixed |
+| 15 | Migration guide | `hound explain plan.json` needs CISO Assistant | Notes the offline `git diff | hound explain` route and its limits |
+
+Carried (Discovered work): skills for migration, reporting and questionnaires (3), board report reading escalations (2), crosswalk error
+hint naming `--offline` (4), the secret heuristic flagging a GUID in a `drop_folder` path (14), and a dry run that reports success without
+a reachable CISO Assistant (16).
+
+Not proven here (CI or a real tenant): `scope plan`/`apply` for the migration, `report snapshot` and report content on live data, the
+crosswalk with today's results, mail reminders and task occurrences, `hound status` after real runs and credential rotation.
+
 ### s12-10 Improve: quality and flow (standing, about 15% of each sprint)
 - [ ] Done
 
@@ -275,6 +312,16 @@ s09-29, s09-39) stay open until one is available.
 - s12-10 Improve: the committee report's "collector success rate for the month" needs run history; the run store keeps only each
   collector's latest run.
 - s12-10 Improve: `ReportCommands` used `.Result` inside `Bind` (sync over async) when reading snapshots. Fixed.
+- s12-09 rehearsal: `hound agent setup` ships no skills for migration, reporting, crosswalks or prime questionnaires, so an
+  organisation's agent does not have those guides. Proposed for s13 (release 1): skills that link the published guides.
+- s12-09 rehearsal: the board report's section 6 does not read the committee's escalations (actions owned by the board); the guides say
+  to add them by hand. Proposed for s15 (incident response and governance).
+- s12-09 rehearsal: `hound mapping crosswalk` without a reachable CISO Assistant fails on the token; the error should suggest `--offline`.
+  Proposed for s13.
+- s12-09 rehearsal: `hound config validate` flags a `drop_folder` path that contains a GUID as a secret. Path-like settings should skip
+  the long-run heuristic, as `_path` settings do. Proposed for s13.
+- s12-09 rehearsal: `hound run --dry-run` without a token or reachable CISO Assistant reports `succeeded` and plans against nothing.
+  It should warn. Proposed for s13.
 - Cloud sessions cannot pull CISO Assistant's images (ghcr.io blobs are blocked by the proxy), so functional checks against CISO Assistant run in CI's functional job; dev servers and `--dry-run` runs work locally.
 
 ## Sprint review

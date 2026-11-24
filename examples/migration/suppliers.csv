@@ -1,4 +1,4 @@
-ref,name,kind,solution_ref,solution_name,contract_ref,contract_name,description,contract_end
-SUP-EXAMPLE-CAD,Example CAD Software Ltd,vendor,SOL-EXAMPLE-CAD,Example CAD,CTR-EXAMPLE-CAD,Example CAD subscription,Makes the CAD software the engineers use.,2027-06-30
-SUP-EXAMPLE-LEDGER,Example Ledger Pty Ltd,vendor,SOL-EXAMPLE-LEDGER,Example Ledger,CTR-EXAMPLE-LEDGER,Example Ledger subscription,Runs the cloud accounting and payroll service.,2027-03-31
-SUP-EXAMPLE-NETOPS,Example Network Services Pty Ltd,msp,SOL-EXAMPLE-NETOPS,Managed firewall,CTR-EXAMPLE-NETOPS,Managed firewall agreement,Manages the office firewall and VPN for us.,2026-12-31
+ref,name,kind,solution_ref,solution_name,contract_ref,contract_name,description,contract_end,data
+SUP-EXAMPLE-CAD,Example CAD Software Ltd,vendor,SOL-EXAMPLE-CAD,Example CAD,CTR-EXAMPLE-CAD,Example CAD subscription,Makes the CAD software the engineers use.,2027-06-30,
+SUP-EXAMPLE-LEDGER,Example Ledger Pty Ltd,vendor,SOL-EXAMPLE-LEDGER,Example Ledger,CTR-EXAMPLE-LEDGER,Example Ledger subscription,Runs the cloud accounting and payroll service.,2027-03-31,pii:stores:Staff payroll records
+SUP-EXAMPLE-NETOPS,Example Network Services Pty Ltd,msp,SOL-EXAMPLE-NETOPS,Managed firewall,CTR-EXAMPLE-NETOPS,Managed firewall agreement,Manages the office firewall and VPN for us.,2026-12-31,cui:transmits:VPN traffic to the engineering file share

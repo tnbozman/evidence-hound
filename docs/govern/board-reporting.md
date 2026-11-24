@@ -30,7 +30,7 @@ evidence, and set the matching risk matrix levels so the board report's "above a
 | 3. Key risks | The top five risk scenarios by level against appetite, with owner, treatment and target date |
 | 4. Risk-acceptance decisions | Acceptances and exceptions the committee made during the quarter, with who and when |
 | 5. Assurance | Automated versus manual coverage, evidence freshness, independent review, supplier assurance |
-| 6. Decisions and asks | What the committee escalated, and the positions to confirm |
+| 6. Decisions and asks | The positions to confirm, endorsements and recovery plans, generated; the committee's escalations, added by hand |
 
 Nothing in the body is operational: no collector failure or task appears there. They stay in the committee reports and the appendix.
 
@@ -39,7 +39,8 @@ Nothing in the body is operational: no collector failure or task appears there. 
 1. The agent drafts the report on the first working day of the quarter.
 2. The authorising official reads section 1 and confirms, or changes, each proposed position with a reason. A changed position is
    written into the report with the reason, never by editing a figure.
-3. The chair of the security committee checks section 6 lists everything the committee escalated.
+3. The authorising official adds the committee's escalations of the quarter (actions with the board as owner in the committee reports) to
+   section 6, and the chair of the security committee checks none is missing.
 4. The report goes to the board with its papers.
 
 ## Record the board's decisions in CISO Assistant

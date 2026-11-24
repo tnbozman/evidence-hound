@@ -43,12 +43,13 @@ public sealed class MigrationExampleTests : IDisposable
 
         foreach (var row in suppliers)
         {
+            string[] data = row["data"].Length > 0 ? ["--data", row["data"]] : [];
             var (exit, _, error) = await OnboardAgentCommandTests.RunAsync(
                 [
                     "supplier", "draft", "--repo", Repo, "--ref", row["ref"], "--name", row["name"], "--kind", row["kind"],
                     "--solution-ref", row["solution_ref"], "--solution-name", row["solution_name"],
                     "--contract-ref", row["contract_ref"], "--contract-name", row["contract_name"],
-                    "--description", row["description"], "--end", row["contract_end"], "--json",
+                    "--description", row["description"], "--end", row["contract_end"], "--json", .. data,
                 ],
                 "", terminal: false, Path.Combine(_root, "home"), _ct);
             exit.ShouldBe(ExitCodes.Ok, error);
@@ -62,6 +63,7 @@ public sealed class MigrationExampleTests : IDisposable
         var drafts = Directory.EnumerateFiles(Repo, "*.yaml", SearchOption.AllDirectories).Select(f => File.ReadAllText(f)).ToList();
         suppliers.ShouldAllBe(row => drafts.Any(d => d.Contains(row["ref"], StringComparison.Ordinal)));
         (await Run("scope", "validate", Scope)).ShouldBe(ExitCodes.Ok);
+        suppliers.Where(row => row["data"].Length > 0).ShouldAllBe(row => drafts.Any(d => d.Contains(row["data"].Split(':')[2], StringComparison.Ordinal)));
     }
 
     [Fact]

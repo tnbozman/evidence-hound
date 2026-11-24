@@ -5,8 +5,9 @@ For board members. Built on [reporting to the board](../govern/board-reporting.m
 **By the end, each person can:** read the board report's compliance positions and trends, understand the risks accepted on the board's
 behalf, and know what the board is asked to decide.
 
-**Before the session:** the presenter generates `hound report board` from four example quarter-end snapshots (the committee report's
-fixtures in the repository's tests, or the local stack) and prints it.
+**Before the session:** on the local stack, the presenter takes a snapshot for the last month of this quarter and of the three quarters
+before (`hound report snapshot --period YYYY-MM` for each; they all read today's data, which is enough for training), then generates
+`hound report board` and prints it.
 
 | Minutes | Topic | What happens |
 | --- | --- | --- |

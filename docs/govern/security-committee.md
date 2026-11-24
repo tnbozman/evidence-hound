@@ -57,7 +57,7 @@ The committee's decisions only count once they are in CISO Assistant, because th
 | Renew an expiring exception | Edit its expiry, and note the meeting date in its description |
 | Close an incident | The incident's status, with the date |
 | Ask a system owner for overdue evidence | Comment on the task in CISO Assistant; the next report lists it again if still overdue |
-| Escalate to the board | An action in section 8 with the board as owner; it appears in the quarter's board report under decisions |
+| Escalate to the board | An action in section 8 with the board as owner. The board report does not read actions, so the authorising official adds each escalation to section 6 of the quarter's draft |
 
 Then upload the minutes as a new revision of the "Security reporting" evidence, next to the month's snapshot.
 

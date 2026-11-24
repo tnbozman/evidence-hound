@@ -32,14 +32,15 @@ either way.
 | --- | --- |
 | Systems (`systems.csv`) | `name`, `ref_id`, `type` (primary holds the data or business process, supporting does not), `owner` (an email), `description`, `parents` (the systems it supports, comma separated) |
 | Controls (`controls.csv`) | `ref_id`, `name`, `owner`, `category` (policy, process, technical, physical or procedure), `systems`, `requirements` (such as `ISM-1511,ISM-1515`) |
-| Suppliers (`suppliers.csv`) | `ref` (`SUP-...`), `name`, `kind` (vendor, reseller or msp), `solution_ref`, `solution_name`, `contract_ref`, `contract_name`, `description`, `contract_end` |
+| Suppliers (`suppliers.csv`) | `ref` (`SUP-...`), `name`, `kind` (vendor, reseller or msp), `solution_ref`, `solution_name`, `contract_ref`, `contract_name`, `description`, `contract_end`, `data` (sensitive data the solution handles, as `kind:role:detail`, such as `cui:transmits:VPN traffic`; empty if none) |
 
 If a control in your spreadsheet does not say which Essential Eight requirement it supports, ask your agent to suggest one from the
 requirement texts in `frameworks/essential-eight-2023.json`, and check each suggestion yourself.
 
 ## Move them in
 
-Ask your agent: "Move the registers in `<folder>` into this repo with the commands in docs/adopt/migrate-from-spreadsheets.md. One
+Ask your agent: "Move the registers in `<folder>` into this repo with the commands in
+https://github.com/tnbozman/evidence-hound/blob/main/docs/adopt/migrate-from-spreadsheets.md. One
 command per row, systems first, then controls, then suppliers. Stop at the first error and tell me." For the sample files it runs:
 
 ```console
@@ -51,11 +52,15 @@ $ hound add control --scope scope --yes --domain "Example Pty Ltd" --ref-id AC-E
 $ hound supplier draft --ref SUP-EXAMPLE-CAD --name "Example CAD Software Ltd" --kind vendor --solution-ref SOL-EXAMPLE-CAD \
     --solution-name "Example CAD" --contract-ref CTR-EXAMPLE-CAD --contract-name "Example CAD subscription" \
     --description "Makes the CAD software the engineers use." --end 2027-06-30 --json
+$ hound supplier draft --ref SUP-EXAMPLE-NETOPS --name "Example Network Services Pty Ltd" --kind msp --solution-ref SOL-EXAMPLE-NETOPS \
+    --solution-name "Managed firewall" --contract-ref CTR-EXAMPLE-NETOPS --contract-name "Managed firewall agreement" \
+    --description "Manages the office firewall and VPN for us." --end 2026-12-31 --data "cui:transmits:VPN traffic to the engineering file share" --json
 ```
 
-Systems go first because controls name them, and suppliers last because a supplier is approved before the systems that rely on it are
-onboarded. A system that holds CUI is the start of your CUI boundary: keep it small, and record which suppliers handle the data with
-`--data` on `hound supplier draft` ([third parties](../third-parties.md)).
+Systems go first because controls name them. Suppliers come last here only because their drafts wait for your approval; when you later
+onboard a new system, its supplier is approved first ([onboarding](../onboarding.md)). A system that holds CUI is the start of your CUI
+boundary: keep it small, and record which suppliers handle the data with `--data` ([third parties](../third-parties.md)). After the
+approval, `hound supplier list --data cui` lists them, which is what a prime asks first.
 
 Then you approve the supplier drafts, yourself, in a terminal: `hound approve`. Your agent cannot do this for you.
 
@@ -73,7 +78,8 @@ Then:
 
 1. `hound scope validate scope --config hound.yaml` reports no problems.
 2. `hound scope plan scope --config hound.yaml --out plan.json` lists one create per row, and nothing you did not expect.
-3. `hound explain plan.json` reads the plan back in plain English. Read it, and compare it with the spreadsheet: same names, owners
+3. `hound explain plan.json` reads the plan back in plain English. Steps 2 and 3 need CISO Assistant; without it, `git diff | hound explain`
+   reads the change to the repo instead, but says less about systems and controls than the plan does. Read it, and compare it with the spreadsheet: same names, owners
    and requirements.
 4. `hound scope apply scope --config hound.yaml` writes it to CISO Assistant.
 5. In CISO Assistant, open the audit and check that the controls appear against the requirements you expected.
@@ -94,7 +100,7 @@ Keep the spreadsheets for one reporting month, read only, so nobody edits both:
 
 | Problem | What to do |
 | --- | --- |
-| `hound add system` says the domain is unknown | Name the domain exactly as in `scope/setup.yaml`, or add it there first. |
+| `hound add system` says `the file has nothing at 'domains[name=...].systems'` | The domain is unknown: name it exactly as in `scope/setup.yaml`, or add it there first. |
 | `hound add control` says a requirement is unknown | Use the requirement's `ref_id` from the framework snapshot, such as `ISM-1511`, not a description. |
 | A supplier draft fails on `--ref` | Ref IDs start with `SUP-` and use capitals, digits and dashes. |
 | `hound scope plan` wants to change something you did not touch | Someone edited CISO Assistant directly. Run `hound scope export` to see it, then decide which copy is right. |

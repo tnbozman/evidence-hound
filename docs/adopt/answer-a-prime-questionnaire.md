@@ -10,7 +10,8 @@ your audit of record in CISO Assistant.
 $ hound mapping crosswalk --from essential-eight --config hound.yaml > crosswalk.md
 ```
 
-The command, explained in [mapping files](../mapping-files.md#crosswalks-to-another-framework), lists every NIST SP 800-171
+Add `--offline` when CISO Assistant is not reachable from where you run it: you get the same rows without today's results. The command,
+explained in [mapping files](../mapping-files.md#crosswalks-to-another-framework), lists every NIST SP 800-171
 requirement with the Essential Eight requirements that answer it and today's result of each, from your audit of record:
 
 - **Answered**: point the prime at the Essential Eight evidence named.
@@ -39,7 +40,8 @@ Instead of a screenshot per question, offer the prime the same records your comm
 
 - the audit of record's export from CISO Assistant (the requirement results with their observations and evidence names);
 - the month's posture snapshot from `hound report snapshot`, which lists each result and when it was collected;
-- for a requirement they care about, the evidence revision in CISO Assistant, with its date and hash.
+- for a requirement they care about, the evidence revision in CISO Assistant, with its date and hash;
+- which of your suppliers handle CUI, and on what authority: `hound supplier list --data cui` ([third parties](../third-parties.md)).
 
 Every result names the check or the person that produced it and when, so the prime can see it is current. Agree with the prime how
 often they need it refreshed, and send the next month's snapshot rather than answering again.

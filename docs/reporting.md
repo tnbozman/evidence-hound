@@ -22,8 +22,10 @@ uploaded hound-report/posture-2026-11 to applied control AC-REPORTING
 - It reads each programme in `scope/setup.yaml` (framework, groups and audit of record), the requirement results of each audit, applied
   controls, risk acceptances and security exceptions, findings, incidents, risk scenarios, tasks and supplier reviews, and the latest run
   of each collector.
-- It writes the snapshot to `reports/` in the evidence store. With `--control`, it also uploads it as evidence on that applied control
-  (create one called "Security reporting" in `scope/controls.yaml`), so the record of what you reported lives in CISO Assistant.
+- It writes the snapshot to `reports/` in the evidence store. With `--control`, it also uploads it as evidence on that applied control,
+  so the record of what you reported lives in CISO Assistant. Create the control once:
+  `hound add control --scope scope --yes --ref-id AC-REPORTING --name "Security reporting" --owner grc@example.com --category process`,
+  then `hound scope apply`.
 - When your audit runs in periods, the snapshot reads the period that holds the month's last day.
 
 Your agent can run this for you; it only reads CISO Assistant, apart from the one upload.
@@ -81,7 +83,7 @@ endorsement. How the board uses the report is in [the board reporting guide](gov
 
 | Message | What to do |
 | --- | --- |
-| `report.snapshot_missing` | Take that period's snapshot first: `hound report snapshot --period <period> --config hound.yaml`. |
-| `report.period_invalid` | Months are `YYYY-MM`, quarters `YYYY-Qn`. |
+| `No snapshot for 2026-11 in ...` | Take that period's snapshot first: `hound report snapshot --period <period> --config hound.yaml`. |
+| `'2026-13' is not a period ...` | Months are `YYYY-MM`, quarters `YYYY-Qn`. |
 | A programme has no coverage figures | The config has no `target` for that programme's audit. |
 | Collector success rate is not shown | hound keeps only each collector's latest run; the committee sees the last outcome and staleness. |
