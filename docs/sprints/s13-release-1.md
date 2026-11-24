@@ -1,6 +1,6 @@
 # s13 Release 1
 
-Status: Planned
+Status: In progress
 
 **Goal:** the deployment from s07 gains tested backups and a hardening and update guide, then a tagged, signed, documented first release that others can install and extend.
 
