@@ -4,7 +4,7 @@
 # each library. CI runs it on every pull request; the release workflow publishes what it packs.
 #
 # Usage: scripts/check-packages.sh [output-folder]   (make test-packages; default: a temporary folder)
-# Environment: MinVerVersionOverride to pack a given version, such as 0.0.0-test.
+# Environment: MinVerVersionOverride to pack a given version, such as 1.0.0-dry-run.
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

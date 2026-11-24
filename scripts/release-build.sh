@@ -2,7 +2,7 @@
 # s13-04: builds what a release publishes, into one folder, and checks it: every NuGet package with its metadata
 # (check-packages.sh), the hound tool installed from those packages as a local test feed, a CycloneDX SBOM of the
 # CLI, and the release notes from CHANGELOG-style Conventional Commits. The release workflow runs it before approval
-# (and, on pull requests, as a dry run on a local v0.0.0-test tag) and again to publish.
+# (and, on pull requests, as a dry run on a local v1.0.0-dry-run tag) and again to publish.
 #
 # Usage: scripts/release-build.sh <version> <out>     for example: scripts/release-build.sh 1.0.0 artifacts
 # The tag v<version> must exist in this checkout (the workflow's dry run makes a local one). Needs the .NET SDK,

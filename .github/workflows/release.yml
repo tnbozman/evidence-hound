@@ -5,7 +5,7 @@ name: Release
 # NuGet packages (when the environment holds NUGET_API_KEY), the runner image on GHCR (amd64 and arm64), build
 # provenance for both, a CycloneDX SBOM, the documentation site on GitHub Pages, and the GitHub release with notes
 # from the Conventional Commits.
-# On a pull request that changes the release, `verify` runs as a dry run on a local v0.0.0-test tag: the packages go
+# On a pull request that changes the release, `verify` runs as a dry run on a local v1.0.0-dry-run tag: the packages go
 # to a local test feed, hound is installed from it, and nothing is pushed or published.
 # How to cut a release: docs/releasing.md.
 
@@ -52,13 +52,13 @@ jobs:
           python3 -m venv "$RUNNER_TEMP/tools"
           "$RUNNER_TEMP/tools/bin/pip" install -q --require-hashes -r tools/changelog/requirements.txt
           echo "$RUNNER_TEMP/tools/bin" >>"$GITHUB_PATH"
-      - name: Version (the tag, or a local v0.0.0-test tag for a dry run)
+      - name: Version (the tag, or a local v1.0.0-dry-run tag for a dry run)
         id: version
         run: |
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             version="${GITHUB_REF_NAME#v}"
           else
-            version="0.0.0-test"
+            version="1.0.0-dry-run"
             git -c user.name=dry-run -c user.email=dry-run@example.com tag -a "v$version" -m "Dry run"
           fi
           [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] || { echo "not a semantic version: $version" >&2; exit 1; }
