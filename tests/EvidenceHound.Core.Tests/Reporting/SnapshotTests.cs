@@ -38,7 +38,7 @@ public class SnapshotTests
             new ResultCount("2", Backups, 0, 0, 0, 1, 0),
         ]);
         ai6.Counts[0].ShouldBe(new ResultCount("F", null, 0, 0, 1, 0, 0));
-        e8.Parents.ShouldBe([new ParentNode(Mfa, "mfa"), new ParentNode(Backups, "rb")]);
+        e8.Parents.ShouldBe([new ParentNode(Mfa, "Multi-factor authentication"), new ParentNode(Backups, "rb")]);
     }
 
     [Fact]

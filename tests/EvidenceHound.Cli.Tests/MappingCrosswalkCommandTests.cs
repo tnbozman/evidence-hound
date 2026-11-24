@@ -104,6 +104,15 @@ public sealed class MappingCrosswalkCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Without_a_ciso_assistant_it_fails_and_suggests_offline()
+    {
+        var exitCode = await Run(new() { ["HOUND_TODAY"] = "2026-12-02" }, "mapping", "crosswalk", "--from", "essential-eight");
+
+        exitCode.ShouldNotBe(ExitCodes.Ok);
+        _logs.Messages.ShouldContain(m => m.Contains("--offline", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task An_unknown_programme_is_refused_with_the_ones_there_are()
     {
         var exitCode = await Run([], "mapping", "crosswalk", "--from", "cmmc", "--offline");

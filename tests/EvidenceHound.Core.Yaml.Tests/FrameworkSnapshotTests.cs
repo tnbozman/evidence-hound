@@ -46,6 +46,22 @@ public class FrameworkSnapshotTests
     }
 
     [Fact]
+    public void Keeps_the_names_of_parent_nodes_for_reports()
+    {
+        // s13-08: reports name an Essential Eight strategy "Multi-factor authentication", not its URN's last part "mfa".
+        var snapshot = FrameworkLibraryReader.Snapshot(RepoFiles.RepeatedLibrary, Source).Value();
+
+        snapshot.Parents.Select(p => (p.Urn, p.RefId, p.Name)).ShouldBe([
+            ("urn:example:risk:req_node:example-repeated:bnd", "BND", "Boundary services"),
+            ("urn:example:risk:req_node:example-repeated:idn", "IDN", "Identity services"),
+        ]);
+        var read = FrameworkSnapshotJson.Read(FrameworkSnapshotJson.Write(snapshot), "snapshot.json").Value();
+        read.Parents.ShouldBe(snapshot.Parents);
+        snapshot.ParentName("urn:example:risk:req_node:example-repeated:bnd").ShouldBe("Boundary services");
+        snapshot.ParentName("urn:example:risk:req_node:example-repeated:zzz").ShouldBe("zzz");
+    }
+
+    [Fact]
     public void A_snapshot_without_descriptions_still_loads()
     {
         const string json = """
@@ -56,6 +72,7 @@ public class FrameworkSnapshotTests
         var node = FrameworkSnapshotJson.Read(json, "old.json").Value().Nodes.ShouldHaveSingleItem();
 
         (node.Description, node.ReferenceControls.Count).ShouldBe(("", 0));
+        FrameworkSnapshotJson.Read(json, "old.json").Value().Parents.ShouldBeEmpty();
     }
 
     [Fact]
