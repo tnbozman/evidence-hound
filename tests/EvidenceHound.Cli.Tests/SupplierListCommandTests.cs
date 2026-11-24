@@ -76,7 +76,8 @@ public sealed class SupplierListCommandTests : IDisposable
 
         var (exit, output, error) = await RunAsync(["scope", "validate", scope]);
         exit.ShouldBe(ExitCodes.Ok, error);
-        (output + error).ShouldContain("warning: scope/setup.yaml line");
+        (output + error).ShouldContain("warning: ");
+        (output + error).ShouldContain("setup.yaml line");
         (output + error).ShouldContain("[data.supplier_not_authorised]");
 
         (exit, output, error) = await RunAsync(["scope", "validate", scope, "--json"]);

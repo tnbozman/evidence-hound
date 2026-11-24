@@ -127,11 +127,34 @@ internal static class ReviewCommand
         var manual = deployment.Exists
             ? await ManualProposalCommands.PendingAsync(deployment, registry, standing, today, cancellationToken)
             : Result.Ok<IReadOnlyList<ReviewItem>>([]);
+        var findings = await FindingsAsync(repo, today, registry, cancellationToken);
         var challenges = await Challenges.ReadAsync(repo, cancellationToken);
         var recommendations = await Recommendations.ReadAsync(repo, cancellationToken);
-        return walked.Bind(_ => manual).Map(proposals => ReviewOrder.Order([.. listing.Items, .. proposals]).Where(i => ReviewOrder.Ready(i, today))
+        return walked.Bind(_ => manual).Map(proposals => ReviewOrder.Order([.. listing.Items, .. proposals, .. findings]).Where(i => ReviewOrder.Ready(i, today))
                 .Select(i => i with { Challenge = challenges.GetValueOrDefault(i.Key), Recommendation = recommendations.GetValueOrDefault(i.Key) ?? i.Recommendation }).ToArray())
             .Map(items => (IReadOnlyList<ReviewItem>)items);
+    }
+
+    /// <summary>The scope's warnings, such as sensitive data held where nothing approves it: each listed every week until it is fixed.</summary>
+    private static async Task<IReadOnlyList<ReviewItem>> FindingsAsync(string repo, DateOnly today, CollectorRegistry registry, CancellationToken cancellationToken)
+    {
+        var scope = new DirectoryInfo(Path.Combine(repo, "scope"));
+        if (!File.Exists(Path.Combine(scope.FullName, "setup.yaml")))
+        {
+            return [];
+        }
+
+        var checkedScope = await ScopeCommands.ValidateAsync(scope, null, registry, today, cancellationToken);
+        return [.. checkedScope.Warnings.Select(w => new ReviewItem(
+            ReviewKind.Finding,
+            string.Create(CultureInfo.InvariantCulture, $"finding:{w.Code}/{Path.GetFileName(w.At.File)}:{w.At.Line}"),
+            $"[finding] {w.Message}",
+            "Sensitive data is handled where nothing on file approves it. A prime or an assessor asks about exactly this, so it stays in front of you until it is fixed.",
+            $"Nothing changes; your sign-off records that you saw it this week. To clear it: {w.Hint}",
+            2)
+        {
+            File = w.At.File,
+        })];
     }
 
     private static string Json(IReadOnlyList<ReviewItem> items) => new JsonObject
@@ -283,7 +306,12 @@ internal static class ReviewCommand
 
             await SayAsync($"  If you accept: {item.Effect}", cancellationToken);
             string[] accept = item.Kind == ReviewKind.SupplierReview ? ["ok", "warning", "blocker"] : ["a"];
-            var question = item.Kind == ReviewKind.SupplierReview ? "Conclude it (ok, warning, blocker; c challenge, s skip, q quit)" : "a accept, c challenge, s skip, q quit";
+            var question = item.Kind switch
+            {
+                ReviewKind.SupplierReview => "Conclude it (ok, warning, blocker; c challenge, s skip, q quit)",
+                ReviewKind.Finding => "a acknowledge, c challenge, s skip, q quit",
+                _ => "a accept, c challenge, s skip, q quit",
+            };
             while (true)
             {
                 var answer = (await _prompt.AskAsync(question, cancellationToken))?.ToLowerInvariant();

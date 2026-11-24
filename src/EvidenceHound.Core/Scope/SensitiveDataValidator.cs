@@ -4,7 +4,8 @@ namespace EvidenceHound.Core.Scope;
 
 /// <summary>
 /// Checks the sensitive data a scope declares: a system may hold a kind of data through a supplier's solution only when the solution lists
-/// that kind, and a solution's authority must not have expired. Pure.
+/// that kind, and a solution's authority must not have expired. Both are findings about the organisation, so they warn and block nothing
+/// (maintainer's decision, s10-05): the repo records the truth while the data moves or the authority is renewed. Pure.
 /// </summary>
 public static class SensitiveDataValidator
 {
@@ -45,11 +46,13 @@ public static class SensitiveDataValidator
                 "data.supplier_not_authorised",
                 d.At,
                 $"{system.Name} holds {SensitiveData.Code(d.Kind)} data through {refId}, which does not list {SensitiveData.Code(d.Kind)} among the data it is approved for.",
-                $"Add {SensitiveData.Code(d.Kind)} with its authority to {refId}'s data, or move the data off it."));
+                $"Add {SensitiveData.Code(d.Kind)} with its authority to {refId}'s data, or move the data off it.")
+            { Warning = true });
 
     private static ScopeProblem Expired(DataAuthority authority) => new(
         "data.authority_expired",
         authority.At,
         $"'{authority.Name}' expired on {authority.Expires!.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}.",
-        "Record the renewed authority and its new expiry, or stop using the solution for this data.");
+        "Record the renewed authority and its new expiry, or stop using the solution for this data.")
+    { Warning = true };
 }

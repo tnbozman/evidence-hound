@@ -172,6 +172,11 @@ Validation reports a system that handles a kind through its `solution`, or throu
 data does not list that kind (`data.supplier_not_authorised`); an authority past `expires` (`data.authority_expired`); and
 export-controlled or classified data with no `detail` (`data.detail_missing`).
 
+The first two are **warnings**: findings about the organisation, not mistakes in the files. They are printed by `scope validate` (and
+`--json` gives them `"severity": "warning"`), `scope plan` and `scope apply`, and listed in the weekly review (`hound review`) every week
+until they are fixed, but they block nothing. Record the truth while the data moves or the authority is renewed; never hide it to get a
+clean validate.
+
 `scope apply` uses CISO Assistant's own features only: each kind is a filtering label `data-<kind>` (`data-cui`, `data-export-controlled`;
 CISO Assistant's labels take letters, digits, `_` and `-`) on the solution's and the system's records, and each solution's description
 ends with its data and authorities. `hound supplier list --data cui` prints each supplier's solution handling a kind, with its role,

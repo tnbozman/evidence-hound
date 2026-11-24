@@ -52,6 +52,6 @@ public class ReviewQueueTests
     public void Each_kind_has_the_code_an_agent_reads()
     {
         Enum.GetValues<ReviewKind>().Select(ReviewOrder.Code).ShouldBe(
-            ["capability", "supplier", "supplier_review", "not_applicable", "system", "audit", "imported_row", "manual_evidence"]);
+            ["capability", "supplier", "supplier_review", "not_applicable", "system", "audit", "imported_row", "manual_evidence", "finding"]);
     }
 }

@@ -60,8 +60,8 @@ in each supplier's `description` and keep the provider's authorisation documents
 
 A prime, an auditor or the security committee will ask which suppliers handle CUI, personal information, export-controlled data or
 classified information, and on what authority. Record it on each solution's `data` (and on each system that holds it), with the
-authority and its expiry, and `hound scope validate` reports a system holding data through a supplier that is not approved for it, and
-an authority that has lapsed. `hound supplier list --data <kind>` prints the list to send. The keys, the four kinds with an Australian and
+authority and its expiry, and `hound scope validate` warns of a system holding data through a supplier that is not approved for it, and
+of an authority that has lapsed: a warning blocks nothing, and the weekly review lists it until it is fixed. `hound supplier list --data <kind>` prints the list to send. The keys, the four kinds with an Australian and
 a US example of each, and what `hound` leaves to the owner and the prime are in
 [scope.md](scope.md#sensitive-data).
 

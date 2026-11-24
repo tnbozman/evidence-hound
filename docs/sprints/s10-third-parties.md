@@ -265,8 +265,9 @@ Built and tested in CI; each waits on a run in the maintainer's own environment,
 - From the s10-05 rehearsals:
   - Machine shop, scope kept tight around CUI: a sensitive-data finding (`data.supplier_not_authorised`, `data.authority_expired`) is an
     error, so recording the truth (CUI in a mail plan not authorised for it) blocks every `hound add`, plan and apply until it is fixed,
-    and an agent hides it to carry on. Decide whether these findings warn (in validate, plan, the review queue and the committee report)
-    rather than block.
+    and an agent hides it to carry on. Decided (maintainer, 2026-11-24): they warn. Done in
+    s10-05: validate, plan and apply print them, `--json` marks them `"severity": "warning"`, the weekly review lists each as a
+    `finding` until it is fixed, and nothing is blocked. The committee report (s12-05) should list them too.
   - Both personas: a solution holding CUI or DSGL data with no authority recorded is listed as "no authority recorded" but never
     reported; nor is a supplier's country, so offshore DSGL storage is found only by reading the notes.
   - Both personas: no command adds `data` to a supplier already drafted, or `solution`, `supplied_through` and `data` to a system

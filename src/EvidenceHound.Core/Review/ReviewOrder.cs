@@ -13,6 +13,9 @@ public enum ReviewKind
     Audit,
     ImportedRow,
     ManualEvidence,
+
+    /// <summary>A finding the scope reports as a warning, such as sensitive data held where nothing approves it: listed each week until fixed.</summary>
+    Finding,
 }
 
 /// <summary>What the agent recommends, why, and what it read.</summary>
