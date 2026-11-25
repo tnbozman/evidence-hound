@@ -202,6 +202,10 @@ public sealed class InitCommandTests : IDisposable
         config.ShouldContain("compliance_assessment: EX-E8\n");
         config.ShouldContain("mapping: mappings/disp.yaml");
         config.ShouldContain("compliance_assessment: EX-DISP\n");
+        var readme = await File.ReadAllTextAsync(Path.Combine(Repo, "README.md"), ct);
+        readme.ShouldContain("EX-DISP");
+        readme.ShouldContain("examples/manual-sources/disp");
+        readme.ShouldContain("hound mapping coverage mappings/disp.yaml --framework frameworks/disp.json --manual hound.yaml");
         await ShouldValidateAsync();
     }
 
