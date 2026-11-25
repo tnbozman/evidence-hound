@@ -27,7 +27,7 @@ internal static class MappingCoverageCommand
         var json = new Option<bool>("--json") { Description = "Print JSON instead of Markdown." };
         var command = new Command(
             "coverage",
-            "Count requirements answered by collectors (automated), by people (manual) and by nothing (uncovered), per parent node and group.")
+            "Count requirements answered by collectors (automated), by people (manual), only by draft rows awaiting review (draft) and by nothing (uncovered), per parent node and group.")
         {
             mapping, framework, groups, manual, json,
         };
@@ -49,6 +49,14 @@ internal static class MappingCoverageCommand
         var loaded = await MappingCommands.LoadAsync(mappingFile, cancellationToken);
         var snapshot = await FrameworkCommands.LoadSnapshotAsync(frameworkFile, cancellationToken);
         var manualChecks = await ReadManualChecksAsync(manualPaths, cancellationToken);
+        if (manualPaths.Length > 0 && manualChecks.Match(checks => checks.Count == 0, _ => false))
+        {
+            Log.Warning(
+                logger,
+                $"Found no manual source in {string.Join(", ", manualPaths.Select(p => p.ToString()))}, so every mapped check counts as automated. "
+                + "Point --manual at your hound.yaml or the folder of manual source templates you copied.");
+        }
+
         var counted = loaded.Bind(l => snapshot.Bind(s => manualChecks.Bind(checks => Count(l, s, groupList, checks))));
         return await counted.Match(
             async report =>
@@ -105,11 +113,11 @@ internal static class MappingCoverageCommand
         var text = new StringBuilder()
             .AppendLine(CultureInfo.InvariantCulture, $"Coverage of {report.Snapshot.FrameworkUrn} for groups {string.Join(", ", report.Groups)}")
             .AppendLine()
-            .AppendLine("| Parent | Group | Automated | Manual | Uncovered |")
-            .AppendLine("| --- | --- | --- | --- | --- |");
+            .AppendLine("| Parent | Group | Automated | Manual | Draft | Uncovered |")
+            .AppendLine("| --- | --- | --- | --- | --- | --- |");
         foreach (var row in report.Rows)
         {
-            text.AppendLine(CultureInfo.InvariantCulture, $"| {ParentLabel(report, row.ParentUrn)} | {row.Group} | {row.Automated} | {row.Manual} | {row.Uncovered} |");
+            text.AppendLine(CultureInfo.InvariantCulture, $"| {ParentLabel(report, row.ParentUrn)} | {row.Group} | {row.Automated} | {row.Manual} | {row.Draft} | {row.Uncovered} |");
         }
 
         if (report.Top.Count > 0)
@@ -117,17 +125,17 @@ internal static class MappingCoverageCommand
             text.AppendLine()
                 .AppendLine("Per top-level node (for the ASD Essentials, per domain):")
                 .AppendLine()
-                .AppendLine("| Top level | Group | Automated | Manual | Uncovered |")
-                .AppendLine("| --- | --- | --- | --- | --- |");
+                .AppendLine("| Top level | Group | Automated | Manual | Draft | Uncovered |")
+                .AppendLine("| --- | --- | --- | --- | --- | --- |");
             foreach (var row in report.Top)
             {
-                text.AppendLine(CultureInfo.InvariantCulture, $"| {report.Snapshot.ParentName(row.ParentUrn)} | {row.Group} | {row.Automated} | {row.Manual} | {row.Uncovered} |");
+                text.AppendLine(CultureInfo.InvariantCulture, $"| {report.Snapshot.ParentName(row.ParentUrn)} | {row.Group} | {row.Automated} | {row.Manual} | {row.Draft} | {row.Uncovered} |");
             }
         }
 
         return text
             .AppendLine()
-            .AppendLine(CultureInfo.InvariantCulture, $"Total: {report.Automated} automated, {report.Manual} manual, {report.Uncovered} uncovered (one per requirement row and group).")
+            .AppendLine(CultureInfo.InvariantCulture, $"Total: {report.Automated} automated, {report.Manual} manual, {report.Draft} draft, {report.Uncovered} uncovered (one per requirement row and group).")
             .ToString();
     }
 
@@ -138,6 +146,7 @@ internal static class MappingCoverageCommand
             ["groups"] = new JsonArray([.. report.Groups.Select(g => (JsonNode)g)]),
             ["automated"] = report.Automated,
             ["manual"] = report.Manual,
+            ["draft"] = report.Draft,
             ["uncovered"] = report.Uncovered,
             ["rows"] = new JsonArray([.. report.Rows.Select(r => new JsonObject
             {
@@ -145,6 +154,7 @@ internal static class MappingCoverageCommand
                 ["group"] = r.Group,
                 ["automated"] = r.Automated,
                 ["manual"] = r.Manual,
+                ["draft"] = r.Draft,
                 ["uncovered"] = r.Uncovered,
             })]),
             ["top"] = new JsonArray([.. report.Top.Select(r => new JsonObject
@@ -154,6 +164,7 @@ internal static class MappingCoverageCommand
                 ["group"] = r.Group,
                 ["automated"] = r.Automated,
                 ["manual"] = r.Manual,
+                ["draft"] = r.Draft,
                 ["uncovered"] = r.Uncovered,
             })]),
         }.ToJsonString(OnboardAgentCommand.Indented) + Environment.NewLine;
@@ -175,6 +186,8 @@ internal static class MappingCoverageCommand
         public int Automated => Rows.Sum(r => r.Automated);
 
         public int Manual => Rows.Sum(r => r.Manual);
+
+        public int Draft => Rows.Sum(r => r.Draft);
 
         public int Uncovered => Rows.Sum(r => r.Uncovered);
     }
