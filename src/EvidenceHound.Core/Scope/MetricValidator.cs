@@ -11,7 +11,7 @@ namespace EvidenceHound.Core.Scope;
 /// </summary>
 public static partial class MetricValidator
 {
-    private const int MaxDecimals = 6;
+    private static readonly int MaxDecimals = 6;
     private static readonly string[] ReservedKeys = ["previous", "now", "today", "metrics"];
 
     public static IReadOnlyList<ScopeProblem> Validate(ScopeDocument scope)

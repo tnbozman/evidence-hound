@@ -12,10 +12,10 @@ namespace EvidenceHound.CisoAssistant;
 /// </summary>
 internal sealed partial class ScopeWriter
 {
-    private const string Definitions = "metrology/metric-definitions";
-    private const string Instances = "metrology/metric-instances";
-    private const string Dashboards = "metrology/dashboards";
-    private const string Widgets = "metrology/dashboard-widgets";
+    private static readonly string Definitions = "metrology/metric-definitions";
+    private static readonly string Instances = "metrology/metric-instances";
+    private static readonly string Dashboards = "metrology/dashboards";
+    private static readonly string Widgets = "metrology/dashboard-widgets";
 
     private async Task<Result<Unit>> MetricDefinitionAsync(ScopeWrite write, Folders folders, CancellationToken cancellationToken)
     {

@@ -8,7 +8,7 @@ namespace EvidenceHound.CisoAssistant.Tests;
 /// <summary>s16-02: metric definitions, instances, dashboards and widgets written to CISO Assistant's metrology API (v4.3.4 shapes).</summary>
 public sealed class MetricClientTests : IDisposable
 {
-    private const string State = "0123456789abcdef";
+    private static readonly string State = "0123456789abcdef";
     private readonly FakeCisoAssistant _ca = new();
     private readonly CancellationToken _ct = TestContext.Current.CancellationToken;
 
