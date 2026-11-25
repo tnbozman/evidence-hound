@@ -1,7 +1,7 @@
 version: 2
 updates:
   - package-ecosystem: nuget
-    directory: "/"
+    directories: ["/", "/templates/collector"]
     schedule:
       interval: weekly
     groups:
@@ -9,6 +9,10 @@ updates:
         patterns: ["xunit*", "FsCheck*", "Shouldly", "WireMock*", "Testcontainers*", "coverlet*", "Microsoft.NET.Test.Sdk"]
       microsoft-extensions:
         patterns: ["Microsoft.Extensions.*"]
+    # Stay on .NET 10 LTS: take patches and minors, not the next major (decided 2026-11-25).
+    ignore:
+      - dependency-name: "Microsoft.Extensions.*"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: npm
     directory: "/tools/markdown"
     schedule:
@@ -18,13 +22,21 @@ updates:
     schedule:
       interval: weekly
   - package-ecosystem: docker
-    directories: ["/deploy/compose", "/src/EvidenceHound.Cli"]
+    directories: ["/deploy/compose", "/src/EvidenceHound.Cli", "/examples/compliance-repo/.devcontainer"]
     schedule:
       interval: weekly
+    # Stay on .NET 10 LTS images (global.json pins the 10.0 SDK).
+    ignore:
+      - dependency-name: "dotnet/*"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: docker-compose
     directories: ["/deploy/compose", "/dev/ciso-assistant"]
     schedule:
       interval: weekly
+    # A new PostgreSQL major cannot open an existing data folder: it needs a planned dump and restore.
+    ignore:
+      - dependency-name: "postgres"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: devcontainers
     directory: "/"
     schedule:

@@ -1,6 +1,6 @@
 # s14 ASD Essentials mapping
 
-Status: Planned
+Status: Done
 
 Release: 2
 
@@ -9,7 +9,7 @@ Was s12-01 before the release 1 reorder. It is the first sprint of release 2 so 
 **Goal:** an ASD Essentials for enterprise IT mapping ready for the migration, priority phase 1 first, derived from the completed Essential Eight mapping (s12-01). The Essential Eight 2023 audit stays the audit of record until the migration's cut-over.
 
 ### s14-01 ASD Essentials mapping file
-- [ ] Done
+- [x] Done
 
 **Story:** As a compliance owner, I want the reference checks mapped to the ASD Essentials for enterprise IT, so that a new deployment produces Essentials results on its first run, and an organisation still on the Essential Eight can run both during its transition.
 
@@ -30,9 +30,11 @@ See [the migration plan](../migrations/essential-eight-to-asd-essentials.md).
 
 **Functional check**
 - Against the local CISO Assistant with both libraries loaded: `hound run` with recordings fills the example Essentials and Essential Eight 2023 audits; the coverage report matches the audits.
+- Result (2026-11-25): `hound mapping coverage mappings/asd-essentials-enterprise-it.yaml --framework frameworks/asd-essentials-enterprise-it.json --groups 1 --manual examples/manual-sources --manual examples/example-essential-eight.yaml` printed the four phase 1 domains (governance 3 automated, 6 manual; visibility 1, 11; boundary 11, 26; identity 11, 24) and `Total: 26 automated, 67 manual, 0 uncovered`, so 93 phase 1 rows, 92 mapped and IT.GOV-01.1 recorded by hand. `hound mapping derive` from the Essential Eight mapping wrote 55 draft rows and listed 38 without checks, which the reviewed mapping fills from the new templates, Microsoft 365 (legacy authentication) and the ciso-assistant profile (supplier assurance). The run against CISO Assistant is `TwoAuditsFunctionalTests` (now with the real Essentials mapping: changed plus unchanged rows of EX-ESSENTIALS-2026 equal the mapping's 92 rows), run by CI's functional job, as CISO Assistant's images cannot be pulled in this cloud session.
+- Notes: the custom library sits in `frameworks/` beside the other libraries, not a new `libraries/` folder. The reference mapping's rows were checked with AI help and the draft marks removed; its header says to review it in your own copy, as the 800-171 crosswalk does.
 
 ### s14-02 DISP membership readiness beyond the Essential Eight (added 2026-11-24)
-- [ ] Done
+- [x] Done
 
 Added at the maintainer's request (2026-11-24): Defence checks DISP membership itself, which covers governance, personnel and physical
 security as well as cyber security.
@@ -57,17 +59,125 @@ expectations held as an audit beside the Essential Eight, so that one place show
 
 **Functional check**
 - Apply the example DISP audit to the local CISO Assistant; one `hound run` fills its cyber rows from the Essential Eight evidence.
+- Result (2026-11-25): `hound mapping validate mappings/disp.yaml --framework frameworks/disp.json` printed `valid: 24 requirements` (25 in the library, DISP-INF-01 recorded by hand under `manual_only`); `hound init /tmp/x --yes --framework disp` wrote 15 files, audits EX-E8 and EX-DISP, and the repo validates (`InitCommandTests`). The example compliance repo declares the library and the audit EX-DISP-2026, so the functional fixture's `hound scope apply` uploads and loads it; `DispRunFunctionalTests` then runs the recorded Microsoft 365 tenant against EX-E8-2026 and EX-DISP-2026 and checks DISP-CYB-07 cites the same conditional access evidence as ISM-1504. Run by CI's functional job.
+- Notes: the library is in `frameworks/` like AI6 (not a new `libraries/` folder). It has one group, M (membership): the DSPF's levels of membership are not modelled, so the guide says to check your level's obligations. The security awareness training template is shared with the ASD Essentials. The incident register is the example's `example-incident-register` manual source until the s15 register lands. Guide: `docs/adopt/disp-readiness.md`.
 
 ### s14-03 Rehearse trial, onboarding and sustaining GRC (standing, every sprint)
-- [ ] Done
+- [x] Done
 
 As [s12-09](s12-e8-mapping-and-adoption.md#s12-09-rehearse-trial-onboarding-and-sustaining-grc-standing-every-sprint), including this sprint's new commands and guides.
 
+**Rehearsal log (2026-11-25).** A novice GRC operator with a few hours a week followed the migration guide, the DISP readiness guide,
+`hound init --framework disp`, the template runbooks, the manual evidence and weekly review steps and the cheat sheet, from source in the
+cloud session, including as a non-root user with the default evidence root. 19 findings; fixed here (red, green):
+
+- `hound mapping derive --out` silently replaced the reviewed reference mapping (the guide told you to). It now refuses an existing file
+  without `--force`, and the guide derives to a new file.
+- Coverage counted draft rows as covered. A Draft column now counts rows only draft rows answer; `hound mapping validate` says how many
+  rows are draft. A `--manual` path with no manual source in it is reported, as every attested check then reads as automated.
+- Any `NAME_FILE` variable from another tool pointing at a file the user cannot read crashed every command. Such files are now skipped.
+- A user who cannot write the default evidence root got "Unexpected failure" and a stack-trace hint. It now says to set `evidence.root`
+  or `chown` the folder; guided setup says the default needs root or the container.
+- The README `hound init --framework disp` writes now has a DISP step (copy its manual sources, check coverage); `init --help` and
+  guided setup list `--framework` and the DISP files.
+- Docs: the migration guide's elided coverage command, "four" for five ISM controls, and a maintainer step written as a user step; the
+  DISP guide's incident register source and the example repo stopping at step 3; `collectors: []` to replace before pasting a template;
+  the first deployment tutorial's file names for an `init` repo; the cheat sheet PDF re-rendered.
+- Already fixed this sprint: the per-parent coverage table names each Essentials principle with its domain.
+
+- Installing the release candidate as a customer also found: `hound config validate` said "valid" for an evidence root the user cannot
+  write (now a warning naming `evidence.root` and the fix; a warning, as a repo's CI validates where only the runner container writes);
+  after `hound add collector fake` the suggested run failed on `plan.control_key_unknown`, whose message now names the target's
+  `controls:` setting; the add collector hint led with `--check-secrets`, which fails before secrets are set; the two-audit functional
+  test depended on test order (fixed with s14-05); the collector tutorial used the deprecated `::` version syntax.
+
+Carried to discovered work: findings 8 (exit codes), 14 and 15.
+
+**Functional check**
+- Result (2026-11-25): with a draft from `derive`, `hound mapping coverage <draft> --framework frameworks/asd-essentials-enterprise-it.json
+  --groups 1` prints `Total: 0 automated, 0 manual, 55 draft, 38 uncovered` (`MappingCoverageCommandTests`); deriving over an existing
+  file exits 2 and keeps it (`MappingDeriveCommandTests`).
+
 ### s14-04 Improve: quality and flow (standing, about 15% of each sprint)
-- [ ] Done
+- [x] Done
 
 As [s12-10](s12-e8-mapping-and-adoption.md#s12-10-improve-quality-and-flow-standing-about-15-of-each-sprint).
 
+- Triage of s13's Discovered work:
+  - Release pins stamped by hand: done. `scripts/stamp-release.sh x.y.z` moves `HOUND_RUNNER_IMAGE`, `EVIDENCE_HOUND_REF` and the
+    tutorial's image to a release (bats tests; `docs/releasing.md`).
+  - Non-root user with the default evidence root: proven by this sprint's rehearsal, which found the unexplained failure (fixed in s14-03).
+  - nuget.org trusted publishing: stays as discovered work.
+- Dependencies: Dependabot updates folded into the sprint branch: test tools with xunit.v3 aligned on 4.0.3 (also in the collector
+  template, which Dependabot now watches), Confluent.Kafka, CycloneDX, code coverage, the runtime image digest, Caddy, Redpanda in the dev
+  stack, markdownlint-cli2 0.24, mkdocs-material. Decided 2026-11-25: stay on .NET 10 LTS and PostgreSQL 16, so the .NET 11 SDK image,
+  Microsoft.Extensions 11 and PostgreSQL 18 (which cannot open an existing data folder without a dump and restore) were closed, and
+  Dependabot ignores those majors.
+- The coverage report's per-parent table names each Essentials principle with its domain, as the same principle sits in several domains.
+- Cheat sheet PDF re-rendered for `mapping derive` and `init --framework`.
+
+### s14-05 Fill rows whose checks come from several collectors (added 2026-11-25)
+- [x] Done
+
+**Story.** The DISP cyber rows and many Essentials rows join checks from several collectors (Microsoft 365 and a manual source, say).
+A run only filled a row one collector fully reported, so those rows were never filled. CI's functional tests found it.
+
+**Acceptance criteria**
+- Each collector run saves its latest check results and evidence list beside its runs.
+- A run fills a row when its own checks and the latest saved results of the other configured collectors together answer every check, and
+  at least one check is its own. Each check counts its newest result; the row cites every contributing collector's evidence.
+- A row no combination fully answers is still left alone, so no collector marks another's row as not assessed.
+
+**Tests to write first**
+- Ownership with other collectors' results; a runner test where two collectors on separate runs fill one row with both evidence.
+
+**Functional check**
+- Result (2026-11-25): `DispRunFunctionalTests` runs the recorded Microsoft 365 tenant and a manual MFA, logging and incident source
+  against EX-E8-2026 and EX-DISP-2026; DISP-CYB-07, which joins both collectors' checks, is filled with the conditional access evidence
+  and the attested checks. CI's functional job passed (38 of 38) at 55f7237.
+
+### s14-06 A devcontainer for the GRC team (added 2026-11-25)
+- [x] Done
+
+**Story.** As a GRC team member, I open our compliance repo in a devcontainer and have released `hound` and my coding assistant
+(Claude Code or GitHub Copilot) ready, so my machine needs only Docker and VS Code, and the tools stay the same for everyone.
+
+**Acceptance criteria**
+- The compliance repo template has `.devcontainer/` with `hound` from the released runner image (no .NET SDK or build tools), the
+  Claude Code and GitHub Copilot extensions, and a writable default evidence root. `hound init` writes it too.
+- Its runner image is pinned to the same release as the deployment, and `scripts/stamp-release.sh` moves it.
+
+**Tests to write first**
+- Example repo: the pin agrees and the devcontainer has no SDK; init writes the files; the stamp script moves the pin.
+
+**Functional check**
+- Result (2026-11-25): `hound init` writes `.devcontainer/` (`InitCommandTests`); the pins agree (`ExampleRepoTests`); `stamp-release.bats`
+  moves the devcontainer's image. The container is not built in this cloud session (no Docker) and needs the v1.0.0 runner image, which is
+  published when the release is tagged; the next local trial runs inside it.
+
 ## Discovered work
 
+- s14-03: `hound mapping coverage` and `validate` exit 0 with uncovered or draft rows; a `--fail-on-uncovered` (and draft) flag would let
+  CI gate on them. Coverage also counts as automated a check that no configured collector gives; reading collector check IDs from the
+  config would show those as unsourced.
+- s14-03: `hound add collector manual` writes `due_days` as a quoted string.
+- s14-03: `hound manual upload` takes `--source`, `hound manual propose` a positional source; upload prints `(attested: False)`.
+- s14-03: `hound review pending` recommends `attest` from a `partial` proposal, but `review recommend --answer` takes accept or decline.
+- s14-03: an incident register manual source template (the example repo has one); s15's incident register may replace it.
+- s14-04: nuget.org trusted publishing (OIDC), carried from s13.
+
 ## Sprint review
+
+**2026-11-25.** The ASD Essentials mapping for priority phase 1 is ready beside the Essential Eight: `hound mapping derive` drafts a new
+framework's mapping from an existing one and CISO Assistant's transition mapping, draft rows never publish until a person reviews them, and
+coverage counts per Essentials domain and shows draft rows. DISP membership readiness beyond the Essential Eight (governance, personnel,
+physical, information and cyber) is a custom library, mapping, four manual source runbooks and a guide, and `hound init --framework disp`
+adds its audit. CI's functional tests found that a row joining several collectors' checks was never filled, which most DISP and Essentials
+rows do; s14-05 fixed it, so each collector's latest results now combine. The GRC team gets a devcontainer with released `hound` and their
+coding assistants (s14-06). The rehearsal and the release candidate's customer install found 24 problems; the important ones are fixed,
+the rest are below. Twelve Dependabot updates were folded in; the project stays on .NET 10 LTS and PostgreSQL 16.
+
+**Retro.** What slowed the sprint: the functional job is the only place CISO Assistant runs, and three of its failures (test order,
+multi-collector rows, the DISP programme in reports) surfaced late because pushes cancelled earlier runs. A mapping that joins checks
+across collectors passed every unit test yet published nothing. Next sprint: when a mapping or the runner changes, write the functional
+test with more than one collector first, and push once per finished task so the functional job completes.

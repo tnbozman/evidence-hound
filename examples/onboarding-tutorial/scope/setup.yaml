@@ -19,6 +19,11 @@ frameworks:
     library: urn:evidence-hound:risk:library:ai6
     file: ../frameworks/ai6.yaml
     snapshot: ../frameworks/ai6.json
+  # DISP membership readiness, as a custom library: governance, personnel, physical, information and cyber security (s14-02).
+  - urn: urn:evidence-hound:risk:framework:disp-membership
+    library: urn:evidence-hound:risk:library:disp-membership
+    file: ../frameworks/disp.yaml
+    snapshot: ../frameworks/disp.json
 # Other libraries to load, such as the mapping between the Essential Eight and the Essentials.
 libraries:
   - urn:intuitem:risk:library:mapping-essential-eight-2023-and-asd-essentials-enterprise-it
@@ -117,6 +122,11 @@ programmes:
     framework: urn:intuitem:risk:framework:essential-eight-2023
     groups: ["1", "2"]
     audit: EX-E8-2026
+  - id: disp
+    name: DISP membership readiness
+    framework: urn:evidence-hound:risk:framework:disp-membership
+    groups: ["M"]
+    audit: EX-DISP-2026
   - id: ai6
     name: AI governance (AI6 Foundations)
     framework: urn:evidence-hound:risk:framework:ai6

@@ -15,7 +15,7 @@ Download the `.nupkg` files from the [release](https://github.com/tnbozman/evide
 `~/hound-packages`, unless the packages are on nuget.org. Then, with the release's version:
 
 ```console
-$ dotnet new install EvidenceHound.Templates::1.0.0 --add-source ~/hound-packages
+$ dotnet new install EvidenceHound.Templates@1.0.0 --add-source ~/hound-packages
 $ dotnet new hound-collector -n Example.Widget
 $ cd Example.Widget
 $ dotnet restore --source ~/hound-packages --source https://api.nuget.org/v3/index.json
@@ -23,7 +23,7 @@ $ dotnet test
 ```
 
 `dotnet restore` needs both sources: the Evidence Hound packages from the folder, everything else from nuget.org. Once the packages are
-on nuget.org, `dotnet new install EvidenceHound.Templates::1.0.0` and `dotnet test` are enough.
+on nuget.org, `dotnet new install EvidenceHound.Templates@1.0.0` and `dotnet test` are enough.
 
 The template references the `EvidenceHound.Collectors.Abstractions` and `EvidenceHound.Collectors.Testing` packages of its own
 version. The generated README lists every file and the steps below in more detail.

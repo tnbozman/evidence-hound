@@ -12,7 +12,7 @@ public static class MappingLoader
 {
     private static readonly string[] TopLevelKeys = ["framework_urn", "description", "requirements", "manual_only"];
     private static readonly string[] ManualOnlyKeys = ["ref", "urn", "rows", "source"];
-    private static readonly string[] RequirementKeys = ["ref", "urn", "rows", "rule", "threshold", "checks"];
+    private static readonly string[] RequirementKeys = ["ref", "urn", "rows", "draft", "rule", "threshold", "checks"];
 
     public static Result<LoadedMapping> Parse(string yaml, string source, IReadOnlySet<CheckId>? knownChecks = null)
     {
@@ -125,13 +125,23 @@ public static class MappingLoader
         var key = ParseKey(map, at);
         var rule = ParseRule(map, at);
         var checks = ParseChecks(map, at);
-        Problem[] problems = [.. UnknownKeys(map, RequirementKeys, at), .. ProblemsOf(key), .. ProblemsOf(rule), .. ProblemsOf(checks)];
+        var draft = ParseDraft(map, at);
+        Problem[] problems = [.. UnknownKeys(map, RequirementKeys, at), .. ProblemsOf(key), .. ProblemsOf(rule), .. ProblemsOf(checks), .. ProblemsOf(draft)];
         return problems.Length > 0
             ? Result.Fail<ParsedRequirement>(problems)
-            : key.Bind(parsedKey => rule.Bind(parsedRule => checks.Bind(parsedChecks =>
+            : key.Bind(parsedKey => rule.Bind(parsedRule => checks.Bind(parsedChecks => draft.Bind(isDraft =>
                 Located(RequirementMapping.Create(parsedKey, parsedChecks.Select(c => c.Id), parsedRule), map.Start, at)
-                    .Map(mapping => new ParsedRequirement(mapping, [.. parsedChecks], (int)map.Start.Line)))));
+                    .Map(mapping => new ParsedRequirement(mapping with { Draft = isDraft }, [.. parsedChecks], (int)map.Start.Line))))));
     }
+
+    /// <summary>s14-01: <c>draft: true</c> on a row <c>hound mapping derive</c> wrote and nobody has reviewed yet.</summary>
+    private static Result<bool> ParseDraft(YamlMappingNode map, Locator at) => Child(map, "draft") switch
+    {
+        null => Result.Ok(false),
+        YamlScalarNode { Value: "true" } => Result.Ok(true),
+        YamlScalarNode { Value: "false" } => Result.Ok(false),
+        var other => Result.Fail<bool>(at.Problem(other.Start, "mapping.draft_invalid", "'draft' must be true or false.")),
+    };
 
     /// <summary>Exactly one of <c>ref</c> and <c>urn</c>; <c>rows: all</c> only with a ref.</summary>
     private static Result<RequirementKey> ParseKey(YamlMappingNode map, Locator at)

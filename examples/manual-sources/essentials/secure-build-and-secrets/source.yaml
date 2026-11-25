@@ -1,0 +1,10 @@
+# Secure build and secrets: paste this under 'collectors:' in hound.yaml, then set the owner and the drop folder.
+# The runbook is README.md beside this file; point an evidence plan row at your copy of it.
+- name: secure-build-and-secrets
+  type: manual
+  schedule: "0 6 * * *"
+  settings:
+    drop_folder: /var/lib/evidence-hound/manual/secure-build-and-secrets
+    checks: build.secure_design_reviewed, build.pipeline_controls_enforced, secrets.stored_in_approved_vault, secrets.scanning_remediated
+    due_days: 92
+    owner: Example development lead

@@ -43,15 +43,23 @@ public static partial class FrameworkLibraryReader
         });
     }
 
-    /// <summary>The named nodes that are the parent of an assessable node, in library order.</summary>
+    /// <summary>The named nodes above an assessable node (its parent, and that parent's own parents), in library order.</summary>
     private static IReadOnlyList<SnapshotParent> Parents(IReadOnlyList<YamlMappingNode> nodes, IReadOnlyList<SnapshotNode> assessable)
     {
-        var used = assessable.Select(n => n.ParentUrn).OfType<string>().ToHashSet(StringComparer.Ordinal);
+        var byUrn = nodes.Where(n => Text(n, "urn") is not null).GroupBy(n => Text(n, "urn")!, StringComparer.Ordinal).ToDictionary(g => g.Key, g => g.First(), StringComparer.Ordinal);
+        var used = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var start in assessable.Select(n => n.ParentUrn).OfType<string>())
+        {
+            for (var urn = start; urn is not null && used.Add(urn); urn = byUrn.TryGetValue(urn, out var node) ? Text(node, "parent_urn") : null)
+            {
+            }
+        }
+
         return
         [
             .. nodes
                 .Where(n => Text(n, "urn") is { } urn && used.Contains(urn) && Text(n, "name") is { Length: > 0 })
-                .Select(n => new SnapshotParent(Text(n, "urn")!, Text(n, "ref_id"), OneLine(Text(n, "name")!))),
+                .Select(n => new SnapshotParent(Text(n, "urn")!, Text(n, "ref_id"), OneLine(Text(n, "name")!)) { ParentUrn = Text(n, "parent_urn") }),
         ];
     }
 

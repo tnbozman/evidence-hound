@@ -77,7 +77,8 @@ description, so write it for someone who will read it in an email:
 - **If something fails**: a failed test is evidence too. Say so and send it.
 
 `examples/manual-sources/essential-eight/` has a runbook for each Essential Eight area no collector reads, with the collector to paste
-into `hound.yaml` beside it ([index](collectors/manual-templates.md)). Copy the ones you need into `manual-sources/` in your repo,
+into `hound.yaml` beside it, and `examples/manual-sources/essentials/` one for each ASD Essentials area the Essential Eight never asked
+about ([index](collectors/manual-templates.md)). Copy the ones you need into `manual-sources/` in your repo,
 set the owner and the drop folder, and point an evidence plan row at the copy.
 
 ## Turning mail on

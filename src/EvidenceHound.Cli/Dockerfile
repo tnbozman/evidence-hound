@@ -9,10 +9,11 @@ WORKDIR /src
 # global.json is left out: it pins the dev SDK band, and this stage uses the SDK image pinned above.
 COPY Directory.Build.props Directory.Packages.props ./
 COPY src/ src/
-# hound init carries the Essential Eight mapping and snapshot, the compliance repo template's .gitignore and the weekly review runbook.
-COPY mappings/essential-eight-2023.yaml mappings/
-COPY frameworks/essential-eight-2023.json frameworks/
+# hound init carries the Essential Eight and DISP mappings and snapshots (and the DISP library), the compliance repo template's .gitignore and the weekly review runbook.
+COPY mappings/essential-eight-2023.yaml mappings/disp.yaml mappings/
+COPY frameworks/essential-eight-2023.json frameworks/disp.yaml frameworks/disp.json frameworks/
 COPY examples/compliance-repo/.gitignore examples/compliance-repo/
+COPY examples/compliance-repo/.devcontainer/ examples/compliance-repo/.devcontainer/
 COPY examples/compliance-repo/manual-sources/weekly-compliance-review.md examples/compliance-repo/manual-sources/
 # hound onboard's default skills and the coding-assistant files hound agent setup writes, built into hound.
 COPY skills/ skills/
@@ -32,7 +33,7 @@ RUN rid="linux-$([ "$TARGETARCH" = arm64 ] && echo arm64 || echo x64)" \
 # so a named volume mounted there starts writable.
 RUN mkdir -p /data/var/lib/evidence-hound
 
-FROM mcr.microsoft.com/dotnet/runtime:10.0-noble-chiseled@sha256:1b234cef150624fe8cc7d027e8d742c0f03a16aef2484dc469eb8c872167255e
+FROM mcr.microsoft.com/dotnet/runtime:10.0-noble-chiseled@sha256:d7841dcba3234bd757f835cdaf03de1cae42b301e7f19677cd87a7bbc2064b27
 LABEL org.opencontainers.image.title="Evidence Hound runner" \
       org.opencontainers.image.description="Collects compliance evidence and publishes it to CISO Assistant" \
       org.opencontainers.image.source="https://github.com/tnbozman/evidence-hound" \

@@ -1,7 +1,7 @@
 # Manual source templates
 
 One template for each Essential Eight area no collector reads. Each folder holds `source.yaml`, a manual collector to paste under
-`collectors:` in `hound.yaml`, and `README.md`, the runbook the owner follows and the evidence plan row points at. How they fit together
+`collectors:` in `hound.yaml` (a repo from `hound init` starts with `collectors: []`: replace it with `collectors:` first), and `README.md`, the runbook the owner follows and the evidence plan row points at. How they fit together
 is in [Manual evidence](../manual-evidence.md).
 
 | Strategy | Template | Every | Requirements |
@@ -17,3 +17,34 @@ is in [Manual evidence](../manual-evidence.md).
 
 Every check in these templates is mapped in `mappings/essential-eight-2023.yaml`. Copy a template into your compliance repo when you
 take the area on; until then its requirements are yours to write by hand in the audit file.
+
+## ASD Essentials (s14)
+
+For the Essentials actions with no Essential Eight source, in `examples/manual-sources/essentials/`. Each check is mapped in
+`mappings/asd-essentials-enterprise-it.yaml`, to the action in every priority phase 1 domain that rates it. The Essential Eight templates
+above cover the actions the Essential Eight already evidences.
+
+| Template | Every | Actions |
+| --- | --- | --- |
+| [Asset records](../../examples/manual-sources/essentials/asset-records/README.md) | 3 months | IT.IDE-01.2 |
+| [Content filtering](../../examples/manual-sources/essentials/content-filtering/README.md) | 3 months | IT.PRO-09.1, IT.PRO-09.2, IT.PRO-09.3 |
+| [Cyber governance](../../examples/manual-sources/essentials/cyber-governance/README.md) | 12 months | IT.GOV-03.1, IT.GOV-04.1, IT.GOV-04.2, IT.GOV-08.1, IT.IDE-04.1 |
+| [Incident learning and detection](../../examples/manual-sources/essentials/incident-learning/README.md) | 6 months | IT.DET-02.1, IT.RES-04.1, IT.RES-04.2 |
+| [Network segmentation](../../examples/manual-sources/essentials/network-segmentation/README.md) | 6 months | IT.PRO-18.1 |
+| [Secure administration](../../examples/manual-sources/essentials/secure-administration/README.md) | 6 months | IT.PRO-05.2 |
+| [Secure build and secrets](../../examples/manual-sources/essentials/secure-build-and-secrets/README.md) | 3 months | IT.PRO-01.1, IT.PRO-01.2, IT.PRO-13.2, IT.PRO-13.3 |
+| [Security awareness training](../../examples/manual-sources/essentials/security-awareness-training/README.md) | 12 months | IT.PRO-14.1, IT.PRO-14.2 |
+| [Supply chain security](../../examples/manual-sources/essentials/supply-chain-security/README.md) | 3 months | IT.PRO-16.1, IT.PRO-16.2 |
+
+## DISP membership readiness (s14)
+
+For the records no system holds, in `examples/manual-sources/disp/`. Each check is mapped in `mappings/disp.yaml`. Security awareness
+training (DISP-PER-04) uses the Essentials [security awareness training](../../examples/manual-sources/essentials/security-awareness-training/README.md)
+template, so one set of training records answers both.
+
+| Template | Every | Requirements |
+| --- | --- | --- |
+| [Annual security report to Defence](../../examples/manual-sources/disp/annual-security-report/README.md) | 12 months | DISP-GOV-04, DISP-INF-03, DISP-PER-05 |
+| [Clearances register review](../../examples/manual-sources/disp/clearances-register/README.md) | 6 months | DISP-PER-01, DISP-PER-02, DISP-PER-03 |
+| [Facility and visitor controls](../../examples/manual-sources/disp/facility-security/README.md) | 6 months | DISP-PHY-01, DISP-PHY-02, DISP-PHY-03 |
+| [Security officer and governance](../../examples/manual-sources/disp/security-officer/README.md) | 12 months | DISP-GOV-01, DISP-GOV-02, DISP-GOV-03 |

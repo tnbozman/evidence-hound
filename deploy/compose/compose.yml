@@ -97,7 +97,7 @@ services:
     security_opt: ["no-new-privileges:true"]
 
   caddy:
-    image: caddy:2.11.4
+    image: caddy:2.11.9
     restart: unless-stopped
     depends_on:
       backend:

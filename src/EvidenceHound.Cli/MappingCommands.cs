@@ -29,7 +29,7 @@ internal static class MappingCommands
         apply.SetAction((parseResult, cancellationToken) =>
             ApplyAsync(parseResult.GetRequiredValue(mappingFile), parseResult.GetRequiredValue(checksFile), output, logger, cancellationToken));
 
-        return new Command("mapping", "Work with framework mapping files.") { validate, apply, MappingCoverageCommand.Build(output, logger), MappingCrosswalkCommand.Build(output, loggers, configuration, registry) };
+        return new Command("mapping", "Work with framework mapping files.") { validate, apply, MappingCoverageCommand.Build(output, logger), MappingDeriveCommand.Build(output, logger), MappingCrosswalkCommand.Build(output, loggers, configuration, registry) };
     }
 
     private static async Task<int> ValidateAsync(FileInfo file, FileInfo? framework, TextWriter output, ILogger logger, CancellationToken cancellationToken)
@@ -48,7 +48,7 @@ internal static class MappingCommands
         return await load.Match(
             async loaded =>
             {
-                await output.WriteLineAsync($"valid: {loaded.Mapping.Requirements.Count} requirements");
+                await output.WriteLineAsync($"valid: {loaded.Mapping.Requirements.Count} requirements{DraftNote(loaded.Mapping.Requirements.Count(r => r.Draft))}");
                 return ExitCodes.Ok;
             },
             problems => Task.FromResult(Log.Problems(logger, problems)));
@@ -72,4 +72,11 @@ internal static class MappingCommands
         file.Exists
             ? MappingLoader.Parse(await File.ReadAllTextAsync(file.FullName, cancellationToken), file.ToString())
             : Result.Fail<LoadedMapping>(new Problem("mapping.file_not_found", $"Mapping file not found: {file}"));
+
+    private static string DraftNote(int drafts) => drafts switch
+    {
+        0 => "",
+        1 => "; 1 row is draft and will not publish until you review it and delete its 'draft: true' line",
+        _ => $"; {drafts} rows are draft and will not publish until you review each and delete its 'draft: true' line",
+    };
 }

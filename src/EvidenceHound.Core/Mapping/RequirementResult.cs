@@ -12,4 +12,7 @@ public sealed record RequirementResult(string RequirementRef, ComplianceResult R
 
     /// <summary>Each contributing check as <c>check.id:outcome</c> (<c>missing</c> when it has no result), in mapping order.</summary>
     public IReadOnlyList<string> CheckOutcomes { get; init; } = [];
+
+    /// <summary>s14-01: the mapping row is a draft nobody has reviewed, so the result is not published.</summary>
+    public bool Draft { get; init; }
 }

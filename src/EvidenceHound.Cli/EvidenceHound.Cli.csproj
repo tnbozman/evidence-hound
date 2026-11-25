@@ -27,7 +27,12 @@
     <EmbeddedResource Include="..\..\mappings\essential-eight-2023.yaml" LogicalName="init/mappings/essential-eight-2023.yaml" />
     <EmbeddedResource Include="..\..\mappings\crosswalks\*.yaml" LogicalName="crosswalks/%(Filename)%(Extension)" />
     <EmbeddedResource Include="..\..\frameworks\essential-eight-2023.json" LogicalName="init/frameworks/essential-eight-2023.json" />
+    <EmbeddedResource Include="..\..\mappings\disp.yaml" LogicalName="init/mappings/disp.yaml" />
+    <EmbeddedResource Include="..\..\frameworks\disp.yaml" LogicalName="init/frameworks/disp.yaml" />
+    <EmbeddedResource Include="..\..\frameworks\disp.json" LogicalName="init/frameworks/disp.json" />
     <EmbeddedResource Include="..\..\examples\compliance-repo\.gitignore" LogicalName="init/.gitignore" />
+    <EmbeddedResource Include="..\..\examples\compliance-repo\.devcontainer\devcontainer.json" LogicalName="init/.devcontainer/devcontainer.json" />
+    <EmbeddedResource Include="..\..\examples\compliance-repo\.devcontainer\Dockerfile" LogicalName="init/.devcontainer/Dockerfile" />
     <EmbeddedResource Include="..\..\examples\compliance-repo\manual-sources\weekly-compliance-review.md" LogicalName="init/manual-sources/weekly-compliance-review.md" />
   </ItemGroup>
   <ItemGroup>

@@ -77,10 +77,16 @@ collectors:
       due_days: 92
       owner: Alex Example
 
-# The audits that results are published to: the Essential Eight ML2 audit and the AI6 self-assessment.
+# The audits that results are published to: the Essential Eight ML2 audit, the ASD Essentials priority phase 1 audit run beside it
+# during the migration (rows whose manual sources are not set up yet stay not assessed), the DISP membership readiness
+# self-assessment, and the AI6 self-assessment.
 targets:
   - mapping: mappings/essential-eight-2023.yaml
     compliance_assessment: EX-E8-2026
     health_control: AC-AUTO-EVIDENCE
+  - mapping: mappings/asd-essentials-enterprise-it.yaml
+    compliance_assessment: EX-ESSENTIALS-2026
+  - mapping: mappings/disp.yaml
+    compliance_assessment: EX-DISP-2026
   - mapping: mappings/ai6.yaml
     compliance_assessment: EX-AI6-2026

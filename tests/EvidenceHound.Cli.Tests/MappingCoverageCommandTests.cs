@@ -23,11 +23,11 @@ public sealed class MappingCoverageCommandTests : IDisposable
 
         exitCode.ShouldBe(ExitCodes.Ok);
         var text = _output.ToString();
-        text.ShouldContain("| Parent | Group | Automated | Manual | Uncovered |");
+        text.ShouldContain("| Parent | Group | Automated | Manual | Draft | Uncovered |");
         text.ShouldContain("| mfa | 2 |");
         text.ShouldContain("| rb | 1 |");
         text.ShouldNotContain("| ml3");
-        text.ShouldMatch(@"(?s).*Total: \d+ automated, \d+ manual, 0 uncovered.*");
+        text.ShouldMatch(@"(?s).*Total: \d+ automated, \d+ manual, 0 draft, 0 uncovered.*");
     }
 
     [Fact]
@@ -39,7 +39,7 @@ public sealed class MappingCoverageCommandTests : IDisposable
             "--groups", "1,2");
 
         exitCode.ShouldBe(ExitCodes.Ok);
-        _output.ToString().ShouldMatch(@"(?s).*Total: 155 automated, 0 manual, 0 uncovered.*");
+        _output.ToString().ShouldMatch(@"(?s).*Total: 155 automated, 0 manual, 0 draft, 0 uncovered.*");
     }
 
     [Fact]
@@ -58,6 +58,77 @@ public sealed class MappingCoverageCommandTests : IDisposable
         rows.GetArrayLength().ShouldBe(6);
         rows[0].GetProperty("group").GetString().ShouldBe("F");
         json.RootElement.GetProperty("uncovered").GetInt32().ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task Essentials_phase_1_is_counted_per_domain_with_no_uncovered_action()
+    {
+        // s14-01: the ASD Essentials rates each action per domain, so coverage also counts per domain and priority phase.
+        var exitCode = await Run(
+            "mapping", "coverage", Repo("mappings", "asd-essentials-enterprise-it.yaml"),
+            "--framework", Repo("frameworks", "asd-essentials-enterprise-it.json"),
+            "--groups", "1",
+            "--manual", Repo("examples", "manual-sources"),
+            "--manual", Repo("examples", "example-essential-eight.yaml"));
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var text = _output.ToString();
+        text.ShouldContain("| Top level | Group | Automated | Manual | Draft | Uncovered |");
+        text.ShouldContain("| Boundary services | 1 |");
+        text.ShouldContain("| Identity services | 1 |");
+        text.ShouldContain("| Governance and culture | 1 |");
+        text.ShouldContain("| Visibility and response | 1 |");
+        text.ShouldNotContain("| Business systems");
+        // s14-04: the same principle sits in several domains, so the per-parent table names the domain too.
+        text.ShouldContain("| Boundary services / Secure system lifecycle | 1 |");
+        text.ShouldContain("| Identity services / Secure system lifecycle | 1 |");
+        text.ShouldMatch(@"(?s).*Total: \d+ automated, \d+ manual, 0 draft, 0 uncovered.*");
+    }
+
+    [Fact]
+    public async Task A_derived_mapping_counts_as_draft_until_reviewed()
+    {
+        // s14-03 rehearsal: an all-draft derived mapping read as "22 automated, 33 manual", yet runs publish none of it.
+        var draft = Path.Combine(Path.GetTempPath(), $"hound-coverage-{Guid.NewGuid():N}.yaml");
+        try
+        {
+            (await Run(
+                "mapping", "derive", Repo("mappings", "essential-eight-2023.yaml"),
+                "--from", Repo("frameworks", "essential-eight-2023.json"),
+                "--to", Repo("frameworks", "asd-essentials-enterprise-it.json"),
+                "--links", Repo("frameworks", "mapping-essential-eight-2023-and-asd-essentials-enterprise-it.yaml"),
+                "--groups", "1",
+                "--out", draft)).ShouldBe(ExitCodes.Ok, _error.ToString());
+            _output.GetStringBuilder().Clear();
+
+            var exitCode = await Run("mapping", "coverage", draft, "--framework", Repo("frameworks", "asd-essentials-enterprise-it.json"), "--groups", "1");
+
+            exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+            _output.ToString().ShouldMatch(@"(?s).*Total: 0 automated, 0 manual, 55 draft, 38 uncovered.*");
+        }
+        finally
+        {
+            File.Delete(draft);
+        }
+    }
+
+    [Fact]
+    public async Task A_manual_folder_with_no_manual_source_is_reported()
+    {
+        // s14-03 rehearsal: --manual pointed at a folder with no sources, so every attested check counted as automated.
+        var empty = Directory.CreateTempSubdirectory("hound-no-manual-");
+        try
+        {
+            var exitCode = await Run(
+                "mapping", "coverage", Repo("mappings", "disp.yaml"), "--framework", Repo("frameworks", "disp.json"), "--manual", empty.FullName);
+
+            exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+            _logs.Messages.ShouldContain(m => m.Contains("no manual source", StringComparison.Ordinal));
+        }
+        finally
+        {
+            empty.Delete(recursive: true);
+        }
     }
 
     [Fact]

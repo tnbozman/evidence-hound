@@ -9,7 +9,8 @@ namespace EvidenceHound.Core.Mapping;
 /// <param name="Automated">Requirements with at least one collector check.</param>
 /// <param name="Manual">Requirements answered only by checks a person attests through a manual source, or listed as manual-only.</param>
 /// <param name="Uncovered">Requirements nothing answers.</param>
-public sealed record CoverageCount(string ParentUrn, string Group, int Automated, int Manual, int Uncovered);
+/// <param name="Draft">s14-03: requirements answered only by draft rows, which runs do not publish until a person reviews them.</param>
+public sealed record CoverageCount(string ParentUrn, string Group, int Automated, int Manual, int Uncovered, int Draft = 0);
 
 /// <summary>s12-01: mapping coverage of a framework snapshot for an audit's selected implementation groups.</summary>
 public static class MappingCoverage
@@ -20,7 +21,31 @@ public static class MappingCoverage
         FrameworkMapping mapping,
         IEnumerable<RequirementKey> manualOnly,
         IReadOnlySet<CheckId> manualChecks,
+        IReadOnlyList<string> groups) =>
+        CountBy(snapshot, mapping, manualOnly, manualChecks, groups, node => node.ParentUrn ?? "");
+
+    /// <summary>
+    /// s14-01: counts per top-level node (in snapshot order) and selected group, such as an ASD Essentials domain, which sits above the
+    /// principle each action belongs to. For a framework with one level of parents this is the same as <see cref="Count"/>.
+    /// </summary>
+    public static IReadOnlyList<CoverageCount> CountByTop(
+        FrameworkSnapshot snapshot,
+        FrameworkMapping mapping,
+        IEnumerable<RequirementKey> manualOnly,
+        IReadOnlySet<CheckId> manualChecks,
         IReadOnlyList<string> groups)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        return CountBy(snapshot, mapping, manualOnly, manualChecks, groups, node => node.ParentUrn is null ? "" : snapshot.TopUrn(node.ParentUrn));
+    }
+
+    private static IReadOnlyList<CoverageCount> CountBy(
+        FrameworkSnapshot snapshot,
+        FrameworkMapping mapping,
+        IEnumerable<RequirementKey> manualOnly,
+        IReadOnlySet<CheckId> manualChecks,
+        IReadOnlyList<string> groups,
+        Func<SnapshotNode, string> parentOf)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
         ArgumentNullException.ThrowIfNull(mapping);
@@ -31,9 +56,9 @@ public static class MappingCoverage
         var kinds = Kinds(snapshot, mapping, manualOnly, manualChecks);
         return
         [
-            .. snapshot.Nodes.Select(n => n.ParentUrn ?? "").Distinct(StringComparer.Ordinal).SelectMany(parent => groups.Select(group =>
-                Counted(parent, group, [.. snapshot.Nodes.Where(n => (n.ParentUrn ?? "") == parent && n.Groups.Contains(group)).Select(n => kinds.GetValueOrDefault(n.Urn, CoverageKind.Uncovered))])))
-            .Where(count => count.Automated + count.Manual + count.Uncovered > 0),
+            .. snapshot.Nodes.Select(parentOf).Distinct(StringComparer.Ordinal).SelectMany(parent => groups.Select(group =>
+                Counted(parent, group, [.. snapshot.Nodes.Where(n => parentOf(n) == parent && n.Groups.Contains(group)).Select(n => kinds.GetValueOrDefault(n.Urn, CoverageKind.Uncovered))])))
+            .Where(count => count.Automated + count.Manual + count.Uncovered + count.Draft > 0),
         ];
     }
 
@@ -42,13 +67,13 @@ public static class MappingCoverage
     {
         var kinds = new Dictionary<string, CoverageKind>(StringComparer.Ordinal);
         var answered = mapping.Requirements
-            .Select(r => (r.Key, Kind: r.Checks.All(manualChecks.Contains) ? CoverageKind.Manual : CoverageKind.Automated))
+            .Select(r => (r.Key, Kind: r.Draft ? CoverageKind.Draft : r.Checks.All(manualChecks.Contains) ? CoverageKind.Manual : CoverageKind.Automated))
             .Concat(manualOnly.Select(key => (Key: key, Kind: CoverageKind.Manual)));
         foreach (var (key, kind) in answered)
         {
             foreach (var node in snapshot.Resolve(key))
             {
-                kinds[node.Urn] = kinds.TryGetValue(node.Urn, out var existing) && existing == CoverageKind.Automated ? existing : kind;
+                kinds[node.Urn] = kinds.TryGetValue(node.Urn, out var existing) && existing < kind ? existing : kind;
             }
         }
 
@@ -60,12 +85,15 @@ public static class MappingCoverage
         group,
         kinds.Count(k => k == CoverageKind.Automated),
         kinds.Count(k => k == CoverageKind.Manual),
-        kinds.Count(k => k == CoverageKind.Uncovered));
+        kinds.Count(k => k == CoverageKind.Uncovered),
+        kinds.Count(k => k == CoverageKind.Draft));
 
+    /// <summary>In order of strength: where two rows answer one requirement, the stronger kind counts.</summary>
     private enum CoverageKind
     {
         Automated,
         Manual,
+        Draft,
         Uncovered,
     }
 }

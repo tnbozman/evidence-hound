@@ -57,11 +57,68 @@ public class CoverageTests
     }
 
     [Fact]
+    public void A_draft_row_counts_as_draft_not_as_covered()
+    {
+        // s14-03 rehearsal: an all-draft derived mapping looked fully covered, yet runs publish no draft row.
+        var draft = RequirementMapping.Create("MFA-B", [Id("identity.mfa.enforced")], MappingRule.AllPass).Value() with { Draft = true };
+        var mapping = Mapping(Requirement("MFA-A", "identity.mfa.enforced"), draft);
+
+        var counts = MappingCoverage.Count(Snapshot, mapping, [], ManualChecks, Ml2);
+
+        counts.Where(c => c.ParentUrn == Mfa).ShouldBe(
+        [
+            new CoverageCount(Mfa, "1", Automated: 1, Manual: 0, Uncovered: 0),
+            new CoverageCount(Mfa, "2", Automated: 1, Manual: 0, Uncovered: 0, Draft: 1),
+        ]);
+    }
+
+    [Fact]
     public void Groups_outside_the_audit_selection_are_not_counted()
     {
         var counts = MappingCoverage.Count(Snapshot, Mapping(Requirement("MFA-A", "identity.mfa.enforced")), [], ManualChecks, ["3"]);
 
         counts.ShouldBe([new CoverageCount(Backups, "3", Automated: 0, Manual: 0, Uncovered: 1)]);
+    }
+
+    [Fact]
+    public void Counts_per_essentials_domain_and_phase()
+    {
+        // s14-01: the Essentials rates an action under a principle in each domain; the report counts per domain (the top node).
+        const string bnd = "urn:example:node:bnd";
+        const string idn = "urn:example:node:idn";
+        var snapshot = new FrameworkSnapshot(
+            "urn:example:library",
+            "urn:example:framework",
+            1,
+            [new ImplementationGroup("1", "Priority phase 1"), new ImplementationGroup("2", "Priority phase 2")],
+            [
+                Node("PRO-01.1", $"{bnd}:pro-01", "1"),
+                Node("PRO-01.2", $"{bnd}:pro-01", "1"),
+                Node("PRO-02.1", $"{bnd}:pro-02", "1"),
+                Node("PRO-01.1", $"{idn}:pro-01", "1", "2"),
+            ])
+        {
+            Parents =
+            [
+                new SnapshotParent(bnd, "BND", "Boundary services"),
+                new SnapshotParent($"{bnd}:pro-01", "PRO-01", "Authentication") { ParentUrn = bnd },
+                new SnapshotParent($"{bnd}:pro-02", "PRO-02", "Backups") { ParentUrn = bnd },
+                new SnapshotParent(idn, "IDN", "Identity services"),
+                new SnapshotParent($"{idn}:pro-01", "PRO-01", "Authentication") { ParentUrn = idn },
+            ],
+        };
+        var mapping = Mapping(
+            RequirementMapping.Create(RequirementKey.Ref("PRO-01.1", allRows: true), [Id("identity.mfa.enforced")], MappingRule.AllPass).Value(),
+            Requirement("PRO-02.1", "backup.restore_tested"));
+
+        var counts = MappingCoverage.CountByTop(snapshot, mapping, [], ManualChecks, ["1", "2"]);
+
+        counts.ShouldBe(
+        [
+            new CoverageCount(bnd, "1", Automated: 1, Manual: 1, Uncovered: 1),
+            new CoverageCount(idn, "1", Automated: 1, Manual: 0, Uncovered: 0),
+            new CoverageCount(idn, "2", Automated: 1, Manual: 0, Uncovered: 0),
+        ]);
     }
 
     private static SnapshotNode Node(string refId, string parent, params string[] groups) =>

@@ -9,6 +9,7 @@ using EvidenceHound.Runtime;
 using EvidenceHound.Runtime.Collectors;
 using EvidenceHound.Runtime.Configuration;
 using EvidenceHound.Runtime.Status;
+using EvidenceHound.Runtime.Storage;
 using EvidenceHound.Transport.Kafka;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -118,6 +119,7 @@ internal static class RunCommand
         {
             States = sinks.States,
             History = new FileRunHistory(config.Evidence.Root),
+            Latest = new FileLatestResults(config.Evidence.Root, [.. config.Collectors.Select(c => c.Name)]),
         };
 
         var summary = await runner.RunAsync(instances, options, cancellationToken);

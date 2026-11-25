@@ -43,9 +43,10 @@ public sealed class ReportFunctionalTests(CisoAssistantFixture ciso) : IDisposab
             await PatchAsync(row["id"]!.GetValue<string>(), was == "non_compliant" ? "compliant" : "non_compliant", ct);
             var after = await SnapshotAsync("2026-11", config, ct);
 
-            before.Programmes.Select(p => p.Id).ShouldBe(["essential-eight", "ai6"]);
+            before.Programmes.Select(p => p.Id).ShouldBe(["essential-eight", "disp", "ai6"]);
             before.Programmes[0].Counts.Select(c => c.Group).Distinct().ShouldBe(["1", "2"]);
-            before.Programmes[1].Counts.Select(c => c.Group).Distinct().ShouldBe(["F"]);
+            before.Programmes[1].Counts.Select(c => c.Group).Distinct().ShouldBe(["M"]);
+            before.Programmes[2].Counts.Select(c => c.Group).Distinct().ShouldBe(["F"]);
             var change = Snapshots.Diff(before, after).Requirements.ShouldHaveSingleItem();
             change.RefId.ShouldBe("ISM-1511");
             change.From.ShouldNotBeNull();

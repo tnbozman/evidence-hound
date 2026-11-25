@@ -28,7 +28,7 @@ public static class AuditPlanner
         Validate(targets, evidence, controlStatuses).Map(controls => (IReadOnlyList<AuditUpdate>)
         [
             .. Uploads(evidence, _ => true),
-            .. targets.SelectMany(t => t.Results.Select(r => Update(t.Target, r, r.Observation, new Dictionary<string, string>()))),
+            .. Publishable(targets).SelectMany(t => t.Results.Select(r => Update(t.Target, r, r.Observation, new Dictionary<string, string>()))),
             .. controls,
         ]);
 
@@ -50,7 +50,7 @@ public static class AuditPlanner
             return (IReadOnlyList<AuditUpdate>)
             [
                 .. Uploads(evidence, _ => true),
-                .. targets.SelectMany(t => t.Results.Select(r => Update(t.Target, r, Marked(r, hashes, runId), new Dictionary<string, string>()))),
+                .. Publishable(targets).SelectMany(t => t.Results.Select(r => Update(t.Target, r, Marked(r, hashes, runId), new Dictionary<string, string>()))),
                 .. controls,
             ];
         });
@@ -83,7 +83,7 @@ public static class AuditPlanner
                 .ToDictionary(e => e.RefId, e => e.Id, StringComparer.Ordinal);
             var audits = current.Audits.DistinctBy(a => a.RefId).ToDictionary(a => a.RefId, StringComparer.Ordinal);
             var documents = current.ScopeDocumentIds.ToHashSet(StringComparer.Ordinal);
-            var rows = targets
+            var rows = Publishable(targets)
                 .SelectMany(t => t.Results.Select(r => PlanRows(t.Target, audits.GetValueOrDefault(t.Target.ComplianceAssessmentRefId), r, hashes, known, documents, runId)))
                 .ToArray();
             var statuses = current.Controls.DistinctBy(c => c.RefId).ToDictionary(c => c.RefId, c => c.Status, StringComparer.Ordinal);
@@ -95,9 +95,19 @@ public static class AuditPlanner
                     .. controls.Where(c => !statuses.TryGetValue(c.RefId, out var status) || status != c.Status),
                 ],
                 [.. targets.Select(t => t.Target.ComplianceAssessmentRefId).Distinct(StringComparer.Ordinal).Select(audit => Tally(audit, rows))],
-                [.. rows.SelectMany(r => r.Drift)]);
+                [.. rows.SelectMany(r => r.Drift), .. DraftNotices(targets)]);
         });
     }
+
+    /// <summary>s14-01: the targets without the results of draft mapping rows, which nobody has reviewed yet.</summary>
+    private static IEnumerable<TargetResults> Publishable(IReadOnlyList<TargetResults> targets) =>
+        targets.Select(t => t with { Results = [.. t.Results.Where(r => !r.Draft)] });
+
+    private static IEnumerable<Problem> DraftNotices(IReadOnlyList<TargetResults> targets) =>
+        targets.SelectMany(t => t.Results.Where(r => r.Draft).Select(r => new Problem(
+            "publish.draft_row",
+            $"{t.Target.ComplianceAssessmentRefId} {r.RequirementRef}: not published, because its mapping row is a draft. "
+            + "Review the row, then remove 'draft: true' from the mapping file.")));
 
     private static Result<AuditUpdate.UpdateAppliedControl[]> Validate(
         IReadOnlyList<TargetResults> targets,
@@ -119,7 +129,8 @@ public static class AuditPlanner
             .ToArray();
         var unknownControls = controlRefIds
             .Where(c => c.RefIds.Length == 0)
-            .Select(c => new Problem("plan.control_key_unknown", $"Control '{c.Status.ControlKey}' is not configured in the target's controls."));
+            .Select(c => new Problem("plan.control_key_unknown", $"Control '{c.Status.ControlKey}' is not configured in the target's controls. In hound.yaml, add it under the target's 'controls:' "
+                + $"with the ref ID of the applied control it updates (such as {c.Status.ControlKey}: AC-EXAMPLE), or leave out the collector that reports it."));
         Problem[] problems = [.. unknownEvidence, .. unknownControls];
         return problems.Length > 0
             ? Result.Fail<AuditUpdate.UpdateAppliedControl[]>(problems)

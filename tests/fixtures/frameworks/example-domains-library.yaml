@@ -1,0 +1,60 @@
+# A small fictional framework library with three levels (domain, principle, action), as the ASD Essentials has, for tests.
+urn: urn:example:risk:library:example-domains
+locale: en
+ref_id: Example domains
+name: Example domains framework
+description: Fictional framework for Evidence Hound tests. Example Pty Ltd.
+copyright: Fictional, for tests.
+version: 1
+publication_date: '2026-01-01'
+provider: Example Pty Ltd
+packager: example
+objects:
+  framework:
+    urn: urn:example:risk:framework:example-domains
+    ref_id: Example domains
+    name: Example domains framework
+    implementation_groups_definition:
+    - ref_id: '1'
+      name: Phase one
+    - ref_id: '2'
+      name: Phase two
+    requirement_nodes:
+    - urn: urn:example:risk:req_node:example-domains:bnd
+      assessable: false
+      depth: 1
+      ref_id: BND
+      name: Boundary services
+    - urn: urn:example:risk:req_node:example-domains:bnd:pro-01
+      assessable: false
+      depth: 2
+      parent_urn: urn:example:risk:req_node:example-domains:bnd
+      ref_id: PRO-01
+      name: Strong authentication
+    - urn: urn:example:risk:req_node:example-domains:bnd:pro-01:pro-01.1
+      assessable: true
+      depth: 3
+      parent_urn: urn:example:risk:req_node:example-domains:bnd:pro-01
+      ref_id: PRO-01.1
+      name: Multi-factor authentication protects every remote access path.
+      implementation_groups:
+      - '1'
+    - urn: urn:example:risk:req_node:example-domains:idn
+      assessable: false
+      depth: 1
+      ref_id: IDN
+      name: Identity services
+    - urn: urn:example:risk:req_node:example-domains:idn:pro-01
+      assessable: false
+      depth: 2
+      parent_urn: urn:example:risk:req_node:example-domains:idn
+      ref_id: PRO-01
+      name: Strong authentication
+    - urn: urn:example:risk:req_node:example-domains:idn:pro-01:pro-01.1
+      assessable: true
+      depth: 3
+      parent_urn: urn:example:risk:req_node:example-domains:idn:pro-01
+      ref_id: PRO-01.1
+      name: Multi-factor authentication protects every remote access path.
+      implementation_groups:
+      - '1'

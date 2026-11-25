@@ -6,7 +6,7 @@
   <ItemGroup Label="Runtime">
     <PackageVersion Include="JsonSchema.Net" Version="9.7.0" />
     <PackageVersion Include="Azure.Identity" Version="1.21.0" />
-    <PackageVersion Include="Confluent.Kafka" Version="2.15.1" />
+    <PackageVersion Include="Confluent.Kafka" Version="2.16.0" />
     <PackageVersion Include="Cronos" Version="0.13.0" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.14" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.14" />
@@ -25,14 +25,14 @@
     <!-- WireMock.Net brings Humanizer 2.x, whose locale packages pin Humanizer.Core 2.x; JsonSchema.Net needs Humanizer.Core 3.x. -->
     <PackageVersion Include="Humanizer" Version="3.0.10" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.14" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.11.2" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.12.0" />
     <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="2.5.1" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="Testcontainers" Version="4.17.0" />
     <PackageVersion Include="Testcontainers.Redpanda" Version="4.17.0" />
-    <PackageVersion Include="WireMock.Net" Version="2.32.0" />
-    <PackageVersion Include="xunit.v3" Version="4.0.2" />
-    <PackageVersion Include="xunit.v3.assert" Version="4.0.2" />
-    <PackageVersion Include="xunit.v3.extensibility.core" Version="4.0.2" />
+    <PackageVersion Include="WireMock.Net" Version="2.33.0" />
+    <PackageVersion Include="xunit.v3" Version="4.0.3" />
+    <PackageVersion Include="xunit.v3.assert" Version="4.0.3" />
+    <PackageVersion Include="xunit.v3.extensibility.core" Version="4.0.3" />
   </ItemGroup>
 </Project>

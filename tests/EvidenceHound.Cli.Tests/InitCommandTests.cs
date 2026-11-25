@@ -15,7 +15,7 @@ public sealed class InitCommandTests : IDisposable
         var exitCode = await Run("", "init", Repo, "--yes");
 
         exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
-        foreach (var file in new[] { "hound.yaml", "scope/setup.yaml", "scope/controls.yaml", "mappings/essential-eight-2023.yaml", "frameworks/essential-eight-2023.json", ".gitignore", "README.md" })
+        foreach (var file in new[] { "hound.yaml", "scope/setup.yaml", "scope/controls.yaml", "mappings/essential-eight-2023.yaml", "frameworks/essential-eight-2023.json", ".gitignore", "README.md", ".devcontainer/devcontainer.json", ".devcontainer/Dockerfile" })
         {
             File.Exists(Path.Combine(Repo, file)).ShouldBeTrue(file);
         }
@@ -177,6 +177,45 @@ public sealed class InitCommandTests : IDisposable
         _output.Dispose();
         _error.Dispose();
         Directory.Delete(_root, recursive: true);
+    }
+
+    [Fact]
+    public async Task Framework_disp_adds_the_disp_audit_beside_the_essential_eight_one()
+    {
+        // s14-02: DISP membership readiness is held as an audit beside the Essential Eight, from the custom library hound carries.
+        var ct = TestContext.Current.CancellationToken;
+
+        var exitCode = await RunOn("2026-11-23", "", "init", Repo, "--yes", "--framework", "disp");
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        foreach (var file in new[] { "frameworks/disp.yaml", "frameworks/disp.json", "mappings/disp.yaml", "scope/audits/ex-e8.yaml", "scope/audits/ex-disp.yaml" })
+        {
+            File.Exists(Path.Combine(Repo, file)).ShouldBeTrue(file);
+        }
+
+        var audit = await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "audits", "ex-disp.yaml"), ct);
+        audit.ShouldContain("ref_id: EX-DISP\n");
+        audit.ShouldContain("framework: urn:evidence-hound:risk:framework:disp-membership\n");
+        var setup = await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "setup.yaml"), ct);
+        setup.ShouldContain("file: ../frameworks/disp.yaml");
+        var config = await File.ReadAllTextAsync(Path.Combine(Repo, "hound.yaml"), ct);
+        config.ShouldContain("compliance_assessment: EX-E8\n");
+        config.ShouldContain("mapping: mappings/disp.yaml");
+        config.ShouldContain("compliance_assessment: EX-DISP\n");
+        var readme = await File.ReadAllTextAsync(Path.Combine(Repo, "README.md"), ct);
+        readme.ShouldContain("EX-DISP");
+        readme.ShouldContain("examples/manual-sources/disp");
+        readme.ShouldContain("hound mapping coverage mappings/disp.yaml --framework frameworks/disp.json --manual hound.yaml");
+        await ShouldValidateAsync();
+    }
+
+    [Fact]
+    public async Task An_unknown_framework_is_refused()
+    {
+        var exitCode = await Run("", "init", Repo, "--yes", "--framework", "iso-27001");
+
+        exitCode.ShouldBe(ExitCodes.Configuration);
+        _error.ToString().ShouldContain("disp");
     }
 
     private async Task ShouldValidateAsync()

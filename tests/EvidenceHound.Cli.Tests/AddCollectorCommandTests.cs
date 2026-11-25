@@ -86,6 +86,9 @@ public sealed class AddCollectorCommandTests : IDisposable
         config.ShouldContain("      super_admin_max: \"1\"");
         config.ShouldContain("      client_secret: file:/run/secrets/home-sophos_client_secret");
         _error.ToString().ShouldNotContain("[");
+        // s14-03 rehearsal: the hint's --check-secrets failed before CISO Assistant had a token, the first failure a new team meets.
+        _output.ToString().ShouldContain("Next: hound config validate hound.yaml, then hound run");
+        _output.ToString().ShouldContain("--check-secrets once its secrets are set");
     }
 
     [Fact]

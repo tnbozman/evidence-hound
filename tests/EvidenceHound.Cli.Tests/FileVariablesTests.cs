@@ -36,6 +36,19 @@ public sealed class FileVariablesTests : IDisposable
     }
 
     [Fact]
+    public void A_file_this_user_cannot_read_sets_nothing_instead_of_stopping_hound()
+    {
+        // s14-03 rehearsal: another tool's NAME_FILE variable pointed at a file the user could not read, and every command crashed.
+        var unreadable = Write("someone_elses.log", "x");
+
+        var values = FileVariables.Resolve(
+            new Dictionary<string, string?> { ["OTHER_TOOL_DIAGNOSTICS_FILE"] = unreadable, ["HOUND_CA_TOKEN_FILE"] = Write("token", "t") },
+            path => path == unreadable ? throw new UnauthorizedAccessException("denied") : File.ReadAllText(path));
+
+        values.ShouldBe(new Dictionary<string, string?> { ["HOUND_CA_TOKEN"] = "t" });
+    }
+
+    [Fact]
     public void Variables_without_the_suffix_are_ignored()
     {
         var values = FileVariables.Resolve(new Dictionary<string, string?> { ["PATH"] = "/usr/bin", ["_FILE"] = Write("x", "y") });

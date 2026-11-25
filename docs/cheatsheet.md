@@ -8,8 +8,8 @@ file by `scripts/cheatsheet/render.sh`.
 
 ### Set up a repo
 
-- `hound init <folder>`: new compliance repo: config, scope, an Essential Eight audit and its mapping
-  - `--org --code --url --time-zone --level --interval --owner --evidence-root --assistant -y --json`
+- `hound init <folder>`: new compliance repo: config, scope, an Essential Eight audit and its mapping (`--framework disp` adds DISP readiness)
+  - `--org --code --url --time-zone --level --interval --owner --evidence-root --framework --assistant -y --json`
 - `hound agent setup`: set up Claude Code or Copilot in the repo
   - `--assistant --repo`
 - `hound config validate <file>`: check `hound.yaml`
@@ -120,8 +120,10 @@ file by `scripts/cheatsheet/render.sh`.
 - `hound mapping validate <file>`: check a mapping file
   - `--framework`
 - `hound mapping apply <mapping> <checks>`: map check results to requirements
-- `hound mapping coverage <mapping>`: automated, manual and uncovered counts per parent and group
+- `hound mapping coverage <mapping>`: automated, manual and uncovered counts per parent and group (and per domain for the ASD Essentials)
   - `--framework --groups --manual --json`
+- `hound mapping derive <mapping>`: draft a new framework's mapping from an old one and a transition mapping (rows `draft: true`; `--force` to replace an existing `--out`)
+  - `--from --to --links` (req) `--groups --out`
 - `hound mapping crosswalk`: which NIST SP 800-171 (or other) requirements a programme's evidence answers today (advisory)
   - `--from --config` (req) `--to --file --scope --offline --json`
 - `hound skill list`: onboarding skills, hound's and yours

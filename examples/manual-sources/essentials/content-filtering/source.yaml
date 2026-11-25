@@ -1,0 +1,10 @@
+# Content filtering: paste this under 'collectors:' in hound.yaml, then set the owner and the drop folder.
+# The runbook is README.md beside this file; point an evidence plan row at your copy of it.
+- name: content-filtering
+  type: manual
+  schedule: "0 6 * * *"
+  settings:
+    drop_folder: /var/lib/evidence-hound/manual/content-filtering
+    checks: network.content.outbound_inspected, network.content.malicious_destinations_blocked, network.content.inbound_inspected
+    due_days: 92
+    owner: Example network owner

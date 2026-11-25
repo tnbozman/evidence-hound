@@ -174,6 +174,13 @@ public static class HoundCli
             Log.Cancelled(logger);
             return ExitCodes.Cancelled;
         }
+        catch (Exception exception) when (AccessDenied.Explain(exception) is { } explanation)
+        {
+            Log.Denied(logger, explanation);
+            Log.Details(logger, exception);
+
+            return ExitCodes.Unexpected;
+        }
         catch (Exception exception)
         {
             Log.Unexpected(logger, exception, parseResult.CommandResult.Command.Name);

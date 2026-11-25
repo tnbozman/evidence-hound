@@ -13,6 +13,51 @@ internal sealed record NewOrganisation(string Name, string Code, string CisoAssi
     public string AuditRef => $"{Code}-E8";
 
     public string AuditFile => $"scope/audits/{AuditRef.ToLowerInvariant()}.yaml";
+
+    /// <summary>s14-02: the audits written beside the Essential Eight one, such as DISP membership readiness.</summary>
+    public IReadOnlyList<ExtraFramework> Extras { get; init; } = [];
+
+    /// <summary>An extra audit's series, such as <c>&lt;CODE&gt;-DISP</c>.</summary>
+    public string ExtraAuditRef(ExtraFramework extra)
+    {
+        ArgumentNullException.ThrowIfNull(extra);
+        return $"{Code}-{extra.Suffix}";
+    }
+}
+
+/// <summary>
+/// s14-02: a framework <c>hound init --framework</c> adds an audit for, beside the Essential Eight: its URNs, the files hound copies for it,
+/// the audit's name and groups, and the suffix of its ref ID.
+/// </summary>
+internal sealed record ExtraFramework(string Id, string Name, string Urn, string LibraryUrn, string Suffix, string Groups, string Mapping, string Snapshot, string? LibraryFile)
+{
+    /// <summary>DISP membership readiness, from the custom library hound carries.</summary>
+    public static readonly ExtraFramework Disp = new(
+        "disp",
+        "DISP membership readiness",
+        "urn:evidence-hound:risk:framework:disp-membership",
+        "urn:evidence-hound:risk:library:disp-membership",
+        "DISP",
+        "\"M\"",
+        "mappings/disp.yaml",
+        "frameworks/disp.json",
+        "frameworks/disp.yaml")
+    {
+        Guide = "examples/manual-sources/disp",
+    };
+
+    /// <summary>Where the Evidence Hound repo keeps the manual source templates people answer this framework with.</summary>
+    public string Guide { get; init; } = "examples/manual-sources";
+
+    /// <summary>The README step for this framework's audit: copy its manual sources, then check its coverage.</summary>
+    public string NextStep(NewOrganisation org) =>
+        $"For {org.ExtraAuditRef(this)} ({Name}): copy the manual source templates in the Evidence Hound repo's `{Guide}` into `hound.yaml` "
+        + $"(replace `collectors: []` with `collectors:` first), then check `hound mapping coverage {Mapping} --framework {Snapshot} --manual hound.yaml`.";
+
+    public static readonly IReadOnlyList<ExtraFramework> All = [Disp];
+
+    /// <summary>The files hound copies for it: the mapping, the snapshot and, for a custom library, the library file.</summary>
+    public IReadOnlyList<string> Copied => LibraryFile is null ? [Mapping, Snapshot] : [Mapping, Snapshot, LibraryFile];
 }
 
 /// <summary>The files of a new compliance repo, by path relative to the repo, as text. Pure: the caller writes them.</summary>
@@ -23,9 +68,16 @@ internal static class RepoTemplate
     public const string HealthControl = "AC-AUTO-EVIDENCE";
     public const string Perimeter = "Corporate IT";
 
-    /// <summary>The files hound writes from its own copies: the Essential Eight mapping and snapshot, and the template's .gitignore.</summary>
+    /// <summary>The files hound writes from its own copies: the Essential Eight mapping and snapshot, and the template's .gitignore and GRC devcontainer.</summary>
     public static readonly IReadOnlyList<string> Copied =
-        ["mappings/essential-eight-2023.yaml", "frameworks/essential-eight-2023.json", ".gitignore", "manual-sources/weekly-compliance-review.md"];
+        ["mappings/essential-eight-2023.yaml", "frameworks/essential-eight-2023.json", ".gitignore", "manual-sources/weekly-compliance-review.md", ".devcontainer/devcontainer.json", ".devcontainer/Dockerfile"];
+
+    /// <summary>Every file hound copies for <paramref name="org"/>: <see cref="Copied"/> and the extra frameworks' files.</summary>
+    public static IReadOnlyList<string> CopiedFor(NewOrganisation org)
+    {
+        ArgumentNullException.ThrowIfNull(org);
+        return [.. Copied, .. org.Extras.SelectMany(e => e.Copied)];
+    }
 
     /// <summary>The team that receives evidence and holds the weekly review: at first, only the compliance owner.</summary>
     public const string GrcTeam = "GRC team";
@@ -33,7 +85,7 @@ internal static class RepoTemplate
     public static IReadOnlyDictionary<string, string> Files(NewOrganisation org)
     {
         ArgumentNullException.ThrowIfNull(org);
-        return new Dictionary<string, string>(StringComparer.Ordinal)
+        var files = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["hound.yaml"] = Config(org),
             ["scope/setup.yaml"] = Setup(org),
@@ -43,9 +95,16 @@ internal static class RepoTemplate
             [org.AuditFile] = Audit(org),
             ["README.md"] = Readme(org),
         };
+        foreach (var extra in org.Extras)
+        {
+            files[$"scope/audits/{org.ExtraAuditRef(extra).ToLowerInvariant()}.yaml"] = ExtraAudit(org, extra);
+        }
+
+        return files;
     }
 
     private static string Config(NewOrganisation org) => Lines(
+    [
         $"# {org.Name}'s deployment config, written by hound init. Guide: docs/configuration.md in the Evidence Hound repo.",
         "# Check it with: hound config validate hound.yaml. Relative paths are relative to this file. Secrets are references only, never values.",
         "",
@@ -65,12 +124,19 @@ internal static class RepoTemplate
         "# Add one with: hound add collector <type> --config hound.yaml (hound collectors list lists the types; manual is for exports people send in).",
         "collectors: []",
         "",
-        "target:",
-        "  mapping: mappings/essential-eight-2023.yaml",
-        $"  compliance_assessment: {Scalar(org.AuditRef)}",
-        $"  health_control: {HealthControl}");
+        "targets:",
+        "  - mapping: mappings/essential-eight-2023.yaml",
+        $"    compliance_assessment: {Scalar(org.AuditRef)}",
+        $"    health_control: {HealthControl}",
+        .. org.Extras.SelectMany(extra => (string[])
+        [
+            $"  - mapping: {extra.Mapping}",
+            $"    compliance_assessment: {Scalar(org.ExtraAuditRef(extra))}",
+        ]),
+    ]);
 
     private static string Setup(NewOrganisation org) => Lines(
+    [
         $"# {org.Name}'s structure in CISO Assistant, written by hound init. Guide: docs/scope.md in the Evidence Hound repo.",
         "# Check it with: hound scope validate scope. Add systems with: hound add system --scope scope",
         "organisation:",
@@ -79,11 +145,19 @@ internal static class RepoTemplate
         $"  - urn: {Framework}",
         $"    library: {Library}",
         "    snapshot: ../frameworks/essential-eight-2023.json",
+        .. org.Extras.SelectMany(extra => (string[])
+        [
+            $"  - urn: {extra.Urn}",
+            $"    library: {extra.LibraryUrn}",
+            .. extra.LibraryFile is null ? Array.Empty<string>() : [$"    file: ../{extra.LibraryFile}"],
+            $"    snapshot: ../{extra.Snapshot}",
+        ]),
         "domains:",
         $"  - name: {Scalar(org.Name)}",
         "    perimeter:",
         $"      name: {Perimeter}",
-        $"      ref_id: {Scalar($"PER-{org.Code}")}");
+        $"      ref_id: {Scalar($"PER-{org.Code}")}",
+    ]);
 
     private static string Controls(NewOrganisation org) => Lines(
         "# Applied controls, declared once and used by any number of audits. Add one with: hound add control --scope scope",
@@ -145,7 +219,25 @@ internal static class RepoTemplate
         "unlisted:",
         "  result: not_assessed");
 
-    private static string Readme(NewOrganisation org) => Lines(
+    /// <summary>s14-02: an extra framework's audit, run in the same periods as the Essential Eight one.</summary>
+    private static string ExtraAudit(NewOrganisation org, ExtraFramework extra) => Lines(
+        $"# {org.Name}'s {extra.Name} audit, by {org.Interval}, beside the Essential Eight one, written by hound init --framework {extra.Id}.",
+        "# Collectors publish their results to it from the same evidence. Write results no check covers under assessments; see docs/scope.md.",
+        $"ref_id: {Scalar(org.ExtraAuditRef(extra))}",
+        $"name: {Scalar(extra.Name)}",
+        $"framework: {extra.Urn}",
+        $"groups: [{extra.Groups}]",
+        $"domain: {Scalar(org.Name)}",
+        $"perimeter: {Perimeter}",
+        $"cycle: {{period: {org.Interval}, starts: \"{org.Starts.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}\"}}",
+        "systems: []",
+        "documents: []",
+        "controls: []",
+        "assessments: []",
+        "unlisted:",
+        "  result: not_assessed");
+
+    private static string Readme(NewOrganisation org) => Lines([
         $"# {org.Name} compliance",
         "",
         "Configuration for Evidence Hound and CISO Assistant, written by `hound init`. Keep this repository private: it describes the organisation.",
@@ -161,8 +253,9 @@ internal static class RepoTemplate
         "5. See what applying would do, then apply: `hound scope plan scope --config hound.yaml` and `hound scope apply scope --config hound.yaml`",
         "6. Run the collectors and see the result: `hound run --config hound.yaml` and `hound status --config hound.yaml`",
         "7. Each week, sign off everything that waits on you in one sitting: `hound review` (the weekly task in `scope/evidence-plan.yaml` reminds you).",
+        .. org.Extras.Select((extra, i) => $"{8 + i}. {extra.NextStep(org)}"),
         "",
-        "The Evidence Hound repo's `examples/compliance-repo` has a fuller example, with access, settings and a pull request workflow.");
+        "The Evidence Hound repo's `examples/compliance-repo` has a fuller example, with access, settings and a pull request workflow."]);
 
     private static string Lines(params string[] lines) => string.Join('\n', lines) + "\n";
 }

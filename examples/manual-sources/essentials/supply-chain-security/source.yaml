@@ -1,0 +1,10 @@
+# Supply chain security: paste this under 'collectors:' in hound.yaml, then set the owner and the drop folder.
+# The runbook is README.md beside this file; point an evidence plan row at your copy of it.
+- name: supply-chain-security
+  type: manual
+  schedule: "0 6 * * *"
+  settings:
+    drop_folder: /var/lib/evidence-hound/manual/supply-chain-security
+    checks: supply_chain.software_integrity_verified, supply_chain.advisories_monitored
+    due_days: 92
+    owner: Example IT lead

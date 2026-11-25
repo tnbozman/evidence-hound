@@ -61,6 +61,10 @@
           "description": "With 'ref' only: 'all' writes the same result to every row that has the ref.",
           "const": "all"
         },
+        "draft": {
+          "description": "Written by 'hound mapping derive': the row is not published until a person has reviewed it and removed the mark.",
+          "type": "boolean"
+        },
         "rule": {
           "enum": [
             "all_pass",

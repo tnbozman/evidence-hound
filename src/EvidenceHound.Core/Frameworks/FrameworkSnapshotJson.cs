@@ -22,10 +22,22 @@ public static class FrameworkSnapshotJson
         };
         if (snapshot.Parents.Count > 0)
         {
-            json["parents"] = new JsonArray([.. snapshot.Parents.Select(p => new JsonObject { ["urn"] = p.Urn, ["ref_id"] = p.RefId, ["name"] = p.Name })]);
+            json["parents"] = new JsonArray([.. snapshot.Parents.Select(Parent)]);
         }
 
         return json.ToJsonString(Indented) + "\n";
+    }
+
+    /// <summary>A parent node; its own parent only when it has one, so snapshots of two-level frameworks stay unchanged.</summary>
+    private static JsonObject Parent(SnapshotParent parent)
+    {
+        var json = new JsonObject { ["urn"] = parent.Urn, ["ref_id"] = parent.RefId, ["name"] = parent.Name };
+        if (parent.ParentUrn is not null)
+        {
+            json["parent_urn"] = parent.ParentUrn;
+        }
+
+        return json;
     }
 
     /// <summary>A node; its description and reference controls only when it has them, so older snapshots stay unchanged.</summary>
@@ -74,7 +86,7 @@ public static class FrameworkSnapshotJson
                     ReferenceControls = [.. Items(n, "reference_controls").Select(r => r.GetValue<string>())],
                 })])
             {
-                Parents = [.. Items(root, "parents").Select(p => new SnapshotParent(Text(p, "urn"), (string?)p["ref_id"], Text(p, "name")))],
+                Parents = [.. Items(root, "parents").Select(p => new SnapshotParent(Text(p, "urn"), (string?)p["ref_id"], Text(p, "name")) { ParentUrn = (string?)p["parent_urn"] })],
             });
         }
         catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException)

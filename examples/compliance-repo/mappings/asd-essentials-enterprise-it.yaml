@@ -1,0 +1,687 @@
+# yaml-language-server: $schema=../../../schemas/mapping.schema.json
+# ASD Essentials for enterprise IT, priority phase 1 (the boundary and identity services domains, and the governance and visibility
+# domains every phase assesses), for the checks Evidence Hound has today. s14-01.
+#
+# - Drafted with `hound mapping derive` from mappings/essential-eight-2023.yaml and ASD's transition mapping
+#   (frameworks/mapping-essential-eight-2023-and-asd-essentials-enterprise-it.yaml): each action row has the union of the checks of
+#   the Essential Eight controls ASD links to it, rule all_pass. Every ASD link is `intersect`, so a row is only as wide as its
+#   checks: read each row's comment and check it fits your environment before you rely on it.
+# - Checked row by row with AI help (Claude) on 2026-11-25 and the draft marks removed; not yet reviewed by an assessor, so review it
+#   in your own copy before you rely on it. Additions to the derived draft say why in the row's
+#   comment: the six Essential Eight controls ASD does not link (in the homes docs/migrations/essential-eight-to-asd-essentials.md
+#   suggests), legacy authentication from Microsoft 365, supplier assurance from the ciso-assistant profile, and the new ground
+#   from the manual sources in examples/manual-sources/essentials/.
+# - Rows name one action in one domain by URN (an action is rated in every domain it applies to). Phase 2 and 3 rows are not mapped
+#   yet: derive them with `hound mapping derive ... --groups 2` when your programme reaches that phase.
+# - The Essential Eight 2023 audit stays the audit of record until the cut-over; run both audits from one config (targets[]).
+framework_urn: urn:intuitem:risk:framework:asd-essentials-enterprise-it
+description: ASD Essentials for enterprise IT priority phase 1, derived from the Essential Eight ML1-ML2 mapping and reviewed; manual sources cover the new ground.
+requirements:
+  # IT.GOV-08.1 (governance-and-culture), no Essential Eight source. Establish and maintain executive accountability for the use, governance and…
+  #   + manual source essentials/cyber-governance
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:governance-and-culture:gov-08:it.gov-08.1
+    rule: all_pass
+    checks:
+      - governance.ai_accountability_defined
+  # IT.GOV-04.1 (governance-and-culture), no Essential Eight source. Assign sufficient cyber security personnel and resources with the required…
+  #   + manual source essentials/cyber-governance
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:governance-and-culture:gov-04:it.gov-04.1
+    rule: all_pass
+    checks:
+      - governance.cyber_resourcing_assigned
+  # IT.GOV-04.2 (governance-and-culture), no Essential Eight source. Periodically review cyber security resourcing against cyber threat trends…
+  #   + manual source essentials/cyber-governance
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:governance-and-culture:gov-04:it.gov-04.2
+    rule: all_pass
+    checks:
+      - governance.cyber_resourcing_reviewed
+  # IT.GOV-03.1 (governance-and-culture), no Essential Eight source. Establish and maintain an approved risk management methodology and plan that…
+  #   + manual source essentials/cyber-governance
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:governance-and-culture:gov-03:it.gov-03.1
+    rule: all_pass
+    checks:
+      - governance.risk_method_approved
+  # IT.GOV-11.1 (governance-and-culture), no Essential Eight source. Select and engage suppliers of software, hardware and services on the basis of…
+  #   + ciso-assistant profile: every supplier has a current assessment
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:governance-and-culture:gov-11:it.gov-11.1
+    rule: all_pass
+    checks:
+      - supplier.assessments_current
+  # IT.GOV-11.2 (governance-and-culture), no Essential Eight source. Maintain current assurance that suppliers continue to meet their cyber…
+  #   + ciso-assistant profile: assessments and contracts current
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:governance-and-culture:gov-11:it.gov-11.2
+    rule: all_pass
+    checks:
+      - supplier.assessments_current
+      - supplier.contracts_current
+  # IT.GOV-14.1 (governance-and-culture), from ISM-1501. Establish and maintain a process for identifying, assessing and treating cyber…
+  #   + ISM-1905 and ISM-1704 (not linked by ASD): unsupported software removed
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:governance-and-culture:gov-14:it.gov-14.1
+    rule: all_pass
+    checks:
+      - endpoint.os.supported_versions
+      - network.firewall.firmware_supported
+      - vuln.operating_systems.unsupported_removed
+      - vuln.internet_facing.unsupported_removed
+      - vuln.common_apps.unsupported_removed
+  # IT.PRO-14.2 (governance-and-culture), no Essential Eight source. Update and provide cyber security awareness training on a regular basis to…
+  #   + manual source essentials/security-awareness-training
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:governance-and-culture:pro-14:it.pro-14.2
+    rule: all_pass
+    checks:
+      - training.awareness_content_current
+  # IT.IDE-01.1 (visibility-and-response), from ISM-1807. Use an approved asset inventory mechanism that supports automated discovery to…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:visibility-and-response:ide-01:it.ide-01.1
+    rule: all_pass
+    checks:
+      - vuln.asset_discovery.fortnightly
+  # IT.IDE-04.1 (visibility-and-response), no Essential Eight source. Identify relevant weaknesses, malicious actor techniques and cyber threat…
+  #   + manual source essentials/cyber-governance
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:visibility-and-response:ide-04:it.ide-04.1
+    rule: all_pass
+    checks:
+      - governance.threats_considered_in_risk
+  # IT.PRO-13.3 (visibility-and-response), no Essential Eight source. Identify and remediate unsecured keys, secrets and credentials by regularly…
+  #   + manual source essentials/secure-build-and-secrets
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:visibility-and-response:pro-13:it.pro-13.3
+    rule: all_pass
+    checks:
+      - secrets.scanning_remediated
+  # IT.DET-01.3 (visibility-and-response), from ISM-1815. Establish a centralised event log storage capability that protects logs from…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:visibility-and-response:det-01:it.det-01.3
+    rule: all_pass
+    checks:
+      - logging.event_logs.protected
+  # IT.DET-02.2 (visibility-and-response), from ISM-0109, ISM-1660, ISM-1683. Ensure detection logic identifies unauthorised changes, anomalous…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:visibility-and-response:det-02:it.det-02.2
+    rule: all_pass
+    checks:
+      - logging.mfa_events.centrally_logged
+      - endpoint.application_control.events_centrally_logged
+  # IT.DET-03.1 (visibility-and-response), from ISM-0109, ISM-1228, ISM-1906, ISM-1907. Triage alerts and events in a timely manner to determine whether cyber…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:visibility-and-response:det-03:it.det-03.1
+    rule: all_pass
+    checks:
+      - logging.internet_facing.analysed
+      - logging.events.triaged
+  # IT.DET-03.2 (visibility-and-response), from ISM-1228. Use indicators from across identities, applications, data and infrastructure…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:visibility-and-response:det-03:it.det-03.2
+    rule: all_pass
+    checks:
+      - logging.events.triaged
+  # IT.DET-05.1 (visibility-and-response), from ISM-1807. Review detection coverage periodically to identify gaps arising from new…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:visibility-and-response:det-05:it.det-05.1
+    rule: all_pass
+    checks:
+      - vuln.asset_discovery.fortnightly
+  # IT.RES-05.1 (visibility-and-response), from ISM-0140. Integrate external coordination obligations into cyber security incident…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:visibility-and-response:res-05:it.res-05.1
+    rule: all_pass
+    checks:
+      - incident.reported_to_asd
+  # IT.RES-03.1 (visibility-and-response), from ISM-1819. Use documented, tested and approved cyber security incident response…
+  #   + ISM-0123 (not linked by ASD): incidents reported to the CISO
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:visibility-and-response:res-03:it.res-03.1
+    rule: all_pass
+    checks:
+      - incident.response_plan_followed
+      - incident.reported_to_ciso
+  # IT.RES-04.1 (visibility-and-response), no Essential Eight source. Perform post-cyber security incident reviews to identify the security gaps…
+  #   + manual source essentials/incident-learning
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:visibility-and-response:res-04:it.res-04.1
+    rule: all_pass
+    checks:
+      - incident.post_incident_reviewed
+  # IT.RES-04.2 (visibility-and-response), no Essential Eight source. Evaluate the monitoring coverage and cyber security incident response…
+  #   + manual source essentials/incident-learning
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:visibility-and-response:res-04:it.res-04.2
+    rule: all_pass
+    checks:
+      - incident.response_coverage_evaluated
+  # IT.IDE-01.2 (boundary-services), no Essential Eight source. Maintain current records of infrastructure, operating systems, applications…
+  #   + manual source essentials/asset-records
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:ide-01:it.ide-01.2
+    rule: all_pass
+    checks:
+      - assets.records_current
+  # IT.PRO-01.1 (boundary-services), no Essential Eight source. Design systems securely to provide visibility, enforce authorised access…
+  #   + manual source essentials/secure-build-and-secrets
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-01:it.pro-01.1
+    rule: all_pass
+    checks:
+      - build.secure_design_reviewed
+  # IT.PRO-01.2 (boundary-services), no Essential Eight source. Secure build and deployment processes to enforce controls consistently across…
+  #   + manual source essentials/secure-build-and-secrets
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-01:it.pro-01.2
+    rule: all_pass
+    checks:
+      - build.pipeline_controls_enforced
+  # IT.PRO-16.1 (boundary-services), no Essential Eight source. Assess the integrity and authenticity of software, components and updates…
+  #   + manual source essentials/supply-chain-security
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-16:it.pro-16.1
+    rule: all_pass
+    checks:
+      - supply_chain.software_integrity_verified
+  # IT.PRO-16.2 (boundary-services), no Essential Eight source. Use vendor advisories and threat intelligence to maintain awareness of…
+  #   + manual source essentials/supply-chain-security
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-16:it.pro-16.2
+    rule: all_pass
+    checks:
+      - supply_chain.advisories_monitored
+  # IT.PRO-13.1 (boundary-services), from ISM-1647, ISM-1648. Identify and disable or remove default and unused accounts regularly…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-13:it.pro-13.1
+    rule: all_pass
+    checks:
+      - privileged.access.disabled_when_unused
+      - privileged.access.revalidated_yearly
+  # IT.PRO-13.2 (boundary-services), no Essential Eight source. Store authentication keys, secrets and tokens in approved secure repositories…
+  #   + manual source essentials/secure-build-and-secrets
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-13:it.pro-13.2
+    rule: all_pass
+    checks:
+      - secrets.stored_in_approved_vault
+  # IT.PRO-13.4 (boundary-services), from ISM-0974, ISM-1173, ISM-1401, ISM-1504, ISM-1505, ISM-1679, ISM-1680, ISM-1681, ISM-1682, ISM-1872, ISM-1873, ISM-1874, ISM-1892, ISM-1893, ISM-1894. Use phishing-resistant MFA for users authenticating to systems, including from…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-13:it.pro-13.4
+    rule: all_pass
+    checks:
+      - identity.mfa.enforced_conditional_access
+      - identity.mfa.registered_all_users
+      - identity.legacy_auth_blocked
+      - identity.mfa.third_party_services
+      - identity.mfa.organisation_services
+      - identity.mfa.customers
+      - identity.mfa.two_factors
+      - identity.mfa.phishing_resistant
+      - identity.mfa.phishing_resistant_admins
+      - identity.mfa.systems
+  # IT.PRO-13.5 (boundary-services), no Essential Eight source. Disable legacy authentication protocols or, where this is not feasible…
+  #   + Microsoft 365: legacy authentication blocked by Conditional Access
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-13:it.pro-13.5
+    rule: all_pass
+    checks:
+      - identity.legacy_auth_blocked
+  # IT.PRO-13.6 (boundary-services), from ISM-1685. Ensure that user, machine, system and service account credentials are unique…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-13:it.pro-13.6
+    rule: all_pass
+    checks:
+      - privileged.credentials.unique
+  # IT.PRO-12.1 (boundary-services), from ISM-1507, ISM-1508, ISM-1647. Periodically review and update access privileges in alignment with current…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-12:it.pro-12.1
+    rule: all_pass
+    checks:
+      - privileged.requests.validated
+      - privileged.access.revalidated_yearly
+  # IT.PRO-12.2 (boundary-services), from ISM-1175, ISM-1507, ISM-1508. Grant only authorised administrative roles permissions to create, modify or…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-12:it.pro-12.2
+    rule: all_pass
+    checks:
+      - privileged.requests.validated
+      - privileged.accounts.no_internet
+  # IT.PRO-12.3 (boundary-services), from ISM-0445, ISM-1175, ISM-1508, ISM-1883. Provision user, administrative and non-person accounts with only the minimum…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-12:it.pro-12.3
+    rule: all_pass
+    checks:
+      - privileged.accounts.no_internet
+      - identity.privileged.global_admin_count
+      - identity.privileged.pim_eligible_not_permanent
+      - network.management.super_admin_count
+      - identity.privileged.admins_cloud_only
+  # IT.PRO-05.1 (boundary-services), from ISM-1380, ISM-1387, ISM-1688, ISM-1689, ISM-1898. Ensure administrative activities can only be performed from dedicated and…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-05:it.pro-05.1
+    rule: all_pass
+    checks:
+      - privileged.environments.separate
+      - privileged.admin.jump_servers
+  # IT.PRO-05.2 (boundary-services), no Essential Eight source. Enforce explicit session establishment controls before privileged actions are…
+  #   + manual source essentials/secure-administration
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-05:it.pro-05.2
+    rule: all_pass
+    checks:
+      - admin.privileged_sessions_controlled
+  # IT.PRO-05.3 (boundary-services), from ISM-1509, ISM-1650. Record all administrative or management actions that modify systems…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-05:it.pro-05.3
+    rule: all_pass
+    checks:
+      - logging.privileged_access.centrally_logged
+      - logging.privileged_accounts.changes_logged
+  # IT.PRO-04.1 (boundary-services), from ISM-0304, ISM-1412, ISM-1485, ISM-1486, ISM-1488, ISM-1542, ISM-1585, ISM-1621, ISM-1622, ISM-1654, ISM-1655, ISM-1667, ISM-1668, ISM-1669, ISM-1670, ISM-1671, ISM-1673, ISM-1675, ISM-1686, ISM-1823, ISM-1824, ISM-1859, ISM-1860, ISM-1861, ISM-1891, ISM-1896, ISM-1897. Define approved configuration baselines, informed by vendor and industry…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-04:it.pro-04.1
+    rule: all_pass
+    checks:
+      - browser.ie11_disabled
+      - browser.java_blocked
+      - browser.ads_blocked
+      - apps.office.macros_blocked_from_internet
+      - browser.settings_locked
+      - office.macros.disabled_without_need
+      - endpoint.asr.office_rules_enabled
+      - office.ole_blocked
+      - office.hardened
+      - browser.hardened
+      - pdf.child_processes_blocked
+      - pdf.hardened
+      - office.settings_locked
+      - pdf.settings_locked
+  # IT.PRO-04.2 (boundary-services), from ISM-1412, ISM-1489, ISM-1622, ISM-1672, ISM-1859, ISM-1860. Deploy approved configuration baselines on systems, including infrastructure…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-04:it.pro-04.2
+    rule: all_pass
+    checks:
+      - office.macros.antivirus_scanning
+      - office.macros.settings_locked
+      - office.hardened
+      - browser.hardened
+      - pdf.hardened
+  # IT.PRO-04.3 (boundary-services), from ISM-1582. Detect and respond to configuration drift using scheduled technical…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-04:it.pro-04.3
+    rule: all_pass
+    checks:
+      - appcontrol.rulesets_validated
+  # IT.PRO-06.1 (boundary-services), from ISM-1698, ISM-1699, ISM-1700, ISM-1701, ISM-1702, ISM-1703, ISM-1807, ISM-1808, ISM-1900. Identify known software and configuration weaknesses of assets through…
+  #   + ISM-1905 and ISM-1704 (not linked by ASD): unsupported software removed
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-06:it.pro-06.1
+    rule: all_pass
+    checks:
+      - vuln.scanner.database_current
+      - vuln.internet_facing.scanned_in_interval
+      - vuln.common_apps.scanned_in_interval
+      - vuln.other_apps.scanned_in_interval
+      - vuln.operating_systems.scanned_in_interval
+      - vuln.asset_discovery.fortnightly
+      - vuln.internet_facing.unsupported_removed
+      - vuln.common_apps.unsupported_removed
+  # IT.PRO-06.2 (boundary-services), from ISM-1690, ISM-1691, ISM-1692, ISM-1693, ISM-1694, ISM-1695, ISM-1696, ISM-1697, ISM-1876, ISM-1877, ISM-1879, ISM-1901, ISM-1902, ISM-1903, ISM-1904. Apply security patches or updates within defined risk-based timeframes or…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-06:it.pro-06.2
+    rule: all_pass
+    checks:
+      - vuln.common_apps.patched_in_window
+      - endpoint.managed.compliant_ratio
+      - vuln.operating_systems.patched_in_window
+      - vuln.internet_facing.patched_in_window
+      - network.firewall.firmware_current
+      - vuln.other_apps.patched_in_window
+  # IT.PRO-06.3 (boundary-services), from ISM-1690, ISM-1691, ISM-1692, ISM-1693, ISM-1694, ISM-1695, ISM-1696, ISM-1697, ISM-1876, ISM-1877, ISM-1879, ISM-1901, ISM-1902, ISM-1903, ISM-1904. Remediate or mitigate vulnerabilities exceeding defined risk thresholds within…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-06:it.pro-06.3
+    rule: all_pass
+    checks:
+      - vuln.common_apps.patched_in_window
+      - endpoint.managed.compliant_ratio
+      - vuln.operating_systems.patched_in_window
+      - vuln.internet_facing.patched_in_window
+      - network.firewall.firmware_current
+      - vuln.other_apps.patched_in_window
+  # IT.PRO-07.1 (boundary-services), from ISM-0843, ISM-1487, ISM-1488, ISM-1490, ISM-1544, ISM-1582, ISM-1656, ISM-1657, ISM-1658, ISM-1659, ISM-1672, ISM-1673, ISM-1674, ISM-1675, ISM-1870, ISM-1871, ISM-1890, ISM-1891. Permit only supported, verified and organisation-authorised software to…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-07:it.pro-07.1
+    rule: all_pass
+    checks:
+      - endpoint.application_control.enforced
+      - appcontrol.rulesets_validated
+      - appcontrol.user_profiles_and_temp
+      - endpoint.application_control.file_types_covered
+      - apps.office.macros_blocked_from_internet
+      - office.macros.antivirus_scanning
+      - appcontrol.internet_facing_servers
+      - appcontrol.all_other_locations
+      - appcontrol.microsoft_blocklist
+      - endpoint.asr.office_rules_enabled
+  # IT.PRO-07.2 (boundary-services), from ISM-1657, ISM-1898. Restrict administrative and management tooling to approved software sets and…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-07:it.pro-07.2
+    rule: all_pass
+    checks:
+      - endpoint.application_control.enforced
+      - endpoint.application_control.file_types_covered
+  # IT.PRO-10.1 (boundary-services), from ISM-1511, ISM-1810, ISM-1811. Back up important data, applications and settings on a defined schedule to…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-10:it.pro-10.1
+    rule: all_pass
+    checks:
+      - backup.performed_and_retained
+      - backup.retained_securely
+      - backup.synchronised
+  # IT.PRO-10.2 (boundary-services), from ISM-1706, ISM-1708, ISM-1811, ISM-1812, ISM-1813, ISM-1814. Isolate backup repositories from general user environments and production…
+  #   + ISM-1705 and ISM-1707 (not linked by ASD): backups isolated from other privileged accounts
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-10:it.pro-10.2
+    rule: all_pass
+    checks:
+      - backup.retained_securely
+      - backup.unprivileged_cannot_read_others
+      - backup.unprivileged_cannot_change
+      - backup.privileged_cannot_read
+      - backup.privileged_cannot_change
+  # IT.PRO-10.3 (boundary-services), from ISM-1511, ISM-1515. Conduct regular testing of backup and restoration procedures to ensure that…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-10:it.pro-10.3
+    rule: all_pass
+    checks:
+      - backup.restore_tested
+      - backup.performed_and_retained
+  # IT.PRO-18.1 (boundary-services), no Essential Eight source. Isolate systems within network zones based on business criticality and trust…
+  #   + manual source essentials/network-segmentation
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-18:it.pro-18.1
+    rule: all_pass
+    checks:
+      - network.segmentation.zones_defined
+  # IT.PRO-18.2 (boundary-services), from ISM-1380. Limit lateral movement between, and within, network segments to explicitly…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-18:it.pro-18.2
+    rule: all_pass
+    checks:
+      - privileged.environments.separate
+  # IT.PRO-09.1 (boundary-services), no Essential Eight source. Inspect outbound content flows to detect unauthorised transfer of sensitive or…
+  #   + manual source essentials/content-filtering
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-09:it.pro-09.1
+    rule: all_pass
+    checks:
+      - network.content.outbound_inspected
+  # IT.PRO-09.2 (boundary-services), no Essential Eight source. Block outbound network connections to known malicious or untrusted destinations.
+  #   + manual source essentials/content-filtering
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-09:it.pro-09.2
+    rule: all_pass
+    checks:
+      - network.content.malicious_destinations_blocked
+  # IT.PRO-09.3 (boundary-services), no Essential Eight source. Inspect inbound content from external or untrusted sources to prevent delivery…
+  #   + manual source essentials/content-filtering
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-09:it.pro-09.3
+    rule: all_pass
+    checks:
+      - network.content.inbound_inspected
+  # IT.PRO-14.1 (boundary-services), no Essential Eight source. Ensure all personnel receive cyber security awareness training, that is…
+  #   + manual source essentials/security-awareness-training
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-14:it.pro-14.1
+    rule: all_pass
+    checks:
+      - training.awareness_completed
+  # IT.DET-01.1 (boundary-services), from ISM-1815. Protect event logs from unauthorised access, modification or deletion…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:det-01:it.det-01.1
+    rule: all_pass
+    checks:
+      - logging.event_logs.protected
+  # IT.DET-01.2 (boundary-services), from ISM-1509, ISM-1623, ISM-1650, ISM-1660, ISM-1683, ISM-1889. Forward high-value, security-relevant event logs and configuration changes…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:det-01:it.det-01.2
+    rule: all_pass
+    checks:
+      - logging.privileged_access.centrally_logged
+      - logging.privileged_accounts.changes_logged
+      - endpoint.application_control.events_centrally_logged
+      - logging.command_line.centrally_logged
+      - logging.powershell.centrally_logged
+      - logging.mfa_events.centrally_logged
+  # IT.DET-04.1 (boundary-services), from ISM-1228, ISM-1623, ISM-1660, ISM-1907. Continuously monitor and analyse software execution behaviour on systems to…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:det-04:it.det-04.1
+    rule: all_pass
+    checks:
+      - logging.powershell.centrally_logged
+      - endpoint.application_control.events_centrally_logged
+      - logging.events.triaged
+  # IT.DET-02.1 (boundary-services), no Essential Eight source. Ensure event logs are normalised, time-synchronised and enriched to support…
+  #   + manual source essentials/incident-learning
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:det-02:it.det-02.1
+    rule: all_pass
+    checks:
+      - logging.events_normalised
+  # IT.IDE-01.2 (identity-services), no Essential Eight source. Maintain current records of infrastructure, operating systems, applications…
+  #   + manual source essentials/asset-records
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:ide-01:it.ide-01.2
+    rule: all_pass
+    checks:
+      - assets.records_current
+  # IT.PRO-01.1 (identity-services), no Essential Eight source. Design systems securely to provide visibility, enforce authorised access…
+  #   + manual source essentials/secure-build-and-secrets
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-01:it.pro-01.1
+    rule: all_pass
+    checks:
+      - build.secure_design_reviewed
+  # IT.PRO-01.2 (identity-services), no Essential Eight source. Secure build and deployment processes to enforce controls consistently across…
+  #   + manual source essentials/secure-build-and-secrets
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-01:it.pro-01.2
+    rule: all_pass
+    checks:
+      - build.pipeline_controls_enforced
+  # IT.PRO-16.1 (identity-services), no Essential Eight source. Assess the integrity and authenticity of software, components and updates…
+  #   + manual source essentials/supply-chain-security
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-16:it.pro-16.1
+    rule: all_pass
+    checks:
+      - supply_chain.software_integrity_verified
+  # IT.PRO-16.2 (identity-services), no Essential Eight source. Use vendor advisories and threat intelligence to maintain awareness of…
+  #   + manual source essentials/supply-chain-security
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-16:it.pro-16.2
+    rule: all_pass
+    checks:
+      - supply_chain.advisories_monitored
+  # IT.PRO-13.1 (identity-services), from ISM-1647, ISM-1648. Identify and disable or remove default and unused accounts regularly…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-13:it.pro-13.1
+    rule: all_pass
+    checks:
+      - privileged.access.disabled_when_unused
+      - privileged.access.revalidated_yearly
+  # IT.PRO-13.2 (identity-services), no Essential Eight source. Store authentication keys, secrets and tokens in approved secure repositories…
+  #   + manual source essentials/secure-build-and-secrets
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-13:it.pro-13.2
+    rule: all_pass
+    checks:
+      - secrets.stored_in_approved_vault
+  # IT.PRO-13.4 (identity-services), from ISM-0974, ISM-1173, ISM-1401, ISM-1504, ISM-1505, ISM-1679, ISM-1680, ISM-1681, ISM-1682, ISM-1872, ISM-1873, ISM-1874, ISM-1892, ISM-1893, ISM-1894. Use phishing-resistant MFA for users authenticating to systems, including from…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-13:it.pro-13.4
+    rule: all_pass
+    checks:
+      - identity.mfa.enforced_conditional_access
+      - identity.mfa.registered_all_users
+      - identity.legacy_auth_blocked
+      - identity.mfa.third_party_services
+      - identity.mfa.organisation_services
+      - identity.mfa.customers
+      - identity.mfa.two_factors
+      - identity.mfa.phishing_resistant
+      - identity.mfa.phishing_resistant_admins
+      - identity.mfa.systems
+  # IT.PRO-13.5 (identity-services), no Essential Eight source. Disable legacy authentication protocols or, where this is not feasible…
+  #   + Microsoft 365: legacy authentication blocked by Conditional Access
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-13:it.pro-13.5
+    rule: all_pass
+    checks:
+      - identity.legacy_auth_blocked
+  # IT.PRO-13.6 (identity-services), from ISM-1685. Ensure that user, machine, system and service account credentials are unique…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-13:it.pro-13.6
+    rule: all_pass
+    checks:
+      - privileged.credentials.unique
+  # IT.PRO-12.1 (identity-services), from ISM-1507, ISM-1508, ISM-1647. Periodically review and update access privileges in alignment with current…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-12:it.pro-12.1
+    rule: all_pass
+    checks:
+      - privileged.requests.validated
+      - privileged.access.revalidated_yearly
+  # IT.PRO-12.2 (identity-services), from ISM-1175, ISM-1507, ISM-1508. Grant only authorised administrative roles permissions to create, modify or…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-12:it.pro-12.2
+    rule: all_pass
+    checks:
+      - privileged.requests.validated
+      - privileged.accounts.no_internet
+  # IT.PRO-12.3 (identity-services), from ISM-0445, ISM-1175, ISM-1508, ISM-1883. Provision user, administrative and non-person accounts with only the minimum…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-12:it.pro-12.3
+    rule: all_pass
+    checks:
+      - privileged.accounts.no_internet
+      - identity.privileged.global_admin_count
+      - identity.privileged.pim_eligible_not_permanent
+      - network.management.super_admin_count
+      - identity.privileged.admins_cloud_only
+  # IT.PRO-05.1 (identity-services), from ISM-1380, ISM-1387, ISM-1688, ISM-1689, ISM-1898. Ensure administrative activities can only be performed from dedicated and…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-05:it.pro-05.1
+    rule: all_pass
+    checks:
+      - privileged.environments.separate
+      - privileged.admin.jump_servers
+  # IT.PRO-05.2 (identity-services), no Essential Eight source. Enforce explicit session establishment controls before privileged actions are…
+  #   + manual source essentials/secure-administration
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-05:it.pro-05.2
+    rule: all_pass
+    checks:
+      - admin.privileged_sessions_controlled
+  # IT.PRO-05.3 (identity-services), from ISM-1509, ISM-1650. Record all administrative or management actions that modify systems…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-05:it.pro-05.3
+    rule: all_pass
+    checks:
+      - logging.privileged_access.centrally_logged
+      - logging.privileged_accounts.changes_logged
+  # IT.PRO-04.1 (identity-services), from ISM-0304, ISM-1412, ISM-1485, ISM-1486, ISM-1488, ISM-1542, ISM-1585, ISM-1621, ISM-1622, ISM-1654, ISM-1655, ISM-1667, ISM-1668, ISM-1669, ISM-1670, ISM-1671, ISM-1673, ISM-1675, ISM-1686, ISM-1823, ISM-1824, ISM-1859, ISM-1860, ISM-1861, ISM-1891, ISM-1896, ISM-1897. Define approved configuration baselines, informed by vendor and industry…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-04:it.pro-04.1
+    rule: all_pass
+    checks:
+      - browser.ie11_disabled
+      - browser.java_blocked
+      - browser.ads_blocked
+      - apps.office.macros_blocked_from_internet
+      - browser.settings_locked
+      - office.macros.disabled_without_need
+      - endpoint.asr.office_rules_enabled
+      - office.ole_blocked
+      - office.hardened
+      - browser.hardened
+      - pdf.child_processes_blocked
+      - pdf.hardened
+      - office.settings_locked
+      - pdf.settings_locked
+  # IT.PRO-04.2 (identity-services), from ISM-1412, ISM-1489, ISM-1622, ISM-1672, ISM-1859, ISM-1860. Deploy approved configuration baselines on systems, including infrastructure…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-04:it.pro-04.2
+    rule: all_pass
+    checks:
+      - office.macros.antivirus_scanning
+      - office.macros.settings_locked
+      - office.hardened
+      - browser.hardened
+      - pdf.hardened
+  # IT.PRO-04.3 (identity-services), from ISM-1582. Detect and respond to configuration drift using scheduled technical…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-04:it.pro-04.3
+    rule: all_pass
+    checks:
+      - appcontrol.rulesets_validated
+  # IT.PRO-06.1 (identity-services), from ISM-1698, ISM-1699, ISM-1700, ISM-1701, ISM-1702, ISM-1703, ISM-1807, ISM-1808, ISM-1900. Identify known software and configuration weaknesses of assets through…
+  #   + ISM-1905 and ISM-1704 (not linked by ASD): unsupported software removed
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-06:it.pro-06.1
+    rule: all_pass
+    checks:
+      - vuln.scanner.database_current
+      - vuln.internet_facing.scanned_in_interval
+      - vuln.common_apps.scanned_in_interval
+      - vuln.other_apps.scanned_in_interval
+      - vuln.operating_systems.scanned_in_interval
+      - vuln.asset_discovery.fortnightly
+      - vuln.internet_facing.unsupported_removed
+      - vuln.common_apps.unsupported_removed
+  # IT.PRO-06.2 (identity-services), from ISM-1690, ISM-1691, ISM-1692, ISM-1693, ISM-1694, ISM-1695, ISM-1696, ISM-1697, ISM-1876, ISM-1877, ISM-1879, ISM-1901, ISM-1902, ISM-1903, ISM-1904. Apply security patches or updates within defined risk-based timeframes or…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-06:it.pro-06.2
+    rule: all_pass
+    checks:
+      - vuln.common_apps.patched_in_window
+      - endpoint.managed.compliant_ratio
+      - vuln.operating_systems.patched_in_window
+      - vuln.internet_facing.patched_in_window
+      - network.firewall.firmware_current
+      - vuln.other_apps.patched_in_window
+  # IT.PRO-06.3 (identity-services), from ISM-1690, ISM-1691, ISM-1692, ISM-1693, ISM-1694, ISM-1695, ISM-1696, ISM-1697, ISM-1876, ISM-1877, ISM-1879, ISM-1901, ISM-1902, ISM-1903, ISM-1904. Remediate or mitigate vulnerabilities exceeding defined risk thresholds within…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-06:it.pro-06.3
+    rule: all_pass
+    checks:
+      - vuln.common_apps.patched_in_window
+      - endpoint.managed.compliant_ratio
+      - vuln.operating_systems.patched_in_window
+      - vuln.internet_facing.patched_in_window
+      - network.firewall.firmware_current
+      - vuln.other_apps.patched_in_window
+  # IT.PRO-07.1 (identity-services), from ISM-0843, ISM-1487, ISM-1488, ISM-1490, ISM-1544, ISM-1582, ISM-1656, ISM-1657, ISM-1658, ISM-1659, ISM-1672, ISM-1673, ISM-1674, ISM-1675, ISM-1870, ISM-1871, ISM-1890, ISM-1891. Permit only supported, verified and organisation-authorised software to…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-07:it.pro-07.1
+    rule: all_pass
+    checks:
+      - endpoint.application_control.enforced
+      - appcontrol.rulesets_validated
+      - appcontrol.user_profiles_and_temp
+      - endpoint.application_control.file_types_covered
+      - apps.office.macros_blocked_from_internet
+      - office.macros.antivirus_scanning
+      - appcontrol.internet_facing_servers
+      - appcontrol.all_other_locations
+      - appcontrol.microsoft_blocklist
+      - endpoint.asr.office_rules_enabled
+  # IT.PRO-07.2 (identity-services), from ISM-1657, ISM-1898. Restrict administrative and management tooling to approved software sets and…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-07:it.pro-07.2
+    rule: all_pass
+    checks:
+      - endpoint.application_control.enforced
+      - endpoint.application_control.file_types_covered
+  # IT.PRO-10.1 (identity-services), from ISM-1511, ISM-1810, ISM-1811. Back up important data, applications and settings on a defined schedule to…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-10:it.pro-10.1
+    rule: all_pass
+    checks:
+      - backup.performed_and_retained
+      - backup.retained_securely
+      - backup.synchronised
+  # IT.PRO-10.2 (identity-services), from ISM-1706, ISM-1708, ISM-1811, ISM-1812, ISM-1813, ISM-1814. Isolate backup repositories from general user environments and production…
+  #   + ISM-1705 and ISM-1707 (not linked by ASD): backups isolated from other privileged accounts
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-10:it.pro-10.2
+    rule: all_pass
+    checks:
+      - backup.retained_securely
+      - backup.unprivileged_cannot_read_others
+      - backup.unprivileged_cannot_change
+      - backup.privileged_cannot_read
+      - backup.privileged_cannot_change
+  # IT.PRO-10.3 (identity-services), from ISM-1511, ISM-1515. Conduct regular testing of backup and restoration procedures to ensure that…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-10:it.pro-10.3
+    rule: all_pass
+    checks:
+      - backup.restore_tested
+      - backup.performed_and_retained
+  # IT.PRO-18.1 (identity-services), no Essential Eight source. Isolate systems within network zones based on business criticality and trust…
+  #   + manual source essentials/network-segmentation
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-18:it.pro-18.1
+    rule: all_pass
+    checks:
+      - network.segmentation.zones_defined
+  # IT.PRO-18.2 (identity-services), from ISM-1380. Limit lateral movement between, and within, network segments to explicitly…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-18:it.pro-18.2
+    rule: all_pass
+    checks:
+      - privileged.environments.separate
+  # IT.PRO-09.1 (identity-services), no Essential Eight source. Inspect outbound content flows to detect unauthorised transfer of sensitive or…
+  #   + manual source essentials/content-filtering
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-09:it.pro-09.1
+    rule: all_pass
+    checks:
+      - network.content.outbound_inspected
+  # IT.PRO-14.1 (identity-services), no Essential Eight source. Ensure all personnel receive cyber security awareness training, that is…
+  #   + manual source essentials/security-awareness-training
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-14:it.pro-14.1
+    rule: all_pass
+    checks:
+      - training.awareness_completed
+  # IT.DET-01.1 (identity-services), from ISM-1815. Protect event logs from unauthorised access, modification or deletion…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:det-01:it.det-01.1
+    rule: all_pass
+    checks:
+      - logging.event_logs.protected
+  # IT.DET-01.2 (identity-services), from ISM-1509, ISM-1623, ISM-1650, ISM-1660, ISM-1683, ISM-1889. Forward high-value, security-relevant event logs and configuration changes…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:det-01:it.det-01.2
+    rule: all_pass
+    checks:
+      - logging.privileged_access.centrally_logged
+      - logging.privileged_accounts.changes_logged
+      - endpoint.application_control.events_centrally_logged
+      - logging.command_line.centrally_logged
+      - logging.powershell.centrally_logged
+      - logging.mfa_events.centrally_logged
+  # IT.DET-04.1 (identity-services), from ISM-1228, ISM-1623, ISM-1660, ISM-1907. Continuously monitor and analyse software execution behaviour on systems to…
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:det-04:it.det-04.1
+    rule: all_pass
+    checks:
+      - logging.powershell.centrally_logged
+      - endpoint.application_control.events_centrally_logged
+      - logging.events.triaged
+  # IT.DET-02.1 (identity-services), no Essential Eight source. Ensure event logs are normalised, time-synchronised and enriched to support…
+  #   + manual source essentials/incident-learning
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:det-02:it.det-02.1
+    rule: all_pass
+    checks:
+      - logging.events_normalised
+# Recorded by hand: board accountability is a governance record that no collector or manual source here covers. The example scope
+# writes it as a hand-written assessment (examples/compliance-repo/scope/audits/ex-essentials-2026.yaml).
+manual_only:
+  - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:governance-and-culture:gov-01:it.gov-01.1
+    source: a hand-written assessment in the audit's scope file, from the board charter or minutes

@@ -127,6 +127,8 @@ public class PlanTests
         plan.Problems().Select(p => p.Code).ShouldBe(["plan.evidence_unknown", "plan.control_key_unknown"]);
         plan.Problems()[0].Message.ShouldContain("ev-9999");
         plan.Problems()[1].Message.ShouldContain("firewall");
+        // s14-03 rehearsal: after `hound add collector fake` the next suggested run failed, and the message did not say where to fix it.
+        plan.Problems()[1].Message.ShouldContain("controls:");
     }
 
     [Theory]

@@ -123,7 +123,7 @@ docker compose run --rm runner scope apply /config/scope --config /config/hound.
 
 The plan lists every user (with the roles they will hold), team, flag and setting it will create or change. New users get CISO Assistant's invitation and set their own password; `hound` never handles one. The plan's access review lists anyone who has not turned on MFA yet.
 
-**Second: the Essential Eight audit.** Put `scope/audits/ex-e8-2026.yaml` back (renamed for your audit), check the mapping, and repeat validate, plan and apply:
+**Second: the Essential Eight audit.** Put `scope/audits/ex-e8-2026.yaml` back (renamed for your audit; a repo from `hound init` has `scope/audits/<code>-e8.yaml` instead, and no `scope/settings.yaml` until you copy the template's), check the mapping, and repeat validate, plan and apply:
 
 ```bash
 hound mapping validate mappings/essential-eight-2023.yaml

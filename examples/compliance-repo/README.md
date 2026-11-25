@@ -11,11 +11,23 @@ A complete, fictional compliance repo for [Evidence Hound](../../README.md). Cop
 | [`frameworks/`](frameworks/) | Framework snapshots, so the scope validates offline, and custom framework libraries. |
 | [`documents/`](documents/) | Policies and procedures uploaded as evidence. |
 | [`manual-sources/`](manual-sources/) | The sources people export by hand, and where their exports go (outside this repo). |
+| [`.devcontainer/`](.devcontainer/devcontainer.json) | The GRC team's workspace: released `hound` and the Claude Code and GitHub Copilot extensions. |
 | [`.gitignore`](.gitignore) | Keeps secrets, keys, certificates, `.env` files and evidence out of the repo. |
 | [`CLAUDE.md`](CLAUDE.md) | Instructions for an AI assistant working in this repo. |
 | [`.github/workflows/compliance.yml`](.github/workflows/compliance.yml) | Scans every change for secrets, validates every pull request, comments the plan, and applies on merge after approval. |
 
 Every YAML file starts with a `# yaml-language-server: $schema=` comment, so editors check it as you type. In your own repo, point those at the schemas of the Evidence Hound version you run.
+
+## Work in the devcontainer
+
+Open the repo in VS Code with the Dev Containers extension and choose **Reopen in Container**. Your machine needs only Docker: the
+container has `hound` from the release your deployment runs (the runner image pinned in `.devcontainer/Dockerfile`, the same as
+`deploy/deploy.env`), the .NET runtime it needs, the GitHub CLI and the Claude Code and GitHub Copilot extensions. No SDK or build tools.
+
+- Set `HOUND_CA_TOKEN` in your own environment before you open it; the container reads it from there, never from the repo.
+- `hound` writes evidence to `/var/lib/evidence-hound` inside the container, which is only for trying things. Scheduled runs and their
+  evidence stay on the server.
+- When you upgrade the deployment, move the image in `.devcontainer/Dockerfile` to the same release and rebuild the container.
 
 ## How a change goes in
 

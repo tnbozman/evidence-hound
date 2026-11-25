@@ -11,9 +11,11 @@ namespace EvidenceHound.Runtime.Tests;
 /// </summary>
 public class ExampleManualSourcesTests
 {
-    /// <summary>The Essential Eight templates by name, and the other libraries' (s11-10: AI6) as <c>library/name</c>.</summary>
+    private static readonly string[] OtherLibraries = ["ai6", "essentials", "disp"];
+
+    /// <summary>The Essential Eight templates by name, and the other libraries' (s11-10: AI6; s14: Essentials and DISP) as <c>library/name</c>.</summary>
     public static TheoryData<string> Templates() =>
-        [.. ExampleManualSources.Folders().Select(Path.GetFileName).OfType<string>(), .. ExampleManualSources.Folders("ai6").Select(f => "ai6/" + Path.GetFileName(f))];
+        [.. ExampleManualSources.Folders().Select(Path.GetFileName).OfType<string>(), .. OtherLibraries.SelectMany(library => ExampleManualSources.Folders(library).Select(f => library + "/" + Path.GetFileName(f)))];
 
     [Fact]
     public void There_is_a_template_for_each_area_without_a_collector()
@@ -24,6 +26,16 @@ public class ExampleManualSourcesTests
                 "privileged-access-review", "user-application-hardening",
             ],
             ignoreOrder: true);
+    }
+
+    [Fact]
+    public void There_is_a_disp_template_for_each_record_no_system_holds()
+    {
+        // s14-02: security officer appointment, clearances register review, facility and visitor controls and the annual security report;
+        // security awareness training records reuse the Essentials template.
+        ExampleManualSources.Folders("disp").Select(Path.GetFileName).ShouldBe(
+            ["annual-security-report", "clearances-register", "facility-security", "security-officer"], ignoreOrder: true);
+        ExampleManualSources.Folders("essentials").Select(Path.GetFileName).ShouldContain("security-awareness-training");
     }
 
     [Theory]
@@ -84,7 +96,7 @@ internal static class ExampleManualSources
         var example = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "files", "examples", "example-essential-eight.yaml"));
         var snippet = string.Join('\n', File.ReadAllLines(Path.Combine(Folder(template), "source.yaml")).Where(l => !l.StartsWith('#')).Select(l => "  " + l));
         var start = example.IndexOf("collectors:", StringComparison.Ordinal);
-        var end = example.IndexOf("\ntarget:", StringComparison.Ordinal);
+        var end = example.IndexOf("\ntargets:", StringComparison.Ordinal);
         return example[..start] + "collectors:\n" + snippet + "\n" + example[end..];
     }
 
@@ -96,4 +108,8 @@ internal static class ExampleManualSources
             .Select(c => CheckId.Create(c).Value());
 
     public static IEnumerable<CheckId> Checks() => Folders().Select(Path.GetFileName).OfType<string>().SelectMany(Checks);
+
+    /// <summary>The checks of every template of another library, such as <c>essentials</c> (s14-01).</summary>
+    public static IEnumerable<CheckId> LibraryChecks(string library) =>
+        Folders(library).Select(f => library + "/" + Path.GetFileName(f)).SelectMany(Checks);
 }

@@ -80,6 +80,9 @@ internal static partial class Log
     [LoggerMessage(EventId = 9000, Level = LogLevel.Critical, Message = "Unexpected failure running '{Command}'. Rerun with Logging__LogLevel__Default=Debug for the stack trace.")]
     public static partial void Unexpected(ILogger logger, Exception exception, string command);
 
+    [LoggerMessage(EventId = 9003, Level = LogLevel.Error, Message = "{Explanation}")]
+    public static partial void Denied(ILogger logger, string explanation);
+
     [LoggerMessage(EventId = 9001, Level = LogLevel.Debug, Message = "Details of the unexpected failure:")]
     public static partial void Details(ILogger logger, Exception exception);
 
