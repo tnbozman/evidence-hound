@@ -1,5 +1,9 @@
 using System.CommandLine;
 using System.Globalization;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using EvidenceHound.Core.Reporting;
 using EvidenceHound.Core.Results;
 using EvidenceHound.Core.Scope;
 using EvidenceHound.Core.Yaml;
@@ -28,60 +32,181 @@ internal static class StatusCommand
         var config = new Option<FileInfo>("--config") { Description = "Path to the deployment config file (YAML).", Required = true };
         var scope = new Option<DirectoryInfo>("--scope")
         {
-            Description = "The compliance repo's scope/ folder: also list security exceptions that expire within 60 days or have expired.",
+            Description = "The compliance repo's scope/ folder: also give each programme's standing from the latest posture snapshot, and list security exceptions that expire within 60 days or have expired.",
         };
-        var status = new Command("status", "Show the latest run of each configured collector.") { config, scope };
+        var json = new Option<bool>("--json") { Description = "Answer in JSON, for an agent: the same figures as the tables." };
+        var status = new Command("status", "Show the latest run of each configured collector, and with --scope each programme's standing.") { config, scope, json };
         status.SetAction(async (parseResult, cancellationToken) =>
         {
+            var today = AuditSeries.Today(configuration);
             var loaded = await ConfigCommands.LoadAsync(parseResult.GetRequiredValue(config), registry, cancellationToken);
             var deployment = await loaded.Match(
-                async d => Result.Ok(await AuditSeries.ResolveAsync(d, AuditSeries.Today(configuration), cancellationToken)),
+                async d => Result.Ok(await AuditSeries.ResolveAsync(d, today, cancellationToken)),
                 problems => Task.FromResult(Result.Fail<DeploymentConfig>(problems)));
             var latest = await deployment.BindAsync(d => new FileRunRecordStore(d.Evidence.Root).LatestAsync(cancellationToken));
             var history = await deployment.BindAsync(d => new FileRunHistory(d.Evidence.Root).LatestAsync(cancellationToken));
-            return await deployment.Bind(d => latest.Bind(records => history.Map(entries => (Collectors: Rows(d, records), Failures: Failures(d, records), Audits: AuditRows(d, entries), Any: entries.Count > 0)))).Match(
-                async tables =>
+            var dir = parseResult.GetValue(scope);
+            var view = await deployment.Bind(d => latest.Bind(records => history.Map(entries => (Deployment: d, Records: records, Entries: entries))))
+                .BindAsync(async x =>
                 {
-                    await output.WriteAsync(Table([Header, .. tables.Collectors]));
-                    foreach (var failure in tables.Failures)
-                    {
-                        await output.WriteLineAsync(failure);
-                    }
-
-                    if (tables.Any)
-                    {
-                        await output.WriteLineAsync();
-                        await output.WriteAsync(Table([AuditHeader, .. tables.Audits]));
-                    }
-
-                    return parseResult.GetValue(scope) is { } dir ? await ExceptionsAsync(dir, AuditSeries.Today(configuration), output, logger, cancellationToken) : ExitCodes.Ok;
+                    var exceptions = dir is null ? Result.Ok<IReadOnlyList<ExceptionNote>>([]) : await ExceptionsAsync(dir, today, cancellationToken);
+                    var standing = dir is null ? null : await StandingAsync(x.Deployment.Evidence.Root, cancellationToken);
+                    return exceptions.Map(notes => new StatusView(x.Deployment, x.Records, x.Entries, dir is null ? null : notes, standing));
+                });
+            return await view.Match(
+                async v =>
+                {
+                    await output.WriteAsync(parseResult.GetValue(json) ? Json(v) : Text(v));
+                    return ExitCodes.Ok;
                 },
                 problems => Task.FromResult(Log.Problems(logger, problems)));
         });
         return status;
     }
 
+    /// <summary>What <c>hound status</c> shows: runs, audits, and with a scope folder the exceptions due and the programmes' standing.</summary>
+    private sealed record StatusView(
+        DeploymentConfig Deployment, IReadOnlyList<RunRecord> Records, IReadOnlyList<(string Audit, HistoryEntry Entry)> Entries, IReadOnlyList<ExceptionNote>? Exceptions, PostureSnapshot? Standing)
+    {
+        public bool ScopeGiven => Exceptions is not null;
+    }
+
+    private static string Text(StatusView view)
+    {
+        var text = new StringBuilder(Table([Header, .. Rows(view.Deployment, view.Records)]));
+        foreach (var failure in Failures(view.Deployment, view.Records))
+        {
+            text.AppendLine(failure);
+        }
+
+        if (view.Entries.Count > 0)
+        {
+            text.AppendLine().Append(Table([AuditHeader, .. AuditRows(view.Deployment, view.Entries)]));
+        }
+
+        if (!view.ScopeGiven)
+        {
+            return text.ToString();
+        }
+
+        text.AppendLine();
+        if (view.Standing is not { } snapshot)
+        {
+            text.AppendLine(NoSnapshot);
+        }
+        else
+        {
+            text.AppendLine(CultureInfo.InvariantCulture, $"Standing from the {snapshot.Period} snapshot taken {snapshot.TakenAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)} UTC:");
+            foreach (var programme in snapshot.Programmes)
+            {
+                text.AppendLine(CultureInfo.InvariantCulture, $"- {programme.Name}: {Standing.Of(programme).Text()}");
+            }
+        }
+
+        text.AppendLine();
+        text.Append(view.Exceptions!.Count == 0
+            ? "No security exception expires within 60 days.\n"
+            : Table([ExceptionHeader, .. view.Exceptions.Select(n => new[] { n.RefId, n.Expires ?? "-", n.Detail })]));
+        return text.ToString();
+    }
+
+    private static string Json(StatusView view)
+    {
+        var byName = view.Records.ToDictionary(r => r.Collector, StringComparer.Ordinal);
+        var byAudit = view.Entries.ToDictionary(e => e.Audit, e => e.Entry, StringComparer.Ordinal);
+        var json = new JsonObject
+        {
+            ["collectors"] = new JsonArray([.. view.Deployment.Collectors.Select(c => byName.TryGetValue(c.Name, out var r)
+                ? new JsonObject
+                {
+                    ["collector"] = c.Name,
+                    ["last_run"] = r.EndedAt.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture),
+                    ["outcome"] = r.Outcome.ToString().ToLowerInvariant(),
+                    ["passed"] = r.ChecksPassed,
+                    ["failed"] = r.ChecksFailed,
+                    ["problems"] = new JsonArray([.. r.Problems.Select(p => new JsonObject { ["code"] = p.Code, ["message"] = p.Message })]),
+                }
+                : new JsonObject { ["collector"] = c.Name, ["last_run"] = null, ["outcome"] = "never_run" })]),
+            ["audits"] = new JsonArray([.. view.Deployment.Targets.Select(t => t.ComplianceAssessmentRefId).Distinct(StringComparer.Ordinal).Select(audit => byAudit.TryGetValue(audit, out var e)
+                ? new JsonObject
+                {
+                    ["audit"] = audit,
+                    ["last_run"] = e.Date.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture),
+                    ["run_id"] = e.RunId,
+                    ["changed"] = e.Changed,
+                    ["unchanged"] = e.Unchanged,
+                    ["drift"] = e.Drift,
+                }
+                : new JsonObject { ["audit"] = audit, ["last_run"] = null })]),
+        };
+        if (view.ScopeGiven)
+        {
+            json["standing"] = view.Standing is { } snapshot
+                ? new JsonObject
+                {
+                    ["snapshot"] = snapshot.Period.ToString(),
+                    ["taken_at"] = snapshot.TakenAt.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture),
+                    ["programmes"] = new JsonArray([.. snapshot.Programmes.Select(p => (Programme: p, Standing: Standing.Of(p))).Select(x => new JsonObject
+                    {
+                        ["id"] = x.Programme.Id,
+                        ["name"] = x.Programme.Name,
+                        ["audit"] = x.Programme.Audit,
+                        ["level_met"] = x.Standing.Met?.Name,
+                        ["compliant"] = x.Standing.Compliant,
+                        ["applicable"] = x.Standing.Applicable,
+                        ["compliant_pct"] = x.Standing.Applicable == 0 ? null : (int)(100L * x.Standing.Compliant / x.Standing.Applicable),
+                        ["assessed"] = x.Standing.Assessed,
+                        ["total"] = x.Standing.Total,
+                        ["not_assessed"] = x.Standing.NotAssessed,
+                    })]),
+                }
+                : new JsonObject { ["snapshot"] = null, ["hint"] = NoSnapshot };
+            json["exceptions_due"] = new JsonArray([.. view.Exceptions!.Select(n => new JsonObject { ["ref_id"] = n.RefId, ["expires"] = n.Expires, ["note"] = n.Detail })]);
+        }
+
+        return json.ToJsonString(Indented) + Environment.NewLine;
+    }
+
+    private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
+
+    private static readonly string NoSnapshot =
+        "No posture snapshot yet, so no programme standing. Take one with: hound report snapshot --period YYYY-MM --scope <scope> --config <hound.yaml>";
+
+    /// <summary>The newest posture snapshot in the evidence store's <c>reports/</c> folder, by when it was taken; null when there is none.</summary>
+    private static async Task<PostureSnapshot?> StandingAsync(string root, CancellationToken cancellationToken)
+    {
+        var folder = Path.Combine(root, "reports");
+        if (!Directory.Exists(folder))
+        {
+            return null;
+        }
+
+        PostureSnapshot? newest = null;
+        foreach (var file in Directory.GetFiles(folder, "posture-*.json"))
+        {
+            if (PostureSnapshotJson.Read(await File.ReadAllTextAsync(file, cancellationToken), file) is Result<PostureSnapshot>.Ok { Value: var snapshot }
+                && (newest is null || snapshot.TakenAt > newest.TakenAt))
+            {
+                newest = snapshot;
+            }
+        }
+
+        return newest;
+    }
+
     /// <summary>The exceptions <c>scope/exceptions.yaml</c> declares that expire within 60 days or have expired (s15-03), by their declared expiry.</summary>
-    private static async Task<int> ExceptionsAsync(DirectoryInfo scope, DateOnly today, TextWriter output, ILogger logger, CancellationToken cancellationToken)
+    private static async Task<Result<IReadOnlyList<ExceptionNote>>> ExceptionsAsync(DirectoryInfo scope, DateOnly today, CancellationToken cancellationToken)
     {
         var path = Path.Combine(scope.FullName, "exceptions.yaml");
         if (!File.Exists(path))
         {
-            return ExitCodes.Ok;
+            return Result.Ok<IReadOnlyList<ExceptionNote>>([]);
         }
 
         var (exceptions, problems) = ScopeLoader.ParseExceptions(new ScopeSource(path, await File.ReadAllTextAsync(path, cancellationToken)));
-        if (problems.Count > 0)
-        {
-            return Log.Problems(logger, [.. problems.Select(p => new Problem(p.Code, $"{p.At.File}:{p.At.Line}: {p.Message} {p.Hint}"))]);
-        }
-
-        var due = ExceptionReview.Declared(exceptions, today);
-        await output.WriteLineAsync();
-        await output.WriteAsync(due.Count == 0
-            ? "No security exception expires within 60 days.\n"
-            : Table([ExceptionHeader, .. due.Select(n => new[] { n.RefId, n.Expires ?? "-", n.Detail })]));
-        return ExitCodes.Ok;
+        return problems.Count > 0
+            ? Result.Fail<IReadOnlyList<ExceptionNote>>([.. problems.Select(p => new Problem(p.Code, $"{p.At.File}:{p.At.Line}: {p.Message} {p.Hint}"))])
+            : Result.Ok(ExceptionReview.Declared(exceptions, today));
     }
 
     private static IReadOnlyList<string[]> Rows(DeploymentConfig config, IReadOnlyList<RunRecord> records)
