@@ -124,6 +124,12 @@ says how to start.
 2. The person runs `hound review` in their own terminal (`--for 30m` to stop after half an hour). Most urgent first, each item shows
    what it is, why it matters, the recommendation and what accepting it does. They accept, challenge (with a note the agent answers
    before the next session; the item stays queued) or skip.
+   For a long queue, or decisions you want to understand before you accept them, go through them with your agent first (the agent
+   `hound-decisions`, skill "work-through-pending-decisions"). `hound review pending --json` gives each item a `risk` (`high` for a
+   not-applicable decision, a supplier, a finding, or an item whose recommendation is missing or has no source) and a `summary` by kind
+   and recommendation, so the agent starts with the size of the job and the riskiest items. Then accept, challenge or skip each one by
+   its key, `hound review --only <key>` (repeat `--only` for several): nothing else is asked or written. An unknown key is refused with
+   the nearest keys, and it still needs you at a terminal. `hound approve` opens with the same count by kind and points here.
 3. Accepted items are written as `hound approve` and `hound manual approve` write them. A session records one sign-off under
    `review/sign-offs/`, naming the person, the time and every item, then shows the plan and applies it after a confirmation
    (`--no-apply` stops at the files).

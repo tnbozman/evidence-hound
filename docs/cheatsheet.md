@@ -142,6 +142,7 @@ file by `scripts/cheatsheet/render.sh`.
 - `hound review recommend <key> --answer ... --reason ... --source ...`: agent: its recommendation
 - `hound review --for 60m`: **Person**: one guided weekly session
   - `--no-apply`: stop at the files
+- `hound review --only <key>`: **Person**: accept or challenge one item, after going through it with your agent (agent `hound-decisions`)
 
 ### Reports
 
