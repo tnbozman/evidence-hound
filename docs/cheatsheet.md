@@ -158,6 +158,11 @@ file by `scripts/cheatsheet/render.sh`.
 - `hound irp build --programme essential-eight`: the incident response plan from `scope/irp.yaml` and the repo, NIST SP 800-61 Rev 3 with the Australian reporting, gaps first (`--strict` fails on gaps, `--json` gives each source)
   - `--config` (req) `--scope --format json`
 
+### CMMC and SPRS
+
+- `hound sprs score --audit EX-CMMC-2026`: the NIST SP 800-171 DoD Assessment Methodology score from the CMMC Level 2 audit, with each deduction, for a person to review before entering it in SPRS
+  - `--config` (req) `--methodology --control --format json`
+
 ## Typical paths
 
 ### Start a repo

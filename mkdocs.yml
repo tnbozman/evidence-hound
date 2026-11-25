@@ -93,6 +93,7 @@ nav:
       - Onboarding tutorial: examples/onboarding-tutorial.md
       - Essential Eight to ASD Essentials: migrations/essential-eight-to-asd-essentials.md
       - DISP membership readiness: adopt/disp-readiness.md
+      - CMMC Level 2 and the SPRS score: adopt/cmmc-level-2.md
   - Operate:
       - operate/README.md
       - GRC member: operate/grc-member.md
