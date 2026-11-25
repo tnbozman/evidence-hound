@@ -60,7 +60,7 @@ with `library.version_not_bumped` after a change at the same version, then appli
 once CI has run.
 
 ### s15-02 Risk register files
-- [ ] Done
+- [x] Done
 
 **Story:** As a risk owner working with an assistant, I want each risk study and its scenarios in a file, so that ratings and treatments are proposed, reviewed and recorded like any other change.
 
@@ -80,6 +80,17 @@ once CI has run.
 
 **Functional check**
 - Apply a fictional study with three scenarios to the local CISO Assistant; the matrix view places them as expected; changing one rating in the file produces a one-line plan and a single update.
+
+**Notes.** The risk client tests are in `ScopeClientTests` (`Creates_risk_study_on_its_matrix_with_actors_and_marker`,
+`Creates_risk_scenario_with_links_and_ratings_by_position`), next to the other recorded writes, and the rating plan test is
+`RiskPlanTests.Rating_change_is_shown_as_level_names`, because the plan's fields come from the parsed scope. A scenario's ratings are
+planned as level names and written as their positions on the matrix (`ScopeObject.Levels`); CISO Assistant's list view gives each rating
+back with its name, so a plan never needs the matrix to read what is held. The seven risk endpoints were added by hand to the OpenAPI
+snapshot, as s12-04 did for the posture lists.
+
+**Functional check result.** `RiskRegisterFunctionalTests` (CI) applies a three-scenario study to a copy of the example repo, checks
+CISO Assistant places R-01 at High and R-03 at Medium on the 4x4 grid, then changes R-03's probability and expects one planned change
+(`current_probability: Likely → Possible`) and one write. Result recorded below once CI has run.
 
 ### s15-03 Security exceptions and risk acceptances
 - [ ] Done

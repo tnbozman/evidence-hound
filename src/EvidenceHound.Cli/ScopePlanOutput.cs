@@ -286,6 +286,8 @@ internal static class ScopePlanOutput
     {
         ScopeKind.FeatureFlag => "feature_flag",
         ScopeKind.EntityAssessment => "supplier_assessment",
+        ScopeKind.RiskStudy => "risk_study",
+        ScopeKind.RiskScenario => "risk_scenario",
         _ => kind.ToString().ToLowerInvariant(),
     };
 

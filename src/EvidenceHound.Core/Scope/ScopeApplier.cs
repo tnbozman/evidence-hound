@@ -85,7 +85,11 @@ public static class ScopeApplier
             yield return (ScopeKind.Domain, domain);
         }
 
-        foreach (var (field, kind) in new[] { ("parents", ScopeKind.System), ("systems", ScopeKind.System), ("documents", ScopeKind.Document), ("controls", ScopeKind.Control) })
+        foreach (var (field, kind) in new[]
+        {
+            ("parents", ScopeKind.System), ("systems", ScopeKind.System), ("documents", ScopeKind.Document), ("controls", ScopeKind.Control),
+            ("existing_controls", ScopeKind.Control), ("planned_controls", ScopeKind.Control), ("study", ScopeKind.RiskStudy),
+        })
         {
             foreach (var name in Split(fields.GetValueOrDefault(field)))
             {

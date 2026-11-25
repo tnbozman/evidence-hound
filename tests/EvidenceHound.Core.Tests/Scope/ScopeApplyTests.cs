@@ -67,11 +67,13 @@ public class ScopeApplyTests
         var study = new ScopeObject(ScopeKind.RiskStudy, "EX-RISK-2026", new Dictionary<string, string> { ["name"] = "Risk register" });
         var scenario = new ScopeObject(ScopeKind.RiskScenario, "EX-RISK-2026/R-01", new Dictionary<string, string>
         {
-            ["study"] = "EX-RISK-2026", ["existing_controls"] = "AC-BACKUP", ["planned_controls"] = "AC-MFA",
+            ["study"] = "EX-RISK-2026",
+            ["existing_controls"] = "AC-BACKUP",
+            ["planned_controls"] = "AC-MFA",
         });
 
         ScopeApplier.DependsOn(scenario).ShouldBe([(ScopeKind.Control, "AC-BACKUP"), (ScopeKind.Control, "AC-MFA"), (ScopeKind.RiskStudy, "EX-RISK-2026")], ignoreOrder: true);
-        var report = await Apply([study, scenario], new InMemoryScopeStore { Refuse = { (ScopeKind.RiskStudy, "EX-RISK-2026") } });
+        var report = await Apply([study, scenario], new InMemoryScopeStore { Refuse = { (ScopeKind.RiskStudy, "EX-RISK-2026") } }, Everything);
         report.Changes.Single(c => c.Change.Key == scenario.Key).Outcome.ShouldBe(ApplyOutcome.Skipped);
     }
 
