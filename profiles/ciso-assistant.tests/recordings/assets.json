@@ -66,10 +66,10 @@
       ],
       "disaster_recovery_objectives": [
         {
-          "str": "rto: 4h"
+          "str": "RTO: 4h"
         },
         {
-          "str": "rpo: 1d"
+          "str": "RPO: 1d"
         }
       ]
     },
