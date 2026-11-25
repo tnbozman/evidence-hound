@@ -89,6 +89,15 @@ internal sealed partial class ScopeWriter
                         ["observation"] = Field(declared, "observation"),
                     };
                     Drop(body, write.Change, "observation");
+                    // A flag named by checks is not declared: each run sets it (s15-05), so an update leaves it as it is.
+                    foreach (var flag in (string[])["recovery_documented", "recovery_tested", "recovery_targets_met"])
+                    {
+                        if (write.Change.Action != ScopeAction.Create && !declared.Fields.ContainsKey(flag))
+                        {
+                            body.Remove(flag);
+                        }
+                    }
+
                     return write.Change.Action == ScopeAction.Create
                         ? await SendAsync(HttpMethod.Post, "asset-assessments/", body, $"to create asset assessment {declared.Key}", cancellationToken)
                         : await UpdateAsync("asset-assessments", existing, body, write, cancellationToken);

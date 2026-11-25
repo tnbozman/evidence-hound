@@ -29,8 +29,9 @@ public static class BiaObjects
                 var key = AssessmentKey(bia.RefId, assessment.System.Value);
                 yield return new ScopeObject(ScopeKind.AssetAssessment, key, Fields(
                     ("bia", bia.RefId), ("system", assessment.System.Value), ("dependencies", ScopeDesired.Joined(assessment.Dependencies.Select(d => d.Value))),
-                    ("controls", ScopeDesired.Joined(assessment.Controls.Select(c => c.Value))), ("recovery_documented", Flag(assessment.Documented)),
-                    ("recovery_tested", Flag(assessment.Tested)), ("recovery_targets_met", Flag(assessment.TargetsMet)), ("observation", assessment.Observation)));
+                    ("controls", ScopeDesired.Joined(assessment.Controls.Select(c => c.Value))), ("recovery_documented", Flag(assessment, "documented", assessment.Documented)),
+                    ("recovery_tested", Flag(assessment, "tested", assessment.Tested)), ("recovery_targets_met", Flag(assessment, "targets_met", assessment.TargetsMet)),
+                    ("observation", assessment.Observation)));
 
                 foreach (var threshold in assessment.Thresholds.DistinctBy(t => t.After))
                 {
@@ -50,7 +51,9 @@ public static class BiaObjects
 
     public static string ThresholdKey(string assessment, Duration after) => $"{assessment}/{after}";
 
-    private static string Flag(bool value) => value ? "true" : "false";
+    /// <summary>A hand-set flag; none for a flag named by checks, which each run sets (s15-05) and the scope plan leaves alone.</summary>
+    private static string? Flag(ScopeAssetAssessment assessment, string flag, bool value) =>
+        assessment.Checks.ContainsKey(flag) ? null : value ? "true" : "false";
 
     private static Dictionary<string, string> Fields(params (string Name, string? Value)[] fields) =>
         fields.Where(f => !string.IsNullOrEmpty(f.Value)).ToDictionary(f => f.Name, f => f.Value!, StringComparer.Ordinal);

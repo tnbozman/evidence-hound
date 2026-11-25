@@ -1,4 +1,6 @@
 using System.Globalization;
+using EvidenceHound.Core.Checks;
+using EvidenceHound.Core.Results;
 using EvidenceHound.Core.Scope;
 using YamlDotNet.RepresentationModel;
 
@@ -13,7 +15,8 @@ public static partial class ScopeLoader
     ];
 
     private static readonly string[] AssetAssessmentKeys = ["system", "dependencies", "controls", "recovery", "observation", "thresholds"];
-    private static readonly string[] RecoveryFlagKeys = ["documented", "tested", "targets_met"];
+    private static readonly string[] RecoveryFlags = ["documented", "tested", "targets_met"];
+    private static readonly string[] RecoveryFlagKeys = [.. RecoveryFlags, .. RecoveryFlags.Select(f => f + "_by")];
     private static readonly string[] ThresholdKeys = ["after", "impact", "qualifications", "justification"];
 
     /// <summary>CISO Assistant's recovery objectives.</summary>
@@ -46,11 +49,46 @@ public static partial class ScopeLoader
         }
 
         bool Flag(string key) => recovery is not null && file.OneOf(recovery, key, Booleans, required: false) == "true";
+        var checks = recovery is null ? new Dictionary<string, IReadOnlyList<ScopeRef>>() : ReadFlagChecks(recovery, file);
         return system is null
             ? null
             : new ScopeAssetAssessment(
                 system, file.Refs(item, "dependencies"), file.Refs(item, "controls"), Flag("documented"), Flag("tested"), Flag("targets_met"),
-                file.Text(item, "observation"), [.. file.Items(item, "thresholds").Select(t => ReadThreshold(t, file)).OfType<ScopeThreshold>()], file.At(item));
+                file.Text(item, "observation"), [.. file.Items(item, "thresholds").Select(t => ReadThreshold(t, file)).OfType<ScopeThreshold>()], file.At(item))
+            {
+                Checks = checks,
+            };
+    }
+
+    /// <summary>The checks named for each recovery flag (<c>tested_by</c> and so on, s15-05); a flag set by checks cannot also be set by hand.</summary>
+    private static Dictionary<string, IReadOnlyList<ScopeRef>> ReadFlagChecks(YamlMappingNode recovery, FileReader file)
+    {
+        var checks = new Dictionary<string, IReadOnlyList<ScopeRef>>(StringComparer.Ordinal);
+        foreach (var flag in RecoveryFlags)
+        {
+            var named = file.Refs(recovery, flag + "_by");
+            foreach (var bad in named.Where(c => CheckId.Create(c.Value) is Result<CheckId>.Fail))
+            {
+                file.Problem("scope.value_invalid", bad.At, $"'{flag}_by' names '{bad.Value}', which is not a check id.", "Name checks by id, such as backup.restore_tested.");
+            }
+
+            if (named.Count == 0)
+            {
+                continue;
+            }
+
+            checks[flag] = named;
+            if (FileReader.Child(recovery, flag) is { } handSet)
+            {
+                file.Problem(
+                    "scope.result_conflict",
+                    file.At(handSet),
+                    $"'{flag}' is set by hand and by the checks in '{flag}_by'.",
+                    $"Remove '{flag}': each run sets it from the checks in '{flag}_by' (true only when every one passes).");
+            }
+        }
+
+        return checks;
     }
 
     private static ScopeThreshold? ReadThreshold(YamlMappingNode item, FileReader file)
