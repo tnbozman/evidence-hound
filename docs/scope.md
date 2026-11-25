@@ -603,6 +603,39 @@ formula's domain), `metric.definition_unknown`, `metric.control_unknown`, `metri
 `dashboard.widget_duplicate`, `dashboard.metric_unknown`, `dashboard.builtin_unknown`, `dashboard.object_unknown` and
 `dashboard.widget_outside_grid`. In a plan, a widget is keyed `dashboard/title`, such as `EX-DASH-COMMITTEE/MFA coverage`.
 
+### Metrics filled in by runs
+
+An instance with `source: hound` is filled in by each `hound run`, so a trend is measured every period without anyone typing numbers.
+
+```yaml
+  - ref_id: EX-MET-MFA-PASS-CORP
+    name: MFA checks passing
+    definition: EX-MET-PASS                # a definition with a unit, usually percentage, and no formula
+    domain: Example Pty Ltd
+    frequency: monthly
+    source: hound
+    measure: check_pass_rate               # see the table below
+    checks: [identity.mfa.*]               # check ids, or every check below one
+```
+
+| `measure` | The percentage it records |
+| --- | --- |
+| `check_pass_rate` | Of the `checks`' latest results, the share that pass. Not applicable results are left out; partial and error do not pass. |
+| `requirements_compliant_pct` | Of the requirements of the `audit` (by ref_id) in CISO Assistant, the share that are compliant. Not applicable rows are left out; not assessed rows count against it. |
+| `evidence_freshness_pct` | Of the latest results of the `checks` (every check when none are named), the share collected in the last 7 days. |
+| `collector_success_rate` | Of the collectors the run ran, the share that succeeded. |
+
+After collecting, each run measures every such instance from every collector's latest results and records one value for the
+instance's current period (its frequency's calendar period in UTC, as CISO Assistant counts it). A later run in the same period replaces
+that value; a value equal to the one CISO Assistant holds, to two decimals, is not sent. The run's JSON lists each value it recorded under
+`metrics`, with why. An instance `hound scope apply` has not created yet is named in a `metric.not_applied` warning, and a measure with
+nothing to count (no matching results) in `metric.nothing_measured`; neither records a value. `--dry-run` and `--no-publish` measure
+nothing.
+
+`hound scope validate` reports `metric.measure_invalid` (a measure without the `checks` or `audit` it reads, a check pattern that is not
+one, a measure on a definition with levels, or a measure without `source: hound`), `metric.audit_unknown`, and `scope.result_conflict`
+for `source: hound` on a definition with a formula, because CISO Assistant computes those itself and refuses values typed in.
+
 ## audits/&lt;audit&gt;.yaml
 
 ### One audit per system, and one per shared platform

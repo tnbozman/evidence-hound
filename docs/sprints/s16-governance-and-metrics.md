@@ -86,6 +86,13 @@ Changed in the AI governance planning PR (Nov 2026): s11-05 builds the `ciso-ass
 **Functional check**
 - Two runs on different days of one month against the local CISO Assistant leave one sample for that month, holding the second run's value.
 
+**Notes**
+- Samples go to CISO Assistant v4.3.4's `custom-metric-samples` with `period_start`: CISO Assistant keeps one sample per instance and period and a later write for the period replaces it, so hound reads the instance's period samples and sends only a changed value (to two decimals). Periods are counted as CISO Assistant counts them (`MetricSamples.PeriodStart`, UTC, ISO weeks).
+- "Cannot also be fed by hand" is read as: an instance whose definition has a formula is filled in by CISO Assistant, which refuses typed values, so `source: hound` there is `scope.result_conflict`. A person can still type a value for a run-fed instance's period in CISO Assistant; the next run whose value differs replaces it.
+- `collector_success_rate` counts the collectors the run ran (all of them unless `--only`). `evidence_freshness_pct` counts a result fresh for 7 days, the committee report's stale window.
+- `HOUND_TODAY` moves the measuring time to that day (never later than now), so the functional test runs twice in last month.
+- Functional: `MetricsFunctionalTests.Two_runs_in_one_month_leave_one_sample_holding_the_second_value` measures `backup.*` with the fake collector, passing then failing one check.
+
 ### s16-04 Documentation and example repo
 - [ ] Done
 
