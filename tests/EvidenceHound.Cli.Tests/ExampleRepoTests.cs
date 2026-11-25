@@ -52,6 +52,25 @@ public sealed partial class ExampleRepoTests : IDisposable
     }
 
     [Fact]
+    public void Example_declares_reporting_obligations_and_an_incident_response_plan_tested_each_year()
+    {
+        // s15-07: the reports an incident owes are configuration; the plan and its annual test are a manual source with a runbook.
+        var reporting = File.ReadAllText(Path.Combine(Repo, "scope", "reporting.yaml"));
+        reporting.ShouldStartWith("# yaml-language-server: $schema=../../../schemas/scope.schema.json");
+        foreach (var id in new[] { "dfars-7012", "ndb-assessment", "reportcyber" })
+        {
+            reporting.ShouldContain($"id: {id}");
+        }
+
+        File.ReadAllText(Path.Combine(Repo, "hound.yaml")).ShouldContain("checks: incident.response_plan_approved, incident.response_plan_tested");
+        var plan = File.ReadAllText(Path.Combine(Repo, "scope", "evidence-plan.yaml"));
+        plan.ShouldContain("collector: example-incident-response-plan");
+        plan.ShouldContain("runbook: manual-sources/incident-response-test.md");
+        File.Exists(Path.Combine(Repo, "manual-sources", "incident-response-test.md")).ShouldBeTrue();
+        File.ReadAllText(Path.Combine(RepoRoot, "docs", "incidents.md")).ShouldContain("hound incident obligations");
+    }
+
+    [Fact]
     public void Example_declares_the_essential_eight_plan_with_its_written_sections()
     {
         // s11-07: the example's plan validates with the rest of the scope (above); here, that every section it names is written, the
@@ -205,7 +224,7 @@ public sealed partial class ExampleRepoTests : IDisposable
 
         parsed.Problems.ShouldBeEmpty();
         var manual = parsed.Scope.EvidencePlan!.Rows.Where(r => r.Method == EvidenceMethod.Manual).ToArray();
-        manual.Length.ShouldBe(5);
+        manual.Length.ShouldBe(6);
         var contacts = parsed.Scope.Access.Teams.Where(t => t.IsOwnerContact).Select(t => t.Name).ToArray();
         manual.ShouldContain(r => contacts.Contains(r.Owner!.Value));
 
