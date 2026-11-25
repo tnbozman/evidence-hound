@@ -66,3 +66,13 @@ evidence:
     owner: IT team
     every: 3 months
     runbook: manual-sources/ai-operations.md
+
+  # CMMC Level 2: once a year, a little before the anniversary of the last assessment, the affirming official reads the affirmation
+  # pack and affirms continuing compliance in SPRS (32 CFR 170.22). first_due anchors the yearly reminder to that date.
+  - ref_id: EV-CMMC-AFFIRMATION
+    control: AC-SPRS
+    method: manual
+    owner: Affirming official
+    every: 12 months
+    first_due: "2026-12-15"
+    runbook: manual-sources/cmmc-affirmation.md

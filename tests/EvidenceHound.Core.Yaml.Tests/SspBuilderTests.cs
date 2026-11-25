@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using EvidenceHound.Core.Scope;
+using EvidenceHound.Core.Sprs;
 
 namespace EvidenceHound.Core.Yaml.Tests;
 
@@ -126,6 +127,43 @@ public class SspBuilderTests
         var controls = ScopeFixture.Controls.Replace("    systems: [Example 365]\n", "    systems: [Example 365]\n    responsible_entity: the cloud\n", StringComparison.Ordinal);
 
         SspFixture.Parse(controls: controls).Problems.ShouldContain(p => p.Message.Contains("responsible_entity", StringComparison.Ordinal) && p.Message.Contains("the cloud", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Cmmc_asset_category_comes_from_the_system_tag()
+    {
+        // s17-03: CISO Assistant's asset custom fields are an Enterprise feature, so the category is a tag in scope/setup.yaml.
+        var setup = SspFixture.Setup.Replace("        tags:\n          essentials_domain: identity\n", "        tags:\n          essentials_domain: identity\n          cmmc_asset_category: cui\n", StringComparison.Ordinal);
+        var parsed = SspFixture.Parse(setup: setup);
+        parsed.Problems.ShouldBeEmpty();
+
+        var inventory = SspBuilder.Build(parsed.Scope.Ssps.Single(), parsed.Scope, SspFixture.Held()).Inventory;
+
+        inventory[0].Category.Value.ShouldBe("cui");
+        inventory[0].Category.Source.Reference.ShouldStartWith("scope/setup.yaml line ");
+        inventory[1].Category.Value.ShouldBeNull();
+    }
+
+    [Fact]
+    public void The_nist_800_171_profile_flags_requirements_cmmc_does_not_allow_on_a_poam()
+    {
+        // s17-03: EX-1.2 is unmet and, in this made-up methodology, worth 5 points, so CMMC would not let it sit on a POA&M.
+        var parsed = SspFixture.Parse(ssp: SspFixture.Ssp.Replace("profile: ism", "profile: nist-800-171", StringComparison.Ordinal));
+        var sprs = new SprsMethodology("Example methodology", "1", 110, [new SprsWeight("1.1", 5), new SprsWeight("1.2", 5)]);
+
+        var document = SspBuilder.Build(parsed.Scope.Ssps.Single(), parsed.Scope, SspFixture.Held(), sprs: sprs);
+
+        document.PoamNotAllowed.Keys.ShouldBe(["EX-1.2"]);
+        SspBuilder.Build(Ssp(), SspFixture.Parse().Scope, SspFixture.Held(), sprs: sprs).PoamNotAllowed.ShouldBeEmpty("only the nist-800-171 profile applies CMMC's rules");
+    }
+
+    [Fact]
+    public void An_unknown_cmmc_asset_category_is_a_problem()
+    {
+        var setup = SspFixture.Setup.Replace("          essentials_domain: identity\n", "          essentials_domain: identity\n          cmmc_asset_category: crown jewels\n", StringComparison.Ordinal);
+        var scope = SspFixture.Parse(setup: setup).Scope;
+
+        SspValidator.Validate(scope).ShouldContain(p => p.Code == "ssp.asset_category_invalid" && p.Message.Contains("crown jewels", StringComparison.Ordinal));
     }
 
     [Fact]

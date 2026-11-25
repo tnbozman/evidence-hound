@@ -7,7 +7,7 @@ For a walkthrough, see [Your system security plan](govern/system-security-plan.m
 | `profile` in `ssp.yaml` | Annex |
 | --- | --- |
 | `ism` | ISM controls for the Essential Eight, each listed once with the strategies it serves (for example ISM-1815 under `mfa, rap, ac, uah`). |
-| `nist-800-171` | NIST SP 800-171 requirements for CMMC Level 2 (s17). |
+| `nist-800-171` | NIST SP 800-171 Rev 2 requirements for CMMC Level 2, grouped by family, with each system's CMMC asset category in the inventory and the requirements CMMC does not allow on a POA&M flagged (32 CFR 170.21). See [NIST SP 800-171 and CMMC Level 2](govern/system-security-plan.md#nist-sp-800-171-and-cmmc-level-2). |
 
 Assessors and primes recognise this layout. hound does not use a separate layout per framework, such as the ASD Blueprint SSP template.
 

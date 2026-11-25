@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=../../../schemas/scope.schema.json
-# The fictional Example Pty Ltd's system security plan for its Essential Eight programme. Everything here is made up.
-# Guide: docs/govern/system-security-plan.md. Build the draft with: hound ssp build --programme essential-eight
+# The fictional Example Pty Ltd's system security plans for its Essential Eight and CMMC Level 2 programmes. Everything here is made up.
+# Guide: docs/govern/system-security-plan.md. Build a draft with: hound ssp build --programme essential-eight (or cmmc-level-2)
 # The generated plan holds the organisation's system details: publish it to CISO Assistant (hound ssp publish), never commit it.
 ssps:
   - programme: essential-eight
@@ -25,3 +25,23 @@ ssps:
     # Signed versions go here, added by pull request when the authorising official approves a draft:
     # sign_offs:
     #   - {version: "1.0", by: ceo@example.com, date: "2026-12-01", sha256: <draft SHA-256>, snapshot: <snapshot SHA-256>}
+  # CMMC Level 2: the same layout with the nist-800-171 profile, which groups the annex by family, shows each system's
+  # cmmc_asset_category and flags what CMMC does not allow on a POA&M (32 CFR 170.21).
+  - programme: cmmc-level-2
+    profile: nist-800-171
+    system_name: Example CUI environment
+    perimeter: Corporate IT
+    version: "0.1"
+    classification: CUI
+    operational_status: operational
+    system_type: general support system
+    roles:
+      system_owner: it@example.com
+      authorising_official: ceo@example.com
+      security_contact: IT team
+    documents: [identity-policy, backup-procedure]
+    sections:
+      purpose: ssp/cmmc/purpose.md
+      environment: ssp/cmmc/environment.md
+      management: ssp/cmmc/management.md
+      laws_and_policies: ssp/cmmc/laws-and-policies.md

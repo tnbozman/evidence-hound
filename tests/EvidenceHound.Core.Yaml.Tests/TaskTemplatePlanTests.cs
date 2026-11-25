@@ -50,6 +50,17 @@ public class TaskTemplatePlanTests
     }
 
     [Fact]
+    public void First_due_anchors_a_yearly_row_to_its_date_and_rolls_past_dates_forward()
+    {
+        // s17-06: the yearly CMMC affirmation is due before the anniversary of the last assessment, not a year from whenever it is applied.
+        var plan = EvidencePlanScopeTests.Plan.Replace("every: 3 months", "every: 12 months\n    first_due: \"2026-12-15\"", StringComparison.Ordinal);
+        Declared(plan).Single(d => d.Kind == ScopeKind.TaskTemplate).Initial["first_due"].ShouldBe("2026-12-15");
+
+        var past = EvidencePlanScopeTests.Plan.Replace("every: 3 months", "every: 12 months\n    first_due: \"2025-12-15\"", StringComparison.Ordinal);
+        Declared(past).Single(d => d.Kind == ScopeKind.TaskTemplate).Initial["first_due"].ShouldBe("2026-12-15");
+    }
+
+    [Fact]
     public void Every_row_is_an_evidence_item_labelled_with_its_method_and_collector()
     {
         var items = Declared().Where(d => d.Kind == ScopeKind.Evidence).ToDictionary(d => d.Key, d => d.Fields);

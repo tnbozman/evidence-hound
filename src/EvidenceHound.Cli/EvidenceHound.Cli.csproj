@@ -26,6 +26,7 @@
     <!-- hound init writes these into a new compliance repo. The runner image's build stage copies them in too. -->
     <EmbeddedResource Include="..\..\mappings\essential-eight-2023.yaml" LogicalName="init/mappings/essential-eight-2023.yaml" />
     <EmbeddedResource Include="..\..\mappings\crosswalks\*.yaml" LogicalName="crosswalks/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="..\..\frameworks\sprs\*.yaml" LogicalName="sprs/%(Filename)%(Extension)" />
     <EmbeddedResource Include="..\..\frameworks\essential-eight-2023.json" LogicalName="init/frameworks/essential-eight-2023.json" />
     <EmbeddedResource Include="..\..\mappings\disp.yaml" LogicalName="init/mappings/disp.yaml" />
     <EmbeddedResource Include="..\..\frameworks\disp.yaml" LogicalName="init/frameworks/disp.yaml" />

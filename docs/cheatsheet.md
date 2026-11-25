@@ -123,7 +123,7 @@ file by `scripts/cheatsheet/render.sh`.
 - `hound mapping validate <file>`: check a mapping file
   - `--framework`
 - `hound mapping apply <mapping> <checks>`: map check results to requirements
-- `hound mapping coverage <mapping>`: automated, manual and uncovered counts per parent and group (and per domain for the ASD Essentials)
+- `hound mapping coverage <mapping>`: automated (and how many of those cover only part), manual and uncovered counts per parent and group (and per domain for the ASD Essentials)
   - `--framework --groups --manual --json`
 - `hound mapping derive <mapping>`: draft a new framework's mapping from an old one and a transition mapping (rows `draft: true`; `--force` to replace an existing `--out`)
   - `--from --to --links` (req) `--groups --out`
@@ -155,8 +155,17 @@ file by `scripts/cheatsheet/render.sh`.
 ### Incidents
 
 - `hound incident obligations INC-2026-01`: each report the incident owes under `scope/reporting.yaml`, due from its discovery, made or overdue
+- `hound incident report-pack INC-2026-01 --dfars`: what the 72-hour DFARS 252.204-7012 report asks for: CUI systems, suppliers, the primes' contracts, deadline and timeline, for the person who files it
+  - `--config` (req) `--scope --out`
 - `hound irp build --programme essential-eight`: the incident response plan from `scope/irp.yaml` and the repo, NIST SP 800-61 Rev 3 with the Australian reporting, gaps first (`--strict` fails on gaps, `--json` gives each source)
   - `--config` (req) `--scope --format json`
+
+### CMMC and SPRS
+
+- `hound sprs score --audit EX-CMMC-2026`: the NIST SP 800-171 DoD Assessment Methodology score from the CMMC Level 2 audit, with each deduction, for a person to review before entering it in SPRS
+  - `--config` (req) `--methodology --control --format json`
+- `hound sprs affirmation-pack --programme cmmc-level-2 --period 2026-11`: what the affirming official reads before the yearly affirmation: score, open POA&M items with dates, evidence freshness, lapsed manual sources
+  - `--config` (req) `--scope --methodology --out`
 
 ## Typical paths
 

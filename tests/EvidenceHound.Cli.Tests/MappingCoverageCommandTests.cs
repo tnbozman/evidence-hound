@@ -61,6 +61,26 @@ public sealed class MappingCoverageCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Cmmc_rows_that_cover_part_of_their_practice_are_counted_so_a_person_finishes_them()
+    {
+        // s17-09: every CMMC row is covers: part, yet coverage read "34 automated" as if the checks answered those practices.
+        var exitCode = await Run(
+            "mapping", "coverage", Repo("mappings", "cmmc-2.0.yaml"), "--framework", Repo("frameworks", "cmmc-2.0.json"), "--groups", "L1,L2", "--json");
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        using var json = System.Text.Json.JsonDocument.Parse(_output.ToString());
+        var automated = json.RootElement.GetProperty("automated").GetInt32();
+        automated.ShouldBeGreaterThan(0);
+        json.RootElement.GetProperty("part").GetInt32().ShouldBe(automated);
+        json.RootElement.GetProperty("rows")[0].TryGetProperty("part", out _).ShouldBeTrue();
+
+        _output.GetStringBuilder().Clear();
+        (await Run("mapping", "coverage", Repo("mappings", "cmmc-2.0.yaml"), "--framework", Repo("frameworks", "cmmc-2.0.json"), "--groups", "L1,L2"))
+            .ShouldBe(ExitCodes.Ok, _error.ToString());
+        _output.ToString().ShouldContain($"{automated} of the automated cover only part of their requirement: a person assesses the rest.");
+    }
+
+    [Fact]
     public async Task Essentials_phase_1_is_counted_per_domain_with_no_uncovered_action()
     {
         // s14-01: the ASD Essentials rates each action per domain, so coverage also counts per domain and priority phase.

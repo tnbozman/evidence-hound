@@ -106,6 +106,7 @@ public class ScopeSchemaTests
     [InlineData("domains:\n  - name: D\n    systems: [{name: S, type: primary, data: [{kind: cui, role: stores, authority: {name: A}}]}]\n")]
     [InlineData("framework: urn:x\nmitigations:\n  - {mitigation: ac, provided_by: hope, approved_by: GRC lead}\n")]
     [InlineData("framework: urn:x\nmitigations:\n  - {mitigation: ac, provided_by: gap, colour: blue}\n")]
+    [InlineData("domains:\n  - name: D\n    systems: [{name: S, type: primary, tags: {cmmc_asset_category: crown jewels}}]\n")]
     public void Invalid_scope_files_fail_the_schema(string yaml)
     {
         Errors(yaml).ShouldNotBeEmpty();

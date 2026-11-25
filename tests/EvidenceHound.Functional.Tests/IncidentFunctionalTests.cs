@@ -58,7 +58,54 @@ public sealed class IncidentFunctionalTests(CisoAssistantFixture ciso) : IDispos
         var dfars = result["reports"]!.AsArray().Single(r => r!["id"]!.GetValue<string>() == "dfars-7012")!;
         DateTimeOffset.Parse(dfars["due"]!.GetValue<string>(), CultureInfo.InvariantCulture).ShouldBe(Detected.AddHours(72));
         dfars["why"]!.GetValue<string>().ShouldContain("Example laptops handles cui");
+
+        // s17-07: the DFARS report pack. The laptops' supplier and the prime's contract are in the scope only (the pack reads them from
+        // the repo, not CISO Assistant), so they are written after the apply above.
+        var thirdParties = Directory.CreateDirectory(Path.Combine(Scope, "third-parties")).FullName;
+        await File.WriteAllTextAsync(Path.Combine(thirdParties, "sup-ft-laptops.yaml"), LaptopSupplier, ct);
+        await File.WriteAllTextAsync(Path.Combine(thirdParties, "cus-ft-prime.yaml"), Prime, ct);
+        await File.WriteAllTextAsync(setup, (await File.ReadAllTextAsync(setup, ct)).Replace(
+            "        parents: [Example 365]\n",
+            "        parents: [Example 365]\n        solution: SOL-FT-LAPTOPS\n",
+            StringComparison.Ordinal), ct);
+        var pack = await StepAsync("3-report-pack", ["incident", "report-pack", "INC-FUNC-01", "--dfars", "--scope", Scope, "--config", Path.Combine(_repo, "hound.yaml")], ct);
+
+        pack.Exit.ShouldBe(ExitCodes.Ok, pack.Output + pack.Error);
+        pack.Output.ShouldContain("| Example laptops | cui (processes): CUI//SP-CTI | CUI asset |", Case.Sensitive, pack.Output);
+        pack.Output.ShouldContain("| Example laptops | Managed laptops | Example Devices Pty Ltd | CTR-FT-LAPTOPS |", Case.Sensitive, pack.Output);
+        pack.Output.ShouldContain("| CTR-FT-PRIME | Engineering services subcontract | Example Prime Pty Ltd | DFARS 252.204-7012 |", Case.Sensitive, pack.Output);
+        pack.Output.ShouldContain("The EDR flagged malware on a laptop.", Case.Sensitive, pack.Output);
     }
+
+    private static readonly string LaptopSupplier = """
+        ref_id: SUP-FT-LAPTOPS
+        name: Example Devices Pty Ltd
+        country: AU
+        currency: AUD
+        domain: Example Pty Ltd
+        solutions:
+          - ref_id: SOL-FT-LAPTOPS
+            name: Managed laptops
+        contracts:
+          - ref_id: CTR-FT-LAPTOPS
+            name: Laptop management 2026
+            status: draft
+            solutions: [SOL-FT-LAPTOPS]
+        """;
+
+    private static readonly string Prime = """
+        ref_id: CUS-FT-PRIME
+        name: Example Prime Pty Ltd
+        domain: Example Pty Ltd
+        contracts:
+          - ref_id: CTR-FT-PRIME
+            name: Engineering services subcontract
+            status: active
+            customer: true
+            obligations:
+              - clause: DFARS 252.204-7012
+                data: [cui]
+        """;
 
     public void Dispose() => Directory.Delete(_repo, recursive: true);
 

@@ -57,6 +57,18 @@ public class CoverageTests
     }
 
     [Fact]
+    public void A_row_that_covers_part_is_automated_and_counted_as_part()
+    {
+        // s17-09 (from s17-01): a covers: part row is automated, but a person must still finish the requirement, so the count shows it.
+        var part = Requirement("MFA-A", "identity.mfa.enforced") with { CoversPart = true };
+        var whole = Requirement("MFA-B", "identity.mfa.enforced");
+
+        var counts = MappingCoverage.Count(Snapshot, Mapping(part, whole), [], ManualChecks, ["2"]);
+
+        counts.Single(c => c.ParentUrn == Mfa).ShouldBe(new CoverageCount(Mfa, "2", Automated: 2, Manual: 0, Uncovered: 0) { Part = 1 });
+    }
+
+    [Fact]
     public void A_draft_row_counts_as_draft_not_as_covered()
     {
         // s14-03 rehearsal: an all-draft derived mapping looked fully covered, yet runs publish no draft row.

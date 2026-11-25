@@ -65,6 +65,13 @@
           "description": "Written by 'hound mapping derive': the row is not published until a person has reviewed it and removed the mark.",
           "type": "boolean"
         },
+        "covers": {
+          "description": "part: the checks answer only part of the requirement, so the row is at most partially compliant until a person assesses the rest. whole (the default): they answer all of it.",
+          "enum": [
+            "part",
+            "whole"
+          ]
+        },
         "rule": {
           "enum": [
             "all_pass",

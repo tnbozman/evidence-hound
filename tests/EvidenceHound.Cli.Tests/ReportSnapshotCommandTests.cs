@@ -26,6 +26,7 @@ public sealed class ReportSnapshotCommandTests : IDisposable
         Audit("EX-E8-2026", "ca-e8", "in_progress", Row("ra-1", "urn:intuitem:risk:req_node:essential-eight-2023:mfa:ism-1504", "ISM-1504", ["1", "2", "3"], "compliant"), Row("ra-2", "urn:intuitem:risk:req_node:essential-eight-2023:rb:ism-1511", "ISM-1511", ["1", "2", "3"], "non_compliant"));
         Audit("EX-AI6-2026", "ca-ai6", "done", Row("ra-3", "urn:evidence-hound:risk:req_node:ai6:ai6-1.1", "AI6-1.1", ["F", "I"], "partially_compliant"));
         Audit("EX-DISP-2026", "ca-disp", "in_progress", Row("ra-4", "urn:evidence-hound:risk:req_node:disp-membership:disp-cyb:disp-cyb-07", "DISP-CYB-07", ["M"], "compliant"));
+        Audit("EX-CMMC-2026", "ca-cmmc", "in_progress", Row("ra-5", "urn:intuitem:risk:req_node:cmmc-2.0:ac.l1-3.1.1", "AC.L1-3.1.1", ["L1"], "partially_compliant"));
         foreach (var resource in new[] { "security-exceptions", "findings", "incidents", "risk-scenarios", "task-nodes", "entity-assessments" })
         {
             Respond("GET", $"/api/{resource}/", List());
@@ -50,20 +51,20 @@ public sealed class ReportSnapshotCommandTests : IDisposable
         File.Exists(file).ShouldBeTrue(_output.ToString());
         var snapshot = PostureSnapshotJson.Read(await File.ReadAllTextAsync(file, _ct), file).Match(s => s, ps => throw new InvalidOperationException(ps[0].Message));
         snapshot.Period.ToString().ShouldBe("2026-11");
-        snapshot.Programmes.Select(p => p.Id).ShouldBe(["essential-eight", "disp", "ai6"]);
+        snapshot.Programmes.Select(p => p.Id).ShouldBe(["essential-eight", "disp", "cmmc-level-2", "ai6"]);
         var e8 = snapshot.Programmes[0];
         e8.Counts.First(c => c.Group == "2" && c.ParentUrn is null).ShouldBe(new ResultCount("2", null, 1, 0, 1, 0, 0));
         e8.Link.ShouldBe($"{_ca.Url}/compliance-assessments/ca-e8");
         e8.Closed.ShouldBeFalse();
-        snapshot.Programmes[2].Closed.ShouldBeTrue();
-        snapshot.Programmes[2].Counts[0].Group.ShouldBe("F");
-        snapshot.Programmes[2].Register!.Of.ShouldBe("ai_systems");
+        snapshot.Programmes[3].Closed.ShouldBeTrue();
+        snapshot.Programmes[3].Counts[0].Group.ShouldBe("F");
+        snapshot.Programmes[3].Register!.Of.ShouldBe("ai_systems");
         snapshot.Acceptances.Single().RefId.ShouldBe("RA-KIOSK");
 
         // Coverage from the config's target mapping for each audit, with the config's manual collectors counted as manual.
         e8.Coverage.Where(c => c.Group == "2").Sum(c => c.Automated + c.Manual + c.Uncovered).ShouldBeGreaterThan(0);
         e8.Coverage.Sum(c => c.Manual).ShouldBeGreaterThan(0);
-        snapshot.Programmes[2].Coverage.Select(c => c.Group).Distinct().ShouldBe(["F"]);
+        snapshot.Programmes[3].Coverage.Select(c => c.Group).Distinct().ShouldBe(["F"]);
         _ca.LogEntries.ShouldNotContain(e => e.RequestMessage!.Method != "GET");
     }
 

@@ -18,6 +18,8 @@ public static class MappingEngine
         return [.. mapping.Requirements.Select(requirement => Assess(requirement, latest))];
     }
 
+    private static readonly string PartNote = "These checks cover part of the requirement, so it is at most partially compliant until a person assesses the rest. ";
+
     private static Dictionary<CheckId, CheckResult> Latest(IEnumerable<CheckResult> checkResults) =>
         checkResults
             .GroupBy(result => result.CheckId)
@@ -31,6 +33,10 @@ public static class MappingEngine
                     .ThenBy(r => string.Join('\n', r.EvidenceRefs), StringComparer.Ordinal)
                     .First());
 
+    /// <summary>A row covering part of its requirement is never more than partially compliant.</summary>
+    private static ComplianceResult AtMost(RequirementMapping requirement, ComplianceResult result) =>
+        requirement.CoversPart && result == ComplianceResult.Compliant ? ComplianceResult.PartiallyCompliant : result;
+
     private static RequirementResult Assess(RequirementMapping requirement, Dictionary<CheckId, CheckResult> latest)
     {
         var contributing = requirement.Checks.Select(id => (Id: id, Result: latest.GetValueOrDefault(id))).ToArray();
@@ -39,12 +45,12 @@ public static class MappingEngine
         var applicable = found.Select(r => r.Outcome).Where(o => o != CheckOutcome.NotApplicable).ToArray();
         var result = found.Length < contributing.Length || applicable.Contains(CheckOutcome.Error) ? ComplianceResult.NotAssessed
             : applicable.Length == 0 ? ComplianceResult.NotApplicable
-            : requirement.Rule.Assess(new OutcomeTally(
+            : AtMost(requirement, requirement.Rule.Assess(new OutcomeTally(
                 applicable.Count(o => o == CheckOutcome.Pass),
                 applicable.Count(o => o == CheckOutcome.Partial),
-                applicable.Count(o => o == CheckOutcome.Fail)));
+                applicable.Count(o => o == CheckOutcome.Fail))));
 
-        var observation = $"Rule {requirement.Rule.Name}. " + string.Join(
+        var observation = (requirement.CoversPart ? PartNote : "") + $"Rule {requirement.Rule.Name}. " + string.Join(
             "; ",
             contributing.Select(c => c.Result is null
                 ? $"{c.Id}: missing"

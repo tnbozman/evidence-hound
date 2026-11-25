@@ -11,7 +11,11 @@ public sealed record SspSource(string Kind, string Reference)
 public sealed record SspValue(string? Value, SspSource Source);
 
 /// <summary>A system in the plan's inventory.</summary>
-public sealed record SspSystem(SspValue Name, SspValue Type, SspValue Owner, SspValue Description);
+public sealed record SspSystem(SspValue Name, SspValue Type, SspValue Owner, SspValue Description)
+{
+    /// <summary>The system's CMMC asset category, such as <c>cui</c>, from its <c>cmmc_asset_category</c> tag (s17-03); null when untagged.</summary>
+    public SspValue Category { get; init; } = new(null, Name.Source);
+}
 
 /// <summary>An external service: a supplier's solution that provides a system in the boundary.</summary>
 public sealed record SspService(SspValue System, SspValue Solution, SspValue Supplier, SspValue Criticality);
@@ -80,6 +84,9 @@ public sealed record SspAnnexRow(
 
     /// <summary>The implementation status in the ASD SSP annex template's terms, such as Effective or Not assessed.</summary>
     public SspValue AsdStatus { get; init; } = new(null, Status.Source);
+
+    /// <summary>The family the requirement is listed under, such as "Access control (AC)" (s17-03).</summary>
+    public string Family { get; init; } = "";
 }
 
 /// <summary>A role and who holds it.</summary>
@@ -114,6 +121,26 @@ public sealed record SspDocument(
     /// <summary>The controls annex (s11-04): one row per control in the programme's groups; empty when built without the framework snapshot.</summary>
     public IReadOnlyList<SspAnnexRow> Annex { get; init; } = [];
 
-    /// <summary>Every gap, by requirement in the document's order: listed at the front of the draft, and fatal with <c>--strict</c>.</summary>
-    public IReadOnlyList<SspGap> Gaps => [.. Requirements.SelectMany(r => r.Gaps.Select(g => new SspGap(r.Ref.Value ?? "", g)))];
+    /// <summary>
+    /// The unmet requirements CMMC does not allow on a POA&amp;M, with the reason (32 CFR 170.21(a)(2), s17-03); empty for other profiles.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> PoamNotAllowed { get; init; } = new Dictionary<string, string>(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Every gap: for the <c>nist-800-171</c> profile, systems with no CMMC asset category first (s17-03); then, by requirement in the
+    /// document's order, what an assessor would miss and whether CMMC forbids the requirement on a POA&amp;M. Listed at the front of the
+    /// draft, and fatal with <c>--strict</c>.
+    /// </summary>
+    public IReadOnlyList<SspGap> Gaps =>
+    [
+        .. Profile == SspProfile.Nist800171
+            ? Inventory.Where(s => s.Category.Value is null).Select(s => new SspGap(s.Name.Value ?? "", UncategorisedAsset))
+            : [],
+        .. Requirements.SelectMany(r => r.Gaps
+            .Concat(r.Ref.Value is { } id && PoamNotAllowed.TryGetValue(id, out var reason) ? [reason] : Array.Empty<string>())
+            .Select(g => new SspGap(r.Ref.Value ?? "", g))),
+    ];
+
+    private static readonly string UncategorisedAsset =
+        $"no CMMC asset category; tag the system '{CmmcAssetCategory.Tag}' in scope/setup.yaml with one of {string.Join(", ", CmmcAssetCategory.Values)}.";
 }

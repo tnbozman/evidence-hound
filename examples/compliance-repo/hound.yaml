@@ -89,7 +89,8 @@ collectors:
 
 # The audits that results are published to: the Essential Eight ML2 audit, the ASD Essentials priority phase 1 audit run beside it
 # during the migration (rows whose manual sources are not set up yet stay not assessed), the DISP membership readiness
-# self-assessment, and the AI6 self-assessment.
+# self-assessment, the AI6 self-assessment, and the CMMC Level 2 self-assessment (every row at most partially compliant, as the
+# Essential Eight evidence covers only part of each practice).
 targets:
   - mapping: mappings/essential-eight-2023.yaml
     compliance_assessment: EX-E8-2026
@@ -100,3 +101,5 @@ targets:
     compliance_assessment: EX-DISP-2026
   - mapping: mappings/ai6.yaml
     compliance_assessment: EX-AI6-2026
+  - mapping: mappings/cmmc-2.0.yaml
+    compliance_assessment: EX-CMMC-2026

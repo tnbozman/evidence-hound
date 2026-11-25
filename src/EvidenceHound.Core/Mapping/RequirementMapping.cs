@@ -26,6 +26,9 @@ public sealed record RequirementMapping
     /// <summary>s14-01: derived by <c>hound mapping derive</c> and not yet reviewed (<c>draft: true</c>); runs do not publish it.</summary>
     public bool Draft { get; init; }
 
+    /// <summary>s17-01: <c>covers: part</c>, the checks answer only part of the requirement, so it is at most partially compliant.</summary>
+    public bool CoversPart { get; init; }
+
     /// <summary>A requirement named by its ref_id.</summary>
     public static Result<RequirementMapping> Create(string requirementRef, IEnumerable<CheckId> checks, MappingRule rule) =>
         Create(RequirementKey.Ref(requirementRef), checks, rule);

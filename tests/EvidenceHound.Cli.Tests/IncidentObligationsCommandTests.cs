@@ -88,6 +88,30 @@ public sealed class IncidentObligationsCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Report_pack_dfars_gathers_what_the_dod_report_asks_for()
+    {
+        // s17-07: the laptops handle CUI in this test's scope, so the incident owes the 72-hour DFARS report; the pack is for the person who files it.
+        var exitCode = await Run("incident", "report-pack", "INC-2026-01", "--dfars");
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString() + string.Join('\n', _logs.Messages));
+        var pack = _output.ToString();
+        pack.ShouldStartWith("# DFARS 252.204-7012 report pack: INC-2026-01 Malware on a laptop\n");
+        pack.ShouldContain("- Report due: 2026-11-23 09:30 UTC (72 hours");
+        pack.ShouldContain("| Example laptops | cui (processes): CUI//SP-CTI | CUI asset |");
+        pack.ShouldContain("| 2026-11-20 09:30 UTC | The EDR flagged ransomware on a laptop. |");
+        _ca.LogEntries.ShouldNotContain(e => e.RequestMessage!.Method != "GET");
+    }
+
+    [Fact]
+    public async Task Report_pack_needs_a_kind_of_report()
+    {
+        var exitCode = await Run("incident", "report-pack", "INC-2026-01");
+
+        exitCode.ShouldNotBe(ExitCodes.Ok);
+        _logs.Messages.ShouldContain(m => m.Contains("--dfars", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task An_unknown_incident_is_a_problem()
     {
         _ca.Given(Request.Create().WithPath("/api/incidents/").WithParam("ref_id", "INC-NONE").UsingGet()).RespondWith(Response.Create().WithBody(List().ToJsonString()));

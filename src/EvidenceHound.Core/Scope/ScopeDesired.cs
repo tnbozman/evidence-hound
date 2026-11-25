@@ -88,7 +88,7 @@ public static partial class ScopeDesired
                     ("schedule", every.Text), ("evidence", row.RefId), ("controls", row.Control.Value),
                     ("requirements", Joined(Rows(scope, row))), ("enabled", "true")))
                 {
-                    Initial = Fields(("first_due", (inputs.Today is { } today ? every.After(today) : (DateOnly?)null)?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture))),
+                    Initial = Fields(("first_due", (inputs.Today is { } today ? row.FirstDueFrom(today) : null)?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture))),
                 };
             }
         }

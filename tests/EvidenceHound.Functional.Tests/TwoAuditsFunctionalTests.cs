@@ -11,6 +11,7 @@ namespace EvidenceHound.Functional.Tests;
 /// <summary>
 /// s06-03: one <c>hound run</c> updates the Essential Eight and the Essentials audits; each evidence file is uploaded once and linked from both.
 /// s14-01: with the repository's Essentials mapping, every mapped priority phase 1 row is written.
+/// s17-01: the same run fills the CMMC Level 2 audit, each mapped practice at most partially compliant.
 /// </summary>
 [Trait("Category", "Functional")]
 [Collection(SharedCisoAssistant.Name)]
@@ -30,7 +31,7 @@ public sealed class TwoAuditsFunctionalTests(CisoAssistantFixture ciso) : IDispo
         // Every target audit is planned; publish lists only audits with an update, and the shared CISO Assistant may already hold
         // an audit's results from an earlier test, so the audits come from the plan.
         var planned = summary["collectors"]![0]!["changes"]!.AsArray();
-        planned.Select(a => a!["compliance_assessment"]!.GetValue<string>()).ShouldBe(["EX-E8-2026", "EX-ESSENTIALS-2026"]);
+        planned.Select(a => a!["compliance_assessment"]!.GetValue<string>()).ShouldBe(["EX-E8-2026", "EX-ESSENTIALS-2026", "EX-CMMC-2026"]);
         var audits = summary["collectors"]![0]!["publish"]!["audits"]!.AsArray();
         audits.Select(a => a!["failed"]!.GetValue<int>()).ShouldAllBe(failed => failed == 0);
         var essentialsChanges = summary["collectors"]![0]!["changes"]!.AsArray().Single(a => a!["compliance_assessment"]!.GetValue<string>() == "EX-ESSENTIALS-2026")!;
@@ -46,6 +47,11 @@ public sealed class TwoAuditsFunctionalTests(CisoAssistantFixture ciso) : IDispo
         var id = policies.ShouldHaveSingleItem()!["id"]!.GetValue<string>();
         Ids(e8["evidences"]).ShouldContain(id);
         Ids(essentials["evidences"]).ShouldContain(id);
+
+        var mfa = (await GetAsync("requirement-assessments/?compliance_assessment__ref_id=EX-CMMC-2026&requirement__ref_id=MA.L2-3.7.5", ct))["results"]![0]!;
+        mfa["result"]!.GetValue<string>().ShouldBeOneOf(["partially_compliant", "non_compliant"], mfa.ToJsonString());
+        mfa["observation"]!.GetValue<string>().ShouldStartWith("These checks cover part of the requirement", Case.Sensitive, mfa.ToJsonString());
+        Ids(mfa["evidences"]).ShouldContain(id);
     }
 
     public void Dispose()
@@ -83,6 +89,8 @@ public sealed class TwoAuditsFunctionalTests(CisoAssistantFixture ciso) : IDispo
                 compliance_assessment: EX-E8-2026
               - mapping: {{Path.Combine(files, "mappings", "asd-essentials-enterprise-it.yaml")}}
                 compliance_assessment: EX-ESSENTIALS-2026
+              - mapping: {{Path.Combine(files, "mappings", "cmmc-2.0.yaml")}}
+                compliance_assessment: EX-CMMC-2026
             """, ct);
 
         using var output = new StringWriter();

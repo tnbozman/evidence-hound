@@ -11,6 +11,9 @@ public sealed record PoamItem(SspValue Requirement, SspValue Status, SspValue Co
 
     /// <summary>The POA&amp;M id of a requirement.</summary>
     public static string For(string? requirement) => $"POAM-{requirement}";
+
+    /// <summary>Why CMMC does not allow this item on a POA&amp;M (s17-03); null when it may sit there.</summary>
+    public string? NotAllowed { get; init; }
 }
 
 /// <summary>
@@ -28,7 +31,8 @@ public static class Poam
             .. document.Requirements
                 .Where(r => SspStatements.Unmet.Contains(r.Status.Value))
                 .OrderBy(r => r.Ref.Value, StringComparer.Ordinal)
-                .SelectMany(r => Items(r, SspStatements.Linked(r, controls))),
+                .SelectMany(r => Items(r, SspStatements.Linked(r, controls)))
+                .Select(i => i with { NotAllowed = document.PoamNotAllowed.GetValueOrDefault(i.Requirement.Value ?? "") }),
         ];
     }
 
@@ -44,7 +48,18 @@ public static class Poam
             text.Append(CultureInfo.InvariantCulture, $"| {i.Requirement.Value} | {i.Status.Value} | {Cell(i.Control)} | {Cell(i.Owner)} | {Cell(i.Eta)} | {Cell(i.ControlStatus)} |\n");
         }
 
-        return text.Append(items.Count == 0 ? "\nNothing to plan: every requirement is implemented or not applicable.\n" : "").ToString();
+        text.Append(items.Count == 0 ? "\nNothing to plan: every requirement is implemented or not applicable.\n" : "");
+        var refused = items.Where(i => i.NotAllowed is not null).DistinctBy(i => i.Requirement.Value).ToArray();
+        if (refused.Length > 0)
+        {
+            text.Append(CultureInfo.InvariantCulture, $"\nCMMC does not allow these on a POA&M ({CmmcPoam.Source}):\n\n");
+            foreach (var i in refused)
+            {
+                text.Append(CultureInfo.InvariantCulture, $"- {i.Requirement.Value}: {i.NotAllowed}\n");
+            }
+        }
+
+        return text.ToString();
     }
 
     private static IEnumerable<PoamItem> Items(SspRequirement row, SspControl[] linked) =>

@@ -13,7 +13,7 @@ public sealed partial class AgentSetupTests : IDisposable
         "onboard-a-system-with-hound", "assess-a-supplier", "read-an-api-specification", "import-an-audit-workbook", "write-a-profile", "review-before-apply",
         "onboard-the-organisation", "onboard-the-environment", "onboard-a-third-party", "onboard-an-audit", "process-manual-evidence", "weekly-review",
         "move-registers-from-spreadsheets", "prepare-the-reports", "answer-a-prime-questionnaire",
-        "work-through-pending-decisions", "operate-collectors", "build-the-ssp", "respond-to-an-incident", "keep-frameworks-and-libraries", "hound-commands",
+        "work-through-pending-decisions", "operate-collectors", "build-the-ssp", "respond-to-an-incident", "keep-frameworks-and-libraries", "keep-the-sprs-score", "hound-commands",
     ];
 
     internal static readonly string[] Rules =

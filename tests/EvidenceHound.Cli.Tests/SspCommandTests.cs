@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using EvidenceHound.Core.Frameworks;
+using EvidenceHound.Core.Reporting;
 using EvidenceHound.Core.Scope;
 using Microsoft.Extensions.Logging;
 using WireMock.RequestBuilders;
@@ -94,6 +95,53 @@ public sealed class SspCommandTests : IDisposable
         markdown.ShouldContain("## 13. Security controls (annex)");
         markdown.ShouldContain("| EX-1.1 |");
         markdown.ShouldContain("_Section `environment` is not written yet._");
+    }
+
+    [Fact]
+    public async Task The_nist_800_171_profile_adds_cmmc_asset_categories_and_poam_rules()
+    {
+        // s17-03: one layout; the profile adds the CMMC asset category column, the gaps for untagged systems and CMMC's POA&M conditions.
+        await WriteScopeAsync(Ssp.Replace("profile: ism", "profile: nist-800-171", StringComparison.Ordinal));
+        Instance();
+
+        (await Build()).ShouldBe(ExitCodes.Ok, _error.ToString());
+
+        var markdown = _output.ToString();
+        markdown.ShouldContain("| System | Type | Owner | Description | CMMC asset category |\n");
+        markdown.ShouldContain("- Example 365: no CMMC asset category;");
+        markdown.ShouldContain("A Conditional CMMC Level 2 status also needs an SPRS score of at least 88");
+    }
+
+    [Fact]
+    public async Task Sprs_affirmation_pack_reads_the_plan_and_the_month_snapshot()
+    {
+        // s17-06: hound sprs affirmation-pack, on this fixture's plan with the nist-800-171 profile and a posture snapshot in the evidence store.
+        await WriteScopeAsync(Ssp.Replace("profile: ism", "profile: nist-800-171", StringComparison.Ordinal));
+        Instance();
+        var evidence = Path.Combine(_workDir, "evidence");
+        Directory.CreateDirectory(Path.Combine(evidence, "reports"));
+        var config = Path.Combine(_workDir, "hound.yaml");
+        await File.WriteAllTextAsync(config, $"ciso_assistant:\n  url: {_ca.Url}/api/\n  token: env:HOUND_CA_TOKEN\nevidence:\n  root: {evidence}\ncollectors: []\ntarget:\n  mapping: {Path.Combine(ExampleRepoTests.RepoRoot, "mappings", "essential-eight-2023.yaml")}\n  compliance_assessment: EXAMPLE-BASELINE-2026\n", _ct);
+        var posture = new PostureSnapshot(
+            new ReportingPeriod(PeriodKind.Month, 2026, 11), new DateTimeOffset(2026, 12, 1, 8, 0, 0, TimeSpan.Zero), [], [], [], [], [], [], [],
+            [new DueItem(DueKind.ManualEvidence, "EV-BACKUP-RESTORE: Daily backups", "Backup owners", new DateOnly(2026, 11, 15), "pending")]);
+        await File.WriteAllTextAsync(Path.Combine(evidence, "reports", "posture-2026-11.json"), PostureSnapshotJson.Write(posture), _ct);
+
+        var exit = await HoundCli.RunAsync(
+            ["sprs", "affirmation-pack", "--programme", "baseline", "--period", "2026-11", "--scope", ScopeDir, "--config", config],
+            _output,
+            _error,
+            logging => logging.AddProvider(_logs),
+            new Dictionary<string, string?> { ["HOUND_CA_TOKEN"] = Token, ["HOUND_TODAY"] = "2026-12-02" },
+            _ct);
+
+        exit.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var pack = _output.ToString();
+        pack.ShouldStartWith("# Annual affirmation pack: baseline, 2026-12-02\n");
+        pack.ShouldContain("SPRS score: -203 (from 110");
+        pack.ShouldContain("No open POA&M items.");
+        pack.ShouldContain("| EV-BACKUP-RESTORE: Daily backups | Backup owners | 2026-11-15 | 17 |");
+        _ca.LogEntries.ShouldAllBe(e => e.RequestMessage!.Method == "GET");
     }
 
     [Fact]

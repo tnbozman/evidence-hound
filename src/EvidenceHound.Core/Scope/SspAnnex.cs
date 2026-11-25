@@ -46,7 +46,7 @@ public static class SspAnnex
             .. snapshot.Nodes
                 .Where(n => n.Groups.Any(g => groups.Contains(g, StringComparer.Ordinal)))
                 .GroupBy(n => n.RefId ?? n.Urn, StringComparer.Ordinal)
-                .Select(g => Row(g.Key, [.. g], document, rows, controls, supplied)),
+                .Select(g => Row(g.Key, [.. g], document, rows, controls, supplied) with { Family = Family(snapshot, g.First().ParentUrn) }),
         ];
     }
 
@@ -97,6 +97,23 @@ public static class SspAnnex
             ResponsibleEntity = Entity(SspStatements.Linked(row, controls), supplied, row.Result.Source),
             AsdStatus = new SspValue(row.Result.Value is { } result ? AsdStatuses.GetValueOrDefault(result, NotAssessed) : NotAssessed, row.Result.Source),
         };
+    }
+
+    /// <summary>
+    /// The family a node is listed under, for the <c>nist-800-171</c> profile (s17-03): its parent's name in sentence case with the parent's
+    /// ref, such as "Access control (AC)" for the cmmc-2.0 library's "ACCESS CONTROL".
+    /// </summary>
+    private static string Family(FrameworkSnapshot snapshot, string? parentUrn)
+    {
+        if (parentUrn is null)
+        {
+            return ProgrammeOutline.Name(parentUrn);
+        }
+
+        var parent = snapshot.Parents.FirstOrDefault(p => p.Urn == parentUrn);
+        var name = snapshot.ParentName(parentUrn);
+        name = name.Any(char.IsLower) || name.Length == 0 ? name : char.ToUpperInvariant(name[0]) + name[1..].ToLowerInvariant();
+        return parent?.RefId is { } refId && !name.Contains(refId, StringComparison.Ordinal) ? $"{name} ({refId})" : name;
     }
 
     /// <summary>The control type a reference control's id names by its prefix (<c>pol.</c>, <c>proc.</c>, <c>tech.</c>, <c>doc.</c>); null for any other.</summary>

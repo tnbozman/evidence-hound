@@ -20,8 +20,11 @@ public static class SspLayout
                 ? $"> **DRAFT.** Not approved: version {Cell(document.Version)} has no sign-off in `scope/ssp.yaml`.\n\n"
                 : $"> Approved by {signOff.By} on {signOff.Date}. SHA-256 of the reviewed draft: {signOff.Sha256}.\n\n")
             .Append(CultureInfo.InvariantCulture, $"Programme `{document.Programme}`, profile `{document.Profile}`, version {Cell(document.Version)}.\n\n")
-            .Append("This plan follows NIST SP 800-18 Rev 1 Appendix A. The overview (sections 1 to 12) and the annex (section 13) meet ISM-0041: ")
-            .Append("the system's purpose, its boundary, how it is managed, and the applicable controls.\n\n");
+            .Append(Nist(document)
+                ? "This plan follows NIST SP 800-18 Rev 1 Appendix A. It is the system security plan NIST SP 800-171 requirement 3.12.4 calls for: "
+                  + "the system boundary, its environment, how each requirement is implemented, and its connections to other systems.\n\n"
+                : "This plan follows NIST SP 800-18 Rev 1 Appendix A. The overview (sections 1 to 12) and the annex (section 13) meet ISM-0041: "
+                  + "the system's purpose, its boundary, how it is managed, and the applicable controls.\n\n");
 
         Gaps(text, document);
 
@@ -57,9 +60,15 @@ public static class SspLayout
         Heading(text, "15. Ongoing system security plan maintenance")
             .Append("`hound ssp build` rebuilds this plan from CISO Assistant and the configuration repo. Review it at least once a year and after any significant change to the system.\n\n");
         Heading(text, "Appendix: plan of action and milestones")
-            .Append(Poam.Markdown(Poam.Of(document)).Replace("## Plan of action and milestones\n\n", "", StringComparison.Ordinal));
+            .Append(Poam.Markdown(Poam.Of(document)).Replace("## Plan of action and milestones\n\n", "", StringComparison.Ordinal))
+            .Append(Nist(document)
+                ? "\nA Conditional CMMC Level 2 status also needs an SPRS score of at least 88 (0.8 of 110) and every item closed within 180 days "
+                  + $"({CmmcPoam.Source}(i) and 170.21(b)). `hound sprs score` works out the score.\n"
+                : "");
         return text.Append(signOff is null ? "\n_DRAFT: not approved._\n" : "").ToString();
     }
+
+    private static bool Nist(SspDocument document) => document.Profile == SspProfile.Nist800171;
 
     private static StringBuilder Heading(StringBuilder text, string title) => text.Append(CultureInfo.InvariantCulture, $"## {title}\n\n");
 
@@ -82,10 +91,12 @@ public static class SspLayout
 
     private static void Inventory(StringBuilder text, SspDocument document)
     {
-        text.Append("| System | Type | Owner | Description |\n| --- | --- | --- | --- |\n");
+        var nist = Nist(document);
+        text.Append(nist ? "| System | Type | Owner | Description | CMMC asset category |\n| --- | --- | --- | --- | --- |\n" : "| System | Type | Owner | Description |\n| --- | --- | --- | --- |\n");
         foreach (var s in document.Inventory)
         {
-            text.Append(CultureInfo.InvariantCulture, $"| {Cell(s.Name)} | {Cell(s.Type)} | {Cell(s.Owner)} | {Cell(s.Description)} |\n");
+            text.Append(CultureInfo.InvariantCulture, $"| {Cell(s.Name)} | {Cell(s.Type)} | {Cell(s.Owner)} | {Cell(s.Description)} |")
+                .Append(nist ? $" {(s.Category.Value is { } c ? CmmcAssetCategory.Name(c) ?? Escape(c) : "-")} |\n" : "\n");
         }
 
         text.Append('\n');
@@ -116,6 +127,12 @@ public static class SspLayout
             return;
         }
 
+        if (Nist(document))
+        {
+            FamilyAnnex(text, document);
+            return;
+        }
+
         text.Append("Columns follow the ASD SSP annex template. Implementation status uses the ASD SSP annex template's terms (Effective, Ineffective, ")
             .Append("Not implemented, Not applicable, Not assessed); the SP 800-18 status beside it decides what the plan of action and milestones carries. ")
             .Append("Control type comes from the framework's reference controls.\n\n")
@@ -128,6 +145,28 @@ public static class SspLayout
         }
 
         text.Append('\n');
+    }
+
+    /// <summary>The <c>nist-800-171</c> annex (s17-03): every requirement under its family, with status, statement, responsible party, evidence and POA&amp;M item.</summary>
+    private static void FamilyAnnex(StringBuilder text, SspDocument document)
+    {
+        text.Append("Every requirement CMMC Level 2 assesses (NIST SP 800-171 Rev 2), grouped by family. Status uses the SP 800-18 terms; a requirement ")
+            .Append("with no row in the audit is not assessed and shown as Not implemented. A POA&M item marked \"not allowed\" cannot stay on a CMMC POA&M ")
+            .Append(CultureInfo.InvariantCulture, $"({CmmcPoam.Source}): see the gaps.\n\n");
+        foreach (var family in document.Annex.GroupBy(a => a.Family, StringComparer.Ordinal))
+        {
+            text.Append(CultureInfo.InvariantCulture, $"### {family.Key}\n\n")
+                .Append("| Requirement | Title | Level | Status | Statement | Responsible | Evidence | POA&M |\n")
+                .Append("| --- | --- | --- | --- | --- | --- | --- | --- |\n");
+            foreach (var a in family)
+            {
+                var poam = a.Poam is null ? "-" : document.PoamNotAllowed.ContainsKey(a.Control) ? $"{a.Poam} (not allowed)" : a.Poam;
+                text.Append(CultureInfo.InvariantCulture, $"| {a.Control} | {Escape(a.Title)} | {List(a.MaturityLevels)} | {Cell(a.Status)} | {Cell(a.Statement)} | ")
+                    .Append(CultureInfo.InvariantCulture, $"{Cell(a.Responsible)} | {Cell(a.Evidence)} | {poam} |\n");
+            }
+
+            text.Append('\n');
+        }
     }
 
     private static string List(IReadOnlyList<string> values) => values.Count == 0 ? "-" : string.Join(", ", values);

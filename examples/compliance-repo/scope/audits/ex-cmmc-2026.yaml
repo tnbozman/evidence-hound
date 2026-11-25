@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../../../schemas/scope.schema.json
+# Example Pty Ltd's CMMC Level 2 self-assessment (NIST SP 800-171 Rev 2), for the contracts that hold CUI. Everything here is made up.
+# Runs fill the practices mappings/cmmc-2.0.yaml maps, each at most partially compliant (covers: part); people assess the rest.
+ref_id: EX-CMMC-2026
+name: CMMC Level 2 2026
+framework: urn:intuitem:risk:framework:cmmc-2.0
+groups: [L1, L2]
+domain: Example Pty Ltd
+perimeter: Corporate IT
+eta: "2026-12-31"
+authors: [it@example.com]
+reviewers: [ceo@example.com]
+systems: [Example 365, Example laptops]
+unlisted:
+  result: not_assessed

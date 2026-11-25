@@ -10,6 +10,10 @@ frameworks:
   - urn: urn:intuitem:risk:framework:asd-essentials-enterprise-it
     library: urn:intuitem:risk:library:asd-essentials-enterprise-it
     snapshot: ../frameworks/asd-essentials-enterprise-it.json
+  # CMMC 2.0: its Level 2 audit selects L1 and L2, as the library tags its 17 Level 1 practices L1 only (s17-01).
+  - urn: urn:intuitem:risk:framework:cmmc-2.0
+    library: urn:intuitem:risk:library:cmmc-2.0
+    snapshot: ../frameworks/cmmc-2.0.json
   # A custom library: uploaded from the file, then loaded.
   - urn: urn:example:risk:framework:example-baseline
     library: urn:example:risk:library:example-baseline
@@ -46,6 +50,8 @@ domains:
         owner: it@example.com
         tags:
           essentials_domain: identity
+          # The system's CMMC asset category (32 CFR 170.19), shown in the CMMC Level 2 system security plan.
+          cmmc_asset_category: cui
         objectives: {confidentiality: 3, integrity: 3, availability: 2}
         recovery: {rto: 4h, rpo: 1d, mtd: 3d}
       - name: Example laptops
@@ -54,11 +60,15 @@ domains:
         description: Staff Windows laptops, managed by Intune.
         owner: it@example.com
         parents: [Example 365]
+        tags:
+          cmmc_asset_category: cui
       - name: Example backup service
         ref_id: SYS-BACKUP
         type: supporting
         description: Daily backups of Example 365 and the laptops.
         owner: it@example.com
+        tags:
+          cmmc_asset_category: cui
       # AI systems: an ai block is the system's entry in the AI register (docs/scope.md#ai-systems), with the National AI Centre
       # register template's columns. screening is the outcome of its seven screening questions (runbooks/ai-screening.md). Both are made up.
       - name: Example ticket triage
@@ -66,6 +76,8 @@ domains:
         type: supporting
         description: Suggests a category and priority for each new IT ticket; the IT team confirms it.
         owner: it@example.com
+        tags:
+          cmmc_asset_category: out_of_scope
         ai:
           screening: normal
           screening_yes: []
@@ -89,6 +101,9 @@ domains:
         type: supporting
         description: Drafts proposal text from past proposals; staff edit every draft before it is sent.
         owner: ceo@example.com
+        # Out of scope only while it is never given CUI: the proposal process says so.
+        tags:
+          cmmc_asset_category: out_of_scope
         ai:
           # Yes to question 1 (past proposals are company confidential) and 7 (built on a general-purpose language model).
           screening: elevated
@@ -133,6 +148,11 @@ programmes:
     framework: urn:evidence-hound:risk:framework:disp-membership
     groups: ["M"]
     audit: EX-DISP-2026
+  - id: cmmc-level-2
+    name: CMMC Level 2
+    framework: urn:intuitem:risk:framework:cmmc-2.0
+    groups: [L1, L2]
+    audit: EX-CMMC-2026
   - id: ai6
     name: AI governance (AI6 Foundations)
     framework: urn:evidence-hound:risk:framework:ai6

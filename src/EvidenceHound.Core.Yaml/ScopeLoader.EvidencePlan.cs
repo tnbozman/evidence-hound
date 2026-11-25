@@ -7,7 +7,7 @@ namespace EvidenceHound.Core.Yaml;
 public static partial class ScopeLoader
 {
     private static readonly string[] EvidencePlanKeys = ["grc_team", "evidence"];
-    private static readonly string[] EvidenceRowKeys = ["ref_id", "control", "requirements", "method", "collector", "owner", "grc_team", "every", "runbook"];
+    private static readonly string[] EvidenceRowKeys = ["ref_id", "control", "requirements", "method", "collector", "owner", "grc_team", "every", "first_due", "runbook"];
     private static readonly string[] EvidenceMethods = ["automated", "manual", "hybrid"];
 
     private static ScopeEvidencePlan ReadEvidencePlan(YamlMappingNode root, FileReader file)
@@ -43,6 +43,7 @@ public static partial class ScopeLoader
             GrcTeam = file.Ref(item, "grc_team") ?? grcTeam,
             Every = EvidenceInterval.Parse(every),
             Runbook = file.Text(item, "runbook"),
+            FirstDue = Date(item, "first_due", file) is { } due ? DateOnly.ParseExact(due, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) : null,
         };
         RowNeeds(row, item, file);
         return row;

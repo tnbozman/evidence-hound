@@ -13,6 +13,8 @@ During an incident:
    goes to and its deadline (for example DFARS 252.204-7012 within 72 hours, ReportCyber, the Notifiable Data Breaches assessment).
    Tell the person the earliest deadline first, in their time zone. A report is marked made by a timeline entry
    `Reported: <id>, <their reference>`, which the person adds after they report.
+   When `dfars-7012` is owed, gather the report for them: `hound incident report-pack <incident> --dfars --scope scope/ --config hound.yaml
+   --out <file outside the repo>`. Walk them through it and what the portal asks beyond it; they file it themselves.
 3. Follow the plan's containment and evidence steps in `irp/`; never wipe, rebuild or power off a system the incident manager has not
    released. Do not contact anyone outside the organisation; the executive is the only spokesperson.
 

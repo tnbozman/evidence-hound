@@ -10,7 +10,11 @@ namespace EvidenceHound.Core.Mapping;
 /// <param name="Manual">Requirements answered only by checks a person attests through a manual source, or listed as manual-only.</param>
 /// <param name="Uncovered">Requirements nothing answers.</param>
 /// <param name="Draft">s14-03: requirements answered only by draft rows, which runs do not publish until a person reviews them.</param>
-public sealed record CoverageCount(string ParentUrn, string Group, int Automated, int Manual, int Uncovered, int Draft = 0);
+public sealed record CoverageCount(string ParentUrn, string Group, int Automated, int Manual, int Uncovered, int Draft = 0)
+{
+    /// <summary>s17-09: of the automated requirements, those answered only by rows that cover part of them (<c>covers: part</c>), which a person finishes.</summary>
+    public int Part { get; init; }
+}
 
 /// <summary>s12-01: mapping coverage of a framework snapshot for an audit's selected implementation groups.</summary>
 public static class MappingCoverage
@@ -67,7 +71,7 @@ public static class MappingCoverage
     {
         var kinds = new Dictionary<string, CoverageKind>(StringComparer.Ordinal);
         var answered = mapping.Requirements
-            .Select(r => (r.Key, Kind: r.Draft ? CoverageKind.Draft : r.Checks.All(manualChecks.Contains) ? CoverageKind.Manual : CoverageKind.Automated))
+            .Select(r => (r.Key, Kind: r.Draft ? CoverageKind.Draft : r.Checks.All(manualChecks.Contains) ? CoverageKind.Manual : r.CoversPart ? CoverageKind.AutomatedPart : CoverageKind.Automated))
             .Concat(manualOnly.Select(key => (Key: key, Kind: CoverageKind.Manual)));
         foreach (var (key, kind) in answered)
         {
@@ -83,15 +87,19 @@ public static class MappingCoverage
     private static CoverageCount Counted(string parent, string group, IReadOnlyList<CoverageKind> kinds) => new(
         parent,
         group,
-        kinds.Count(k => k == CoverageKind.Automated),
+        kinds.Count(k => k is CoverageKind.Automated or CoverageKind.AutomatedPart),
         kinds.Count(k => k == CoverageKind.Manual),
         kinds.Count(k => k == CoverageKind.Uncovered),
-        kinds.Count(k => k == CoverageKind.Draft));
+        kinds.Count(k => k == CoverageKind.Draft))
+    {
+        Part = kinds.Count(k => k == CoverageKind.AutomatedPart),
+    };
 
     /// <summary>In order of strength: where two rows answer one requirement, the stronger kind counts.</summary>
     private enum CoverageKind
     {
         Automated,
+        AutomatedPart,
         Manual,
         Draft,
         Uncovered,

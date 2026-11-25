@@ -5,6 +5,7 @@ using EvidenceHound.Core.Frameworks;
 using EvidenceHound.Core.Publishing;
 using EvidenceHound.Core.Results;
 using EvidenceHound.Core.Scope;
+using EvidenceHound.Core.Sprs;
 using EvidenceHound.Runtime.Collectors;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -301,6 +302,32 @@ internal static class SspCommands
             problems => Log.Problems(logger, problems));
     }
 
+    /// <summary>
+    /// The programme's plan, read live from CISO Assistant after the scope is checked (s17-06: the affirmation pack); on a problem, the exit
+    /// code and no plan.
+    /// </summary>
+    internal static async Task<(int Exit, SspDocument? Document)> PlanAsync(
+        string programme, DirectoryInfo scope, FileInfo config, IConfiguration configuration, CollectorRegistry registry, ILoggerFactory loggers, ILogger logger,
+        CancellationToken cancellationToken)
+    {
+        // The config gives only the connection here: the scope is checked on its own, as 'hound ssp build' does without --config.
+        var checkedScope = await ScopeCommands.ValidateAsync(scope, null, registry, AuditSeries.Today(configuration), cancellationToken);
+        if (checkedScope.Problems.Count > 0)
+        {
+            return (Log.Problems(logger, checkedScope.Problems.Select(p => p.ToProblem())), null);
+        }
+
+        if (checkedScope.Scope.Ssps.FirstOrDefault(s => s.Programme.Value == programme) is not { } ssp)
+        {
+            return (Log.Problems(logger, [new Problem("ssp.not_declared", $"no plan is declared for programme '{programme}'; declare it in scope/ssp.yaml.")]), null);
+        }
+
+        var connection = await PublishCommand.ConnectionAsync(configuration, config, registry, cancellationToken);
+        return await connection.Match(
+            c => ReadAsync(ssp, checkedScope, c, loggers, logger, cancellationToken),
+            problems => Task.FromResult<(int, SspDocument?)>((Log.Problems(logger, problems), null)));
+    }
+
     /// <summary>Checks the scope and finds the programme's plan; on a problem, the exit code and no plan.</summary>
     private static async Task<(int Exit, ScopeCommands.CheckedScope? Scope, ScopeSsp? Ssp)> CheckAsync(
         ParseResult parseResult, Option<string> programme, Option<DirectoryInfo> scope, Option<FileInfo?> config, IConfiguration configuration, CollectorRegistry registry,
@@ -367,8 +394,10 @@ internal static class SspCommands
             AllRowsOf = new HashSet<string>(StringComparer.Ordinal) { SspBuilder.AuditOfRecord(checkedScope.Scope, programme, today) },
         };
         var held = await services.GetRequiredService<IScopeStateSource>().ReadAsync(query, cancellationToken);
+        // s17-03: the nist-800-171 profile flags what CMMC does not allow on a POA&M, by the bundled SPRS weights.
+        var sprs = ssp.Profile == SspProfile.Nist800171 ? (await SprsCommands.MethodologyAsync(null, cancellationToken)).Match<SprsMethodology?>(m => m, _ => null) : null;
         return held.Match<(int, SspDocument?)>(
-            objects => (ExitCodes.Ok, SspBuilder.Build(ssp, checkedScope.Scope, objects, Snapshot(checkedScope, programme.Audit.Value), today)),
+            objects => (ExitCodes.Ok, SspBuilder.Build(ssp, checkedScope.Scope, objects, Snapshot(checkedScope, programme.Audit.Value), today, sprs)),
             problems => (Log.Problems(logger, problems), null));
     }
 
