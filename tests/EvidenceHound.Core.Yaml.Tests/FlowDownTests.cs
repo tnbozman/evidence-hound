@@ -68,7 +68,7 @@ public class FlowDownTests
         ]);
         contract.Obligations[0].Data.ShouldBe([SensitiveDataKind.Cui]);
         Problems(Prime.Replace("framework: urn:example:risk:framework:example-baseline\n        level: \"2\"\n        data", "framework: urn:example:risk:framework:not-declared\n        level: \"2\"\n        data", StringComparison.Ordinal), Supplier)
-            .ShouldContain(p => p.Code == "contract.framework_unknown");
+            .ShouldContain(p => p.Code == "contract.framework_unknown" && p.Warning, "a prime requiring a framework not yet loaded is a gap to review, recorded without locking the repo");
     }
 
     [Fact]
