@@ -33,6 +33,25 @@ public sealed partial class ExampleRepoTests : IDisposable
     }
 
     [Fact]
+    public void Example_declares_a_risk_library_study_exception_and_bia()
+    {
+        // s15-06: Example_compliance_repo_validates checks these with the rest of the scope; here, that the example has each of them.
+        var setup = File.ReadAllText(Path.Combine(Repo, "scope", "setup.yaml"));
+        setup.ShouldContain("file: ../libraries/example-risk.yaml");
+        setup.ShouldContain("snapshot: ../libraries/example-risk.json");
+        File.Exists(Path.Combine(Repo, "libraries", "example-risk.json")).ShouldBeTrue();
+        Directory.GetFiles(Path.Combine(Repo, "scope", "risks"), "*.yaml").ShouldNotBeEmpty();
+        File.ReadAllText(Path.Combine(Repo, "scope", "exceptions.yaml")).ShouldContain("ref_id:");
+        File.ReadAllText(Directory.GetFiles(Path.Combine(Repo, "scope", "bia"), "*.yaml").ShouldHaveSingleItem()).ShouldContain("tested_by:");
+        foreach (var guide in new[] { "risk.md", "bia.md" })
+        {
+            var text = File.ReadAllText(Path.Combine(RepoRoot, "docs", guide));
+            text.ShouldContain("## What stays in CISO Assistant", Case.Sensitive, guide);
+            text.ShouldContain("examples/compliance-repo/scope/", Case.Sensitive, guide);
+        }
+    }
+
+    [Fact]
     public void Example_declares_the_essential_eight_plan_with_its_written_sections()
     {
         // s11-07: the example's plan validates with the rest of the scope (above); here, that every section it names is written, the
