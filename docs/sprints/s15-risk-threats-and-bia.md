@@ -270,7 +270,7 @@ against my own suppliers' contracts, so that I can show a prime what I flow down
 - A customer is a third party whose every contract has `customer: true`, with the `CUS-` prefix. `obligations` name a clause, a
   framework and level, the data kinds it covers and `flow_down`. `contract.flow_down_missing` is a warning, like the sensitive-data
   findings (s10-05): recording the truth must not lock the repo, and it joins the weekly review. `contract.framework_unknown` and
-  `contract.flow_down_invalid` are errors.
+  `contract.flow_down_invalid` are errors (s15-D9 made the first a warning).
 - `hound programme list` adds "Required by <customer> (<contract>): <clause>, level N." under each programme with that framework
   (`required_by` in JSON). `hound supplier list --data` adds a "Flowed-down clauses" column (`clauses` in JSON), carried or missing.
 
@@ -398,5 +398,9 @@ As [s12-10](s12-e8-mapping-and-adoption.md#s12-10-improve-quality-and-flow-stand
   scope guides, explains the period name where `hound init` and `hound audit` print it, and steers onboarding to the per-check
   manual-source templates; making per-system and platform audits the onboarding default, with an organisation audit only when an
   organisation-wide source feeds it, goes to s18 (fewer steps for the agent).
+- **s15-D9 Copying the guide's customer contract locked the example repo** (found 2026-11-25 rehearsing docs/scope.md). The
+  example names NIST SP 800-171, which the example repo does not load, so `contract.framework_unknown` failed validation: recording a
+  prime's true requirement stopped every other command. Fixed: it is a warning that names the gap (no programme tracks the framework
+  yet) and joins the weekly review (test, then fix).
 
 ## Sprint review

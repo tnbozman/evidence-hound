@@ -37,8 +37,9 @@ public static class SupplierValidator
         [
             .. contracts.SelectMany(c => c.Contract.Obligations).Select(o => o.Framework).OfType<ScopeRef>().Where(f => !frameworks.Contains(f.Value))
                 .Select(f => new ScopeProblem(
-                    "contract.framework_unknown", f.At, $"obligation framework '{f.Value}' is not declared.",
-                    "Add the framework to scope/setup.yaml, or correct its URN.")),
+                    "contract.framework_unknown", f.At, $"obligation framework '{f.Value}' is not loaded, so no programme tracks what the contract requires.",
+                    "Add the framework to scope/setup.yaml and a programme for it, or correct its URN.")
+                { Warning = true }),
             .. contracts.Where(c => !c.Contract.Customer).SelectMany(c => c.Contract.Obligations.Where(o => o.FlowDown))
                 .Select(o => new ScopeProblem(
                     "contract.flow_down_invalid", o.FlowDownAt ?? o.At, $"clause '{o.Clause}' is marked flow_down on a supplier contract.",
