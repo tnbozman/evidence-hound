@@ -41,7 +41,18 @@ internal sealed record ExtraFramework(string Id, string Name, string Urn, string
         "\"M\"",
         "mappings/disp.yaml",
         "frameworks/disp.json",
-        "frameworks/disp.yaml");
+        "frameworks/disp.yaml")
+    {
+        Guide = "examples/manual-sources/disp",
+    };
+
+    /// <summary>Where the Evidence Hound repo keeps the manual source templates people answer this framework with.</summary>
+    public string Guide { get; init; } = "examples/manual-sources";
+
+    /// <summary>The README step for this framework's audit: copy its manual sources, then check its coverage.</summary>
+    public string NextStep(NewOrganisation org) =>
+        $"For {org.ExtraAuditRef(this)} ({Name}): copy the manual source templates in the Evidence Hound repo's `{Guide}` into `hound.yaml` "
+        + $"(replace `collectors: []` with `collectors:` first), then check `hound mapping coverage {Mapping} --framework {Snapshot} --manual hound.yaml`.";
 
     public static readonly IReadOnlyList<ExtraFramework> All = [Disp];
 
@@ -226,7 +237,7 @@ internal static class RepoTemplate
         "unlisted:",
         "  result: not_assessed");
 
-    private static string Readme(NewOrganisation org) => Lines(
+    private static string Readme(NewOrganisation org) => Lines([
         $"# {org.Name} compliance",
         "",
         "Configuration for Evidence Hound and CISO Assistant, written by `hound init`. Keep this repository private: it describes the organisation.",
@@ -242,8 +253,9 @@ internal static class RepoTemplate
         "5. See what applying would do, then apply: `hound scope plan scope --config hound.yaml` and `hound scope apply scope --config hound.yaml`",
         "6. Run the collectors and see the result: `hound run --config hound.yaml` and `hound status --config hound.yaml`",
         "7. Each week, sign off everything that waits on you in one sitting: `hound review` (the weekly task in `scope/evidence-plan.yaml` reminds you).",
+        .. org.Extras.Select((extra, i) => $"{8 + i}. {extra.NextStep(org)}"),
         "",
-        "The Evidence Hound repo's `examples/compliance-repo` has a fuller example, with access, settings and a pull request workflow.");
+        "The Evidence Hound repo's `examples/compliance-repo` has a fuller example, with access, settings and a pull request workflow."]);
 
     private static string Lines(params string[] lines) => string.Join('\n', lines) + "\n";
 }

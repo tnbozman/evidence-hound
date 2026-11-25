@@ -37,7 +37,7 @@ internal static class InitCommand
         var yes = new Option<bool>("--yes", "-y") { Description = "Ask nothing: take the options given and the defaults." };
         var json = new Option<bool>("--json") { Description = "Answer in JSON, for an agent: the organisation, the audit and every file written." };
 
-        var init = new Command("init", "Write a new organisation's compliance repo: config, scope, an Essential Eight audit and its mapping. Asks each question it needs.")
+        var init = new Command("init", "Write a new organisation's compliance repo: config, scope, an Essential Eight audit and its mapping, and with --framework the audits of other frameworks such as DISP. Asks each question it needs.")
         {
             folder, org, code, url, timeZone, level, interval, due, owner, evidenceRoot, frameworks, assistant, yes, json,
         };
