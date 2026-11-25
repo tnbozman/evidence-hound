@@ -83,7 +83,8 @@ public sealed class BiaFunctionalTests(CisoAssistantFixture ciso) : IDisposable
 
         var passed = await StepAsync("flags-2-run-pass", ["run", "--config", await ConfigAsync(fail: null, ct)], ct);
         passed.Exit.ShouldBe(ExitCodes.Ok, passed.Output + passed.Error);
-        JsonNode.Parse(passed.Output)!["recovery"]!.AsArray().ShouldHaveSingleItem()!["value"]!.GetValue<bool>().ShouldBeTrue();
+        // The example repo's own BIA names the same check, so its flag is set too.
+        JsonNode.Parse(passed.Output)!["recovery"]!.AsArray().Single(r => r!["assessment"]!.GetValue<string>() == "EX-BIA-FLAGS/Example 365")!["value"]!.GetValue<bool>().ShouldBeTrue();
         var tested = await AssessmentAsync(ct);
         tested["recovery_tested"]!.GetValue<bool>().ShouldBeTrue();
         tested["evidences"]!.AsArray().ShouldNotBeEmpty();
