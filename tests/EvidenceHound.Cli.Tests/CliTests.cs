@@ -88,6 +88,29 @@ public sealed class CliTests : IDisposable
     }
 
     [Fact]
+    public async Task Mapping_validate_says_how_many_rows_are_draft()
+    {
+        // s14-03 rehearsal: a derived, all-draft mapping printed only "valid: 55 requirements".
+        var mapping = Path.Combine(_workDir, "draft-mapping.yaml");
+        await File.WriteAllTextAsync(mapping, """
+            framework_urn: urn:example:risk:library:example-baseline
+            requirements:
+              - ref: "1.1"
+                rule: all_pass
+                checks: [identity.mfa.admins]
+                draft: true
+              - ref: "1.2"
+                rule: any_pass
+                checks: [backup.restore_tested]
+            """, TestContext.Current.CancellationToken);
+
+        var exitCode = await Run("mapping", "validate", mapping);
+
+        exitCode.ShouldBe(0);
+        _output.ToString().Trim().ShouldBe("valid: 2 requirements; 1 row is draft and will not publish until you review it and delete its 'draft: true' line");
+    }
+
+    [Fact]
     public async Task Mapping_validate_prints_requirement_count()
     {
         var mapping = Path.Combine(_workDir, "mapping.yaml");
