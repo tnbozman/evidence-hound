@@ -53,6 +53,21 @@ INC-2026-01 Malware on a laptop: discovered 2026-11-20 09:30 UTC, 2 report(s) ow
 
 `--format json` gives the same for an agent. The command reads CISO Assistant and writes nothing.
 
+### The DFARS 252.204-7012 report
+
+When the incident touches a system that handles CUI, the DFARS report is due 72 hours from discovery and is filed by a person on the
+DoD portal (DIBNet), with a medium assurance certificate. To gather what it asks for:
+
+```bash
+hound incident report-pack INC-2026-01 --dfars --config hound.yaml --out inc-2026-01-dfars.md
+```
+
+The pack lists the deadline, the affected systems that handle CUI with their data and CMMC asset category, the suppliers whose
+solutions provide them and their contracts, the customer contracts that carry the clause (the primes to tell, from
+`scope/third-parties/`), and the incident's timeline. It reminds you to keep images of the affected systems and the monitoring data
+for at least 90 days, and to send any malicious software you isolate to the DoD Cyber Crime Center as the portal directs. The portal
+asks for more than the pack holds, such as your CAGE code. hound reads only; keep the pack out of the repo.
+
 ## 4. Record each report you make
 
 Add a timeline entry to the incident that starts with `Reported:` and the obligation's id, then their reference:
