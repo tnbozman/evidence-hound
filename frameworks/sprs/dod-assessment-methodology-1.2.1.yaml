@@ -1,0 +1,125 @@
+# The NIST SP 800-171 DoD Assessment Methodology, Version 1.2.1, June 24, 2020, Annex A: the points each NIST SP 800-171 Rev 2
+# requirement takes off the score of 110 when it is not implemented. Values copied from the published table (pages 12 to 20);
+# the lowest possible score is -203. `hound sprs score` reads this file (s17-05). DoD's methodology is authoritative: check this
+# file against it, and replace it when DoD publishes a new version.
+#
+# - partial: the methodology's two partial deductions, 3.5.3 (MFA) and 3.13.11 (FIPS-validated cryptography). hound always takes the
+#   full points off and names the partial case, because only a person can say which case applies.
+# - not_applicable_when: the methodology says not to subtract points when the capability is not permitted. Record the requirement
+#   as not applicable in CISO Assistant, with the policy that keeps the capability disabled.
+# - 3.12.4 (system security plan) has no points: without a plan the assessment cannot be completed.
+methodology: NIST SP 800-171 DoD Assessment Methodology
+version: 1.2.1
+published: "2020-06-24"
+start: 110
+requirements:
+  - {ref: "3.1.1", points: 5}
+  - {ref: "3.1.2", points: 5}
+  - {ref: "3.1.3", points: 1}
+  - {ref: "3.1.4", points: 1}
+  - {ref: "3.1.5", points: 3}
+  - {ref: "3.1.6", points: 1}
+  - {ref: "3.1.7", points: 1}
+  - {ref: "3.1.8", points: 1}
+  - {ref: "3.1.9", points: 1}
+  - {ref: "3.1.10", points: 1}
+  - {ref: "3.1.11", points: 1}
+  - {ref: "3.1.12", points: 5, not_applicable_when: "remote access is not permitted"}
+  - {ref: "3.1.13", points: 5, not_applicable_when: "remote access is not permitted"}
+  - {ref: "3.1.14", points: 1}
+  - {ref: "3.1.15", points: 1}
+  - {ref: "3.1.16", points: 5, not_applicable_when: "wireless access is not permitted"}
+  - {ref: "3.1.17", points: 5, not_applicable_when: "wireless access is not permitted"}
+  - {ref: "3.1.18", points: 5, not_applicable_when: "connection of mobile devices is not permitted"}
+  - {ref: "3.1.19", points: 3}
+  - {ref: "3.1.20", points: 1}
+  - {ref: "3.1.21", points: 1}
+  - {ref: "3.1.22", points: 1}
+  - {ref: "3.2.1", points: 5}
+  - {ref: "3.2.2", points: 5}
+  - {ref: "3.2.3", points: 1}
+  - {ref: "3.3.1", points: 5}
+  - {ref: "3.3.2", points: 3}
+  - {ref: "3.3.3", points: 1}
+  - {ref: "3.3.4", points: 1}
+  - {ref: "3.3.5", points: 5}
+  - {ref: "3.3.6", points: 1}
+  - {ref: "3.3.7", points: 1}
+  - {ref: "3.3.8", points: 1}
+  - {ref: "3.3.9", points: 1}
+  - {ref: "3.4.1", points: 5}
+  - {ref: "3.4.2", points: 5}
+  - {ref: "3.4.3", points: 1}
+  - {ref: "3.4.4", points: 1}
+  - {ref: "3.4.5", points: 5}
+  - {ref: "3.4.6", points: 5}
+  - {ref: "3.4.7", points: 5}
+  - {ref: "3.4.8", points: 5}
+  - {ref: "3.4.9", points: 1}
+  - {ref: "3.5.1", points: 5}
+  - {ref: "3.5.2", points: 5}
+  - {ref: "3.5.3", points: 5, partial: {points: 3, when: "MFA is implemented for remote and privileged users, but not for general users"}}
+  - {ref: "3.5.4", points: 1}
+  - {ref: "3.5.5", points: 1}
+  - {ref: "3.5.6", points: 1}
+  - {ref: "3.5.7", points: 1}
+  - {ref: "3.5.8", points: 1}
+  - {ref: "3.5.9", points: 1}
+  - {ref: "3.5.10", points: 5}
+  - {ref: "3.5.11", points: 1}
+  - {ref: "3.6.1", points: 5}
+  - {ref: "3.6.2", points: 5}
+  - {ref: "3.6.3", points: 1}
+  - {ref: "3.7.1", points: 3}
+  - {ref: "3.7.2", points: 5}
+  - {ref: "3.7.3", points: 1}
+  - {ref: "3.7.4", points: 3}
+  - {ref: "3.7.5", points: 5}
+  - {ref: "3.7.6", points: 1}
+  - {ref: "3.8.1", points: 3}
+  - {ref: "3.8.2", points: 3}
+  - {ref: "3.8.3", points: 5}
+  - {ref: "3.8.4", points: 1}
+  - {ref: "3.8.5", points: 1}
+  - {ref: "3.8.6", points: 1}
+  - {ref: "3.8.7", points: 5}
+  - {ref: "3.8.8", points: 3}
+  - {ref: "3.8.9", points: 1}
+  - {ref: "3.9.1", points: 3}
+  - {ref: "3.9.2", points: 5}
+  - {ref: "3.10.1", points: 5}
+  - {ref: "3.10.2", points: 5}
+  - {ref: "3.10.3", points: 1}
+  - {ref: "3.10.4", points: 1}
+  - {ref: "3.10.5", points: 1}
+  - {ref: "3.10.6", points: 1}
+  - {ref: "3.11.1", points: 3}
+  - {ref: "3.11.2", points: 5}
+  - {ref: "3.11.3", points: 1}
+  - {ref: "3.12.1", points: 5}
+  - {ref: "3.12.2", points: 3}
+  - {ref: "3.12.3", points: 5}
+  - {ref: "3.12.4", points: none, note: "Without a system security plan, an assessment could not be completed (DFARS 252.204-7012)."}
+  - {ref: "3.13.1", points: 5}
+  - {ref: "3.13.2", points: 5}
+  - {ref: "3.13.3", points: 1}
+  - {ref: "3.13.4", points: 1}
+  - {ref: "3.13.5", points: 5}
+  - {ref: "3.13.6", points: 5}
+  - {ref: "3.13.7", points: 1}
+  - {ref: "3.13.8", points: 3}
+  - {ref: "3.13.9", points: 1}
+  - {ref: "3.13.10", points: 1}
+  - {ref: "3.13.11", points: 5, partial: {points: 3, when: "cryptography is employed, but mostly not FIPS validated"}}
+  - {ref: "3.13.12", points: 1}
+  - {ref: "3.13.13", points: 1}
+  - {ref: "3.13.14", points: 1}
+  - {ref: "3.13.15", points: 5}
+  - {ref: "3.13.16", points: 1}
+  - {ref: "3.14.1", points: 5}
+  - {ref: "3.14.2", points: 5}
+  - {ref: "3.14.3", points: 5}
+  - {ref: "3.14.4", points: 5}
+  - {ref: "3.14.5", points: 3}
+  - {ref: "3.14.6", points: 5}
+  - {ref: "3.14.7", points: 3}
