@@ -374,6 +374,46 @@ Each requirement row gets a status from its result: `compliant` is *Implemented*
 
 External services are the solutions the scope links the boundary's systems to (`solution:` in `setup.yaml`), with their suppliers as CISO Assistant holds them. Controls and requirement rows come from the programme's audit of record. Problems: `ssp.programme_unknown`, `ssp.perimeter_unknown`, `ssp.role_missing`, `ssp.role_unknown`, `ssp.document_unknown`, `ssp.section_missing`, and `scope.duplicate` for a second plan for the same programme.
 
+## risks/&lt;study&gt;.yaml
+
+One file per risk study (CISO Assistant's risk assessment) and its scenarios. Ratings, treatment and justification are proposed and
+reviewed in a pull request like any other change; accepting a risk and approving it stays with the Approver in CISO Assistant. Ratings
+use the matrix's level names from its [library snapshot](#risk-matrices-and-threats). CISO Assistant computes the risk levels, so they
+are never written.
+
+```yaml
+ref_id: EX-RISK-2026
+name: Example Pty Ltd risk register 2026
+domain: Example Pty Ltd
+perimeter: Corporate IT                  # optional
+matrix: urn:example:risk:matrix:example-4x4
+status: in_progress                      # planned, in_progress, in_review, done or deprecated
+authors: [it@example.com]
+reviewers: [ceo@example.com]
+eta: "2026-12-31"
+scenarios:
+  - ref_id: R-01
+    name: Ransomware encrypts the file shares
+    systems: [Example 365]               # impacted systems, by name
+    threats: [THR-02]                    # by URN or ref_id, from a library snapshot
+    existing_controls: [AC-BACKUP]       # by ref_id from controls.yaml
+    planned_controls: [AC-MFA]
+    current: {probability: Possible, impact: Major}
+    residual: {probability: Unlikely, impact: Major}
+    # inherent: {probability: Likely, impact: Severe}   # when CISO Assistant's inherent risk flag is on
+    treatment: mitigate                  # open (the default), mitigate, accept, avoid or transfer
+    justification: Backups are restored and tested each month.
+```
+
+`--` (or leaving a rating out) means not rated. `hound scope validate` reports `risk.matrix_unknown` (no library snapshot holds the
+matrix), `risk.level_unknown` (a level name the matrix does not have, with its line), `risk.residual_above_current` (treatment can only
+lower a risk, as CISO Assistant's own consistency check says), `risk.system_unknown`, `risk.threat_unknown`, `risk.control_unknown`,
+`risk.domain_unknown`, `risk.perimeter_unknown`, duplicate `ref_id`s, and the warning `risk.planned_control_active` for a planned control
+that controls.yaml says is already active.
+
+`hound scope plan` shows a rating change by level name, such as `current_probability: Likely → Possible`, so a reviewer reads what
+changed without the matrix to hand.
+
 ## audits/&lt;audit&gt;.yaml
 
 | Key | Meaning |

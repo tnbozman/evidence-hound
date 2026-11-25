@@ -45,6 +45,8 @@ public class ScopeSchemaTests
         Errors(ProgrammeScopeTests.WithProgrammes(ProgrammeScopeTests.Programme() + "    register:\n      of: ai_systems\n      by: [screening, use]\n")).ShouldBeEmpty();
         Errors(AiRegisterScopeTests.Setup().Replace("screening: elevated", "screening: extreme", StringComparison.Ordinal)).ShouldNotBeEmpty();
         Errors(SspFixture.Ssp).ShouldBeEmpty();
+        Errors(RiskFixture.Study).ShouldBeEmpty();
+        Errors(RiskFixture.Study.Replace("treatment: accept", "treatment: ignore", StringComparison.Ordinal)).ShouldNotBeEmpty();
         Errors(SspFixture.Setup).ShouldBeEmpty();
         Errors(SspFixture.Ssp.Replace("profile: ism", "profile: iso27001", StringComparison.Ordinal)).ShouldNotBeEmpty();
     }

@@ -468,6 +468,8 @@ internal static class ScopeCommands
         var capabilitiesPath = Path.Combine(dir.ToString(), "capabilities.yaml");
         var planPath = Path.Combine(dir.ToString(), "evidence-plan.yaml");
         var sspPath = Path.Combine(dir.ToString(), "ssp.yaml");
+        var risksDir = Path.Combine(dir.ToString(), "risks");
+        var risks = Directory.Exists(risksDir) ? Directory.GetFiles(risksDir, "*.yaml").Order(StringComparer.Ordinal).ToArray() : [];
         var parsed = ScopeLoader.Parse(
             await ReadAsync(setupPath, cancellationToken),
             File.Exists(controlsPath) ? await ReadAsync(controlsPath, cancellationToken) : null,
@@ -477,7 +479,8 @@ internal static class ScopeCommands
             [.. await Task.WhenAll(thirdParties.Select(t => ReadAsync(t, cancellationToken)))],
             File.Exists(capabilitiesPath) ? await ReadAsync(capabilitiesPath, cancellationToken) : null,
             File.Exists(planPath) ? await ReadAsync(planPath, cancellationToken) : null,
-            File.Exists(sspPath) ? await ReadAsync(sspPath, cancellationToken) : null);
+            File.Exists(sspPath) ? await ReadAsync(sspPath, cancellationToken) : null,
+            [.. await Task.WhenAll(risks.Select(r => ReadAsync(r, cancellationToken)))]);
 
         var snapshots = await SnapshotsAsync(parsed.Scope.Setup.Frameworks, Path.GetDirectoryName(Path.GetFullPath(setupPath))!, cancellationToken);
         var deployment = configFile is null ? Result.Ok(Deployment.None) : await DeploymentAsync(configFile, registry, cancellationToken);
@@ -495,12 +498,13 @@ internal static class ScopeCommands
             .. targets.Match(_ => [], ps => ps.Select(p => new ScopeProblem(p.Code, new SourceLine(configFile!.ToString(), 0), p.Message, "Fix the deployment config first."))),
             .. ScopeValidator.Validate(scope, snapshots.Loaded, targets.Match(t => t, _ => [])),
             .. SupplierValidator.Validate(scope, today),
+            .. RiskValidator.Validate(scope, libraries.Snapshots),
             .. RunbooksMissing(scope, repoDir),
             .. configFile is null ? [] : deployment.Match(d => EvidencePlanValidator.Collectors(scope, d.Collectors), _ => []),
         ];
         return new(
             [.. problems.Where(p => !p.Warning)],
-            string.Create(CultureInfo.InvariantCulture, $"scope valid: {scope.Setup.Domains.Count} domain(s), {scope.Controls.Count} control(s), {scope.Audits.Count} audit(s){ThirdPartyCount(scope)}"),
+            string.Create(CultureInfo.InvariantCulture, $"scope valid: {scope.Setup.Domains.Count} domain(s), {scope.Controls.Count} control(s), {scope.Audits.Count} audit(s){ThirdPartyCount(scope)}{RiskCount(scope)}"),
             scope,
             new ScopeInputs(snapshots.Loaded, configFile is null ? null : targets.Match(t => t, _ => []), files.Found.Concat(libraries.Files).ToDictionary(StringComparer.Ordinal))
             {
@@ -512,6 +516,11 @@ internal static class ScopeCommands
             Warnings = [.. problems.Where(p => p.Warning)],
         };
     }
+
+    private static string RiskCount(ScopeDocument scope) =>
+        scope.RiskStudies.Count == 0
+            ? ""
+            : string.Create(CultureInfo.InvariantCulture, $", {scope.RiskStudies.Count} risk study(ies) with {scope.RiskStudies.Sum(r => r.Scenarios.Count)} scenario(s)");
 
     /// <summary>Each runbook the evidence plan names that is in the repo, by its path as the plan names it: the text of its task.</summary>
     private static async Task<Dictionary<string, string>> RunbooksAsync(ScopeDocument scope, string repoDir, CancellationToken cancellationToken)

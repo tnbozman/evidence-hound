@@ -135,6 +135,7 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
         var tasks = query.EvidencePlan ? (await reading.ListAsync("task-templates/")).Where(t => RelationId(t["folder"]) is { } f && inScope.Contains(f)).ToArray() : [];
         var controls = await reading.ObjectsInAsync("applied-controls", inScope);
         var hashes = await HashesAsync(reading, evidences);
+        var risks = query.Risks ? await RisksAsync(reading, inScope) : RiskLists.None;
         var access = query.Access ? await AccessAsync(reading, folders, userList, inScope) : [];
         var settings = query.Settings ? await SettingsAsync(reading) : [];
         var entityList = query.ThirdParties || query.Organisation ? await reading.ListAsync("entities/") : [];
@@ -187,6 +188,7 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
                 ? f with { Held = f.Held with { Fields = new Dictionary<string, string>(f.Held.Fields, StringComparer.Ordinal) { ["sha256"] = hash } } }
                 : f),
             .. domainObjects.Select(d => Marked(ScopeKind.Domain, Text(d["name"]), d)),
+            .. RiskObjects(risks, names),
             .. perimeters.Select(p => Marked(ScopeKind.Perimeter, ScopeDesired.PerimeterKey(names.Domain(p) ?? names.Root, Text(p["name"]) ?? Id(p)), p,
                 ("name", Text(p["name"])), ("ref_id", Text(p["ref_id"])), ("domain", names.Domain(p)))),
             .. assets.Select(a => Marked(ScopeKind.System, Text(a["name"]), a,
@@ -360,6 +362,58 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
         }
 
         return hashes;
+    }
+
+    /// <summary>
+    /// The risk studies under the root folder and each one's scenarios, with the matrix and threat URNs by ID (s15-02). Scenarios come from the
+    /// list view, which gives each rating with its level name.
+    /// </summary>
+    private static async Task<RiskLists> RisksAsync(Reading reading, HashSet<string> inScope)
+    {
+        var studies = await reading.ObjectsInAsync("risk-assessments", inScope);
+        if (studies.Count == 0)
+        {
+            return RiskLists.None;
+        }
+
+        var scenarios = new List<(string Study, JsonNode Scenario)>();
+        foreach (var study in studies)
+        {
+            var key = RefIdOrName(ScopeKind.RiskStudy, study);
+            scenarios.AddRange((await reading.ListAsync($"risk-scenarios/?risk_assessment={Uri.EscapeDataString(Id(study))}")).Select(s => (key, s)));
+        }
+
+        return new RiskLists(
+            studies,
+            scenarios,
+            Names(await reading.ListAsync("risk-matrices/"), "urn"),
+            scenarios.Count > 0 ? Names(await reading.ListAsync("threats/"), "urn") : []);
+    }
+
+    private static IEnumerable<ActualObject> RiskObjects(RiskLists risks, Lookups names) =>
+    [
+        .. risks.Studies.Select(r => Marked(ScopeKind.RiskStudy, RefIdOrName(ScopeKind.RiskStudy, r), r,
+            ("name", Text(r["name"])), ("domain", names.Domain(r)), ("perimeter", Lookup(r["perimeter"], names.Perimeters)), ("matrix", Lookup(r["risk_matrix"], risks.Matrices)),
+            ("status", Text(r["status"])), ("eta", Text(r["eta"])), ("due_date", Text(r["due_date"])),
+            ("authors", Joined(r["authors"], names.Users)), ("reviewers", Joined(r["reviewers"], names.Users)))),
+        .. risks.Scenarios.Select(x => Marked(ScopeKind.RiskScenario, Core.Scope.RiskObjects.ScenarioKey(x.Study, Text(x.Scenario["ref_id"]) ?? Id(x.Scenario)), x.Scenario,
+            ("ref_id", Text(x.Scenario["ref_id"])), ("name", Text(x.Scenario["name"])), ("study", x.Study),
+            ("systems", Joined(x.Scenario["assets"], names.Assets)), ("threats", Joined(x.Scenario["threats"], risks.Threats)),
+            ("existing_controls", Joined(x.Scenario["existing_applied_controls"], names.Controls)), ("planned_controls", Joined(x.Scenario["applied_controls"], names.Controls)),
+            ("current_probability", Level(x.Scenario["current_proba"])), ("current_impact", Level(x.Scenario["current_impact"])),
+            ("residual_probability", Level(x.Scenario["residual_proba"])), ("residual_impact", Level(x.Scenario["residual_impact"])),
+            ("inherent_probability", Level(x.Scenario["inherent_proba"])), ("inherent_impact", Level(x.Scenario["inherent_impact"])),
+            ("treatment", Text(x.Scenario["treatment"])), ("justification", Text(x.Scenario["justification"])))),
+    ];
+
+    /// <summary>A rating's level name from the list view's <c>{"name", "value"}</c>; null when not rated (<c>--</c>).</summary>
+    private static string? Level(JsonNode? rating) =>
+        Text(rating?["name"]) is { } name && name != RiskRating.NotRatedName ? name : null;
+
+    private sealed record RiskLists(
+        List<JsonNode> Studies, List<(string Study, JsonNode Scenario)> Scenarios, Dictionary<string, string> Matrices, Dictionary<string, string> Threats)
+    {
+        public static RiskLists None { get; } = new([], [], [], []);
     }
 
     /// <summary>Each evidence item's file hashes, from its revisions.</summary>

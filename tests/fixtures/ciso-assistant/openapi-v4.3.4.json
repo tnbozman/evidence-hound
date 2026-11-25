@@ -2022,6 +2022,9 @@
     "/api/risk-scenarios/": {
       "get": {
         "operationId": "risk_scenarios_list"
+      },
+      "post": {
+        "operationId": "risk_scenarios_create"
       }
     },
     "/api/task-nodes/": {
@@ -2032,6 +2035,40 @@
     "/api/entity-assessments/": {
       "get": {
         "operationId": "entity_assessments_list"
+      }
+    },
+    "/api/risk-assessments/": {
+      "get": {
+        "operationId": "risk_assessments_list"
+      },
+      "post": {
+        "operationId": "risk_assessments_create"
+      }
+    },
+    "/api/risk-assessments/{id}/": {
+      "patch": {
+        "operationId": "risk_assessments_partial_update"
+      },
+      "delete": {
+        "operationId": "risk_assessments_destroy"
+      }
+    },
+    "/api/risk-assessments/{id}/object/": {
+      "get": {
+        "operationId": "risk_assessments_object_retrieve"
+      }
+    },
+    "/api/risk-scenarios/{id}/": {
+      "patch": {
+        "operationId": "risk_scenarios_partial_update"
+      },
+      "delete": {
+        "operationId": "risk_scenarios_destroy"
+      }
+    },
+    "/api/threats/": {
+      "get": {
+        "operationId": "threats_list"
       }
     }
   }

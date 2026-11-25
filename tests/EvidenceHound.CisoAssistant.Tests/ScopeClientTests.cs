@@ -193,7 +193,6 @@ public sealed class ScopeClientTests : IDisposable
             ["risk_matrix"] = "rm-4x4",
             ["status"] = "in_progress",
             ["eta"] = "2026-12-31",
-            ["due_date"] = null,
             ["authors"] = new JsonArray("act-it"),
             ["reviewers"] = new JsonArray(),
         }));
