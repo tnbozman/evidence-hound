@@ -46,9 +46,9 @@ public sealed class NoEvidenceFunctionalTests(CisoAssistantFixture ciso) : IDisp
             var ours = JsonNode.Parse(applied.Output)!["changes"]!.AsArray()
                 .Where(c => c!["kind"]!.GetValue<string>() == "assessment" && c["key"]!.GetValue<string>().StartsWith(RefId, StringComparison.Ordinal))
                 .GroupBy(c => $"{c!["action"]}/{c["outcome"]}").Select(g => $"{g.Key}: {g.Count()}");
-            var open = rows.Where(r => r!["result"]!.GetValue<string>() == "not_assessed").Select(r => r!["requirement"]?["str"]?.ToString() ?? r!["id"]!.ToString()).Take(5);
+            var open = rows.Where(r => r!["result"]!.GetValue<string>() == "not_assessed").Select(r => r!["requirement"]?["ref_id"]?.ToString() ?? r!["id"]!.ToString()).Take(5);
             counts.GetValueOrDefault("not_assessed").ShouldBe(
-                0, $"no row waits as not assessed, which CISO Assistant leaves out of its percentage. Applied rows: {string.Join(", ", ours)}. Still open: {string.Join("; ", open)}");
+                0, $"no row waits as not assessed, which CISO Assistant leaves out of its percentage. Rows by result: {string.Join(", ", counts.Select(c => $"{c.Key} {c.Value}"))}. Applied rows: {string.Join(", ", ours)}. Still open: {string.Join("; ", open)}");
             counts.GetValueOrDefault("compliant").ShouldBe(1);
             var nonCompliant = counts.GetValueOrDefault("non_compliant");
             nonCompliant.ShouldBeGreaterThan(40);
@@ -84,7 +84,8 @@ public sealed class NoEvidenceFunctionalTests(CisoAssistantFixture ciso) : IDisp
             path = page["next"]?.GetValue<string>() is { } next ? new Uri(next).PathAndQuery[(ciso.ApiUrl.AbsolutePath.Length)..] : null;
         }
 
-        return [.. rows];
+        // CISO Assistant keeps a row for every requirement, and counts only those in the audit's selected groups (maturity levels 1 and 2).
+        return [.. rows.Where(r => r!["requirement"]?["implementation_groups"] is JsonArray groups && groups.Any(g => g?.ToString() is "1" or "2"))];
     }
 
     private async Task<(int Exit, string Output, string Error)> StepAsync(string name, string[] args, CancellationToken ct)
