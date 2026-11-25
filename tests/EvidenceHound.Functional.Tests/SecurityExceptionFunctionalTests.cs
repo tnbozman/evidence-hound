@@ -90,9 +90,7 @@ public sealed class SecurityExceptionFunctionalTests(CisoAssistantFixture ciso) 
         }
 
         // Its own library URNs, so this test never shares a stored library with the other risk tests.
-        var library = (await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, "files", "frameworks", "example-risk-library.yaml"), ct))
-            .Replace("example-risk", "example-exception", StringComparison.Ordinal)
-            .Replace("example-4x4", "example-exception-4x4", StringComparison.Ordinal);
+        var library = await ExampleRiskLibrary.CopyAsync("exception", ct);
         Directory.CreateDirectory(Path.Combine(_repo, "libraries"));
         await File.WriteAllTextAsync(Path.Combine(_repo, "libraries", "example-exception.yaml"), library, ct);
         var setup = Path.Combine(Scope, "setup.yaml");

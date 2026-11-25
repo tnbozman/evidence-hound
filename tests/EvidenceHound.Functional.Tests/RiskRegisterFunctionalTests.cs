@@ -25,7 +25,7 @@ public sealed class RiskRegisterFunctionalTests(CisoAssistantFixture ciso) : IDi
           - ref_id: R-01
             name: Ransomware encrypts the file shares
             systems: [Example 365]
-            threats: [THR-02]
+            threats: [REGISTER-THR-02]
             existing_controls: [AC-BACKUP]
             current: {probability: Possible, impact: Major}
             residual: {probability: Unlikely, impact: Major}
@@ -34,7 +34,7 @@ public sealed class RiskRegisterFunctionalTests(CisoAssistantFixture ciso) : IDi
           - ref_id: R-02
             name: The only backup administrator leaves
             systems: [Example backup service]
-            threats: [THR-01]
+            threats: [REGISTER-THR-01]
             current: {probability: Unlikely, impact: Moderate}
             treatment: accept
             justification: A second administrator is being trained.
@@ -94,9 +94,7 @@ public sealed class RiskRegisterFunctionalTests(CisoAssistantFixture ciso) : IDi
         }
 
         // Its own library URNs, so this test and the library test never share a stored library.
-        var library = (await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, "files", "frameworks", "example-risk-library.yaml"), ct))
-            .Replace("example-risk", "example-register", StringComparison.Ordinal)
-            .Replace("example-4x4", "example-register-4x4", StringComparison.Ordinal);
+        var library = await ExampleRiskLibrary.CopyAsync("register", ct);
         Directory.CreateDirectory(Path.Combine(_repo, "libraries"));
         await File.WriteAllTextAsync(Path.Combine(_repo, "libraries", "example-register.yaml"), library, ct);
         var setup = Path.Combine(Scope, "setup.yaml");

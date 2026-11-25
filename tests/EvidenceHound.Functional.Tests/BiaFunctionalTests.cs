@@ -76,9 +76,7 @@ public sealed class BiaFunctionalTests(CisoAssistantFixture ciso) : IDisposable
         }
 
         // Its own library URNs, so this test never shares a stored library with the other risk tests.
-        var library = (await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, "files", "frameworks", "example-risk-library.yaml"), ct))
-            .Replace("example-risk", "example-bia", StringComparison.Ordinal)
-            .Replace("example-4x4", "example-bia-4x4", StringComparison.Ordinal);
+        var library = await ExampleRiskLibrary.CopyAsync("bia", ct);
         Directory.CreateDirectory(Path.Combine(_repo, "libraries"));
         await File.WriteAllTextAsync(Path.Combine(_repo, "libraries", "example-bia.yaml"), library, ct);
         var setup = Path.Combine(Scope, "setup.yaml");
