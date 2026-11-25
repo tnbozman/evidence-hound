@@ -26,6 +26,24 @@ public sealed class CliTests : IDisposable
     }
 
     [Fact]
+    public async Task Config_validate_warns_when_the_evidence_root_cannot_be_written()
+    {
+        // s14-03 rehearsal: validate said "valid", then a run as a normal user failed on the default evidence root.
+        // A warning, not a failure: the repo's CI validates the config where only the runner container can write the root.
+        var ct = TestContext.Current.CancellationToken;
+        var blocker = Path.Combine(_workDir, "not-a-folder");
+        await File.WriteAllTextAsync(blocker, "x", ct);
+        var config = Path.Combine(_workDir, "hound.yaml");
+        await File.WriteAllTextAsync(config, ConfigWithoutCollectors.Replace("./evidence", Path.Combine(blocker, "evidence"), StringComparison.Ordinal), ct);
+        await File.WriteAllTextAsync(Path.Combine(_workDir, "mapping.yaml"), "framework_urn: urn:example:x\nrequirements: []\n", ct);
+
+        var exitCode = await Run("config", "validate", config);
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        _logs.Messages.ShouldContain(m => m.Contains("evidence.root", StringComparison.Ordinal) && m.Contains("not writable", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task Collect_dry_run_with_empty_config_exits_zero()
     {
         var config = Path.Combine(_workDir, "empty.yaml");
