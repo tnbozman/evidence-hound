@@ -108,12 +108,23 @@ public static class ScopeExport
                     Optional(yaml, "        ", "description", description);
                     Optional(yaml, "        ", "owner", Field(system, "owner"));
                     List(yaml, "        ", "parents", Split(Field(system, "parents")));
+                    Pairs(yaml, "objectives", Field(system, "objectives"));
+                    Pairs(yaml, "recovery", Field(system, "recovery"));
                     Ai(yaml, ai);
                 }
             }
         }
 
         return yaml.ToString();
+    }
+
+    /// <summary>A system's security or recovery objectives (s15-04), held as <c>key=value, ...</c>, as one flow mapping.</summary>
+    private static void Pairs(StringBuilder yaml, string name, string? held)
+    {
+        if (Split(held) is { Length: > 0 } pairs)
+        {
+            yaml.Append(CultureInfo.InvariantCulture, $"        {name}: {{{string.Join(", ", pairs.Select(p => p.Replace("=", ": ", StringComparison.Ordinal)))}}}\n");
+        }
     }
 
     /// <summary>A system's AI register entry (s11-12), as <see cref="AiRegister.Read"/> recovered it from CISO Assistant.</summary>

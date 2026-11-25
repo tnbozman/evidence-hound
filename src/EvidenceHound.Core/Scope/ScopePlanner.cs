@@ -125,7 +125,7 @@ public static class ScopePlanner
     /// (s15-D2), which a person may add in CISO Assistant instead, and a supplier
     /// review's conclusion, which the scope declares once a person concludes it with <c>hound approve</c>, and a supplier's levels and a
     /// solution's criticality, which a drafted supplier leaves to decide and CISO Assistant fills in with its defaults, and a BIA's recovery
-    /// flags, which each run sets when checks are named for them (s15-05).
+    /// flags, which each run sets when checks are named for them (s15-05), and a BIA's status, which CISO Assistant starts at planned.
     /// </summary>
     private static bool Optional(ScopeKind kind, string field) => kind switch
     {
@@ -134,6 +134,7 @@ public static class ScopePlanner
         ScopeKind.Entity => field is "dependency" or "penetration" or "maturity" or "trust",
         ScopeKind.Solution => field == "criticality",
         ScopeKind.AssetAssessment => field.StartsWith("recovery_", StringComparison.Ordinal),
+        ScopeKind.Bia => field == "status",
         _ => false,
     };
 
