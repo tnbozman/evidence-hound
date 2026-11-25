@@ -178,7 +178,7 @@ Notes:
 - Functional: `NextFunctionalTests.Status_json_shows_the_failed_collector_and_the_connection`.
 
 ### s18-08 The agent walks the person through pending decisions (added 2026-11-25)
-- [ ] Done
+- [x] Done
 
 Builds on s15-12 (`hound review pending --json` with risk and a summary, and `hound review --only <key>`) and s15-13 (the
 `work-through-pending-decisions` skill and the `hound-decisions` agent for both assistants, and the command reference). s18-08 extends
@@ -204,19 +204,65 @@ evidence for each, so that I approve in minutes what I understand and challenge 
 **Functional check**
 - Rehearse onboarding the tutorial system with the skill; record the minutes and the commands the person ran.
 
+Notes:
+- `hound init` writes no organisation-wide audit by default. It names the series each system's audit joins in `scope/setup.yaml`
+  (`organisation.audit_series: {ref_id: EX-E8, groups, cycle}`), so `hound onboard` still gives each system's audit its periods
+  (`EX-E8-Q2-2027FY-<SYSTEM>`), and `hound.yaml` starts with `targets: []` (now valid: no audit yet). `--organisation-audit` writes the
+  organisation's audit as before, for when an organisation-wide source feeds it; `--json` answers `audits` (a list) in place of `audit`.
+- Approving an audit (`hound approve` on an audit draft, or a system's onboarding) adds its target to `hound.yaml` when the repo has the
+  system's own mapping (`mappings/<system>-<framework>.yaml`). It never uses the framework's general mapping for a system's audit: that
+  maps every collector's checks, so another system's results would land in it. Without one it says what to add.
+- The trial keeps the organisation's audit (`--organisation-audit`): Microsoft 365 covers every account and laptop, an
+  organisation-wide source. Its script, guide and the guides for init, onboarding, scope and first deployment say when to use it.
+- `work-through-pending-decisions` starts from `hound review prepare`, says the time the session will take, takes high-risk items first
+  and then by deadline, presents together what one document or export settles (each still answered by its own key), and redrafts a
+  challenge with `hound onboard <system> decide`.
+- Functional: `hound init` (defaults), `hound add system`, `hound audit draft` for Example 365, its mapping copied in, `hound approve`
+  (two answers), `hound scope validate`: the audit and its target written, valid, about three seconds of commands. The person ran one
+  command (`hound approve`). The onboarding tutorial's system path is covered by
+  `OnboardSystemCommandTests.System_audit_joins_the_series_setup_names_without_an_organisation_audit`.
+
 ### s18-06 Rehearse trial, onboarding and sustaining GRC (standing, every sprint)
-- [ ] Done
+- [x] Done
 
 As [s12-09](s12-e8-mapping-and-adoption.md#s12-09-rehearse-trial-onboarding-and-sustaining-grc-standing-every-sprint), including this
-The rehearsal drives hound through the agent skills, and the sprint ends with the Claude Code and Copilot skills and agents
-accurate for the CLI and its workflows (sprint lifecycle step 5 in [README.md](README.md)).
-sprint's new commands and guides. Count the agent's commands and the person's minutes for one week's work, and compare with s17.
+sprint's new commands and guides. The rehearsal drives hound through the agent skills, and the sprint ends with the Claude Code and
+Copilot skills and agents accurate for the CLI and its workflows (sprint lifecycle step 5 in [README.md](README.md)). Count the
+agent's commands and the person's minutes for one week's work, and compare with s17.
+
+Notes:
+- The week, following `weekly-review` on a copy of the example repo, offline: `hound next --json` (0.6 s: 7 items, 95 minutes,
+  most urgent first, each with its command and skill), `hound review prepare --json` (0.6 s) and `hound review pending --json`
+  (0.6 s). Three read commands. In s17 the agent gathered the same with `hound status`, `hound status --scope`,
+  `hound review pending`, `hound manual list` per source and `hound scope plan --out`, and joined their output itself: five or more.
+  The person's part is unchanged: one `hound review` session, its length the queue's minutes.
+- Onboarding a system's audit: see s18-08's functional check (the person runs `hound approve` once; the target is added for them).
+- Adding a risk and an exception for it: see s18-03's functional check.
+- Agent kit: `hound agent setup --assistant both` writes 26 skills and 4 agents; `AgentFilesTests` and `AgentCommandTests` check every
+  command, option and skill they name against the CLI.
 
 ### s18-07 Improve: quality and flow (standing, about 15% of each sprint)
-- [ ] Done
+- [x] Done
 
 As [s12-10](s12-e8-mapping-and-adoption.md#s12-10-improve-quality-and-flow-standing-about-15-of-each-sprint).
 
+Notes:
+- Guards that keep the agent fast and right without a person checking: `RequestBudgetTests` (every read `scope plan` makes, with its
+  reason), `AgentFilesTests` (every command and option the kit and guides name exists; every named skill exists and has an agent).
+- Fixed: every scope warning in the review queue said it was about sensitive data, a missing flow-down clause included. Each kind now
+  says why for itself (`ReviewOrder.FindingWhy`).
+- Fixed: the s18-06 task text had its sentences out of order.
+
 ## Discovered work
+
+- **s18-D1 CISO Assistant's API gives no token expiry.** `hound next` and `hound status --json` say so and where to look; a rejected
+  token is listed as broken. Watch for an API that gives it.
+- **s18-D2 `hound audit draft` writes an audit without the series.** `hound onboard` joins the series `setup.yaml` names; an audit drafted
+  for named systems has a year and a due date instead. Offer the series there too.
+- **s18-D3 A run searches each uploaded evidence item twice.** The state read finds it, then the publisher's find-or-create searches
+  again. Passing the known ID to the upload would save one request per file.
+- **s18-D4 Each collector's publish reads its audits' state itself.** Deliberate (s18-04): one read for the whole run would compare
+  later collectors with rows an earlier one had just changed.
+- **s18-D5 `ScopeTestInstance` repeats helpers of `ScopePlanCommandTests`.** Fold them together when either changes next.
 
 ## Sprint review
