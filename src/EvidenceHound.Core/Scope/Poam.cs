@@ -11,6 +11,9 @@ public sealed record PoamItem(SspValue Requirement, SspValue Status, SspValue Co
 
     /// <summary>The POA&amp;M id of a requirement.</summary>
     public static string For(string? requirement) => $"POAM-{requirement}";
+
+    /// <summary>Why CMMC does not allow this item on a POA&amp;M (s17-03); null when it may sit there.</summary>
+    public string? NotAllowed { get; init; }
 }
 
 /// <summary>

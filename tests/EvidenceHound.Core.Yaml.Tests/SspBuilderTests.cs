@@ -129,6 +129,30 @@ public class SspBuilderTests
     }
 
     [Fact]
+    public void Cmmc_asset_category_comes_from_the_system_tag()
+    {
+        // s17-03: CISO Assistant's asset custom fields are an Enterprise feature, so the category is a tag in scope/setup.yaml.
+        var setup = SspFixture.Setup.Replace("        tags:\n          essentials_domain: identity\n", "        tags:\n          essentials_domain: identity\n          cmmc_asset_category: cui\n", StringComparison.Ordinal);
+        var parsed = SspFixture.Parse(setup: setup);
+        parsed.Problems.ShouldBeEmpty();
+
+        var inventory = SspBuilder.Build(parsed.Scope.Ssps.Single(), parsed.Scope, SspFixture.Held()).Inventory;
+
+        inventory[0].Category.Value.ShouldBe("cui");
+        inventory[0].Category.Source.Reference.ShouldStartWith("scope/setup.yaml line ");
+        inventory[1].Category.Value.ShouldBeNull();
+    }
+
+    [Fact]
+    public void An_unknown_cmmc_asset_category_is_a_problem()
+    {
+        var setup = SspFixture.Setup.Replace("          essentials_domain: identity\n", "          essentials_domain: identity\n          cmmc_asset_category: crown jewels\n", StringComparison.Ordinal);
+        var scope = SspFixture.Parse(setup: setup).Scope;
+
+        SspValidator.Validate(scope).ShouldContain(p => p.Code == "ssp.asset_category_invalid" && p.Message.Contains("crown jewels", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void A_programme_audit_series_reads_the_rows_of_the_period_open_today()
     {
         // s13-08 (carried from s11): rows of a series live under each period's ref_id, not under the series'.
