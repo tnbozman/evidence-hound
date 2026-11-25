@@ -79,6 +79,9 @@ public sealed class MappingCoverageCommandTests : IDisposable
         text.ShouldContain("| Governance and culture | 1 |");
         text.ShouldContain("| Visibility and response | 1 |");
         text.ShouldNotContain("| Business systems");
+        // s14-04: the same principle sits in several domains, so the per-parent table names the domain too.
+        text.ShouldContain("| Boundary services / Secure system lifecycle | 1 |");
+        text.ShouldContain("| Identity services / Secure system lifecycle | 1 |");
         text.ShouldMatch(@"(?s).*Total: \d+ automated, \d+ manual, 0 uncovered.*");
     }
 
