@@ -107,6 +107,11 @@ Changed in the AI governance planning PR (Nov 2026): s11-05 builds the `ciso-ass
 **Functional check**
 - Following the guides verbatim, add a metric to the example repo and apply it.
 
+**Notes**
+- The governance collector is the `rest` collector with the `ciso-assistant` profile (s14, extended in s16-01); its page, `docs/collectors/ciso-assistant.md`, is retitled for governance and `docs/metrics.md` links its checks as metric inputs.
+- The example repo's `scope/metrics.yaml`: MFA checks passing (`check_pass_rate` over `identity.mfa.*`), Essential Eight requirements compliant (`requirements_compliant_pct` for EX-E8-2026), and the committee dashboard with both, the audit's builtin progress and a note. The local CISO Assistant is seeded by applying the example scope, so every CI run applies them (`ScopePlanFunctionalTests` lists the four new kinds, and its second plan must be empty).
+- `hound scope validate` now counts metrics and dashboards in its summary line. The example repo's `CLAUDE.md` and the `prepare-the-reports` skill say where metrics live and that values are never typed.
+
 ### s16-07 `hound status` gives each programme's standing (carried from s15-D10)
 - [ ] Done
 

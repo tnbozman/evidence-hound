@@ -541,7 +541,7 @@ internal static class ScopeCommands
         ];
         return new(
             [.. problems.Where(p => !p.Warning)],
-            string.Create(CultureInfo.InvariantCulture, $"scope valid: {scope.Setup.Domains.Count} domain(s), {scope.Controls.Count} control(s), {scope.Audits.Count} audit(s){ThirdPartyCount(scope)}{RiskCount(scope)}"),
+            string.Create(CultureInfo.InvariantCulture, $"scope valid: {scope.Setup.Domains.Count} domain(s), {scope.Controls.Count} control(s), {scope.Audits.Count} audit(s){ThirdPartyCount(scope)}{RiskCount(scope)}{MetricCount(scope)}"),
             scope,
             new ScopeInputs(snapshots.Loaded, configFile is null ? null : targets.Match(t => t, _ => []), files.Found.Concat(libraries.Files).ToDictionary(StringComparer.Ordinal))
             {
@@ -586,6 +586,11 @@ internal static class ScopeCommands
                 "Add the runbook (what to export, from where, and how to send it to the GRC team), or fix the path: it is relative to the folder that holds scope/."));
 
     /// <summary>", N third party(ies)" when the scope declares any, so a scope without them reads as before.</summary>
+    private static string MetricCount(ScopeDocument scope) =>
+        scope.Metrics.Instances.Count + scope.Metrics.Dashboards.Count == 0
+            ? ""
+            : string.Create(CultureInfo.InvariantCulture, $", {scope.Metrics.Instances.Count} metric(s) with {scope.Metrics.Dashboards.Count} dashboard(s)");
+
     private static string ThirdPartyCount(ScopeDocument scope) =>
         scope.ThirdParties.Count == 0 ? "" : string.Create(CultureInfo.InvariantCulture, $", {scope.ThirdParties.Count} third party(ies)");
 

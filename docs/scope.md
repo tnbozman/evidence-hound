@@ -601,7 +601,8 @@ and `aggregation` to `none`; `x`, `y`, `width` and `height` default to 0, 0, 6 a
 `metric.target_invalid`, `metric.input_unknown`, `metric.input_invalid`, `metric.input_outside_domain` (an input with no instance in the
 formula's domain), `metric.definition_unknown`, `metric.control_unknown`, `metric.domain_unknown`, `dashboard.widget_invalid`,
 `dashboard.widget_duplicate`, `dashboard.metric_unknown`, `dashboard.builtin_unknown`, `dashboard.object_unknown` and
-`dashboard.widget_outside_grid`. In a plan, a widget is keyed `dashboard/title`, such as `EX-DASH-COMMITTEE/MFA coverage`.
+`dashboard.widget_outside_grid`. In a plan, a widget is keyed `dashboard/title`, such as `EX-DASH-COMMITTEE/MFA coverage`. The
+[Metrics and dashboards](metrics.md) guide walks through adding one; the example is `examples/compliance-repo/scope/metrics.yaml`.
 
 ### Metrics filled in by runs
 

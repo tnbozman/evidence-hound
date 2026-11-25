@@ -19,3 +19,7 @@ The guides are [docs/reporting.md](https://github.com/tnbozman/evidence-hound/bl
 5. Escalations the committee owns for the board are not read into the board report yet; list them for the person from the committee
    minutes, and say so.
 6. Hand the person the report files and your draft. They check each sentence against its line and publish the report themselves.
+7. The committee's trend charts are metrics in `scope/metrics.yaml`, drawn on its dashboard in CISO Assistant. Runs record an instance
+   with `source: hound` each period; check the latest run's `metrics` list and its `metric.not_applied` or `metric.nothing_measured`
+   warnings. To add a metric the person asks for, follow [docs/metrics.md](https://github.com/tnbozman/evidence-hound/blob/main/docs/metrics.md):
+   edit the file, `hound scope validate scope/`, `hound scope plan scope/`, and propose it in a pull request. Never type a metric's value.

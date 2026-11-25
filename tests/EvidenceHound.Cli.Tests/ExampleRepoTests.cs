@@ -26,6 +26,7 @@ public sealed partial class ExampleRepoTests : IDisposable
     {
         (await Hound("config", "validate", Path.Combine(Repo, "hound.yaml"))).ShouldBe(ExitCodes.Ok, _error.ToString());
         (await Hound("scope", "validate", Path.Combine(Repo, "scope"), "--config", Path.Combine(Repo, "hound.yaml"))).ShouldBe(ExitCodes.Ok, _error.ToString());
+        _output.ToString().ShouldContain(", 2 metric(s) with 1 dashboard(s)");
         foreach (var mapping in Directory.GetFiles(Path.Combine(Repo, "mappings"), "*.yaml"))
         {
             (await Hound("mapping", "validate", mapping)).ShouldBe(ExitCodes.Ok, $"{mapping}: {_error}");

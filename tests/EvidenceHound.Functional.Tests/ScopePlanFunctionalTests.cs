@@ -30,6 +30,7 @@ public sealed class ScopePlanFunctionalTests(CisoAssistantFixture ciso)
             [
                 "feature_flag", "setting", "framework", "domain", "perimeter", "system", "user", "team", "audit", "document", "control", "assessment", "evidence", "tasktemplate",
                 "security_exception", "risk_study", "risk_scenario", "risk_acceptance", "bia", "asset_assessment", "escalation_threshold",
+                "metric_definition", "metric_instance", "dashboard", "dashboard_widget",
             ],
             ignoreOrder: true, ciso.SeedApplyReport);
         written.ShouldContain(("framework", "urn:example:risk:framework:example-baseline"), ciso.SeedApplyReport);

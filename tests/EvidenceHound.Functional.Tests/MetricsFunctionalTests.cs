@@ -162,7 +162,9 @@ public sealed class MetricsFunctionalTests(CisoAssistantFixture ciso) : IDisposa
     public void Dispose() => Directory.Delete(_repo, recursive: true);
 
     private static (string Instance, string Period, double Value)[] Recorded(string runJson) =>
-        [.. JsonNode.Parse(runJson)!["metrics"]!.AsArray().Select(m => (m!["instance"]!.GetValue<string>(), m["period_start"]!.GetValue<string>(), m["value"]!.GetValue<double>()))];
+        [.. JsonNode.Parse(runJson)!["metrics"]!.AsArray()
+            .Select(m => (m!["instance"]!.GetValue<string>(), m["period_start"]!.GetValue<string>(), m["value"]!.GetValue<double>()))
+            .Where(m => m.Item1.StartsWith("EX-FMET-", StringComparison.Ordinal))];
 
     /// <summary>The example deployment, with its scope, its evidence under the test's repo, and the fake collector's fail setting.</summary>
     private async Task<string> ConfigAsync(string? fail, CancellationToken ct)

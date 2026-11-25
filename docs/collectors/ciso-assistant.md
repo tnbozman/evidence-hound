@@ -1,4 +1,4 @@
-# The AI register and suppliers, checked on every run
+# Governance checked on every run: the AI register, suppliers, risk and recovery
 
 Two collectors check the AI register and your suppliers. Each reads the place where the facts are kept.
 

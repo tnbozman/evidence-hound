@@ -85,6 +85,7 @@ nav:
       - Scope files: scope.md
       - Risk studies and exceptions: risk.md
       - Business impact analysis: bia.md
+      - Metrics and dashboards: metrics.md
       - Incidents and reporting deadlines: incidents.md
       - Third parties: third-parties.md
       - Move off spreadsheets: adopt/migrate-from-spreadsheets.md
