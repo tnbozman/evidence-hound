@@ -47,3 +47,12 @@ teardown() {
   [[ "$output" == *"map check results to requirements"* ]]
   [[ "$output" != *"essentials mapping"* ]]
 }
+
+@test "the changelog is lint-clean Markdown: spaced headings, single blank lines, addresses as code" {
+  git -C "$repo" commit -q --allow-empty -m "feat(s01-05): remind owner@example.com before the due date"
+  "$root/scripts/changelog.sh" 1.0.0 "$repo"
+  changelog="$repo/CHANGELOG.md"
+  grep -B1 '^## 1.0.0' "$changelog" | head -1 | grep -q '^$'
+  ! awk 'prev == "" && $0 == "" && NR > 1 { found = 1 } { prev = $0 } END { exit !found }' "$changelog"
+  grep -q 'remind `owner@example.com` before' "$changelog"
+}
