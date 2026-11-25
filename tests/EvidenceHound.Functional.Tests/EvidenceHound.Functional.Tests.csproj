@@ -22,7 +22,6 @@
     <None Include="..\fixtures\sophos\*.json" Link="sophos\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\fixtures\sophos-mapping.yaml" Link="files\fixtures\sophos-mapping.yaml" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\fixtures\m365-mapping.yaml" Link="files\fixtures\m365-mapping.yaml" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\fixtures\essentials-m365-mapping.yaml" Link="files\fixtures\essentials-m365-mapping.yaml" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\dev\ciso-assistant\seed\*" Link="seed\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />

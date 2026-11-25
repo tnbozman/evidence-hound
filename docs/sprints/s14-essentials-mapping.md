@@ -30,6 +30,8 @@ See [the migration plan](../migrations/essential-eight-to-asd-essentials.md).
 
 **Functional check**
 - Against the local CISO Assistant with both libraries loaded: `hound run` with recordings fills the example Essentials and Essential Eight 2023 audits; the coverage report matches the audits.
+- Result (2026-11-25): `hound mapping coverage mappings/asd-essentials-enterprise-it.yaml --framework frameworks/asd-essentials-enterprise-it.json --groups 1 --manual examples/manual-sources --manual examples/example-essential-eight.yaml` printed the four phase 1 domains (governance 3 automated, 6 manual; visibility 1, 11; boundary 11, 26; identity 11, 24) and `Total: 26 automated, 67 manual, 0 uncovered`, so 93 phase 1 rows, 92 mapped and IT.GOV-01.1 recorded by hand. `hound mapping derive` from the Essential Eight mapping wrote 55 draft rows and listed 38 without checks, which the reviewed mapping fills from the new templates, Microsoft 365 (legacy authentication) and the ciso-assistant profile (supplier assurance). The run against CISO Assistant is `TwoAuditsFunctionalTests` (now with the real Essentials mapping: changed plus unchanged rows of EX-ESSENTIALS-2026 equal the mapping's 92 rows), run by CI's functional job, as CISO Assistant's images cannot be pulled in this cloud session.
+- Notes: the custom library sits in `frameworks/` beside the other libraries, not a new `libraries/` folder. The reference mapping's rows were checked with AI help and the draft marks removed; its header says to review it in your own copy, as the 800-171 crosswalk does.
 
 ### s14-02 DISP membership readiness beyond the Essential Eight (added 2026-11-24)
 - [ ] Done

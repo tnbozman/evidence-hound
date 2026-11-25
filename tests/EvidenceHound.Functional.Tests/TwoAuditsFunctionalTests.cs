@@ -8,7 +8,10 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace EvidenceHound.Functional.Tests;
 
-/// <summary>s06-03: one <c>hound run</c> updates the Essential Eight and the Essentials audits; each evidence file is uploaded once and linked from both.</summary>
+/// <summary>
+/// s06-03: one <c>hound run</c> updates the Essential Eight and the Essentials audits; each evidence file is uploaded once and linked from both.
+/// s14-01: with the repository's Essentials mapping, every mapped priority phase 1 row is written.
+/// </summary>
 [Trait("Category", "Functional")]
 [Collection(SharedCisoAssistant.Name)]
 public sealed class TwoAuditsFunctionalTests(CisoAssistantFixture ciso) : IDisposable
@@ -27,6 +30,8 @@ public sealed class TwoAuditsFunctionalTests(CisoAssistantFixture ciso) : IDispo
         var audits = summary["collectors"]![0]!["publish"]!["audits"]!.AsArray();
         audits.Select(a => a!["compliance_assessment"]!.GetValue<string>()).ShouldBe(["EX-E8-2026", "EX-ESSENTIALS-2026"]);
         audits.Select(a => a!["failed"]!.GetValue<int>()).ShouldAllBe(failed => failed == 0);
+        var essentialsChanges = summary["collectors"]![0]!["changes"]!.AsArray().Single(a => a!["compliance_assessment"]!.GetValue<string>() == "EX-ESSENTIALS-2026")!;
+        (essentialsChanges["changed"]!.GetValue<int>() + essentialsChanges["unchanged"]!.GetValue<int>()).ShouldBe(EssentialsRows(), summary.ToJsonString());
 
         var e8 = (await GetAsync("requirement-assessments/?compliance_assessment__ref_id=EX-E8-2026&requirement__ref_id=ISM-1504", ct))["results"]![0]!;
         var essentials = (await GetAsync(
@@ -43,6 +48,14 @@ public sealed class TwoAuditsFunctionalTests(CisoAssistantFixture ciso) : IDispo
     {
         _tenant.Dispose();
         Directory.Delete(_workDir, recursive: true);
+    }
+
+    /// <summary>The rows the repository's Essentials mapping names: one row each, as every row is named by URN.</summary>
+    private static int EssentialsRows()
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, "files", "mappings", "asd-essentials-enterprise-it.yaml");
+        return EvidenceHound.Core.Yaml.MappingLoader.Parse(File.ReadAllText(path), path)
+            .Match(loaded => loaded.Mapping.Requirements.Count, problems => throw new InvalidOperationException(problems[0].Message));
     }
 
     private static List<string> Ids(JsonNode? evidences) =>
@@ -71,7 +84,7 @@ public sealed class TwoAuditsFunctionalTests(CisoAssistantFixture ciso) : IDispo
             targets:
               - mapping: {{Path.Combine(files, "mappings", "essential-eight-2023.yaml")}}
                 compliance_assessment: EX-E8-2026
-              - mapping: {{Path.Combine(files, "fixtures", "essentials-m365-mapping.yaml")}}
+              - mapping: {{Path.Combine(files, "mappings", "asd-essentials-enterprise-it.yaml")}}
                 compliance_assessment: EX-ESSENTIALS-2026
             """, ct);
 
