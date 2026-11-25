@@ -68,6 +68,22 @@ public static class ReviewOrder
         };
     }
 
+    /// <summary>Why a scope warning waits on a person, by its code (s18-07): each kind of finding says what it is about.</summary>
+    public static string FindingWhy(string code)
+    {
+        ArgumentNullException.ThrowIfNull(code);
+        return code switch
+        {
+            _ when code.StartsWith("data.", StringComparison.Ordinal) =>
+                "Sensitive data is handled where nothing on file approves it. A prime or an assessor asks about exactly this, so it stays in front of you until it is fixed.",
+            "contract.flow_down_missing" =>
+                "A supplier's contract lacks a clause your customer requires you to flow down to it. A prime asks about exactly this, so it stays in front of you until the contract carries it.",
+            "contract.framework_unknown" =>
+                "A customer requires a framework no programme tracks yet, so nothing shows whether you meet it. It stays in front of you until a programme tracks it.",
+            _ => "The scope reports this as a warning: it blocks nothing, so it stays in front of you each week until it is fixed.",
+        };
+    }
+
     public static string Code(ReviewKind kind) => kind switch
     {
         ReviewKind.SupplierReview => "supplier_review",

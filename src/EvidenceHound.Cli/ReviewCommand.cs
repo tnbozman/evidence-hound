@@ -252,7 +252,7 @@ internal static class ReviewCommand
             ReviewKind.Finding,
             string.Create(CultureInfo.InvariantCulture, $"finding:{w.Code}/{Path.GetFileName(w.At.File)}:{w.At.Line}"),
             $"[finding] {w.Message}",
-            "Sensitive data is handled where nothing on file approves it. A prime or an assessor asks about exactly this, so it stays in front of you until it is fixed.",
+            ReviewOrder.FindingWhy(w.Code),
             $"Nothing changes; your sign-off records that you saw it this week. To clear it: {w.Hint}",
             2)
         {
