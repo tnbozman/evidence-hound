@@ -59,7 +59,8 @@ public class ExceptionScopeTests
         var problem = problems.ShouldHaveSingleItem();
         problem.Code.ShouldBe("scope.approval_not_configurable");
         problem.Hint.ShouldContain("approver in CISO Assistant");
-        Parse(RiskFixture.Study.Replace("treatment: accept", "treatment: accept\n    approved: true", StringComparison.Ordinal)).Problems.ShouldBeEmpty("a key the study does not know is reported by the study, not here");
+        Parse(study: RiskFixture.Study.Replace("treatment: accept", "treatment: accept\n    approved: true", StringComparison.Ordinal)).Problems
+            .ShouldHaveSingleItem().Code.ShouldBe("scope.key_unknown", "an acceptance is requested by treatment: accept and approved in CISO Assistant");
     }
 
     [Fact]
@@ -95,6 +96,14 @@ public class ExceptionScopeTests
         exception.Fields["requirements"].ShouldBe("EXAMPLE-BASELINE-2026/EX-1.1");
         exception.Fields.Keys.ShouldNotContain("status");
         declared.Single(o => o.Key == "EX-RISK-2026/R-01" && o.Kind == ScopeKind.RiskScenario).Fields["exceptions"].ShouldBe("EXC-01");
+    }
+
+    [Fact]
+    public void Exceptions_alone_ask_the_reader_for_risks()
+    {
+        var scope = Parse().Scope with { RiskStudies = [] };
+
+        ScopeStateQuery.For(scope, ScopeDesired.From(scope, ScopeInputs.None)).Risks.ShouldBeTrue("exceptions and acceptances are read with the risks");
     }
 
     private static ActualObject Held(string refId, string status, string expires) =>

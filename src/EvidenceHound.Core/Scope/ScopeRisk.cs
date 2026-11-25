@@ -67,7 +67,11 @@ public sealed record ScopeExceptionRequest(
     IReadOnlyList<ScopeRef> Controls,
     IReadOnlyList<ScopeRef> Scenarios,
     IReadOnlyList<ExceptionRequirement> Requirements,
-    SourceLine At);
+    SourceLine At)
+{
+    /// <summary>CISO Assistant's severities, in its order: it stores each as its position less one (undefined is -1, critical 4).</summary>
+    public static IReadOnlyList<string> Severities { get; } = ["undefined", "info", "low", "medium", "high", "critical"];
+}
 
 /// <summary>A requirement an exception covers, by its audit's <c>ref_id</c> and the requirement's <c>ref_id</c> or URN.</summary>
 public sealed record ExceptionRequirement(string Audit, string Requirement, SourceLine At);

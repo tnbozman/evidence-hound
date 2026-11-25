@@ -91,13 +91,15 @@ public static partial class ScopeLoader
         var parsedSsps = sspFile?.Root() is { } sspRoot ? ReadSsps(sspRoot, sspFile) : [];
         var riskFiles = (risks ?? []).Select(r => new FileReader(r)).ToArray();
         var parsedRisks = riskFiles.Select(file => file.Root() is { } root ? ReadRiskStudy(root, file) : null).OfType<ScopeRiskStudy>().ToArray();
+        var exceptionsFile = exceptions is null ? null : new FileReader(exceptions);
+        var parsedExceptions = exceptionsFile?.Root() is { } exceptionsRoot ? ReadExceptions(exceptionsRoot, exceptionsFile) : [];
 
         return new ScopeParse(
-            new ScopeDocument(parsedSetup, parsedControls, parsedAudits) { Access = parsedAccess, Settings = parsedSettings, ThirdParties = parsedThirdParties, Capabilities = parsedCapabilities, EvidencePlan = parsedPlan, Ssps = parsedSsps, RiskStudies = parsedRisks },
+            new ScopeDocument(parsedSetup, parsedControls, parsedAudits) { Access = parsedAccess, Settings = parsedSettings, ThirdParties = parsedThirdParties, Capabilities = parsedCapabilities, EvidencePlan = parsedPlan, Ssps = parsedSsps, RiskStudies = parsedRisks, Exceptions = parsedExceptions },
             [
                 .. setupFile.Problems, .. controlsFile?.Problems ?? [], .. auditFiles.SelectMany(f => f.Problems), .. accessFile?.Problems ?? [],
                 .. settingsFile?.Problems ?? [], .. thirdPartyFiles.SelectMany(f => f.Problems), .. capabilitiesFile?.Problems ?? [], .. planFile?.Problems ?? [], .. sspFile?.Problems ?? [],
-                .. riskFiles.SelectMany(f => f.Problems),
+                .. riskFiles.SelectMany(f => f.Problems), .. exceptionsFile?.Problems ?? [],
             ]);
     }
 

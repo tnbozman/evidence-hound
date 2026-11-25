@@ -58,7 +58,7 @@ public static partial class ScopeDesired
             .. scope.ThirdParties.SelectMany(ThirdParty),
             .. Reviews(scope, inputs.Today),
             .. EvidencePlan(scope, inputs),
-            .. RiskObjects.From(scope.RiskStudies, inputs.Libraries),
+            .. RiskObjects.From(scope.RiskStudies, inputs.Libraries, scope.Exceptions),
         ];
     }
 

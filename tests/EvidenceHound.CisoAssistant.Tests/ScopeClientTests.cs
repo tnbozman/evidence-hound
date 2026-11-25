@@ -242,6 +242,8 @@ public sealed class ScopeClientTests : IDisposable
         List("security-exceptions");
         List("applied-controls", new JsonObject { ["id"] = "ac-mfa", ["ref_id"] = "AC-MFA" });
         List("compliance-assessments", new JsonObject { ["id"] = "ca-base", ["ref_id"] = "EXAMPLE-BASELINE-2026" });
+        _ca.Server.Given(Request.Create().WithPath("/api/compliance-assessments/ca-base/object/").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject { ["id"] = "ca-base", ["selected_implementation_groups"] = new JsonArray() }.ToJsonString()));
         List("requirement-assessments", new JsonObject { ["id"] = "ra-1", ["requirement"] = new JsonObject { ["urn"] = "urn:example:req:ex-1.1", ["ref_id"] = "EX-1.1" } });
         Respond("POST", "/api/security-exceptions/", 201, new JsonObject { ["id"] = "se-new" });
         var exception = Declared(ScopeKind.SecurityException, "EXC-01",

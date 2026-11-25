@@ -2002,11 +2002,17 @@
     "/api/risk-acceptances/": {
       "get": {
         "operationId": "risk_acceptances_list"
+      },
+      "post": {
+        "operationId": "risk_acceptances_create"
       }
     },
     "/api/security-exceptions/": {
       "get": {
         "operationId": "security_exceptions_list"
+      },
+      "post": {
+        "operationId": "security_exceptions_create"
       }
     },
     "/api/findings/": {
@@ -2069,6 +2075,22 @@
     "/api/threats/": {
       "get": {
         "operationId": "threats_list"
+      }
+    },
+    "/api/security-exceptions/{id}/": {
+      "patch": {
+        "operationId": "security_exceptions_partial_update"
+      },
+      "delete": {
+        "operationId": "security_exceptions_destroy"
+      }
+    },
+    "/api/risk-acceptances/{id}/": {
+      "patch": {
+        "operationId": "risk_acceptances_partial_update"
+      },
+      "delete": {
+        "operationId": "risk_acceptances_destroy"
       }
     }
   }

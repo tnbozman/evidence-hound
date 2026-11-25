@@ -48,6 +48,8 @@ internal sealed partial class ScopeWriter(HttpClient http, ICisoAssistantClient 
         ScopeKind.TaskTemplate => TaskTemplateAsync(write, folders, cancellationToken),
         ScopeKind.RiskStudy => RiskStudyAsync(write, folders, cancellationToken),
         ScopeKind.RiskScenario => RiskScenarioAsync(write, cancellationToken),
+        ScopeKind.SecurityException => SecurityExceptionAsync(write, folders, cancellationToken),
+        ScopeKind.RiskAcceptance => RiskAcceptanceAsync(write, folders, cancellationToken),
         var kind => Task.FromResult(Result.Fail<Unit>(new Problem("scope.kind_not_applied", $"This version of hound does not write {kind.ToString().ToLowerInvariant()}s yet."))),
     };
 

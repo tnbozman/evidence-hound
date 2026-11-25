@@ -18,7 +18,7 @@ public sealed record ScopeStateQuery(string RootFolder, IReadOnlyList<string> Fr
     /// <summary>Whether to read the evidence plan's recurring task templates: only when the scope declares an evidence plan.</summary>
     public bool EvidencePlan { get; init; }
 
-    /// <summary>Whether to read risk studies and their scenarios: only when the scope declares risk studies (s15-02).</summary>
+    /// <summary>Whether to read risk studies, their scenarios, security exceptions and risk acceptances: only when the scope declares studies or exceptions (s15-02, s15-03).</summary>
     public bool Risks { get; init; }
 
     /// <summary>Whether to read the organisation's own entity (the builtin main entity): only when setup declares it.</summary>
@@ -58,7 +58,7 @@ public sealed record ScopeStateQuery(string RootFolder, IReadOnlyList<string> Fr
             ThirdParties = scope.ThirdParties.Count > 0,
             Organisation = scope.Setup.Organisation is not null,
             EvidencePlan = scope.EvidencePlan is not null,
-            Risks = scope.RiskStudies.Count > 0,
+            Risks = scope.RiskStudies.Count > 0 || scope.Exceptions.Count > 0,
             CustomLibraries = declared.Where(d => d.Kind == ScopeKind.Framework && d.Files.Count > 0 && d.Initial.ContainsKey("library"))
                 .GroupBy(d => d.Key, StringComparer.Ordinal)
                 .ToDictionary(g => g.Key, g => g.First().Initial["library"], StringComparer.Ordinal),

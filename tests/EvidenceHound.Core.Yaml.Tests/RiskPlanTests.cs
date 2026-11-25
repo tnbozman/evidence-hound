@@ -22,7 +22,7 @@ public class RiskPlanTests
         scenario.Fields["threats"].ShouldBe("urn:example:risk:threat:example-risk:thr-02");
         scenario.Fields.Keys.ShouldNotContain(k => k.EndsWith("_level", StringComparison.Ordinal), "CISO Assistant computes risk levels");
         scenario.Levels.ShouldBe(new Dictionary<string, int> { ["current_proba"] = 2, ["current_impact"] = 2, ["residual_proba"] = 1, ["residual_impact"] = 2 });
-        declared.Single(o => o.Key == "EX-RISK-2026/R-02").Fields.Keys.ShouldNotContain("residual_probability", "not rated is left out");
+        declared.Single(o => o.Kind == ScopeKind.RiskScenario && o.Key == "EX-RISK-2026/R-02").Fields.Keys.ShouldNotContain("residual_probability", "not rated is left out");
     }
 
     [Fact]

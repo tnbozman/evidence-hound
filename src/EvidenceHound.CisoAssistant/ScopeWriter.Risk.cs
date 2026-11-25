@@ -84,7 +84,8 @@ internal sealed partial class ScopeWriter
                 var threats = await IdsAsync("threats/", "urn", Split(Field(declared, "threats")), "threat", cancellationToken);
                 var inPlace = await IdsAsync("applied-controls/", "ref_id", Split(Field(declared, "existing_controls")), "applied control", cancellationToken);
                 var planned = await IdsAsync("applied-controls/", "ref_id", Split(Field(declared, "planned_controls")), "applied control", cancellationToken);
-                return await Result.Combine([assets, threats, inPlace, planned]).BindAsync(async resolved =>
+                var exceptions = await IdsAsync("security-exceptions/", "ref_id", Split(Field(declared, "exceptions")), "security exception", cancellationToken);
+                return await Result.Combine([assets, threats, inPlace, planned, exceptions]).BindAsync(async resolved =>
                 {
                     var body = new JsonObject
                     {
@@ -99,6 +100,11 @@ internal sealed partial class ScopeWriter
                         ["treatment"] = Field(declared, "treatment"),
                         ["justification"] = Field(declared, "justification"),
                     };
+                    if (Field(declared, "exceptions") is not null || write.Change.Fields.Any(f => f.Field == "exceptions"))
+                    {
+                        body["security_exceptions"] = resolved[4].DeepClone();
+                    }
+
                     foreach (var number in RatingNumbers)
                     {
                         body[number] = declared.Levels.TryGetValue(number, out var level) ? level : -1;

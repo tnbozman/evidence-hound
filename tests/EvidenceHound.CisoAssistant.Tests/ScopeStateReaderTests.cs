@@ -215,6 +215,82 @@ public sealed class ScopeStateReaderTests : IDisposable
             });
     }
 
+    [Fact]
+    public async Task Reads_security_exceptions_and_risk_acceptances_with_their_approval_observed()
+    {
+        // s15-03: links come from both sides (a control's or row's security_exceptions); status and expiry are CISO Assistant's, only observed.
+        List("risk-assessments", Listed("ra-study", "f-ex"));
+        Object("risk-assessments", "ra-study", new JsonObject { ["id"] = "ra-study", ["name"] = "Example risks", ["ref_id"] = "EX-RISK-2026", ["folder"] = "f-ex" });
+        List("risk-matrices");
+        List("threats");
+        _ca.Server.Given(Request.Create().WithPath("/api/risk-scenarios/").WithParam("risk_assessment", "ra-study").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject
+            {
+                ["count"] = 1,
+                ["results"] = new JsonArray(new JsonObject
+                {
+                    ["id"] = "rs-2",
+                    ["ref_id"] = "R-02",
+                    ["name"] = "Backup administrator leaves",
+                    ["treatment"] = "accept",
+                    ["security_exceptions"] = new JsonArray(new JsonObject { ["id"] = "se-1", ["str"] = "EXC-01" }),
+                }),
+            }.ToJsonString()));
+        List("security-exceptions", Listed("se-1", "f-ex"));
+        Object("security-exceptions", "se-1", new JsonObject
+        {
+            ["id"] = "se-1",
+            ["ref_id"] = "EXC-01",
+            ["name"] = "Legacy finance app without MFA",
+            ["folder"] = "f-ex",
+            ["severity"] = 2,
+            ["status"] = "approved",
+            ["expiration_date"] = "2027-03-31",
+            ["owners"] = new JsonArray("act-it"),
+            ["assets"] = new JsonArray("a-365"),
+            ["observation"] = "Office network only.",
+        });
+        List("risk-acceptances", Listed("rac-1", "f-ex"));
+        Object("risk-acceptances", "rac-1", new JsonObject
+        {
+            ["id"] = "rac-1",
+            ["ref_id"] = "ACC-EX-RISK-2026-R-02",
+            ["name"] = "Accept: Backup administrator leaves",
+            ["folder"] = "f-ex",
+            ["state"] = "submitted",
+            ["expiry_date"] = "2027-06-30",
+            ["risk_scenarios"] = new JsonArray("rs-2"),
+            ["justification"] = "Training a second.",
+        });
+
+        var held = (await _ca.Scope.ReadAsync(Query with { Risks = true }, _ct)).Value().ToDictionary(a => (a.Held.Kind, a.Held.Key));
+
+        var exception = held[(ScopeKind.SecurityException, "EXC-01")];
+        exception.Held.Fields.ShouldBe(new Dictionary<string, string>
+        {
+            ["name"] = "Legacy finance app without MFA",
+            ["domain"] = "Example Pty Ltd",
+            ["severity"] = "medium",
+            ["owners"] = "it@example.com",
+            ["expiration_date"] = "2027-03-31",
+            ["observation"] = "Office network only.",
+            ["systems"] = "Example 365",
+            ["controls"] = "AC-MFA",
+            ["requirements"] = "EX-E8-2026/ISM-1486",
+        });
+        exception.Observed.ShouldBe(new Dictionary<string, string> { ["status"] = "approved", ["expiration_date"] = "2027-03-31" });
+        var acceptance = held[(ScopeKind.RiskAcceptance, "EX-RISK-2026/R-02")];
+        acceptance.Held.Fields.ShouldBe(new Dictionary<string, string>
+        {
+            ["name"] = "Accept: Backup administrator leaves",
+            ["domain"] = "Example Pty Ltd",
+            ["scenario"] = "EX-RISK-2026/R-02",
+            ["justification"] = "Training a second.",
+        });
+        acceptance.Observed.ShouldBe(new Dictionary<string, string> { ["status"] = "submitted", ["expiration_date"] = "2027-06-30" });
+        held[(ScopeKind.RiskScenario, "EX-RISK-2026/R-02")].Held.Fields["exceptions"].ShouldBe("EXC-01");
+    }
+
     private void RecordInstance()
     {
         List("folders", Folder("f-global", "Global", null), Folder("f-ex", "Example Pty Ltd", "f-global"), Folder("f-other", "Other Pty Ltd", "f-other-parent"));
@@ -278,6 +354,7 @@ public sealed class ScopeStateReaderTests : IDisposable
             ["eta"] = null,
             ["assets"] = new JsonArray("a-365"),
             ["evidences"] = new JsonArray("ev-policy"),
+            ["security_exceptions"] = new JsonArray("se-1"),
         });
         List("requirement-assessments",
             new JsonObject
@@ -288,6 +365,7 @@ public sealed class ScopeStateReaderTests : IDisposable
                 ["observation"] = "Reviewed by hand.",
                 ["applied_controls"] = new JsonArray("ac-mfa"),
                 ["evidences"] = new JsonArray(new JsonObject { ["id"] = "ev-policy", ["str"] = "Identity policy" }),
+                ["security_exceptions"] = new JsonArray(new JsonObject { ["id"] = "se-1", ["str"] = "EXC-01" }),
                 ["requirement"] = new JsonObject { ["urn"] = "urn:intuitem:risk:req_node:essential-eight-2023:ism-1486", ["ref_id"] = "ISM-1486", ["implementation_groups"] = new JsonArray("1") },
             },
             new JsonObject

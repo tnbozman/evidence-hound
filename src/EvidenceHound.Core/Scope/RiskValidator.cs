@@ -14,7 +14,7 @@ public static class RiskValidator
     {
         ArgumentNullException.ThrowIfNull(scope);
         ArgumentNullException.ThrowIfNull(libraries);
-        if (scope.RiskStudies.Count == 0)
+        if (scope.RiskStudies.Count == 0 && scope.Exceptions.Count == 0)
         {
             return [];
         }
@@ -26,7 +26,27 @@ public static class RiskValidator
         [
             .. Duplicates(scope.RiskStudies.Select(s => (s.RefId, s.At)), "risk.study_duplicate", "risk study"),
             .. scope.RiskStudies.SelectMany(study => Study(study, scope, catalogue, systems, controls)),
+            .. Duplicates(scope.Exceptions.Select(e => (e.RefId, e.At)), "exception.duplicate", "security exception"),
+            .. scope.Exceptions.SelectMany(exception => Exception(exception, scope, systems, controls)),
         ];
+    }
+
+    /// <summary>What a security exception names must be declared: its domain, systems, controls, scenarios (<c>study/scenario</c>) and audits.</summary>
+    private static IEnumerable<ScopeProblem> Exception(ScopeExceptionRequest exception, ScopeDocument scope, HashSet<string> systems, Dictionary<string, ScopeControl> controls)
+    {
+        var name = $"security exception '{exception.RefId}'";
+        var scenarios = scope.RiskStudies.SelectMany(s => s.Scenarios.Select(c => RiskObjects.ScenarioKey(s.RefId, c.RefId))).ToHashSet(StringComparer.Ordinal);
+        var audits = scope.Audits.Select(a => a.RefId).ToHashSet(StringComparer.Ordinal);
+        var unknown = new[]
+        {
+            scope.Setup.Domains.Any(d => d.Name == exception.Domain.Value) ? [] : new[] { ("domain", exception.Domain, "a domain from setup.yaml") },
+            exception.Systems.Where(s => !systems.Contains(s.Value)).Select(s => ("system", s, "a system's name from setup.yaml")),
+            exception.Controls.Where(c => !controls.ContainsKey(c.Value)).Select(c => ("control", c, "a control's ref_id from controls.yaml")),
+            exception.Scenarios.Where(c => !scenarios.Contains(c.Value)).Select(c => ("scenario", c, "<study ref_id>/<scenario ref_id> from scope/risks/")),
+            exception.Requirements.Where(r => !audits.Contains(r.Audit)).Select(r => ("audit", new ScopeRef(r.Audit, r.At), "an audit's ref_id from scope/audits/")),
+        };
+        return unknown.SelectMany(u => u).Select(u =>
+            new ScopeProblem($"exception.{u.Item1}_unknown", u.Item2.At, $"{name} names {u.Item1} '{u.Item2.Value}', which the scope does not declare.", $"Use {u.Item3}."));
     }
 
     private static IEnumerable<ScopeProblem> Study(
