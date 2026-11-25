@@ -83,7 +83,7 @@ Notes:
 - Functional: `NextFunctionalTests.Review_prepare_plans_the_example_scope_against_the_instance`.
 
 ### s18-03 Skills for every feature, checked against the CLI
-- [ ] Done
+- [x] Done
 
 **Story:** As the agent, I want a skill for each task the person may ask for, and skills that never name a command that no longer exists.
 
@@ -101,6 +101,21 @@ Notes:
 
 **Functional check**
 - Ask an agent in the GRC devcontainer to "add a risk and request an exception for it"; it follows the skills to a reviewed plan.
+
+Notes:
+- New skills: `keep-the-risk-register`, `keep-exceptions-and-acceptances`, `keep-the-bia`, `flow-down-to-suppliers` and
+  `keep-the-metrics`, in the `hound-operations` agent for both assistants. Incident deadlines were already in `respond-to-an-incident`
+  and CMMC Level 2 and SPRS in `keep-the-sprs-score`; `AgentSkillTests.Every_feature_has_a_skill` holds what each must say.
+- `hound next` sends an expiring exception to `keep-exceptions-and-acceptances` (it was `review-before-apply`); the review queue sends a
+  `contract.flow_down_missing` finding to `flow-down-to-suppliers`; `weekly-review` names both and the incident reports.
+- `AgentFilesTests.Every_hound_command_in_a_skill_exists` reads every `hound ...` in `agent/`, the guides and the README (inline and in
+  code blocks; sprint files, designs and recorded evidence are history and left out) and checks the command and each option against
+  the CLI's own help. It found nothing wrong: the s15-13 guard had kept commands right, and options had not drifted.
+  `Every_skill_an_agent_names_exists` checks the agents' skill lists, skills named in the kit, and the skills `hound next` and the
+  review queue name; each skill belongs to an agent.
+- Functional: no GRC devcontainer here, so the agent's part was rehearsed by following the two skills on a copy of the example repo:
+  a scenario `R-09` with `treatment: accept` and exception `EXC-02` naming it, then `hound scope validate scope --json`: no problems,
+  about one second. The plan needs CISO Assistant and runs in the functional tests.
 
 ### s18-04 Faster runs
 - [x] Done
