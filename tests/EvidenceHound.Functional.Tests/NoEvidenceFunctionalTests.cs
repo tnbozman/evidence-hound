@@ -37,12 +37,18 @@ public sealed class NoEvidenceFunctionalTests(CisoAssistantFixture ciso) : IDisp
         var config = Path.Combine(_repo, "hound.yaml");
         try
         {
-            (await StepAsync("1-apply", ["scope", "apply", Scope, "--config", config], ct)).Exit.ShouldBe(ExitCodes.Ok);
+            var applied = await StepAsync("1-apply", ["scope", "apply", Scope, "--config", config], ct);
+            applied.Exit.ShouldBe(ExitCodes.Ok, applied.Error);
 
             var rows = await RowsAsync(ct);
             var counts = rows.GroupBy(r => r!["result"]!.GetValue<string>()).ToDictionary(g => g.Key, g => g.Count(), StringComparer.Ordinal);
             await File.WriteAllTextAsync(Path.Combine(_results, "2-results.json"), new JsonObject([.. counts.Select(c => KeyValuePair.Create(c.Key, (JsonNode?)c.Value))]).ToJsonString(), ct);
-            counts.GetValueOrDefault("not_assessed").ShouldBe(0, "no row waits as not assessed, which CISO Assistant leaves out of its percentage");
+            var ours = JsonNode.Parse(applied.Output)!["changes"]!.AsArray()
+                .Where(c => c!["kind"]!.GetValue<string>() == "assessment" && c["key"]!.GetValue<string>().StartsWith(RefId, StringComparison.Ordinal))
+                .GroupBy(c => $"{c!["action"]}/{c["outcome"]}").Select(g => $"{g.Key}: {g.Count()}");
+            var open = rows.Where(r => r!["result"]!.GetValue<string>() == "not_assessed").Select(r => r!["requirement"]?["str"]?.ToString() ?? r!["id"]!.ToString()).Take(5);
+            counts.GetValueOrDefault("not_assessed").ShouldBe(
+                0, $"no row waits as not assessed, which CISO Assistant leaves out of its percentage. Applied rows: {string.Join(", ", ours)}. Still open: {string.Join("; ", open)}");
             counts.GetValueOrDefault("compliant").ShouldBe(1);
             var nonCompliant = counts.GetValueOrDefault("non_compliant");
             nonCompliant.ShouldBeGreaterThan(40);
