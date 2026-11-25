@@ -492,6 +492,23 @@ ascend), `bia.impact_unknown`, `bia.system_unknown`, `bia.control_unknown`, `bia
 CISO Assistant carries the highest impact forward. In a plan, an assessment is keyed `bia/system` and a threshold `bia/system/after`, such
 as `EX-BIA-2026/Example 365/1d`.
 
+### Recovery flags from checks
+
+A recovery flag can come from evidence instead of a hand-set value: name the checks that prove it with `documented_by`, `tested_by` or
+`targets_met_by`.
+
+```yaml
+    recovery: {documented: true, tested_by: [backup.restore_tested]}
+```
+
+After collecting, each `hound run` sets the flag from every collector's latest results: true only when every named check passed, false
+when any failed or has no result. It writes only when the value changes, and links the checks' evidence to the asset assessment when
+CISO Assistant already holds it (evidence a run published for a requirement); evidence it does not hold is named in a
+`recovery.evidence_not_published` warning, and the flag is still set. The run's JSON lists each flag it set under `recovery`, with why.
+`hound scope plan` leaves such a flag alone, and an asset assessment that `hound scope apply` has not created yet waits for it. A flag
+cannot be both set by hand and named by checks (`scope.result_conflict`), and a check is named by its id (`scope.value_invalid` if it is
+not one).
+
 ## audits/&lt;audit&gt;.yaml
 
 | Key | Meaning |

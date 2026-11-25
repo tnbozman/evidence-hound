@@ -178,6 +178,17 @@ once CI has run.
 **Functional check**
 - With the fake collector reporting `backup.restore_tested` as pass, then fail: the flag in the local CISO Assistant follows, with evidence linked.
 
+**Notes.** `documented_by`, `tested_by` and `targets_met_by` name checks by id. `RecoveryFlags.Plan` (pure) compares each such flag with
+the asset assessment CISO Assistant holds; `RecoveryPublisher` runs after the collectors in `hound run` (REST only, not in a dry run),
+reads every collector's latest results (s14-05), sets each changed flag and links the evidence CISO Assistant already holds. The scope
+plan treats recovery flags as optional fields, so it neither resets a flag set by checks nor reports it as edited, and apply leaves an
+undeclared flag out of its update. The fake collector gained a `fail` setting (check ids to report as failed) for the functional check.
+
+**Functional check result.** `BiaFunctionalTests.A_recovery_flag_named_by_a_check_follows_it_from_pass_to_fail_with_its_evidence` (CI)
+applies a BIA with `tested_by: [backup.restore_tested]`, runs the fake collector (flag true, evidence linked), runs it with
+`fail: backup.restore_tested` (flag false), runs again (nothing set) and plans the scope (no change to the assessment). Result: pending
+the CI run.
+
 ### s15-06 Documentation and example repo
 - [ ] Done
 
