@@ -632,7 +632,7 @@ Below the change table, the plan shows what the change does to each audit's resu
 
 Rows that collector runs own are never changed by the scope, so they are left out; `hound plan` shows their effect. A plan with no result changes has no such section. JSON plans have the same as `compliance[]`, each `{audit, groups[{group, name, before, after, total}], rows[{requirement, title, parent, old, new, why, regresses}]}`, and `scope apply` puts it in its report, so the record of each apply carries the effect it had.
 
-Changes come in dependency order: frameworks, domains, perimeters, systems, audits, documents, controls, then assessments. Deletes come last, in reverse.
+Changes come in dependency order: frameworks, domains, perimeters, users and teams, systems, audits, documents, controls, then assessments. Deletes come last, in reverse.
 
 How objects are matched: a framework by URN, a domain and a system by name, a perimeter by domain and name, an audit and a control by `ref_id`, a document by its id (the evidence's `ref_id`), and a hand-written assessment by audit and requirement. Only objects in the root folder and the domains directly under it are read.
 
