@@ -42,6 +42,12 @@
     }
   ],
   "$defs": {
+    "recoveryChecks": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$" },
+      "description": "Checks that set this recovery flag on each run: true only when every one passes (s15-05). The flag itself cannot also be set."
+    },
     "duration": {
       "type": "string",
       "pattern": "^[1-9][0-9]*[mhdw]$",
@@ -80,7 +86,10 @@
                 "properties": {
                   "documented": { "enum": ["true", "false", true, false] },
                   "tested": { "enum": ["true", "false", true, false] },
-                  "targets_met": { "enum": ["true", "false", true, false] }
+                  "targets_met": { "enum": ["true", "false", true, false] },
+                  "documented_by": { "$ref": "#/$defs/recoveryChecks" },
+                  "tested_by": { "$ref": "#/$defs/recoveryChecks" },
+                  "targets_met_by": { "$ref": "#/$defs/recoveryChecks" }
                 }
               },
               "observation": { "type": "string" },
