@@ -1,5 +1,11 @@
 # Evidence Hound
 
+[![CI](https://github.com/tnbozman/evidence-hound/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/tnbozman/evidence-hound/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/tnbozman/evidence-hound/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/tnbozman/evidence-hound/security/code-scanning)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/tnbozman/evidence-hound/badge)](https://scorecard.dev/viewer/?uri=github.com/tnbozman/evidence-hound)
+[![Licence: Apache-2.0](https://img.shields.io/github/license/tnbozman/evidence-hound)](LICENSE)
+[![Latest release](https://img.shields.io/github/v/release/tnbozman/evidence-hound)](https://github.com/tnbozman/evidence-hound/releases/latest)
+
 *Sniffs out compliance evidence from your systems and fetches it into CISO Assistant, on schedule, every time.*
 
 Small businesses in the defence industry must reach and then sustain cyber compliance, such as Essential Eight Maturity Level 2 (DISP, Australia) or NIST SP 800-171 (CMMC, US), usually without a dedicated CISO or GRC team.
@@ -12,6 +18,8 @@ This project shows how to do that with open-source tools:
 
 It is designed to be built and run by an ordinary in-house IT and software team, with AI-assisted development doing most of the build and automation doing most of the upkeep.
 
+> **Install and docs:** the [documentation site](https://tnbozman.github.io/evidence-hound/) starts with [getting started](docs/getting-started.md); each [release](https://github.com/tnbozman/evidence-hound/releases) lists the install commands.
+>
 > **`hound` cheat sheet:** every command and its options on one page, the typical paths on the next. [PDF](docs/cheatsheet.pdf) · [Markdown](docs/cheatsheet.md)
 
 ## What this repo provides
@@ -23,7 +31,7 @@ It is designed to be built and run by an ordinary in-house IT and software team,
 | Framework mappings | One file per framework turns neutral checks into requirement results. Essential Eight first, with an advisory crosswalk to NIST SP 800-171 ([mapping files](docs/mapping-files.md), [answering a prime's questionnaire](docs/adopt/answer-a-prime-questionnaire.md)). |
 | Collector SDK | A plugin interface, template and test kit. A collector only talks to its target system. |
 | Manual-upload collector | For systems without a usable API: schedule, upload, same audit updates. |
-| Reference collectors | Microsoft 365; Sophos Central as a REST profile; Veeam Backup & Replication next. |
+| Reference collectors | Microsoft 365 and vulnerability scan import as code; Sophos Central, Terraform pipelines and CISO Assistant itself as REST profiles; manual-upload templates for everything else, including backup restore tests. |
 | AI governance | The Australian *Guidance for AI Adoption* (AI6) as a programme beside cyber compliance: an AI system register kept in your repo and shown in CISO Assistant, checked on every run. See the [primer](docs/ai-grc-primer.md) and [docs/ai-grc.md](docs/ai-grc.md). |
 | Reporting | Monthly security committee report (operational) and quarterly board report (governance), generated from CISO Assistant data ([reporting](docs/reporting.md), [committee](docs/govern/security-committee.md), [board](docs/govern/board-reporting.md)). |
 | Adoption and operation | [Moving registers out of spreadsheets](docs/adopt/migrate-from-spreadsheets.md), [guides per role](docs/operate/README.md), [training outlines](docs/training/README.md) and a [continuous compliance procedure](docs/govern/continuous-compliance-procedure.md). |

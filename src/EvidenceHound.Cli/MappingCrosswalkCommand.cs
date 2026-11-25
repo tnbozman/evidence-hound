@@ -103,7 +103,7 @@ internal static class MappingCrosswalkCommand
             : await ReadRowsAsync(auditRef, request.Config, configuration, loggers, registry, cancellationToken);
         if (rows is not Result<IReadOnlyList<CurrentRow>>.Ok { Value: var current })
         {
-            return Log.Problems(logger, rows.Match(_ => [], ps => ps));
+            return Log.Problems(logger, [.. rows.Match(_ => [], ps => ps), TryOffline]);
         }
 
         var framework = checkedScope.Inputs.Snapshots[programme.Framework.Value];
@@ -112,6 +112,10 @@ internal static class MappingCrosswalkCommand
         await output.WriteAsync(request.Json ? Json(report) : Markdown(report));
         return ExitCodes.Ok;
     }
+
+    private static readonly Problem TryOffline = new(
+        "crosswalk.results_not_read",
+        "Today's results could not be read from CISO Assistant. To see what would answer each requirement without them, run again with --offline.");
 
     private static async Task<Result<LoadedMapping>> MappingAsync(DeploymentConfig deployment, ScopeProgramme programme, CancellationToken cancellationToken) =>
         deployment.Targets.FirstOrDefault(t => t.ComplianceAssessmentRefId == programme.Audit.Value) is { } target

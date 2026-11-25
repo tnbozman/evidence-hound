@@ -68,7 +68,7 @@ The `ism` annex follows the columns of ASD's Blueprint *System Security Plan Ann
 
 *Partially compliant* maps to *Ineffective*, the template's nearest term; the maintainer reviews this choice. The template's *Alternate control* and *No visibility* have no CISO Assistant result, so hound does not use them yet.
 
-A section file that does not exist yet prints as "_Section `name` is not written yet._", so a draft still builds.
+A section file that does not exist yet prints as "*Section `name` is not written yet.*", so a draft still builds.
 
 `--json` gives the same plan with every value and its source, including the annex (`annex[]`, with `poam` linking each unmet row to its POA&M item).
 

@@ -191,6 +191,26 @@ public class ConfigTests
     }
 
     [Theory]
+    // A folder or path setting holds a path: a GUID-named folder (a SharePoint library sync, a tenant ID) is not a token.
+    [InlineData("drop_folder: /evidence/manual/3f2a9c1e-7b4d-4e8a-9c2f-1d5e6a7b8c9d")]
+    [InlineData("drop_folder: ./manual/3f2a9c1e7b4d4e8a9c2f1d5e6a7b8c9d")]
+    [InlineData("profiles_path: ../profiles/3f2a9c1e7b4d4e8a9c2f1d5e6a7b8c9d")]
+    [InlineData("export_dir: /data/3f2a9c1e7b4d4e8a9c2f1d5e6a7b8c9d")]
+    public void Path_setting_with_a_long_folder_name_is_not_a_secret(string setting)
+    {
+        var collector = ConfigLoader.Parse(Valid.Replace("tenant: example.com", setting, StringComparison.Ordinal), Source, Known).Value().Collectors[0];
+
+        collector.Settings.Count.ShouldBe(1);
+    }
+
+    [Theory]
+    [InlineData("drop_folder: abcd1234abcd1234abcd1234abcd1234abcd1234")]
+    [InlineData("drop_folder: '-----BEGIN PRIVATE KEY-----'")]
+    public void Path_setting_that_is_not_a_path_is_still_checked(string setting) =>
+        ConfigLoader.Parse(Valid.Replace("tenant: example.com", setting, StringComparison.Ordinal), Source, Known).Problems()
+            .ShouldHaveSingleItem().Code.ShouldBe("config.secret_inline");
+
+    [Theory]
     [InlineData("token_url: https://login.example.com/oauth2/token?key=abcd1234abcd1234abcd1234abcd1234abcd1234")]
     [InlineData("token_url: hunter2")]
     public void Address_setting_holding_a_secret_is_rejected(string setting) =>

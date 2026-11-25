@@ -1,0 +1,4 @@
+# git-cliff turns Conventional Commits into CHANGELOG.md and the release notes (scripts/changelog.sh). Linux x86-64 wheel,
+# pinned by hash: pip install --require-hashes -r tools/changelog/requirements.txt
+git-cliff==2.13.1 \
+    --hash=sha256:1ab059d671565189faa4f3858b2fb42535aa39fe265ad95d84d5c116a2724fc7

@@ -218,9 +218,11 @@ an audit workbook, write a profile and review a plan before you apply it. Withou
 
 With `both`, the skills are written once, under `.claude/skills/`, which Copilot in VS Code reads too.
 
-- **Six skills, from one source.** Onboard a system with hound, assess a supplier, read an API specification, import an audit workbook,
-  write a profile, review before apply. Each is the steps for driving `hound`, followed by hound's default guidance for that step (the
-  same text `hound skill list` shows).
+- **Fifteen skills, from one source.** Onboarding: onboard the organisation, the environment, a third party, a system and an audit;
+  assess a supplier; read an API specification; import an audit workbook; write a profile. Upkeep: process manual evidence, prepare
+  the weekly review, review before apply. Adoption and reporting: move registers from spreadsheets, prepare the committee and board
+  reports, answer a prime's questionnaire. Each is the steps for driving `hound`, linking the guide it follows, and where hound has
+  default guidance for that step (the same text `hound skill list` shows), that guidance too.
 - **Two agents, with the least tools each needs.** `hound-onboarding` reads, searches, edits and runs commands. `hound-review` reads,
   searches and runs commands; it cannot edit a file.
 - **Every file opens with the same rules:** organisation data stays in this private repo; never open `secrets/`; never approve on the
@@ -280,8 +282,9 @@ The agent drafts each kind through a command that asks nothing; `hound` checks i
 | Manual evidence | `hound manual propose <source> <file> --result ... --observation ... --supports ...` | `<file>.proposal.yaml` beside the file in the drop folder, until `hound manual approve` |
 
 - **The environment.** `pending` lists the mitigations not yet decided, the drafts waiting and the systems in scope. `decide` records one
-  mitigation; deciding it again replaces the draft, and a decision a person approved is refused. Once the decisions are approved,
-  `hound onboard environment --no-model` writes the rows each system's audit leaves open for another system.
+  mitigation; deciding it again replaces the draft, and a decision a person approved is refused. Once every mitigation is decided
+  and the decisions are approved, `hound onboard environment` asks nothing and writes the rows each system's audit leaves open for
+  another system. While any mitigation is undecided it asks a person for each one, so an agent checks `pending` is empty first.
 - **A reseller or managed service provider** is a third party of its own. Draft the vendor first, then the reseller or provider with
   `--kind` and `--for <vendor ref_id>`; its description names the vendor it stands for. `--document` names a document kept in the repo
   that the draft rests on, and the file records it with its SHA-256. A system bought through one names it as `supplied_through`.

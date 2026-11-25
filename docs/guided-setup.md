@@ -22,7 +22,7 @@ Writes a new compliance repo into the folder, which must be missing or empty:
 | Time zone schedules run in | `--time-zone` | Australia/Sydney |
 | Essential Eight maturity level to assess, 1 to 3 | `--level` | 2 |
 | Audit interval: each quarter of the financial year (July to June), or each month | `--interval` | quarter |
-| Compliance owner's email | `--owner` | ceo@example.com |
+| Compliance owner's email | `--owner` | <ceo@example.com> |
 
 `--evidence-root` sets where the runner keeps evidence (default `/var/lib/evidence-hound/evidence`, outside the repo).
 
@@ -66,7 +66,7 @@ hound add collector manual --config hound.yaml
 hound add collector rest --name sophos --set profile=sophos-central --config hound.yaml --secrets-dir /etc/evidence-hound/secrets
 ```
 
-Adds a collector of any type `hound collectors` lists. It asks for the collector's name (default: the type), its schedule (default `0 3 * * *`) and each setting the collector requires, using the collector's own description of it. `--set key=value` gives any setting, optional ones included, without asking. For the `rest` collector, once it knows the profile (`--set profile=<name>`, and `--set profiles_path=<folder>` when the profiles folder is not the default), it also asks for each parameter the profile requires and has no default for, and takes the profile's secrets as the collector's.
+Adds a collector of any type `hound collectors list` lists. It asks for the collector's name (default: the type), its schedule (default `0 3 * * *`) and each setting the collector requires, using the collector's own description of it. `--set key=value` gives any setting, optional ones included, without asking. For the `rest` collector, once it knows the profile (`--set profile=<name>`, and `--set profiles_path=<folder>` when the profiles folder is not the default), it also asks for each parameter the profile requires and has no default for, and takes the profile's secrets as the collector's.
 
 For each secret the collector needs:
 

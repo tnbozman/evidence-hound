@@ -57,9 +57,9 @@ public class CommitteeReportTests
         var section = Section(Report, "## 3.");
 
         section.IndexOf("### Essential Eight", StringComparison.Ordinal).ShouldBeLessThan(section.IndexOf("### AI governance", StringComparison.Ordinal));
-        Part(section, "### Essential Eight").ShouldContain("#### mfa");
+        Part(section, "### Essential Eight").ShouldContain("#### Multi-factor authentication");
         Part(section, "### Essential Eight").ShouldContain("#### rb");
-        Part(section, "#### mfa").ShouldContain("[E8-1](https://ciso.example.com/requirement-assessments/e8-1): non-compliant → compliant");
+        Part(section, "#### Multi-factor authentication").ShouldContain("[E8-1](https://ciso.example.com/requirement-assessments/e8-1): non-compliant → compliant");
         Part(section, "### AI governance").ShouldContain("No result changed.");
         Part(section, "### AI governance").ShouldContain("Register: 2 ai_systems");
     }

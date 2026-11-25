@@ -9,6 +9,10 @@ updates:
         patterns: ["xunit*", "FsCheck*", "Shouldly", "WireMock*", "Testcontainers*", "coverlet*", "Microsoft.NET.Test.Sdk"]
       microsoft-extensions:
         patterns: ["Microsoft.Extensions.*"]
+  - package-ecosystem: npm
+    directory: "/tools/markdown"
+    schedule:
+      interval: weekly
   - package-ecosystem: github-actions
     directory: "/"
     schedule:

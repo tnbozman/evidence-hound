@@ -123,11 +123,14 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0 # MinVer reads the version from tags
       - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
           global-json-file: global.json
       - name: Generate a collector from the template, build and test it
         run: make test-template
+      - name: Pack every NuGet package and check its metadata
+        run: make test-packages
 
   image:
     runs-on: ubuntu-latest
@@ -153,11 +156,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Install bats
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq bats
-      - name: Static checks of the Compose stack (docker compose config)
+      - name: Install bats and age
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq bats age
+      - name: Static checks of the Compose stack and the backup scripts
         run: make test-compose
-      - name: Smoke test (stack up, healthy, runner runs once with the fake collector, HTTPS through Caddy)
+      - name: Smoke test (stack up, healthy, runner runs once with the fake collector, backup and restore test, HTTPS through Caddy)
         if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
         run: make compose-smoke
 
@@ -188,12 +191,32 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Install bats
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq bats
+      - name: Install bats and git-cliff
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq bats
+          python3 -m venv "$RUNNER_TEMP/tools"
+          "$RUNNER_TEMP/tools/bin/pip" install -q --require-hashes -r tools/changelog/requirements.txt
+          echo "$RUNNER_TEMP/tools/bin" >>"$GITHUB_PATH"
       - name: ShellCheck
         run: make lint-shell
       - name: Script tests
         run: make test-scripts
+
+  docs:
+    # s13-02: Markdown lint and relative link check of the published docs (no external fetches); s13-05: the site builds strictly.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install bats
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq bats
+      - name: Link checker tests
+        run: make test-docs
+      - name: Markdown lint and link check
+        run: make lint-docs
+      - name: Documentation site, strict (warnings fail)
+        run: make docs
 
   terraform:
     # s09-55: the tutorial's control tests, with mock providers. No cloud account or credentials.

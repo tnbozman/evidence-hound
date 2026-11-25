@@ -83,7 +83,7 @@ internal static class ManualCommand
         var answer = source.Checks.Count == 0 || !terminal.Interactive ? Result.Ok(new Answer(null)) : await AskAsync(terminal, source, clock, cancellationToken);
         if (source.Checks.Count > 0 && !terminal.Interactive)
         {
-            Log.Usage(logger, $"{file.Name} is copied but not attested: only a person at a terminal attests evidence. Propose a result with 'hound manual propose', and a person attests it with 'hound manual approve' or in the weekly review.");
+            Log.CopiedNotAttested(logger, file.Name);
         }
         if (answer is Result<Answer>.Fail failed)
         {

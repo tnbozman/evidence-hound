@@ -30,12 +30,29 @@ public static partial class FrameworkLibraryReader
             return Result.Fail<FrameworkSnapshot>(new Problem("framework.library_has_no_framework", $"{source}: the library has no framework."));
         }
 
+        var nodes = Items(framework, "requirement_nodes").ToList();
+        var assessable = nodes.Where(n => Text(n, "assessable") == "true").Select(Node).ToList();
         return Result.Ok(new FrameworkSnapshot(
             Text(root, "urn") ?? "",
             Text(framework, "urn") ?? "",
             int.TryParse(Text(root, "version"), NumberStyles.None, CultureInfo.InvariantCulture, out var version) ? version : 0,
             [.. Items(framework, "implementation_groups_definition").Select(g => new ImplementationGroup(Text(g, "ref_id") ?? "", Text(g, "name") ?? ""))],
-            [.. Items(framework, "requirement_nodes").Where(n => Text(n, "assessable") == "true").Select(Node)]));
+            assessable)
+        {
+            Parents = Parents(nodes, assessable),
+        });
+    }
+
+    /// <summary>The named nodes that are the parent of an assessable node, in library order.</summary>
+    private static IReadOnlyList<SnapshotParent> Parents(IReadOnlyList<YamlMappingNode> nodes, IReadOnlyList<SnapshotNode> assessable)
+    {
+        var used = assessable.Select(n => n.ParentUrn).OfType<string>().ToHashSet(StringComparer.Ordinal);
+        return
+        [
+            .. nodes
+                .Where(n => Text(n, "urn") is { } urn && used.Contains(urn) && Text(n, "name") is { Length: > 0 })
+                .Select(n => new SnapshotParent(Text(n, "urn")!, Text(n, "ref_id"), OneLine(Text(n, "name")!))),
+        ];
     }
 
     private static SnapshotNode Node(YamlMappingNode node) => new(

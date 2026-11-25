@@ -7,6 +7,7 @@ file by `scripts/cheatsheet/render.sh`.
 ## Commands
 
 ### Set up a repo
+
 - `hound init <folder>`: new compliance repo: config, scope, an Essential Eight audit and its mapping
   - `--org --code --url --time-zone --level --interval --owner --evidence-root --assistant -y --json`
 - `hound agent setup`: set up Claude Code or Copilot in the repo
@@ -16,6 +17,7 @@ file by `scripts/cheatsheet/render.sh`.
 - `hound collectors list`: collector types in this build
 
 ### Suppliers, systems and audits
+
 - `hound supplier draft`: draft a supplier, its solution, contract and review
   - `--ref --name --solution-ref --solution-name --contract-ref --contract-name` (req)
   - `--kind msp|reseller|vendor --for --system --level --document --data --description --start --end --annual-expense --currency --json`
@@ -42,6 +44,7 @@ file by `scripts/cheatsheet/render.sh`.
   - `--programme` (req) `--scope --config --json`
 
 ### Onboard
+
 - `hound onboard <system>`: onboard a system: supplier, applicability, files
   - `--repo --framework --group --spec`
 - `hound onboard pending`: agent: what is still undecided (`hound onboard <system> pending`)
@@ -57,6 +60,7 @@ file by `scripts/cheatsheet/render.sh`.
   - `--repo`
 
 ### Scope: CISO Assistant as config
+
 - `hound scope validate <scope>`: check scope files offline
   - `--config --format json|text --json`
 - `hound scope plan <scope>`: what would change (reads only)
@@ -73,6 +77,7 @@ file by `scripts/cheatsheet/render.sh`.
   - `--out` (req) `--root-folder --with-files`
 
 ### Collect and publish
+
 - `hound run`: collect, store evidence, map, plan, publish
   - `--config` (req) `--only --dry-run --no-publish`
 - `hound serve`: run each collector on its schedule
@@ -87,6 +92,7 @@ file by `scripts/cheatsheet/render.sh`.
   - `--config --checks --evidence-dir` (req) `--dry-run`
 
 ### Manual evidence
+
 - `hound manual upload <file>`: drop an export into a manual source; only a **Person** at a terminal is asked to attest it
   - `--config --source` (req)
 - `hound manual propose <source> <file>`: agent: propose a result and its extract
@@ -95,6 +101,7 @@ file by `scripts/cheatsheet/render.sh`.
   - `--config` (req) `--source`
 
 ### Collectors and REST profiles
+
 - `hound add collector <type>`: add a collector to `hound.yaml`
   - `--config` (req) `--name --schedule --set --secrets-dir --secret-file -y`
 - `hound onboard profile <system>`: draft a REST profile from an API spec
@@ -107,6 +114,7 @@ file by `scripts/cheatsheet/render.sh`.
   - `--profiles --library`
 
 ### Frameworks, mappings and skills
+
 - `hound framework snapshot <library>`: snapshot a framework library
   - `--out`
 - `hound mapping validate <file>`: check a mapping file
@@ -124,12 +132,14 @@ file by `scripts/cheatsheet/render.sh`.
   - `--skills` on every skill command; draft: `--only`
 
 ### Weekly review
+
 - `hound review pending --json`: agent: everything waiting on a person
 - `hound review recommend <key> --answer ... --reason ... --source ...`: agent: its recommendation
 - `hound review --for 60m`: **Person**: one guided weekly session
   - `--no-apply`: stop at the files
 
 ### Reports
+
 - `hound report snapshot --period 2026-11`: the period's posture per programme, from CISO Assistant and the run store, to the evidence store
   - `--config` (req) `--scope --control`
 - `hound report committee --month 2026-11`: the monthly security committee report from the month's and last month's snapshots
@@ -139,12 +149,14 @@ file by `scripts/cheatsheet/render.sh`.
 ## Typical paths
 
 ### Start a repo
+
 1. `hound init ./compliance --org "Example Pty Ltd"`
 2. `hound agent setup --assistant claude`
 3. `hound config validate hound.yaml --check-secrets`
 4. `hound scope validate scope --config hound.yaml`
 
 ### Onboard a supplier and a system
+
 1. Agent: `hound supplier draft --ref ... --name ...`
 2. Agent: `hound onboard <system> pending --json`
 3. Agent: `hound onboard <system> decide <req> --kind ... --reasoning ...`
@@ -152,17 +164,20 @@ file by `scripts/cheatsheet/render.sh`.
 5. `hound scope validate scope --config hound.yaml`
 
 ### Write config to CISO Assistant
+
 1. `hound scope plan scope --config hound.yaml --out plan.json`
 2. `hound explain plan.json`
 3. `hound scope apply scope --config hound.yaml`
 
 ### Collect evidence on a schedule
+
 1. `hound run --config hound.yaml --dry-run`
 2. `hound run --config hound.yaml`
 3. `hound serve --config hound.yaml` (the runner container)
 4. `hound status --config hound.yaml`
 
 ### Manual evidence each period
+
 1. CISO Assistant emails the owner the runbook
 2. `hound manual upload <file> --config hound.yaml --source <src>`
 3. Agent: `hound manual propose <src> <file> --config hound.yaml`
@@ -170,17 +185,20 @@ file by `scripts/cheatsheet/render.sh`.
 5. The next `hound run` publishes it
 
 ### Add a REST collector
+
 1. `hound onboard profile <system> --sample`
 2. `hound profile validate <name>`
 3. `hound profile test <name>`
 4. `hound add collector rest --config hound.yaml`
 
 ### Move off a spreadsheet
+
 1. `hound scope import audit.xlsx --audit <AUDIT-REF>`
 2. `hound scope validate scope`
 3. `hound scope plan scope`, then `hound scope apply scope`
 
 ### Weekly review
+
 1. CISO Assistant's weekly task alerts the GRC member
 2. Agent: `hound review pending --json`, drafts each recommendation
 3. **Person**: `hound review --for 60m`: read, accept or challenge

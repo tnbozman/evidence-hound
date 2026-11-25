@@ -25,7 +25,11 @@ internal static class ReportingFixtures
             Node("E8-2", Mfa, "2", "3"),
             Node("E8-3", Backups, "1", "2", "3"),
             Node("E8-4", Backups, "3"),
-        ]);
+        ])
+    {
+        // Only one parent is named, so a snapshot made before parent names (s13-08) still reports by the URN's last part.
+        Parents = [new SnapshotParent(Mfa, "MFA", "Multi-factor authentication")],
+    };
 
     public static FrameworkSnapshot Ai6 { get; } = new(
         "urn:example:library:ai6",

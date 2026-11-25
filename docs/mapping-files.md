@@ -113,7 +113,7 @@ Total: 1 answered, 30 partly answered, 79 open, of 110 requirements.
 
 ## Framework snapshots
 
-A framework snapshot lets you check a mapping without CISO Assistant. It lists the framework's URN, version and implementation groups, and each assessable requirement's URN, `ref_id`, parent, groups and a short title. Make one from a CISO Assistant library file and commit it under `frameworks/`:
+A framework snapshot lets you check a mapping without CISO Assistant. It lists the framework's URN, version and implementation groups, and each assessable requirement's URN, `ref_id`, parent, groups and a short title, and the name of each parent node (an Essential Eight strategy), which reports show. Make one from a CISO Assistant library file and commit it under `frameworks/`:
 
 ```console
 $ hound framework snapshot essential-eight-2023.yaml --out frameworks/essential-eight-2023.json

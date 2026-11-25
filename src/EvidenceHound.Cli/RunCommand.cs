@@ -127,7 +127,13 @@ internal static class RunCommand
             Log.Problems(logger, collector.Problems.Select(p => new Problem(p.Code, $"{collector.Collector}: {p.Message}")));
         }
 
-        await output.WriteLineAsync(Json(summary).ToJsonString(Indented));
+        IReadOnlyList<Problem> warnings = options.DryRun ? [DryRunStateNotRead] : [];
+        foreach (var warning in warnings)
+        {
+            Log.Warning(logger, warning.Message);
+        }
+
+        await output.WriteLineAsync(Json(summary, warnings).ToJsonString(Indented));
         return summary.Outcome == CollectorOutcome.Failed ? ExitCodes.CollectorFailed : ExitCodes.Ok;
     }
 
@@ -144,10 +150,17 @@ internal static class RunCommand
         return ConfigCommands.Secrets(configuration).Resolve(ca.Token).Map(token => Transports.Rest(new CisoAssistantOptions(url, token.Reveal()), loggers));
     }
 
-    private static JsonObject Json(RunSummary summary) => new()
+    /// <summary>A dry run sends nothing and reads nothing, so its plan lists every update as if CISO Assistant held nothing.</summary>
+    private static readonly Problem DryRunStateNotRead = new(
+        "run.dry_run_state_not_read",
+        "Dry run: CISO Assistant was not read, so each plan lists every update as if CISO Assistant held nothing. "
+        + "It does not show that CISO Assistant is reachable or that the token works; `hound scope plan` reads CISO Assistant and shows both.");
+
+    private static JsonObject Json(RunSummary summary, IReadOnlyList<Problem> warnings) => new()
     {
         ["outcome"] = summary.Outcome.ToString().ToLowerInvariant(),
         ["run_id"] = summary.RunId,
+        ["warnings"] = new JsonArray([.. warnings.Select(p => new JsonObject { ["code"] = p.Code, ["message"] = p.Message })]),
         ["collectors"] = new JsonArray([.. summary.Collectors.Select(c => new JsonObject
         {
             ["name"] = c.Collector,

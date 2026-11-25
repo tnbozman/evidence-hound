@@ -62,7 +62,7 @@ Like B, but each check is an expression in an existing language: JMESPath, JSONa
 
 Evidence for one control often spans two or more API calls: an admin's role comes from one endpoint, their MFA state from another, and the firmware they run from a third. So a run is three phases, each finished before the next starts:
 
-```
+```text
  1. Collect                       2. Extract                          3. Assess
  every query, once                named evidence datasets             every check
  ------------------------         -----------------------------       ---------------------------
@@ -386,4 +386,3 @@ What changed from this design while it was built:
 - **Profile tests** are YAML cases in `<profile>.tests/` with recordings beside them, run offline by `hound profile test`. A profile without tests runs with a warning, or is unable to assess when the instance sets `require_profile_tests`.
 - **Adding a collector.** `hound add collector rest --set profile=<name>` asks for the profile's required parameters and secrets.
 - **Manifest.** The run's `_manifest.json` lists each profile that ran, with its version, source and SHA-256.
-

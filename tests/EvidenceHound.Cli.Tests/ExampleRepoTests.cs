@@ -99,6 +99,17 @@ public sealed partial class ExampleRepoTests : IDisposable
     }
 
     [Fact]
+    public void Ai6_audit_lists_the_ai_policy_document_for_the_governance_and_risk_requirements()
+    {
+        var audit = File.ReadAllText(Path.Combine(Repo, "scope", "audits", "ex-ai6-2026.yaml"));
+
+        audit.ShouldContain("- id: ai-policy");
+        audit.ShouldContain("files: [documents/ai-policy.pdf]");
+        audit.ShouldContain("requirements: [AI6-1.4, AI6-3.1]");
+        File.Exists(Path.Combine(Repo, "documents", "ai-policy.pdf")).ShouldBeTrue();
+    }
+
+    [Fact]
     public void Ssp_guide_covers_what_people_write_and_how_a_version_is_approved()
     {
         var guide = File.ReadAllText(Path.Combine(RepoRoot, "docs", "govern", "system-security-plan.md"));
@@ -236,6 +247,25 @@ public sealed partial class ExampleRepoTests : IDisposable
 
         workflow.ShouldContain("gitleaks/gitleaks-action@");
         workflow.ShouldContain("fetch-depth: 0");
+    }
+
+    [Fact]
+    public void Deployments_pin_one_released_version_not_dev_or_main()
+    {
+        // s13-07 rehearsal: the template ran the runner image's dev tag and built hound from main, under comments that said to pin a release.
+        static string Setting(string file, string key) =>
+            File.ReadLines(file).Single(l => l.StartsWith(key + "=", StringComparison.Ordinal))[(key.Length + 1)..];
+        var image = Setting(Path.Combine(Repo, "deploy", "deploy.env"), "HOUND_RUNNER_IMAGE");
+        var reference = Setting(Path.Combine(RepoRoot, "deploy", "compose", ".env.example"), "HOUND_RUNNER_IMAGE");
+        var workflow = File.ReadLines(Path.Combine(Repo, ".github", "workflows", "compliance.yml")).Single(l => l.Contains("EVIDENCE_HOUND_REF: ", StringComparison.Ordinal));
+        var tutorial = File.ReadAllText(Path.Combine(RepoRoot, "docs", "tutorials", "first-deployment.md"));
+
+        image.ShouldMatch(@"^ghcr\.io/tnbozman/evidence-hound:\d+\.\d+\.\d+$");
+        reference.ShouldBe(image);
+        var version = image[(image.LastIndexOf(':') + 1)..];
+        workflow.Trim().ShouldBe($"EVIDENCE_HOUND_REF: v{version}");
+        tutorial.ShouldNotContain("evidence-hound:dev");
+        tutorial.ShouldContain($"evidence-hound:{version}");
     }
 
     [Fact]

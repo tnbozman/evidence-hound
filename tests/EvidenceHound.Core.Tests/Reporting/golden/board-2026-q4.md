@@ -17,13 +17,13 @@ Compliant requirements out of those assessed in each group, per parent, at the e
 
 | Maturity Level One | 2026-Q1 | 2026-Q2 | 2026-Q3 | 2026-Q4 |
 | --- | --- | --- | --- | --- |
-| mfa | 0/1 | 0/1 | 1/1 | 1/1 |
+| Multi-factor authentication | 0/1 | 0/1 | 1/1 | 1/1 |
 | rb | 1/1 | 1/1 | 1/1 | 1/1 |
 | **All** | 1/2 | 1/2 | 2/2 | 2/2 |
 
 | Maturity Level Two | 2026-Q1 | 2026-Q2 | 2026-Q3 | 2026-Q4 |
 | --- | --- | --- | --- | --- |
-| mfa | 0/2 | 0/2 | 1/2 | 1/2 |
+| Multi-factor authentication | 0/2 | 0/2 | 1/2 | 1/2 |
 | rb | 1/1 | 1/1 | 1/1 | 1/1 |
 | **All** | 1/3 | 1/3 | 2/3 | 2/3 |
 

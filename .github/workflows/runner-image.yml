@@ -1,13 +1,12 @@
 name: Runner image
 
-# Publishes the collector runner image to GHCR with build provenance:
-# `dev` from main, and the version tags (for example 0.2.0 and 0.2) from a v* release tag.
+# Publishes the collector runner image `dev` from main to GHCR, with build provenance. Release versions (such as
+# 1.0.0 and 1.0) are published by the release workflow (release.yml) from a v* tag, after approval.
 # CI (ci.yml, job `image`) builds, tests and scans the same Dockerfile on every push and PR.
 
 on:
   push:
     branches: [main]
-    tags: ["v*"]
   workflow_dispatch:
 
 permissions:
@@ -41,8 +40,6 @@ jobs:
           images: ghcr.io/${{ github.repository }}
           tags: |
             type=raw,value=dev,enable={{is_default_branch}}
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
       - name: Build (amd64) and load for the checks
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:

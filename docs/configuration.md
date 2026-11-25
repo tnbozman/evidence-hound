@@ -4,7 +4,7 @@ One YAML file per deployment says how to reach CISO Assistant, where evidence is
 
 The config lives in your private compliance repo next to the scope files that say what CISO Assistant should hold; the template is [`examples/compliance-repo/`](../examples/compliance-repo/) (its `hound.yaml`), and [scope.md](scope.md) explains the scope files and the review workflow.
 
-```
+```console
 $ hound config validate examples/example-pty-ltd.yaml
 valid
 ```
@@ -129,7 +129,7 @@ outcomes:
 
 `hound manual upload` copies a file into a source's drop folder and, for a person at a terminal, asks whether to attest it. Through a pipe or from an agent it copies the file without attesting it; a person attests it later with `hound manual approve` or in the weekly review. Prompts go to stderr; the copied file's path goes to stdout.
 
-```
+```console
 $ hound manual upload --config hound.yaml --source example-firewall-config firewall-export.txt
 Attest this file now? [y/N]: y
 Attested by [Alex Example]:
@@ -144,7 +144,7 @@ The command refuses a file that does not match the source's patterns, or whose n
 
 **No evidence without a person.** A coding assistant set up with `hound agent setup` can read a manual evidence file and propose its result, but only a person attests it. Runs never use a model, and they publish attested results only.
 
-```
+```console
 $ hound manual propose example-backup-restore-test restore-test-2026-11.txt --config hound.yaml \
     --result pass --observation "Restore test of 18 November 2026: 3 files restored, hashes match." \
     --supports "Restored: 3 files to a scratch folder, hashes match" --json
@@ -152,7 +152,7 @@ $ hound manual propose example-backup-restore-test restore-test-2026-11.txt --co
 
 The agent's command takes the source, the file (a path, or the name of a file already in the drop folder), `--result pass|fail|partial` for every check of the source, `--check <check id>=<result>` for a check that differs, `--observation`, and at least one `--supports`: an extract or a location in the file that shows the result. It copies the file into the drop folder if it is not there, and writes `<file>.proposal.yaml` beside it with `proposed_by: agent`, the file's SHA-256, the outcomes, the observation and the supporting extracts. A proposal is pending: it is not an attestation, a run does not publish it or store it as evidence, and the check stays "evidence present, not attested". Proposing again replaces a pending proposal. The command refuses a file a person already attested, a file the source's patterns do not accept, and a proposal without `--supports` (exit 3).
 
-```
+```console
 $ hound manual approve --config hound.yaml
 Your name, recorded as the attester: Sam Example
 

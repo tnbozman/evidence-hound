@@ -174,7 +174,7 @@ internal static class InitCommand
         }
 
         await terminal.Output.WriteLineAsync(string.Create(CultureInfo.InvariantCulture, $"Wrote {org.Name}'s compliance repo to {target.FullName}: {files.Count + RepoTemplate.Copied.Count} files, audit {org.AuditRef}."));
-        await terminal.Output.WriteLineAsync("Next: add systems, controls and collectors (see README.md), then hound scope plan and apply. hound agent setup writes the files a coding assistant needs to help.");
+        await terminal.Output.WriteLineAsync("Next: make it a git repository (git init) and push it to a private repository; add systems, controls and collectors (see README.md), then hound scope plan and apply. hound agent setup writes the files a coding assistant needs to help.");
         return ExitCodes.Ok;
     }
 

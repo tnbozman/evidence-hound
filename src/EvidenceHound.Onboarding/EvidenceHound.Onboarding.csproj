@@ -4,6 +4,8 @@
     core and the collectors cannot reach a model: ArchitectureTests fails if any of them references this project or a model SDK.
   -->
   <PropertyGroup>
+    <!-- Internal: ships inside the hound CLI tool, not as its own package. -->
+    <IsPackable>false</IsPackable>
     <RootNamespace>EvidenceHound.Onboarding</RootNamespace>
   </PropertyGroup>
   <ItemGroup>

@@ -1,0 +1,4 @@
+# The documentation site (make docs). Compiled with hashes into requirements.txt:
+#   pip-compile --generate-hashes --strip-extras tools/docs/requirements.in
+mkdocs==1.6.1
+mkdocs-material==9.7.6

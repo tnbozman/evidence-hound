@@ -20,6 +20,11 @@ public static class FrameworkSnapshotJson
             ["groups"] = new JsonArray([.. snapshot.Groups.Select(g => new JsonObject { ["ref_id"] = g.RefId, ["name"] = g.Name })]),
             ["nodes"] = new JsonArray([.. snapshot.Nodes.Select(Node)]),
         };
+        if (snapshot.Parents.Count > 0)
+        {
+            json["parents"] = new JsonArray([.. snapshot.Parents.Select(p => new JsonObject { ["urn"] = p.Urn, ["ref_id"] = p.RefId, ["name"] = p.Name })]);
+        }
+
         return json.ToJsonString(Indented) + "\n";
     }
 
@@ -67,7 +72,10 @@ public static class FrameworkSnapshotJson
                 {
                     Description = (string?)n["description"] ?? "",
                     ReferenceControls = [.. Items(n, "reference_controls").Select(r => r.GetValue<string>())],
-                })]));
+                })])
+            {
+                Parents = [.. Items(root, "parents").Select(p => new SnapshotParent(Text(p, "urn"), (string?)p["ref_id"], Text(p, "name")))],
+            });
         }
         catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException)
         {

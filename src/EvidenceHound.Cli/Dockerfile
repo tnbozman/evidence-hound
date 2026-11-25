@@ -14,8 +14,7 @@ COPY mappings/essential-eight-2023.yaml mappings/
 COPY frameworks/essential-eight-2023.json frameworks/
 COPY examples/compliance-repo/.gitignore examples/compliance-repo/
 COPY examples/compliance-repo/manual-sources/weekly-compliance-review.md examples/compliance-repo/manual-sources/
-# hound onboard's default model per provider (onboarding only; the runner refuses any model settings).
-# hound onboard's default skills, built into hound.
+# hound onboard's default skills and the coding-assistant files hound agent setup writes, built into hound.
 COPY skills/ skills/
 COPY agent/ agent/
 RUN dotnet restore src/EvidenceHound.Cli/EvidenceHound.Cli.csproj --locked-mode
@@ -23,9 +22,11 @@ RUN dotnet restore src/EvidenceHound.Cli/EvidenceHound.Cli.csproj --locked-mode
 # (one of the csproj's RuntimeIdentifiers), so arm64 needs no emulation and other platforms' native
 # libraries stay out of the image.
 ARG TARGETARCH=amd64
+# The image has no git history for MinVer, so the release workflow passes the tag's version (s13-04).
+ARG HOUND_VERSION=1.0.0-dev
 RUN rid="linux-$([ "$TARGETARCH" = arm64 ] && echo arm64 || echo x64)" \
  && dotnet publish src/EvidenceHound.Cli/EvidenceHound.Cli.csproj --no-restore -c Release -o /app \
-      -r "$rid" --self-contained false \
+      -r "$rid" --self-contained false -p:MinVerVersionOverride="$HOUND_VERSION" \
       -p:ContinuousIntegrationBuild=true -p:DebugType=none -p:GenerateDocumentationFile=false
 # The runner's data folder (evidence, run records, manual drop folders), owned by the non-root `app` user (1654)
 # so a named volume mounted there starts writable.

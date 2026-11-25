@@ -9,7 +9,7 @@ A small defence-industry business has to reach and then sustain cyber compliance
 ## Approach
 
 1. **CISO Assistant is the system of record.** Self-hosted Community Edition on Docker. Frameworks (Essential Eight, NIST SP 800-171 and others) come from its built-in library.
-2. **Use CISO Assistant's standard integration paths.** Spreadsheet registers move in through its Data Wizard templates and the `clica` CLI (no custom code). Collectors send updates in the same shape as its dispatcher messages, over its REST API with a service-account token.
+2. **Use CISO Assistant's standard integration paths.** Spreadsheet registers move into the compliance repo's scope files, which `hound scope apply` writes to CISO Assistant over its REST API ([move off spreadsheets](adopt/migrate-from-spreadsheets.md)). Collectors send updates in the same shape as its dispatcher messages, over its REST API with a service-account token.
 3. **Build a base, not a collector for everything.** The kit provides one standard way to update an audit. Each system gets a thin collector. Systems without a usable API use the manual-upload collector on a schedule.
 4. **Stay framework-neutral.** Collectors emit neutral check results; one mapping file per framework turns them into requirement results.
 5. **AI-assisted build, automated upkeep.** Claude Code implements sprint tasks by strict TDD inside a dev container; CI and GitHub Advanced Security close the loop. In operation, schedules, health records, backups and dependency updates keep it running with little manual effort.
@@ -19,7 +19,7 @@ A small defence-industry business has to reach and then sustain cyber compliance
 
 | Release | Contents |
 | --- | --- |
-| 1 | Core, publisher, runner, collector SDK and test kit, manual-upload collector, Microsoft 365, Sophos Central and Veeam collectors, CISO Assistant as configuration, a thin reference Docker deployment with scheduled runs (early, so evidence builds history), CISO Assistant users and settings as configuration, a tutorial for the private compliance repo, Essential Eight gap collectors (application control, vulnerability scan import, manual-upload templates), third parties as configuration, the evidence plan as recurring CISO Assistant tasks, one guided weekly review, an Essential Eight system security plan drafted from CISO Assistant records, AI governance on the Australian AI6 guidance, the completed Essential Eight mapping, a NIST SP 800-171 crosswalk, adoption guides, committee (operational) and board (governance) reporting, backups and hardening |
+| 1 | Core, publisher, runner, collector SDK and test kit, manual-upload collector, the Microsoft 365 collector and the Sophos Central profile (Veeam was dropped in s09: backup evidence stays manual), CISO Assistant as configuration, a thin reference Docker deployment with scheduled runs (early, so evidence builds history), CISO Assistant users and settings as configuration, a tutorial for the private compliance repo, Essential Eight gap collectors (application control, vulnerability scan import, manual-upload templates), third parties as configuration, the evidence plan as recurring CISO Assistant tasks, one guided weekly review, an Essential Eight system security plan drafted from CISO Assistant records, AI governance on the Australian AI6 guidance, the completed Essential Eight mapping, a NIST SP 800-171 crosswalk, adoption guides, committee (operational) and board (governance) reporting, backups and hardening, NuGet packages, a signed release pipeline and a documentation site |
 | 2 | ASD Essentials mapping, DISP membership readiness, risk, threats and BIA as configuration, incident reporting deadlines, supply-chain flow-down, CISO Assistant governance collector and metrics, CMMC Level 2 (NIST SP 800-171) mapping and its SSP and POA&M layout, SPRS score, annual affirmation and DFARS 7012 incident reporting, optional collector console |
 | 3 | Security document generators for CMMC Level 2 and Essential Eight ML2 (ISM Guidelines for Cyber Security Documentation): security assessment report, continuous monitoring plan, cyber security policy and policy statements, risk assessment report, business continuity and recovery summary, supplier and supply chain report, change and configuration management plan, registers, document register with annual review, authorisation package |
 
@@ -30,7 +30,7 @@ Sprints are in [`docs/sprints/`](sprints/README.md).
 | Step | What | Code needed |
 | --- | --- | --- |
 | 1. Stand up | Self-host CISO Assistant and the runner with `deploy/compose` | No |
-| 2. Migrate | Move spreadsheet compliance and third-party registers in with the Data Wizard templates and `clica` | No |
+| 2. Migrate | Move spreadsheet compliance and third-party registers into the compliance repo ([guide](adopt/migrate-from-spreadsheets.md)) | No |
 | 3. Tier systems | Automate the 3 or 4 highest-value systems; put every other system on the manual-upload collector with an owner and interval | Config only |
 | 4. Operate | Scheduled runs, collector health in CISO Assistant, manual uploads by owners | No |
 | 5. Govern | Monthly committee report, quarterly board report, authorising-official decisions recorded in CISO Assistant | No |
@@ -46,7 +46,7 @@ Sprints are in [`docs/sprints/`](sprints/README.md).
 | Supplier owners | Third-party reviews and contract details |
 | Independent reviewer | Periodic external assessment |
 
-Guides and training outlines for each role are delivered in sprint s12.
+Each role has a guide in [`docs/operate/`](operate/README.md), with training in [`docs/training/`](training/README.md).
 
 ## Reporting: operation and governance
 

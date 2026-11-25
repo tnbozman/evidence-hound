@@ -30,7 +30,7 @@ Audit of record: [EX-E8-2026](https://ciso.example.com/compliance-assessments/ca
 | Maturity Level One | 1 | 0 | 1 | 0 | 0 |
 | Maturity Level Two | 1 | 0 | 1 | 1 | 0 |
 
-#### mfa
+#### Multi-factor authentication
 
 - [E8-1](https://ciso.example.com/requirement-assessments/e8-1): non-compliant → compliant
 

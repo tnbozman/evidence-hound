@@ -11,6 +11,12 @@
           "Azure.Core": "1.53.0"
         }
       },
+      "MinVer": {
+        "type": "Direct",
+        "requested": "[8.0.0, )",
+        "resolved": "8.0.0",
+        "contentHash": "AJy/KVjXgUbgjf6HiI8wAk4DSSq0SCmvXQF8aU6IB+pnIQq+YJvofvMczug2hqO8yEvnQY557ryew66KPpyCsA=="
+      },
       "Azure.Core": {
         "type": "Transitive",
         "resolved": "1.53.0",
@@ -177,7 +183,7 @@
       "evidencehound.collectors.abstractions": {
         "type": "Project",
         "dependencies": {
-          "EvidenceHound.Core": "[0.1.0, )",
+          "EvidenceHound.Core": "[1.0.0, )",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.14, )",
           "Microsoft.Extensions.Http": "[10.0.13, )",
           "Microsoft.Extensions.Logging.Abstractions": "[10.0.14, )"

@@ -52,3 +52,6 @@ Thumbs.db
 .terraform/
 *.tfstate
 *.tfstate.*
+node_modules/
+site/
+.venv-docs/

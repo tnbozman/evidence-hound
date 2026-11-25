@@ -2273,5 +2273,47 @@
         "urn:intuitem:risk:function:doc-pol:pol.backup"
       ]
     }
+  ],
+  "parents": [
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pa",
+      "ref_id": null,
+      "name": "Patch applications"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:pos",
+      "ref_id": null,
+      "name": "Patch operating systems"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:mfa",
+      "ref_id": null,
+      "name": "Multi-factor authentication"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rap",
+      "ref_id": null,
+      "name": "Restrict administrative privileges"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:ac",
+      "ref_id": null,
+      "name": "Application control"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rmom",
+      "ref_id": null,
+      "name": "Restrict Microsoft Office macros"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:uah",
+      "ref_id": null,
+      "name": "User application hardening"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:essential-eight-2023:rb",
+      "ref_id": null,
+      "name": "Regular backups"
+    }
   ]
 }

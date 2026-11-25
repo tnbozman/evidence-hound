@@ -2,7 +2,7 @@
 
 `hound run` is the one command a schedule calls. For each collector in the [deployment configuration](configuration.md) it collects evidence into the local store, evaluates the checks, maps them to the audit's requirements, plans the updates and publishes them to CISO Assistant.
 
-```
+```console
 $ hound run --config examples/example-pty-ltd.yaml --dry-run
 info: Collector example-fake: Succeeded
 {
@@ -48,7 +48,7 @@ Exit codes: 0 every collector succeeded, 1 any collector failed, 2 usage, 3 conf
 
 `hound serve --config <file>` runs each collector on its `schedule` until stopped; it is the runner container's default command in the [reference deployment](../deploy/compose/README.md). Schedules are read in `scheduler.time_zone` and each collector's runs are delayed by its own jitter (see [configuration](configuration.md)). At start it logs each collector's next run:
 
-```
+```text
 info: example-m365: next run 2026-11-22 03:02:41 Australia/Sydney (2026-11-21 16:02:41 UTC)
 ```
 
@@ -59,7 +59,7 @@ info: example-m365: next run 2026-11-22 03:02:41 Australia/Sydney (2026-11-21 16
 
 **Without `hound serve`.** A host scheduler can call one-off runs instead. Set the runner's command to something harmless or remove the service's `restart`, then, for example with cron:
 
-```
+```text
 # /etc/cron.d/evidence-hound: every collector nightly at 03:00 host time
 0 3 * * * root cd /opt/evidence-hound/deploy/compose && docker compose run --rm runner run --config /config/hound.yaml >>/var/log/evidence-hound.log 2>&1
 ```
@@ -99,7 +99,7 @@ Evidence IDs are scoped by collector (`example-fake/mfa-users.json`), and that I
 
 Every run writes a run record (start, end, outcome, checks passed and failed, publish counts) to `<evidence root>/_status/<collector>.json`. `hound status` shows the latest one per collector:
 
-```
+```console
 $ hound status --config examples/example-pty-ltd.yaml
 COLLECTOR     LAST RUN (UTC)       OUTCOME    PASSED  FAILED  PUBLISHED
 example-fake  2026-11-21 05:21:21  succeeded  3       1       0 sent, 0 skipped, 0 failed

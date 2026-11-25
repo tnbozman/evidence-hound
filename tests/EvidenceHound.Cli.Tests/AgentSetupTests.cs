@@ -12,6 +12,7 @@ public sealed partial class AgentSetupTests : IDisposable
     [
         "onboard-a-system-with-hound", "assess-a-supplier", "read-an-api-specification", "import-an-audit-workbook", "write-a-profile", "review-before-apply",
         "onboard-the-organisation", "onboard-the-environment", "onboard-a-third-party", "onboard-an-audit", "process-manual-evidence", "weekly-review",
+        "move-registers-from-spreadsheets", "prepare-the-reports", "answer-a-prime-questionnaire",
     ];
 
     internal static readonly string[] Rules =
@@ -45,6 +46,11 @@ public sealed partial class AgentSetupTests : IDisposable
         (await ReadAsync(".claude", "skills", "review-before-apply", "SKILL.md")).ShouldContain(Body(await File.ReadAllTextAsync(Path.Combine(defaults, "reviewing-a-config-change.md"), _ct)));
         (await ReadAsync(".claude", "skills", "onboard-a-system-with-hound", "SKILL.md")).ShouldContain("hound onboard <system> pending --json");
         (await ReadAsync(".claude", "skills", "import-an-audit-workbook", "SKILL.md")).ShouldContain("hound scope validate");
+        // s13-08: the adoption and reporting guides reach the agent as skills, each linking its guide.
+        (await ReadAsync(".claude", "skills", "move-registers-from-spreadsheets", "SKILL.md")).ShouldContain("docs/adopt/migrate-from-spreadsheets.md");
+        (await ReadAsync(".claude", "skills", "prepare-the-reports", "SKILL.md")).ShouldContain("hound report committee");
+        (await ReadAsync(".claude", "skills", "prepare-the-reports", "SKILL.md")).ShouldContain("docs/govern/ai-assisted-reporting.md");
+        (await ReadAsync(".claude", "skills", "answer-a-prime-questionnaire", "SKILL.md")).ShouldContain("hound mapping crosswalk");
 
         var onboarding = await ReadAsync(".claude", "agents", "hound-onboarding.md");
         onboarding.ShouldStartWith("---\nname: hound-onboarding\ndescription: ");
@@ -64,7 +70,7 @@ public sealed partial class AgentSetupTests : IDisposable
         var onboarding = await ReadAsync(".github", "agents", "hound-onboarding.agent.md");
         onboarding.ShouldStartWith("---\nname: hound-onboarding\ndescription: ");
         onboarding.ShouldContain("\ntools: [\"read\", \"search\", \"edit\", \"execute\"]\n");
-        onboarding.ShouldContain("\nskills: [\"onboard-the-organisation\", \"onboard-the-environment\", \"onboard-a-third-party\", \"assess-a-supplier\", \"onboard-a-system-with-hound\", \"read-an-api-specification\", \"onboard-an-audit\", \"import-an-audit-workbook\", \"write-a-profile\", \"process-manual-evidence\", \"weekly-review\"]\n");
+        onboarding.ShouldContain("\nskills: [\"onboard-the-organisation\", \"onboard-the-environment\", \"onboard-a-third-party\", \"assess-a-supplier\", \"onboard-a-system-with-hound\", \"read-an-api-specification\", \"onboard-an-audit\", \"import-an-audit-workbook\", \"write-a-profile\", \"process-manual-evidence\", \"weekly-review\", \"move-registers-from-spreadsheets\", \"prepare-the-reports\", \"answer-a-prime-questionnaire\"]\n");
 
         // The review agent reads and runs hound; it cannot edit a file.
         var review = await ReadAsync(".github", "agents", "hound-review.agent.md");

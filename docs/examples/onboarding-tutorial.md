@@ -145,7 +145,7 @@ cp examples/onboarding-tutorial/scope/third-parties/sup-ciso-assistant.yaml exam
    | Question | Answer |
    | --- | --- |
    | Your name | Sam Example |
-   | System owner's email | it@example.com |
+   | System owner's email | <it@example.com> |
    | Product | CISO Assistant and Evidence Hound on an OCI Compute VM |
    | Supplier ref_id and name | `ORACLE` after the `SUP-` the prompt shows, Oracle Cloud Infrastructure |
    | Solution ref_id and name | `OCI-HOSTING` after `SOL-`, OCI compute, networking and storage |

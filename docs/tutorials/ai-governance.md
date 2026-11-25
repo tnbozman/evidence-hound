@@ -192,7 +192,7 @@ The dry run shows the updates without sending them. After the real run, open the
   `last_tested_on`. Your new system passes. The fix is the same as step 8, for that system.
 - **AI6-3.2** (Assess AI system risks) shows whether each system in use was screened before it went live, and each elevated one had its impact assessment approved first.
 
-The evidence store (`.dev/ai-walkthrough/evidence/example-ai-register/<run id>/`) holds `ai-register.json`: every entry, whether it is in use, and the SHA-256 of the
+The evidence store (`.dev/ai-walkthrough/evidence/example-ai-register/<time>/`, named by when the collector ran, to the millisecond) holds `ai-register.json`: every entry, whether it is in use, and the SHA-256 of the
 `setup.yaml` it read, so a result traces back to the reviewed file.
 
 ## 10. Show the committee

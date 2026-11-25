@@ -35,6 +35,17 @@ public sealed class RunCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Dry_run_warns_that_it_planned_against_nothing_in_ciso_assistant()
+    {
+        var exitCode = await Run([], "run", "--config", await ConfigAsync(token: "env:HOUND_TEST_NOT_SET"), "--dry-run");
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        _logs.Entries.ShouldContain(e => e.Level == LogLevel.Warning && e.Message.Contains("not read", StringComparison.Ordinal));
+        var warning = Summary()["warnings"]!.AsArray().ShouldHaveSingleItem()!;
+        warning["code"]!.GetValue<string>().ShouldBe("run.dry_run_state_not_read");
+    }
+
+    [Fact]
     public async Task No_publish_needs_no_token()
     {
         var exitCode = await Run([], "run", "--config", await ConfigAsync(token: "env:HOUND_TEST_NOT_SET"), "--no-publish");

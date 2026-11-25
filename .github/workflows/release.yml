@@ -1,0 +1,197 @@
+name: Release
+
+# s13-04: a release from a vX.Y.Z tag. `verify` builds, tests and checks everything a release publishes; `publish`
+# waits for a maintainer to approve the `release` environment, then builds it again from the tag and publishes:
+# NuGet packages (when the environment holds NUGET_API_KEY), the runner image on GHCR (amd64 and arm64), build
+# provenance for both, a CycloneDX SBOM, the documentation site on GitHub Pages, and the GitHub release with notes
+# from the Conventional Commits.
+# On a pull request that changes the release, `verify` runs as a dry run on a local v1.0.0-dry-run tag: the packages go
+# to a local test feed, hound is installed from it, and nothing is pushed or published.
+# How to cut a release: docs/releasing.md.
+
+on:
+  push:
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/release.yml
+      - scripts/release-build.sh
+      - scripts/check-packages.sh
+      - scripts/check-org-data.sh
+      - scripts/changelog.sh
+      - cliff.toml
+      - Directory.Build.props
+      - src/EvidenceHound.Cli/Dockerfile
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  CONFIGURATION: Release
+
+# Every action is pinned to a full commit SHA (comment shows the tag). Dependabot keeps them current.
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0 # MinVer and the release notes read the tags
+      - name: No organisation data anywhere in the history (every commit's changes and message)
+        env:
+          ORG_DENYLIST: ${{ secrets.ORG_DENYLIST }}
+        run: scripts/check-org-data.sh --history
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          global-json-file: global.json
+      - name: Install git-cliff
+        run: |
+          python3 -m venv "$RUNNER_TEMP/tools"
+          "$RUNNER_TEMP/tools/bin/pip" install -q --require-hashes -r tools/changelog/requirements.txt
+          echo "$RUNNER_TEMP/tools/bin" >>"$GITHUB_PATH"
+      - name: Version (the tag, or a local v1.0.0-dry-run tag for a dry run)
+        id: version
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            version="${GITHUB_REF_NAME#v}"
+          else
+            version="1.0.0-dry-run"
+            git -c user.name=dry-run -c user.email=dry-run@example.com tag -a "v$version" -m "Dry run"
+          fi
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] || { echo "not a semantic version: $version" >&2; exit 1; }
+          echo "version=$version" >>"$GITHUB_OUTPUT"
+      - name: Build and unit tests
+        run: make test CONFIGURATION="$CONFIGURATION"
+      - name: Packages, test feed install, SBOM and release notes
+        run: scripts/release-build.sh "${{ steps.version.outputs.version }}" artifacts
+      - name: Release notes
+        run: cat artifacts/notes.md >>"$GITHUB_STEP_SUMMARY"
+      - name: Build the runner image (amd64) for the checks
+        run: docker build -f src/EvidenceHound.Cli/Dockerfile --build-arg HOUND_VERSION="${{ steps.version.outputs.version }}" -t evidence-hound-runner:candidate .
+      - name: Install bats
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq bats
+      - name: Test the image
+        run: HOUND_IMAGE=evidence-hound-runner:candidate bats tests/image
+      - name: Scan the image (high and critical findings stop the release)
+        uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
+        with:
+          image: evidence-hound-runner:candidate
+          severity-cutoff: high
+          output-format: table
+
+  publish:
+    needs: verify
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    # A maintainer approves this environment before anything is published (Settings > Environments > release).
+    environment: release
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          global-json-file: global.json
+      - name: Install git-cliff
+        run: |
+          python3 -m venv "$RUNNER_TEMP/tools"
+          "$RUNNER_TEMP/tools/bin/pip" install -q --require-hashes -r tools/changelog/requirements.txt
+          echo "$RUNNER_TEMP/tools/bin" >>"$GITHUB_PATH"
+      - name: Version
+        id: version
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          echo "version=$version" >>"$GITHUB_OUTPUT"
+          if [[ "$version" == *-* ]]; then echo "prerelease=true" >>"$GITHUB_OUTPUT"; else echo "prerelease=false" >>"$GITHUB_OUTPUT"; fi
+      - name: Packages, SBOM (CycloneDX) and release notes, from the tag
+        run: scripts/release-build.sh "${{ steps.version.outputs.version }}" artifacts
+      - name: Attest the packages' build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: artifacts/packages/*.nupkg
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}},enable=${{ steps.version.outputs.prerelease == 'false' }}
+      - id: push
+        name: Build and push the runner image (amd64, arm64)
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: src/EvidenceHound.Cli/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          provenance: mode=max
+          sbom: true
+          build-args: HOUND_VERSION=${{ steps.version.outputs.version }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+      - name: Attest the image's build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-name: ghcr.io/${{ github.repository }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+      - name: Publish the packages to NuGet (when the release environment has NUGET_API_KEY)
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          if [[ -z "$NUGET_API_KEY" ]]; then
+            echo "::notice::No NUGET_API_KEY in the release environment: the packages are attached to the GitHub release only."
+            exit 0
+          fi
+          dotnet nuget push "artifacts/packages/*.nupkg" --api-key "$NUGET_API_KEY" \
+            --source https://api.nuget.org/v3/index.json --skip-duplicate
+      - name: Publish the documentation site to GitHub Pages (the gh-pages branch)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          make docs
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          .venv-docs/bin/mkdocs gh-deploy --force --no-history --message "docs: site for ${GITHUB_REF_NAME}"
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+          PRERELEASE: ${{ steps.version.outputs.prerelease }}
+          DIGEST: ${{ steps.push.outputs.digest }}
+        run: |
+          {
+            cat artifacts/notes.md
+            echo
+            echo "### Install"
+            echo
+            echo "- Runner image: \`ghcr.io/${GITHUB_REPOSITORY}:${VERSION}\` (\`${DIGEST}\`). Check it with \`gh attestation verify oci://ghcr.io/${GITHUB_REPOSITORY}:${VERSION} --owner ${GITHUB_REPOSITORY_OWNER}\`."
+            echo "- CLI: \`dotnet tool install --global EvidenceHound.Cli --version ${VERSION}\`, or the \`.nupkg\` files below."
+            echo "- Collector template: \`dotnet new install EvidenceHound.Templates::${VERSION}\`."
+            echo "- Tested with CISO Assistant $(sed -n 's/^CA_VERSION=//p' deploy/compose/.env.example)."
+          } >"$RUNNER_TEMP/notes.md"
+          flags=(--verify-tag --title "v${VERSION}" --notes-file "$RUNNER_TEMP/notes.md")
+          if [[ "$PRERELEASE" == "true" ]]; then flags+=(--prerelease); else flags+=(--latest); fi
+          gh release create "v${VERSION}" "${flags[@]}" --repo "$GITHUB_REPOSITORY" \
+            artifacts/packages/*.nupkg artifacts/packages/*.snupkg artifacts/sbom/*.cdx.json

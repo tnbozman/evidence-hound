@@ -40,7 +40,7 @@ requirement texts in `frameworks/essential-eight-2023.json`, and check each sugg
 ## Move them in
 
 Ask your agent: "Move the registers in `<folder>` into this repo with the commands in
-https://github.com/tnbozman/evidence-hound/blob/main/docs/adopt/migrate-from-spreadsheets.md. One
+<https://github.com/tnbozman/evidence-hound/blob/main/docs/adopt/migrate-from-spreadsheets.md>. One
 command per row, systems first, then controls, then suppliers. Stop at the first error and tell me." For the sample files it runs:
 
 ```console

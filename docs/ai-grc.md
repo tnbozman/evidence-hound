@@ -110,8 +110,8 @@ The policy template sets out a policy's purpose and scope, what counts as an AI 
 accountability, risk and impact assessment, testing, fairness, transparency and human oversight), the roles (policy owner, approvers,
 compliance monitor, governance committee, system owners and all staff), screening new use cases, incidents and yearly review.
 
-Write your own policy from it, approve it, and list it under `documents` in your AI6 audit for AI6-1.4 and AI6-3.1, the way the
-example's Essential Eight audit lists its identity policy. The yearly `ai-governance` source attests it was approved (`ai.policy_approved`). Two things to match up when
+Write your own policy from it, approve it, and list it under `documents` in your AI6 audit for AI6-1.4 and AI6-3.1, as the
+example's AI6 audit does with a placeholder ([`ex-ai6-2026.yaml`](../examples/compliance-repo/scope/audits/ex-ai6-2026.yaml)). The yearly `ai-governance` source attests it was approved (`ai.policy_approved`). Two things to match up when
 you write it: the template's screening outcomes are *normal*, *elevated* and *prohibited* in one place and *unacceptable* in another
 (the register uses *unacceptable*); and it asks for a risk and impact assessment for every AI system, where the register asks for an
 approved one only for elevated systems. Choose one rule for your policy, and say so in it.
