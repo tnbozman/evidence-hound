@@ -10,7 +10,7 @@ namespace EvidenceHound.Functional.Tests;
 /// </summary>
 [Trait("Category", "Functional")]
 [Collection(SharedCisoAssistant.Name)]
-public sealed class SprsFunctionalTests(CisoAssistantFixture ciso) : IDisposable
+public sealed partial class SprsFunctionalTests(CisoAssistantFixture ciso) : IDisposable
 {
     private readonly string _workDir = Directory.CreateTempSubdirectory("hound-sprs-").FullName;
 
@@ -66,7 +66,9 @@ public sealed class SprsFunctionalTests(CisoAssistantFixture ciso) : IDisposable
             evidence:
               root: {{Path.Combine(_workDir, "evidence")}}
             collectors: []
-            targets: []
+            target:
+              mapping: {{Path.Combine(CisoAssistantFixture.RepoRoot, "mappings", "cmmc-2.0.yaml")}}
+              compliance_assessment: EX-CMMC-2026
             """, ct);
         var period = DateTime.UtcNow.ToString("yyyy-MM", System.Globalization.CultureInfo.InvariantCulture);
         var env = new Dictionary<string, string?> { ["HOUND_CA_URL"] = ciso.ApiUrl.ToString(), ["HOUND_CA_TOKEN"] = ciso.Token };
@@ -97,6 +99,9 @@ public sealed class SprsFunctionalTests(CisoAssistantFixture ciso) : IDisposable
         pack.ShouldContain("## Lapsed manual sources", Case.Sensitive, pack);
     }
 
+    [System.Text.RegularExpressions.GeneratedRegex(@"^[A-Z]{2}\.L[12]-3\.\d+\.\d+$")]
+    private static partial System.Text.RegularExpressions.Regex Practice();
+
     public void Dispose() => Directory.Delete(_workDir, recursive: true);
 
     private async Task<List<(string Practice, string Result)>> RowsAsync(CancellationToken ct)
@@ -106,7 +111,9 @@ public sealed class SprsFunctionalTests(CisoAssistantFixture ciso) : IDisposable
         request.Headers.Authorization = new AuthenticationHeaderValue("Token", ciso.Token);
         using var response = await http.SendAsync(request, ct);
         response.EnsureSuccessStatusCode();
+        // CISO Assistant keeps a row for each family node too (AC, AT, ...); the practices are the rows with a level in their ref_id.
         return [.. JsonNode.Parse(await response.Content.ReadAsStringAsync(ct))!["results"]!.AsArray()
-            .Select(r => (r!["requirement"]!["ref_id"]!.GetValue<string>(), r["result"]!.GetValue<string>()))];
+            .Select(r => (Practice: r!["requirement"]!["ref_id"]!.GetValue<string>(), Result: r["result"]!.GetValue<string>()))
+            .Where(r => Practice().IsMatch(r.Practice))];
     }
 }
