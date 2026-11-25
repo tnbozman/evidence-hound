@@ -8,9 +8,10 @@ public enum ScopeKind
     Framework,
     Domain,
     Perimeter,
-    System,
+    // Users and teams come before the systems and controls that name them as owners, so one apply on an empty CISO Assistant writes both.
     User,
     Team,
+    System,
     Audit,
     Document,
     Control,

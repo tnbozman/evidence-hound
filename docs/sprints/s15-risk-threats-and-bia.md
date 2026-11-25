@@ -301,4 +301,10 @@ As [s12-10](s12-e8-mapping-and-adoption.md#s12-10-improve-quality-and-flow-stand
 
 ## Discovered work
 
+- **s15-D1 First apply on an empty CISO Assistant failed to create systems whose owner the same apply creates** (found
+  2026-11-25 rehearsing `hound init`, `hound add system` and `hound scope apply`). The plan ordered systems before users, so a
+  system owned by a user from `scope/access.yaml` was refused (owner not found) and only a second apply created it. Fixed: users
+  and teams are planned before systems (test, then fix). `hound add system --parents` takes system names, not ref IDs; the guided
+  setup page now says so.
+
 ## Sprint review
