@@ -144,6 +144,37 @@ internal static class ReportCommands
         return ExitCodes.Ok;
     }
 
+    /// <summary>
+    /// Each incident with the reports it owes under the scope's <c>reporting.yaml</c> (s15-07), read from its timeline; unchanged when the
+    /// scope declares no obligations. An incident CISO Assistant cannot give the timeline of keeps no reports rather than failing the snapshot.
+    /// </summary>
+    private static async Task<Result<PostureRecords>> WithReportsAsync(
+        Result<PostureRecords> read, DirectoryInfo scopeDir, ScopeDocument scope, IIncidentSource incidents, CancellationToken cancellationToken)
+    {
+        var reporting = await ScopeCommands.ReportingAsync(scopeDir, cancellationToken);
+        if (reporting.Obligations.Count == 0 || read is not Result<PostureRecords>.Ok { Value: var records })
+        {
+            return read;
+        }
+
+        var systems = scope.Setup.Domains.SelectMany(d => d.Systems).ToList();
+        var now = DateTimeOffset.UtcNow;
+        var withReports = new List<IncidentItem>();
+        foreach (var incident in records.Incidents)
+        {
+            var facts = await incidents.ReadAsync(incident.RefId, cancellationToken);
+            withReports.Add(facts is Result<IncidentFacts>.Ok { Value: var found }
+                ? incident with
+                {
+                    Reports = [.. ReportingObligations.Owed(reporting.Obligations, systems, found, now)
+                        .Select(r => new IncidentReport(r.Obligation.Id, r.Obligation.Name, r.Obligation.ReportTo, r.Due, IncidentCommands.Status(r)))],
+                }
+                : incident);
+        }
+
+        return Result.Ok(records with { Incidents = withReports });
+    }
+
     /// <summary>The snapshot's file name in the evidence store's <c>reports/</c> folder, and its evidence ref_id after <c>hound-report/</c>.</summary>
     internal static string SnapshotName(ReportingPeriod period) => $"posture-{period}";
 
@@ -183,7 +214,8 @@ internal static class ReportCommands
                 .Bind(p => coverage.Map(c => p with { Coverage = c })));
         }
 
-        var records = await posture.ReadAsync(cancellationToken);
+        var records = await WithReportsAsync(
+            await posture.ReadAsync(cancellationToken), scopeDir, checkedScope.Scope, services.GetRequiredService<IIncidentSource>(), cancellationToken);
         var collectors = await new FileRunRecordStore(setup.Deployment.Evidence.Root).LatestAsync(cancellationToken);
         var built = Result.Combine(programmes).Bind(p => records.Bind(r => collectors.Map(c => new PostureSnapshot(
             period, DateTimeOffset.UtcNow, p, r.Controls, r.Acceptances, r.Remediation, r.Incidents, r.Risks, [.. c.Select(Health)], r.Due)
