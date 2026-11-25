@@ -161,6 +161,12 @@ internal static class SupplierCommands
             ["evidence"] = h.Data.Authority?.Evidence,
             ["expires"] = Day(h.Data.Authority?.Expires),
             ["systems"] = new JsonArray([.. h.Systems.Select(s => (JsonNode)s)]),
+            ["clauses"] = new JsonArray([.. h.Clauses.Select(c => (JsonNode)new JsonObject
+            {
+                ["clause"] = c.Clause,
+                ["required_by"] = c.RequiredBy,
+                ["carried"] = c.Carried,
+            })]),
         })]),
     }.ToJsonString(OnboardAgentCommand.Indented);
 
@@ -171,17 +177,20 @@ internal static class SupplierCommands
         {
             $"# Suppliers handling {kind}",
             "",
-            holders.Count == 0 ? $"No supplier's solution lists {kind} in its data." : "| Supplier | Solution | Role | Detail | Authority | Evidence | Expires | Systems |",
+            holders.Count == 0 ? $"No supplier's solution lists {kind} in its data." : "| Supplier | Solution | Role | Detail | Authority | Evidence | Expires | Systems | Flowed-down clauses |",
         };
         if (holders.Count > 0)
         {
-            lines.Add("| --- | --- | --- | --- | --- | --- | --- | --- |");
+            lines.Add("| --- | --- | --- | --- | --- | --- | --- | --- | --- |");
             lines.AddRange(holders.Select(h =>
-                $"| {h.Supplier} | {h.Solution} | {Role(h.Data)} | {Cell(h.Data.Detail)} | {Cell(h.Data.Authority?.Name ?? "no authority recorded")} | {Cell(h.Data.Authority?.Evidence)} | {Day(h.Data.Authority?.Expires)} | {Cell(string.Join(", ", h.Systems))} |"));
+                $"| {h.Supplier} | {h.Solution} | {Role(h.Data)} | {Cell(h.Data.Detail)} | {Cell(h.Data.Authority?.Name ?? "no authority recorded")} | {Cell(h.Data.Authority?.Evidence)} | {Day(h.Data.Authority?.Expires)} | {Cell(string.Join(", ", h.Systems))} | {Cell(Clauses(h.Clauses))} |"));
         }
 
         return string.Join('\n', lines);
     }
+
+    private static string Clauses(IReadOnlyList<FlowedClause> clauses) =>
+        string.Join("; ", clauses.Select(c => $"{c.Clause} ({(c.Carried ? "carried" : "missing")})"));
 
     private static string Role(SensitiveData data) => data.Role.ToString().ToLowerInvariant();
 

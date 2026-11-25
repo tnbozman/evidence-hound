@@ -32,9 +32,7 @@ public static class SupplierValidator
         ArgumentNullException.ThrowIfNull(scope);
         var frameworks = scope.Setup.Frameworks.Select(f => f.Urn).ToHashSet(StringComparer.Ordinal);
         var contracts = scope.ThirdParties.SelectMany(e => e.Contracts.Select(c => (Entity: e, Contract: c))).ToArray();
-        var flowed = contracts.Where(c => c.Contract.Customer)
-            .SelectMany(c => c.Contract.Obligations.Where(o => o.FlowDown).Select(o => (c.Contract, Obligation: o)))
-            .ToArray();
+        var flowed = CustomerObligations.All(scope).Where(r => r.Obligation.FlowDown).ToArray();
         return
         [
             .. contracts.SelectMany(c => c.Contract.Obligations).Select(o => o.Framework).OfType<ScopeRef>().Where(f => !frameworks.Contains(f.Value))
@@ -46,17 +44,16 @@ public static class SupplierValidator
                     "contract.flow_down_invalid", o.FlowDownAt ?? o.At, $"clause '{o.Clause}' is marked flow_down on a supplier contract.",
                     "Only a customer contract (customer: true) flows a clause down; remove flow_down here.")),
             .. contracts.Where(c => !c.Contract.Customer).SelectMany(c => flowed
-                .Where(f => Handles(c.Entity, c.Contract, f.Obligation.Data) && c.Contract.Obligations.All(o => o.Clause != f.Obligation.Clause))
+                .Where(f => CustomerObligations.Covers(f.Obligation, Kinds(c.Entity, c.Contract)) && c.Contract.Obligations.All(o => o.Clause != f.Obligation.Clause))
                 .Select(f => new ScopeProblem(
                     "contract.flow_down_missing", c.Contract.At,
-                    $"contract '{c.Contract.RefId}' with {c.Entity.RefId} lacks '{f.Obligation.Clause}', which customer contract '{f.Contract.RefId}' flows down.",
+                    $"contract '{c.Contract.RefId}' with {c.Entity.RefId} lacks '{f.Obligation.Clause}', which customer contract '{f.Contract}' flows down.",
                     $"Add the clause to the supplier contract's obligations once it is in the signed contract, or raise it with {c.Entity.Name}."))),
         ];
     }
 
-    private static bool Handles(ScopeEntity entity, ScopeContract contract, IReadOnlyList<SensitiveDataKind> kinds) =>
-        kinds.Count == 0 || entity.Solutions.Where(s => contract.Solutions.Any(r => r.Value == s.RefId))
-            .SelectMany(s => s.Data).Any(d => kinds.Contains(d.Kind));
+    private static IEnumerable<SensitiveDataKind> Kinds(ScopeEntity entity, ScopeContract contract) =>
+        entity.Solutions.Where(s => contract.Solutions.Any(r => r.Value == s.RefId)).SelectMany(s => s.Data).Select(d => d.Kind);
 
     /// <summary>Third parties declared once (entities, solutions and contracts by ref_id, representatives by email), and the parents and domains they name.</summary>
     public static IEnumerable<ScopeProblem> References(ScopeDocument scope)

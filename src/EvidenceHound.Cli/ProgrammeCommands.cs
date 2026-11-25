@@ -39,13 +39,14 @@ internal static class ProgrammeCommands
                 p => p.Id,
                 p => p.Register is { } r ? RegisterSummary.Of(RegisterItems.Of(setup, r.Of), r.By, today, today, new HashSet<string>(StringComparer.Ordinal)) : null,
                 StringComparer.Ordinal);
-            await output.WriteLineAsync(parseResult.GetValue(json) ? Json(outlines, registers) : Markdown(outlines, registers));
+            var required = setup.Programmes.ToDictionary(p => p.Id, p => CustomerObligations.Requiring(checkedScope.Scope, p.Framework.Value), StringComparer.Ordinal);
+            await output.WriteLineAsync(parseResult.GetValue(json) ? Json(outlines, registers, required) : Markdown(outlines, registers, required));
             return ExitCodes.Ok;
         });
         return new Command("programme", "Compliance programmes: a framework, its groups and the audit of record, which reports are organised by.") { list };
     }
 
-    private static string Json(IEnumerable<ProgrammeOutline> outlines, Dictionary<string, RegisterSummary?> registers) =>
+    private static string Json(IEnumerable<ProgrammeOutline> outlines, Dictionary<string, RegisterSummary?> registers, Dictionary<string, IReadOnlyList<CustomerRequirement>> required) =>
         new JsonObject
         {
             ["programmes"] = new JsonArray([.. outlines.Select(o => new JsonObject
@@ -64,6 +65,14 @@ internal static class ProgrammeCommands
                     ["parents"] = new JsonArray([.. g.Parents.Select(p => new JsonObject { ["urn"] = p.Urn, ["name"] = p.Name, ["requirements"] = p.Requirements })]),
                 })]),
                 ["register"] = registers[o.Programme.Id] is { } summary ? Register(o.Programme.Register!, summary) : null,
+                ["required_by"] = new JsonArray([.. required[o.Programme.Id].Select(r => (JsonNode)new JsonObject
+                {
+                    ["customer"] = r.Customer,
+                    ["customer_name"] = r.CustomerName,
+                    ["contract"] = r.Contract,
+                    ["clause"] = r.Obligation.Clause,
+                    ["level"] = r.Obligation.Level,
+                })]),
             })]),
         }.ToJsonString(OnboardAgentCommand.Indented);
 
@@ -87,7 +96,11 @@ internal static class ProgrammeCommands
     private static string Values(RegisterSummary summary, string field) =>
         summary.Counts.Where(c => c.Field == field).Select(c => $"{c.Value} {c.Count}").ToArray() is { Length: > 0 } values ? string.Join(", ", values) : "none";
 
-    private static string Markdown(ProgrammeOutline[] outlines, Dictionary<string, RegisterSummary?> registers)
+    /// <summary>One line, such as <c>Required by Example Prime Pty Ltd (CTR-PRIME-PARTS): Essential Eight maturity level 2, level 2.</c></summary>
+    private static string RequiredLine(CustomerRequirement r) =>
+        $"Required by {r.CustomerName} ({r.Contract}): {r.Obligation.Clause}{(r.Obligation.Level is { } level ? $", level {level}" : "")}.";
+
+    private static string Markdown(ProgrammeOutline[] outlines, Dictionary<string, RegisterSummary?> registers, Dictionary<string, IReadOnlyList<CustomerRequirement>> required)
     {
         if (outlines.Length == 0)
         {
@@ -112,6 +125,16 @@ internal static class ProgrammeCommands
             if (registers[o.Programme.Id] is { } summary)
             {
                 text.AppendLine(RegisterLine(o.Programme.Register!, summary)).AppendLine();
+            }
+
+            foreach (var requirement in required[o.Programme.Id])
+            {
+                text.AppendLine(RequiredLine(requirement));
+            }
+
+            if (required[o.Programme.Id].Count > 0)
+            {
+                text.AppendLine();
             }
         }
 

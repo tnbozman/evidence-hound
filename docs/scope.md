@@ -42,6 +42,7 @@ Every ref ID reads the same way whoever wrote it: its kind's prefix, then upper 
 | perimeter | `PER-` | `PER-CORP` |
 | supplier assessment | `EA-` | `EA-SUP-EXAMPLE` |
 | evidence plan row | `EV-` | `EV-BACKUP-RESTORE` |
+| customer | `CUS-` | `CUS-EXAMPLE-PRIME` |
 
 An audit has no prefix. An audit that runs in periods, as `hound init` writes it, is a series `<CODE>-<FRAMEWORK>`, such as `EX-E8`, or `<CODE>-<FRAMEWORK>-<SYSTEM>` for one system; each period reads `<CODE>-<FRAMEWORK>-<INTERVAL>-<YEAR>FY[-<SYSTEM>]`, such as `EX-E8-Q2-2027FY` ([Audit periods](#audit-periods)). An audit without a cycle reads `<CODE>-<FRAMEWORK>-<YEAR>`, such as `EX-E8-2026`.
 
@@ -303,6 +304,35 @@ assessments:
 - `forced_tier` needs a `reason`. `hound` never writes the tier; the plan lists a tier in CISO Assistant that differs from the forced one.
 
 Validation reports an assessment naming a solution the entity does not provide (`supplier.solution_unknown`), an unknown perimeter, domain or questionnaire, a criticality outside 1 to 4, `review_every` without a `due_date` (`supplier.review_without_due_date`), a conclusion naming a review that is not one of the assessment's (`supplier.conclusion_review_unknown`) and a forced tier without a reason (`supplier.forced_tier_reason_missing`).
+
+### Customer contracts and flow-down
+
+A prime you supply is declared like a supplier, in its own file under `scope/third-parties/`, with `CUS-` in place of `SUP-` and `customer: true` on each of its contracts. The contract's `obligations` list the clauses it imposes:
+
+```yaml
+ref_id: CUS-EXAMPLE-PRIME
+name: Example Prime Pty Ltd
+domain: Example Pty Ltd
+contracts:
+  - ref_id: CTR-PRIME-PARTS
+    name: Machined parts subcontract
+    status: active
+    customer: true
+    obligations:
+      - clause: DFARS 252.204-7012
+        framework: urn:intuitem:risk:framework:nist-sp-800-171-rev2
+        level: "2"
+        data: [cui]
+        flow_down: true
+      - clause: Essential Eight maturity level 2
+        framework: urn:intuitem:risk:framework:essential-eight-2023
+        level: "2"
+```
+
+- `clause` is the clause as the contract names it. `framework` (a URN in `setup.yaml`) and `level` say what it requires; `hound programme list` then names, under each programme with that framework, the customer that requires it.
+- `flow_down: true` means your own suppliers must carry the clause. `data` limits it to suppliers whose solutions handle those kinds of sensitive data; with no `data`, every supplier contract must carry it.
+- A supplier contract lists the clauses it carries under its own `obligations`, by `clause` alone. `hound scope validate` reports `contract.flow_down_missing` for each supplier contract that lacks one it owes, `contract.framework_unknown` for a framework `setup.yaml` does not declare, and `contract.flow_down_invalid` for `flow_down` on a supplier contract.
+- `hound supplier list --data cui` shows each supplier's flowed-down clauses as carried or missing: the answer to a prime's supply-chain questionnaire.
 
 ### Supplier approval
 
