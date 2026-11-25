@@ -320,7 +320,7 @@ suppliers change.
   externally to relevant authorities (from `scope/reporting.yaml`); other parties to inform (suppliers and customers, s15-08); the
   authorities responsible for investigating and responding; the criteria for requesting an investigation from a law enforcement agency,
   ASD or another authority; the steps that keep evidence intact; and system contingency measures, or a reference to the business
-  continuity summary (s19-06).
+  continuity summary (s19b-06).
 - It is system-specific documentation, so the system's authorising officer approves it (ISM-0047).
 
 **Tests first**

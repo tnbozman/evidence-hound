@@ -1,10 +1,13 @@
-# s19 Security document generators
+# s19 part B: Security document generators (droppable)
 
-Status: Planned
+Status: Planned, waiting on the maintainer: part B of s19, or a later sprint
 
-Release: 3
+Release: 3, unless moved
 
-Added at the maintainer's request (2026-11-24) as the final sprint, after release 2.
+Added at the maintainer's request (2026-11-24) as the final sprint, after release 2. On 2026-11-25 the maintainer made s19 a principal
+software engineer and CISO review ([s19-review-and-release-3.md](s19-review-and-release-3.md)). These tasks are its droppable part B:
+they start only after part A is done, and only if the maintainer keeps them in s19. The CISO review (s19b-07) may cut or reorder them;
+its result is recorded here before any of them starts.
 
 **Goal:** `hound` drafts the security documents a CMMC Level 2 or Essential Eight Maturity Level 2 organisation must keep, from the data it already manages, the same way it drafts the system security plan (s11-04) and the incident response plan (s15-09). Only documents that Evidence Hound's data can largely fill are in scope. A person writes the judgement parts, and approves each version in CISO Assistant. Then the approved document is published as evidence for the controls that require it, because several of these documents are themselves the evidence for policy and documentation controls.
 
@@ -13,7 +16,7 @@ Source: ASD's ISM, Guidelines for Cyber Security Documentation, September 2026 (
 What the guideline requires:
 - Organisation level: a cyber security strategy (ISM-0039). Organisation-level documents are approved by the CISO, and system-specific ones by the system's authorising officer (ISM-0047). A system's security architecture is approved before the system is developed (ISM-1739). All documentation is reviewed at least annually and carries a "current as at [date]" statement (ISM-0888). Approved documentation, and notice of later changes, is communicated to all stakeholders (ISM-1602).
 - Per system: a system security plan (ISM-0041), a cyber security incident response plan (ISM-0043), a change and configuration management plan (ISM-0912), a continuous monitoring plan (ISM-1163), a security assessment report produced by the assessor (ISM-1563), and a plan of action and milestones produced by the system owner after the assessment (ISM-1564).
-- It also points to registers, policies and procedures in other guidelines: system registers, incident registers, approved supplier lists, managed service and outsourced cloud service registers, software registers, AI agent registers, awareness training registers, and usage policies (system, email, web, mobile devices, general-purpose AI, and others). s19-04 and s19-11 cover the ones hound has data for.
+- It also points to registers, policies and procedures in other guidelines: system registers, incident registers, approved supplier lists, managed service and outsourced cloud service registers, software registers, AI agent registers, awareness training registers, and usage policies (system, email, web, mobile devices, general-purpose AI, and others). s19b-04 and s19b-11 cover the ones hound has data for.
 
 The ASD SSP annex template the guideline points to is used for the ISM annex (s11-16). Small and medium businesses often have no CISO. hound therefore names the approver of organisation-level documents as a configurable role, `cyber_grc_lead`: the person responsible for cyber GRC. That is the CISO, or an appropriate manager the chief security officer (CSO) or equivalent has delegated, such as a CTO or IT manager. The register records who approved and under which delegation.
 
@@ -26,21 +29,21 @@ Builds on: the SSP model and layout (s11-02 to s11-05), the POA&M (s11-03), the 
 | System security plan | ISM-0041 | 3.12.4 | Done in s11 and s17 | - | - |
 | Incident response plan | ISM-0043 | 3.6.1 | Done in s15-09 | - | - |
 | Plan of action and milestones | ISM-1564 | 3.12.2 | Done in s11-03 | - | - |
-| Security assessment report | ISM-1563 | 3.12.1 | Audit results, evidence and its dates, check results, gaps | Assessor's conclusions, strengths and weaknesses, recommended remediation | s19-02 |
-| Change and configuration management plan | ISM-0912 | 3.4.1 to 3.4.5 | Baselines as checks, the config repo's pull requests, `scope plan` and `scope apply`, approvers in `access.yaml` | What is routine or urgent, who is consulted | s19-10 |
-| Continuous monitoring plan | ISM-1163 | 3.12.3 | Collectors, schedules, checks, the evidence plan and its intervals, metrics, the weekly review | Escalation thresholds | s19-03 |
-| Cyber security policy and policy statements | ISM-0047 (approval), ISM-0888 (review); usage policies in other guidelines | Each family's "establish policy" objectives in the CMMC assessment guide | Controls declared once with owners and descriptions, grouped by strategy or family | Purpose, scope, exceptions process | s19-04 |
-| Risk assessment report | Risk management in the system lifecycle | 3.11.1 | Risk register, threats, matrices, exceptions (s15) | Context and risk appetite | s19-05 |
-| Business continuity and recovery summary | Backups "in accordance with business continuity requirements" (Essential Eight regular backups) | 3.8.9 (backups) | BIA, recovery objectives, backup and restore-test evidence (s15-04, s15-05) | Recovery priorities | s19-06 |
-| Supplier and supply chain report, and registers | Approved supplier list, managed service and outsourced cloud service registers (procurement and outsourcing guidelines) | 3.12 and DFARS 252.204-7012 flow-down | Suppliers, contracts, data kinds, flow-down gaps (s10, s15-08) | - | s19-07 |
-| Document register, annual review and communication | ISM-0047, ISM-0888, ISM-1602 | Policy review in each family | Every generated document, its version, approval and review date | Review decision | s19-08 |
-| Authorisation package | ISM-0047, ISM-1739 (system documents approved by the authorising officer) | 3.12 | SSP, SAR, POA&M, continuous monitoring plan | The authorising official's decision | s19-09 |
+| Security assessment report | ISM-1563 | 3.12.1 | Audit results, evidence and its dates, check results, gaps | Assessor's conclusions, strengths and weaknesses, recommended remediation | s19b-02 |
+| Change and configuration management plan | ISM-0912 | 3.4.1 to 3.4.5 | Baselines as checks, the config repo's pull requests, `scope plan` and `scope apply`, approvers in `access.yaml` | What is routine or urgent, who is consulted | s19b-10 |
+| Continuous monitoring plan | ISM-1163 | 3.12.3 | Collectors, schedules, checks, the evidence plan and its intervals, metrics, the weekly review | Escalation thresholds | s19b-03 |
+| Cyber security policy and policy statements | ISM-0047 (approval), ISM-0888 (review); usage policies in other guidelines | Each family's "establish policy" objectives in the CMMC assessment guide | Controls declared once with owners and descriptions, grouped by strategy or family | Purpose, scope, exceptions process | s19b-04 |
+| Risk assessment report | Risk management in the system lifecycle | 3.11.1 | Risk register, threats, matrices, exceptions (s15) | Context and risk appetite | s19b-05 |
+| Business continuity and recovery summary | Backups "in accordance with business continuity requirements" (Essential Eight regular backups) | 3.8.9 (backups) | BIA, recovery objectives, backup and restore-test evidence (s15-04, s15-05) | Recovery priorities | s19b-06 |
+| Supplier and supply chain report, and registers | Approved supplier list, managed service and outsourced cloud service registers (procurement and outsourcing guidelines) | 3.12 and DFARS 252.204-7012 flow-down | Suppliers, contracts, data kinds, flow-down gaps (s10, s15-08) | - | s19b-07 |
+| Document register, annual review and communication | ISM-0047, ISM-0888, ISM-1602 | Policy review in each family | Every generated document, its version, approval and review date | Review decision | s19b-08 |
+| Authorisation package | ISM-0047, ISM-1739 (system documents approved by the authorising officer) | 3.12 | SSP, SAR, POA&M, continuous monitoring plan | The authorising official's decision | s19b-09 |
 
-**Left out:** documents that are mostly judgement and that Evidence Hound has little data for. These are the cyber security strategy (ISM-0039), the awareness and training programme, physical and personnel security plans (DISP readiness, s14, covers what Defence asks), standard operating procedures, cabling, telephone and media documents, and floor plans. The change and configuration management plan (ISM-0912) was first left out, and is now in (s19-10), because the config repo's pull requests and `scope plan` already are the change process. If a later need appears, the catalogue in s19-01 can list one as a template with only judgement sections.
+**Left out:** documents that are mostly judgement and that Evidence Hound has little data for. These are the cyber security strategy (ISM-0039), the awareness and training programme, physical and personnel security plans (DISP readiness, s14, covers what Defence asks), standard operating procedures, cabling, telephone and media documents, and floor plans. The change and configuration management plan (ISM-0912) was first left out, and is now in (s19b-10), because the config repo's pull requests and `scope plan` already are the change process. If a later need appears, the catalogue in s19b-01 can list one as a template with only judgement sections.
 
-**Policy documents as evidence:** the policy statements (s19-04), the continuous monitoring plan, the SSP, the IRP, the SAR and the document register are each the evidence for a control in their own right. When a version is approved, `hound` publishes it to the requirement rows it answers, using the same publisher as collectors. Approval is a person's action in CISO Assistant (Approver role), never `hound`'s.
+**Policy documents as evidence:** the policy statements (s19b-04), the continuous monitoring plan, the SSP, the IRP, the SAR and the document register are each the evidence for a control in their own right. When a version is approved, `hound` publishes it to the requirement rows it answers, using the same publisher as collectors. Approval is a person's action in CISO Assistant (Approver role), never `hound`'s.
 
-### s19-01 Document catalogue and one generator pattern
+### s19b-01 Document catalogue and one generator pattern
 - [ ] Done
 
 **Story:** As a GRC team member, I want every document `hound` can draft listed in one place, with what it is built from and which controls it evidences, so that I can see what is generated, what I must write and what is due for review.
@@ -61,7 +64,7 @@ Builds on: the SSP model and layout (s11-02 to s11-05), the POA&M (s11-03), the 
 **Functional check**
 - `hound doc list` against the example scope on the local CISO Assistant lists the SSP and IRP as drafts and every other document as not declared.
 
-### s19-02 Security assessment report
+### s19b-02 Security assessment report
 - [ ] Done
 
 **Story:** As an authorising official, I want a security assessment report built from the audit, so that I can see what was assessed, how, and what was found before I decide.
@@ -79,7 +82,7 @@ Builds on: the SSP model and layout (s11-02 to s11-05), the POA&M (s11-03), the 
 **Functional check**
 - Build the example Essential Eight SAR; it lists ISM-1486's evidence and the POA&M items from s11-03.
 
-### s19-03 Continuous monitoring plan
+### s19b-03 Continuous monitoring plan
 - [ ] Done
 
 **Story:** As a GRC team member with a few hours a week, I want the monitoring plan to be what `hound` actually runs, so that the plan never drifts from practice.
@@ -97,7 +100,7 @@ Builds on: the SSP model and layout (s11-02 to s11-05), the POA&M (s11-03), the 
 **Functional check**
 - Build the example plan; it lists the nightly Microsoft 365 and Sophos runs and the manual backup restore test.
 
-### s19-04 Cyber security policy and policy statements
+### s19b-04 Cyber security policy and policy statements
 - [ ] Done
 
 **Story:** As a small supplier without a policy writer, I want a policy set drafted from the controls I already declare, so that each control has a policy statement an assessor can find and I only write what is mine to decide.
@@ -115,7 +118,7 @@ Builds on: the SSP model and layout (s11-02 to s11-05), the POA&M (s11-03), the 
 **Functional check**
 - Build the example policy; the multi-factor authentication statement names AC-MFA and its owner.
 
-### s19-05 Risk assessment report
+### s19b-05 Risk assessment report
 - [ ] Done
 
 **Story:** As the person responsible for cyber GRC, I want the risk assessment written up from the risk register, so that the periodic risk assessment requirement is met without a separate spreadsheet.
@@ -132,7 +135,7 @@ Builds on: the SSP model and layout (s11-02 to s11-05), the POA&M (s11-03), the 
 **Functional check**
 - Build the example risk report against the local CISO Assistant with the example risk study (s15-06).
 
-### s19-06 Business continuity and recovery summary
+### s19b-06 Business continuity and recovery summary
 - [ ] Done
 
 **Story:** As a system owner, I want my recovery objectives and the evidence that recovery works in one document, so that backups are shown to meet business continuity requirements.
@@ -147,7 +150,7 @@ Builds on: the SSP model and layout (s11-02 to s11-05), the POA&M (s11-03), the 
 **Functional check**
 - Build the example summary; it shows the example backup service's restore test.
 
-### s19-07 Supplier and supply chain report
+### s19b-07 Supplier and supply chain report
 - [ ] Done
 
 **Story:** As a subcontractor, I want one report of my suppliers, what data they handle and which clauses I flow down, so that I can answer a prime's supply chain questionnaire.
@@ -162,7 +165,7 @@ Builds on: the SSP model and layout (s11-02 to s11-05), the POA&M (s11-03), the 
 **Functional check**
 - Build the example report; it lists the machine-shop rehearsal's supplier contract missing its DFARS clause.
 
-### s19-08 Document register and annual review
+### s19b-08 Document register and annual review
 - [ ] Done
 
 **Story:** As a GRC team member, I want each document's version, approval and next review tracked for me, so that nothing lapses and the review is one item in my weekly session.
@@ -184,7 +187,7 @@ Builds on: the SSP model and layout (s11-02 to s11-05), the POA&M (s11-03), the 
 **Functional check**
 - Approve the example SSP in the local CISO Assistant, move the clock a year on, and see it in `hound review`.
 
-### s19-09 Authorisation package
+### s19b-09 Authorisation package
 - [ ] Done
 
 **Story:** As an authorising official, I want the SSP, SAR, POA&M and monitoring plan bundled at one version, so that I authorise one consistent set and an assessor receives exactly that.
@@ -201,7 +204,7 @@ Builds on: the SSP model and layout (s11-02 to s11-05), the POA&M (s11-03), the 
 **Functional check**
 - Package the example Essential Eight programme and verify the manifest.
 
-### s19-10 Change and configuration management plan
+### s19b-10 Change and configuration management plan
 - [ ] Done
 
 **Story:** As a small IT team, I want the change plan to describe the process we already follow in the config repo, so that ISM-0912 and CMMC's configuration management practices are met without a second process.
@@ -217,7 +220,7 @@ Builds on: the SSP model and layout (s11-02 to s11-05), the POA&M (s11-03), the 
 **Functional check**
 - Build the example plan; it lists the Microsoft 365 baseline checks and the approver from the example `access.yaml`.
 
-### s19-11 Registers
+### s19b-11 Registers
 - [ ] Done
 
 **Story:** As a GRC team member, I want the registers the ISM points to printed from what CISO Assistant holds, so that I never keep a second spreadsheet.
@@ -233,7 +236,7 @@ Builds on: the SSP model and layout (s11-02 to s11-05), the POA&M (s11-03), the 
 **Functional check**
 - Build the example registers against the local CISO Assistant.
 
-### s19-12 Documentation and example
+### s19b-12 Documentation and example
 - [ ] Done
 
 **Acceptance criteria**
@@ -247,17 +250,7 @@ Builds on: the SSP model and layout (s11-02 to s11-05), the POA&M (s11-03), the 
 **Functional check**
 - Following `docs/documents.md` verbatim, build and package the example documents.
 
-### s19-13 Rehearse trial, onboarding and sustaining GRC (standing, every sprint)
-- [ ] Done
-
-As [s12-09](s12-e8-mapping-and-adoption.md#s12-09-rehearse-trial-onboarding-and-sustaining-grc-standing-every-sprint), including this sprint's new commands and guides.
-The rehearsal drives hound through the agent skills, and the sprint ends with the Claude Code and Copilot skills and agents
-accurate for the CLI and its workflows (sprint lifecycle step 5 in [README.md](README.md)).
-
-### s19-14 Improve: quality and flow (standing, about 15% of each sprint)
-- [ ] Done
-
-As [s12-10](s12-e8-mapping-and-adoption.md#s12-10-improve-quality-and-flow-standing-about-15-of-each-sprint).
+The standing rehearsal and improvement tasks are part A's (s19-10 and s19-11).
 
 ## Discovered work
 
