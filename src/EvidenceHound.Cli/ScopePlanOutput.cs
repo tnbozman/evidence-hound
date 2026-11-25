@@ -308,6 +308,9 @@ internal sealed record PlanNotes(IReadOnlyList<PeriodNote> Periods, IReadOnlyLis
     /// <summary>Lapsed supplier approvals and tiers that differ from the forced one.</summary>
     public IReadOnlyList<SupplierNote> Suppliers { get; init; } = [];
 
+    /// <summary>The security exceptions and risk acceptances CISO Assistant holds, with their status and any renewal due (s15-03).</summary>
+    public IReadOnlyList<ExceptionNote> Exceptions { get; init; } = [];
+
     /// <summary>Mitigations the capability map says no product provides.</summary>
     public IReadOnlyList<CapabilityGap> Gaps { get; init; } = [];
 
