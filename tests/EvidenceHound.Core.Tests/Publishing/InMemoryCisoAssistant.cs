@@ -3,6 +3,7 @@ using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Planning;
 using EvidenceHound.Core.Publishing;
 using EvidenceHound.Core.Results;
+using EvidenceHound.Core.Scope;
 
 namespace EvidenceHound.Core.Tests.Publishing;
 
@@ -90,6 +91,21 @@ internal sealed class InMemoryCisoAssistant : ICisoAssistantClient
     {
         Calls.Add($"evidence {refId}");
         return Task.FromResult(Result.Ok<IReadOnlyList<RemoteEvidence>>(_evidenceByRefId.TryGetValue(refId, out var found) ? [found] : []));
+    }
+
+    /// <summary>Asset assessments by BIA ref_id, then system name (s15-05).</summary>
+    public Dictionary<string, Dictionary<string, HeldRecovery>> Recovery { get; } = [];
+
+    /// <summary>Each recovery flag set: assessment id, field, value and the evidence ids sent.</summary>
+    public List<(string Assessment, string Field, bool Value, IReadOnlyList<string> Evidence)> RecoverySet { get; } = [];
+
+    public Task<Result<IReadOnlyDictionary<string, HeldRecovery>>> ListRecoveryAsync(string biaRefId, CancellationToken cancellationToken) =>
+        Task.FromResult(Result.Ok<IReadOnlyDictionary<string, HeldRecovery>>(Recovery.TryGetValue(biaRefId, out var held) ? held : []));
+
+    public Task<Result<Unit>> UpdateRecoveryAsync(string assessmentId, string field, bool value, IReadOnlyList<string> evidenceIds, CancellationToken cancellationToken)
+    {
+        RecoverySet.Add((assessmentId, field, value, evidenceIds));
+        return Task.FromResult(Result.Ok(Unit.Value));
     }
 
     public Task<Result<ControlState>> FindAppliedControlStatusAsync(string refId, CancellationToken cancellationToken)
