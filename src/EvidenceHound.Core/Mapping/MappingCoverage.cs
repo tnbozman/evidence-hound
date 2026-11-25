@@ -20,7 +20,31 @@ public static class MappingCoverage
         FrameworkMapping mapping,
         IEnumerable<RequirementKey> manualOnly,
         IReadOnlySet<CheckId> manualChecks,
+        IReadOnlyList<string> groups) =>
+        CountBy(snapshot, mapping, manualOnly, manualChecks, groups, node => node.ParentUrn ?? "");
+
+    /// <summary>
+    /// s14-01: counts per top-level node (in snapshot order) and selected group, such as an ASD Essentials domain, which sits above the
+    /// principle each action belongs to. For a framework with one level of parents this is the same as <see cref="Count"/>.
+    /// </summary>
+    public static IReadOnlyList<CoverageCount> CountByTop(
+        FrameworkSnapshot snapshot,
+        FrameworkMapping mapping,
+        IEnumerable<RequirementKey> manualOnly,
+        IReadOnlySet<CheckId> manualChecks,
         IReadOnlyList<string> groups)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        return CountBy(snapshot, mapping, manualOnly, manualChecks, groups, node => node.ParentUrn is null ? "" : snapshot.TopUrn(node.ParentUrn));
+    }
+
+    private static IReadOnlyList<CoverageCount> CountBy(
+        FrameworkSnapshot snapshot,
+        FrameworkMapping mapping,
+        IEnumerable<RequirementKey> manualOnly,
+        IReadOnlySet<CheckId> manualChecks,
+        IReadOnlyList<string> groups,
+        Func<SnapshotNode, string> parentOf)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
         ArgumentNullException.ThrowIfNull(mapping);
@@ -31,8 +55,8 @@ public static class MappingCoverage
         var kinds = Kinds(snapshot, mapping, manualOnly, manualChecks);
         return
         [
-            .. snapshot.Nodes.Select(n => n.ParentUrn ?? "").Distinct(StringComparer.Ordinal).SelectMany(parent => groups.Select(group =>
-                Counted(parent, group, [.. snapshot.Nodes.Where(n => (n.ParentUrn ?? "") == parent && n.Groups.Contains(group)).Select(n => kinds.GetValueOrDefault(n.Urn, CoverageKind.Uncovered))])))
+            .. snapshot.Nodes.Select(parentOf).Distinct(StringComparer.Ordinal).SelectMany(parent => groups.Select(group =>
+                Counted(parent, group, [.. snapshot.Nodes.Where(n => parentOf(n) == parent && n.Groups.Contains(group)).Select(n => kinds.GetValueOrDefault(n.Urn, CoverageKind.Uncovered))])))
             .Where(count => count.Automated + count.Manual + count.Uncovered > 0),
         ];
     }

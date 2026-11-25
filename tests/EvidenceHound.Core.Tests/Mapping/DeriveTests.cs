@@ -8,9 +8,9 @@ namespace EvidenceHound.Core.Tests.Mapping;
 /// <summary>s14-01: <c>hound mapping derive</c> drafts a mapping for a new framework from an old framework's mapping and a transition mapping.</summary>
 public class DeriveTests
 {
-    private const string Old = "urn:example:risk:req_node:example-old:mfa";
-    private const string Bnd = "urn:example:risk:req_node:example-domains:bnd";
-    private const string Idn = "urn:example:risk:req_node:example-domains:idn";
+    private static readonly string Old = "urn:example:risk:req_node:example-old:mfa";
+    private static readonly string Bnd = "urn:example:risk:req_node:example-domains:bnd";
+    private static readonly string Idn = "urn:example:risk:req_node:example-domains:idn";
 
     private static readonly FrameworkSnapshot Source = new(
         "urn:example:risk:library:example-old",

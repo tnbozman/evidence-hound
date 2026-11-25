@@ -54,6 +54,7 @@ public static class MappingEngine
         return new RequirementResult(requirement.RequirementRef, result, observation, evidence)
         {
             Key = requirement.Key,
+            Draft = requirement.Draft,
             CheckOutcomes = [.. contributing.Select(c => $"{c.Id}:{(c.Result is null ? "missing" : Names.Of(c.Result.Outcome))}")],
         };
     }

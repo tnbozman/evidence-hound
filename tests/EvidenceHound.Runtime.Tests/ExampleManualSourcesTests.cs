@@ -86,7 +86,7 @@ internal static class ExampleManualSources
         var example = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "files", "examples", "example-essential-eight.yaml"));
         var snippet = string.Join('\n', File.ReadAllLines(Path.Combine(Folder(template), "source.yaml")).Where(l => !l.StartsWith('#')).Select(l => "  " + l));
         var start = example.IndexOf("collectors:", StringComparison.Ordinal);
-        var end = example.IndexOf("\ntarget:", StringComparison.Ordinal);
+        var end = example.IndexOf("\ntargets:", StringComparison.Ordinal);
         return example[..start] + "collectors:\n" + snippet + "\n" + example[end..];
     }
 

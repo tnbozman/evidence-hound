@@ -1,0 +1,10 @@
+# Cyber governance: paste this under 'collectors:' in hound.yaml, then set the owner and the drop folder.
+# The runbook is README.md beside this file; point an evidence plan row at your copy of it.
+- name: cyber-governance
+  type: manual
+  schedule: "0 6 * * *"
+  settings:
+    drop_folder: /var/lib/evidence-hound/manual/cyber-governance
+    checks: governance.ai_accountability_defined, governance.cyber_resourcing_assigned, governance.cyber_resourcing_reviewed, governance.risk_method_approved, governance.threats_considered_in_risk
+    due_days: 366
+    owner: Example cyber security lead

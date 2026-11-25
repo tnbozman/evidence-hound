@@ -1,7 +1,9 @@
-# Example deployment config for the fictional Example Pty Ltd's Essential Eight (November 2023) ML2 audit.
+# Example deployment config for the fictional Example Pty Ltd's Essential Eight (November 2023) ML2 audit, and its ASD Essentials
+# priority phase 1 audit run beside it during the migration (s14-01).
 # Everything here is made up. Keep your organisation's real config in a private repo.
 # Schema: schemas/config.schema.json. Guides: docs/configuration.md, docs/collectors/m365.md
 # The audit EX-E8-2026 selects maturity levels 1 and 2 in CISO Assistant; ML3-only rows are skipped when publishing.
+# EX-ESSENTIALS-2026 selects priority phase 1. One run fills both from the same evidence (docs/migrations/essential-eight-to-asd-essentials.md).
 
 ciso_assistant:
   url: http://localhost:8000/api/        # HOUND_CA_URL overrides this
@@ -49,6 +51,8 @@ collectors:
       due_days: 366
       owner: Sam Example
 
-target:
-  mapping: ../mappings/essential-eight-2023.yaml
-  compliance_assessment: EX-E8-2026
+targets:
+  - mapping: ../mappings/essential-eight-2023.yaml
+    compliance_assessment: EX-E8-2026
+  - mapping: ../mappings/asd-essentials-enterprise-it.yaml
+    compliance_assessment: EX-ESSENTIALS-2026

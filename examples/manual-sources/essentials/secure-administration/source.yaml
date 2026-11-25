@@ -1,0 +1,10 @@
+# Secure administration: paste this under 'collectors:' in hound.yaml, then set the owner and the drop folder.
+# The runbook is README.md beside this file; point an evidence plan row at your copy of it.
+- name: secure-administration
+  type: manual
+  schedule: "0 6 * * *"
+  settings:
+    drop_folder: /var/lib/evidence-hound/manual/secure-administration
+    checks: admin.privileged_sessions_controlled
+    due_days: 183
+    owner: Example IT lead

@@ -26,6 +26,23 @@ public sealed record FrameworkSnapshot(
         return Parents.FirstOrDefault(p => p.Urn == urn)?.Name ?? urn[(urn.LastIndexOf(':') + 1)..];
     }
 
+    /// <summary>
+    /// The top-level node above a parent node, such as an ASD Essentials domain above a principle: follows each parent's own parent.
+    /// A node with no known parent is its own top.
+    /// </summary>
+    public string TopUrn(string urn)
+    {
+        ArgumentNullException.ThrowIfNull(urn);
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var current = urn;
+        while (seen.Add(current) && Parents.FirstOrDefault(p => p.Urn == current)?.ParentUrn is { } parent)
+        {
+            current = parent;
+        }
+
+        return current;
+    }
+
     /// <summary>The nodes a requirement key names: every node with the ref, or the one node with the URN. Empty when none.</summary>
     public IReadOnlyList<SnapshotNode> Resolve(RequirementKey key)
     {
@@ -35,7 +52,11 @@ public sealed record FrameworkSnapshot(
 }
 
 /// <summary>A node that groups requirements, such as an Essential Eight strategy or an AI6 practice: URN, ref_id and name.</summary>
-public sealed record SnapshotParent(string Urn, string? RefId, string Name);
+public sealed record SnapshotParent(string Urn, string? RefId, string Name)
+{
+    /// <summary>The node above this one, such as an ASD Essentials domain above a principle; null at the top.</summary>
+    public string? ParentUrn { get; init; }
+}
 
 /// <summary>One implementation group, such as a maturity level or a priority phase.</summary>
 public sealed record ImplementationGroup(string RefId, string Name);

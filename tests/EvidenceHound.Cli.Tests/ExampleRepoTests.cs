@@ -333,6 +333,7 @@ public sealed partial class ExampleRepoTests : IDisposable
         foreach (var (copy, original) in new[]
         {
             ("mappings/essential-eight-2023.yaml", "mappings/essential-eight-2023.yaml"),
+            ("mappings/asd-essentials-enterprise-it.yaml", "mappings/asd-essentials-enterprise-it.yaml"),
             ("mappings/example.yaml", "mappings/example.yaml"),
             ("frameworks/essential-eight-2023.json", "frameworks/essential-eight-2023.json"),
             ("frameworks/asd-essentials-enterprise-it.json", "frameworks/asd-essentials-enterprise-it.json"),

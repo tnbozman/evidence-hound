@@ -77,7 +77,11 @@ internal static class MappingCoverageCommand
                 $"Group {string.Join(", ", unknown)} is not in {snapshot.FrameworkUrn}; its groups are {string.Join(", ", known)}."));
         }
 
-        return Result.Ok(new CoverageReport(snapshot.FrameworkUrn, groups, MappingCoverage.Count(snapshot, loaded.Mapping, loaded.ManualOnly.Select(m => m.Key), manualChecks, groups)));
+        var manualOnly = loaded.ManualOnly.Select(m => m.Key).ToList();
+        var top = snapshot.Parents.Any(p => p.ParentUrn is not null)
+            ? MappingCoverage.CountByTop(snapshot, loaded.Mapping, manualOnly, manualChecks, groups)
+            : [];
+        return Result.Ok(new CoverageReport(snapshot, groups, MappingCoverage.Count(snapshot, loaded.Mapping, manualOnly, manualChecks, groups), top));
     }
 
     private static async Task<Result<IReadOnlySet<CheckId>>> ReadManualChecksAsync(FileInfo[] paths, CancellationToken cancellationToken)
@@ -99,13 +103,26 @@ internal static class MappingCoverageCommand
     private static string Markdown(CoverageReport report)
     {
         var text = new StringBuilder()
-            .AppendLine(CultureInfo.InvariantCulture, $"Coverage of {report.FrameworkUrn} for groups {string.Join(", ", report.Groups)}")
+            .AppendLine(CultureInfo.InvariantCulture, $"Coverage of {report.Snapshot.FrameworkUrn} for groups {string.Join(", ", report.Groups)}")
             .AppendLine()
             .AppendLine("| Parent | Group | Automated | Manual | Uncovered |")
             .AppendLine("| --- | --- | --- | --- | --- |");
         foreach (var row in report.Rows)
         {
             text.AppendLine(CultureInfo.InvariantCulture, $"| {Short(row.ParentUrn)} | {row.Group} | {row.Automated} | {row.Manual} | {row.Uncovered} |");
+        }
+
+        if (report.Top.Count > 0)
+        {
+            text.AppendLine()
+                .AppendLine("Per top-level node (for the ASD Essentials, per domain):")
+                .AppendLine()
+                .AppendLine("| Top level | Group | Automated | Manual | Uncovered |")
+                .AppendLine("| --- | --- | --- | --- | --- |");
+            foreach (var row in report.Top)
+            {
+                text.AppendLine(CultureInfo.InvariantCulture, $"| {report.Snapshot.ParentName(row.ParentUrn)} | {row.Group} | {row.Automated} | {row.Manual} | {row.Uncovered} |");
+            }
         }
 
         return text
@@ -117,7 +134,7 @@ internal static class MappingCoverageCommand
     private static string Json(CoverageReport report) =>
         new JsonObject
         {
-            ["framework"] = report.FrameworkUrn,
+            ["framework"] = report.Snapshot.FrameworkUrn,
             ["groups"] = new JsonArray([.. report.Groups.Select(g => (JsonNode)g)]),
             ["automated"] = report.Automated,
             ["manual"] = report.Manual,
@@ -130,12 +147,21 @@ internal static class MappingCoverageCommand
                 ["manual"] = r.Manual,
                 ["uncovered"] = r.Uncovered,
             })]),
+            ["top"] = new JsonArray([.. report.Top.Select(r => new JsonObject
+            {
+                ["node"] = r.ParentUrn,
+                ["name"] = report.Snapshot.ParentName(r.ParentUrn),
+                ["group"] = r.Group,
+                ["automated"] = r.Automated,
+                ["manual"] = r.Manual,
+                ["uncovered"] = r.Uncovered,
+            })]),
         }.ToJsonString(OnboardAgentCommand.Indented) + Environment.NewLine;
 
     /// <summary>The last part of a parent node's URN, such as <c>mfa</c> for the Essential Eight's multi-factor authentication.</summary>
     private static string Short(string urn) => urn[(urn.LastIndexOf(':') + 1)..];
 
-    private sealed record CoverageReport(string FrameworkUrn, IReadOnlyList<string> Groups, IReadOnlyList<CoverageCount> Rows)
+    private sealed record CoverageReport(FrameworkSnapshot Snapshot, IReadOnlyList<string> Groups, IReadOnlyList<CoverageCount> Rows, IReadOnlyList<CoverageCount> Top)
     {
         public int Automated => Rows.Sum(r => r.Automated);
 

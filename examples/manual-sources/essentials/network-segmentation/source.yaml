@@ -1,0 +1,10 @@
+# Network segmentation: paste this under 'collectors:' in hound.yaml, then set the owner and the drop folder.
+# The runbook is README.md beside this file; point an evidence plan row at your copy of it.
+- name: network-segmentation
+  type: manual
+  schedule: "0 6 * * *"
+  settings:
+    drop_folder: /var/lib/evidence-hound/manual/network-segmentation
+    checks: network.segmentation.zones_defined
+    due_days: 183
+    owner: Example network owner

@@ -17,6 +17,9 @@ public class EssentialsMappingTests
     private static readonly string[] ReferenceTypes = ["m365", "vuln-scan"];
     private static readonly string[] ReferenceProfiles = ["sophos-central", "ciso-assistant"];
 
+    /// <summary>Of the ciso-assistant profile's checks, the supplier ones answer the Essentials' supplier assurance; its AI ones answer AI6.</summary>
+    private static bool Relevant(string profile, string check) => profile != "ciso-assistant" || check.StartsWith("supplier.", StringComparison.Ordinal);
+
     private static LoadedMapping Mapping { get; } =
         MappingLoader.Parse(File.ReadAllText(Path.Combine(Files, "mappings", "asd-essentials-enterprise-it.yaml")), "mappings/asd-essentials-enterprise-it.yaml").Value();
 
@@ -83,14 +86,14 @@ public class EssentialsMappingTests
     private static IEnumerable<CheckId> ReferenceChecks()
     {
         var descriptions = Registry().Descriptions;
-        var profileChecks = ReferenceProfiles.Select(profile => descriptions["rest"].ChecksFrom!(new CollectorSettings(new Dictionary<string, string>(StringComparer.Ordinal)
+        var profileChecks = ReferenceProfiles.SelectMany(profile => descriptions["rest"].ChecksFrom!(new CollectorSettings(new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["profile"] = profile,
             ["profiles_path"] = Path.Combine(Files, "profiles"),
-        }))).ToList();
+        })).Where(c => Relevant(profile, c))).ToList();
         return ReferenceTypes
             .SelectMany(type => descriptions[type].Checks)
-            .Concat(profileChecks.SelectMany(checks => checks).Where(c => c.StartsWith("supplier.", StringComparison.Ordinal)))
+            .Concat(profileChecks)
             .Select(c => CheckId.Create(c).Value());
     }
 

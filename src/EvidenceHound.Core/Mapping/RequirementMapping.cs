@@ -23,6 +23,9 @@ public sealed record RequirementMapping
 
     public MappingRule Rule { get; }
 
+    /// <summary>s14-01: derived by <c>hound mapping derive</c> and not yet reviewed (<c>draft: true</c>); runs do not publish it.</summary>
+    public bool Draft { get; init; }
+
     /// <summary>A requirement named by its ref_id.</summary>
     public static Result<RequirementMapping> Create(string requirementRef, IEnumerable<CheckId> checks, MappingRule rule) =>
         Create(RequirementKey.Ref(requirementRef), checks, rule);

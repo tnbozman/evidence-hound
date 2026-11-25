@@ -7,7 +7,7 @@ namespace EvidenceHound.Cli.Tests;
 /// <summary>s14-01: <c>hound mapping derive</c> drafts the ASD Essentials mapping from the Essential Eight one and the transition mapping.</summary>
 public sealed class MappingDeriveCommandTests : IDisposable
 {
-    private const string LegacyAuth = "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-13:it.pro-13.4";
+    private static readonly string LegacyAuth = "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-13:it.pro-13.4";
 
     private readonly StringWriter _output = new();
     private readonly StringWriter _error = new();

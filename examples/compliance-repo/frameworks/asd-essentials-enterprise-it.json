@@ -2182,524 +2182,668 @@
   ],
   "parents": [
     {
+      "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:governance-and-culture",
+      "ref_id": null,
+      "name": "Governance and culture"
+    },
+    {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:governance-and-culture:gov-01",
       "ref_id": "GOV-01",
-      "name": "Executive cyber security accountability"
+      "name": "Executive cyber security accountability",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:governance-and-culture"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:governance-and-culture:gov-08",
       "ref_id": "GOV-08",
-      "name": "Executive artificial intelligence accountability"
+      "name": "Executive artificial intelligence accountability",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:governance-and-culture"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:governance-and-culture:gov-04",
       "ref_id": "GOV-04",
-      "name": "Cyber security resourcing"
+      "name": "Cyber security resourcing",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:governance-and-culture"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:governance-and-culture:gov-03",
       "ref_id": "GOV-03",
-      "name": "Security risk management assurance"
+      "name": "Security risk management assurance",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:governance-and-culture"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:governance-and-culture:gov-11",
       "ref_id": "GOV-11",
-      "name": "Supplier cyber security assurance"
+      "name": "Supplier cyber security assurance",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:governance-and-culture"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:governance-and-culture:gov-14",
       "ref_id": "GOV-14",
-      "name": "Legacy system management"
+      "name": "Legacy system management",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:governance-and-culture"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:governance-and-culture:pro-14",
       "ref_id": "PRO-14",
-      "name": "Cyber security awareness training"
+      "name": "Cyber security awareness training",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:governance-and-culture"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:visibility-and-response",
+      "ref_id": null,
+      "name": "Visibility and response"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:visibility-and-response:ide-01",
       "ref_id": "IDE-01",
-      "name": "Asset identification"
+      "name": "Asset identification",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:visibility-and-response"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:visibility-and-response:ide-04",
       "ref_id": "IDE-04",
-      "name": "Security risk identification"
+      "name": "Security risk identification",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:visibility-and-response"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:visibility-and-response:pro-13",
       "ref_id": "PRO-13",
-      "name": "Identity, credential and access management"
+      "name": "Identity, credential and access management",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:visibility-and-response"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:visibility-and-response:det-01",
       "ref_id": "DET-01",
-      "name": "Centralised event logging"
+      "name": "Centralised event logging",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:visibility-and-response"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:visibility-and-response:det-02",
       "ref_id": "DET-02",
-      "name": "Cyber security event detection"
+      "name": "Cyber security event detection",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:visibility-and-response"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:visibility-and-response:det-03",
       "ref_id": "DET-03",
-      "name": "Cyber security incident identification"
+      "name": "Cyber security incident identification",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:visibility-and-response"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:visibility-and-response:det-05",
       "ref_id": "DET-05",
-      "name": "Detection capability efficacy"
+      "name": "Detection capability efficacy",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:visibility-and-response"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:visibility-and-response:res-05",
       "ref_id": "RES-05",
-      "name": "Cyber security incident coordination"
+      "name": "Cyber security incident coordination",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:visibility-and-response"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:visibility-and-response:res-03",
       "ref_id": "RES-03",
-      "name": "Cyber security incident response"
+      "name": "Cyber security incident response",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:visibility-and-response"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:visibility-and-response:res-04",
       "ref_id": "RES-04",
-      "name": "Cyber security incident insights"
+      "name": "Cyber security incident insights",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:visibility-and-response"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services",
+      "ref_id": null,
+      "name": "Boundary services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:ide-01",
       "ref_id": "IDE-01",
-      "name": "Asset identification"
+      "name": "Asset identification",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-01",
       "ref_id": "PRO-01",
-      "name": "Secure system lifecycle"
+      "name": "Secure system lifecycle",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-16",
       "ref_id": "PRO-16",
-      "name": "Cyber supply chain security"
+      "name": "Cyber supply chain security",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-13",
       "ref_id": "PRO-13",
-      "name": "Identity, credential and access management"
+      "name": "Identity, credential and access management",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-12",
       "ref_id": "PRO-12",
-      "name": "Least privilege access"
+      "name": "Least privilege access",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-05",
       "ref_id": "PRO-05",
-      "name": "Secure administration"
+      "name": "Secure administration",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-04",
       "ref_id": "PRO-04",
-      "name": "Secure configuration management"
+      "name": "Secure configuration management",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-06",
       "ref_id": "PRO-06",
-      "name": "Vulnerability management"
+      "name": "Vulnerability management",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-07",
       "ref_id": "PRO-07",
-      "name": "Trustworthy software"
+      "name": "Trustworthy software",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-10",
       "ref_id": "PRO-10",
-      "name": "Regular and proven backups"
+      "name": "Regular and proven backups",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-18",
       "ref_id": "PRO-18",
-      "name": "Network segmentation and segregation"
+      "name": "Network segmentation and segregation",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-09",
       "ref_id": "PRO-09",
-      "name": "Content filtering"
+      "name": "Content filtering",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-14",
       "ref_id": "PRO-14",
-      "name": "Cyber security awareness training"
+      "name": "Cyber security awareness training",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:det-01",
       "ref_id": "DET-01",
-      "name": "Centralised event logging"
+      "name": "Centralised event logging",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:det-04",
       "ref_id": "DET-04",
-      "name": "Baseline high-risk access activities"
+      "name": "Baseline high-risk access activities",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:det-02",
       "ref_id": "DET-02",
-      "name": "Cyber security event detection"
+      "name": "Cyber security event detection",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services",
+      "ref_id": null,
+      "name": "Identity services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:ide-01",
       "ref_id": "IDE-01",
-      "name": "Asset identification"
+      "name": "Asset identification",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-01",
       "ref_id": "PRO-01",
-      "name": "Secure system lifecycle"
+      "name": "Secure system lifecycle",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-16",
       "ref_id": "PRO-16",
-      "name": "Cyber supply chain security"
+      "name": "Cyber supply chain security",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-13",
       "ref_id": "PRO-13",
-      "name": "Identity, credential and access management"
+      "name": "Identity, credential and access management",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-12",
       "ref_id": "PRO-12",
-      "name": "Least privilege access"
+      "name": "Least privilege access",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-05",
       "ref_id": "PRO-05",
-      "name": "Secure administration"
+      "name": "Secure administration",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-04",
       "ref_id": "PRO-04",
-      "name": "Secure configuration management"
+      "name": "Secure configuration management",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-06",
       "ref_id": "PRO-06",
-      "name": "Vulnerability management"
+      "name": "Vulnerability management",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-07",
       "ref_id": "PRO-07",
-      "name": "Trustworthy software"
+      "name": "Trustworthy software",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-10",
       "ref_id": "PRO-10",
-      "name": "Regular and proven backups"
+      "name": "Regular and proven backups",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-18",
       "ref_id": "PRO-18",
-      "name": "Network segmentation and segregation"
+      "name": "Network segmentation and segregation",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-09",
       "ref_id": "PRO-09",
-      "name": "Content filtering"
+      "name": "Content filtering",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-14",
       "ref_id": "PRO-14",
-      "name": "Cyber security awareness training"
+      "name": "Cyber security awareness training",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:det-01",
       "ref_id": "DET-01",
-      "name": "Centralised event logging"
+      "name": "Centralised event logging",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:det-04",
       "ref_id": "DET-04",
-      "name": "Baseline high-risk access activities"
+      "name": "Baseline high-risk access activities",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:det-02",
       "ref_id": "DET-02",
-      "name": "Cyber security event detection"
+      "name": "Cyber security event detection",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:critical-processes-and-services",
+      "ref_id": null,
+      "name": "Critical processes and services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:critical-processes-and-services:ide-01",
       "ref_id": "IDE-01",
-      "name": "Asset identification"
+      "name": "Asset identification",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:critical-processes-and-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:critical-processes-and-services:pro-01",
       "ref_id": "PRO-01",
-      "name": "Secure system lifecycle"
+      "name": "Secure system lifecycle",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:critical-processes-and-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:critical-processes-and-services:pro-16",
       "ref_id": "PRO-16",
-      "name": "Cyber supply chain security"
+      "name": "Cyber supply chain security",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:critical-processes-and-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:critical-processes-and-services:pro-13",
       "ref_id": "PRO-13",
-      "name": "Identity, credential and access management"
+      "name": "Identity, credential and access management",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:critical-processes-and-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:critical-processes-and-services:pro-12",
       "ref_id": "PRO-12",
-      "name": "Least privilege access"
+      "name": "Least privilege access",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:critical-processes-and-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:critical-processes-and-services:pro-05",
       "ref_id": "PRO-05",
-      "name": "Secure administration"
+      "name": "Secure administration",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:critical-processes-and-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:critical-processes-and-services:pro-04",
       "ref_id": "PRO-04",
-      "name": "Secure configuration management"
+      "name": "Secure configuration management",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:critical-processes-and-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:critical-processes-and-services:pro-06",
       "ref_id": "PRO-06",
-      "name": "Vulnerability management"
+      "name": "Vulnerability management",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:critical-processes-and-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:critical-processes-and-services:pro-07",
       "ref_id": "PRO-07",
-      "name": "Trustworthy software"
+      "name": "Trustworthy software",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:critical-processes-and-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:critical-processes-and-services:pro-10",
       "ref_id": "PRO-10",
-      "name": "Regular and proven backups"
+      "name": "Regular and proven backups",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:critical-processes-and-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:critical-processes-and-services:pro-18",
       "ref_id": "PRO-18",
-      "name": "Network segmentation and segregation"
+      "name": "Network segmentation and segregation",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:critical-processes-and-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:critical-processes-and-services:pro-09",
       "ref_id": "PRO-09",
-      "name": "Content filtering"
+      "name": "Content filtering",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:critical-processes-and-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:critical-processes-and-services:pro-14",
       "ref_id": "PRO-14",
-      "name": "Cyber security awareness training"
+      "name": "Cyber security awareness training",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:critical-processes-and-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:critical-processes-and-services:det-01",
       "ref_id": "DET-01",
-      "name": "Centralised event logging"
+      "name": "Centralised event logging",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:critical-processes-and-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:critical-processes-and-services:det-04",
       "ref_id": "DET-04",
-      "name": "Baseline high-risk access activities"
+      "name": "Baseline high-risk access activities",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:critical-processes-and-services"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:critical-processes-and-services:det-02",
       "ref_id": "DET-02",
-      "name": "Cyber security event detection"
+      "name": "Cyber security event detection",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:critical-processes-and-services"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:privileged-environments",
+      "ref_id": null,
+      "name": "Privileged environments"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:privileged-environments:ide-01",
       "ref_id": "IDE-01",
-      "name": "Asset identification"
+      "name": "Asset identification",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:privileged-environments"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:privileged-environments:pro-01",
       "ref_id": "PRO-01",
-      "name": "Secure system lifecycle"
+      "name": "Secure system lifecycle",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:privileged-environments"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:privileged-environments:pro-16",
       "ref_id": "PRO-16",
-      "name": "Cyber supply chain security"
+      "name": "Cyber supply chain security",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:privileged-environments"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:privileged-environments:pro-13",
       "ref_id": "PRO-13",
-      "name": "Identity, credential and access management"
+      "name": "Identity, credential and access management",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:privileged-environments"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:privileged-environments:pro-12",
       "ref_id": "PRO-12",
-      "name": "Least privilege access"
+      "name": "Least privilege access",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:privileged-environments"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:privileged-environments:pro-05",
       "ref_id": "PRO-05",
-      "name": "Secure administration"
+      "name": "Secure administration",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:privileged-environments"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:privileged-environments:pro-04",
       "ref_id": "PRO-04",
-      "name": "Secure configuration management"
+      "name": "Secure configuration management",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:privileged-environments"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:privileged-environments:pro-06",
       "ref_id": "PRO-06",
-      "name": "Vulnerability management"
+      "name": "Vulnerability management",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:privileged-environments"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:privileged-environments:pro-07",
       "ref_id": "PRO-07",
-      "name": "Trustworthy software"
+      "name": "Trustworthy software",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:privileged-environments"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:privileged-environments:pro-10",
       "ref_id": "PRO-10",
-      "name": "Regular and proven backups"
+      "name": "Regular and proven backups",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:privileged-environments"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:privileged-environments:pro-18",
       "ref_id": "PRO-18",
-      "name": "Network segmentation and segregation"
+      "name": "Network segmentation and segregation",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:privileged-environments"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:privileged-environments:pro-09",
       "ref_id": "PRO-09",
-      "name": "Content filtering"
+      "name": "Content filtering",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:privileged-environments"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:privileged-environments:pro-14",
       "ref_id": "PRO-14",
-      "name": "Cyber security awareness training"
+      "name": "Cyber security awareness training",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:privileged-environments"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:privileged-environments:det-01",
       "ref_id": "DET-01",
-      "name": "Centralised event logging"
+      "name": "Centralised event logging",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:privileged-environments"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:privileged-environments:det-04",
       "ref_id": "DET-04",
-      "name": "Baseline high-risk access activities"
+      "name": "Baseline high-risk access activities",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:privileged-environments"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:privileged-environments:det-02",
       "ref_id": "DET-02",
-      "name": "Cyber security event detection"
+      "name": "Cyber security event detection",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:privileged-environments"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:business-systems",
+      "ref_id": null,
+      "name": "Business systems"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:business-systems:ide-01",
       "ref_id": "IDE-01",
-      "name": "Asset identification"
+      "name": "Asset identification",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:business-systems"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:business-systems:pro-01",
       "ref_id": "PRO-01",
-      "name": "Secure system lifecycle"
+      "name": "Secure system lifecycle",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:business-systems"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:business-systems:pro-16",
       "ref_id": "PRO-16",
-      "name": "Cyber supply chain security"
+      "name": "Cyber supply chain security",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:business-systems"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:business-systems:pro-13",
       "ref_id": "PRO-13",
-      "name": "Identity, credential and access management"
+      "name": "Identity, credential and access management",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:business-systems"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:business-systems:pro-12",
       "ref_id": "PRO-12",
-      "name": "Least privilege access"
+      "name": "Least privilege access",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:business-systems"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:business-systems:pro-04",
       "ref_id": "PRO-04",
-      "name": "Secure configuration management"
+      "name": "Secure configuration management",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:business-systems"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:business-systems:pro-06",
       "ref_id": "PRO-06",
-      "name": "Vulnerability management"
+      "name": "Vulnerability management",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:business-systems"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:business-systems:pro-07",
       "ref_id": "PRO-07",
-      "name": "Trustworthy software"
+      "name": "Trustworthy software",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:business-systems"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:business-systems:pro-10",
       "ref_id": "PRO-10",
-      "name": "Regular and proven backups"
+      "name": "Regular and proven backups",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:business-systems"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:business-systems:pro-18",
       "ref_id": "PRO-18",
-      "name": "Network segmentation and segregation"
+      "name": "Network segmentation and segregation",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:business-systems"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:business-systems:pro-09",
       "ref_id": "PRO-09",
-      "name": "Content filtering"
+      "name": "Content filtering",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:business-systems"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:business-systems:det-01",
       "ref_id": "DET-01",
-      "name": "Centralised event logging"
+      "name": "Centralised event logging",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:business-systems"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:business-systems:det-02",
       "ref_id": "DET-02",
-      "name": "Cyber security event detection"
+      "name": "Cyber security event detection",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:business-systems"
+    },
+    {
+      "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:user-devices",
+      "ref_id": null,
+      "name": "User devices"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:user-devices:ide-01",
       "ref_id": "IDE-01",
-      "name": "Asset identification"
+      "name": "Asset identification",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:user-devices"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:user-devices:pro-01",
       "ref_id": "PRO-01",
-      "name": "Secure system lifecycle"
+      "name": "Secure system lifecycle",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:user-devices"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:user-devices:pro-16",
       "ref_id": "PRO-16",
-      "name": "Cyber supply chain security"
+      "name": "Cyber supply chain security",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:user-devices"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:user-devices:pro-13",
       "ref_id": "PRO-13",
-      "name": "Identity, credential and access management"
+      "name": "Identity, credential and access management",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:user-devices"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:user-devices:pro-12",
       "ref_id": "PRO-12",
-      "name": "Least privilege access"
+      "name": "Least privilege access",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:user-devices"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:user-devices:pro-04",
       "ref_id": "PRO-04",
-      "name": "Secure configuration management"
+      "name": "Secure configuration management",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:user-devices"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:user-devices:pro-06",
       "ref_id": "PRO-06",
-      "name": "Vulnerability management"
+      "name": "Vulnerability management",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:user-devices"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:user-devices:pro-07",
       "ref_id": "PRO-07",
-      "name": "Trustworthy software"
+      "name": "Trustworthy software",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:user-devices"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:user-devices:det-01",
       "ref_id": "DET-01",
-      "name": "Centralised event logging"
+      "name": "Centralised event logging",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:user-devices"
     },
     {
       "urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:user-devices:det-02",
       "ref_id": "DET-02",
-      "name": "Cyber security event detection"
+      "name": "Cyber security event detection",
+      "parent_urn": "urn:intuitem:risk:req_node:asd-essentials-enterprise-it:user-devices"
     }
   ]
 }
