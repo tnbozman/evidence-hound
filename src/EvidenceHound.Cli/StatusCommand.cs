@@ -195,7 +195,7 @@ internal static class StatusCommand
     }
 
     /// <summary>The exceptions <c>scope/exceptions.yaml</c> declares that expire within 60 days or have expired (s15-03), by their declared expiry.</summary>
-    private static async Task<Result<IReadOnlyList<ExceptionNote>>> ExceptionsAsync(DirectoryInfo scope, DateOnly today, CancellationToken cancellationToken)
+    internal static async Task<Result<IReadOnlyList<ExceptionNote>>> ExceptionsAsync(DirectoryInfo scope, DateOnly today, CancellationToken cancellationToken)
     {
         var path = Path.Combine(scope.FullName, "exceptions.yaml");
         if (!File.Exists(path))

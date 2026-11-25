@@ -51,7 +51,7 @@ public sealed class NextCommandTests : IDisposable
             && i["urgency"]!.GetValue<string>() == "broken" && i["command"]!.GetValue<string>() == "hound run --config hound.yaml --only example-m365");
         items.ShouldContain(i => i["kind"]!.GetValue<string>() == "manual_source" && i["subject"]!.GetValue<string>() == "example-incident-register"
             && i["urgency"]!.GetValue<string>() == "overdue");
-        items.ShouldNotContain(i => i["subject"]!.GetValue<string>() == "example-incident-response-plan", "uploaded 30 days ago, due every 366");
+        items.ShouldNotContain(i => i["kind"]!.GetValue<string>() == "manual_source" && i["subject"]!.GetValue<string>() == "example-incident-response-plan", "uploaded 30 days ago, due every 366");
         items.ShouldContain(i => i["kind"]!.GetValue<string>() == "exception" && i["subject"]!.GetValue<string>() == "EXC-01"
             && i["urgency"]!.GetValue<string>() == "due_soon");
         items.ShouldAllBe(i => i["command"]!.GetValue<string>().StartsWith("hound ", StringComparison.Ordinal) && i["minutes"]!.GetValue<int>() > 0);

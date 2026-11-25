@@ -6,8 +6,11 @@ is built so that everything waiting on you arrives in one queue, with a recommen
 ## Every week (1 to 2 hours)
 
 1. CISO Assistant's weekly task emails you the [weekly review runbook](../../examples/compliance-repo/manual-sources/weekly-compliance-review.md).
-2. Ask your agent: "Prepare this week's review." It runs `hound review pending --json` and records a recommendation, with reasons and
-   sources, for each item (manual evidence, onboarding decisions, suppliers, drafted audits).
+2. Ask your agent: "Prepare this week's review." It starts with `hound next --json`, one read-only list of everything that needs doing
+   this week, most urgent first: the review queue, collectors that failed or missed their schedule, manual evidence due, exceptions
+   expiring within 60 days, scope changes not yet applied and whether CISO Assistant accepts hound's token. Then it runs
+   `hound review pending --json` and records a recommendation, with reasons and sources, for each item (manual evidence, onboarding
+   decisions, suppliers, drafted audits).
 3. In your own terminal: `hound review --for 60m`. Read each item, then accept, challenge with a note, or skip. Challenged items come
    back next week with the agent's answer. Accepted items are applied in one batch at the end ([guided review](../manual-evidence.md#the-weekly-review)).
 4. Look at `hound status --config hound.yaml --scope scope/`. A collector that failed or has not run is the one thing to chase this

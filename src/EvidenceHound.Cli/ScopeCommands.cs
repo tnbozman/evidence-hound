@@ -356,6 +356,15 @@ internal static class ScopeCommands
     /// <summary>Where to save a plan, and the scope folder and config it is made from, as given.</summary>
     private sealed record PlanSave(FileInfo File, DirectoryInfo Scope, FileInfo? Config);
 
+    /// <summary>The plan the scope would make against CISO Assistant now, without notes, output or prune: for <c>hound next</c> (s18-01). Reads only.</summary>
+    internal static async Task<Result<ScopePlan>> PendingPlanAsync(CheckedScope checkedScope, CisoAssistantOptions connection, ILoggerFactory loggers, CancellationToken cancellationToken)
+    {
+        using var services = new ServiceCollection().AddSingleton(loggers).AddCisoAssistantClient(connection).BuildServiceProvider();
+        var declared = ScopeDesired.From(checkedScope.Scope, checkedScope.Inputs);
+        var actual = await services.GetRequiredService<IScopeStateSource>().ReadAsync(ScopeStateQuery.For(checkedScope.Scope, declared), cancellationToken);
+        return actual.Map(held => ScopePlanner.Plan(declared, held, prune: false));
+    }
+
     private static async Task<int> PlanAsync(
         CheckedScope checkedScope, CisoAssistantOptions connection, PlanOptions options, ILoggerFactory loggers, TextWriter output, ILogger logger, CancellationToken cancellationToken)
     {
