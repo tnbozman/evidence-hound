@@ -26,7 +26,7 @@ public sealed class SecurityExceptionFunctionalTests(CisoAssistantFixture ciso) 
             current: {probability: Possible, impact: Major}
             treatment: mitigate
           - ref_id: R-02
-            name: The only backup administrator leaves
+            name: The only backup administrator leaves (exception test)
             current: {probability: Unlikely, impact: Moderate}
             treatment: accept
             justification: A second administrator is being trained.
