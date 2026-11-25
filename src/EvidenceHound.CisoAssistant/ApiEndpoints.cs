@@ -45,6 +45,8 @@ public static class ApiEndpoints
         new("GET", "/api/stored-libraries/"),
         new("POST", "/api/stored-libraries/upload/"),
         new("POST", "/api/stored-libraries/{id}/import/"),
+        new("GET", "/api/stored-libraries/{id}/"),
+        new("GET", "/api/loaded-libraries/{id}/update/"),
         new("POST", "/api/compliance-assessments/"),
         new("PATCH", "/api/compliance-assessments/{id}/"),
         new("DELETE", "/api/compliance-assessments/{id}/"),

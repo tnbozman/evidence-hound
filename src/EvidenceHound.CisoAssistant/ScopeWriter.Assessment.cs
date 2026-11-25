@@ -17,6 +17,11 @@ internal sealed partial class ScopeWriter
     /// </summary>
     private async Task<Result<Unit>> FrameworkAsync(ScopeWrite write, CancellationToken cancellationToken)
     {
+        if (write.Change.Action == ScopeAction.Update && write.Declared is { Files: [var newer, ..] } custom)
+        {
+            return await UpdateLibraryAsync(custom.Initial.GetValueOrDefault("library") ?? custom.Key, newer, cancellationToken);
+        }
+
         if (write.Change.Action != ScopeAction.Create || write.Declared is not { } declared)
         {
             return Result.Ok(Unit.Value);
@@ -34,6 +39,25 @@ internal sealed partial class ScopeWriter
             : SendAsync(HttpMethod.Post, $"stored-libraries/{library}/import/", null, $"to load library {library}", cancellationToken));
     }
 
+    /// <summary>
+    /// Brings a custom library to its raised version (s15-01): uploads the file, which CISO Assistant stores in place of the older version, then
+    /// asks it to update the loaded library (a GET, by URN).
+    /// </summary>
+    private async Task<Result<Unit>> UpdateLibraryAsync(string library, ScopeFile file, CancellationToken cancellationToken)
+    {
+        var uploaded = await http.SendForJsonAsync(UploadRequest(await File.ReadAllBytesAsync(file.Path, cancellationToken), file.Path), $"to upload library {Path.GetFileName(file.Path)}", cancellationToken);
+        return await uploaded.BindAsync(_ => SendAsync(HttpMethod.Get, $"loaded-libraries/{library}/update/", null, $"to update library {library}", cancellationToken));
+    }
+
+    /// <summary>CISO Assistant reads an upload with a file upload parser: the raw file as the body, named by Content-Disposition.</summary>
+    private static HttpRequestMessage UploadRequest(byte[] bytes, string path)
+    {
+        var content = new ByteArrayContent(bytes);
+        content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+        content.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment") { FileName = Path.GetFileName(path) };
+        return new HttpRequestMessage(HttpMethod.Post, "stored-libraries/upload/") { Content = content };
+    }
+
     /// <summary>Uploads a custom library file unless CISO Assistant already stores the library; true when it was uploaded.</summary>
     private async Task<Result<bool>> UploadLibraryAsync(string library, ScopeFile file, CancellationToken cancellationToken)
     {
@@ -45,11 +69,7 @@ internal sealed partial class ScopeWriter
                 return Result.Ok(false);
             }
 
-            // CISO Assistant reads the upload with a file upload parser: the raw file as the body, named by Content-Disposition.
-            var content = new ByteArrayContent(await File.ReadAllBytesAsync(file.Path, cancellationToken));
-            content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-            content.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment") { FileName = Path.GetFileName(file.Path) };
-            var request = new HttpRequestMessage(HttpMethod.Post, "stored-libraries/upload/") { Content = content };
+            var request = UploadRequest(await File.ReadAllBytesAsync(file.Path, cancellationToken), file.Path);
             return (await http.SendForJsonAsync(request, $"to upload library {Path.GetFileName(file.Path)}", cancellationToken)).Map(_ => true);
         });
     }

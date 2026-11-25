@@ -4,7 +4,7 @@ namespace EvidenceHound.Core.Yaml.Tests;
 
 public class LibrarySnapshotTests
 {
-    private const string Source = "example-risk-library.yaml";
+    private static readonly string Source = "example-risk-library.yaml";
 
     private static string RiskLibrary => File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "files", "frameworks", Source));
 

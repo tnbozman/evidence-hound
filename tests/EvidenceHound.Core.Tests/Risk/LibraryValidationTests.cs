@@ -5,7 +5,7 @@ namespace EvidenceHound.Core.Tests.Risk;
 
 public class LibraryValidationTests
 {
-    private const string Urn = "urn:example:risk:library:example-risk";
+    private static readonly string Urn = "urn:example:risk:library:example-risk";
 
     [Fact]
     public void Changed_content_without_version_bump_is_reported()

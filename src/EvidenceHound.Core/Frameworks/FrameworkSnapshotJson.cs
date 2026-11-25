@@ -25,6 +25,11 @@ public static class FrameworkSnapshotJson
             json["parents"] = new JsonArray([.. snapshot.Parents.Select(Parent)]);
         }
 
+        if (snapshot.Dependencies.Count > 0)
+        {
+            json["dependencies"] = new JsonArray([.. snapshot.Dependencies.Select(d => JsonValue.Create(d))]);
+        }
+
         return json.ToJsonString(Indented) + "\n";
     }
 
@@ -86,6 +91,7 @@ public static class FrameworkSnapshotJson
                     ReferenceControls = [.. Items(n, "reference_controls").Select(r => r.GetValue<string>())],
                 })])
             {
+                Dependencies = [.. Items(root, "dependencies").Select(d => d.GetValue<string>())],
                 Parents = [.. Items(root, "parents").Select(p => new SnapshotParent(Text(p, "urn"), (string?)p["ref_id"], Text(p, "name")) { ParentUrn = (string?)p["parent_urn"] })],
             });
         }

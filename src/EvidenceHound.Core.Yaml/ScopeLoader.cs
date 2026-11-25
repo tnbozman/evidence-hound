@@ -26,6 +26,7 @@ public static partial class ScopeLoader
     private static readonly string[] GroupBys = ["parent"];
     private static readonly string[] OrganisationKeys = ["root_folder", "entity"];
     private static readonly string[] FrameworkKeys = ["urn", "library", "file", "snapshot"];
+    private static readonly string[] LibraryFileKeys = ["urn", "file", "snapshot"];
     private static readonly string[] DomainKeys = ["name", "description", "perimeters", "perimeter", "systems"];
     private static readonly string[] PerimeterKeys = ["name", "ref_id", "description"];
     private static readonly string[] SystemKeys = ["name", "ref_id", "type", "description", "owner", "parents", "tags", "solution", "supplied_through", "data", "ai"];
@@ -223,7 +224,8 @@ public static partial class ScopeLoader
             [.. file.Items(root, "frameworks").Select(item => ReadFramework(item, file)).OfType<ScopeFramework>()],
             [.. file.Items(root, "domains").Select(item => ReadDomain(item, file)).OfType<ScopeDomain>()])
         {
-            Libraries = file.Refs(root, "libraries"),
+            Libraries = [.. file.Entries(root, "libraries").OfType<YamlScalarNode>().Select(item => file.Ref(item)).OfType<ScopeRef>()],
+            LibraryFiles = [.. file.Entries(root, "libraries").OfType<YamlMappingNode>().Select(item => ReadLibraryFile(item, file)).OfType<ScopeLibraryFile>()],
             Organisation = organisation is not null && file.Map(organisation, "entity") is { } entity ? ReadOrganisation(entity, file) : null,
             Programmes = [.. file.Items(root, "programmes").Select(item => ReadProgramme(item, file)).OfType<ScopeProgramme>()],
         };
@@ -273,6 +275,15 @@ public static partial class ScopeLoader
         file.Keys(item, FrameworkKeys);
         var urn = file.Required(item, "urn");
         return urn is null ? null : new ScopeFramework(urn, file.Text(item, "library"), file.Text(item, "file"), file.Text(item, "snapshot"), file.At(item));
+    }
+
+    /// <summary>A custom library in the repo (s15-01): its URN and file, and optionally its snapshot.</summary>
+    private static ScopeLibraryFile? ReadLibraryFile(YamlMappingNode item, FileReader file)
+    {
+        file.Keys(item, LibraryFileKeys);
+        var urn = file.Required(item, "urn");
+        var path = file.Required(item, "file");
+        return urn is null || path is null ? null : new ScopeLibraryFile(urn, path, file.Text(item, "snapshot"), file.At(item));
     }
 
     private static ScopeDomain? ReadDomain(YamlMappingNode item, FileReader file)
@@ -565,6 +576,13 @@ public static partial class ScopeLoader
         public IReadOnlyList<ScopeRef> Refs(YamlMappingNode map, string key) =>
             [.. Sequence(map, key).Select(item => item is YamlScalarNode { Value: { Length: > 0 } value } ? new ScopeRef(value, At(item)) : Reject<ScopeRef>(item, $"each item of '{key}' must be a text value."))
                 .OfType<ScopeRef>()];
+
+        /// <summary>Each item of a list that may mix text values and maps; any other item is reported.</summary>
+        public YamlNode[] Entries(YamlMappingNode map, string key) =>
+            [.. Sequence(map, key).Where(item => item is YamlScalarNode { Value.Length: > 0 } or YamlMappingNode || Reject<YamlNode>(item, $"each item of '{key}' must be a URN or a map.") is not null)];
+
+        /// <summary>A text value as a reference, with where it was written.</summary>
+        public ScopeRef? Ref(YamlScalarNode node) => node.Value is { Length: > 0 } value ? new ScopeRef(value, At(node)) : null;
 
         public YamlMappingNode? Map(YamlMappingNode map, string key) => Child(map, key) switch
         {

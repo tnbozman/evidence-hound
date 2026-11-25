@@ -117,6 +117,9 @@ file by `scripts/cheatsheet/render.sh`.
 
 - `hound framework snapshot <library>`: snapshot a framework library
   - `--out`
+- `hound library validate <library>`: check a custom risk matrix or threat library
+- `hound library snapshot <library>`: snapshot its matrix levels and threats
+  - `--out`
 - `hound mapping validate <file>`: check a mapping file
   - `--framework`
 - `hound mapping apply <mapping> <checks>`: map check results to requirements

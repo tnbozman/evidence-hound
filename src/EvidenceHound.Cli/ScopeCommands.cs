@@ -5,6 +5,7 @@ using System.Text.Json.Nodes;
 using EvidenceHound.CisoAssistant;
 using EvidenceHound.Core.Frameworks;
 using EvidenceHound.Core.Results;
+using EvidenceHound.Core.Risk;
 using EvidenceHound.Core.Scope;
 using EvidenceHound.Core.Yaml;
 using EvidenceHound.Runtime.Collectors;
@@ -173,9 +174,10 @@ internal static class ScopeCommands
             async held =>
             {
                 var suppliers = Suppliers(checkedScope, held);
-                if (suppliers.Refused.Count > 0)
+                IReadOnlyList<ScopeProblem> refused = [.. suppliers.Refused, .. LibraryValidation.Refused(declared, held)];
+                if (refused.Count > 0)
                 {
-                    return await ReportAsync(suppliers.Refused, "", "text", output, logger);
+                    return await ReportAsync(refused, "", "text", output, logger);
                 }
 
                 var plan = ScopePlanner.Plan(declared, held, prune);
@@ -367,9 +369,10 @@ internal static class ScopeCommands
             async read =>
             {
                 var suppliers = Suppliers(checkedScope, read.Held);
-                if (suppliers.Refused.Count > 0)
+                IReadOnlyList<ScopeProblem> refused = [.. suppliers.Refused, .. LibraryValidation.Refused(declared, read.Held)];
+                if (refused.Count > 0)
                 {
-                    return await ReportAsync(suppliers.Refused, "", options.Format == "json" ? "json" : "text", output, logger);
+                    return await ReportAsync(refused, "", options.Format == "json" ? "json" : "text", output, logger);
                 }
 
                 var plan = ScopePlanner.Plan(declared, read.Held, options.Prune);
@@ -482,10 +485,12 @@ internal static class ScopeCommands
         var scope = parsed.Scope;
         var repoDir = Path.GetDirectoryName(Path.GetFullPath(dir.ToString().TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)))!;
         var files = await FilesAsync(scope, repoDir, Path.GetDirectoryName(Path.GetFullPath(setupPath))!, cancellationToken);
+        var libraries = await ScopeLibraries.LoadAsync(scope.Setup.LibraryFiles, Path.GetDirectoryName(Path.GetFullPath(setupPath))!, cancellationToken);
         IReadOnlyList<ScopeProblem> problems =
         [
             .. parsed.Problems,
             .. snapshots.Problems,
+            .. libraries.Problems,
             .. files.Problems,
             .. targets.Match(_ => [], ps => ps.Select(p => new ScopeProblem(p.Code, new SourceLine(configFile!.ToString(), 0), p.Message, "Fix the deployment config first."))),
             .. ScopeValidator.Validate(scope, snapshots.Loaded, targets.Match(t => t, _ => [])),
@@ -497,7 +502,12 @@ internal static class ScopeCommands
             [.. problems.Where(p => !p.Warning)],
             string.Create(CultureInfo.InvariantCulture, $"scope valid: {scope.Setup.Domains.Count} domain(s), {scope.Controls.Count} control(s), {scope.Audits.Count} audit(s){ThirdPartyCount(scope)}"),
             scope,
-            new ScopeInputs(snapshots.Loaded, configFile is null ? null : targets.Match(t => t, _ => []), files.Found) { Today = today, Runbooks = await RunbooksAsync(scope, repoDir, cancellationToken) })
+            new ScopeInputs(snapshots.Loaded, configFile is null ? null : targets.Match(t => t, _ => []), files.Found.Concat(libraries.Files).ToDictionary(StringComparer.Ordinal))
+            {
+                Today = today,
+                Runbooks = await RunbooksAsync(scope, repoDir, cancellationToken),
+                Libraries = libraries.Snapshots,
+            })
         {
             Warnings = [.. problems.Where(p => p.Warning)],
         };

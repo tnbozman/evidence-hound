@@ -166,7 +166,8 @@ public sealed class ScopeClientTests : IDisposable
 
         (await Write(declared, ScopeAction.Update, null)).Value();
 
-        Sent().ShouldBe([("POST", "/api/stored-libraries/upload/"), ("GET", $"/api/loaded-libraries/{library}/update/")]);
+        Sent().ShouldBe([("POST", "/api/stored-libraries/upload/")]);
+        Logged("GET", $"/api/loaded-libraries/{library}/update/").ShouldNotBeNull();
     }
 
     [Fact]

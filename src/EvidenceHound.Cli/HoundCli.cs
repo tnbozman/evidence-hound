@@ -200,6 +200,7 @@ public static class HoundCli
             CollectorsCommand.Build(output, registry),
             ConfigCommands.Build(output, loggers, configuration, registry),
             FrameworkCommands.Build(output, loggers),
+            LibraryCommands.Build(output, loggers),
             Setup.InitCommand.Build(terminal, loggers, configuration, registry),
             Setup.AddCommands.Build(terminal, loggers, configuration, registry),
             ExplainCommand.Build(terminal, loggers),

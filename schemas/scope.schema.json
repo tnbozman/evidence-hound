@@ -111,10 +111,22 @@
           }
         },
         "libraries": {
-          "description": "Other libraries to load by URN, such as the mapping sets between the frameworks.",
+          "description": "Other libraries to load: a URN CISO Assistant already stores (such as a mapping set or a built-in risk matrix), or your own library file with its URN, such as a custom risk matrix or threat catalogue (s15-01).",
           "type": "array",
           "items": {
-            "$ref": "#/$defs/text"
+            "oneOf": [
+              { "$ref": "#/$defs/text" },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["urn", "file"],
+                "properties": {
+                  "urn": { "$ref": "#/$defs/text", "description": "The library's URN, as in the file." },
+                  "file": { "$ref": "#/$defs/text", "description": "The library file, relative to setup.yaml. Raise its version whenever it changes." },
+                  "snapshot": { "$ref": "#/$defs/text", "description": "The snapshot made by 'hound library snapshot', relative to setup.yaml." }
+                }
+              }
+            ]
           }
         },
         "domains": {

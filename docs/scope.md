@@ -54,7 +54,7 @@ A prompt for a ref ID (`hound add system`, `hound add control`, `hound onboard <
 | `organisation.root_folder` | The existing folder the domains sit under. Default `Global`. |
 | `organisation.entity` | Optional. The organisation's own entity, which CISO Assistant creates itself as its main entity: `name`, and optional `description`, `mission`, `country`, `currency` and `identifiers`, as for a [third party](#third-partiesentityyaml). `hound scope apply` only ever updates it in place, never creates or deletes it, and it carries no `[hound scope]` marker. Left out, the main entity is not read or changed. |
 | `frameworks` | Each framework to load: `urn` (the framework URN), and `library` (a library URN from CISO Assistant's stored libraries) or `file` (a custom library file). `snapshot` names the framework snapshot made by `hound framework snapshot`, so groups and requirements can be checked offline; Paths are relative to setup.yaml. |
-| `libraries` | Other libraries to load by URN, such as the mapping set between the Essential Eight and the Essentials. |
+| `libraries` | Other libraries to load. A URN loads one CISO Assistant already stores, such as the mapping set between the Essential Eight and the Essentials. A map with `urn` and `file` uploads your own library from the repo, such as a custom risk matrix or threat catalogue, and `snapshot` names the snapshot made by `hound library snapshot`. Raise the file's `version` whenever you change it: CISO Assistant only takes a new version, so `hound` stops with `library.version_not_bumped` otherwise, and uploads and updates the library when the version goes up. See [Risk matrices and threats](#risk-matrices-and-threats). |
 | `domains` | Folders. Each has a `name`, a `description`, its `perimeters` (or a single `perimeter`) and its `systems`. |
 | perimeter | `name`, optional `ref_id` and `description`. |
 | system | `name`, `type` (`primary` or `supporting`), optional `ref_id`, `description`, `owner`, `parents` (other systems by name), `tags` (per-framework labels such as `essentials_domain: identity` or `cui: "true"`), `solution` (the third-party solution that provides it, by `ref_id`) `supplied_through` (a reseller or managed service provider, by the third party's `ref_id`) `data` (the [sensitive data](#sensitive-data) it handles) and `ai` (its [AI register entry](#ai-systems), when it is an AI system). A system with either supplier key is registered only once those suppliers are approved: see [Supplier approval](#supplier-approval). |
@@ -105,6 +105,41 @@ In CISO Assistant the asset gets the labels `ai-system`, `ai-screening-elevated`
 questions 1, 5), third party, human on the loop." `hound scope validate` reports `ai.screening_disagrees` (normal with a yes, or
 elevated with none), `ai.impact_date_without_approval`, `ai.retired_before_use`, and `ai.solution_missing` for a third-party AI system
 with no `solution`.
+
+### Risk matrices and threats
+
+Risk studies are rated on a risk matrix and name threats from a threat catalogue. Both come from CISO Assistant libraries. Many arrive
+with a framework: CISO Assistant loads a library's declared `dependencies` with it, so loading the Essential Eight also loads intuitem's
+Common Catalog of threats (and its policy and reference controls catalogue). The ASD Essentials library declares none. `hound scope plan`
+shows what a framework brings in a `brings` line, read from its snapshot. Declare only what does not arrive with a framework.
+
+A built-in matrix, such as `urn:intuitem:risk:library:critical_risk_matrix_5x5`, is a URN under `libraries`. Your own matrix or threats
+go in a library file under `libraries/` in the repo, listed with its URN and file:
+
+```yaml
+libraries:
+  - urn: urn:intuitem:risk:library:critical_risk_matrix_5x5
+  - urn: urn:example:risk:library:example-risk
+    file: ../libraries/example-risk.yaml
+    snapshot: ../libraries/example-risk.json
+```
+
+Check the file offline, then snapshot it so risk studies are checked by level name and threat without CISO Assistant:
+
+```console
+$ hound library validate libraries/example-risk.yaml
+valid: 1 risk matrix, 2 threats
+$ hound library snapshot libraries/example-risk.yaml --out libraries/example-risk.json
+```
+
+`hound library validate` reports `library.matrix_urn_invalid` (a matrix URN not of the form `urn:<packager>:risk:matrix:<id>`),
+`library.matrix_level_gap` (an explicit level `id` that is not its position, counting from 0), `library.matrix_grid_shape` (not one grid
+row per probability level with one cell per impact level) and `library.matrix_grid_unknown_risk` (a cell that is not a risk level).
+`hound scope validate` runs the same checks on every library file the setup lists.
+
+CISO Assistant only takes a changed library when its `version` goes up. If the file differs from the one it stores at the same version,
+`hound scope plan` and `hound scope apply` stop with `library.version_not_bumped`. Raise the version, and the apply uploads the file and
+updates the loaded library.
 
 ## controls.yaml
 

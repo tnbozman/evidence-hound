@@ -21,5 +21,29 @@ public static class LibraryValidation
             : null;
     }
 
-    public static IReadOnlyList<ScopeProblem> Refused(IReadOnlyList<ScopeObject> declared, IReadOnlyList<ActualObject> held) => throw new NotImplementedException();
+    /// <summary>
+    /// Each custom library (a declared framework or library with a file) whose file differs from the one CISO Assistant stores at the same or a
+    /// higher version, read from the held object's <c>version</c> and <c>sha256</c> fields. A plan or apply stops on these.
+    /// </summary>
+    public static IReadOnlyList<ScopeProblem> Refused(IReadOnlyList<ScopeObject> declared, IReadOnlyList<ActualObject> held)
+    {
+        ArgumentNullException.ThrowIfNull(declared);
+        ArgumentNullException.ThrowIfNull(held);
+        var stored = held.Where(h => h.Held.Kind == ScopeKind.Framework).GroupBy(h => h.Held.Key, StringComparer.Ordinal).ToDictionary(g => g.Key, g => g.First().Held.Fields, StringComparer.Ordinal);
+        return
+        [
+            .. from library in declared
+               where library.Kind == ScopeKind.Framework && library.Files.Count > 0 && stored.ContainsKey(library.Key)
+               let file = library.Files[0]
+               let heldFields = stored[library.Key]
+               let problem = VersionBump(
+                   new LibraryVersion(library.Key, Number(library.Fields.GetValueOrDefault("version")), file.Sha256),
+                   new LibraryVersion(library.Key, Number(heldFields.GetValueOrDefault("version")), heldFields.GetValueOrDefault("sha256")))
+               where problem is not null
+               select new ScopeProblem(problem.Code, new SourceLine(file.Path, 1), problem.Message, "Raise 'version' at the top of the library file, then plan again."),
+        ];
+    }
+
+    private static int Number(string? text) =>
+        int.TryParse(text, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var number) ? number : 0;
 }

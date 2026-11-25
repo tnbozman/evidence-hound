@@ -30,6 +30,7 @@ public static partial class ScopeDesired
             .. scope.Settings.General.Select(g => new ScopeObject(ScopeKind.Setting, g.Name, Fields(("value", g.Json)))),
             .. setup.Frameworks.Select(f => Framework(f, inputs)),
             .. setup.Libraries.Select(l => new ScopeObject(ScopeKind.Framework, l.Value, Fields()) { Initial = Fields(("library", l.Value)) }),
+            .. setup.LibraryFiles.Select(l => LibraryFile(l, inputs)),
             .. setup.Domains.Select(d => new ScopeObject(ScopeKind.Domain, d.Name, Fields(("description", d.Description)))),
             .. setup.Domains.SelectMany(d => d.Perimeters.Select(p => new ScopeObject(
                 ScopeKind.Perimeter, PerimeterKey(d.Name, p.Name), Fields(("name", p.Name), ("ref_id", p.RefId), ("description", p.Description), ("domain", d.Name))))),
@@ -224,8 +225,22 @@ public static partial class ScopeDesired
         var snapshot = inputs.Snapshots.GetValueOrDefault(framework.Urn);
         return new ScopeObject(ScopeKind.Framework, framework.Urn, Fields(("version", snapshot?.Version.ToString(CultureInfo.InvariantCulture))))
         {
-            Initial = Fields(("library", framework.LibraryUrn ?? snapshot?.LibraryUrn), ("file", framework.LibraryFile)),
+            Initial = Fields(("library", framework.LibraryUrn ?? snapshot?.LibraryUrn), ("file", framework.LibraryFile), ("brings", Joined(snapshot?.Dependencies ?? []))),
             Files = framework.LibraryFile is null ? [] : inputs.Files.GetValueOrDefault(framework.Urn) ?? [],
+        };
+    }
+
+    /// <summary>
+    /// A custom library in the repo, such as a risk matrix or threat catalogue (s15-01), keyed by its library URN, with its version from its
+    /// snapshot and its file to upload. A raised version is uploaded and CISO Assistant's loaded copy updated.
+    /// </summary>
+    private static ScopeObject LibraryFile(ScopeLibraryFile library, ScopeInputs inputs)
+    {
+        var snapshot = inputs.Libraries.GetValueOrDefault(library.Urn);
+        return new ScopeObject(ScopeKind.Framework, library.Urn, Fields(("version", snapshot?.Version.ToString(CultureInfo.InvariantCulture))))
+        {
+            Initial = Fields(("library", library.Urn), ("file", library.File), ("brings", Joined(snapshot?.Dependencies ?? []))),
+            Files = inputs.Files.GetValueOrDefault(library.Urn) ?? [],
         };
     }
 

@@ -12,7 +12,7 @@ public static class ScopePlanner
     /// longer match the state <c>hound</c> recorded on it was edited in CISO Assistant: it is reported as drift and written back. Links (a
     /// control's systems and documents, a row's controls and documents, a document's file hashes) are added to what CISO Assistant holds, and
     /// removed only with <paramref name="prune"/>. A locked audit and its rows are never changed, and a framework loaded from an older library
-    /// version is never upgraded: both are reported as drift.
+    /// version is never upgraded: both are reported as drift. A custom library from the repo (one with a file) is upgraded when its version is raised.
     /// </remarks>
     public static ScopePlan Plan(IReadOnlyList<ScopeObject> declared, IReadOnlyList<ActualObject> actual, bool prune)
     {
@@ -44,7 +44,17 @@ public static class ScopePlanner
 
             if (declaredObject.Kind == ScopeKind.Framework)
             {
-                drift.AddRange(Outdated(declaredObject, have));
+                var outdated = Outdated(declaredObject, have).ToList();
+                if (outdated.Count > 0 && declaredObject.Files.Count > 0)
+                {
+                    // The repo's own library: its raised version is uploaded and CISO Assistant's loaded copy updated (s15-01).
+                    changes.Add(new ScopeChange(declaredObject.Kind, declaredObject.Key, ScopeAction.Update, outdated[0].Fields, StateOf(declaredObject)) { Desired = declaredObject });
+                }
+                else
+                {
+                    drift.AddRange(outdated);
+                }
+
                 continue;
             }
 
