@@ -81,6 +81,32 @@ public sealed class ReportSnapshotCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Each_incident_carries_the_reports_it_owes_with_their_status()
+    {
+        // s15-07: the scope's reporting obligations, applied to each incident when the snapshot is taken.
+        File.WriteAllText(Path.Combine(_dir, "scope", "reporting.yaml"), """
+            obligations:
+              - id: reportcyber
+                name: Report to ASD's ACSC through ReportCyber
+                report_to: ASD's ACSC
+                within: 1d
+                when: {always: true}
+            """);
+        var incident = new JsonObject { ["id"] = "in-9", ["ref_id"] = "INC-9", ["name"] = "Malware on a laptop", ["status"] = "ongoing", ["reported_at"] = "2026-11-20T12:00:00Z", ["assets"] = new JsonArray() };
+        _ca.Given(Request.Create().WithPath("/api/incidents/").UsingGet()).AtPriority(-1).RespondWith(Response.Create().WithBody(List(incident).ToJsonString()));
+        _ca.Given(Request.Create().WithPath("/api/timeline-entries/").UsingGet())
+            .RespondWith(Response.Create().WithBody(List(new JsonObject { ["timestamp"] = "2026-11-20T09:30:00Z", ["entry_type"] = "detection", ["entry"] = "Found." }).ToJsonString()));
+
+        var exitCode = await Run("report", "snapshot", "--period", "2026-11");
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var file = Path.Combine(_dir, "evidence", "reports", "posture-2026-11.json");
+        var snapshot = PostureSnapshotJson.Read(await File.ReadAllTextAsync(file, _ct), file).Match(s => s, ps => throw new InvalidOperationException(ps[0].Message));
+        var report = snapshot.Incidents.ShouldHaveSingleItem().Reports.ShouldHaveSingleItem();
+        (report.Id, report.Due, report.Status).ShouldBe(("reportcyber", new DateTimeOffset(2026, 11, 21, 9, 30, 0, TimeSpan.Zero), "overdue"));
+    }
+
+    [Fact]
     public async Task A_bad_period_is_refused()
     {
         var exitCode = await Run("report", "snapshot", "--period", "November");
