@@ -67,11 +67,59 @@ expectations held as an audit beside the Essential Eight, so that one place show
 
 As [s12-09](s12-e8-mapping-and-adoption.md#s12-09-rehearse-trial-onboarding-and-sustaining-grc-standing-every-sprint), including this sprint's new commands and guides.
 
+**Rehearsal log (2026-11-25).** A novice GRC operator with a few hours a week followed the migration guide, the DISP readiness guide,
+`hound init --framework disp`, the template runbooks, the manual evidence and weekly review steps and the cheat sheet, from source in the
+cloud session, including as a non-root user with the default evidence root. 19 findings; fixed here (red, green):
+
+- `hound mapping derive --out` silently replaced the reviewed reference mapping (the guide told you to). It now refuses an existing file
+  without `--force`, and the guide derives to a new file.
+- Coverage counted draft rows as covered. A Draft column now counts rows only draft rows answer; `hound mapping validate` says how many
+  rows are draft. A `--manual` path with no manual source in it is reported, as every attested check then reads as automated.
+- Any `NAME_FILE` variable from another tool pointing at a file the user cannot read crashed every command. Such files are now skipped.
+- A user who cannot write the default evidence root got "Unexpected failure" and a stack-trace hint. It now says to set `evidence.root`
+  or `chown` the folder; guided setup says the default needs root or the container.
+- The README `hound init --framework disp` writes now has a DISP step (copy its manual sources, check coverage); `init --help` and
+  guided setup list `--framework` and the DISP files.
+- Docs: the migration guide's elided coverage command, "four" for five ISM controls, and a maintainer step written as a user step; the
+  DISP guide's incident register source and the example repo stopping at step 3; `collectors: []` to replace before pasting a template;
+  the first deployment tutorial's file names for an `init` repo; the cheat sheet PDF re-rendered.
+- Already fixed this sprint: the per-parent coverage table names each Essentials principle with its domain.
+
+Carried to discovered work: findings 8 (exit codes), 13 to 15.
+
+**Functional check**
+- Result (2026-11-25): with a draft from `derive`, `hound mapping coverage <draft> --framework frameworks/asd-essentials-enterprise-it.json
+  --groups 1` prints `Total: 0 automated, 0 manual, 55 draft, 38 uncovered` (`MappingCoverageCommandTests`); deriving over an existing
+  file exits 2 and keeps it (`MappingDeriveCommandTests`).
+
 ### s14-04 Improve: quality and flow (standing, about 15% of each sprint)
 - [ ] Done
 
 As [s12-10](s12-e8-mapping-and-adoption.md#s12-10-improve-quality-and-flow-standing-about-15-of-each-sprint).
 
+- Triage of s13's Discovered work:
+  - Release pins stamped by hand: done. `scripts/stamp-release.sh x.y.z` moves `HOUND_RUNNER_IMAGE`, `EVIDENCE_HOUND_REF` and the
+    tutorial's image to a release (bats tests; `docs/releasing.md`).
+  - Non-root user with the default evidence root: proven by this sprint's rehearsal, which found the unexplained failure (fixed in s14-03).
+  - nuget.org trusted publishing: stays as discovered work.
+- Dependencies: twelve Dependabot updates folded into the sprint branch (Microsoft.Extensions 11 packages on the .NET 10 runtime, test
+  tools with xunit.v3 aligned on 4.0.3, Confluent.Kafka, CycloneDX, code coverage, the runtime image digest, Caddy, Redpanda in the dev
+  stack, markdownlint-cli2 0.24, mkdocs-material). PostgreSQL 18 (needs a dump and restore of an existing database) and the .NET 11 SDK
+  image (the repo pins the .NET 10 SDK) were held for a decision.
+- The coverage report's per-parent table names each Essentials principle with its domain, as the same principle sits in several domains.
+- Cheat sheet PDF re-rendered for `mapping derive` and `init --framework`.
+
 ## Discovered work
+
+- s14-03: `hound mapping coverage` and `validate` exit 0 with uncovered or draft rows; a `--fail-on-uncovered` (and draft) flag would let
+  CI gate on them. Coverage also counts as automated a check that no configured collector gives; reading collector check IDs from the
+  config would show those as unsourced.
+- s14-03: `hound add collector manual` writes `due_days` as a quoted string, and its "Next:" hint suggests `config validate
+  --check-secrets`, which fails before CISO Assistant has a token.
+- s14-03: `hound manual upload` takes `--source`, `hound manual propose` a positional source; upload prints `(attested: False)`.
+- s14-03: `hound review pending` recommends `attest` from a `partial` proposal, but `review recommend --answer` takes accept or decline.
+- s14-03: an incident register manual source template (the example repo has one); s15's incident register may replace it.
+- s14-03: `hound config validate` could check that the evidence root is writable.
+- s14-04: nuget.org trusted publishing (OIDC), carried from s13.
 
 ## Sprint review
