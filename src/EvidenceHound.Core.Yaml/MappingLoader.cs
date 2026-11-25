@@ -130,9 +130,9 @@ public static class MappingLoader
         Problem[] problems = [.. UnknownKeys(map, RequirementKeys, at), .. ProblemsOf(key), .. ProblemsOf(rule), .. ProblemsOf(checks), .. ProblemsOf(draft), .. ProblemsOf(part)];
         return problems.Length > 0
             ? Result.Fail<ParsedRequirement>(problems)
-            : key.Bind(parsedKey => rule.Bind(parsedRule => checks.Bind(parsedChecks => draft.Bind(isDraft =>
+            : key.Bind(parsedKey => rule.Bind(parsedRule => checks.Bind(parsedChecks => draft.Bind(isDraft => part.Bind(coversPart =>
                 Located(RequirementMapping.Create(parsedKey, parsedChecks.Select(c => c.Id), parsedRule), map.Start, at)
-                    .Map(mapping => new ParsedRequirement(mapping with { Draft = isDraft, CoversPart = part is Result<bool>.Ok { Value: true } }, [.. parsedChecks], (int)map.Start.Line))))));
+                    .Map(mapping => new ParsedRequirement(mapping with { Draft = isDraft, CoversPart = coversPart }, [.. parsedChecks], (int)map.Start.Line)))))));
     }
 
     /// <summary>s14-01: <c>draft: true</c> on a row <c>hound mapping derive</c> wrote and nobody has reviewed yet.</summary>
