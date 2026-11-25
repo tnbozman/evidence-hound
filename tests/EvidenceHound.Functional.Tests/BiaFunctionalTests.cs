@@ -48,12 +48,12 @@ public sealed class BiaFunctionalTests(CisoAssistantFixture ciso) : IDisposable
 
         var applied = await StepAsync("1-apply", ["scope", "apply", Scope], ct);
         applied.Exit.ShouldBe(ExitCodes.Ok, applied.Output + applied.Error);
-        var bia = (await SendAsync(HttpMethod.Get, "business-impact-analysis/?limit=500", null, ct))["results"]!.AsArray().Single(b => b!["ref_id"]?.GetValue<string>() == "EX-BIA-FUNC")!;
-        var assessments = (await SendAsync(HttpMethod.Get, $"asset-assessments/?bia={bia["id"]!.GetValue<string>()}", null, ct))["results"]!.AsArray();
+        var bia = (await SendAsync(HttpMethod.Get, "resilience/business-impact-analysis/?limit=500", null, ct))["results"]!.AsArray().Single(b => b!["ref_id"]?.GetValue<string>() == "EX-BIA-FUNC")!;
+        var assessments = (await SendAsync(HttpMethod.Get, $"resilience/asset-assessments/?bia={bia["id"]!.GetValue<string>()}", null, ct))["results"]!.AsArray();
         assessments.Select(a => a!["asset"]!["str"]!.GetValue<string>()).Order(StringComparer.Ordinal).ShouldBe(["Example 365", "Example laptops"]);
         var main = assessments.Single(a => a!["asset"]!["str"]!.GetValue<string>() == "Example 365")!;
         main["recovery_documented"]!.GetValue<bool>().ShouldBeTrue();
-        var thresholds = (await SendAsync(HttpMethod.Get, $"escalation-thresholds/?asset_assessment={main["id"]!.GetValue<string>()}", null, ct))["results"]!.AsArray();
+        var thresholds = (await SendAsync(HttpMethod.Get, $"resilience/escalation-thresholds/?asset_assessment={main["id"]!.GetValue<string>()}", null, ct))["results"]!.AsArray();
         thresholds.Select(t => (t!["point_in_time"]!.GetValue<int>(), t["quali_impact"]!["name"]!.GetValue<string>())).OrderBy(t => t.Item1)
             .ShouldBe([(14400, "Minor"), (86400, "Major")]);
 
@@ -103,8 +103,8 @@ public sealed class BiaFunctionalTests(CisoAssistantFixture ciso) : IDisposable
 
     private async Task<JsonNode> AssessmentAsync(CancellationToken ct)
     {
-        var bia = (await SendAsync(HttpMethod.Get, "business-impact-analysis/?limit=500", null, ct))["results"]!.AsArray().Single(b => b!["ref_id"]?.GetValue<string>() == "EX-BIA-FLAGS")!;
-        return (await SendAsync(HttpMethod.Get, $"asset-assessments/?bia={bia["id"]!.GetValue<string>()}", null, ct))["results"]!.AsArray().ShouldHaveSingleItem()!;
+        var bia = (await SendAsync(HttpMethod.Get, "resilience/business-impact-analysis/?limit=500", null, ct))["results"]!.AsArray().Single(b => b!["ref_id"]?.GetValue<string>() == "EX-BIA-FLAGS")!;
+        return (await SendAsync(HttpMethod.Get, $"resilience/asset-assessments/?bia={bia["id"]!.GetValue<string>()}", null, ct))["results"]!.AsArray().ShouldHaveSingleItem()!;
     }
 
     /// <summary>The example deployment, with its scope, its evidence under the test's repo, and the fake collector's fail setting.</summary>

@@ -312,7 +312,7 @@ public sealed class ScopeStateReaderTests : IDisposable
             ["reviewers"] = new JsonArray(),
         });
         List("risk-matrices", new JsonObject { ["id"] = "rm-4x4", ["urn"] = "urn:example:risk:matrix:example-4x4" });
-        _ca.Server.Given(Request.Create().WithPath("/api/asset-assessments/").WithParam("bia", "bia-1").UsingGet())
+        _ca.Server.Given(Request.Create().WithPath("/api/resilience/asset-assessments/").WithParam("bia", "bia-1").UsingGet())
             .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject
             {
                 ["count"] = 1,
@@ -328,7 +328,7 @@ public sealed class ScopeStateReaderTests : IDisposable
                     ["observation"] = "Mail stops.",
                 }),
             }.ToJsonString()));
-        _ca.Server.Given(Request.Create().WithPath("/api/escalation-thresholds/").WithParam("asset_assessment", "aa-1").UsingGet())
+        _ca.Server.Given(Request.Create().WithPath("/api/resilience/escalation-thresholds/").WithParam("asset_assessment", "aa-1").UsingGet())
             .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject
             {
                 ["count"] = 1,

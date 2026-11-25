@@ -204,13 +204,13 @@ public sealed class ScopeClientTests : IDisposable
         List("assets", new JsonObject { ["id"] = "a-365", ["name"] = "Example 365" });
         List("applied-controls");
         List("asset-assessments", new JsonObject { ["id"] = "aa-1", ["asset"] = new JsonObject { ["id"] = "a-365", ["str"] = "Example 365" } });
-        Respond("PATCH", "/api/asset-assessments/aa-1/", 200, new JsonObject { ["id"] = "aa-1" });
+        Respond("PATCH", "/api/resilience/asset-assessments/aa-1/", 200, new JsonObject { ["id"] = "aa-1" });
         var assessment = Declared(ScopeKind.AssetAssessment, "EX-BIA-2026/Example 365",
             ("bia", "EX-BIA-2026"), ("system", "Example 365"), ("recovery_documented", "true"), ("observation", "Restores are tested monthly."));
 
         (await _ca.Writer.WriteAsync(new ScopeWrite(new ScopeChange(assessment.Kind, assessment.Key, ScopeAction.Update, [new FieldChange("observation", null, "Restores are tested monthly.")], State), assessment, "Global"), _ct)).Value();
 
-        var patched = JsonNode.Parse(Logged("PATCH", "/api/asset-assessments/aa-1/").Body!)!.AsObject();
+        var patched = JsonNode.Parse(Logged("PATCH", "/api/resilience/asset-assessments/aa-1/").Body!)!.AsObject();
         patched["recovery_documented"]!.GetValue<bool>().ShouldBeTrue();
         patched.ContainsKey("recovery_tested").ShouldBeFalse();
         patched.ContainsKey("recovery_targets_met").ShouldBeFalse();
@@ -227,9 +227,9 @@ public sealed class ScopeClientTests : IDisposable
         List("asset-assessments", new JsonObject { ["id"] = "aa-1", ["asset"] = new JsonObject { ["id"] = "a-365", ["str"] = "Example 365" } });
         List("escalation-thresholds");
         List("terminologies", new JsonObject { ["id"] = "t-rep", ["name"] = "Reputation", ["field_path"] = "qualifications" });
-        Respond("POST", "/api/business-impact-analysis/", 201, new JsonObject { ["id"] = "bia-new" });
-        Respond("POST", "/api/asset-assessments/", 201, new JsonObject { ["id"] = "aa-new" });
-        Respond("POST", "/api/escalation-thresholds/", 201, new JsonObject { ["id"] = "et-new" });
+        Respond("POST", "/api/resilience/business-impact-analysis/", 201, new JsonObject { ["id"] = "bia-new" });
+        Respond("POST", "/api/resilience/asset-assessments/", 201, new JsonObject { ["id"] = "aa-new" });
+        Respond("POST", "/api/resilience/escalation-thresholds/", 201, new JsonObject { ["id"] = "et-new" });
         var bia = Declared(ScopeKind.Bia, "EX-BIA-2026-NEW",
             ("name", "Example BIA"), ("domain", "Example Pty Ltd"), ("perimeter", "Corporate IT"), ("matrix", "urn:example:risk:matrix:example-4x4"),
             ("version", "1.0"), ("status", "in_progress"), ("due_date", "2026-12-31"), ("authors", "it@example.com"));

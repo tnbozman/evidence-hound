@@ -2093,7 +2093,7 @@
         "operationId": "risk_acceptances_destroy"
       }
     },
-    "/api/business-impact-analysis/": {
+    "/api/resilience/business-impact-analysis/": {
       "get": {
         "operationId": "business_impact_analysis_list"
       },
@@ -2101,7 +2101,7 @@
         "operationId": "business_impact_analysis_create"
       }
     },
-    "/api/business-impact-analysis/{id}/": {
+    "/api/resilience/business-impact-analysis/{id}/": {
       "patch": {
         "operationId": "business_impact_analysis_partial_update"
       },
@@ -2109,7 +2109,7 @@
         "operationId": "business_impact_analysis_destroy"
       }
     },
-    "/api/asset-assessments/": {
+    "/api/resilience/asset-assessments/": {
       "get": {
         "operationId": "asset_assessments_list"
       },
@@ -2117,7 +2117,7 @@
         "operationId": "asset_assessments_create"
       }
     },
-    "/api/asset-assessments/{id}/": {
+    "/api/resilience/asset-assessments/{id}/": {
       "patch": {
         "operationId": "asset_assessments_partial_update"
       },
@@ -2125,7 +2125,7 @@
         "operationId": "asset_assessments_destroy"
       }
     },
-    "/api/escalation-thresholds/": {
+    "/api/resilience/escalation-thresholds/": {
       "get": {
         "operationId": "escalation_thresholds_list"
       },
@@ -2133,7 +2133,7 @@
         "operationId": "escalation_thresholds_create"
       }
     },
-    "/api/escalation-thresholds/{id}/": {
+    "/api/resilience/escalation-thresholds/{id}/": {
       "patch": {
         "operationId": "escalation_thresholds_partial_update"
       },
