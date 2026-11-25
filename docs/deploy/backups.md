@@ -30,7 +30,7 @@ Nothing is written unencrypted outside a private temporary folder, and the live 
 4. **Schedule it.** As root, in `/etc/cron.d/evidence-hound-backup`:
 
    ```cron
-   # Daily at 01:30, before the collectors' 02:00 runs.
+   # Daily at 01:30, before the collectors' runs (hound init and hound add schedule them at 03:00 by default).
    30 1 * * * root cd /opt/evidence-hound/deploy/compose && HOUND_BACKUP_DIR=/mnt/backups/evidence-hound HOUND_BACKUP_RECIPIENTS=/etc/evidence-hound/backup-recipients.txt ./backup.sh >>/var/log/evidence-hound-backup.log 2>&1
    ```
 
@@ -57,7 +57,7 @@ Every quarter, and after every CISO Assistant upgrade:
 
 3. Remove the identity: `sudo shred -u /root/backup.key`.
 4. The next run collects the result file. Your agent proposes the result (skill "process-manual-evidence") and you attest it in the
-   [weekly review](../manual-evidence.md#the-weekly-review), like any other manual evidence. A failed test is evidence too: record it
+   [weekly review](../manual-evidence.md#the-weekly-review), like any other manual evidence. A test that stops part way still drops a result that says where it stopped (`Failed at:`). A failed test is evidence too: record it
    and open an action.
 
 The test needs about 2 GB of free memory and disk for the temporary project, and takes 5 to 10 minutes, most of it CISO Assistant
@@ -67,7 +67,8 @@ starting. It exits 0 when the test passed, 1 when it failed and 2 when it could 
 
 When the live stack is lost, on a new host with the stack installed but not started ([deploy/compose](../../deploy/compose/README.md#install)):
 
-1. Decrypt the newest backup: `age -d -i backup.key ciso-assistant-<time>.tar.age | tar -C /root/restore -xf -`, then check it:
+1. Decrypt the newest backup into a private folder: `install -d -m 700 /root/restore`, then
+   `age -d -i backup.key ciso-assistant-<time>.tar.age | tar -C /root/restore -xf -`, then check it:
    `(cd /root/restore && sha256sum --check SHA256SUMS)`.
 2. Start PostgreSQL only: `docker compose up -d --wait postgres`.
 3. Restore the database:

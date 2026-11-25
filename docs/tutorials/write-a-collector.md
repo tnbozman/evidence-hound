@@ -11,12 +11,19 @@ Assistant: hound maps and publishes its results.
 
 ## 1. Make the project
 
+Download the `.nupkg` files from the [release](https://github.com/tnbozman/evidence-hound/releases) into a folder, such as
+`~/hound-packages`, unless the packages are on nuget.org. Then, with the release's version:
+
 ```console
-$ dotnet new install EvidenceHound.Templates
+$ dotnet new install EvidenceHound.Templates::1.0.0 --add-source ~/hound-packages
 $ dotnet new hound-collector -n Example.Widget
 $ cd Example.Widget
+$ dotnet restore --source ~/hound-packages --source https://api.nuget.org/v3/index.json
 $ dotnet test
 ```
+
+`dotnet restore` needs both sources: the Evidence Hound packages from the folder, everything else from nuget.org. Once the packages are
+on nuget.org, `dotnet new install EvidenceHound.Templates::1.0.0` and `dotnet test` are enough.
 
 The template references the `EvidenceHound.Collectors.Abstractions` and `EvidenceHound.Collectors.Testing` packages of its own
 version. The generated README lists every file and the steps below in more detail.
@@ -34,8 +41,9 @@ requirement, so one collector serves the Essential Eight, NIST SP 800-171 and wh
 2. Write a failing test for each check in `WidgetCollectorTests`, then make it pass. Keep the evaluation pure: response in,
    `CheckResult` out.
 3. The contract tests (`WidgetCollectorContractTests`) run the shared kit from `EvidenceHound.Collectors.Testing` against your
-   collector: it describes itself, it is read-only, it reports `unable_to_assess` rather than throwing when the system fails, and its
-   evidence files are well formed. They must pass unchanged. The kit is documented in
+   collector: it describes at least one check and emits only the checks it declares, its evidence files can be hashed, it honours
+   cancellation, it returns a failed result rather than throwing when credentials are refused, and it never logs a secret. Read-only
+   access is up to you: ask the system for read-only permissions and call only read endpoints. They must pass unchanged. The kit is documented in
    [its README](../../src/EvidenceHound.Collectors.Testing/README.md).
 
 ## 4. Bring it into hound

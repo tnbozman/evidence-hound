@@ -17,14 +17,14 @@ makes that manageable with open-source tools:
 
 | You want to | Read |
 | --- | --- |
-| See it work on your laptop in an afternoon | [Getting started](getting-started.md), then the [local trial](tutorials/local-trial.md) |
+| See it work on your laptop in an hour or two | [Getting started](getting-started.md), then the [local trial](tutorials/local-trial.md) |
 | Run it for real next to CISO Assistant | [First deployment](tutorials/first-deployment.md), then [backups](deploy/backups.md) and [hardening](deploy/hardening.md) |
 | Move your registers in | [Onboarding](onboarding.md) and [moving off spreadsheets](adopt/migrate-from-spreadsheets.md) |
 | Know what to do each week as the GRC member | [GRC member guide](operate/grc-member.md) and [the weekly review](manual-evidence.md#the-weekly-review) |
 | Report to the committee and the board | [Reporting](reporting.md), [security committee](govern/security-committee.md), [board](govern/board-reporting.md) |
 | Answer a prime's NIST SP 800-171 questions | [Answer a prime's questionnaire](adopt/answer-a-prime-questionnaire.md) |
 | Govern your use of AI | [AI governance primer](ai-grc-primer.md) |
-| Connect a system | [Collectors](collectors/m365.md), or [write a profile](tutorials/write-a-profile.md) for any REST API |
+| Connect a system | [Collectors](collectors/README.md), or [write a profile](tutorials/write-a-profile.md) for any REST API |
 
 Every command and its options are on the [cheat sheet](cheatsheet.md).
 
