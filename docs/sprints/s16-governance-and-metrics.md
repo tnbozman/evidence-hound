@@ -1,6 +1,6 @@
 # s16 Governance collector and metrics
 
-Status: In progress
+Status: Done
 
 Release: 2
 
@@ -15,7 +15,7 @@ Builds on s06 (scope files, plan, apply, inventory), s10 (suppliers), s14 (the E
 | Metric definitions, metric instances, dashboards | Manually entered metric samples |
 
 ### s16-01 Risk and recovery checks in the `ciso-assistant` profile
-- [ ] Done
+- [x] Done
 
 Changed in the AI governance planning PR (Nov 2026): s11-05 builds the `ciso-assistant` REST collector profile and its supplier checks (`supplier.assessments_current`, `supplier.contracts_current`), so this task extends that profile instead of building a coded collector.
 
@@ -43,6 +43,8 @@ Changed in the AI governance planning PR (Nov 2026): s11-05 builds the `ciso-ass
 - Mapped: GOV-03.1 gains both risk checks, PRO-16.1 (both domains) gains `supplier.assessments_current`, PRO-10.3 (both domains) gains `bia.recovery_tested`. GOV-11 already had the supplier checks from s14. The migration guide says which manual-only actions are now partly automated.
 - Functional: `RiskRecoveryChecksFunctionalTests` runs the profile against the seeded CISO Assistant and works out each expected outcome from CISO Assistant's own lists.
 - Found by the functional check: CISO Assistant's asset list gives `disaster_recovery_objectives` as display text (`[{"str": "RTO: 4h"}]`, only objectives above zero), not the stored seconds that `/object/` gives. The first recordings were hand-made in the stored shape, so `bia.recovery_tested` passed its cases but would always have been not applicable against a real CISO Assistant. The recordings now hold the list's shape and the check matches `(?i)^rto: `.
+
+**Functional check result.** CI run 45661679058 (2026-11-25): `RiskRecoveryChecksFunctionalTests` passed against CISO Assistant v4.3.4 seeded with the example scope: `risk.studies_reviewed` passed for EX-RISK-2026, `risk.exceptions_current` matched the approved exceptions' expiry dates, and `bia.recovery_tested` counted the BIA assessments of Example 365 (RTO 4h) and gave the outcome their recovery-tested flags give.
 
 ### s16-02 Metric definitions and instances
 - [x] Done
@@ -146,7 +148,7 @@ that I see the real position without opening a report or trusting CISO Assistant
 **Functional check result.** CI run 45640153076 (2026-11-25): `ReportFunctionalTests.Status_gives_the_essential_eight_standing_from_the_snapshot` passed: after a 2026-11 snapshot of the seeded instance, `hound status --scope` gave the Essential Eight line the committee report gives, and `--json` counted the same rows not assessed.
 
 ### s16-05 Rehearse trial, onboarding and sustaining GRC (standing, every sprint)
-- [ ] Done
+- [x] Done
 
 As [s12-09](s12-e8-mapping-and-adoption.md#s12-09-rehearse-trial-onboarding-and-sustaining-grc-standing-every-sprint), including this sprint's new commands and guides.
 The rehearsal drives hound through the agent skills, and the sprint ends with the Claude Code and Copilot skills and agents
@@ -159,7 +161,7 @@ fix, and a misspelt measure with `scope.value_invalid` listing the four; both me
 on the copy said there was no snapshot and how to take one. `AgentCommandTests` confirm every command the skills name exists.
 
 ### s16-06 Improve: quality and flow (standing, about 15% of each sprint)
-- [ ] Done
+- [x] Done
 
 As [s12-10](s12-e8-mapping-and-adoption.md#s12-10-improve-quality-and-flow-standing-about-15-of-each-sprint).
 
@@ -171,3 +173,13 @@ The risk and recovery functional test reads CISO Assistant's asset lists by shap
 ## Discovered work
 
 ## Sprint review
+
+**2026-11-25.** Metrics now live in the repo: definitions, instances and committee dashboards are planned and applied to CISO
+Assistant's metrology (s16-02), and each `hound run` records the value of every metric it can measure (check pass rate, an audit's
+compliant share, evidence freshness, collector success), one value a period (s16-03). The example repo has an MFA metric, an Essential
+Eight metric and a committee dashboard, with a guide in `docs/metrics.md` (s16-04). The `ciso-assistant` profile checks risk studies
+reviewed, approved exceptions not expired and critical systems' recovery tested (s16-01). Its functional check found that CISO
+Assistant's asset list gives recovery objectives as text ("RTO: 4h"), not the stored seconds the hand-made recordings held, so the
+recovery check would have always read not applicable on a real instance; the recordings and check now use the real shape. `hound status
+--scope` gives each programme's standing from the latest snapshot, with `--json` for agents (s16-07). The skills and agents are
+accurate for these commands (s16-05).
