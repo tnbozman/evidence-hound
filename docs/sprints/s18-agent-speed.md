@@ -1,6 +1,6 @@
 # s18 Agent speed: fewer steps, faster runs
 
-Status: Planned
+Status: In progress
 
 Release: 2
 
