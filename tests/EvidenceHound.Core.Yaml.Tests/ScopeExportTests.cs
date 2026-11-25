@@ -144,6 +144,30 @@ public sealed class ScopeExportTests
     }
 
     [Fact]
+    public void A_systems_security_and_recovery_objectives_are_exported_and_plan_nothing()
+    {
+        var held = Held();
+        held = held with
+        {
+            Objects =
+            [
+                .. held.Objects.Where(o => o.Held.Key != "Example 365"),
+                Managed(ScopeKind.System, "Example 365", ("ref_id", "SYS-365"), ("type", "primary"), ("owner", "it@example.com"), ("domain", "Example Pty Ltd"),
+                    ("objectives", "availability=2, confidentiality=3, integrity=3"), ("recovery", "mtd=3d, rpo=1d, rto=4h")),
+            ],
+        };
+
+        var files = ScopeExport.Write(held);
+
+        files["setup.yaml"].ShouldContain("        objectives: {availability: 2, confidentiality: 3, integrity: 3}\n");
+        files["setup.yaml"].ShouldContain("        recovery: {mtd: 3d, rpo: 1d, rto: 4h}\n");
+        var (scope, problems) = Parse(files);
+        problems.ShouldBeEmpty(string.Join("\n", problems.Select(p => $"{p.Code} {p.At.File}:{p.At.Line} {p.Message}")));
+        var declared = ScopeDesired.From(scope, new ScopeInputs(Snapshots(files), null, new Dictionary<string, IReadOnlyList<ScopeFile>>()));
+        ScopePlanner.Plan(declared, held.Objects, prune: false).Changes.ShouldBeEmpty();
+    }
+
+    [Fact]
     public void Objects_without_a_ref_id_are_given_one()
     {
         ScopeRefIds.For(ScopeKind.Audit, "Essential Eight review 2026").ShouldBe("ESSENTIAL-EIGHT-REVIEW-2026");

@@ -32,7 +32,7 @@ public sealed class RiskRegisterFunctionalTests(CisoAssistantFixture ciso) : IDi
             treatment: mitigate
             justification: Backups are restored and tested each month.
           - ref_id: R-02
-            name: The only backup administrator leaves
+            name: The only backup administrator leaves (register test)
             systems: [Example backup service]
             threats: [REGISTER-THR-01]
             current: {probability: Unlikely, impact: Moderate}

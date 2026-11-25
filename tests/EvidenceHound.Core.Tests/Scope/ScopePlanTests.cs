@@ -309,6 +309,20 @@ public class ScopePlanTests
     }
 
     [Fact]
+    public void A_bia_status_the_scope_leaves_out_is_left_as_ciso_assistant_sets_it()
+    {
+        // CISO Assistant gives a new BIA the status planned. A file that declares none leaves it there, so the plan after an apply is empty.
+        // A status the file declares is still compared.
+        var declared = Declared(ScopeKind.Bia, "EX-BIA-2026", ("name", "Example BIA"));
+        var applied = new ActualObject(Declared(ScopeKind.Bia, declared.Key, ("name", "Example BIA"), ("status", "planned")), ScopeMarker.State(ScopeKind.Bia, declared.Fields));
+
+        ScopePlanner.Plan([declared], [applied], prune: false).IsEmpty.ShouldBeTrue();
+
+        var done = Declared(ScopeKind.Bia, declared.Key, ("name", "Example BIA"), ("status", "done"));
+        ScopePlanner.Plan([done], [applied], prune: false).Changes.ShouldHaveSingleItem().Fields.ShouldContain(new FieldChange("status", "planned", "done"));
+    }
+
+    [Fact]
     public void Assessment_compares_only_the_fields_the_scope_declares()
     {
         var declared = Declared(ScopeKind.Assessment, "EX-E8-2026/ISM-1486", ("result", "not_assessed"), ("documents", "identity-policy"));
