@@ -1,0 +1,532 @@
+# yaml-language-server: $schema=../schemas/mapping.schema.json
+# CMMC Level 2 (NIST SP 800-171 Rev 2), onto CISO Assistant's built-in cmmc-2.0 library (version 6 in v4.3.4), for the checks Evidence
+# Hound has today. s17-01. The audit selects implementation groups L1 and L2: the library tags its 17 Level 1 practices L1 only, so an
+# audit at L2 alone would leave them out.
+#
+# - Drafted from mappings/essential-eight-2023.yaml through the Essential Eight to NIST SP 800-171 crosswalk
+#   (mappings/crosswalks/essential-eight-2023-to-nist-sp-800-171-rev2.yaml): each practice gets the checks of the Essential Eight
+#   requirements linked to it. CISO Assistant ships no mapping library between the Essential Eight and CMMC to seed it from.
+# - Every row is `covers: part`. The Essential Eight is narrower than 800-171 (workstations and online services, not every system
+#   holding CUI), and the collectors see only Microsoft 365, Intune devices, Sophos Central firewalls and the vulnerability scanner, so
+#   passing checks make a practice partially compliant, never compliant. A person assesses the rest in CISO Assistant before an
+#   assessment. Do not remove `covers: part` unless your checks answer the whole practice for every system in your CMMC scope.
+# - Checked row by row with AI help (Claude) on 2026-11-25; not yet reviewed by an assessor. Review it in your own copy.
+# - manual_only lists the practices no check reaches, with the record a person keeps for each family.
+framework_urn: urn:intuitem:risk:framework:cmmc-2.0
+description: CMMC Level 2 (NIST SP 800-171 Rev 2) from the Essential Eight checks through the 800-171 crosswalk; every row covers part of its practice.
+requirements:
+  # AC.L1-3.1.1 Authorized Access Control. Limit system access to authorised users, processes acting for them, and devices
+  #   via ISM-1507:intersect
+  - ref: AC.L1-3.1.1
+    covers: part
+    rule: all_pass
+    checks:
+      - privileged.requests.validated
+  # AC.L2-3.1.5 Least Privilege. Use least privilege, including for specific security functions and privileged accounts
+  #   via ISM-1507:intersect, ISM-1647:intersect, ISM-1648:intersect, ISM-1883:intersect
+  - ref: AC.L2-3.1.5
+    covers: part
+    rule: all_pass
+    checks:
+      - privileged.requests.validated
+      - privileged.access.revalidated_yearly
+      - privileged.access.disabled_when_unused
+      - identity.privileged.global_admin_count
+      - identity.privileged.pim_eligible_not_permanent
+      - network.management.super_admin_count
+  # AC.L2-3.1.6 Non-Privileged Account Use. Use non-privileged accounts or roles for non-security functions
+  #   via ISM-0445:equal, ISM-1175:subset
+  - ref: AC.L2-3.1.6
+    covers: part
+    rule: all_pass
+    checks:
+      - identity.privileged.admins_cloud_only
+      - privileged.accounts.no_internet
+  # AC.L2-3.1.7 Privileged Functions. Prevent non-privileged users running privileged functions, and log privileged functions
+  #   via ISM-1509:intersect, ISM-1650:intersect
+  - ref: AC.L2-3.1.7
+    covers: part
+    rule: all_pass
+    checks:
+      - logging.privileged_access.centrally_logged
+      - logging.privileged_accounts.changes_logged
+  # AC.L2-3.1.15 Privileged Remote Access. Authorise remote running of privileged commands and remote access to security information
+  #   via ISM-1387:intersect
+  - ref: AC.L2-3.1.15
+    covers: part
+    rule: all_pass
+    checks:
+      - privileged.admin.jump_servers
+  # AU.L2-3.3.1 System Auditing. Create and keep system audit logs to monitor, analyse, investigate and report unlawful or unauthorised activi…
+  #   via ISM-1509:subset, ISM-1650:subset, ISM-1683:subset, ISM-1660:subset, ISM-1623:subset, ISM-1889:subset
+  - ref: AU.L2-3.3.1
+    covers: part
+    rule: all_pass
+    checks:
+      - logging.privileged_access.centrally_logged
+      - logging.privileged_accounts.changes_logged
+      - logging.mfa_events.centrally_logged
+      - endpoint.application_control.events_centrally_logged
+      - logging.powershell.centrally_logged
+      - logging.command_line.centrally_logged
+  # AU.L2-3.3.2 User Accountability. Trace the actions of individual users so they can be held accountable
+  #   via ISM-1509:intersect
+  - ref: AU.L2-3.3.2
+    covers: part
+    rule: all_pass
+    checks:
+      - logging.privileged_access.centrally_logged
+  # AU.L2-3.3.5 Audit Correlation. Correlate audit record review, analysis and reporting
+  #   via ISM-1228:intersect, ISM-1906:intersect
+  - ref: AU.L2-3.3.5
+    covers: part
+    rule: all_pass
+    checks:
+      - logging.events.triaged
+      - logging.internet_facing.analysed
+  # AU.L2-3.3.8 Audit Protection. Protect audit information and logging tools from unauthorised access, change and deletion
+  #   via ISM-1815:intersect
+  - ref: AU.L2-3.3.8
+    covers: part
+    rule: all_pass
+    checks:
+      - logging.event_logs.protected
+  # CM.L2-3.4.1 System Baselining. Establish and keep baseline configurations and inventories of systems
+  #   via ISM-1807:subset
+  - ref: CM.L2-3.4.1
+    covers: part
+    rule: all_pass
+    checks:
+      - vuln.asset_discovery.fortnightly
+  # CM.L2-3.4.2 Security Configuration Enforcement. Establish and enforce security configuration settings
+  #   via ISM-1412:subset, ISM-1859:subset, ISM-1860:subset, ISM-1671:subset, ISM-1489:subset
+  - ref: CM.L2-3.4.2
+    covers: part
+    rule: all_pass
+    checks:
+      - browser.hardened
+      - office.hardened
+      - pdf.hardened
+      - office.macros.disabled_without_need
+      - office.macros.settings_locked
+  # CM.L2-3.4.6 Least Functionality. Employ least functionality: only essential capabilities
+  #   via ISM-1654:subset, ISM-1486:subset, ISM-1485:subset
+  - ref: CM.L2-3.4.6
+    covers: part
+    rule: all_pass
+    checks:
+      - browser.ie11_disabled
+      - browser.java_blocked
+      - browser.ads_blocked
+  # CM.L2-3.4.7 Nonessential Functionality. Restrict, disable or prevent nonessential programs, functions, ports, protocols and services
+  #   via ISM-0843:intersect
+  - ref: CM.L2-3.4.7
+    covers: part
+    rule: all_pass
+    checks:
+      - endpoint.application_control.enforced
+  # CM.L2-3.4.8 Application Execution Policy. Apply deny-by-exception or permit-by-exception to running software
+  #   via ISM-0843:intersect, ISM-1490:intersect, ISM-1657:intersect, ISM-1544:subset
+  - ref: CM.L2-3.4.8
+    covers: part
+    rule: all_pass
+    checks:
+      - endpoint.application_control.enforced
+      - appcontrol.internet_facing_servers
+      - endpoint.application_control.file_types_covered
+      - appcontrol.microsoft_blocklist
+  # CM.L2-3.4.9 User-Installed Software. Control and monitor user-installed software
+  #   via ISM-0843:intersect, ISM-1870:intersect
+  - ref: CM.L2-3.4.9
+    covers: part
+    rule: all_pass
+    checks:
+      - endpoint.application_control.enforced
+      - appcontrol.user_profiles_and_temp
+  # IA.L1-3.5.2 Authentication. Authenticate users, processes and devices before allowing access
+  #   via ISM-0974:intersect, ISM-1173:intersect
+  - ref: IA.L1-3.5.2
+    covers: part
+    rule: all_pass
+    checks:
+      - identity.mfa.systems
+      - identity.mfa.enforced_conditional_access
+      - identity.mfa.phishing_resistant_admins
+  # IA.L2-3.5.3 Multifactor Authentication. Use multifactor authentication for privileged accounts and for network access to non-privileged accounts
+  #   via ISM-1173:subset, ISM-0974:subset, ISM-1504:intersect
+  - ref: IA.L2-3.5.3
+    covers: part
+    rule: all_pass
+    checks:
+      - identity.mfa.enforced_conditional_access
+      - identity.mfa.phishing_resistant_admins
+      - identity.mfa.systems
+      - identity.mfa.registered_all_users
+      - identity.legacy_auth_blocked
+  # IA.L2-3.5.4 Replay-Resistant Authentication. Use replay-resistant authentication for network access to accounts
+  #   via ISM-1682:intersect, ISM-1872:intersect
+  - ref: IA.L2-3.5.4
+    covers: part
+    rule: all_pass
+    checks:
+      - identity.mfa.phishing_resistant
+  # IA.L2-3.5.6 Identifier Handling. Disable identifiers after a defined period of inactivity
+  #   via ISM-1648:subset
+  - ref: IA.L2-3.5.6
+    covers: part
+    rule: all_pass
+    checks:
+      - privileged.access.disabled_when_unused
+  # IR.L2-3.6.1 Incident Handling. Set up an incident handling capability: preparation, detection, analysis, containment, recovery and user resp…
+  #   via ISM-1819:intersect, ISM-1228:intersect
+  - ref: IR.L2-3.6.1
+    covers: part
+    rule: all_pass
+    checks:
+      - incident.response_plan_followed
+      - logging.events.triaged
+  # IR.L2-3.6.2 Incident Reporting. Track, document and report incidents to designated officials and authorities
+  #   via ISM-0123:intersect, ISM-0140:intersect
+  - ref: IR.L2-3.6.2
+    covers: part
+    rule: all_pass
+    checks:
+      - incident.reported_to_ciso
+  # MA.L2-3.7.5 Nonlocal Maintenance. Use multifactor authentication for nonlocal maintenance sessions and end them when complete
+  #   via ISM-1173:intersect
+  - ref: MA.L2-3.7.5
+    covers: part
+    rule: all_pass
+    checks:
+      - identity.mfa.enforced_conditional_access
+      - identity.mfa.phishing_resistant_admins
+  # MP.L2-3.8.9 Protect Backups. Protect the confidentiality of backup CUI at storage locations
+  #   via ISM-1811:intersect, ISM-1812:intersect, ISM-1705:intersect
+  - ref: MP.L2-3.8.9
+    covers: part
+    rule: all_pass
+    checks:
+      - backup.retained_securely
+      - backup.unprivileged_cannot_read_others
+      - backup.privileged_cannot_read
+  # RA.L2-3.11.1 Risk Assessments. Periodically assess the risk to operations, assets and individuals from processing CUI
+  #   ciso-assistant profile: risk studies updated within the review interval
+  - ref: RA.L2-3.11.1
+    covers: part
+    rule: all_pass
+    checks:
+      - risk.studies_reviewed
+  # RA.L2-3.11.2 Vulnerability Scan. Scan for vulnerabilities periodically and when new vulnerabilities are identified
+  #   via ISM-1808:intersect, ISM-1698:intersect, ISM-1699:intersect, ISM-1700:intersect, ISM-1701:intersect, ISM-1702:intersect
+  - ref: RA.L2-3.11.2
+    covers: part
+    rule: all_pass
+    checks:
+      - vuln.scanner.database_current
+      - vuln.internet_facing.scanned_in_interval
+      - vuln.common_apps.scanned_in_interval
+      - vuln.other_apps.scanned_in_interval
+      - vuln.operating_systems.scanned_in_interval
+  # RA.L2-3.11.3 Vulnerability Remediation. Remediate vulnerabilities in line with risk assessments
+  #   via ISM-1876:intersect, ISM-1690:intersect, ISM-1691:intersect, ISM-1693:intersect, ISM-1877:intersect, ISM-1694:intersect, ISM-1695:intersect
+  - ref: RA.L2-3.11.3
+    covers: part
+    rule: all_pass
+    checks:
+      - vuln.internet_facing.patched_in_window
+      - vuln.common_apps.patched_in_window
+      - vuln.other_apps.patched_in_window
+      - network.firewall.firmware_current
+      - endpoint.managed.compliant_ratio
+      - vuln.operating_systems.patched_in_window
+  # SC.L2-3.13.3 Role Separation. Separate user functionality from system management functionality
+  #   via ISM-1380:intersect, ISM-1387:intersect
+  - ref: SC.L2-3.13.3
+    covers: part
+    rule: all_pass
+    checks:
+      - privileged.environments.separate
+      - privileged.admin.jump_servers
+  # SC.L2-3.13.13 Mobile Code. Control and monitor the use of mobile code
+  #   via ISM-1488:intersect, ISM-1671:intersect, ISM-1486:intersect
+  - ref: SC.L2-3.13.13
+    covers: part
+    rule: all_pass
+    checks:
+      - apps.office.macros_blocked_from_internet
+      - office.macros.disabled_without_need
+      - browser.java_blocked
+  # SI.L1-3.14.1 Flaw Remediation. Identify, report and correct system flaws in a timely way
+  #   via ISM-1691:intersect, ISM-1693:intersect, ISM-1694:intersect, ISM-1695:intersect, ISM-1501:intersect, ISM-1905:intersect
+  - ref: SI.L1-3.14.1
+    covers: part
+    rule: all_pass
+    checks:
+      - vuln.common_apps.patched_in_window
+      - vuln.other_apps.patched_in_window
+      - network.firewall.firmware_current
+      - vuln.internet_facing.patched_in_window
+      - endpoint.managed.compliant_ratio
+      - vuln.operating_systems.patched_in_window
+      - endpoint.os.supported_versions
+      - network.firewall.firmware_supported
+      - vuln.operating_systems.unsupported_removed
+      - vuln.internet_facing.unsupported_removed
+  # SI.L1-3.14.2 Malicious Code Protection. Protect against malicious code at designated locations
+  #   via ISM-0843:intersect, ISM-1672:subset
+  - ref: SI.L1-3.14.2
+    covers: part
+    rule: all_pass
+    checks:
+      - endpoint.application_control.enforced
+      - office.macros.antivirus_scanning
+  # SI.L2-3.14.6 Monitor Communications for Attacks. Monitor systems, including inbound and outbound traffic, to detect attacks
+  #   via ISM-1228:intersect, ISM-1906:intersect
+  - ref: SI.L2-3.14.6
+    covers: part
+    rule: all_pass
+    checks:
+      - logging.events.triaged
+      - logging.internet_facing.analysed
+  # SI.L2-3.14.7 Identify Unauthorized Use. Identify unauthorised use of systems
+  #   via ISM-1228:intersect
+  - ref: SI.L2-3.14.7
+    covers: part
+    rule: all_pass
+    checks:
+      - logging.events.triaged
+manual_only:
+  # Transaction & Function Control
+  - ref: AC.L1-3.1.2
+    source: access control policy and quarterly account review export, signed by the system owner
+  # Control CUI Flow
+  - ref: AC.L2-3.1.3
+    source: access control policy and quarterly account review export, signed by the system owner
+  # Separation of Duties
+  - ref: AC.L2-3.1.4
+    source: access control policy and quarterly account review export, signed by the system owner
+  # Unsuccessful Logon Attempts
+  - ref: AC.L2-3.1.8
+    source: access control policy and quarterly account review export, signed by the system owner
+  # Privacy & Security Notices
+  - ref: AC.L2-3.1.9
+    source: access control policy and quarterly account review export, signed by the system owner
+  # Session Lock
+  - ref: AC.L2-3.1.10
+    source: access control policy and quarterly account review export, signed by the system owner
+  # Session Termination
+  - ref: AC.L2-3.1.11
+    source: access control policy and quarterly account review export, signed by the system owner
+  # Control Remote Access
+  - ref: AC.L2-3.1.12
+    source: access control policy and quarterly account review export, signed by the system owner
+  # Remote Access Confidentiality
+  - ref: AC.L2-3.1.13
+    source: access control policy and quarterly account review export, signed by the system owner
+  # Remote Access Routing
+  - ref: AC.L2-3.1.14
+    source: access control policy and quarterly account review export, signed by the system owner
+  # Wireless Access Authorization
+  - ref: AC.L2-3.1.16
+    source: access control policy and quarterly account review export, signed by the system owner
+  # Wireless Access Protection
+  - ref: AC.L2-3.1.17
+    source: access control policy and quarterly account review export, signed by the system owner
+  # Mobile Device Connection
+  - ref: AC.L2-3.1.18
+    source: access control policy and quarterly account review export, signed by the system owner
+  # Encrypt CUI on Mobile
+  - ref: AC.L2-3.1.19
+    source: access control policy and quarterly account review export, signed by the system owner
+  # External Connections
+  - ref: AC.L1-3.1.20
+    source: access control policy and quarterly account review export, signed by the system owner
+  # Portable Storage Use
+  - ref: AC.L2-3.1.21
+    source: access control policy and quarterly account review export, signed by the system owner
+  # Control Public Information
+  - ref: AC.L1-3.1.22
+    source: access control policy and quarterly account review export, signed by the system owner
+  # Role-Based Risk Awareness
+  - ref: AT.L2-3.2.1
+    source: training records and the awareness programme, kept by the GRC team
+  # Role-Based Training
+  - ref: AT.L2-3.2.2
+    source: training records and the awareness programme, kept by the GRC team
+  # Insider Threat Awareness
+  - ref: AT.L2-3.2.3
+    source: training records and the awareness programme, kept by the GRC team
+  # Event Review
+  - ref: AU.L2-3.3.3
+    source: audit logging standard and a sample of reviewed log reports
+  # Audit Failure Alerting
+  - ref: AU.L2-3.3.4
+    source: audit logging standard and a sample of reviewed log reports
+  # Reduction & Reporting
+  - ref: AU.L2-3.3.6
+    source: audit logging standard and a sample of reviewed log reports
+  # Authoritative Time Source
+  - ref: AU.L2-3.3.7
+    source: audit logging standard and a sample of reviewed log reports
+  # Audit Management
+  - ref: AU.L2-3.3.9
+    source: audit logging standard and a sample of reviewed log reports
+  # System Change Management
+  - ref: CM.L2-3.4.3
+    source: configuration baseline and change records for each system holding CUI
+  # Security Impact Analysis
+  - ref: CM.L2-3.4.4
+    source: configuration baseline and change records for each system holding CUI
+  # Access Restrictions for Change
+  - ref: CM.L2-3.4.5
+    source: configuration baseline and change records for each system holding CUI
+  # Identification
+  - ref: IA.L1-3.5.1
+    source: identity standard and an export of account settings from each system holding CUI
+  # Identifier Reuse
+  - ref: IA.L2-3.5.5
+    source: identity standard and an export of account settings from each system holding CUI
+  # Password Complexity
+  - ref: IA.L2-3.5.7
+    source: identity standard and an export of account settings from each system holding CUI
+  # Password Reuse
+  - ref: IA.L2-3.5.8
+    source: identity standard and an export of account settings from each system holding CUI
+  # Temporary Passwords
+  - ref: IA.L2-3.5.9
+    source: identity standard and an export of account settings from each system holding CUI
+  # Cryptographically-Protected Passwords
+  - ref: IA.L2-3.5.10
+    source: identity standard and an export of account settings from each system holding CUI
+  # Obscure Feedback
+  - ref: IA.L2-3.5.11
+    source: identity standard and an export of account settings from each system holding CUI
+  # Incident Response Testing
+  - ref: IR.L2-3.6.3
+    source: incident response plan (hound irp build) and the last exercise report
+  # Perform Maintenance
+  - ref: MA.L2-3.7.1
+    source: maintenance records and the maintenance procedure
+  # System Maintenance Control
+  - ref: MA.L2-3.7.2
+    source: maintenance records and the maintenance procedure
+  # Equipment Sanitization
+  - ref: MA.L2-3.7.3
+    source: maintenance records and the maintenance procedure
+  # Media Inspection
+  - ref: MA.L2-3.7.4
+    source: maintenance records and the maintenance procedure
+  # Maintenance Personnel
+  - ref: MA.L2-3.7.6
+    source: maintenance records and the maintenance procedure
+  # Media Protection
+  - ref: MP.L2-3.8.1
+    source: media protection procedure and the media sanitisation log
+  # Media Access
+  - ref: MP.L2-3.8.2
+    source: media protection procedure and the media sanitisation log
+  # Media Disposal
+  - ref: MP.L1-3.8.3
+    source: media protection procedure and the media sanitisation log
+  # Media Markings
+  - ref: MP.L2-3.8.4
+    source: media protection procedure and the media sanitisation log
+  # Media Accountability
+  - ref: MP.L2-3.8.5
+    source: media protection procedure and the media sanitisation log
+  # Portable Storage Encryption
+  - ref: MP.L2-3.8.6
+    source: media protection procedure and the media sanitisation log
+  # Removable Media
+  - ref: MP.L2-3.8.7
+    source: media protection procedure and the media sanitisation log
+  # Shared Media
+  - ref: MP.L2-3.8.8
+    source: media protection procedure and the media sanitisation log
+  # Screen Individuals
+  - ref: PS.L2-3.9.1
+    source: personnel screening and offboarding records, kept by HR
+  # Personnel Actions
+  - ref: PS.L2-3.9.2
+    source: personnel screening and offboarding records, kept by HR
+  # Limit Physical Access
+  - ref: PE.L1-3.10.1
+    source: physical security plan, visitor log and access records for each site
+  # Monitor Facility
+  - ref: PE.L2-3.10.2
+    source: physical security plan, visitor log and access records for each site
+  # Escort Visitors
+  - ref: PE.L1-3.10.3
+    source: physical security plan, visitor log and access records for each site
+  # Physical Access Logs
+  - ref: PE.L1-3.10.4
+    source: physical security plan, visitor log and access records for each site
+  # Manage Physical Access
+  - ref: PE.L1-3.10.5
+    source: physical security plan, visitor log and access records for each site
+  # Alternative Work Sites
+  - ref: PE.L2-3.10.6
+    source: physical security plan, visitor log and access records for each site
+  # Security Control Assessment
+  - ref: CA.L2-3.12.1
+    source: security assessment report, the system security plan and the POA&M
+  # Plan of Action
+  - ref: CA.L2-3.12.2
+    source: security assessment report, the system security plan and the POA&M
+  # Security Control Monitoring
+  - ref: CA.L2-3.12.3
+    source: security assessment report, the system security plan and the POA&M
+  # System Security Plan
+  - ref: CA.L2-3.12.4
+    source: security assessment report, the system security plan and the POA&M
+  # Boundary Protection
+  - ref: SC.L1-3.13.1
+    source: network diagram, boundary device configuration and cryptography standard
+  # Security Engineering
+  - ref: SC.L2-3.13.2
+    source: network diagram, boundary device configuration and cryptography standard
+  # Shared Resource Control
+  - ref: SC.L2-3.13.4
+    source: network diagram, boundary device configuration and cryptography standard
+  # Public-Access System Separation
+  - ref: SC.L1-3.13.5
+    source: network diagram, boundary device configuration and cryptography standard
+  # Network Communication by Exception
+  - ref: SC.L2-3.13.6
+    source: network diagram, boundary device configuration and cryptography standard
+  # Split Tunneling
+  - ref: SC.L2-3.13.7
+    source: network diagram, boundary device configuration and cryptography standard
+  # Data in Transit
+  - ref: SC.L2-3.13.8
+    source: network diagram, boundary device configuration and cryptography standard
+  # Connections Termination
+  - ref: SC.L2-3.13.9
+    source: network diagram, boundary device configuration and cryptography standard
+  # Key Management
+  - ref: SC.L2-3.13.10
+    source: network diagram, boundary device configuration and cryptography standard
+  # CUI Encryption
+  - ref: SC.L2-3.13.11
+    source: network diagram, boundary device configuration and cryptography standard
+  # Collaborative Device Control
+  - ref: SC.L2-3.13.12
+    source: network diagram, boundary device configuration and cryptography standard
+  # Voice over Internet Protocol
+  - ref: SC.L2-3.13.14
+    source: network diagram, boundary device configuration and cryptography standard
+  # Communications Authenticity
+  - ref: SC.L2-3.13.15
+    source: network diagram, boundary device configuration and cryptography standard
+  # Data at Rest
+  - ref: SC.L2-3.13.16
+    source: network diagram, boundary device configuration and cryptography standard
+  # Security Alerts & Advisories
+  - ref: SI.L2-3.14.3
+    source: system integrity procedure and security alert subscription records
+  # Update Malicious Code Protection
+  - ref: SI.L1-3.14.4
+    source: system integrity procedure and security alert subscription records
+  # System & File Scanning
+  - ref: SI.L1-3.14.5
+    source: system integrity procedure and security alert subscription records

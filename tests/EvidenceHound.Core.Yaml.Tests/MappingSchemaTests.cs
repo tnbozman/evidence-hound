@@ -19,14 +19,23 @@ public class MappingSchemaTests
         result.IsValid.ShouldBeTrue(string.Join("; ", (result.Details ?? []).Where(d => d.Errors is not null).SelectMany(d => d.Errors!.Values)));
     }
 
-    [Fact]
-    public void Essential_eight_mapping_validates_against_schema()
+    [Theory]
+    [InlineData("essential-eight-2023.yaml")]
+    [InlineData("cmmc-2.0.yaml")]
+    public void Reference_mapping_validates_against_schema(string file)
     {
-        var yaml = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "files", "mappings", "essential-eight-2023.yaml"));
+        var yaml = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "files", "mappings", file));
 
         var result = Schema.Evaluate(ToJson(yaml), new EvaluationOptions { OutputFormat = OutputFormat.List });
 
         result.IsValid.ShouldBeTrue(string.Join("; ", (result.Details ?? []).Where(d => d.Errors is not null).SelectMany(d => d.Errors!.Values)));
+    }
+
+    [Theory]
+    [InlineData("framework_urn: urn:example:x\nrequirements:\n  - {ref: '1', covers: some, rule: all_pass, checks: [a.b]}\n")]
+    public void Covers_is_part_or_whole_in_the_schema(string yaml)
+    {
+        Schema.Evaluate(ToJson(yaml)).IsValid.ShouldBeFalse();
     }
 
     [Theory]

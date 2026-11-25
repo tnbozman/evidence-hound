@@ -4,6 +4,7 @@ using EvidenceHound.Core.Frameworks;
 using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Yaml;
 using EvidenceHound.Runtime.Collectors;
+using EvidenceHound.Runtime.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace EvidenceHound.Runtime.Tests;
@@ -41,7 +42,7 @@ public class CmmcMappingTests
     [Fact]
     public void No_collector_changes_needed()
     {
-        var known = ReferenceChecks().Concat(ExampleManualSources.Checks()).Concat(ExampleManualSources.LibraryChecks("essentials")).ToHashSet();
+        var known = ReferenceChecks().Concat(ExampleManualChecks()).ToHashSet();
 
         Mapping.Mapping.Requirements.SelectMany(r => r.Checks).Distinct().Where(c => !known.Contains(c)).ShouldBeEmpty();
     }
@@ -80,10 +81,24 @@ public class CmmcMappingTests
     /// <summary>A CMMC practice's NIST SP 800-171 Rev 2 requirement: <c>AC.L2-3.1.3</c> is <c>3.1.3</c>.</summary>
     private static string Nist171(string practice) => practice[(practice.IndexOf('-', StringComparison.Ordinal) + 1)..];
 
-    private static IEnumerable<CheckId> ReferenceChecks()
+    private static IEnumerable<CheckId> ExampleManualChecks() =>
+        ConfigLoader.Parse(File.ReadAllText(Path.Combine(Files, "examples", "example-essential-eight.yaml")), "examples/example-essential-eight.yaml", Descriptions()).Value()
+            .Collectors
+            .Where(c => c.Type == "manual")
+            .SelectMany(c => c.Settings["checks"].Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
+            .Select(c => CheckId.Create(c).Value())
+            .Concat(ExampleManualSources.Checks())
+            .Concat(ExampleManualSources.LibraryChecks("essentials"));
+
+    private static IReadOnlyDictionary<string, CollectorDescription> Descriptions()
     {
         using var services = new ServiceCollection().AddLogging().AddBuiltInCollectors().BuildServiceProvider();
-        var descriptions = CollectorRegistry.FromServices(services).Value().Descriptions;
+        return CollectorRegistry.FromServices(services).Value().Descriptions;
+    }
+
+    private static IEnumerable<CheckId> ReferenceChecks()
+    {
+        var descriptions = Descriptions();
         var profileChecks = ReferenceProfiles.SelectMany(profile => descriptions["rest"].ChecksFrom!(new CollectorSettings(new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["profile"] = profile,
