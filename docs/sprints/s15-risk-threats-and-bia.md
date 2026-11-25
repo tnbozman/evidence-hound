@@ -414,9 +414,18 @@ much is assessed, so that a few automated passes can never read as compliance.
   100%; and "not assessed: N". 3 compliant, 61 not applicable and 43 not assessed give level 0 and "not assessed: 43".
 - The committee summary and the board position give each programme's standing.
 - The reporting guide says which CISO Assistant figures leave not-assessed rows out, and to quote hound's standing instead.
+- The figure CISO Assistant itself shows is fixed at the data: its compliance percentage counts compliant (and half of partially
+  compliant) over compliant, partial and non-compliant rows, leaving not-assessed and not-applicable rows out, so three passes over
+  forty-odd open rows read 100%. A row with no evidence is therefore published as `non_compliant`, its observation starting
+  "No evidence yet: ", from `scope apply` and from a run. An audit file or a `hound.yaml` target can opt out with
+  `no_evidence: not_assessed`. `hound scope export` gives back the not-assessed row the file declared, so a re-plan shows nothing.
 - Reproduced in the trial before s15 closes.
 
 **Tests first**
+- `PlanTests.A_row_with_no_evidence_is_published_non_compliant_and_says_so`
+- `PlanTests.An_audit_can_opt_out_and_keep_rows_with_no_evidence_not_assessed`
+- `NoEvidenceScopeTests`, `ScopeExportTests.A_row_sent_non_compliant_for_want_of_evidence_exports_as_not_assessed`
+- `ConfigTests.A_target_publishes_rows_with_no_evidence_as_non_compliant_unless_it_opts_out`
 - `StandingTests.Not_assessed_rows_block_the_level_and_count_as_not_met`
 - `StandingTests.A_level_is_met_only_when_every_row_at_it_and_below_is_compliant_or_not_applicable`
 - `StandingTests.The_percentage_never_rounds_up_to_100_while_a_row_is_open`
@@ -426,6 +435,8 @@ much is assessed, so that a few automated passes can never read as compliance.
 **Functional check**
 - In the trial, an audit with passing automated rows, not-applicable rows and open manual rows: the committee and board reports give
   level 0 with the open rows counted.
+- `NoEvidenceFunctionalTests` (CI): an Essential Eight audit with one compliant row and no evidence for the rest reads under 5% in
+  CISO Assistant, every open row non-compliant with "No evidence yet: ", and a re-plan shows no change.
 
 ### s15-13 Skills and agents for every hound workflow, for Claude Code and GitHub Copilot (added 2026-11-25)
 - [ ] Done
@@ -464,6 +475,10 @@ skill for every job hound does, so that it can run the job with me and never inv
 **Functional check**
 - `hound agent setup --assistant both` on a copy of the example repo; count the skills and agents written and check the reference
   against `hound --help`.
+
+**Functional check result (2026-11-25).** `hound agent setup --assistant both --repo <copy of examples/compliance-repo>` wrote 21
+skills (twenty plus `hound-commands`) under `.claude/skills`, four agents under `.claude/agents` and four under `.github/agents`. The
+reference lists 83 commands and sub-commands, covering all 29 top-level commands in `hound --help`.
 
 ## Discovered work
 
