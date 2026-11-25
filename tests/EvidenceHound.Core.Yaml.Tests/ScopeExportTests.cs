@@ -49,6 +49,27 @@ public sealed class ScopeExportTests
     }
 
     [Fact]
+    public void A_row_sent_non_compliant_for_want_of_evidence_exports_as_not_assessed()
+    {
+        // s15-14: hound sends a row with no evidence as non-compliant; the export gives back what the file said, so a round trip keeps it open.
+        var held = Held() with
+        {
+            Objects =
+            [
+                .. Held().Objects.Where(o => o.Held.Key is not ("EX-E8-2026/ISM-1173" or "EX-E8-2026/ISM-1486")),
+                Row("EX-E8-2026/ISM-1173", ("status", "to_do"), ("result", "non_compliant"), ("observation", "No evidence yet: Manual evidence: the quarterly allow-list review.")),
+                Row("EX-E8-2026/ISM-1486", ("status", "to_do"), ("result", "non_compliant"), ("observation", "No evidence yet: nothing is recorded for this requirement.")),
+            ],
+        };
+
+        var audit = ScopeExport.Write(held)["audits/ex-e8-2026.yaml"];
+
+        audit.ShouldContain("  - ref: ISM-1173\n    status: to_do\n    result: not_assessed\n    observation: \"Manual evidence: the quarterly allow-list review.\"");
+        audit.ShouldNotContain("ISM-1486", Case.Sensitive, "an unlisted row with nothing recorded is the unlisted rule's, not a hand-written row");
+        audit.ShouldNotContain("No evidence yet");
+    }
+
+    [Fact]
     public void Output_is_sorted_and_stable()
     {
         var held = Held();
