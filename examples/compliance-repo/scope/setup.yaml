@@ -10,6 +10,10 @@ frameworks:
   - urn: urn:intuitem:risk:framework:asd-essentials-enterprise-it
     library: urn:intuitem:risk:library:asd-essentials-enterprise-it
     snapshot: ../frameworks/asd-essentials-enterprise-it.json
+  # CMMC 2.0: its Level 2 audit selects L1 and L2, as the library tags its 17 Level 1 practices L1 only (s17-01).
+  - urn: urn:intuitem:risk:framework:cmmc-2.0
+    library: urn:intuitem:risk:library:cmmc-2.0
+    snapshot: ../frameworks/cmmc-2.0.json
   # A custom library: uploaded from the file, then loaded.
   - urn: urn:example:risk:framework:example-baseline
     library: urn:example:risk:library:example-baseline
