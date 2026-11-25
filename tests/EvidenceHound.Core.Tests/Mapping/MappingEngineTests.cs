@@ -20,6 +20,25 @@ public class MappingEngineTests
     }
 
     [Fact]
+    public void A_row_covering_part_of_its_requirement_is_at_most_partially_compliant()
+    {
+        var requirement = Requirement("EX-1.1", MappingRule.AllPass, "identity.mfa.admins", "identity.mfa.users") with { CoversPart = true };
+
+        var result = Apply(requirement, Check("identity.mfa.admins", CheckOutcome.Pass), Check("identity.mfa.users", CheckOutcome.Pass)).Single();
+
+        result.Result.ShouldBe(ComplianceResult.PartiallyCompliant);
+        result.Observation.ShouldStartWith("These checks cover part of the requirement, so it is at most partially compliant until a person assesses the rest. Rule all_pass.");
+    }
+
+    [Fact]
+    public void A_row_covering_part_keeps_a_failure_non_compliant()
+    {
+        var requirement = Requirement("EX-1.1", MappingRule.AllPass, "identity.mfa.admins") with { CoversPart = true };
+
+        Apply(requirement, Check("identity.mfa.admins", CheckOutcome.Fail)).Single().Result.ShouldBe(ComplianceResult.NonCompliant);
+    }
+
+    [Fact]
     public void All_pass_rule_one_fail_is_non_compliant()
     {
         var results = Apply(MappingRule.AllPass, Check("identity.mfa.admins", CheckOutcome.Pass), Check("identity.mfa.users", CheckOutcome.Fail));

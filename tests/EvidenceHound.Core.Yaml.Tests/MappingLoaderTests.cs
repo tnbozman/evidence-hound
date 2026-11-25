@@ -45,6 +45,48 @@ public class MappingLoaderTests
     }
 
     [Fact]
+    public void Covers_part_marks_a_row_whose_checks_answer_only_part_of_its_requirement()
+    {
+        const string yaml = """
+            framework_urn: urn:example:risk:library:example-baseline
+            requirements:
+              - ref: "1.1"
+                covers: part
+                rule: all_pass
+                checks: [identity.mfa.admins]
+              - ref: "1.2"
+                covers: whole
+                rule: all_pass
+                checks: [identity.mfa.users]
+              - ref: "1.3"
+                rule: all_pass
+                checks: [backup.restore_tested]
+            """;
+
+        var mapping = MappingLoader.Parse(yaml, Source).Value().Mapping;
+
+        mapping.Requirements.Select(r => r.CoversPart).ShouldBe([true, false, false]);
+    }
+
+    [Fact]
+    public void Covers_must_be_part_or_whole()
+    {
+        const string yaml = """
+            framework_urn: urn:example:risk:library:example-baseline
+            requirements:
+              - ref: "1.1"
+                covers: some
+                rule: all_pass
+                checks: [identity.mfa.admins]
+            """;
+
+        var problem = MappingLoader.Parse(yaml, Source).Problems().ShouldHaveSingleItem();
+
+        problem.Code.ShouldBe("mapping.covers_invalid");
+        problem.Message.ShouldContain("line 4");
+    }
+
+    [Fact]
     public void Duplicate_requirement_ref_fails_with_line_number()
     {
         const string yaml = """
