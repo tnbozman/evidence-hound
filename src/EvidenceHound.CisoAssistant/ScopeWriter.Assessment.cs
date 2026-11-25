@@ -91,7 +91,8 @@ internal sealed partial class ScopeWriter
             var perimeter = await folder.BindAsync(f => PerimeterIdAsync(Field(declared, "perimeter"), f, cancellationToken));
             var authors = await ActorsAsync(Split(Field(declared, "authors")), cancellationToken);
             var reviewers = await ActorsAsync(Split(Field(declared, "reviewers")), cancellationToken);
-            return await Result.Combine([folder.Map(Node), framework.Map(Node), perimeter.Map(Node), authors.Map(a => (JsonNode)a), reviewers.Map(r => (JsonNode)r)]).BindAsync(async resolved =>
+            var systems = await IdsAsync("assets/", "name", Split(Field(declared, "systems")), "system", cancellationToken);
+            return await Result.Combine([folder.Map(Node), framework.Map(Node), perimeter.Map(Node), authors.Map(a => (JsonNode)a), reviewers.Map(r => (JsonNode)r), systems.Map(s => (JsonNode)s)]).BindAsync(async resolved =>
             {
                 var body = new JsonObject
                 {
@@ -106,6 +107,7 @@ internal sealed partial class ScopeWriter
                     ["due_date"] = Field(declared, "due_date"),
                     ["authors"] = resolved[3].DeepClone(),
                     ["reviewers"] = resolved[4].DeepClone(),
+                    ["assets"] = resolved[5].DeepClone(),
                 };
                 // A period audit: its status and lock go in the same write, because a locked audit refuses any later one.
                 body["status"] = Field(declared, "status");
@@ -122,6 +124,11 @@ internal sealed partial class ScopeWriter
 
                 Drop(body, write.Change, "eta", "due_date");
                 Drop(body, "status", "baseline");
+                // Systems are sent only when the scope names some or has just removed them, so systems added in the UI are otherwise kept.
+                if (!declared.Fields.ContainsKey("systems") && write.Change.Fields.All(c => c.Field != "systems"))
+                {
+                    body.Remove("assets");
+                }
                 return write.Change.Action == ScopeAction.Create
                     ? await SendAsync(HttpMethod.Post, "compliance-assessments/", body, $"to create audit {declared.Key}", cancellationToken)
                     : await UpdateAsync("compliance-assessments", existing, body, write, cancellationToken);

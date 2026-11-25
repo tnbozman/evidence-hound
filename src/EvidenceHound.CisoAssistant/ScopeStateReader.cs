@@ -201,7 +201,7 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
             .. audits.Select(a => Marked(ScopeKind.Audit, AuditKey(a), a,
                 ("name", Text(a["name"])), ("framework", Lookup(a["framework"], frameworks)), ("groups", ScopeDesired.Joined(Strings(a["selected_implementation_groups"]))),
                 ("domain", names.Domain(a)), ("perimeter", Lookup(a["perimeter"], names.Perimeters)), ("eta", Text(a["eta"])), ("due_date", Text(a["due_date"])),
-                ("authors", Joined(a["authors"], names.Users)), ("reviewers", Joined(a["reviewers"], names.Users)), ("status", Text(a["status"])),
+                ("authors", Joined(a["authors"], names.Users)), ("reviewers", Joined(a["reviewers"], names.Users)), ("systems", Joined(a["assets"], names.Assets)), ("status", Text(a["status"])),
                 ("locked", IsLocked(a) ? "true" : null)) with { Locked = IsLocked(a) }),
             .. planned.Select(e => Marked(ScopeKind.Evidence, Text(e["ref_id"]), e,
                 ("name", Text(e["name"])), ("domain", names.Domain(e)), ("owner", Joined(e["owner"], names.Users)), ("controls", Joined(e["applied_controls"], names.Controls)),

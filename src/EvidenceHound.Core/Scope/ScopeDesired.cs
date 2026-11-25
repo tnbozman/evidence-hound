@@ -43,7 +43,7 @@ public static partial class ScopeDesired
             .. scope.Audits.Select(a => new ScopeObject(ScopeKind.Audit, a.RefId, Fields(
                 ("name", a.Name), ("framework", a.Framework.Value), ("groups", Joined(a.Groups.Select(g => g.Value))), ("domain", a.Domain.Value),
                 ("perimeter", a.Perimeter.Value), ("eta", a.Eta), ("due_date", a.DueDate), ("authors", Joined(a.Authors)), ("reviewers", Joined(a.Reviewers)),
-                ("status", a.Period?.Status), ("locked", a.Period is { Locked: true } ? "true" : null)))
+                ("systems", Joined(a.Systems.Select(s => s.Value))), ("status", a.Period?.Status), ("locked", a.Period is { Locked: true } ? "true" : null)))
             {
                 Initial = Fields(("baseline", a.Period?.Baseline)),
             }),
