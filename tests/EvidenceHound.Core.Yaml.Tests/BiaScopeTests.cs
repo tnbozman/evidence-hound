@@ -141,6 +141,18 @@ public class BiaScopeTests
     }
 
     [Fact]
+    public void Assessments_and_thresholds_have_no_description_to_mark_so_they_are_compared_field_by_field()
+    {
+        // CI: CISO Assistant's asset assessments and escalation thresholds have no description, so no applied state is read back, and a
+        // replan after apply listed each as an update with no fields.
+        var declared = ScopeDesired.From(Parse().Scope, ScopeInputs.None with { Libraries = RiskFixture.Libraries })
+            .Where(o => o.Kind is ScopeKind.AssetAssessment or ScopeKind.EscalationThreshold).ToArray();
+        var held = declared.Select(o => new ActualObject(o, null)).ToArray();
+
+        ScopePlanner.Plan(declared, held, prune: true).Changes.ShouldBeEmpty();
+    }
+
+    [Fact]
     public void Bia_objects_are_keyed_by_system_and_point_in_time()
     {
         var declared = ScopeDesired.From(Parse().Scope, ScopeInputs.None with { Libraries = RiskFixture.Libraries });
