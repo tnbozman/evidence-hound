@@ -213,7 +213,27 @@ public static class CommitteeReport
         return text.ToString();
     }
 
-    private static string Incidents(View view)
+    private static string Incidents(View view) => IncidentsOpenedOrClosed(view) + OverdueReports(view);
+
+    /// <summary>Each report an incident owes that is past its deadline and not recorded as made (s15-07), soonest first.</summary>
+    private static string OverdueReports(View view)
+    {
+        if (view.OverdueReports.Count == 0)
+        {
+            return "";
+        }
+
+        var text = new StringBuilder("\n### Reports overdue\n\nRecord each report you make as a timeline entry on the incident: 'Reported: <id>, <their reference>'.\n\n")
+            .Append("| Incident | Report | To | Due |\n| --- | --- | --- | --- |\n");
+        foreach (var (incident, report) in view.OverdueReports)
+        {
+            text.Append(CultureInfo.InvariantCulture, $"| {Linked(Name(incident.RefId, incident.Name), incident.Link)} | {Cell($"{report.Id}: {report.Name}")} | {Cell(report.ReportTo)} | {report.Due.ToUniversalTime():yyyy-MM-dd HH:mm} UTC |\n");
+        }
+
+        return text.ToString();
+    }
+
+    private static string IncidentsOpenedOrClosed(View view)
     {
         var period = view.Month.Period;
         var items = view.Month.Incidents
@@ -222,7 +242,7 @@ public static class CommitteeReport
             .ToList();
         if (items.Count == 0)
         {
-            return None + " No incident was opened or closed in CISO Assistant this month.";
+            return None + " No incident was opened or closed in CISO Assistant this month.\n";
         }
 
         var opened = items.Count(i => i.ReportedOn is { } r && period.Contains(r));
@@ -306,6 +326,7 @@ public static class CommitteeReport
                     .ThenByDescending(d => d.Overdue)
                     .ThenBy(d => d.Item.Due),
             ];
+            OverdueReports = [.. Month.Incidents.SelectMany(i => i.Reports.Where(r => r.Status == "overdue").Select(r => (i, r))).OrderBy(x => x.r.Due).ThenBy(x => x.i.RefId, StringComparer.Ordinal)];
             Actions = ProposeActions();
         }
 
@@ -329,6 +350,8 @@ public static class CommitteeReport
 
         public List<ProposedAction> Actions { get; }
 
+        public IReadOnlyList<(IncidentItem Incident, IncidentReport Report)> OverdueReports { get; }
+
         private List<ProposedAction> ProposeActions()
         {
             var end = Month.Period.End;
@@ -342,6 +365,9 @@ public static class CommitteeReport
             actions.AddRange(Month.Collectors.Where(c => c.Outcome is not "Succeeded" || Stale(c, Month.Period)).Select(c => new ProposedAction(
                 $"Fix collector {c.Collector}{(c.Problems.Count > 0 ? ": " + c.Problems[0] : "")}", "Collector operator", end.AddDays(7), "section 2")));
             actions.AddRange(Month.Warnings.Select(w => new ProposedAction($"Resolve {w.Code}: {w.Message}", "Cyber GRC lead", end.AddDays(30), "scope warning")));
+            actions.AddRange(OverdueReports.Select(o => new ProposedAction(
+                $"Make the {o.Report.Name} for {o.Incident.RefId} ({o.Report.ReportTo}), overdue since {Date(DateOnly.FromDateTime(o.Report.Due.UtcDateTime))}, and record it on the incident",
+                "Cyber GRC lead", Month.Period.End, "section 6")));
             return actions;
         }
     }
