@@ -33,12 +33,17 @@ public sealed class RiskRecoveryChecksFunctionalTests(CisoAssistantFixture ciso)
         checks["risk.exceptions_current"]["outcome"]!.GetValue<string>().ShouldBe(
             approved.Count == 0 ? "not_applicable" : expired == 0 ? "pass" : "fail", checks["risk.exceptions_current"].ToJsonString());
 
-        var critical = (await ListAsync("assets/", ct))
-            .Where(a => a["disaster_recovery_objectives"]?["objectives"]?["rto"]?["value"] is JsonValue rto && rto.GetValue<int>() >= 1)
+        // Read as CISO Assistant's lists hold them, whatever other tests have written; the lists are kept with the results.
+        var assets = await ListAsync("assets/", ct);
+        var assessments = await ListAsync("resilience/asset-assessments/", ct);
+        await File.WriteAllTextAsync(Path.Combine(_results, "assets.json"), new JsonArray([.. assets.Select(a => a.DeepClone())]).ToJsonString(), ct);
+        await File.WriteAllTextAsync(Path.Combine(_results, "asset-assessments.json"), new JsonArray([.. assessments.Select(a => a.DeepClone())]).ToJsonString(), ct);
+        var critical = assets
+            .Where(a => Rto(a) >= 1)
             .Select(a => a["id"]!.GetValue<string>())
             .ToHashSet(StringComparer.Ordinal);
         critical.ShouldNotBeEmpty("Example 365 has a recovery time objective in the example scope");
-        var assessed = (await ListAsync("resilience/asset-assessments/", ct)).Where(a => critical.Contains(a["asset"]!["id"]!.GetValue<string>())).ToList();
+        var assessed = assessments.Where(a => Id(a["asset"]) is { } asset && critical.Contains(asset)).ToList();
         assessed.ShouldNotBeEmpty("the example business impact analysis assesses Example 365");
         var tested = assessed.Count(a => a["recovery_tested"]!.GetValue<bool>());
         var recovery = checks["bia.recovery_tested"];
@@ -46,7 +51,23 @@ public sealed class RiskRecoveryChecksFunctionalTests(CisoAssistantFixture ciso)
         recovery["observation"]!.GetValue<string>().ShouldStartWith(string.Create(CultureInfo.InvariantCulture, $"{tested} of {assessed.Count} business impact analysis assessments of critical systems"));
     }
 
+    private readonly string _results = Directory.CreateDirectory(Path.Combine(CisoAssistantFixture.RepoRoot, "test-results", "risk-recovery")).FullName;
+
     public void Dispose() => Directory.Delete(_workDir, recursive: true);
+
+    /// <summary>An asset's recovery time objective in seconds, from <c>disaster_recovery_objectives.objectives.rto.value</c>; 0 when it has none.</summary>
+    private static int Rto(JsonNode asset) =>
+        asset["disaster_recovery_objectives"] is JsonObject dro && dro["objectives"] is JsonObject objectives && objectives["rto"] is JsonObject rto
+            && rto["value"] is JsonValue value && value.TryGetValue<int>(out var seconds)
+            ? seconds
+            : 0;
+
+    private static string? Id(JsonNode? relation) => relation switch
+    {
+        JsonObject o => o["id"]?.GetValue<string>(),
+        JsonValue v when v.TryGetValue<string>(out var id) => id,
+        _ => null,
+    };
 
     private async Task<Dictionary<string, JsonNode>> RunAsync(CancellationToken ct)
     {
