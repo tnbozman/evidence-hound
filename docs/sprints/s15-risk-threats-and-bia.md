@@ -359,6 +359,42 @@ As [s12-09](s12-e8-mapping-and-adoption.md#s12-09-rehearse-trial-onboarding-and-
 
 As [s12-10](s12-e8-mapping-and-adoption.md#s12-10-improve-quality-and-flow-standing-about-15-of-each-sprint).
 
+### s15-12 Approve one decision at a time, with the person's agent (added 2026-11-25)
+- [ ] Done
+
+Added at the maintainer's request (2026-11-25), after a first real `hound approve`: the terminal loop asked about each item with no
+help, so 240 not-applicable rows and a typo went through. The maintainer's direction: every decision waiting for a person is written
+out first; their own agent (Claude Code or GitHub Copilot) works through them with them one at a time, researching and checking around
+the edges; the person then approves or challenges each with a command against a stable id. A person still approves at a terminal: no
+agent can.
+
+**Story:** As a GRC member with a few hours a week, I want to see every pending decision grouped, with the agent's case, its sources
+and a risk flag, and to approve or challenge one at a time by id, so that I decide with help and nothing slips through in a long loop.
+
+**Acceptance criteria**
+- `hound approve pending --repo . --json` (prompt-free, read-only, for the agent) lists every decision waiting for a person, each with
+  a stable id (such as `onboarding/<system>/EX-2`, `supplier/SUP-EXAMPLE`, `review/EA-SUP-EXAMPLE`, `capability/<id>`), its kind, the
+  agent's recommendation and reasoning, its sources, and a risk flag (`high` for not applicable, another system meets it, a supplier
+  approval, or a recommendation with no source; else `normal`). A summary groups them by kind and recommendation with counts.
+- `hound approve <id> --accept` and `hound approve <id> --challenge "<note>"` act on one decision. Accept records the person and date as
+  `hound approve` does today; challenge records the note for the agent, and the decision goes back to draft. Both need a person at a
+  terminal and ask once to confirm, showing the item; an agent or a pipe is refused, as now.
+- An unknown id is refused with the nearest ids; answers are validated before anything is written (s15-D7).
+- `hound approve` with no id keeps working, now starting with the grouped summary.
+- The onboarding and approval guides describe the flow with an agent: list, discuss, approve or challenge by id.
+
+**Tests first**
+- `ApprovePendingTests.Lists_every_waiting_decision_with_id_case_sources_and_risk`
+- `ApprovePendingTests.Summary_groups_by_kind_and_recommendation`
+- `ApproveByIdTests.Accept_records_the_person_on_one_decision`
+- `ApproveByIdTests.Challenge_returns_the_decision_to_draft_with_the_note`
+- `ApproveByIdTests.Unknown_id_is_refused_with_the_nearest`
+- `ApproveByIdTests.Without_a_terminal_is_refused`
+
+**Functional check**
+- On a copy of the example onboarding tutorial: an agent drafts, `approve pending --json` lists the items, one is challenged and one
+  accepted by id, and `onboard` writes only once all are accepted.
+
 ## Discovered work
 
 - **s15-D1 First apply on an empty CISO Assistant failed to create systems whose owner the same apply creates** (found

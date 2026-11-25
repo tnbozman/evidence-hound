@@ -112,6 +112,32 @@ hold the instance.
 **Functional check**
 - `hound status --json` on the example deployment shows the seeded failing collector.
 
+### s18-08 The agent walks the person through pending decisions (added 2026-11-25)
+- [ ] Done
+
+Builds on s15-12 (`hound approve pending --json` and approve or challenge by id). The maintainer's direction (2026-11-25): the
+person's own agent works through every pending decision with them, one at a time.
+
+**Story:** As the GRC member, I want my agent to take me through the waiting decisions, highest risk first, with its case and the
+evidence for each, so that I approve in minutes what I understand and challenge what I do not.
+
+**Acceptance criteria**
+- A `hound-approve` skill (Claude Code and GitHub Copilot instructions, from `hound agent setup`) reads `approve pending --json`,
+  opens with the grouped summary and the time it will take, then goes item by item: the requirement, the agent's case and sources,
+  what it checked around the edges, and the one command for the person to run (`hound approve <id> --accept` or `--challenge`).
+- A challenge comes back to the agent as its note; the skill researches again and redrafts with `hound onboard decide`.
+- Items the same evidence settles are presented together, but each is still approved by its own id.
+- Onboarding defaults follow the maintainer's direction on audits (s15-D8): per-system audits, a shared platform's own audit, shared
+  evidence sources feeding many audits, and the organisation's audit only when an organisation-wide source feeds it.
+
+**Tests first**
+- `AgentSetupTests.Approve_skill_names_only_commands_the_cli_has`
+- `AgentSetupTests.Approve_skill_orders_items_by_risk`
+- `InitCommandTests.Organisation_audit_only_with_an_organisation_wide_source`
+
+**Functional check**
+- Rehearse onboarding the tutorial system with the skill; record the minutes and the commands the person ran.
+
 ### s18-06 Rehearse trial, onboarding and sustaining GRC (standing, every sprint)
 - [ ] Done
 
