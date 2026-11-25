@@ -182,4 +182,57 @@ public class MetricScopeTests
         var widget = objects[(ScopeKind.DashboardWidget, "EX-DASH-COMMITTEE/Baseline progress")].Fields;
         (widget["builtin"], widget["chart"], widget["position"]).ShouldBe(("audit EXAMPLE-BASELINE-2026 progress", "kpi_card", "6, 0, 6, 2"));
     }
+
+    /// <summary>s16-03: the metrics fixture with a percentage definition and an instance a run fills in.</summary>
+    public static string Measured(string source) => Metrics
+        .Replace("instances:\n", "  - ref_id: EX-MET-PASS\n    name: Checks passing\n    unit: percentage\n    direction: higher_is_better\ninstances:\n", StringComparison.Ordinal)
+        .Replace("dashboards:\n", "  - ref_id: EX-MET-PASS-CORP\n    name: MFA checks passing\n    definition: EX-MET-PASS\n    domain: Example Pty Ltd\n    frequency: monthly\n" + source + "dashboards:\n", StringComparison.Ordinal);
+
+    [Fact]
+    public void A_run_fed_instance_reads_its_measure()
+    {
+        var parsed = Parse(Measured("    source: hound\n    measure: check_pass_rate\n    checks: [identity.mfa.*, identity.admin_accounts]\n"));
+
+        var source = parsed.Scope.Metrics.Instances.Single(i => i.RefId == "EX-MET-PASS-CORP").Source.ShouldNotBeNull();
+        (source.Measure, source.Audit).ShouldBe(("check_pass_rate", null));
+        source.Checks.ShouldBe(["identity.mfa.*", "identity.admin_accounts"]);
+        parsed.Scope.Metrics.Instances.Single(i => i.RefId == "EX-MET-MFA-CORP").Source.ShouldBeNull();
+        Problems(Measured("    source: hound\n    measure: check_pass_rate\n    checks: [identity.mfa.*, identity.admin_accounts]\n")).ShouldBeEmpty();
+        Problems(Measured("    source: hound\n    measure: requirements_compliant_pct\n    audit: EXAMPLE-BASELINE-2026\n")).ShouldBeEmpty();
+        Problems(Measured("    source: hound\n    measure: evidence_freshness_pct\n")).ShouldBeEmpty();
+        Problems(Measured("    source: hound\n    measure: collector_success_rate\n")).ShouldBeEmpty();
+    }
+
+    [Theory]
+    [InlineData("    source: hound\n    measure: check_pass_rate\n", "metric.measure_invalid")]
+    [InlineData("    source: hound\n    measure: check_pass_rate\n    checks: [Identity.MFA]\n", "metric.measure_invalid")]
+    [InlineData("    source: hound\n    measure: requirements_compliant_pct\n", "metric.measure_invalid")]
+    [InlineData("    source: hound\n    measure: requirements_compliant_pct\n    audit: EX-NO-SUCH-AUDIT\n", "metric.audit_unknown")]
+    [InlineData("    source: hound\n", "scope.key_missing")]
+    [InlineData("    measure: collector_success_rate\n", "metric.measure_invalid")]
+    [InlineData("    source: person\n    measure: collector_success_rate\n", "scope.value_invalid")]
+    public void A_run_fed_instance_names_what_it_measures(string source, string code)
+    {
+        Problems(Measured(source)).Select(p => p.Code).ShouldContain(code);
+    }
+
+    [Fact]
+    public void A_measure_is_a_number_so_its_definition_has_a_unit()
+    {
+        var problems = Problems(Metrics.Replace("    frequency: quarterly\n", "    frequency: quarterly\n    source: hound\n    measure: collector_success_rate\n", StringComparison.Ordinal));
+
+        problems.ShouldHaveSingleItem().Code.ShouldBe("metric.measure_invalid");
+        problems[0].Message.ShouldContain("'EX-MET-POLICY-CORP'");
+    }
+
+    [Fact]
+    public void A_computed_metric_cannot_also_be_fed_by_a_run()
+    {
+        var problems = Problems(Metrics.Replace("    controls: [AC-MFA]\n", "    controls: [AC-MFA]\n    source: hound\n    measure: collector_success_rate\n", StringComparison.Ordinal));
+
+        var conflict = problems.ShouldHaveSingleItem();
+        conflict.Code.ShouldBe("scope.result_conflict");
+        conflict.Message.ShouldContain("'EX-MET-MFA-CORP'");
+        conflict.Message.ShouldContain("formula");
+    }
 }
