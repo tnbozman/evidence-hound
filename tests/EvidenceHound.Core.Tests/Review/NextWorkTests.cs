@@ -102,6 +102,17 @@ public class NextWorkTests
     }
 
     [Fact]
+    public void A_finding_says_why_for_its_own_kind()
+    {
+        // s18-07: every scope warning said it was about sensitive data, a missing flow-down clause included.
+        ReviewOrder.FindingWhy("data.supplier_not_authorised").ShouldContain("Sensitive data");
+        ReviewOrder.FindingWhy("contract.flow_down_missing").ShouldContain("flow down");
+        ReviewOrder.FindingWhy("contract.flow_down_missing").ShouldNotContain("Sensitive data");
+        ReviewOrder.FindingWhy("contract.framework_unknown").ShouldContain("no programme tracks");
+        ReviewOrder.FindingWhy("risk.planned_control_active").ShouldNotContain("Sensitive data");
+    }
+
+    [Fact]
     public void Nothing_to_apply_is_not_listed()
     {
         NextWork.Scope(0, 0).ShouldBeNull();
