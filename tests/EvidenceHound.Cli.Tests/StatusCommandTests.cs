@@ -37,6 +37,29 @@ public sealed class StatusCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task A_failed_latest_run_shows_why_below_the_table()
+    {
+        // s15-D3: a collector whose checks all errored showed "0 0" and nothing else; its problems now follow the table.
+        var config = Path.Combine(_workDir, "hound.yaml");
+        await File.WriteAllTextAsync(config, """
+            ciso_assistant: {url: "http://localhost:8000/api/", token: "env:HOUND_CA_TOKEN"}
+            evidence: {root: ./evidence}
+            collectors:
+              - {name: example-fake, type: fake, schedule: "0 2 * * *"}
+            target: {mapping: ./mapping.yaml, compliance_assessment: EXAMPLE-1}
+            """, TestContext.Current.CancellationToken);
+        var store = new FileRunRecordStore(Path.Combine(_workDir, "evidence"));
+        await store.SaveAsync(
+            new RunRecord("example-fake", Start, Start.AddSeconds(3), CollectorOutcome.Failed, 0, 0, 2, [new("collector.all_checks_errored", "All 2 checks errored.")], null),
+            TestContext.Current.CancellationToken);
+
+        var exitCode = await HoundCli.RunAsync(["status", "--config", config], _output, _error, cancellationToken: TestContext.Current.CancellationToken);
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        _output.ToString().ShouldContain("example-fake failed: All 2 checks errored. (collector.all_checks_errored)");
+    }
+
+    [Fact]
     public async Task Shows_changed_unchanged_and_drift_per_audit_from_the_history()
     {
         var config = Path.Combine(_workDir, "hound.yaml");
