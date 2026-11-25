@@ -29,7 +29,7 @@ public static partial class ScopeLoader
     private static readonly string[] LibraryFileKeys = ["urn", "file", "snapshot"];
     private static readonly string[] DomainKeys = ["name", "description", "perimeters", "perimeter", "systems"];
     private static readonly string[] PerimeterKeys = ["name", "ref_id", "description"];
-    private static readonly string[] SystemKeys = ["name", "ref_id", "type", "description", "owner", "parents", "tags", "solution", "supplied_through", "data", "ai"];
+    private static readonly string[] SystemKeys = ["name", "ref_id", "type", "description", "owner", "parents", "tags", "solution", "supplied_through", "data", "ai", "objectives", "recovery"];
     private static readonly string[] ControlsKeys = ["controls"];
     private static readonly string[] ControlKeys =
         ["ref_id", "name", "description", "domain", "owner", "status", "priority", "category", "eta", "systems", "reference_control", "documents", "responsible_entity"];
@@ -91,15 +91,17 @@ public static partial class ScopeLoader
         var parsedSsps = sspFile?.Root() is { } sspRoot ? ReadSsps(sspRoot, sspFile) : [];
         var riskFiles = (risks ?? []).Select(r => new FileReader(r)).ToArray();
         var parsedRisks = riskFiles.Select(file => file.Root() is { } root ? ReadRiskStudy(root, file) : null).OfType<ScopeRiskStudy>().ToArray();
+        var biaFiles = (bias ?? []).Select(b => new FileReader(b)).ToArray();
+        var parsedBias = biaFiles.Select(file => file.Root() is { } root ? ReadBia(root, file) : null).OfType<ScopeBia>().ToArray();
         var exceptionsFile = exceptions is null ? null : new FileReader(exceptions);
         var parsedExceptions = exceptionsFile?.Root() is { } exceptionsRoot ? ReadExceptions(exceptionsRoot, exceptionsFile) : [];
 
         return new ScopeParse(
-            new ScopeDocument(parsedSetup, parsedControls, parsedAudits) { Access = parsedAccess, Settings = parsedSettings, ThirdParties = parsedThirdParties, Capabilities = parsedCapabilities, EvidencePlan = parsedPlan, Ssps = parsedSsps, RiskStudies = parsedRisks, Exceptions = parsedExceptions },
+            new ScopeDocument(parsedSetup, parsedControls, parsedAudits) { Access = parsedAccess, Settings = parsedSettings, ThirdParties = parsedThirdParties, Capabilities = parsedCapabilities, EvidencePlan = parsedPlan, Ssps = parsedSsps, RiskStudies = parsedRisks, Exceptions = parsedExceptions, Bias = parsedBias },
             [
                 .. setupFile.Problems, .. controlsFile?.Problems ?? [], .. auditFiles.SelectMany(f => f.Problems), .. accessFile?.Problems ?? [],
                 .. settingsFile?.Problems ?? [], .. thirdPartyFiles.SelectMany(f => f.Problems), .. capabilitiesFile?.Problems ?? [], .. planFile?.Problems ?? [], .. sspFile?.Problems ?? [],
-                .. riskFiles.SelectMany(f => f.Problems), .. exceptionsFile?.Problems ?? [],
+                .. riskFiles.SelectMany(f => f.Problems), .. exceptionsFile?.Problems ?? [], .. biaFiles.SelectMany(f => f.Problems),
             ]);
     }
 
@@ -337,6 +339,8 @@ public static partial class ScopeLoader
                 SuppliedThrough = file.Ref(item, "supplied_through"),
                 Data = ReadData(item, file, authority: false),
                 Ai = ReadAi(item, name, file),
+                Objectives = ReadObjectives(item, file),
+                Recovery = ReadRecovery(item, file),
             };
     }
 

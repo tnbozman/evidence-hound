@@ -37,7 +37,9 @@ public static partial class ScopeDesired
             .. setup.Domains.SelectMany(d => d.Systems.Select(s => new ScopeObject(ScopeKind.System, s.Name, Fields(
                 ("ref_id", s.RefId), ("type", s.Type == SystemType.Primary ? "primary" : "supporting"), ("description", AiRegister.Description(s.Description, s.Ai)),
                 ("owner", s.Owner), ("domain", d.Name), ("parents", Joined(s.Parents.Select(p => p.Value))),
-                ("labels", Joined([.. DataLabelCodes(s.Data), .. AiRegister.Labels(s.Ai)])))))),
+                ("labels", Joined([.. DataLabelCodes(s.Data), .. AiRegister.Labels(s.Ai)])),
+                ("objectives", Joined(s.Objectives.OrderBy(o => o.Key, StringComparer.Ordinal).Select(o => string.Create(CultureInfo.InvariantCulture, $"{o.Key}={o.Value}")))),
+                ("recovery", Joined(s.Recovery.OrderBy(r => r.Key, StringComparer.Ordinal).Select(r => $"{r.Key}={r.Value}"))))))),
             .. scope.Audits.Select(a => new ScopeObject(ScopeKind.Audit, a.RefId, Fields(
                 ("name", a.Name), ("framework", a.Framework.Value), ("groups", Joined(a.Groups.Select(g => g.Value))), ("domain", a.Domain.Value),
                 ("perimeter", a.Perimeter.Value), ("eta", a.Eta), ("due_date", a.DueDate), ("authors", Joined(a.Authors)), ("reviewers", Joined(a.Reviewers)),
@@ -59,6 +61,7 @@ public static partial class ScopeDesired
             .. Reviews(scope, inputs.Today),
             .. EvidencePlan(scope, inputs),
             .. RiskObjects.From(scope.RiskStudies, inputs.Libraries, scope.Exceptions),
+            .. BiaObjects.From(scope.Bias, inputs.Libraries),
         ];
     }
 

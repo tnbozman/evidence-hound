@@ -33,8 +33,8 @@ public class BiaScopeTests
         """;
 
     private static readonly string Setup = ScopeFixture.Setup.Replace(
-        "                description: Mail, files and identity.\n",
-        "                description: Mail, files and identity.\n                objectives: {confidentiality: 3, availability: 2}\n                recovery: {rto: 4h, rpo: 1d, mtd: 3d}\n",
+        "        description: Mail, files and identity.\n",
+        "        description: Mail, files and identity.\n        objectives: {confidentiality: 3, availability: 2}\n        recovery: {rto: 4h, rpo: 1d, mtd: 3d}\n",
         StringComparison.Ordinal);
 
     public static ScopeParse Parse(string bia = Bia, string? setup = null) =>
@@ -69,7 +69,7 @@ public class BiaScopeTests
     [Fact]
     public void Duplicate_system_is_reported()
     {
-        var problem = Problems(Bia + "  - system: Example 365\n").ShouldHaveSingleItem();
+        var problem = Problems(Bia + "\n  - system: Example 365\n").ShouldHaveSingleItem();
 
         problem.Code.ShouldBe("bia.system_duplicate");
     }
@@ -121,5 +121,16 @@ public class BiaScopeTests
         var system = declared.Single(o => o.Kind == ScopeKind.System && o.Key == "Example 365");
         system.Fields["objectives"].ShouldBe("availability=2, confidentiality=3");
         system.Fields["recovery"].ShouldBe("mtd=3d, rpo=1d, rto=4h");
+    }
+
+    [Fact]
+    public void Assessments_wait_for_their_bia_and_systems_and_thresholds_for_their_assessment()
+    {
+        var declared = ScopeDesired.From(Parse().Scope, ScopeInputs.None with { Libraries = RiskFixture.Libraries });
+
+        ScopeApplier.DependsOn(declared.Single(o => o.Key == "EX-BIA-2026/Example 365" && o.Kind == ScopeKind.AssetAssessment))
+            .ShouldBe([(ScopeKind.System, "Example 365"), (ScopeKind.System, "Example laptops"), (ScopeKind.Control, "AC-BACKUP"), (ScopeKind.Bia, "EX-BIA-2026")], ignoreOrder: true);
+        ScopeApplier.DependsOn(declared.Single(o => o.Kind == ScopeKind.EscalationThreshold && o.Key == "EX-BIA-2026/Example 365/4h"))
+            .ShouldBe([(ScopeKind.AssetAssessment, "EX-BIA-2026/Example 365")]);
     }
 }
