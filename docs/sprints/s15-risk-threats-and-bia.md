@@ -372,28 +372,64 @@ agent can.
 and a risk flag, and to approve or challenge one at a time by id, so that I decide with help and nothing slips through in a long loop.
 
 **Acceptance criteria**
-- `hound approve pending --repo . --json` (prompt-free, read-only, for the agent) lists every decision waiting for a person, each with
-  a stable id (such as `onboarding/<system>/EX-2`, `supplier/SUP-EXAMPLE`, `review/EA-SUP-EXAMPLE`, `capability/<id>`), its kind, the
-  agent's recommendation and reasoning, its sources, and a risk flag (`high` for not applicable, another system meets it, a supplier
-  approval, or a recommendation with no source; else `normal`). A summary groups them by kind and recommendation with counts.
-- `hound approve <id> --accept` and `hound approve <id> --challenge "<note>"` act on one decision. Accept records the person and date as
-  `hound approve` does today; challenge records the note for the agent, and the decision goes back to draft. Both need a person at a
-  terminal and ask once to confirm, showing the item; an agent or a pipe is refused, as now.
-- An unknown id is refused with the nearest ids; answers are validated before anything is written (s15-D7).
-- `hound approve` with no id keeps working, now starting with the grouped summary.
-- The onboarding and approval guides describe the flow with an agent: list, discuss, approve or challenge by id.
+- Builds on the weekly review (s10-05), which already has the pieces: `hound review pending --json` lists every waiting item by a stable
+  key, `hound review recommend <key>` records the agent's case and sources, and `hound review` is the person's session at a terminal.
+- `hound review pending --json` adds a risk flag to each item (`high` for a not-applicable decision, a supplier approval, a finding, or
+  an item with no recommendation or one without a source; else `normal`) and a summary grouped by kind and recommendation with counts
+  and minutes, so the agent opens with the size of the job.
+- `hound review --only <key>` (repeatable) runs the session for just those items: the person reads the item with the agent's case and
+  answers accept, challenge or skip. Nothing else is asked or written. An unknown key is refused with the nearest keys. It needs a
+  person at a terminal, as now: an agent or a pipe is refused.
+- `hound approve` opens with the grouped summary and points to `hound review` with an agent for long lists.
+- The onboarding and review guides describe the flow with an agent: list, discuss, then the person accepts or challenges by key.
 
 **Tests first**
-- `ApprovePendingTests.Lists_every_waiting_decision_with_id_case_sources_and_risk`
-- `ApprovePendingTests.Summary_groups_by_kind_and_recommendation`
-- `ApproveByIdTests.Accept_records_the_person_on_one_decision`
-- `ApproveByIdTests.Challenge_returns_the_decision_to_draft_with_the_note`
-- `ApproveByIdTests.Unknown_id_is_refused_with_the_nearest`
-- `ApproveByIdTests.Without_a_terminal_is_refused`
+- `ReviewCommandTests.Pending_flags_risk_and_groups_a_summary`
+- `ReviewCommandTests.Only_the_named_item_is_asked_and_the_rest_wait`
+- `ReviewCommandTests.An_unknown_key_is_refused_with_the_nearest`
+- `ReviewCommandTests.Refuses_without_a_terminal` (extended to `--only`)
 
 **Functional check**
-- On a copy of the example onboarding tutorial: an agent drafts, `approve pending --json` lists the items, one is challenged and one
-  accepted by id, and `onboard` writes only once all are accepted.
+- On a copy of the example repo with a drafted onboarding: the agent lists the items, records a recommendation, and the person
+  accepts one item and challenges another by key; the sign-off records only those.
+
+### s15-13 Skills and agents for every hound workflow, for Claude Code and GitHub Copilot (added 2026-11-25)
+- [ ] Done
+
+Added at the maintainer's request (2026-11-25): "I need skills or agents written for both github copilot and claude that supports all
+workflows and understand the hounds commands", now rather than in s18. A gap check of what `hound agent setup` wrote found no skill,
+agent or instructions for collect, collectors, config, status, publish, serve, ssp, incident, irp, programme, framework, library or
+skill. s18-08 then extends the kit only for what s18 adds.
+
+**Story:** As a GRC member who leans on my coding assistant, whichever one I use, I want it to know every hound command and to have a
+skill for every job hound does, so that it can run the job with me and never invents a command.
+
+**Acceptance criteria**
+- `hound agent setup` writes a command reference skill, `hound-commands`, built from the CLI's own command tree when it runs (every
+  command and sub-command with its description and options), so it cannot fall behind. Every agent loads it, and the instructions
+  point to it.
+- New skills, in the one source (`agent/skills/`) and so for both assistants: `work-through-pending-decisions` (lists by key with risk
+  first, researches each item, records its case with `hound review recommend`, and gives the person the one `hound review --only <key>`
+  to run, never running it), `operate-collectors` (config validate, collectors list, add collector, collect, plan, publish, run,
+  serve, status, and reading a collector's errors), `build-the-ssp` (programme list, ssp and mapping coverage and crosswalk),
+  `respond-to-an-incident` (incident obligations and irp build) and `keep-frameworks-and-libraries` (framework and library
+  snapshots, mapping derive and validate, profile validate, test and diff, and the organisation's own skills).
+- Two more agents: `hound-decisions` (walks the person through pending decisions; changes no scope file) and `hound-operations`
+  (collectors, runs, the SSP, incidents, frameworks and libraries). The onboarding and review agents hand pending decisions to
+  `hound-decisions`.
+- Every top-level command is named by at least one skill, agent or the instructions, and every `hound ...` command any of them names
+  exists in the CLI. Both checks run on what is written for Claude Code and for Copilot.
+
+**Tests first**
+- `AgentCommandTests.The_reference_names_every_command_for_both_assistants`
+- `AgentCommandTests.Every_top_level_command_has_a_skill`
+- `AgentCommandTests.Every_command_a_skill_names_exists`
+- `AgentCommandTests.Every_agent_loads_the_command_reference`
+- `AgentSkillTests.Decisions_skill_recommends_and_never_accepts`
+
+**Functional check**
+- `hound agent setup --assistant both` on a copy of the example repo; count the skills and agents written and check the reference
+  against `hound --help`.
 
 ## Discovered work
 
