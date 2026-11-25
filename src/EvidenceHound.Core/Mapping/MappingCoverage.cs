@@ -10,7 +10,11 @@ namespace EvidenceHound.Core.Mapping;
 /// <param name="Manual">Requirements answered only by checks a person attests through a manual source, or listed as manual-only.</param>
 /// <param name="Uncovered">Requirements nothing answers.</param>
 /// <param name="Draft">s14-03: requirements answered only by draft rows, which runs do not publish until a person reviews them.</param>
-public sealed record CoverageCount(string ParentUrn, string Group, int Automated, int Manual, int Uncovered, int Draft = 0);
+public sealed record CoverageCount(string ParentUrn, string Group, int Automated, int Manual, int Uncovered, int Draft = 0)
+{
+    /// <summary>s17-09: of the automated requirements, those answered only by rows that cover part of them (<c>covers: part</c>), which a person finishes.</summary>
+    public int Part { get; init; }
+}
 
 /// <summary>s12-01: mapping coverage of a framework snapshot for an audit's selected implementation groups.</summary>
 public static class MappingCoverage
