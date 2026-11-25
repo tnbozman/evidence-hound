@@ -39,7 +39,7 @@ public sealed class RiskRecoveryChecksFunctionalTests(CisoAssistantFixture ciso)
         await File.WriteAllTextAsync(Path.Combine(_results, "assets.json"), new JsonArray([.. assets.Select(a => a.DeepClone())]).ToJsonString(), ct);
         await File.WriteAllTextAsync(Path.Combine(_results, "asset-assessments.json"), new JsonArray([.. assessments.Select(a => a.DeepClone())]).ToJsonString(), ct);
         var critical = assets
-            .Where(a => Rto(a) >= 1)
+            .Where(HasRto)
             .Select(a => a["id"]!.GetValue<string>())
             .ToHashSet(StringComparer.Ordinal);
         critical.ShouldNotBeEmpty("Example 365 has a recovery time objective in the example scope");
@@ -55,12 +55,10 @@ public sealed class RiskRecoveryChecksFunctionalTests(CisoAssistantFixture ciso)
 
     public void Dispose() => Directory.Delete(_workDir, recursive: true);
 
-    /// <summary>An asset's recovery time objective in seconds, from <c>disaster_recovery_objectives.objectives.rto.value</c>; 0 when it has none.</summary>
-    private static int Rto(JsonNode asset) =>
-        asset["disaster_recovery_objectives"] is JsonObject dro && dro["objectives"] is JsonObject objectives && objectives["rto"] is JsonObject rto
-            && rto["value"] is JsonValue value && value.TryGetValue<int>(out var seconds)
-            ? seconds
-            : 0;
+    /// <summary>Whether an asset has a recovery time objective: CISO Assistant's asset list gives each one set as text, such as <c>rto: 4h</c>.</summary>
+    private static bool HasRto(JsonNode asset) =>
+        asset["disaster_recovery_objectives"] is JsonArray objectives
+        && objectives.Any(o => o?["str"] is JsonValue text && text.TryGetValue<string>(out var s) && s.StartsWith("rto: ", StringComparison.Ordinal));
 
     private static string? Id(JsonNode? relation) => relation switch
     {
