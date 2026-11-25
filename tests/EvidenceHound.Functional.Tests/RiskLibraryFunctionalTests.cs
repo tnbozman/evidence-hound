@@ -13,7 +13,7 @@ namespace EvidenceHound.Functional.Tests;
 [Collection(SharedCisoAssistant.Name)]
 public sealed class RiskLibraryFunctionalTests(CisoAssistantFixture ciso) : IDisposable
 {
-    private static readonly string LibraryUrn = "urn:example:risk:library:example-risk";
+    private static readonly string LibraryUrn = "urn:example:risk:library:example-versioned";
 
     private readonly string _repo = Directory.CreateTempSubdirectory("hound-risk-library-").FullName;
     private readonly string _results = Directory.CreateDirectory(Path.Combine(CisoAssistantFixture.RepoRoot, "test-results", "risk-library")).FullName;
@@ -28,26 +28,27 @@ public sealed class RiskLibraryFunctionalTests(CisoAssistantFixture ciso) : IDis
         var ct = TestContext.Current.CancellationToken;
         Directory.CreateDirectory(Scope);
         Directory.CreateDirectory(Path.GetDirectoryName(Library)!);
-        File.Copy(Path.Combine(AppContext.BaseDirectory, "files", "frameworks", "example-risk-library.yaml"), Library);
+        // Under its own URN: raising its version must not leave the example library, which other tests load, behind CISO Assistant's copy.
+        await File.WriteAllTextAsync(Library, await ExampleRiskLibrary.CopyAsync("versioned", ct), ct);
         await File.WriteAllTextAsync(Path.Combine(Scope, "setup.yaml"), """
             organisation:
               root_folder: Global
             libraries:
-              - urn: urn:example:risk:library:example-risk
+              - urn: urn:example:risk:library:example-versioned
                 file: ../libraries/example-risk.yaml
             """, ct);
 
         (await StepAsync("1-apply", ["scope", "apply", Scope], ct)).Exit.ShouldBe(ExitCodes.Ok);
-        (await GetAsync("risk-matrices/?limit=500", ct))["results"]!.AsArray().ShouldContain(m => m!["urn"]!.GetValue<string>() == "urn:example:risk:matrix:example-4x4");
-        (await ThreatsAsync(ct)).ShouldBe(["THR-01", "THR-02"]);
+        (await GetAsync("risk-matrices/?limit=500", ct))["results"]!.AsArray().ShouldContain(m => m!["urn"]!.GetValue<string>() == "urn:example:risk:matrix:example-versioned-4x4");
+        (await ThreatsAsync(ct)).ShouldBe(["VERSIONED-THR-01", "VERSIONED-THR-02"]);
 
         var replan = await StepAsync("2-plan-again", ["scope", "plan", Scope, "--format", "json"], ct);
         replan.Exit.ShouldBe(ExitCodes.Ok);
         JsonNode.Parse(replan.Output)!["changes"]!.AsArray().ShouldNotContain(c => c!["key"]!.GetValue<string>() == LibraryUrn);
 
         var threat = """
-                - urn: urn:example:risk:threat:example-risk:thr-03
-                  ref_id: THR-03
+                - urn: urn:example:risk:threat:example-versioned:thr-03
+                  ref_id: VERSIONED-THR-03
                   name: Shared administrator account used after a role change
                   description: An administrator who moved role still signs in with a shared account.
 
@@ -59,7 +60,7 @@ public sealed class RiskLibraryFunctionalTests(CisoAssistantFixture ciso) : IDis
 
         await File.WriteAllTextAsync(Library, (await File.ReadAllTextAsync(Library, ct)).Replace("\nversion: 1\n", "\nversion: 2\n", StringComparison.Ordinal), ct);
         (await StepAsync("4-apply-version-2", ["scope", "apply", Scope], ct)).Exit.ShouldBe(ExitCodes.Ok);
-        (await ThreatsAsync(ct)).ShouldBe(["THR-01", "THR-02", "THR-03"]);
+        (await ThreatsAsync(ct)).ShouldBe(["VERSIONED-THR-01", "VERSIONED-THR-02", "VERSIONED-THR-03"]);
         (await StepAsync("5-apply-again", ["scope", "apply", Scope], ct)).Output.ShouldContain("\"written\": 0");
     }
 
@@ -67,7 +68,7 @@ public sealed class RiskLibraryFunctionalTests(CisoAssistantFixture ciso) : IDis
 
     private async Task<string[]> ThreatsAsync(CancellationToken ct) =>
         [.. (await GetAsync("threats/?limit=1000", ct))["results"]!.AsArray()
-            .Where(t => t!["urn"]?.GetValue<string>()?.StartsWith("urn:example:risk:threat:example-risk:", StringComparison.Ordinal) == true)
+            .Where(t => t!["urn"]?.GetValue<string>()?.StartsWith("urn:example:risk:threat:example-versioned:", StringComparison.Ordinal) == true)
             .Select(t => t!["ref_id"]!.GetValue<string>()).Order(StringComparer.Ordinal)];
 
     private async Task<(int Exit, string Output, string Error)> StepAsync(string name, string[] args, CancellationToken ct)
