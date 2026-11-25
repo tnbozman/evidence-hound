@@ -1,7 +1,7 @@
 version: 2
 updates:
   - package-ecosystem: nuget
-    directory: "/"
+    directories: ["/", "/templates/collector"]
     schedule:
       interval: weekly
     groups:
