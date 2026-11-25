@@ -396,6 +396,37 @@ and a risk flag, and to approve or challenge one at a time by id, so that I deci
 - On a copy of the example repo with a drafted onboarding: the agent lists the items, records a recommendation, and the person
   accepts one item and challenges another by key; the sign-off records only those.
 
+### s15-14 A report never reads 100% while rows are not assessed (added 2026-11-25, top priority)
+- [ ] Done
+
+Found by the maintainer on a trial run (2026-11-25): per-system Essential Eight audits whose only results were a few passing automated
+checks, many not-applicable rows and every manual row not assessed read as 100% compliant. hound's own reports did not compute that
+figure (the board gives "X of Y compliant" and the committee counts each result), so it was most likely CISO Assistant's view, whose
+compliance figures can leave not-assessed rows out. Either way the person must never be shown, or show a prime, a full mark that
+rests on rows nobody assessed.
+
+**Story:** As a GRC member reporting upward, I want every figure hound gives to count a not-assessed row as not met and to say how
+much is assessed, so that a few automated passes can never read as compliance.
+
+**Acceptance criteria**
+- A programme's standing: the highest group (maturity level) met, where a level is met only when every row at it and below is
+  compliant or not applicable; compliant of applicable, counting not assessed as not met, rounded down so an open row never reads
+  100%; and "not assessed: N". 3 compliant, 61 not applicable and 43 not assessed give level 0 and "not assessed: 43".
+- The committee summary and the board position give each programme's standing.
+- The reporting guide says which CISO Assistant figures leave not-assessed rows out, and to quote hound's standing instead.
+- Reproduced in the trial before s15 closes.
+
+**Tests first**
+- `StandingTests.Not_assessed_rows_block_the_level_and_count_as_not_met`
+- `StandingTests.A_level_is_met_only_when_every_row_at_it_and_below_is_compliant_or_not_applicable`
+- `StandingTests.The_percentage_never_rounds_up_to_100_while_a_row_is_open`
+- `CommitteeReportTests.Summary_gives_each_programmes_standing_with_what_is_not_assessed`
+- `BoardReportTests.Position_gives_the_level_met_and_what_is_not_assessed`
+
+**Functional check**
+- In the trial, an audit with passing automated rows, not-applicable rows and open manual rows: the committee and board reports give
+  level 0 with the open rows counted.
+
 ### s15-13 Skills and agents for every hound workflow, for Claude Code and GitHub Copilot (added 2026-11-25)
 - [ ] Done
 

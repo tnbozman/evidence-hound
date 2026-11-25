@@ -17,6 +17,17 @@ public class CommitteeReportTests
     }
 
     [Fact]
+    public void Summary_gives_each_programmes_standing_with_what_is_not_assessed()
+    {
+        // s15-14: the committee sees, for each programme, the level met and how much is not yet assessed, never a bare percentage.
+        var summary = Section(Report, "## 1.");
+
+        summary.ShouldContain("Level met:");
+        summary.ShouldContain("not assessed:");
+        summary.ShouldContain("applicable (");
+    }
+
+    [Fact]
     public void Expiring_exceptions_use_60_day_window()
     {
         var section = Section(Report, "## 4.");
