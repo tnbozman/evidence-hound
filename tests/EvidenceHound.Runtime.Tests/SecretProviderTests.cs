@@ -48,6 +48,22 @@ public sealed class SecretProviderTests : IDisposable
         problem.Message.ShouldContain(reference);
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData("\n")]
+    [InlineData("  \r\n")]
+    public void An_empty_secret_file_is_missing(string content)
+    {
+        // s15-D4: an empty file (such as a secret written before its value was pasted in) passed --check-secrets.
+        var path = Path.Combine(_dir, "empty");
+        File.WriteAllText(path, content);
+
+        var problem = Composite().Resolve(Ref("file:" + path)).Problems().ShouldHaveSingleItem();
+
+        problem.Code.ShouldBe("secret.missing");
+        problem.Message.ShouldContain("the file is empty");
+    }
+
     [Fact]
     public void A_scheme_without_a_provider_is_missing()
     {
