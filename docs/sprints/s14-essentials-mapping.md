@@ -85,7 +85,13 @@ cloud session, including as a non-root user with the default evidence root. 19 f
   the first deployment tutorial's file names for an `init` repo; the cheat sheet PDF re-rendered.
 - Already fixed this sprint: the per-parent coverage table names each Essentials principle with its domain.
 
-Carried to discovered work: findings 8 (exit codes), 13 to 15.
+- Installing the release candidate as a customer also found: `hound config validate` said "valid" for an evidence root the user cannot
+  write (now a warning naming `evidence.root` and the fix; a warning, as a repo's CI validates where only the runner container writes);
+  after `hound add collector fake` the suggested run failed on `plan.control_key_unknown`, whose message now names the target's
+  `controls:` setting; the add collector hint led with `--check-secrets`, which fails before secrets are set; the two-audit functional
+  test depended on test order (fixed with s14-05); the collector tutorial used the deprecated `::` version syntax.
+
+Carried to discovered work: findings 8 (exit codes), 14 and 15.
 
 **Functional check**
 - Result (2026-11-25): with a draft from `derive`, `hound mapping coverage <draft> --framework frameworks/asd-essentials-enterprise-it.json
@@ -149,12 +155,10 @@ A run only filled a row one collector fully reported, so those rows were never f
 - s14-03: `hound mapping coverage` and `validate` exit 0 with uncovered or draft rows; a `--fail-on-uncovered` (and draft) flag would let
   CI gate on them. Coverage also counts as automated a check that no configured collector gives; reading collector check IDs from the
   config would show those as unsourced.
-- s14-03: `hound add collector manual` writes `due_days` as a quoted string, and its "Next:" hint suggests `config validate
-  --check-secrets`, which fails before CISO Assistant has a token.
+- s14-03: `hound add collector manual` writes `due_days` as a quoted string.
 - s14-03: `hound manual upload` takes `--source`, `hound manual propose` a positional source; upload prints `(attested: False)`.
 - s14-03: `hound review pending` recommends `attest` from a `partial` proposal, but `review recommend --answer` takes accept or decline.
 - s14-03: an incident register manual source template (the example repo has one); s15's incident register may replace it.
-- s14-03: `hound config validate` could check that the evidence root is writable.
 - s14-04: nuget.org trusted publishing (OIDC), carried from s13.
 
 ## Sprint review
