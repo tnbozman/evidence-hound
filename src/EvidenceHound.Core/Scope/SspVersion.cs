@@ -95,7 +95,10 @@ public static class SspSnapshotJson
             Value(d, "audit"),
             Value(d, "perimeter"),
             [.. Items(d, "roles").Select(r => new SspRoleValue(Text(r, "role"), Value(r, "holder")))],
-            [.. Items(d, "inventory").Select(s => new SspSystem(Value(s, "name"), Value(s, "type"), Value(s, "owner"), Value(s, "description")))],
+            [.. Items(d, "inventory").Select(s => new SspSystem(Value(s, "name"), Value(s, "type"), Value(s, "owner"), Value(s, "description"))
+            {
+                Category = s["cmmc_asset_category"] is JsonObject category ? Value(category) : Value(s, "name") with { Value = null },
+            })],
             [.. Items(d, "external_services").Select(s => new SspService(Value(s, "system"), Value(s, "solution"), Value(s, "supplier"), Value(s, "criticality")))],
             [.. Items(d, "controls").Select(Control)],
             [.. Items(d, "requirements").Select(Requirement)],
@@ -106,6 +109,7 @@ public static class SspSnapshotJson
             OperationalStatus = Value(d, "operational_status"),
             SystemType = Value(d, "system_type"),
             Annex = [.. Items(d, "annex").Select(Annex)],
+            PoamNotAllowed = (d["poam_not_allowed"] as JsonObject ?? []).ToDictionary(p => p.Key, p => (string?)p.Value ?? "", StringComparer.Ordinal),
         };
 
     private static SspControl Control(JsonObject c) =>
@@ -138,6 +142,7 @@ public static class SspSnapshotJson
             (string?)a["poam"])
         {
             Description = (string?)a["description"] ?? "",
+            Family = (string?)a["family"] ?? "",
             MaturityLevels = Strings(a, "maturity_levels"),
             ControlTypes = Strings(a, "control_types"),
             ResponsibleEntity = Value(a, "responsible_entity"),

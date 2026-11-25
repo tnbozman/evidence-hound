@@ -126,6 +126,21 @@ public sealed record SspDocument(
     /// </summary>
     public IReadOnlyDictionary<string, string> PoamNotAllowed { get; init; } = new Dictionary<string, string>(StringComparer.Ordinal);
 
-    /// <summary>Every gap, by requirement in the document's order: listed at the front of the draft, and fatal with <c>--strict</c>.</summary>
-    public IReadOnlyList<SspGap> Gaps => [.. Requirements.SelectMany(r => r.Gaps.Select(g => new SspGap(r.Ref.Value ?? "", g)))];
+    /// <summary>
+    /// Every gap: for the <c>nist-800-171</c> profile, systems with no CMMC asset category first (s17-03); then, by requirement in the
+    /// document's order, what an assessor would miss and whether CMMC forbids the requirement on a POA&amp;M. Listed at the front of the
+    /// draft, and fatal with <c>--strict</c>.
+    /// </summary>
+    public IReadOnlyList<SspGap> Gaps =>
+    [
+        .. Profile == SspProfile.Nist800171
+            ? Inventory.Where(s => s.Category.Value is null).Select(s => new SspGap(s.Name.Value ?? "", UncategorisedAsset))
+            : [],
+        .. Requirements.SelectMany(r => r.Gaps
+            .Concat(r.Ref.Value is { } id && PoamNotAllowed.TryGetValue(id, out var reason) ? [reason] : Array.Empty<string>())
+            .Select(g => new SspGap(r.Ref.Value ?? "", g))),
+    ];
+
+    private static readonly string UncategorisedAsset =
+        $"no CMMC asset category; tag the system '{CmmcAssetCategory.Tag}' in scope/setup.yaml with one of {string.Join(", ", CmmcAssetCategory.Values)}.";
 }

@@ -5,6 +5,7 @@ using EvidenceHound.Core.Frameworks;
 using EvidenceHound.Core.Publishing;
 using EvidenceHound.Core.Results;
 using EvidenceHound.Core.Scope;
+using EvidenceHound.Core.Sprs;
 using EvidenceHound.Runtime.Collectors;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -367,8 +368,10 @@ internal static class SspCommands
             AllRowsOf = new HashSet<string>(StringComparer.Ordinal) { SspBuilder.AuditOfRecord(checkedScope.Scope, programme, today) },
         };
         var held = await services.GetRequiredService<IScopeStateSource>().ReadAsync(query, cancellationToken);
+        // s17-03: the nist-800-171 profile flags what CMMC does not allow on a POA&M, by the bundled SPRS weights.
+        var sprs = ssp.Profile == SspProfile.Nist800171 ? (await SprsCommands.MethodologyAsync(null, cancellationToken)).Match<SprsMethodology?>(m => m, _ => null) : null;
         return held.Match<(int, SspDocument?)>(
-            objects => (ExitCodes.Ok, SspBuilder.Build(ssp, checkedScope.Scope, objects, Snapshot(checkedScope, programme.Audit.Value), today)),
+            objects => (ExitCodes.Ok, SspBuilder.Build(ssp, checkedScope.Scope, objects, Snapshot(checkedScope, programme.Audit.Value), today, sprs)),
             problems => (Log.Problems(logger, problems), null));
     }
 

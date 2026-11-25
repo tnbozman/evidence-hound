@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using EvidenceHound.Core.Scope;
+using EvidenceHound.Core.Sprs;
 
 namespace EvidenceHound.Core.Yaml.Tests;
 
@@ -141,6 +142,19 @@ public class SspBuilderTests
         inventory[0].Category.Value.ShouldBe("cui");
         inventory[0].Category.Source.Reference.ShouldStartWith("scope/setup.yaml line ");
         inventory[1].Category.Value.ShouldBeNull();
+    }
+
+    [Fact]
+    public void The_nist_800_171_profile_flags_requirements_cmmc_does_not_allow_on_a_poam()
+    {
+        // s17-03: EX-1.2 is unmet and, in this made-up methodology, worth 5 points, so CMMC would not let it sit on a POA&M.
+        var parsed = SspFixture.Parse(ssp: SspFixture.Ssp.Replace("profile: ism", "profile: nist-800-171", StringComparison.Ordinal));
+        var sprs = new SprsMethodology("Example methodology", "1", 110, [new SprsWeight("1.1", 5), new SprsWeight("1.2", 5)]);
+
+        var document = SspBuilder.Build(parsed.Scope.Ssps.Single(), parsed.Scope, SspFixture.Held(), sprs: sprs);
+
+        document.PoamNotAllowed.Keys.ShouldBe(["EX-1.2"]);
+        SspBuilder.Build(Ssp(), SspFixture.Parse().Scope, SspFixture.Held(), sprs: sprs).PoamNotAllowed.ShouldBeEmpty("only the nist-800-171 profile applies CMMC's rules");
     }
 
     [Fact]

@@ -100,7 +100,7 @@ internal static class SprsCommands
             problems => Task.FromResult(Log.Problems(logger, problems)));
     }
 
-    private static async Task<Result<SprsMethodology>> MethodologyAsync(FileInfo? file, CancellationToken cancellationToken)
+    internal static async Task<Result<SprsMethodology>> MethodologyAsync(FileInfo? file, CancellationToken cancellationToken)
     {
         if (file is not null)
         {

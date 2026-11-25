@@ -97,6 +97,21 @@ public sealed class SspCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task The_nist_800_171_profile_adds_cmmc_asset_categories_and_poam_rules()
+    {
+        // s17-03: one layout; the profile adds the CMMC asset category column, the gaps for untagged systems and CMMC's POA&M conditions.
+        await WriteScopeAsync(Ssp.Replace("profile: ism", "profile: nist-800-171", StringComparison.Ordinal));
+        Instance();
+
+        (await Build()).ShouldBe(ExitCodes.Ok, _error.ToString());
+
+        var markdown = _output.ToString();
+        markdown.ShouldContain("| System | Type | Owner | Description | CMMC asset category |\n");
+        markdown.ShouldContain("- Example 365: no CMMC asset category;");
+        markdown.ShouldContain("A Conditional CMMC Level 2 status also needs an SPRS score of at least 88");
+    }
+
+    [Fact]
     public async Task Json_carries_the_annex_with_poam_links()
     {
         await WriteScopeAsync(Ssp);

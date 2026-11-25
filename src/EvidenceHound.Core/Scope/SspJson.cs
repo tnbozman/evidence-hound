@@ -31,6 +31,7 @@ public static class SspJson
             ["inventory"] = new JsonArray([.. document.Inventory.Select(s => new JsonObject
             {
                 ["name"] = Value(s.Name), ["type"] = Value(s.Type), ["owner"] = Value(s.Owner), ["description"] = Value(s.Description),
+                ["cmmc_asset_category"] = Value(s.Category),
             })]),
             ["external_services"] = new JsonArray([.. document.ExternalServices.Select(s => new JsonObject
             {
@@ -57,9 +58,21 @@ public static class SspJson
                 ["responsible"] = Value(a.Responsible), ["evidence"] = Value(a.Evidence), ["poam"] = a.Poam,
                 ["description"] = a.Description, ["maturity_levels"] = new JsonArray([.. a.MaturityLevels.Select(l => JsonValue.Create(l))]),
                 ["control_types"] = new JsonArray([.. a.ControlTypes.Select(t => JsonValue.Create(t))]),
-                ["responsible_entity"] = Value(a.ResponsibleEntity), ["asd_status"] = Value(a.AsdStatus),
+                ["responsible_entity"] = Value(a.ResponsibleEntity), ["asd_status"] = Value(a.AsdStatus), ["family"] = a.Family,
             })]),
+            ["poam_not_allowed"] = NotAllowed(document.PoamNotAllowed),
         };
+    }
+
+    private static JsonObject NotAllowed(IReadOnlyDictionary<string, string> reasons)
+    {
+        var json = new JsonObject();
+        foreach (var (requirement, reason) in reasons.OrderBy(r => r.Key, StringComparer.Ordinal))
+        {
+            json[requirement] = reason;
+        }
+
+        return json;
     }
 
     /// <summary>The POA&amp;M as JSON, each value with its source.</summary>

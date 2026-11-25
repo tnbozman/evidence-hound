@@ -18,6 +18,13 @@ public static class SspValidator
             .. scope.Ssps.GroupBy(s => s.Programme.Value, StringComparer.Ordinal).Where(g => g.Count() > 1).SelectMany(g => g.Skip(1).Select(s => new ScopeProblem(
                 "scope.duplicate", s.At, $"ssp for programme '{g.Key}' is declared more than once; first at {g.First().At.File} line {g.First().At.Line}.", "Keep one plan per programme."))),
             .. scope.Ssps.SelectMany(s => Problems(s, programmes, perimeters, holders, documents)),
+            .. scope.Setup.Domains.SelectMany(d => d.Systems)
+                .Where(s => s.Tags.TryGetValue(CmmcAssetCategory.Tag, out var category) && CmmcAssetCategory.Name(category) is null)
+                .Select(s => new ScopeProblem(
+                    "ssp.asset_category_invalid",
+                    s.At,
+                    $"system '{s.Name}' has {CmmcAssetCategory.Tag} '{s.Tags[CmmcAssetCategory.Tag]}', which is not a CMMC asset category.",
+                    $"Use one of {string.Join(", ", CmmcAssetCategory.Values)} (32 CFR 170.19(c)(1), Table 1).")),
         ];
     }
 

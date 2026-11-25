@@ -1,6 +1,7 @@
 using EvidenceHound.Core.Frameworks;
 using EvidenceHound.Core.Scope;
 using EvidenceHound.Core.Sprs;
+using EvidenceHound.Core.Tests.Checks;
 using EvidenceHound.Core.Tests.Scope;
 using static EvidenceHound.Core.Tests.Ssp.SspStatementTests;
 
@@ -76,6 +77,18 @@ public class Nist171SspTests
 
         var golden = Path.Combine(AppContext.BaseDirectory, "golden", "ssp-nist-800-171.md");
         markdown.ShouldBe(File.ReadAllText(golden));
+    }
+
+    [Fact]
+    public void A_snapshot_rebuilds_the_same_nist_800_171_draft()
+    {
+        // s11-05: a signed plan is checked by hash, so categories, families and the POA&M flags must survive the snapshot.
+        var document = Example() with { Annex = SspAnnex.Of(Example(), Cmmc, Level2) };
+        var snapshot = new SspSnapshot(document, SspLayoutTests.Texts());
+
+        var reread = SspSnapshotJson.Read(SspSnapshotJson.Write(snapshot), "ssp-0.1.json").Value();
+
+        SspLayout.Markdown(reread.Document, reread.Sections).ShouldBe(SspLayout.Markdown(document, snapshot.Sections));
     }
 
     /// <summary>The SPRS weights the rules need: a 1-point, a 5-point and the 3.13.11 requirement, and the never-allowed ones.</summary>

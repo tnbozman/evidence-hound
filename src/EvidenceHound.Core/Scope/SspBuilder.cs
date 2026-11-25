@@ -1,5 +1,6 @@
 using System.Globalization;
 using EvidenceHound.Core.Frameworks;
+using EvidenceHound.Core.Sprs;
 
 namespace EvidenceHound.Core.Scope;
 
@@ -10,7 +11,9 @@ namespace EvidenceHound.Core.Scope;
 /// </summary>
 public static class SspBuilder
 {
-    public static SspDocument Build(ScopeSsp ssp, ScopeDocument scope, IReadOnlyList<ActualObject> held, FrameworkSnapshot? snapshot = null, DateOnly? today = null)
+    /// <summary>The plan. With <paramref name="sprs"/>, the <c>nist-800-171</c> profile flags what CMMC does not allow on a POA&amp;M (s17-03).</summary>
+    public static SspDocument Build(
+        ScopeSsp ssp, ScopeDocument scope, IReadOnlyList<ActualObject> held, FrameworkSnapshot? snapshot = null, DateOnly? today = null, SprsMethodology? sprs = null)
     {
         ArgumentNullException.ThrowIfNull(ssp);
         ArgumentNullException.ThrowIfNull(scope);
@@ -41,7 +44,7 @@ public static class SspBuilder
             Repo(programme.Audit with { Value = audit }),
             Repo(ssp.Perimeter),
             [.. ssp.Roles.Select(r => new SspRoleValue(r.Role, Repo(r.Holder)))],
-            [.. inBoundary.Select(s => Inventory(s, Find(ScopeKind.System, s.Value)))],
+            [.. inBoundary.Select(s => Inventory(s, Find(ScopeKind.System, s.Value), systems.GetValueOrDefault(s.Value)))],
             [.. inBoundary.Select(s => systems.GetValueOrDefault(s.Value)).OfType<ScopeSystem>().Where(s => s.Solution is not null).Select(s => Service(s, Find))],
             controls,
             [.. rows.Select(r => SspStatements.Complete(Requirement(r), byRef))],
@@ -52,6 +55,11 @@ public static class SspBuilder
             OperationalStatus = Repo(ssp.OperationalStatus, ssp.At),
             SystemType = Repo(ssp.SystemType, ssp.At),
         };
+        if (sprs is not null && ssp.Profile == SspProfile.Nist800171)
+        {
+            document = document with { PoamNotAllowed = CmmcPoam.For(document.Requirements, sprs) };
+        }
+
         return snapshot is null ? document : document with { Annex = SspAnnex.Of(document, snapshot, programme.Groups) };
     }
 
@@ -64,14 +72,17 @@ public static class SspBuilder
         return AuditPeriods.Target(programme.Audit.Value, series, today);
     }
 
-    private static SspSystem Inventory(ScopeRef system, ActualObject? held)
+    private static SspSystem Inventory(ScopeRef system, ActualObject? held, ScopeSystem? declared)
     {
         var source = Asset(system.Value);
         return new SspSystem(
             held is null ? Repo(system) : new SspValue(held.Held.Key, source),
             Field(held, "type", source),
             Field(held, "owner", source),
-            Field(held, "description", source));
+            Field(held, "description", source))
+        {
+            Category = declared is null ? new SspValue(null, source) : Repo(declared.Tags.GetValueOrDefault(CmmcAssetCategory.Tag), declared.At),
+        };
     }
 
     private static SspService Service(ScopeSystem system, Func<ScopeKind, string?, ActualObject?> find)
