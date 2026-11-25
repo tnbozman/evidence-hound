@@ -37,6 +37,12 @@ Changed in the AI governance planning PR (Nov 2026): s11-05 builds the `ciso-ass
 **Functional check**
 - Against the local CISO Assistant with the example suppliers, study and BIA, `hound run` produces the supplier, risk and BIA checks with the expected outcomes and publishes them.
 
+**Notes**
+- Tests are YAML cases in `profiles/ciso-assistant.tests/` (run by `LibraryProfileTests` with the unit suite): `risk-study-past-interval`, `expired-approved-exception` and `critical-bia-without-recovery-test`, with `all-pass` extended.
+- A critical system is one with a recovery time objective (`recovery: {rto: ...}`), so the check needs nothing new in the scope. `risk.studies_reviewed` skips deprecated studies and fails when there is no study at all; the interval is the `risk_review_interval` setting (default a year).
+- Mapped: GOV-03.1 gains both risk checks, PRO-16.1 (both domains) gains `supplier.assessments_current`, PRO-10.3 (both domains) gains `bia.recovery_tested`. GOV-11 already had the supplier checks from s14. The migration guide says which manual-only actions are now partly automated.
+- Functional: `RiskRecoveryChecksFunctionalTests` runs the profile against the seeded CISO Assistant and works out each expected outcome from CISO Assistant's own lists.
+
 ### s16-02 Metric definitions and instances
 - [ ] Done
 

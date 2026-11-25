@@ -124,6 +124,8 @@ Suggested homes, to confirm with ASD's guidance: ISM-0123 under RES-03 (incident
 
 These are new work. Most are processes rather than technical settings, so a manual source (see [configuration.md](../configuration.md#manual-sources)) with an owner and a due interval is the natural first step. Content filtering (PRO-09), legacy authentication (PRO-13.5) and secret scanning (PRO-13.3) are good candidates for automated collectors later.
 
+The [ciso-assistant profile](../collectors/ciso-assistant.md#the-ciso-assistant-profile) (s16) evidences part of this ground from what CISO Assistant already holds: GOV-03.1 (risk studies reviewed, no approved exception past its expiry), GOV-11.1 and GOV-11.2 (supplier assessments and contracts current) and PRO-16.1 (suppliers assessed). Each keeps its manual source for the rest of the action. It also adds the business impact analysis's recovery tests to PRO-10.3.
+
 | Action | Principle | Summary |
 | --- | --- | --- |
 | IT.DET-02.1 | Cyber security event detection | Ensure event logs are normalised, time-synchronised and enriched to support correlation across systems and… |
