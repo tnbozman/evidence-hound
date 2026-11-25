@@ -119,7 +119,7 @@ internal static class PlanCommand
         var run = await CheckResultsJson.LoadRunAsync(checksFile, cancellationToken);
 
         return targets.Bind(loaded => run.Map(r => (
-            (IReadOnlyList<TargetResults>)[.. loaded.Select(t => new TargetResults(new AuditTarget(t.Target.ComplianceAssessmentRefId, t.Target.Controls), MappingEngine.ApplyMapping(t.Mapping, r.Checks)))],
+            (IReadOnlyList<TargetResults>)[.. loaded.Select(t => new TargetResults(new AuditTarget(t.Target.ComplianceAssessmentRefId, t.Target.Controls) { NoEvidence = t.Target.NoEvidence }, MappingEngine.ApplyMapping(t.Mapping, r.Checks)))],
             r)));
     }
 

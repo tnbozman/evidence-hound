@@ -37,7 +37,7 @@ public static partial class ScopeLoader
     private static readonly string[] AuditKeys =
     [
         "ref_id", "name", "framework", "groups", "domain", "perimeter", "eta", "due_date", "authors", "reviewers", "field_visibility",
-        "systems", "documents", "controls", "assessments", "cycle", "sign_offs", "unlisted",
+        "systems", "documents", "controls", "assessments", "cycle", "sign_offs", "unlisted", "no_evidence",
     ];
 
     private static readonly string[] FieldAccessKeys = ["auditor", "respondent"];
@@ -409,6 +409,7 @@ public static partial class ScopeLoader
                 Cycle = cycle,
                 SignOffs = signOffs,
                 Unlisted = unlisted,
+                NoEvidence = file.OneOf(root, "no_evidence", ["non_compliant", "not_assessed"], required: false) == "not_assessed" ? ComplianceResult.NotAssessed : ComplianceResult.NonCompliant,
             };
     }
 

@@ -321,6 +321,11 @@ public static partial class ScopeDesired
             }
         }
 
+        foreach (var row in rows.Values.Where(r => r.GetValueOrDefault("result") == Names.Of(ComplianceResult.NotAssessed)))
+        {
+            (row["result"], row["observation"]) = (Names.Of(audit.NoEvidence), NoEvidence.Observation(audit.NoEvidence, row.GetValueOrDefault("observation")));
+        }
+
         return rows.Select(r => new ScopeObject(ScopeKind.Assessment, $"{audit.RefId}/{r.Key}", Fields([.. r.Value.Select(f => (f.Key, f.Value))])));
     }
 

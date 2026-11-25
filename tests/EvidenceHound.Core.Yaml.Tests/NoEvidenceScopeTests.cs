@@ -8,7 +8,7 @@ namespace EvidenceHound.Core.Yaml.Tests;
 /// </summary>
 public class NoEvidenceScopeTests
 {
-    private const string Open = """
+    public const string Open = """
         assessments:
           - ref: EX-1.2
             status: to_do
@@ -50,7 +50,7 @@ public class NoEvidenceScopeTests
         rows["EXAMPLE-BASELINE-2026/EX-1.1"]["result"].ShouldBe("not_applicable");
     }
 
-    private const string Closed = """
+    public const string Closed = """
         assessments:
           - ref: EX-1.2
             status: done

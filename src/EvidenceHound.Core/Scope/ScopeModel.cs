@@ -215,4 +215,10 @@ public sealed record ScopeAudit(
 
     /// <summary>Required; null when the file leaves it out, which validation reports.</summary>
     public UnlistedRule? Unlisted { get; init; }
+
+    /// <summary>
+    /// What a row the scope leaves not assessed is applied as (s15-14): non-compliant by default, because CISO Assistant leaves
+    /// not-assessed rows out of its compliance percentage; <c>no_evidence: not_assessed</c> opts out.
+    /// </summary>
+    public ComplianceResult NoEvidence { get; init; } = ComplianceResult.NonCompliant;
 }

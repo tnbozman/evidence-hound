@@ -47,4 +47,8 @@ public sealed record CollectorInstance(
 /// The audit that results are published to: the mapping file, the audit's ref_id, control key to applied control ref_id, and the
 /// applied control that each collector's health evidence is linked to.
 /// </summary>
-public sealed record TargetConfig(string MappingPath, string ComplianceAssessmentRefId, IReadOnlyDictionary<string, string> Controls, string? HealthControlRefId = null);
+public sealed record TargetConfig(string MappingPath, string ComplianceAssessmentRefId, IReadOnlyDictionary<string, string> Controls, string? HealthControlRefId = null)
+{
+    /// <summary>What a row with no evidence is published as (s15-14): non-compliant, or not assessed with <c>no_evidence: not_assessed</c>.</summary>
+    public EvidenceHound.Core.Mapping.ComplianceResult NoEvidence { get; init; } = EvidenceHound.Core.Mapping.ComplianceResult.NonCompliant;
+}

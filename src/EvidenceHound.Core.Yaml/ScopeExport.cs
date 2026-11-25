@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using EvidenceHound.Core.Frameworks;
+using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Planning;
 using EvidenceHound.Core.Scope;
 
@@ -50,6 +51,7 @@ public static class ScopeExport
         }
 
         var rows = Of(ScopeKind.Assessment)
+            .Select(Declared)
             .Select(r => (Row: r, Parts: r.Key.Split('/', 2)))
             .Where(r => r.Parts.Length == 2)
             .ToLookup(r => r.Parts[0], r => (Requirement: r.Parts[1], r.Row), StringComparer.Ordinal);
@@ -244,6 +246,25 @@ public static class ScopeExport
     }
 
     /// <summary>A row a person wrote: not computed by a run (no run marker), and not still to do and not assessed.</summary>
+    /// <summary>s15-14: a row hound sent non-compliant for want of evidence, as its file declared it: not assessed.</summary>
+    private static ScopeObject Declared(ScopeObject row)
+    {
+        var (result, observation) = NoEvidence.Declared(Field(row, "result"), Field(row, "observation"));
+        if (result == Field(row, "result"))
+        {
+            return row;
+        }
+
+        var fields = row.Fields.Where(f => f.Key is not ("result" or "observation")).ToDictionary(f => f.Key, f => f.Value, StringComparer.Ordinal);
+        fields["result"] = result!;
+        if (observation is not null)
+        {
+            fields["observation"] = observation;
+        }
+
+        return row with { Fields = fields };
+    }
+
     private static bool IsHandWritten(ScopeObject row) =>
         RowState.ReadMark(Field(row, "observation")) is null
         && !(Field(row, "result") is null or "not_assessed" && Field(row, "status") is null or "to_do" && Field(row, "observation") is null);

@@ -100,9 +100,17 @@ public static class AuditPlanner
         });
     }
 
-    /// <summary>s14-01: the targets without the results of draft mapping rows, which nobody has reviewed yet.</summary>
+    /// <summary>
+    /// s14-01: the targets without the results of draft mapping rows, which nobody has reviewed yet. s15-14: a result with no evidence (a
+    /// check missing or in error) goes as the target's <see cref="AuditTarget.NoEvidence"/> result, its observation saying so.
+    /// </summary>
     private static IEnumerable<TargetResults> Publishable(IReadOnlyList<TargetResults> targets) =>
-        targets.Select(t => t with { Results = [.. t.Results.Where(r => !r.Draft)] });
+        targets.Select(t => t with
+        {
+            Results = [.. t.Results.Where(r => !r.Draft).Select(r => r.Result == ComplianceResult.NotAssessed
+                ? r with { Result = t.Target.NoEvidence, Observation = NoEvidence.Observation(t.Target.NoEvidence, r.Observation)! }
+                : r)],
+        });
 
     private static IEnumerable<Problem> DraftNotices(IReadOnlyList<TargetResults> targets) =>
         targets.SelectMany(t => t.Results.Where(r => r.Draft).Select(r => new Problem(

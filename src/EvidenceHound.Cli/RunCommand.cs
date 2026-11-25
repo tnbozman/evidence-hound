@@ -84,7 +84,7 @@ internal static class RunCommand
                 config,
                 instances,
                 options,
-                [.. r.Targets.Select(t => new RunTarget(t.Mapping, new AuditTarget(t.Target.ComplianceAssessmentRefId, t.Target.Controls), t.Target.HealthControlRefId))],
+                [.. r.Targets.Select(t => new RunTarget(t.Mapping, new AuditTarget(t.Target.ComplianceAssessmentRefId, t.Target.Controls) { NoEvidence = t.Target.NoEvidence }, t.Target.HealthControlRefId))],
                 r.Transport,
                 configuration,
                 registry,
