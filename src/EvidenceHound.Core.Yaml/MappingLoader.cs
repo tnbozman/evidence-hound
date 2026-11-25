@@ -12,7 +12,7 @@ public static class MappingLoader
 {
     private static readonly string[] TopLevelKeys = ["framework_urn", "description", "requirements", "manual_only"];
     private static readonly string[] ManualOnlyKeys = ["ref", "urn", "rows", "source"];
-    private static readonly string[] RequirementKeys = ["ref", "urn", "rows", "draft", "rule", "threshold", "checks"];
+    private static readonly string[] RequirementKeys = ["ref", "urn", "rows", "draft", "covers", "rule", "threshold", "checks"];
 
     public static Result<LoadedMapping> Parse(string yaml, string source, IReadOnlySet<CheckId>? knownChecks = null)
     {
@@ -126,12 +126,13 @@ public static class MappingLoader
         var rule = ParseRule(map, at);
         var checks = ParseChecks(map, at);
         var draft = ParseDraft(map, at);
-        Problem[] problems = [.. UnknownKeys(map, RequirementKeys, at), .. ProblemsOf(key), .. ProblemsOf(rule), .. ProblemsOf(checks), .. ProblemsOf(draft)];
+        var part = ParseCovers(map, at);
+        Problem[] problems = [.. UnknownKeys(map, RequirementKeys, at), .. ProblemsOf(key), .. ProblemsOf(rule), .. ProblemsOf(checks), .. ProblemsOf(draft), .. ProblemsOf(part)];
         return problems.Length > 0
             ? Result.Fail<ParsedRequirement>(problems)
             : key.Bind(parsedKey => rule.Bind(parsedRule => checks.Bind(parsedChecks => draft.Bind(isDraft =>
                 Located(RequirementMapping.Create(parsedKey, parsedChecks.Select(c => c.Id), parsedRule), map.Start, at)
-                    .Map(mapping => new ParsedRequirement(mapping with { Draft = isDraft }, [.. parsedChecks], (int)map.Start.Line))))));
+                    .Map(mapping => new ParsedRequirement(mapping with { Draft = isDraft, CoversPart = part is Result<bool>.Ok { Value: true } }, [.. parsedChecks], (int)map.Start.Line))))));
     }
 
     /// <summary>s14-01: <c>draft: true</c> on a row <c>hound mapping derive</c> wrote and nobody has reviewed yet.</summary>
@@ -141,6 +142,14 @@ public static class MappingLoader
         YamlScalarNode { Value: "true" } => Result.Ok(true),
         YamlScalarNode { Value: "false" } => Result.Ok(false),
         var other => Result.Fail<bool>(at.Problem(other.Start, "mapping.draft_invalid", "'draft' must be true or false.")),
+    };
+
+    /// <summary>s17-01: <c>covers: part</c> when the checks answer only part of the requirement; <c>whole</c>, the default, when they answer all of it.</summary>
+    private static Result<bool> ParseCovers(YamlMappingNode map, Locator at) => Child(map, "covers") switch
+    {
+        null or YamlScalarNode { Value: "whole" } => Result.Ok(false),
+        YamlScalarNode { Value: "part" } => Result.Ok(true),
+        var other => Result.Fail<bool>(at.Problem(other.Start, "mapping.covers_invalid", "'covers' must be part (the checks answer only part of the requirement) or whole.")),
     };
 
     /// <summary>Exactly one of <c>ref</c> and <c>urn</c>; <c>rows: all</c> only with a ref.</summary>
