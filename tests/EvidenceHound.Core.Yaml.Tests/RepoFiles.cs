@@ -9,6 +9,10 @@ internal static class RepoFiles
 
     public static string RepeatedLibrary => File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "files", "frameworks", "example-repeated-library.yaml"));
 
+    public static string DomainsLibrary => File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "files", "frameworks", "example-domains-library.yaml"));
+
+    public static string TransitionMapping => File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "files", "frameworks", "example-transition-mapping.yaml"));
+
     public static string MappingSchema => File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "files", "schemas", "mapping.schema.json"));
 
     public static T Value<T>(this Result<T> result)

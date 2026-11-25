@@ -1,0 +1,30 @@
+# A small fictional requirement mapping library in CISO Assistant's format, for tests: two old requirements to the
+# fictional example-domains framework.
+urn: urn:example:risk:library:mapping-example-old-to-example-domains
+locale: en
+ref_id: mapping-example-old-to-example-domains
+name: Example old -> Example domains
+description: Fictional transition mapping for Evidence Hound tests. Example Pty Ltd.
+copyright: Fictional, for tests.
+version: 1
+publication_date: '2026-01-01'
+provider: Example Pty Ltd
+packager: example
+objects:
+  requirement_mapping_set:
+    urn: urn:example:risk:req_mapping_set:mapping-example-old-to-example-domains
+    ref_id: mapping-example-old-to-example-domains
+    name: Example old -> Example domains
+    source_framework_urn: urn:example:risk:framework:example-old
+    target_framework_urn: urn:example:risk:framework:example-domains
+    requirement_mappings:
+    - source_requirement_urn: urn:example:risk:req_node:example-old:mfa:old-1
+      target_requirement_urn: urn:example:risk:req_node:example-domains:bnd:pro-01:pro-01.1
+      relationship: intersect
+      rationale: functional
+      strength_of_relationship: null
+    - source_requirement_urn: urn:example:risk:req_node:example-old:mfa:old-2
+      target_requirement_urn: urn:example:risk:req_node:example-domains:bnd:pro-01:pro-01.1
+      relationship: subset
+      rationale: functional
+      strength_of_relationship: null

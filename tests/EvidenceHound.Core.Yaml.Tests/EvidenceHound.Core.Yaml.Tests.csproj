@@ -8,7 +8,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\mappings\*.yaml" Link="files\mappings\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\fixtures\frameworks\example-repeated-library.yaml" Link="files\frameworks\example-repeated-library.yaml" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\fixtures\frameworks\*.yaml" Link="files\frameworks\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\frameworks\ai6.*" Link="files\frameworks\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\profiles\ciso-assistant.yaml" Link="files\profiles\ciso-assistant.yaml" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\examples\manual-sources\ai6\**\*" Link="files\manual-sources\ai6\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />

@@ -61,6 +61,28 @@ public sealed class MappingCoverageCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Essentials_phase_1_is_counted_per_domain_with_no_uncovered_action()
+    {
+        // s14-01: the ASD Essentials rates each action per domain, so coverage also counts per domain and priority phase.
+        var exitCode = await Run(
+            "mapping", "coverage", Repo("mappings", "asd-essentials-enterprise-it.yaml"),
+            "--framework", Repo("frameworks", "asd-essentials-enterprise-it.json"),
+            "--groups", "1",
+            "--manual", Repo("examples", "manual-sources"),
+            "--manual", Repo("examples", "example-essential-eight.yaml"));
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var text = _output.ToString();
+        text.ShouldContain("| Top level | Group | Automated | Manual | Uncovered |");
+        text.ShouldContain("| Boundary services | 1 |");
+        text.ShouldContain("| Identity services | 1 |");
+        text.ShouldContain("| Governance and culture | 1 |");
+        text.ShouldContain("| Visibility and response | 1 |");
+        text.ShouldNotContain("| Business systems");
+        text.ShouldMatch(@"(?s).*Total: \d+ automated, \d+ manual, 0 uncovered.*");
+    }
+
+    [Fact]
     public async Task Unknown_group_is_a_configuration_error()
     {
         var exitCode = await Run(
