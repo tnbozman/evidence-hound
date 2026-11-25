@@ -19,8 +19,44 @@ public static class SupplierValidator
             .. scope.Setup.Organisation is { } organisation ? EntityProblems(organisation, today) : [],
             .. scope.ThirdParties.SelectMany(entity => EntityProblems(entity, today)),
             .. SensitiveDataValidator.Validate(scope, today),
+            .. FlowDown(scope),
         ];
     }
+
+    /// <summary>
+    /// The clauses a customer contract imposes: each names a framework <c>scope/setup.yaml</c> declares, only a customer contract flows a clause down,
+    /// and a flowed-down clause is on every supplier contract whose solutions handle the data kinds it covers (every supplier contract when it names none).
+    /// </summary>
+    public static IEnumerable<ScopeProblem> FlowDown(ScopeDocument scope)
+    {
+        ArgumentNullException.ThrowIfNull(scope);
+        var frameworks = scope.Setup.Frameworks.Select(f => f.Urn).ToHashSet(StringComparer.Ordinal);
+        var contracts = scope.ThirdParties.SelectMany(e => e.Contracts.Select(c => (Entity: e, Contract: c))).ToArray();
+        var flowed = contracts.Where(c => c.Contract.Customer)
+            .SelectMany(c => c.Contract.Obligations.Where(o => o.FlowDown).Select(o => (c.Contract, Obligation: o)))
+            .ToArray();
+        return
+        [
+            .. contracts.SelectMany(c => c.Contract.Obligations).Select(o => o.Framework).OfType<ScopeRef>().Where(f => !frameworks.Contains(f.Value))
+                .Select(f => new ScopeProblem(
+                    "contract.framework_unknown", f.At, $"obligation framework '{f.Value}' is not declared.",
+                    "Add the framework to scope/setup.yaml, or correct its URN.")),
+            .. contracts.Where(c => !c.Contract.Customer).SelectMany(c => c.Contract.Obligations.Where(o => o.FlowDown))
+                .Select(o => new ScopeProblem(
+                    "contract.flow_down_invalid", o.FlowDownAt ?? o.At, $"clause '{o.Clause}' is marked flow_down on a supplier contract.",
+                    "Only a customer contract (customer: true) flows a clause down; remove flow_down here.")),
+            .. contracts.Where(c => !c.Contract.Customer).SelectMany(c => flowed
+                .Where(f => Handles(c.Entity, c.Contract, f.Obligation.Data) && c.Contract.Obligations.All(o => o.Clause != f.Obligation.Clause))
+                .Select(f => new ScopeProblem(
+                    "contract.flow_down_missing", c.Contract.At,
+                    $"contract '{c.Contract.RefId}' with {c.Entity.RefId} lacks '{f.Obligation.Clause}', which customer contract '{f.Contract.RefId}' flows down.",
+                    $"Add the clause to the supplier contract's obligations once it is in the signed contract, or raise it with {c.Entity.Name}."))),
+        ];
+    }
+
+    private static bool Handles(ScopeEntity entity, ScopeContract contract, IReadOnlyList<SensitiveDataKind> kinds) =>
+        kinds.Count == 0 || entity.Solutions.Where(s => contract.Solutions.Any(r => r.Value == s.RefId))
+            .SelectMany(s => s.Data).Any(d => kinds.Contains(d.Kind));
 
     /// <summary>Third parties declared once (entities, solutions and contracts by ref_id, representatives by email), and the parents and domains they name.</summary>
     public static IEnumerable<ScopeProblem> References(ScopeDocument scope)

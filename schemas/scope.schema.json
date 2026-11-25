@@ -1460,6 +1460,26 @@
               "approved_on": {
                 "$ref": "#/$defs/date",
                 "description": "The day it was approved, as yyyy-MM-dd."
+              },
+              "customer": {
+                "enum": ["true", "false", true, false],
+                "description": "true when this is a contract a customer (such as a prime) holds with the organisation, rather than one with a supplier."
+              },
+              "obligations": {
+                "type": "array",
+                "description": "The clauses the contract imposes. On a customer contract, flow_down marks a clause every supplier handling its data must carry.",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["clause"],
+                  "properties": {
+                    "clause": { "$ref": "#/$defs/text", "description": "The clause as the contract names it, such as DFARS 252.204-7012." },
+                    "framework": { "$ref": "#/$defs/text", "description": "The URN of the framework the clause requires, declared in setup.yaml." },
+                    "level": { "$ref": "#/$defs/text", "description": "The level of that framework the clause requires, such as 2." },
+                    "data": { "type": "array", "items": { "enum": ["cui", "pii", "export_controlled", "classified"] }, "description": "The data kinds the clause covers; none means every supplier." },
+                    "flow_down": { "enum": ["true", "false", true, false], "description": "On a customer contract only: suppliers handling the data must carry this clause." }
+                  }
+                }
               }
             }
           }

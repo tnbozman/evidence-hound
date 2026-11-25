@@ -58,6 +58,8 @@ public class ScopeSchemaTests
         Errors(ReportingObligationTests.Reporting.Replace("{data: [cui]}", "{data: [secrets]}", StringComparison.Ordinal)).ShouldNotBeEmpty();
         Errors(ExceptionScopeTests.Exceptions.Replace("    severity: medium", "    severity: medium\n    status: approved", StringComparison.Ordinal)).ShouldNotBeEmpty();
         Errors(SspFixture.Setup).ShouldBeEmpty();
+        Errors(FlowDownTests.Prime).ShouldBeEmpty();
+        Errors(FlowDownTests.Prime.Replace("data: [cui]", "data: [secrets]", StringComparison.Ordinal)).ShouldNotBeEmpty();
         Errors(SspFixture.Ssp.Replace("profile: ism", "profile: iso27001", StringComparison.Ordinal)).ShouldNotBeEmpty();
     }
 

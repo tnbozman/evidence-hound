@@ -21,7 +21,8 @@ public static partial class ScopeLoader
     private static readonly string[] OrganisationEntityKeys = ["name", "description", "mission", "country", "currency", "identifiers"];
 
     private static readonly string[] SolutionKeys = ["ref_id", "name", "description", "criticality", "data"];
-    private static readonly string[] ContractKeys = ["ref_id", "name", "description", "status", "start", "end", "annual_expense", "currency", "solutions", "approved_by", "approved_on"];
+    private static readonly string[] ContractKeys = ["ref_id", "name", "description", "status", "start", "end", "annual_expense", "currency", "solutions", "approved_by", "approved_on", "customer", "obligations"];
+    private static readonly string[] ContractObligationKeys = ["clause", "framework", "level", "data", "flow_down"];
     private static readonly string[] ContractStatuses = ["draft", "active", "expired", "terminated"];
     private static readonly string[] RepresentativeKeys = ["email", "first_name", "last_name", "role", "phone"];
     private static readonly string[] Levels = ["dependency", "penetration", "maturity", "trust"];
@@ -121,6 +122,37 @@ public static partial class ScopeLoader
                 Solutions = file.Refs(item, "solutions"),
                 ApprovedBy = file.Text(item, "approved_by"),
                 ApprovedOn = Date(item, "approved_on", file),
+                Customer = file.OneOf(item, "customer", Booleans, required: false) == "true",
+                Obligations = [.. file.Items(item, "obligations").Select(o => ReadContractObligation(o, file)).OfType<ScopeObligation>()],
+            };
+    }
+
+    private static ScopeObligation? ReadContractObligation(YamlMappingNode item, FileReader file)
+    {
+        file.Keys(item, ContractObligationKeys);
+        var clause = file.Required(item, "clause");
+        var data = new List<SensitiveDataKind>();
+        foreach (var kind in file.Refs(item, "data"))
+        {
+            if (DataKinds.Contains(kind.Value, StringComparer.Ordinal))
+            {
+                data.Add(Kind(kind.Value));
+            }
+            else
+            {
+                file.Invalid(FileReader.Child(item, "data")!, $"'data' names '{kind.Value}'; expected one of {string.Join(", ", DataKinds)}.");
+            }
+        }
+
+        return clause is null
+            ? null
+            : new ScopeObligation(clause, file.At(item))
+            {
+                Framework = file.Ref(item, "framework"),
+                Level = file.Text(item, "level"),
+                Data = data,
+                FlowDown = file.OneOf(item, "flow_down", Booleans, required: false) == "true",
+                FlowDownAt = FileReader.Child(item, "flow_down") is { } flowDown ? file.At(flowDown) : null,
             };
     }
 
