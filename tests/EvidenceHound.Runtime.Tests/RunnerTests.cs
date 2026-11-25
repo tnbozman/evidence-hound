@@ -65,6 +65,34 @@ public sealed class RunnerTests : IDisposable
     }
 
     [Fact]
+    public async Task A_row_joining_two_collectors_checks_is_published_by_the_later_run_with_both_evidence()
+    {
+        // s14-05: each collector runs on its own schedule; the later run fills the row from the earlier run's saved results.
+        var both = FrameworkMapping.Create("urn:example:z", [RequirementMapping.Create("R-BOTH", [Id("identity.mfa.admins"), Id("backup.daily")], MappingRule.AllPass).Value()]).Value();
+        Runner Joined() => new(
+            new Dictionary<string, ICollector> { ["idp"] = Reporting("identity.mfa.admins", "admins.json"), ["backup"] = Reporting("backup.daily", "jobs.json") },
+            new CollectStep(Secrets.From(new Dictionary<string, string>()), new FileEvidenceStore(_root), new FixedClock(Now), retentionDays: null, TestCollectorServices.None),
+            [new RunTarget(both, Target)],
+            files => _sink.With(files),
+            new FixedClock(Now),
+            new FileRunRecordStore(_root))
+        {
+            Latest = new FileLatestResults(_root, ["example-idp", "example-backup"]),
+        };
+        var ct = TestContext.Current.CancellationToken;
+
+        await Joined().RunAsync([Instance("example-idp", "idp")], new RunOptions(), ct);
+        _sink.Main.ShouldHaveSingleItem().OfType<AuditUpdate.UpdateRequirementAssessment>().ShouldBeEmpty();
+
+        var summary = await Joined().RunAsync([Instance("example-backup", "backup")], new RunOptions(), ct);
+
+        summary.Outcome.ShouldBe(CollectorOutcome.Succeeded, string.Join("; ", summary.Collectors.SelectMany(c => c.Problems).Select(p => p.Message)));
+        var update = _sink.Main[1].OfType<AuditUpdate.UpdateRequirementAssessment>().ShouldHaveSingleItem();
+        (update.RequirementRefId, update.Result).ShouldBe(("R-BOTH", ComplianceResult.Compliant));
+        update.EvidenceRefIds.ShouldBe(["example-backup/jobs.json", "example-idp/admins.json"]);
+    }
+
+    [Fact]
     public async Task Owned_results_go_to_every_target_with_one_evidence_upload()
     {
         var second = FrameworkMapping.Create("urn:example:y", [RequirementMapping.Create("Q-MFA", [Id("identity.mfa.admins")], MappingRule.AllPass).Value()]).Value();

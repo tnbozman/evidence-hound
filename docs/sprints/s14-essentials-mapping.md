@@ -110,6 +110,21 @@ As [s12-10](s12-e8-mapping-and-adoption.md#s12-10-improve-quality-and-flow-stand
 - The coverage report's per-parent table names each Essentials principle with its domain, as the same principle sits in several domains.
 - Cheat sheet PDF re-rendered for `mapping derive` and `init --framework`.
 
+### s14-05 Fill rows whose checks come from several collectors (added 2026-11-25)
+- [ ] Done
+
+**Story.** The DISP cyber rows and many Essentials rows join checks from several collectors (Microsoft 365 and a manual source, say).
+A run only filled a row one collector fully reported, so those rows were never filled. CI's functional tests found it.
+
+**Acceptance criteria**
+- Each collector run saves its latest check results and evidence list beside its runs.
+- A run fills a row when its own checks and the latest saved results of the other configured collectors together answer every check, and
+  at least one check is its own. Each check counts its newest result; the row cites every contributing collector's evidence.
+- A row no combination fully answers is still left alone, so no collector marks another's row as not assessed.
+
+**Tests to write first**
+- Ownership with other collectors' results; a runner test where two collectors on separate runs fill one row with both evidence.
+
 ## Discovered work
 
 - s14-03: `hound mapping coverage` and `validate` exit 0 with uncovered or draft rows; a `--fail-on-uncovered` (and draft) flag would let

@@ -31,4 +31,17 @@ public class OwnershipTests
     {
         Ownership.OwnedResults(Mapping, [Check("network.firewall.enabled")]).ShouldBeEmpty();
     }
+
+    [Fact]
+    public void A_requirement_whose_other_checks_another_collector_reported_is_owned_with_their_latest_results()
+    {
+        // s14-05: the DISP and Essentials rows join checks from several collectors (Microsoft 365 and a manual source, say).
+        var backup = CheckResult.Create(Id("backup.daily"), CheckOutcome.Fail, "no job", ["example-backup/jobs.json"], At.AddDays(-1), "backup").Value();
+
+        var owned = Ownership.OwnedResults(Mapping, [Check("identity.mfa.admins")], [backup, Check("patching.os.supported")]);
+
+        var r2 = owned.ShouldHaveSingleItem();
+        (r2.RequirementRef, r2.Result).ShouldBe(("R-2", ComplianceResult.NonCompliant));
+        r2.EvidenceRefs.ShouldBe(["example-backup/jobs.json"]);
+    }
 }
