@@ -9,7 +9,7 @@ namespace EvidenceHound.Core.Yaml.Tests;
 /// </summary>
 public class LibraryContentTests
 {
-    private const string Yaml = """
+    public const string Yaml = """
         urn: urn:example:risk:library:example-content
         version: 1
         objects:
@@ -30,7 +30,7 @@ public class LibraryContentTests
         """;
 
     // As CISO Assistant serves stored-libraries/<id>/content/: the YAML loaded by Python, then written as JSON, keys in another order.
-    private const string Stored = """
+    public const string Stored = """
         {"threats": [{"name": "Loss of the only backup administrator", "ref_id": "01", "urn": "urn:example:risk:threat:example-content:thr-01"}],
          "risk_matrix": [{"urn": "urn:example:risk:matrix:example-2x2", "name": "Example 2x2", "description": "Two levels: quoted, with a colon.",
            "grid": [[0, 1], [1, 1]], "is_enabled": true, "annotation": null, "order": 1.5}]}
