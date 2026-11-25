@@ -27,6 +27,9 @@ public enum ScopeKind
     RiskStudy,
     RiskScenario,
     RiskAcceptance,
+    Bia,
+    AssetAssessment,
+    EscalationThreshold,
 }
 
 /// <summary>

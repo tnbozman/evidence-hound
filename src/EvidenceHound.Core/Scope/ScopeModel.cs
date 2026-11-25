@@ -40,6 +40,9 @@ public sealed record ScopeDocument(ScopeSetup Setup, IReadOnlyList<ScopeControl>
 
     /// <summary><c>scope/exceptions.yaml</c>: security exceptions requested through the repo, approved only in CISO Assistant (s15-03).</summary>
     public IReadOnlyList<ScopeExceptionRequest> Exceptions { get; init; } = [];
+
+    /// <summary><c>scope/bia/*.yaml</c>: business impact analyses, one per file (s15-04).</summary>
+    public IReadOnlyList<ScopeBia> Bias { get; init; } = [];
 }
 
 /// <summary><c>scope/setup.yaml</c>: the root folder, the frameworks to load and the domains.</summary>
@@ -107,6 +110,12 @@ public sealed record ScopeSystem(
 
     /// <summary>The system's entry in the AI register, when it is an AI system (s11-12).</summary>
     public AiRegistration? Ai { get; init; }
+
+    /// <summary>Security objectives by name, such as <c>confidentiality: 3</c>, on CISO Assistant's 0 to 4 scale (s15-04).</summary>
+    public IReadOnlyDictionary<string, int> Objectives { get; init; } = new Dictionary<string, int>();
+
+    /// <summary>Recovery objectives: <c>rto</c>, <c>rpo</c> and <c>mtd</c> as durations (s15-04).</summary>
+    public IReadOnlyDictionary<string, Duration> Recovery { get; init; } = new Dictionary<string, Duration>();
 }
 
 /// <summary>An applied control, declared once in <c>scope/controls.yaml</c> and used by any number of audits.</summary>
