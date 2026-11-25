@@ -35,6 +35,19 @@ commands and join their output before I can help.
 - `hound next --json` on a copy of the example repo against the local CISO Assistant lists the seeded failures and the expiring
   exception.
 
+Notes:
+- `NextWork` (Core, pure) turns the facts into entries and orders them: overdue, broken, due soon, waiting; then by date. Each entry has
+  its command, skill and minutes. The review queue is one entry (count and minutes, overdue if any item is past its deadline) plus one
+  for items with no recommendation yet.
+- `hound next --repo --config [--json]` gathers the review queue, the run records (a collector that never ran, failed, or missed its
+  cron schedule by more than 6 hours), each manual source's newest upload (listed from 14 days before it falls due; its never-run
+  collector is not listed twice), exceptions expiring within 60 days, and, with a connection, one read of the folder list (reachable,
+  token accepted or rejected) and the scope plan (changes and drift not yet applied).
+- CISO Assistant's API does not give a token's expiry, so `token_expiry` is null and the note says where to look; a rejected token is a
+  broken entry. Offline, the note says why the connection was not checked and the scope entry is left out.
+- Skill `weekly-review` and the instructions start with `hound next`; guide `docs/operate/grc-member.md`; cheat sheet.
+- Functional: `NextFunctionalTests` runs it on a copy of the example repo against the local CISO Assistant.
+
 ### s18-02 Prepare the week in one step
 - [ ] Done
 
