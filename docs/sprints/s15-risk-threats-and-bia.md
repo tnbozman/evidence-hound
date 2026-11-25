@@ -523,5 +523,8 @@ reference lists 83 commands and sub-commands, covering all 29 top-level commands
   example names NIST SP 800-171, which the example repo does not load, so `contract.framework_unknown` failed validation: recording a
   prime's true requirement stopped every other command. Fixed: it is a warning that names the gap (no programme tracks the framework
   yet) and joins the weekly review (test, then fix).
+- **s15-D10 `hound status` gives no coverage** (raised 2026-11-25 with s15-14). `hound status` reads only the run store, so it cannot
+  say how much of each audit is assessed. The committee and board reports and the trial now give it. Carried to s16 (governance
+  metrics), where status gains each programme's standing from the latest snapshot.
 
 ## Sprint review
