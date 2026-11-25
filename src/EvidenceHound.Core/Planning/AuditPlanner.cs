@@ -129,7 +129,8 @@ public static class AuditPlanner
             .ToArray();
         var unknownControls = controlRefIds
             .Where(c => c.RefIds.Length == 0)
-            .Select(c => new Problem("plan.control_key_unknown", $"Control '{c.Status.ControlKey}' is not configured in the target's controls."));
+            .Select(c => new Problem("plan.control_key_unknown", $"Control '{c.Status.ControlKey}' is not configured in the target's controls. In hound.yaml, add it under the target's 'controls:' "
+                + $"with the ref ID of the applied control it updates (such as {c.Status.ControlKey}: AC-EXAMPLE), or leave out the collector that reports it."));
         Problem[] problems = [.. unknownEvidence, .. unknownControls];
         return problems.Length > 0
             ? Result.Fail<AuditUpdate.UpdateAppliedControl[]>(problems)

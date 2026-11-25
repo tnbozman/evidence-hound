@@ -27,6 +27,7 @@ internal static class ConfigCommands
                 async loaded =>
                 {
                     WarnAboutInstances(loaded, registry, logger);
+                    WarnIfEvidenceRootNotWritable(loaded, file: parseResult.GetRequiredValue(file), logger);
                     await output.WriteLineAsync("valid");
                     return ExitCodes.Ok;
                 },
@@ -53,6 +54,47 @@ internal static class ConfigCommands
             {
                 Log.InstanceProblems(logger, instance.Name, problems);
             }
+        }
+    }
+
+    /// <summary>
+    /// Warns when this user cannot write the evidence root, or create it. Only a warning: the runner container owns the default root, and a
+    /// repo's CI validates the config where nobody can write it. Nothing is left behind: the probe file is deleted.
+    /// </summary>
+    internal static void WarnIfEvidenceRootNotWritable(DeploymentConfig config, FileInfo file, ILogger logger)
+    {
+        var root = Path.GetFullPath(config.Evidence.Root, file.DirectoryName ?? Directory.GetCurrentDirectory());
+        if (!Writable(root))
+        {
+            Log.Warning(logger, $"evidence.root {root} is not writable by this user, so 'hound run' here will fail. That is expected where only "
+                + "the runner container writes it; to run hound yourself, set evidence.root in hound.yaml to a folder you can write, or create it "
+                + "for your user: sudo mkdir -p <folder> && sudo chown $USER <folder>.");
+        }
+    }
+
+    private static bool Writable(string root)
+    {
+        var existing = root;
+        while (!Directory.Exists(existing))
+        {
+            if (File.Exists(existing) || Path.GetDirectoryName(existing) is not { } parent)
+            {
+                return false;
+            }
+
+            existing = parent;
+        }
+
+        var probe = Path.Combine(existing, $".hound-write-check-{Guid.NewGuid():N}");
+        try
+        {
+            File.WriteAllBytes(probe, []);
+            File.Delete(probe);
+            return true;
+        }
+        catch (Exception e) when (e is UnauthorizedAccessException or IOException)
+        {
+            return false;
         }
     }
 
