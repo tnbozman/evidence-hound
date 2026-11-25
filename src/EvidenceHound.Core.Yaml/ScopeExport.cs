@@ -194,6 +194,7 @@ public static class ScopeExport
 
         List(yaml, "", "authors", Split(Field(audit, "authors")));
         List(yaml, "", "reviewers", Split(Field(audit, "reviewers")));
+        List(yaml, "", "systems", Split(Field(audit, "systems")));
 
         var linked = (string field) => rows
             .SelectMany(r => Split(Field(r.Row, field)).Select(id => (Id: id, r.Requirement)))
