@@ -172,13 +172,13 @@ public sealed class ScopePlanCommandTests : IDisposable
         var markdown = _output.ToString();
         markdown.ShouldContain("| Create | audit | EXAMPLE-BASELINE-Q1-2027FY |");
         markdown.ShouldContain("### Audit periods");
-        markdown.ShouldContain("| EXAMPLE-BASELINE-Q1-2027FY | closes: in review, awaiting sign-off |");
-        markdown.ShouldContain("| EXAMPLE-BASELINE-Q2-2027FY | opens, from EXAMPLE-BASELINE-Q1-2027FY |");
+        markdown.ShouldContain("| EXAMPLE-BASELINE-Q1-2027FY | July to September 2026 | closes: in review, awaiting sign-off |");
+        markdown.ShouldContain("| EXAMPLE-BASELINE-Q2-2027FY | October to December 2026 | opens, from EXAMPLE-BASELINE-Q1-2027FY |");
         _output.GetStringBuilder().Clear();
 
         (await Plan(settings, "--format", "json")).ShouldBe(ExitCodes.Ok, _error.ToString());
-        JsonNode.Parse(_output.ToString())!["periods"]!.AsArray().Select(p => (p!["audit"]!.GetValue<string>(), p["event"]!.GetValue<string>(), (string?)p["baseline"]))
-            .ShouldBe([("EXAMPLE-BASELINE-Q1-2027FY", "closes", (string?)null), ("EXAMPLE-BASELINE-Q2-2027FY", "opens", "EXAMPLE-BASELINE-Q1-2027FY")]);
+        JsonNode.Parse(_output.ToString())!["periods"]!.AsArray().Select(p => (p!["audit"]!.GetValue<string>(), p["event"]!.GetValue<string>(), (string?)p["baseline"], p["covers"]!.GetValue<string>()))
+            .ShouldBe([("EXAMPLE-BASELINE-Q1-2027FY", "closes", (string?)null, "July to September 2026"), ("EXAMPLE-BASELINE-Q2-2027FY", "opens", "EXAMPLE-BASELINE-Q1-2027FY", "October to December 2026")]);
     }
 
     [Fact]
