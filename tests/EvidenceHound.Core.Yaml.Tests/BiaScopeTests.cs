@@ -121,6 +121,7 @@ public class BiaScopeTests
         var system = declared.Single(o => o.Kind == ScopeKind.System && o.Key == "Example 365");
         system.Fields["objectives"].ShouldBe("availability=2, confidentiality=3");
         system.Fields["recovery"].ShouldBe("mtd=3d, rpo=1d, rto=4h");
+        ScopeStateQuery.For(Parse().Scope, declared).Bias.ShouldBeTrue("the reader reads BIAs only when the scope declares some");
     }
 
     [Fact]

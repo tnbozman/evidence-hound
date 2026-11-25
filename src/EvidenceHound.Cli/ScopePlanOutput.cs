@@ -313,6 +313,8 @@ internal static class ScopePlanOutput
         ScopeKind.RiskScenario => "risk_scenario",
         ScopeKind.SecurityException => "security_exception",
         ScopeKind.RiskAcceptance => "risk_acceptance",
+        ScopeKind.AssetAssessment => "asset_assessment",
+        ScopeKind.EscalationThreshold => "escalation_threshold",
         _ => kind.ToString().ToLowerInvariant(),
     };
 

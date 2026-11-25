@@ -43,6 +43,7 @@ public sealed class ExceptionPlanTests
     public void Kinds_are_named_in_snake_case()
     {
         (ScopePlanOutput.Kind(ScopeKind.SecurityException), ScopePlanOutput.Kind(ScopeKind.RiskAcceptance)).ShouldBe(("security_exception", "risk_acceptance"));
+        (ScopePlanOutput.Kind(ScopeKind.AssetAssessment), ScopePlanOutput.Kind(ScopeKind.EscalationThreshold)).ShouldBe(("asset_assessment", "escalation_threshold"));
     }
 
     [Fact]

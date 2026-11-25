@@ -62,6 +62,7 @@ public sealed record ScopeStateQuery(string RootFolder, IReadOnlyList<string> Fr
             Organisation = scope.Setup.Organisation is not null,
             EvidencePlan = scope.EvidencePlan is not null,
             Risks = scope.RiskStudies.Count > 0 || scope.Exceptions.Count > 0,
+            Bias = scope.Bias.Count > 0,
             CustomLibraries = declared.Where(d => d.Kind == ScopeKind.Framework && d.Files.Count > 0 && d.Initial.ContainsKey("library"))
                 .GroupBy(d => d.Key, StringComparer.Ordinal)
                 .ToDictionary(g => g.Key, g => g.First().Initial["library"], StringComparer.Ordinal),

@@ -473,6 +473,8 @@ internal static class ScopeCommands
         var risksDir = Path.Combine(dir.ToString(), "risks");
         var risks = Directory.Exists(risksDir) ? Directory.GetFiles(risksDir, "*.yaml").Order(StringComparer.Ordinal).ToArray() : [];
         var exceptionsPath = Path.Combine(dir.ToString(), "exceptions.yaml");
+        var biaDir = Path.Combine(dir.ToString(), "bia");
+        var bias = Directory.Exists(biaDir) ? Directory.GetFiles(biaDir, "*.yaml").Order(StringComparer.Ordinal).ToArray() : [];
         var parsed = ScopeLoader.Parse(
             await ReadAsync(setupPath, cancellationToken),
             File.Exists(controlsPath) ? await ReadAsync(controlsPath, cancellationToken) : null,
@@ -484,7 +486,8 @@ internal static class ScopeCommands
             File.Exists(planPath) ? await ReadAsync(planPath, cancellationToken) : null,
             File.Exists(sspPath) ? await ReadAsync(sspPath, cancellationToken) : null,
             [.. await Task.WhenAll(risks.Select(r => ReadAsync(r, cancellationToken)))],
-            File.Exists(exceptionsPath) ? await ReadAsync(exceptionsPath, cancellationToken) : null);
+            File.Exists(exceptionsPath) ? await ReadAsync(exceptionsPath, cancellationToken) : null,
+            [.. await Task.WhenAll(bias.Select(b => ReadAsync(b, cancellationToken)))]);
 
         var snapshots = await SnapshotsAsync(parsed.Scope.Setup.Frameworks, Path.GetDirectoryName(Path.GetFullPath(setupPath))!, cancellationToken);
         var deployment = configFile is null ? Result.Ok(Deployment.None) : await DeploymentAsync(configFile, registry, cancellationToken);
@@ -503,6 +506,7 @@ internal static class ScopeCommands
             .. ScopeValidator.Validate(scope, snapshots.Loaded, targets.Match(t => t, _ => [])),
             .. SupplierValidator.Validate(scope, today),
             .. RiskValidator.Validate(scope, libraries.Snapshots),
+            .. BiaValidator.Validate(scope, libraries.Snapshots),
             .. RunbooksMissing(scope, repoDir),
             .. configFile is null ? [] : deployment.Match(d => EvidencePlanValidator.Collectors(scope, d.Collectors), _ => []),
         ];
