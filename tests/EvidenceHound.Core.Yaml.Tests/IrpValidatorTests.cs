@@ -1,5 +1,3 @@
-using EvidenceHound.Core.Scope;
-
 namespace EvidenceHound.Core.Yaml.Tests;
 
 /// <summary>s15-09: a judgement section or role the plan lacks is a gap, like the SSP's.</summary>
@@ -10,7 +8,7 @@ public class IrpValidatorTests
     {
         IrpFixture.Build().Gaps.ShouldBeEmpty();
 
-        var withoutLessons = IrpFixture.Irp.Replace("  lessons_learned: irp/lessons-learned.md\n", "", StringComparison.Ordinal);
+        var withoutLessons = IrpFixture.Irp.Replace("\n  lessons_learned: irp/lessons-learned.md", "", StringComparison.Ordinal);
         IrpFixture.Build(withoutLessons).Gaps.ShouldContain(g => g.Requirement == "section lessons_learned");
 
         var emptyFile = new Dictionary<string, string>(IrpFixture.Texts, StringComparer.Ordinal) { ["irp/containment.md"] = "  \n" };

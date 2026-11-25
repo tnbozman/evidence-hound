@@ -154,6 +154,7 @@ file by `scripts/cheatsheet/render.sh`.
 ### Incidents
 
 - `hound incident obligations INC-2026-01`: each report the incident owes under `scope/reporting.yaml`, due from its discovery, made or overdue
+- `hound irp build --programme essential-eight`: the incident response plan from `scope/irp.yaml` and the repo, NIST SP 800-61 Rev 3 with the Australian reporting, gaps first (`--strict` fails on gaps, `--json` gives each source)
   - `--config` (req) `--scope --format json`
 
 ## Typical paths

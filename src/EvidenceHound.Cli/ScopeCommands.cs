@@ -452,6 +452,22 @@ internal static class ScopeCommands
         return File.Exists(path) ? ScopeLoader.ParseReporting(await (read ?? ReadAsync)(path, cancellationToken)) : ([], []);
     }
 
+    /// <summary>The incident response plan in <c>irp.yaml</c> (s15-09), with its problems; null when the scope has no such file.</summary>
+    internal static async Task<(ScopeIrp? Irp, IReadOnlyList<ScopeProblem> Problems)> IrpAsync(
+        DirectoryInfo dir, ScopeDocument scope, CancellationToken cancellationToken, Func<string, CancellationToken, Task<ScopeSource>>? read = null)
+    {
+        var path = Path.Combine(dir.ToString(), "irp.yaml");
+        if (!File.Exists(path))
+        {
+            return (null, []);
+        }
+
+        var (irp, problems) = ScopeLoader.ParseIrp(await (read ?? ReadAsync)(path, cancellationToken));
+        return irp is not null && scope.Setup.Programmes.All(p => p.Id != irp.Programme.Value)
+            ? (irp, [.. problems, new ScopeProblem("irp.programme_unknown", irp.Programme.At, $"programme '{irp.Programme.Value}' is not declared.", "Name a programme from 'programmes:' in scope/setup.yaml.")])
+            : (irp, problems);
+    }
+
     /// <summary>
     /// Checks the scope folder offline. <paramref name="edits"/> stands in for files by full path, so a wizard checks its change before
     /// it writes anything.
@@ -516,6 +532,7 @@ internal static class ScopeCommands
             .. RiskValidator.Validate(scope, libraries.Snapshots),
             .. BiaValidator.Validate(scope, libraries.Snapshots),
             .. (await ReportingAsync(dir, cancellationToken, ReadAsync)).Problems,
+            .. (await IrpAsync(dir, scope, cancellationToken, ReadAsync)).Problems,
             .. RunbooksMissing(scope, repoDir),
             .. configFile is null ? [] : deployment.Match(d => EvidencePlanValidator.Collectors(scope, d.Collectors), _ => []),
         ];

@@ -12,6 +12,7 @@ Instructions for an AI assistant working in this compliance repo. The repo says 
 - `scope/audits/<audit>.yaml`: one audit each: framework, groups, systems, documents, controls with the requirements they support, hand-written `assessments`, `unlisted`, and optionally `cycle` and `sign_offs`.
 - `scope/risks/<study>.yaml`: risk studies and their scenarios, rated by the matrix's level names (docs/risk.md).
 - `scope/exceptions.yaml`: security exception requests; only an approver in CISO Assistant approves them, so never write a `status`.
+- `scope/irp.yaml` and `irp/`: the incident response plan's roles and the judgement sections people write; `hound irp build` derives the rest (docs/incidents.md).
 - `scope/reporting.yaml`: the reports an incident owes, to whom and within how long of discovery (docs/incidents.md); incidents themselves live in CISO Assistant.
 - `scope/bia/<bia>.yaml`: business impact analyses; a recovery flag named by checks (`tested_by`) is set by each run, never by hand (docs/bia.md).
 - `libraries/`: custom libraries such as the risk matrix and threats, with their snapshots (`hound library snapshot`). Raise a library's `version` whenever you change it.

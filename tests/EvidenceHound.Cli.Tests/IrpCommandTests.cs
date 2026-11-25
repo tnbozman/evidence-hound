@@ -44,7 +44,7 @@ public sealed class IrpCommandTests : IDisposable
         var (exit, _, error) = await RunAsync(["irp", "build", "--programme", "disp", "--scope", Scope]);
 
         exit.ShouldBe(ExitCodes.Configuration);
-        error.ShouldContain("irp.programme_unknown");
+        error.ShouldContain("scope/irp.yaml is the plan for 'essential-eight', not 'disp'");
     }
 
     public void Dispose() => Directory.Delete(_root, recursive: true);

@@ -65,6 +65,42 @@ Add a timeline entry to the incident that starts with `Reported:` and the obliga
 - **The committee report.** `hound report snapshot` records the reports each incident owes; `hound report committee` lists the
   overdue ones in section 6 and proposes making each in section 8.
 
+## Build the plan
+
+`hound irp build --programme essential-eight` writes the incident response plan from what the repo already holds, so you write only
+the parts that need judgement. `scope/irp.yaml` names the programme, the plan's version, who holds each role and the Markdown file of
+each judgement section:
+
+```yaml
+programme: essential-eight
+version: "0.1"
+roles:
+  incident_manager: it@example.com    # leads a response
+  deputy: IT team                     # stands in
+  executive: ceo@example.com          # decides for the business, the only spokesperson
+  legal_privacy: ceo@example.com      # law, contracts and privacy
+  authorising_officer: ceo@example.com  # approves each version (ISM-0047)
+sections:
+  severity: irp/severity.md
+  escalation: irp/escalation.md
+  containment: irp/containment.md
+  communication: irp/communication.md
+  lessons_learned: irp/lessons-learned.md
+```
+
+- **Derived:** the contacts from the roles, the systems with the sensitive data they handle and their recovery objectives
+  (`setup.yaml`), the suppliers and customers with their contacts and contract clauses (`third-parties/`, including flowed-down
+  clauses), and each report with its deadline and what triggers it (`reporting.yaml`). `--json` gives every value with its file and line.
+- **Written by you:** severity definitions, escalation decisions, containment priorities, communication approach and lessons learned.
+  A missing role or section, or an empty file, is a gap listed first; `--strict` exits non-zero while any remain.
+- **Layout:** NIST SP 800-61 Rev 3's functions (govern, identify, protect, detect, respond, recover), with the Australian reporting
+  (ReportCyber, the Notifiable Data Breaches scheme, DISP) and DFARS 252.204-7012 inside them, and a section for each of ISM-0043's
+  eight items. It cites NIST SP 800-171 3.6.1 to 3.6.3 and the
+  [ACSC Cyber Incident Response Plan Guidance](https://www.cyber.gov.au/sites/default/files/2023-03/ACSC%20Cyber%20Incident%20Response%20Plan%20Guidance_A4.pdf).
+
+The plan holds names and contacts: keep the built plan out of a public repo, and store the approved copy as the evidence of the yearly
+check below. Raise `version` when you change the plan; the authorising officer approves each version.
+
 ## The plan and its yearly test
 
 The incident response plan is approved and tested once a year, for example with a one-hour tabletop exercise. Make it a manual

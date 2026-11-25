@@ -218,6 +218,7 @@ public static class HoundCli
             ProfileCommands.Build(output, loggers, configuration),
             ProgrammeCommands.Build(output, loggers, configuration, registry),
             IncidentCommands.Build(output, loggers, configuration, registry),
+            IrpCommands.Build(output, loggers, configuration, registry),
             ReportCommands.Build(output, loggers, configuration, registry),
             SspCommands.Build(output, loggers, configuration, registry),
             PublishCommand.Build(output, loggers, configuration, registry),

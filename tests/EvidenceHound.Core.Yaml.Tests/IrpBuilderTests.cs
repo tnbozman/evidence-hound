@@ -39,9 +39,9 @@ public class IrpBuilderTests
 
         reports.Select(r => (r.Name.Value, r.Within.Value, r.Trigger.Value)).ShouldBe(
         [
-            ("DFARS 252.204-7012 cyber incident report", "72h", "an incident on a system handling cui (Example laptops)"),
-            ("Notifiable Data Breaches assessment", "30d", "an incident on a system handling pii (none in scope)"),
-            ("Report to ASD's ACSC through ReportCyber", "1d", "every incident"),
+            ("DFARS 252.204-7012 cyber incident report", "72 hours", "an incident on a system handling cui (Example laptops)"),
+            ("Notifiable Data Breaches assessment", "30 days", "an incident on a system handling pii (none in scope)"),
+            ("Report to ASD's ACSC through ReportCyber", "24 hours", "every incident"),
         ]);
         reports[0].ReportTo.Value.ShouldBe("DoD, through the DIBNet portal");
         reports[0].Name.Source.Reference.ShouldStartWith("scope/reporting.yaml line ");

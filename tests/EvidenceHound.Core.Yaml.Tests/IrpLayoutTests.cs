@@ -30,8 +30,8 @@ public class IrpLayoutTests
         functions.Select(f => Array.FindIndex(headings, h => h.Contains(f, StringComparison.Ordinal))).ShouldBeInOrder(SortDirection.Ascending);
         functions.ShouldAllBe(f => headings.Any(h => h.Contains(f, StringComparison.Ordinal)));
 
-        var respond = plan[plan.IndexOf("Respond", StringComparison.Ordinal)..plan.IndexOf("Recover", StringComparison.Ordinal)];
-        respond.ShouldContain("| DFARS 252.204-7012 cyber incident report | DoD, through the DIBNet portal | 72h |");
+        var respond = plan[plan.IndexOf(headings.First(h => h.Contains("Respond", StringComparison.Ordinal)), StringComparison.Ordinal)..plan.IndexOf(headings.First(h => h.Contains("Recover", StringComparison.Ordinal)), StringComparison.Ordinal)];
+        respond.ShouldContain("| DFARS 252.204-7012 cyber incident report | DoD, through the DIBNet portal | 72 hours |");
         respond.ShouldContain("ReportCyber");
         plan.ShouldContain("NIST SP 800-61 Rev 3");
         plan.ShouldContain("NIST SP 800-171 3.6.1");

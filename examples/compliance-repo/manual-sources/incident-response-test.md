@@ -7,10 +7,11 @@ login: follow the steps and send the result to the GRC team.
 
 1. Review the incident response plan with the CEO: who leads, who decides, who calls whom, and the reports in
    `scope/reporting.yaml` with their clocks. Fix anything that changed in the year (people, phone numbers, suppliers).
-2. The CEO approves it: a signed and dated PDF of the plan.
+2. Rebuild it with `hound irp build --programme essential-eight`, and the CEO approves it: a signed and dated PDF of the
+   plan, showing its version.
 3. Run a one-hour tabletop exercise with the people the plan names. Pick one scenario a year, such as ransomware on a
    laptop that handles customer data. Walk the plan step by step, and note what went well and what to change.
-4. Write a one-page record: the date, who took part, the scenario, the reports the scenario would owe and whether the
+4. Write a one-page record: the date, the plan version you tested, who took part, the scenario, the reports the scenario would owe and whether the
    team knew where to make each one, and the actions you agreed.
 
 ## Send it to the GRC team

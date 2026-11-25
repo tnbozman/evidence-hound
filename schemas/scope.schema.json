@@ -35,6 +35,9 @@
       "$ref": "#/$defs/riskStudy"
     },
     {
+      "$ref": "#/$defs/irp"
+    },
+    {
       "$ref": "#/$defs/exceptions"
     },
     {
@@ -45,6 +48,18 @@
     }
   ],
   "$defs": {
+    "irp": {
+      "type": "object",
+      "description": "scope/irp.yaml: the incident response plan's programme, version, role holders and judgement sections (s15-09).",
+      "additionalProperties": false,
+      "required": ["programme", "version", "roles", "sections"],
+      "properties": {
+        "programme": { "$ref": "#/$defs/text", "description": "The programme's id from setup.yaml." },
+        "version": { "$ref": "#/$defs/text", "description": "The plan's version; the annual test records it." },
+        "roles": { "type": "object", "additionalProperties": false, "description": "Who holds each role: an email or a team.", "properties": { "incident_manager": { "$ref": "#/$defs/text" }, "deputy": { "$ref": "#/$defs/text" }, "executive": { "$ref": "#/$defs/text" }, "legal_privacy": { "$ref": "#/$defs/text" }, "authorising_officer": { "$ref": "#/$defs/text" } } },
+        "sections": { "type": "object", "additionalProperties": false, "description": "The Markdown file of each judgement section, relative to the repo.", "properties": { "severity": { "$ref": "#/$defs/text" }, "escalation": { "$ref": "#/$defs/text" }, "containment": { "$ref": "#/$defs/text" }, "communication": { "$ref": "#/$defs/text" }, "lessons_learned": { "$ref": "#/$defs/text" } } }
+      }
+    },
     "reporting": {
       "description": "reporting.yaml (s15-07): the reports an incident owes, to whom, and within how long of its discovery. Incidents live in CISO Assistant; 'hound incident obligations' lists what one owes.",
       "type": "object",
