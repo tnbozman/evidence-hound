@@ -42,6 +42,7 @@ It writes:
 | `scope/audits/<code>-e8.yaml` | The audit series `<CODE>-E8` at that maturity level, by quarter or month from the period holding today, with no hand-written results yet. Each period is its own audit, such as `EX-E8-Q2-2027FY` ([Audit periods](scope.md#audit-periods)). `hound scope new-audit` lists every requirement, if you want them all in the file |
 | `mappings/essential-eight-2023.yaml`, `frameworks/essential-eight-2023.json` | The Essential Eight mapping and framework snapshot of this `hound` version |
 | With `--framework disp`: `frameworks/disp.yaml`, `frameworks/disp.json`, `mappings/disp.yaml`, `scope/audits/<code>-disp.yaml` | The DISP library, its snapshot and mapping, and the audit series `<CODE>-DISP`, declared in `scope/setup.yaml` and added to `targets` in `hound.yaml` |
+| `.devcontainer/` | The GRC team's workspace: released `hound`, the .NET runtime and the Claude Code and GitHub Copilot extensions, so your machine needs only Docker and VS Code ([work in the devcontainer](../examples/compliance-repo/README.md#work-in-the-devcontainer)) |
 | `.gitignore`, `README.md` | What never goes in the repo, and the next steps |
 
 For more people, settings and a pull request workflow, copy them from the [example compliance repo](../examples/compliance-repo/README.md), as the [first deployment tutorial](tutorials/first-deployment.md) describes.

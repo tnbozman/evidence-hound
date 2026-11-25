@@ -1,0 +1,27 @@
+{
+  // The GRC team's workspace: open this repo in VS Code with the Dev Containers extension; the host needs only Docker.
+  // hound is the released one (see Dockerfile); the coding assistants guide the weekly review and onboarding.
+  "name": "Compliance (Evidence Hound)",
+  "build": { "dockerfile": "Dockerfile" },
+  "remoteUser": "vscode",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/anthropics/devcontainer-features/claude-code:1": {}
+  },
+  // The CISO Assistant token comes from your own environment, never from this repo.
+  "remoteEnv": {
+    "HOUND_CA_TOKEN": "${localEnv:HOUND_CA_TOKEN}"
+  },
+  "postCreateCommand": "hound --version",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "anthropic.claude-code",
+        "github.copilot",
+        "github.copilot-chat",
+        "redhat.vscode-yaml",
+        "yzhang.markdown-all-in-one"
+      ]
+    }
+  }
+}

@@ -22,7 +22,7 @@ updates:
     schedule:
       interval: weekly
   - package-ecosystem: docker
-    directories: ["/deploy/compose", "/src/EvidenceHound.Cli"]
+    directories: ["/deploy/compose", "/src/EvidenceHound.Cli", "/examples/compliance-repo/.devcontainer"]
     schedule:
       interval: weekly
     # Stay on .NET 10 LTS images (global.json pins the 10.0 SDK).

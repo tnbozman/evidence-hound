@@ -13,6 +13,7 @@ COPY src/ src/
 COPY mappings/essential-eight-2023.yaml mappings/disp.yaml mappings/
 COPY frameworks/essential-eight-2023.json frameworks/disp.yaml frameworks/disp.json frameworks/
 COPY examples/compliance-repo/.gitignore examples/compliance-repo/
+COPY examples/compliance-repo/.devcontainer/ examples/compliance-repo/.devcontainer/
 COPY examples/compliance-repo/manual-sources/weekly-compliance-review.md examples/compliance-repo/manual-sources/
 # hound onboard's default skills and the coding-assistant files hound agent setup writes, built into hound.
 COPY skills/ skills/

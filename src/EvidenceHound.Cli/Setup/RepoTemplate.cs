@@ -68,9 +68,9 @@ internal static class RepoTemplate
     public const string HealthControl = "AC-AUTO-EVIDENCE";
     public const string Perimeter = "Corporate IT";
 
-    /// <summary>The files hound writes from its own copies: the Essential Eight mapping and snapshot, and the template's .gitignore.</summary>
+    /// <summary>The files hound writes from its own copies: the Essential Eight mapping and snapshot, and the template's .gitignore and GRC devcontainer.</summary>
     public static readonly IReadOnlyList<string> Copied =
-        ["mappings/essential-eight-2023.yaml", "frameworks/essential-eight-2023.json", ".gitignore", "manual-sources/weekly-compliance-review.md"];
+        ["mappings/essential-eight-2023.yaml", "frameworks/essential-eight-2023.json", ".gitignore", "manual-sources/weekly-compliance-review.md", ".devcontainer/devcontainer.json", ".devcontainer/Dockerfile"];
 
     /// <summary>Every file hound copies for <paramref name="org"/>: <see cref="Copied"/> and the extra frameworks' files.</summary>
     public static IReadOnlyList<string> CopiedFor(NewOrganisation org)
