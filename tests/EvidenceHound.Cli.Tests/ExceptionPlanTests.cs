@@ -40,6 +40,12 @@ public sealed class ExceptionPlanTests
     }
 
     [Fact]
+    public void Kinds_are_named_in_snake_case()
+    {
+        (ScopePlanOutput.Kind(ScopeKind.SecurityException), ScopePlanOutput.Kind(ScopeKind.RiskAcceptance)).ShouldBe(("security_exception", "risk_acceptance"));
+    }
+
+    [Fact]
     public void Without_exceptions_there_is_no_section()
     {
         ScopePlanOutput.Markdown(Empty, PlanNotes.None).ShouldNotContain("Security exceptions");

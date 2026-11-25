@@ -33,9 +33,111 @@
     },
     {
       "$ref": "#/$defs/riskStudy"
+    },
+    {
+      "$ref": "#/$defs/exceptions"
     }
   ],
   "$defs": {
+    "exceptions": {
+      "description": "exceptions.yaml (s15-03): security exceptions requested through the repo. Their status is never declared: an approver sets it in CISO Assistant.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "exceptions"
+      ],
+      "properties": {
+        "exceptions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/securityException"
+          }
+        }
+      }
+    },
+    "securityException": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ref_id",
+        "name",
+        "domain"
+      ],
+      "properties": {
+        "ref_id": {
+          "$ref": "#/$defs/text"
+        },
+        "name": {
+          "$ref": "#/$defs/text"
+        },
+        "description": {
+          "type": "string"
+        },
+        "domain": {
+          "$ref": "#/$defs/text"
+        },
+        "severity": {
+          "enum": [
+            "undefined",
+            "info",
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ]
+        },
+        "owners": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/email"
+          }
+        },
+        "expiration_date": {
+          "$ref": "#/$defs/date"
+        },
+        "observation": {
+          "type": "string"
+        },
+        "systems": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "controls": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "scenarios": {
+          "type": "array",
+          "description": "Risk scenarios as <study ref_id>/<scenario ref_id>.",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "requirements": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "audit",
+              "requirement"
+            ],
+            "properties": {
+              "audit": {
+                "$ref": "#/$defs/text"
+              },
+              "requirement": {
+                "$ref": "#/$defs/text"
+              }
+            }
+          }
+        }
+      }
+    },
     "riskStudy": {
       "description": "risks/<study>.yaml (s15-02): one risk study, rated on one risk matrix by URN, and its scenarios. Risk levels are never declared: CISO Assistant computes them.",
       "type": "object",

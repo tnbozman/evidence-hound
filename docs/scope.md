@@ -414,6 +414,48 @@ that controls.yaml says is already active.
 `hound scope plan` shows a rating change by level name, such as `current_probability: Likely → Possible`, so a reviewer reads what
 changed without the matrix to hand.
 
+### Risk acceptances
+
+A scenario with `treatment: accept` asks CISO Assistant for a risk acceptance, under the ref_id `ACC-<study>-<scenario>` with the
+scenario's justification. `hound` never sets its state: the Approver accepts or rejects it in CISO Assistant, and `hound scope plan`
+shows what they decided.
+
+## exceptions.yaml
+
+Security exceptions: a known gap the organisation lives with for a time, such as an application that cannot use single sign-on until its
+upgrade. The request is written and reviewed in the repo; only an approver in CISO Assistant approves it, so the decision keeps its
+separation of duties.
+
+```yaml
+exceptions:
+  - ref_id: EXC-01
+    name: Legacy finance app without MFA
+    description: The finance app cannot use single sign-on until its upgrade.
+    domain: Example Pty Ltd
+    severity: medium                     # undefined, info, low, medium, high or critical
+    owners: [it@example.com]
+    expiration_date: "2027-03-31"
+    observation: Sign-in is limited to the office network.
+    systems: [Example 365]               # by name, from setup.yaml
+    controls: [AC-MFA]                   # by ref_id, from controls.yaml
+    scenarios: [EX-RISK-2026/R-01]       # <study ref_id>/<scenario ref_id>
+    requirements:                        # audit rows the exception covers
+      - audit: EXAMPLE-BASELINE-2026
+        requirement: EX-1.1
+```
+
+- A `status` in the file is an error (`scope.approval_not_configurable`). Apply the exception as a request; its approver decides in
+  CISO Assistant.
+- `hound scope validate` reports `exception.domain_unknown`, `exception.system_unknown`, `exception.control_unknown`,
+  `exception.scenario_unknown`, `exception.audit_unknown` and duplicate `ref_id`s.
+- `hound scope plan` lists each exception and risk acceptance with its CISO Assistant status (`draft`, `in_review`, `approved`,
+  `rejected`, `resolved`, `expired` or `deprecated`), then what to renew or close: `exception.expiring` (an approved one that expires
+  within 60 days) and `exception.expired_but_approved`.
+- `hound status --config hound.yaml --scope scope` lists, offline, the exceptions whose declared expiry is within 60 days or past.
+- When a check fails on a row an approved, unexpired exception covers, `hound run` names the exception in the row's observation, such as
+  "Covered by security exception EXC-01 (Legacy finance app without MFA), approved until 2027-03-31." The result itself stays
+  non-compliant: an exception explains a gap, it does not close it.
+
 ## audits/&lt;audit&gt;.yaml
 
 | Key | Meaning |
