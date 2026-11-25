@@ -444,6 +444,14 @@ internal static class ScopeCommands
         public IReadOnlyList<ScopeProblem> Warnings { get; init; } = [];
     }
 
+    /// <summary>The reporting obligations in <c>reporting.yaml</c> (s15-07); none when the scope has no such file.</summary>
+    internal static async Task<(IReadOnlyList<ReportingObligation> Obligations, IReadOnlyList<ScopeProblem> Problems)> ReportingAsync(
+        DirectoryInfo dir, CancellationToken cancellationToken, Func<string, CancellationToken, Task<ScopeSource>>? read = null)
+    {
+        var path = Path.Combine(dir.ToString(), "reporting.yaml");
+        return File.Exists(path) ? ScopeLoader.ParseReporting(await (read ?? ReadAsync)(path, cancellationToken)) : ([], []);
+    }
+
     /// <summary>
     /// Checks the scope folder offline. <paramref name="edits"/> stands in for files by full path, so a wizard checks its change before
     /// it writes anything.
@@ -507,6 +515,7 @@ internal static class ScopeCommands
             .. SupplierValidator.Validate(scope, today),
             .. RiskValidator.Validate(scope, libraries.Snapshots),
             .. BiaValidator.Validate(scope, libraries.Snapshots),
+            .. (await ReportingAsync(dir, cancellationToken, ReadAsync)).Problems,
             .. RunbooksMissing(scope, repoDir),
             .. configFile is null ? [] : deployment.Match(d => EvidencePlanValidator.Collectors(scope, d.Collectors), _ => []),
         ];
