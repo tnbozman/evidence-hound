@@ -102,10 +102,11 @@ As [s12-10](s12-e8-mapping-and-adoption.md#s12-10-improve-quality-and-flow-stand
     tutorial's image to a release (bats tests; `docs/releasing.md`).
   - Non-root user with the default evidence root: proven by this sprint's rehearsal, which found the unexplained failure (fixed in s14-03).
   - nuget.org trusted publishing: stays as discovered work.
-- Dependencies: twelve Dependabot updates folded into the sprint branch (Microsoft.Extensions 11 packages on the .NET 10 runtime, test
-  tools with xunit.v3 aligned on 4.0.3, Confluent.Kafka, CycloneDX, code coverage, the runtime image digest, Caddy, Redpanda in the dev
-  stack, markdownlint-cli2 0.24, mkdocs-material). PostgreSQL 18 (needs a dump and restore of an existing database) and the .NET 11 SDK
-  image (the repo pins the .NET 10 SDK) were held for a decision.
+- Dependencies: Dependabot updates folded into the sprint branch: test tools with xunit.v3 aligned on 4.0.3 (also in the collector
+  template, which Dependabot now watches), Confluent.Kafka, CycloneDX, code coverage, the runtime image digest, Caddy, Redpanda in the dev
+  stack, markdownlint-cli2 0.24, mkdocs-material. Decided 2026-11-25: stay on .NET 10 LTS and PostgreSQL 16, so the .NET 11 SDK image,
+  Microsoft.Extensions 11 and PostgreSQL 18 (which cannot open an existing data folder without a dump and restore) were closed, and
+  Dependabot ignores those majors.
 - The coverage report's per-parent table names each Essentials principle with its domain, as the same principle sits in several domains.
 - Cheat sheet PDF re-rendered for `mapping derive` and `init --framework`.
 
