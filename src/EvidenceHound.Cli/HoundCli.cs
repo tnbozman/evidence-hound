@@ -226,9 +226,9 @@ public static class HoundCli
         };
     }
 
-    /// <summary>Logs to <paramref name="error"/>, with each HTTP request's own information lines hidden below warnings.</summary>
+    /// <summary>Logs to <paramref name="error"/>, with each HTTP request's information lines and each retry attempt (Polly) hidden below warnings.</summary>
     internal static ILoggingBuilder DefaultLogging(ILoggingBuilder logging, TextWriter error) =>
-        logging.AddFilter("System.Net.Http.HttpClient", LogLevel.Warning).AddProvider(new StderrLoggerProvider(error));
+        logging.AddFilter("System.Net.Http.HttpClient", LogLevel.Warning).AddFilter("Polly", LogLevel.Warning).AddProvider(new StderrLoggerProvider(error));
 
     /// <summary>One host per run. Logs go to <paramref name="error"/>; the level comes from configuration (for example <c>Logging__LogLevel__Default</c>).</summary>
     private static IHost BuildHost(
