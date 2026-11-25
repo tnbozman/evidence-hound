@@ -33,8 +33,12 @@ Release 1 is ordered to put Essential Eight evidence on a schedule as early as p
 2. **Implement.** In the dev container, open Claude Code and run `/next-task`. Each task follows red, green, refactor, functional check, as in `CLAUDE.md`.
 3. **Rehearse and improve (every sprint).** Claude, not the maintainer, follows the trial, onboarding and sustaining-GRC guides end to end on the local stack as a small, stretched Cyber GRC team would, records every doc or hound error under "Discovered work" and fixes it in the sprint. About 15% of each sprint goes to an Improve task: triage the last sprint's discovered work, fix docs drift and legacy files, speed up feedback, and a short retro. Each sprint file has these two standing tasks.
 4. **Feedback.** After each task, `/check-feedback` reads CI and security results; fix before moving on.
-5. **Review.** When all tasks are ticked and checks are green, add the sprint review note, mark the PR ready, review and merge.
-6. **Close.** In the last commit before merging, set `Status: Done`. Unfinished tasks move to the next sprint file under "Carried over".
+5. **Agent kit (every sprint).** Before review, the Claude Code and GitHub Copilot skills and agents (`agent/`, written by
+   `hound agent setup`) match the CLI and the workflows as they now stand: a new or changed command or workflow is in a skill, the
+   generated command reference is current, and the `AgentCommandTests` pass for both assistants. The rehearsal (step 3) uses the
+   skills, as the person's agent would, and records where one was wrong or missing.
+6. **Review.** When all tasks are ticked and checks are green, add the sprint review note, mark the PR ready, review and merge.
+7. **Close.** In the last commit before merging, set `Status: Done`. Unfinished tasks move to the next sprint file under "Carried over".
 
 ## Task format
 

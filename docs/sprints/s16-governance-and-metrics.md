@@ -91,6 +91,8 @@ Changed in the AI governance planning PR (Nov 2026): s11-05 builds the `ciso-ass
 - [ ] Done
 
 As [s12-09](s12-e8-mapping-and-adoption.md#s12-09-rehearse-trial-onboarding-and-sustaining-grc-standing-every-sprint), including this sprint's new commands and guides.
+The rehearsal drives hound through the agent skills, and the sprint ends with the Claude Code and Copilot skills and agents
+accurate for the CLI and its workflows (sprint lifecycle step 5 in [README.md](README.md)).
 
 ### s16-06 Improve: quality and flow (standing, about 15% of each sprint)
 - [ ] Done

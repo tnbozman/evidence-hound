@@ -143,6 +143,8 @@ evidence for each, so that I approve in minutes what I understand and challenge 
 - [ ] Done
 
 As [s12-09](s12-e8-mapping-and-adoption.md#s12-09-rehearse-trial-onboarding-and-sustaining-grc-standing-every-sprint), including this
+The rehearsal drives hound through the agent skills, and the sprint ends with the Claude Code and Copilot skills and agents
+accurate for the CLI and its workflows (sprint lifecycle step 5 in [README.md](README.md)).
 sprint's new commands and guides. Count the agent's commands and the person's minutes for one week's work, and compare with s17.
 
 ### s18-07 Improve: quality and flow (standing, about 15% of each sprint)

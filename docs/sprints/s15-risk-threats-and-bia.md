@@ -353,6 +353,9 @@ The supplier contacts are covered by `IrpBuilderTests` (the example repo declare
 - [ ] Done
 
 As [s12-09](s12-e8-mapping-and-adoption.md#s12-09-rehearse-trial-onboarding-and-sustaining-grc-standing-every-sprint), including this sprint's new commands and guides.
+From s15 the rehearsal drives hound through the agent skills, as the person's agent would, and records any skill that was wrong or
+missing (the maintainer's standing rule, 2026-11-25: every sprint ends with the Claude Code and Copilot skills and agents accurate for
+the CLI and its workflows; see the sprint lifecycle in [README.md](README.md)).
 
 ### s15-11 Improve: quality and flow (standing, about 15% of each sprint)
 - [ ] Done
