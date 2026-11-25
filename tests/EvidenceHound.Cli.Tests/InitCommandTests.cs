@@ -210,6 +210,28 @@ public sealed class InitCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Organisation_audit_only_with_an_organisation_wide_source()
+    {
+        // s18-08: audits are per system, so each shows its own gaps; an organisation-wide audit no organisation-wide source feeds is an
+        // empty shell. init writes one only when asked, and says how to draft one per system.
+        var ct = TestContext.Current.CancellationToken;
+        (await Run("", "init", Repo, "--yes")).ShouldBe(ExitCodes.Ok, _error.ToString());
+
+        Directory.GetFiles(Path.Combine(Repo, "scope", "audits"), "*.yaml").ShouldBeEmpty();
+        var config = await File.ReadAllTextAsync(Path.Combine(Repo, "hound.yaml"), ct);
+        config.ShouldContain("targets: []");
+        var readme = await File.ReadAllTextAsync(Path.Combine(Repo, "README.md"), ct);
+        readme.ShouldContain("hound audit draft");
+        readme.ShouldContain("one audit per system");
+        await ShouldValidateAsync();
+
+        var organisation = Path.Combine(_root, "organisation");
+        (await Run("", "init", organisation, "--yes", "--organisation-audit")).ShouldBe(ExitCodes.Ok, _error.ToString());
+        Directory.GetFiles(Path.Combine(organisation, "scope", "audits"), "*.yaml").ShouldHaveSingleItem();
+        (await File.ReadAllTextAsync(Path.Combine(organisation, "hound.yaml"), ct)).ShouldContain("compliance_assessment: EX-E8\n");
+    }
+
+    [Fact]
     public async Task An_unknown_framework_is_refused()
     {
         var exitCode = await Run("", "init", Repo, "--yes", "--framework", "iso-27001");

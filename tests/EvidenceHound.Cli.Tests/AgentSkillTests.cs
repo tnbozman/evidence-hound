@@ -116,5 +116,20 @@ public sealed class AgentSkillTests : IDisposable
         (await File.ReadAllTextAsync(Path.Combine(_root, ".claude", "skills", "weekly-review", "SKILL.md"), ct)).ShouldContain("work-through-pending-decisions");
     }
 
+    [Fact]
+    public async Task Decisions_skill_orders_items_by_risk()
+    {
+        // s18-08: high risk first, then by deadline; it starts from the prepared week, groups what the same evidence settles, and answers
+        // a challenge by redrafting.
+        var ct = TestContext.Current.CancellationToken;
+        var (exit, _, error) = await OnboardAgentCommandTests.RunAsync(["agent", "setup", "--repo", _root, "--assistant", "claude"], "", terminal: false, Path.Combine(_root, "home"), ct);
+        exit.ShouldBe(ExitCodes.Ok, error);
+
+        var text = await File.ReadAllTextAsync(Path.Combine(_root, ".claude", "skills", "work-through-pending-decisions", "SKILL.md"), ct);
+        string[] says = ["hound review prepare", "\"risk\": \"high\"` first", "then by deadline", "present together", "each is still answered by its own key", "hound onboard <system> decide", "the time it will take"];
+        says.Where(s => !text.Contains(s, StringComparison.Ordinal)).ShouldBeEmpty();
+        text.IndexOf("\"risk\": \"high\"", StringComparison.Ordinal).ShouldBeLessThan(text.IndexOf("then by deadline", StringComparison.Ordinal));
+    }
+
     public void Dispose() => Directory.Delete(_root, recursive: true);
 }
