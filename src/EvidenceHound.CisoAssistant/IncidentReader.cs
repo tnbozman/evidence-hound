@@ -25,6 +25,29 @@ internal sealed class IncidentReader(HttpClient http) : IIncidentSource
                 "incident.not_found", $"CISO Assistant holds no incident with the ref_id {refId}. Record it under Operations, Incidents, and give it that reference ID."));
         }
 
+        return await FactsAsync(incident, cancellationToken);
+    }
+
+    public async Task<Result<IReadOnlyList<IncidentFacts>>> OpenAsync(CancellationToken cancellationToken)
+    {
+        var listed = await http.ListAllAsync("incidents/", cancellationToken);
+        if (listed is not Result<List<JsonNode>>.Ok { Value: var incidents })
+        {
+            return listed.Map(_ => (IReadOnlyList<IncidentFacts>)[]);
+        }
+
+        var open = new List<Result<IncidentFacts>>();
+        foreach (var incident in incidents.Where(i => (string?)i["status"] is not ("closed" or "resolved" or "dismissed")))
+        {
+            open.Add(await FactsAsync(incident, cancellationToken));
+        }
+
+        return Result.Combine(open).Map(all => (IReadOnlyList<IncidentFacts>)all);
+    }
+
+    private async Task<Result<IncidentFacts>> FactsAsync(JsonNode incident, CancellationToken cancellationToken)
+    {
+        var refId = (string?)incident["ref_id"] ?? (string)incident["id"]!;
         var entries = await http.ListAllAsync($"timeline-entries/?incident={Uri.EscapeDataString((string)incident["id"]!)}", cancellationToken);
         return entries.Map(all =>
         {

@@ -62,7 +62,10 @@ public sealed class ReviewCommandTests : IDisposable
         using var error = new StringWriter();
         var settings = new Dictionary<string, string?>(StringComparer.Ordinal)
         {
-            ["XDG_CONFIG_HOME"] = Path.Combine(_root, "home"), ["HOUND_TODAY"] = "2026-11-23", ["HOUND_CA_URL"] = $"{ca.Url}/api/", ["HOUND_CA_TOKEN"] = "example-token-for-cli-tests",
+            ["XDG_CONFIG_HOME"] = Path.Combine(_root, "home"),
+            ["HOUND_TODAY"] = "2026-11-23",
+            ["HOUND_CA_URL"] = $"{ca.Url}/api/",
+            ["HOUND_CA_TOKEN"] = "example-token-for-cli-tests",
         };
         var exit = await HoundCli.RunAsync(["review", "pending", "--json", "--repo", Repo, "--config", Config], new StringReader(""), output, error, settings, false, _ct);
 

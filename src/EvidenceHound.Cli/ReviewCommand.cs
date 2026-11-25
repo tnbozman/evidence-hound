@@ -1,11 +1,14 @@
 using System.CommandLine;
 using System.Globalization;
 using System.Text.Json.Nodes;
+using EvidenceHound.CisoAssistant;
 using EvidenceHound.Core.Results;
 using EvidenceHound.Core.Review;
+using EvidenceHound.Core.Scope;
 using EvidenceHound.Runtime;
 using EvidenceHound.Runtime.Collectors;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Prompt = EvidenceHound.Cli.OnboardSystemCommand.Prompt;
 
@@ -30,7 +33,7 @@ internal static class ReviewCommand
         pending.SetAction(async (parseResult, cancellationToken) =>
         {
             var root = parseResult.GetValue(repo)?.FullName ?? Directory.GetCurrentDirectory();
-            var queue = await QueueAsync(root, parseResult.GetValue(config), terminal, registry, AuditSeries.Today(configuration), cancellationToken);
+            var queue = await QueueAsync(root, parseResult.GetValue(config), terminal, registry, AuditSeries.Today(configuration), cancellationToken, configuration);
             return await queue.Match(
                 async items =>
                 {
@@ -51,7 +54,7 @@ internal static class ReviewCommand
         {
             var root = parseResult.GetValue(repo)?.FullName ?? Directory.GetCurrentDirectory();
             var itemKey = parseResult.GetValue(key)!;
-            var queue = await QueueAsync(root, parseResult.GetValue(config), terminal, registry, AuditSeries.Today(configuration), cancellationToken);
+            var queue = await QueueAsync(root, parseResult.GetValue(config), terminal, registry, AuditSeries.Today(configuration), cancellationToken, configuration);
             var made = queue.Bind(items => ReviewOrder.Recommend(items, itemKey, parseResult.GetValue(answer), parseResult.GetValue(reason), parseResult.GetValue(source) ?? []));
             return await made.Match(
                 async recommendation =>
@@ -85,7 +88,7 @@ internal static class ReviewCommand
 
             var root = parseResult.GetValue(repo)?.FullName ?? Directory.GetCurrentDirectory();
             var deployment = parseResult.GetValue(config) ?? new FileInfo(Path.Combine(root, "hound.yaml"));
-            var session = new Session(root, deployment, terminal, registry, AuditSeries.Today(configuration), new SystemClock());
+            var session = new Session(root, deployment, terminal, registry, AuditSeries.Today(configuration), new SystemClock(), configuration);
             var done = await session.RunAsync(minutes, cancellationToken);
             if (done is Result<Unit>.Fail { Errors: var problems })
             {
@@ -118,7 +121,7 @@ internal static class ReviewCommand
 
     /// <summary>Every item waiting on a person, most urgent first: what <c>hound approve</c> would ask, and each pending manual evidence proposal.</summary>
     internal static async Task<Result<IReadOnlyList<ReviewItem>>> QueueAsync(
-        string repo, FileInfo? config, Terminal terminal, CollectorRegistry registry, DateOnly today, CancellationToken cancellationToken)
+        string repo, FileInfo? config, Terminal terminal, CollectorRegistry registry, DateOnly today, CancellationToken cancellationToken, IConfiguration? configuration = null)
     {
         var listing = new ApproveCommand.Listing();
         var walked = await new ApproveCommand.Walk(repo, terminal, new Prompt(terminal), today, listing).RunAsync(cancellationToken);
@@ -128,11 +131,48 @@ internal static class ReviewCommand
             ? await ManualProposalCommands.PendingAsync(deployment, registry, standing, today, cancellationToken)
             : Result.Ok<IReadOnlyList<ReviewItem>>([]);
         var findings = await FindingsAsync(repo, today, registry, cancellationToken);
+        var reports = configuration is null ? [] : await IncidentReportsAsync(repo, configuration, registry, today, cancellationToken);
         var challenges = await Challenges.ReadAsync(repo, cancellationToken);
         var recommendations = await Recommendations.ReadAsync(repo, cancellationToken);
-        return walked.Bind(_ => manual).Map(proposals => ReviewOrder.Order([.. listing.Items, .. proposals, .. findings]).Where(i => ReviewOrder.Ready(i, today))
+        return walked.Bind(_ => manual).Map(proposals => ReviewOrder.Order([.. listing.Items, .. proposals, .. findings, .. reports]).Where(i => ReviewOrder.Ready(i, today))
                 .Select(i => i with { Challenge = challenges.GetValueOrDefault(i.Key), Recommendation = recommendations.GetValueOrDefault(i.Key) ?? i.Recommendation }).ToArray())
             .Map(items => (IReadOnlyList<ReviewItem>)items);
+    }
+
+    /// <summary>
+    /// Each report an open incident in CISO Assistant still owes under <c>scope/reporting.yaml</c> (s15-07), due by its deadline: listed every
+    /// week until the incident's timeline records it. None when the scope declares no obligations or CISO Assistant is not configured.
+    /// </summary>
+    private static async Task<IReadOnlyList<ReviewItem>> IncidentReportsAsync(
+        string repo, IConfiguration configuration, CollectorRegistry registry, DateOnly today, CancellationToken cancellationToken)
+    {
+        var scope = new DirectoryInfo(Path.Combine(repo, "scope"));
+        var reporting = await ScopeCommands.ReportingAsync(scope, cancellationToken);
+        if (reporting.Obligations.Count == 0 || PublishCommand.Connection(configuration) is not Result<CisoAssistantOptions>.Ok { Value: var options })
+        {
+            return [];
+        }
+
+        var checkedScope = await ScopeCommands.ValidateAsync(scope, null, registry, today, cancellationToken);
+        var systems = checkedScope.Scope.Setup.Domains.SelectMany(d => d.Systems).ToList();
+        using var services = new ServiceCollection().AddLogging().AddCisoAssistantClient(options).BuildServiceProvider();
+        var open = await services.GetRequiredService<IIncidentSource>().OpenAsync(cancellationToken);
+        var now = DateTimeOffset.UtcNow;
+        return open.Match(
+            incidents => (IReadOnlyList<ReviewItem>)[.. incidents.SelectMany(i => ReportingObligations.Owed(reporting.Obligations, systems, i, now)
+                .Where(r => r.ReportedAt is null)
+                .Select(r => new ReviewItem(
+                    ReviewKind.Finding,
+                    $"incident_report:{i.RefId}/{r.Obligation.Id}",
+                    $"[incident] {i.RefId} {i.Name}: {r.Obligation.Name} to {r.Obligation.ReportTo}, {(r.Overdue ? "overdue since" : "due by")} {r.Due.ToUniversalTime():yyyy-MM-dd HH:mm} UTC",
+                    $"Owed because {r.Why}. The clock started when the incident was discovered.",
+                    $"Nothing changes; your sign-off records that you saw it this week. Make the report, then add a timeline entry to the incident: '{ReportingObligations.ReportedPrefix}{r.Obligation.Id}, <their reference>'.",
+                    2)
+                {
+                    Deadline = DateOnly.FromDateTime(r.Due.UtcDateTime),
+                    File = Path.Combine(scope.FullName, "reporting.yaml"),
+                }))],
+            _ => []);
     }
 
     /// <summary>The scope's warnings, such as sensitive data held where nothing approves it: each listed every week until it is fixed.</summary>
@@ -189,7 +229,7 @@ internal static class ReviewCommand
     /// One guided session: the most urgent items that fit the time, each read and answered by the person, then the accepted ones written as
     /// <c>hound approve</c> and <c>hound manual approve</c> write them, challenges kept for the agent, and one sign-off record.
     /// </summary>
-    private sealed class Session(string repo, FileInfo deployment, Terminal terminal, CollectorRegistry registry, DateOnly today, Core.IClock clock)
+    private sealed class Session(string repo, FileInfo deployment, Terminal terminal, CollectorRegistry registry, DateOnly today, Core.IClock clock, IConfiguration configuration)
     {
         private readonly Dictionary<string, string> _answers = new(StringComparer.Ordinal);
         private readonly List<(string Key, string Note)> _challenged = [];
@@ -205,7 +245,7 @@ internal static class ReviewCommand
         public async Task<Result<Unit>> RunAsync(int minutes, CancellationToken cancellationToken)
         {
             _recommendations = await Recommendations.ReadAsync(repo, cancellationToken);
-            var queue = await QueueAsync(repo, deployment, terminal, registry, today, cancellationToken);
+            var queue = await QueueAsync(repo, deployment, terminal, registry, today, cancellationToken, configuration);
             if (queue is Result<IReadOnlyList<ReviewItem>>.Fail failed)
             {
                 return Result.Fail<Unit>(failed.Errors);
