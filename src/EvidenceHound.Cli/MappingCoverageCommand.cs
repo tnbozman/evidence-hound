@@ -109,7 +109,7 @@ internal static class MappingCoverageCommand
             .AppendLine("| --- | --- | --- | --- | --- |");
         foreach (var row in report.Rows)
         {
-            text.AppendLine(CultureInfo.InvariantCulture, $"| {Short(row.ParentUrn)} | {row.Group} | {row.Automated} | {row.Manual} | {row.Uncovered} |");
+            text.AppendLine(CultureInfo.InvariantCulture, $"| {ParentLabel(report, row.ParentUrn)} | {row.Group} | {row.Automated} | {row.Manual} | {row.Uncovered} |");
         }
 
         if (report.Top.Count > 0)
@@ -157,6 +157,15 @@ internal static class MappingCoverageCommand
                 ["uncovered"] = r.Uncovered,
             })]),
         }.ToJsonString(OnboardAgentCommand.Indented) + Environment.NewLine;
+
+    /// <summary>
+    /// A parent's label: for a framework with levels above the parents (the ASD Essentials), the top node's name and the parent's, as the
+    /// same principle sits in several domains; otherwise the last part of its URN, such as <c>mfa</c>.
+    /// </summary>
+    private static string ParentLabel(CoverageReport report, string urn) =>
+        report.Top.Count > 0 && report.Snapshot.TopUrn(urn) is var top && top != urn
+            ? $"{report.Snapshot.ParentName(top)} / {report.Snapshot.ParentName(urn)}"
+            : Short(urn);
 
     /// <summary>The last part of a parent node's URN, such as <c>mfa</c> for the Essential Eight's multi-factor authentication.</summary>
     private static string Short(string urn) => urn[(urn.LastIndexOf(':') + 1)..];
