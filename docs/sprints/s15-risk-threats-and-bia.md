@@ -1,6 +1,6 @@
 # s15 Risk, threats and business impact analysis as configuration
 
-Status: In progress
+Status: Done
 
 Release: 2
 
@@ -93,7 +93,7 @@ CISO Assistant places R-01 at High and R-03 at Medium on the 4x4 grid, then chan
 (`current_probability: Likely → Possible`) and one write. Result recorded below once CI has run.
 
 ### s15-03 Security exceptions and risk acceptances
-- [ ] Done
+- [x] Done
 
 **Story:** As an authorising official, I want exceptions and acceptances requested through the repo but approved only by an approver in CISO Assistant, so that the request is reviewed and versioned and the decision keeps its separation of duties.
 
@@ -130,7 +130,7 @@ expects the next plan to show it approved with no change to apply. The observati
 Result recorded below once CI has run.
 
 ### s15-04 Business impact analysis files
-- [ ] Done
+- [x] Done
 
 **Story:** As a continuity owner, I want each BIA declared in the repo, so that recovery objectives and impact over time are reviewed and kept with the systems they describe.
 
@@ -162,7 +162,7 @@ assessment per system and the thresholds at 4h Minor and 1d Major, then expects 
 once CI has run.
 
 ### s15-05 Recovery flags from checks
-- [ ] Done
+- [x] Done
 
 **Story:** As a continuity owner, I want "recovery tested" to come from evidence rather than a hand-ticked box, so that the BIA shows what was actually proven.
 
@@ -190,7 +190,7 @@ applies a BIA with `tested_by: [backup.restore_tested]`, runs the fake collector
 the CI run.
 
 ### s15-06 Documentation and example repo
-- [ ] Done
+- [x] Done
 
 **Acceptance criteria**
 - `docs/risk.md` and `docs/bia.md`: file formats, validation, plan and apply, what stays in CISO Assistant (approvals, computed levels) and why.
@@ -203,8 +203,12 @@ the CI run.
 **Functional check**
 - Following the guides verbatim, add a scenario to the example study and apply it.
 
+**Functional check result (2026-11-25).** The CI seed applies the example repo with its matrix, threats, risk study, exception and BIA:
+every kind is written (`ScopePlanFunctionalTests`), and the plan and a second apply after it change nothing. `RiskRegisterFunctionalTests`
+adds scenarios to a study as docs/risk.md describes and applies them.
+
 ### s15-07 Incident response and reporting deadlines (added 2026-11-24)
-- [ ] Done
+- [x] Done
 
 Added at the maintainer's request (2026-11-24): both regimes require incidents to be reported on a clock, and incident response had no
 home in the plan.
@@ -350,7 +354,7 @@ exit 0
 The supplier contacts are covered by `IrpBuilderTests` (the example repo declares no third party).
 
 ### s15-10 Rehearse trial, onboarding and sustaining GRC (standing, every sprint)
-- [ ] Done
+- [x] Done
 
 As [s12-09](s12-e8-mapping-and-adoption.md#s12-09-rehearse-trial-onboarding-and-sustaining-grc-standing-every-sprint), including this sprint's new commands and guides.
 From s15 the rehearsal drives hound through the agent skills, as the person's agent would, and records any skill that was wrong or
@@ -366,7 +370,7 @@ decisions skill on the example repos found nothing waiting (they hold no drafts)
 `AgentSkillTests.Decisions_skill_recommends_and_never_accepts`. No skill named a command that does not exist.
 
 ### s15-11 Improve: quality and flow (standing, about 15% of each sprint)
-- [ ] Done
+- [x] Done
 
 As [s12-10](s12-e8-mapping-and-adoption.md#s12-10-improve-quality-and-flow-standing-about-15-of-each-sprint).
 
@@ -377,7 +381,7 @@ scope and onboarding guides and the audit skill say one audit per system and one
 sprint lifecycle keep the agent kit accurate every sprint.
 
 ### s15-12 Approve one decision at a time, with the person's agent (added 2026-11-25)
-- [ ] Done
+- [x] Done
 
 Added at the maintainer's request (2026-11-25), after a first real `hound approve`: the terminal loop asked about each item with no
 help, so 240 not-applicable rows and a typo went through. The maintainer's direction: every decision waiting for a person is written
@@ -416,7 +420,7 @@ item and writes only its answer, an unknown key is refused with the nearest keys
 the grouped summary (`ApproveCommandTests`). The review writes scope files only, so no CISO Assistant is needed.
 
 ### s15-14 A report never reads 100% while rows are not assessed (added 2026-11-25, top priority)
-- [ ] Done
+- [x] Done
 
 Found by the maintainer on a trial run (2026-11-25): per-system Essential Eight audits whose only results were a few passing automated
 checks, many not-applicable rows and every manual row not assessed read as 100% compliant. hound's own reports did not compute that
@@ -457,8 +461,14 @@ much is assessed, so that a few automated passes can never read as compliance.
 - `NoEvidenceFunctionalTests` (CI): an Essential Eight audit with one compliant row and no evidence for the rest reads under 5% in
   CISO Assistant, every open row non-compliant with "No evidence yet: ", and a re-plan shows no change.
 
+**Functional check result (2026-11-25).** `NoEvidenceFunctionalTests` passed in CI: no row in the audit's levels is left not assessed,
+one compliant row, the rest non-compliant with "No evidence yet: ", and a re-plan shows nothing. The trial now ends by reading each
+audit as CISO Assistant computes it: `EX-E8-Q2-2027FY: CISO Assistant reads 15% (17 compliant, 0 partially compliant, 90 non-compliant
+of which 80 have no evidence yet; it leaves out 0 not applicable and 0 not assessed)`. Before this task the same audit's open rows were
+left out, so it read close to 100%.
+
 ### s15-13 Skills and agents for every hound workflow, for Claude Code and GitHub Copilot (added 2026-11-25)
-- [ ] Done
+- [x] Done
 
 Added at the maintainer's request (2026-11-25): "I need skills or agents written for both github copilot and claude that supports all
 workflows and understand the hounds commands", now rather than in s18. A gap check of what `hound agent setup` wrote found no skill,
@@ -547,3 +557,20 @@ reference lists 83 commands and sub-commands, covering all 29 top-level commands
   metrics), where status gains each programme's standing from the latest snapshot.
 
 ## Sprint review
+
+**2026-11-25.** Risk matrices, threats, risk studies and scenarios, security exceptions and business impact analyses now live in the
+repo as YAML and are applied to CISO Assistant; approvals stay with people there, and a recovery flag follows the check that proves it.
+Incidents get their reporting deadlines (DFARS 72 hours, ACSC) and `hound irp build` writes the incident response plan. Supply-chain
+flow-down is recorded and checked. Added during the sprint at the maintainer's request: pending decisions are listed by key with a risk
+flag and a grouped summary, and `hound review --only <key>` lets the person accept or challenge one at a time after working through
+them with their agent (s15-12); skills and agents for every hound command and workflow, for Claude Code and GitHub Copilot, with a
+command reference built from the CLI (s15-13); and the top-priority fix for audits reading 100% in CISO Assistant while manual rows
+were not assessed (s15-14). CISO Assistant leaves not-assessed rows out of its percentage, so hound now sends a row with no evidence as
+non-compliant ("No evidence yet: ..."), the reports give each programme's standing with open rows counted, and the trial reads each
+audit's figure: the trial's Essential Eight audit reads 15%, with 80 rows waiting for evidence.
+
+**Retro.** What slowed the sprint: the functional job's log was cut at 5000 lines, so failures were invisible until CI listed them last;
+five functional expectations had drifted from changes made earlier in the sprint (a plan column, the seed's new kinds, a shared risk
+acceptance name) because pushes cancelled the runs that would have shown them. The no-evidence check first counted rows outside the
+audit's maturity levels, which CISO Assistant keeps but does not count. Next sprint: push once per finished task and let the functional
+job finish; when a check reads CISO Assistant's figures, filter rows by the audit's levels as CISO Assistant does.
