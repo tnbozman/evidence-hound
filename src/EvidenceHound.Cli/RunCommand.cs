@@ -5,6 +5,7 @@ using EvidenceHound.CisoAssistant;
 using EvidenceHound.Core.Planning;
 using EvidenceHound.Core.Publishing;
 using EvidenceHound.Core.Results;
+using EvidenceHound.Core.Yaml;
 using EvidenceHound.Runtime;
 using EvidenceHound.Runtime.Collectors;
 using EvidenceHound.Runtime.Configuration;
@@ -109,6 +110,7 @@ internal static class RunCommand
     {
         using var sinks = transport;
         var step = await AuditSeries.CollectStepAsync(config, configuration, collectorServices, cancellationToken);
+        var latest = new FileLatestResults(config.Evidence.Root, [.. config.Collectors.Select(c => c.Name)]);
         var runner = new Runner(
             registry.ByType,
             step,
@@ -119,10 +121,18 @@ internal static class RunCommand
         {
             States = sinks.States,
             History = new FileRunHistory(config.Evidence.Root),
-            Latest = new FileLatestResults(config.Evidence.Root, [.. config.Collectors.Select(c => c.Name)]),
+            Latest = latest,
         };
 
         var summary = await runner.RunAsync(instances, options, cancellationToken);
+        var recovery = sinks.Client is { } client && config.Scope is { } scopeDir && !options.DryRun && !options.NoPublish
+            ? await RecoveryAsync(client, scopeDir, latest, cancellationToken)
+            : RecoveryReport.None;
+        foreach (var problem in recovery.Problems)
+        {
+            Log.Warning(logger, $"{problem.Message} ({problem.Code})");
+        }
+
         foreach (var collector in summary.Collectors)
         {
             Log.CollectorRan(logger, collector.Collector, collector.Outcome);
@@ -135,8 +145,35 @@ internal static class RunCommand
             Log.Warning(logger, warning.Message);
         }
 
-        await output.WriteLineAsync(Json(summary, warnings).ToJsonString(Indented));
+        var json = Json(summary, warnings);
+        json["recovery"] = new JsonArray([.. recovery.Set.Select(r => new JsonObject
+        {
+            ["assessment"] = r.AssessmentKey,
+            ["field"] = r.Field,
+            ["value"] = r.Value,
+            ["why"] = r.Why,
+        })]);
+        await output.WriteLineAsync(json.ToJsonString(Indented));
         return summary.Outcome == CollectorOutcome.Failed ? ExitCodes.CollectorFailed : ExitCodes.Ok;
+    }
+
+    /// <summary>
+    /// s15-05: the BIA recovery flags named by checks, set from every collector's latest results. The BIA files are read on their own, as
+    /// <c>hound scope plan</c> has already checked them.
+    /// </summary>
+    private static async Task<RecoveryReport> RecoveryAsync(ICisoAssistantClient client, string scopeDir, FileLatestResults latest, CancellationToken cancellationToken)
+    {
+        var biaDir = Path.Combine(scopeDir, "bia");
+        if (!Directory.Exists(biaDir))
+        {
+            return RecoveryReport.None;
+        }
+
+        var sources = await Task.WhenAll(Directory.GetFiles(biaDir, "*.yaml").Order(StringComparer.Ordinal)
+            .Select(async path => new ScopeSource(path, await File.ReadAllTextAsync(path, cancellationToken))));
+        var bias = ScopeLoader.Parse(new ScopeSource(Path.Combine(scopeDir, "setup.yaml"), "organisation:\n  root_folder: Global\n"), null, [], bias: sources).Scope.Bias;
+        var results = (await latest.OthersAsync("", cancellationToken)).SelectMany(l => l.Results.Checks).ToList();
+        return await RecoveryPublisher.PublishAsync(client, bias, results, cancellationToken);
     }
 
     /// <summary>The configured transport. The URL comes from the config unless <c>HOUND_CA_URL</c> overrides it; the token is a secret reference.</summary>
@@ -203,8 +240,11 @@ internal static class RunCommand
     }
 
     /// <summary>Makes a sink per collector run over that run's files, and owns whatever the sinks share.</summary>
-    private sealed class Transports(Func<IEvidenceFiles, IAuditUpdateSink> sinkFor, IDisposable? shared, ICurrentStateSource? states = null) : IDisposable
+    private sealed class Transports(Func<IEvidenceFiles, IAuditUpdateSink> sinkFor, IDisposable? shared, ICurrentStateSource? states = null, ICisoAssistantClient? client = null) : IDisposable
     {
+        /// <summary>The REST client, for what a run writes besides the audits (s15-05); none over Kafka.</summary>
+        public ICisoAssistantClient? Client { get; } = client;
+
         public static Transports None { get; } = new(_ => throw new InvalidOperationException("Publishing is off for this run."), null);
 
         public Func<IEvidenceFiles, IAuditUpdateSink> SinkFor { get; } = sinkFor;
@@ -216,7 +256,7 @@ internal static class RunCommand
         {
             var services = new ServiceCollection().AddSingleton(loggers).AddCisoAssistantClient(options).BuildServiceProvider();
             var client = services.GetRequiredService<ICisoAssistantClient>();
-            return new Transports(files => new RestSink(client, files), services, new ClientStateSource(client, today));
+            return new Transports(files => new RestSink(client, files), services, new ClientStateSource(client, today), client);
         }
 
         public static Transports Kafka(KafkaSinkOptions options) => new(files => new KafkaSink(options, files), null);
