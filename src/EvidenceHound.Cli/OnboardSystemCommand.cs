@@ -385,9 +385,16 @@ internal static partial class OnboardSystemCommand
 
         var setupPath = Path.Combine(settings.Repo, "scope", "setup.yaml");
         var domains = await DomainsAsync(settings, cancellationToken);
-        var domain = await prompt.AskWithDefaultAsync("Domain for the system's audit", (domains is [var first, ..] ? first.Name : ""), cancellationToken);
-        var perimeter = await prompt.AskWithDefaultAsync(
-            "Perimeter", (domains.FirstOrDefault(d => d.Name == domain)?.Perimeters is [var firstPerimeter, ..] ? firstPerimeter.Name : ""), cancellationToken);
+        var domain = await prompt.AskOneOfAsync("Domain for the system's audit", [.. domains.Select(d => d.Name)], "a domain in scope/setup.yaml", cancellationToken);
+        var perimeters = domains.FirstOrDefault(d => d.Name == domain)?.Perimeters.Select(p => p.Name).ToArray() ?? [];
+        var perimeter = await prompt.AskOneOfAsync("Perimeter", perimeters, $"a perimeter of {domain}", cancellationToken);
+        if (domain is null || perimeter is null)
+        {
+            return Result.Fail<OnboardSession>(new Problem(
+                "onboard.place_missing",
+                "scope/setup.yaml declares no domain with a perimeter for the system's audit. Add one (docs/scope.md, setup.yaml), then run hound approve again."));
+        }
+
         var snapshot = ((Result<FrameworkSnapshot>.Ok)framework).Value;
         var declared = await DeclareSystemAsync(setupPath, domains, domain, session, cancellationToken);
         if (declared is Result<bool>.Fail { Errors: var declareProblems })
@@ -672,6 +679,35 @@ internal static partial class OnboardSystemCommand
         {
             await HintAsync(opening, cancellationToken);
             return await RefIdPrompt.AskAsync(terminal, kind, OnboardGuide.Question(opening), "", cancellationToken);
+        }
+
+        /// <summary>
+        /// One of <paramref name="options"/>, listed in the question, the first by default; any other answer is asked again, so a "y" typed out
+        /// of habit is never written (s15-D7). The default once the input has ended, as an empty answer would; null with no options.
+        /// </summary>
+        public async Task<string?> AskOneOfAsync(string question, IReadOnlyList<string> options, string what, CancellationToken cancellationToken)
+        {
+            if (options.Count == 0)
+            {
+                return null;
+            }
+
+            while (await AskAsync($"{question}, one of: {string.Join(", ", options)} [{options[0]}]", cancellationToken) is { } answer)
+            {
+                if (answer.Length == 0)
+                {
+                    return options[0];
+                }
+
+                if (options.FirstOrDefault(o => string.Equals(o, answer, StringComparison.OrdinalIgnoreCase)) is { } chosen)
+                {
+                    return chosen;
+                }
+
+                await terminal.Error.WriteLineAsync($"'{answer}' is not {what}. Press Enter for {options[0]}, or type one of the names listed.".AsMemory(), cancellationToken);
+            }
+
+            return options[0];
         }
 
         public async Task<string> AskWithDefaultAsync(string question, string @default, CancellationToken cancellationToken)

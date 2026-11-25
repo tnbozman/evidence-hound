@@ -50,8 +50,9 @@ Run it in the config repo (or pass `--repo`). The session goes in this order, an
    proposal where a session has one, and `l` every remaining one that is not `not_applicable`), or `s` to save and stop. Not applicable always needs a justification
    and the name of who approves it; another system needs that system's name.
 
-5. **Written for review.** Once every requirement is decided, it asks for the domain and perimeter of the system's audit (the first ones in
-   `scope/setup.yaml` by default) and writes, into the working copy only:
+5. **Written for review.** Once every requirement is decided, it asks for the domain and perimeter of the system's audit. These are
+   names, not yes or no: the prompt lists the ones `scope/setup.yaml` declares, Enter takes the first, and any other answer is asked
+   again. It then writes, into the working copy only:
    - `scope/audits/<system>-<framework>.yaml`: the system's own audit. Not applicable rows are done with result `not_applicable` and the
      justification and approver in the observation; rows another system meets stay open (`to_do`, `not_assessed`) with `provided_by` naming
      that system, until its own audit shows the requirement met; manual rows are to do. Rows checked

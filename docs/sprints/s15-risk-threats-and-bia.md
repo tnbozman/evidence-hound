@@ -366,6 +366,8 @@ As [s12-10](s12-e8-mapping-and-adoption.md#s12-10-improve-quality-and-flow-stand
 - **s15-D7 `hound approve` wrote an audit domain and perimeter it never checked** (found 2026-11-25 in a person's first approve).
   Asked for the audit's domain, the person typed "y", taking it for a yes/no question; approve wrote `domain: "y"` and an empty
   perimeter, and `scope validate` then failed with `scope.value_invalid`. The audit's systems were also not linked in CISO
-  Assistant, which s15-D2 fixed after that release.
+  Assistant, which s15-D2 fixed after that release. Fixed: the prompt lists the domains and perimeters setup.yaml declares
+  ("Domain for the system's audit, one of: Example Pty Ltd [Example Pty Ltd]"), Enter takes the first, and any other answer is asked
+  again with the reason; with none declared, approve stops with `onboard.place_missing` and writes nothing (test, then fix).
 
 ## Sprint review
