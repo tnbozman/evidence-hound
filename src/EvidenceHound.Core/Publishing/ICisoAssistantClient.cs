@@ -1,6 +1,7 @@
 using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Planning;
 using EvidenceHound.Core.Results;
+using EvidenceHound.Core.Scope;
 
 namespace EvidenceHound.Core.Publishing;
 
@@ -28,6 +29,14 @@ public interface ICisoAssistantClient
     /// <summary>Every security exception with its status and expiry (s15-03), so a row's exceptions can be named.</summary>
     Task<Result<IReadOnlyList<RemoteWaiver>>> ListSecurityExceptionsAsync(CancellationToken cancellationToken) =>
         Task.FromResult(Result.Ok<IReadOnlyList<RemoteWaiver>>([]));
+
+    /// <summary>The asset assessments of the BIA with this ref_id, by system name, with their recovery flags and evidence (s15-05); empty when there is none.</summary>
+    Task<Result<IReadOnlyDictionary<string, HeldRecovery>>> ListRecoveryAsync(string biaRefId, CancellationToken cancellationToken) =>
+        Task.FromResult(Result.Ok<IReadOnlyDictionary<string, HeldRecovery>>(new Dictionary<string, HeldRecovery>()));
+
+    /// <summary>Sets one recovery flag on an asset assessment, with the evidence linked to it.</summary>
+    Task<Result<Unit>> UpdateRecoveryAsync(string assessmentId, string field, bool value, IReadOnlyList<string> evidenceIds, CancellationToken cancellationToken) =>
+        Task.FromResult(Result.Ok(Unit.Value));
 
     /// <summary>The evidence with this ref_id and its latest hash; empty when there is none. Creates nothing.</summary>
     Task<Result<IReadOnlyList<RemoteEvidence>>> FindEvidenceAsync(string refId, CancellationToken cancellationToken);

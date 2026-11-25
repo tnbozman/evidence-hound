@@ -4,6 +4,7 @@ using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Planning;
 using EvidenceHound.Core.Publishing;
 using EvidenceHound.Core.Results;
+using EvidenceHound.Core.Scope;
 using WireMock;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
@@ -327,6 +328,35 @@ public sealed class ClientContractTests : IDisposable
             new RemoteWaiver("se-1", "EXC-01", "Legacy finance app without MFA", "approved", new DateOnly(2027, 3, 31)),
             new RemoteWaiver("se-2", null, "Old kiosk", "draft", null),
         ]);
+    }
+
+    [Fact]
+    public async Task A_bias_asset_assessments_are_read_with_their_recovery_flags_and_a_flag_is_set_with_its_evidence()
+    {
+        // s15-05: each run reads the BIA's asset assessments and sets a flag named by checks, adding the checks' evidence to those linked.
+        Respond("/api/business-impact-analysis/", 200, Page(new JsonObject { ["id"] = "bia-1", ["ref_id"] = "EX-BIA-2026" }));
+        Respond("/api/asset-assessments/", 200, Page(new JsonObject
+        {
+            ["id"] = "aa-1",
+            ["asset"] = new JsonObject { ["id"] = "a-365", ["str"] = "Example 365" },
+            ["recovery_documented"] = true,
+            ["recovery_tested"] = false,
+            ["recovery_targets_met"] = false,
+            ["evidences"] = new JsonArray(new JsonObject { ["id"] = "ev-old", ["str"] = "Restore runbook" }),
+        }));
+        Respond("/api/asset-assessments/aa-1/", 200, """{"id": "aa-1"}""", "PATCH");
+
+        var held = await _ca.Client.ListRecoveryAsync("EX-BIA-2026", _ct);
+        var set = await _ca.Client.UpdateRecoveryAsync("aa-1", "recovery_tested", true, ["ev-old", "ev-new"], _ct);
+
+        var assessment = held.Match(h => h, _ => new Dictionary<string, HeldRecovery>()).ShouldHaveSingleItem();
+        assessment.Key.ShouldBe("Example 365");
+        (assessment.Value.Id, assessment.Value.Flags["recovery_documented"], assessment.Value.Flags["recovery_tested"]).ShouldBe(("aa-1", true, false));
+        assessment.Value.EvidenceIds.ShouldBe(["ev-old"]);
+        set.ShouldBeOfType<Result<Unit>.Ok>();
+        var patch = Requests().Single(r => r.Method == "PATCH");
+        JsonNode.Parse(patch.Body!)!.ToJsonString().ShouldBe("""{"recovery_tested":true,"evidences":["ev-old","ev-new"]}""");
+        Requests().ShouldContain(r => r.Method == "GET" && r.Path == "/api/asset-assessments/" && r.RawQuery!.Contains("bia=bia-1"));
     }
 
     [Fact]
