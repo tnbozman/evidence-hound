@@ -18,6 +18,7 @@ compliance-repo/
       example-cloud.yaml  one file per supplier or other third party (optional)
     capabilities.yaml   which system provides each mitigation (optional)
     ssp.yaml            one system security plan per programme (optional)
+    metrics.yaml        metric definitions, instances and dashboards (optional)
   mappings/             which checks satisfy which requirements (docs/mapping-files.md)
   frameworks/           framework snapshots and custom library files
   documents/            the files that documents name, relative to the compliance repo (the scope folder's parent)
@@ -538,6 +539,69 @@ CISO Assistant already holds it (evidence a run published for a requirement); ev
 `hound scope plan` leaves such a flag alone, and an asset assessment that `hound scope apply` has not created yet waits for it. A flag
 cannot be both set by hand and named by checks (`scope.result_conflict`), and a check is named by its id (`scope.value_invalid` if it is
 not one).
+
+## metrics.yaml
+
+What the organisation measures, its targets and owners, and the dashboards that show it, written to CISO Assistant's metrology (metric
+definitions, metric instances, dashboards and widgets). A definition says what is measured; an instance measures it in one domain, how
+often, against what target and for whom; a dashboard lays widgets on a 12-column grid. Values are never declared here: runs or people
+enter them.
+
+```yaml
+definitions:
+  - ref_id: EX-MET-MFA-COVERED
+    name: Accounts with MFA
+    unit: users                          # count, users, bytes, percentage, score, days, hours or events per second
+    direction: higher_is_better          # higher_is_better, lower_is_better or none (the default for a number)
+  - ref_id: EX-MET-MFA-TOTAL
+    name: Staff accounts
+    unit: users
+  - ref_id: EX-MET-MFA
+    name: MFA coverage
+    unit: percentage
+    direction: higher_is_better
+    decimals: 1                          # 0 to 6
+    frequency: monthly                   # 15min, hourly, daily, weekly, monthly, quarterly or yearly
+    target: 95
+    formula:                             # computed each period from other definitions' instances in the same domain
+      expression: covered / total * 100  # CEL
+      inputs:
+        - {key: covered, definition: EX-MET-MFA-COVERED, combine: sum}   # one, sum, avg, min, max or count
+        - {key: total, definition: EX-MET-MFA-TOTAL, combine: sum}
+  - ref_id: EX-MET-POLICY
+    name: Policy maturity
+    levels: [Missing, Drafted, Approved, Reviewed]   # qualitative: worst first
+    target: Approved
+instances:
+  - ref_id: EX-MET-MFA-CORP
+    name: MFA coverage
+    definition: EX-MET-MFA               # by ref_id, or a library definition by URN
+    domain: Example Pty Ltd              # the root folder when left out
+    grace_days: 5                        # days after a period ends before the value is late
+    owners: [it@example.com]
+    controls: [AC-MFA]                   # the applied controls it tells about
+dashboards:
+  - ref_id: EX-DASH-COMMITTEE
+    name: Security committee
+    domain: Example Pty Ltd
+    widgets:                             # each found again by its title
+      - {title: MFA coverage, metric: EX-MET-MFA-CORP, chart: line, time_range: last_year}
+      - {title: Baseline progress, audit: EXAMPLE-BASELINE-2026, builtin: progress, x: 6}
+      - {title: How to read this, text: Each figure is collected monthly., y: 2, width: 12, height: 1}
+```
+
+A definition is quantitative with a `unit` or qualitative with `levels`, never both. An instance's `frequency` and `target` fall back to
+its definition's, as CISO Assistant copies them. A widget shows one thing: a `metric` instance, a `builtin` metric of one `audit`,
+`risk_study` or `domain` (such as `progress`, `total_scenarios` or `total_controls`), or `text`. `chart` is `kpi_card` (the default),
+`donut`, `pie`, `bar`, `line`, `area`, `gauge`, `sparkline`, `small_multiples`, `table` or `text`; `time_range` defaults to `last_30_days`
+and `aggregation` to `none`; `x`, `y`, `width` and `height` default to 0, 0, 6 and 2, and `x + width` is at most 12.
+
+`hound scope validate` reports `metric.duplicate`, `dashboard.duplicate`, `metric.kind_ambiguous` (a unit and levels), `metric.unit_unknown`
+(a warning: add another unit to CISO Assistant's terminologies first), `metric.levels_unordered`, `metric.decimals_invalid`,
+`metric.target_invalid`, `metric.input_unknown`, `metric.input_invalid`, `metric.input_outside_domain` (an input with no instance in the
+formula's domain), `metric.definition_unknown`, `metric.control_unknown`, `metric.domain_unknown`, `dashboard.widget_invalid`,
+`dashboard.widget_duplicate`, `dashboard.metric_unknown`, `dashboard.builtin_unknown`, `dashboard.object_unknown` and
+`dashboard.widget_outside_grid`. In a plan, a widget is keyed `dashboard/title`, such as `EX-DASH-COMMITTEE/MFA coverage`.
 
 ## audits/&lt;audit&gt;.yaml
 

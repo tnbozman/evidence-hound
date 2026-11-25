@@ -61,6 +61,13 @@ Changed in the AI governance planning PR (Nov 2026): s11-05 builds the `ciso-ass
 **Functional check**
 - Apply a fictional "MFA coverage" metric with a 95 % target and a dashboard widget to the local CISO Assistant.
 
+**Notes**
+- `scope/metrics.yaml` is read by `ScopeLoader.Metrics`, checked by `MetricValidator`, compared by `MetricObjects` and written by `ScopeWriter.Metrics` to CISO Assistant v4.3.4's metrology API. Four new plan kinds: `metric_definition`, `metric_instance`, `dashboard` (marked by state, as other `ref_id` kinds) and `dashboard_widget` (keyed `dashboard/title`, compared field by field).
+- A qualitative target is written as its level's position counted from 1, as CISO Assistant stores it, and read back as the level name. A unit is CISO Assistant's terminology with `field_path` `metric_definition.unit`; another unit is a warning, not an error, because an organisation can add one in CISO Assistant.
+- "In the computed instance's domain or below it" is read as: an instance in the root folder may read any domain; an instance in a domain reads only that domain, as CISO Assistant's formula engine does.
+- An instance with no `frequency` or `target` takes its definition's, so the plan compares what CISO Assistant copies.
+- Functional: `MetricsFunctionalTests` applies an MFA coverage formula with a 95 target, a qualitative policy metric and a dashboard with metric, builtin and text widgets, then checks a second plan is empty and a new target is one update.
+
 ### s16-03 Metric samples from runs
 - [ ] Done
 
