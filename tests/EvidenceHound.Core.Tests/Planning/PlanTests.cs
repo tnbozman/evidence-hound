@@ -48,11 +48,35 @@ public class PlanTests
 
         var updates = plan.OfType<AuditUpdate.UpdateRequirementAssessment>().ToArray();
         updates.Select(u => (u.ComplianceAssessmentRefId, u.RequirementRefId, u.Result)).ShouldBe([
-            ("EXAMPLE-BASELINE-2026", "EX-2.1", ComplianceResult.NotAssessed),
+            ("EXAMPLE-BASELINE-2026", "EX-2.1", ComplianceResult.NonCompliant),
             ("EXAMPLE-BASELINE-2026", "EX-1.1", ComplianceResult.Compliant),
             ("EXAMPLE-BASELINE-2026", "EX-1.2", ComplianceResult.NotApplicable),
         ]);
         updates[1].EvidenceRefIds.ShouldBe(["ev-0001"]);
+    }
+
+    [Fact]
+    public void A_row_with_no_evidence_is_published_non_compliant_and_says_so()
+    {
+        // s15-14: CISO Assistant leaves not-assessed rows out of its compliance percentage, so a few passes read as 100%. With no
+        // evidence there is no compliance: the row goes as non-compliant, its observation saying why.
+        var plan = Plan([Requirement("EX-2.1", ComplianceResult.NotAssessed)], [], []);
+
+        var update = plan.OfType<AuditUpdate.UpdateRequirementAssessment>().ShouldHaveSingleItem();
+        update.Result.ShouldBe(ComplianceResult.NonCompliant);
+        update.Observation.ShouldStartWith("No evidence yet: ");
+    }
+
+    [Fact]
+    public void An_audit_can_opt_out_and_keep_rows_with_no_evidence_not_assessed()
+    {
+        var target = Target with { NoEvidence = ComplianceResult.NotAssessed };
+
+        var plan = AuditPlanner.PlanUpdates([new TargetResults(target, [Requirement("EX-2.1", ComplianceResult.NotAssessed)])], [], []).Value();
+
+        var update = plan.OfType<AuditUpdate.UpdateRequirementAssessment>().ShouldHaveSingleItem();
+        update.Result.ShouldBe(ComplianceResult.NotAssessed);
+        update.Observation.ShouldNotStartWith("No evidence yet");
     }
 
     [Fact]
