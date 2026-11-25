@@ -154,7 +154,7 @@ public sealed class ScopeExportTests
             Managed(ScopeKind.System, "Example 365", ("ref_id", "SYS-365"), ("type", "primary"), ("description", "Mail: files, identity \"and\" devices."), ("owner", "it@example.com"), ("domain", "Example Pty Ltd")),
             Managed(ScopeKind.System, "Example laptops", ("ref_id", "SYS-LAPTOPS"), ("type", "supporting"), ("owner", "it@example.com"), ("domain", "Example Pty Ltd"), ("parents", "Example 365")),
             Managed(ScopeKind.Audit, "EX-E8-2026", ("name", "Essential Eight ML2 2026"), ("framework", E8), ("groups", "1, 2"), ("domain", "Example Pty Ltd"),
-                ("perimeter", "Corporate IT"), ("eta", "2026-06-30"), ("due_date", "2026-07-31"), ("authors", "it@example.com"), ("reviewers", "ceo@example.com"), ("status", "in_progress")),
+                ("perimeter", "Corporate IT"), ("eta", "2026-06-30"), ("due_date", "2026-07-31"), ("authors", "it@example.com"), ("reviewers", "ceo@example.com"), ("systems", "Example 365, Example laptops"), ("status", "in_progress")),
             Managed(ScopeKind.Document, "identity-policy", ("name", "Identity and access policy"), ("domain", "Example Pty Ltd"), ("hashes", new string('a', 64))),
             new ActualObject(new ScopeObject(ScopeKind.Document, "ev-0001", Fields(("name", "mfa-admins.json"))), null),
             Managed(ScopeKind.Control, "AC-MFA", ("name", "Multi-factor authentication"), ("description", "Every user signs in with MFA."), ("domain", "Example Pty Ltd"),
