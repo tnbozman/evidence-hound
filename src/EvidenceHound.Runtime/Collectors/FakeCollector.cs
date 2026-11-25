@@ -29,7 +29,10 @@ public sealed class FakeCollector : ICollector
 
     public CollectorDescription Describe() => new(
         [.. Findings.Select(f => f.CheckId)],
-        [new("tenant", "Tenant domain named in the evidence. Default: example.com.", Required: false)],
+        [
+            new("tenant", "Tenant domain named in the evidence. Default: example.com.", Required: false),
+            new("fail", "Check ids to report as failed instead, comma-separated, such as backup.restore_tested. Default: none.", Required: false),
+        ],
         []);
 
     public Task<Result<CollectionResult>> CollectAsync(CollectorContext context, CancellationToken cancellationToken)
@@ -39,8 +42,11 @@ public sealed class FakeCollector : ICollector
         var tenant = context.Settings.GetOrDefault("tenant", "example.com");
         var now = context.Clock.UtcNow;
 
+        var failing = context.Settings.GetOrDefault("fail", "").Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).ToHashSet(StringComparer.Ordinal);
         var checks = Result.Combine(Findings.Select(f => CheckId.Create(f.CheckId)
-            .Bind(id => CheckResult.Create(id, f.Outcome, f.Observation, [f.File], now, context.Name))));
+            .Bind(id => failing.Contains(f.CheckId)
+                ? CheckResult.Create(id, CheckOutcome.Fail, $"The check failed (the fake collector's 'fail' setting names {f.CheckId}).", [f.File], now, context.Name)
+                : CheckResult.Create(id, f.Outcome, f.Observation, [f.File], now, context.Name))));
         var files = Findings.Select(f => CollectedEvidence.FromBytes(f.File, "application/json", Encoding.UTF8.GetBytes(Content(tenant, f.CheckId, f.Detail))));
         ControlStatus[] controls = [new("mfa", ControlState.InProgress), new("backups", ControlState.Active)];
 
