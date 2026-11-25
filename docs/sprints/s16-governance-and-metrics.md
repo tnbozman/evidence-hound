@@ -1,6 +1,6 @@
 # s16 Governance collector and metrics
 
-Status: Planned
+Status: In progress
 
 Release: 2
 
@@ -86,6 +86,25 @@ Changed in the AI governance planning PR (Nov 2026): s11-05 builds the `ciso-ass
 
 **Functional check**
 - Following the guides verbatim, add a metric to the example repo and apply it.
+
+### s16-07 `hound status` gives each programme's standing (carried from s15-D10)
+- [ ] Done
+
+**Story:** As a GRC member with a few hours a week, I want `hound status` to say how much of each programme is assessed and met, so
+that I see the real position without opening a report or trusting CISO Assistant's percentage.
+
+**Acceptance criteria**
+- With `--scope`, `hound status` gives each programme's standing from the latest posture snapshot (s15-14's level met, compliant of
+  applicable with not-assessed rows as not met, rounded down, and "not assessed: N"), and says when there is no snapshot yet and how
+  to make one (`hound report snapshot`).
+- `--json` carries the same figures.
+
+**Tests first**
+- `StatusCommandTests.Gives_each_programmes_standing_from_the_latest_snapshot`
+- `StatusCommandTests.Says_how_to_make_a_snapshot_when_there_is_none`
+
+**Functional check**
+- After the trial's runs and a snapshot, `hound status --scope scope/` gives the Essential Eight standing with the open rows counted.
 
 ### s16-05 Rehearse trial, onboarding and sustaining GRC (standing, every sprint)
 - [ ] Done
