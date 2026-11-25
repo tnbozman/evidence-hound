@@ -57,6 +57,22 @@ public class CoverageTests
     }
 
     [Fact]
+    public void A_draft_row_counts_as_draft_not_as_covered()
+    {
+        // s14-03 rehearsal: an all-draft derived mapping looked fully covered, yet runs publish no draft row.
+        var draft = RequirementMapping.Create("MFA-B", [Id("identity.mfa.enforced")], MappingRule.AllPass).Value() with { Draft = true };
+        var mapping = Mapping(Requirement("MFA-A", "identity.mfa.enforced"), draft);
+
+        var counts = MappingCoverage.Count(Snapshot, mapping, [], ManualChecks, Ml2);
+
+        counts.Where(c => c.ParentUrn == Mfa).ShouldBe(
+        [
+            new CoverageCount(Mfa, "1", Automated: 1, Manual: 0, Uncovered: 0),
+            new CoverageCount(Mfa, "2", Automated: 1, Manual: 0, Uncovered: 0, Draft: 1),
+        ]);
+    }
+
+    [Fact]
     public void Groups_outside_the_audit_selection_are_not_counted()
     {
         var counts = MappingCoverage.Count(Snapshot, Mapping(Requirement("MFA-A", "identity.mfa.enforced")), [], ManualChecks, ["3"]);
