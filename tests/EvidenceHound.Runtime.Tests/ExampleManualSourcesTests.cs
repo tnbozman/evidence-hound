@@ -28,6 +28,16 @@ public class ExampleManualSourcesTests
             ignoreOrder: true);
     }
 
+    [Fact]
+    public void There_is_a_disp_template_for_each_record_no_system_holds()
+    {
+        // s14-02: security officer appointment, clearances register review, facility and visitor controls and the annual security report;
+        // security awareness training records reuse the Essentials template.
+        ExampleManualSources.Folders("disp").Select(Path.GetFileName).ShouldBe(
+            ["annual-security-report", "clearances-register", "facility-security", "security-officer"], ignoreOrder: true);
+        ExampleManualSources.Folders("essentials").Select(Path.GetFileName).ShouldContain("security-awareness-training");
+    }
+
     [Theory]
     [MemberData(nameof(Templates))]
     public void Every_template_config_validates(string template)

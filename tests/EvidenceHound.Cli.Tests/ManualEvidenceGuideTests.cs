@@ -45,6 +45,7 @@ public sealed class ManualEvidenceGuideTests
 
     [Theory]
     [InlineData("essentials")]
+    [InlineData("disp")]
     public void The_template_index_lists_every_template_of_the_other_libraries(string library)
     {
         // s14: the ASD Essentials and DISP templates are indexed beside the Essential Eight ones.
