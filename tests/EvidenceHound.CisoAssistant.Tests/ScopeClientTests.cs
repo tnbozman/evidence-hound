@@ -197,6 +197,26 @@ public sealed class ScopeClientTests : IDisposable
     }
 
     [Fact]
+    public async Task An_asset_assessment_update_leaves_the_flags_set_by_checks()
+    {
+        // s15-05: a flag named by checks is not declared; each run sets it, so the scope's update must not reset it to false.
+        List("business-impact-analysis", new JsonObject { ["id"] = "bia-1", ["ref_id"] = "EX-BIA-2026" });
+        List("assets", new JsonObject { ["id"] = "a-365", ["name"] = "Example 365" });
+        List("applied-controls");
+        List("asset-assessments", new JsonObject { ["id"] = "aa-1", ["asset"] = new JsonObject { ["id"] = "a-365", ["str"] = "Example 365" } });
+        Respond("PATCH", "/api/asset-assessments/aa-1/", 200, new JsonObject { ["id"] = "aa-1" });
+        var assessment = Declared(ScopeKind.AssetAssessment, "EX-BIA-2026/Example 365",
+            ("bia", "EX-BIA-2026"), ("system", "Example 365"), ("recovery_documented", "true"), ("observation", "Restores are tested monthly."));
+
+        (await _ca.Writer.WriteAsync(new ScopeWrite(new ScopeChange(assessment.Kind, assessment.Key, ScopeAction.Update, [new FieldChange("observation", null, "Restores are tested monthly.")], State), assessment, "Global"), _ct)).Value();
+
+        var patched = JsonNode.Parse(Logged("PATCH", "/api/asset-assessments/aa-1/").Body!)!.AsObject();
+        patched["recovery_documented"]!.GetValue<bool>().ShouldBeTrue();
+        patched.ContainsKey("recovery_tested").ShouldBeFalse();
+        patched.ContainsKey("recovery_targets_met").ShouldBeFalse();
+    }
+
+    [Fact]
     public async Task Creates_bia_asset_assessment_and_thresholds()
     {
         // s15-04 (BiaClientTests in the plan): the BIA on its matrix, one asset assessment per system, thresholds by seconds and impact position.

@@ -297,6 +297,18 @@ public class ScopePlanTests
     }
 
     [Fact]
+    public void A_recovery_flag_set_by_checks_is_not_compared()
+    {
+        // s15-05: each run sets a flag named by checks, so the scope plan neither resets it nor reports it as edited.
+        var declared = Declared(ScopeKind.AssetAssessment, "EX-BIA-2026/Example 365", ("system", "Example 365"), ("recovery_documented", "true"));
+        var applied = new ActualObject(
+            Declared(ScopeKind.AssetAssessment, declared.Key, ("system", "Example 365"), ("recovery_documented", "true"), ("recovery_tested", "true")),
+            ScopeMarker.State(declared.Kind, declared.Fields));
+
+        ScopePlanner.Plan([declared], [applied], prune: false).IsEmpty.ShouldBeTrue();
+    }
+
+    [Fact]
     public void Assessment_compares_only_the_fields_the_scope_declares()
     {
         var declared = Declared(ScopeKind.Assessment, "EX-E8-2026/ISM-1486", ("result", "not_assessed"), ("documents", "identity-policy"));
