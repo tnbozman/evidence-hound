@@ -52,6 +52,33 @@ public sealed class MappingDeriveCommandTests : IDisposable
         _output.ToString().ShouldContain("draft: true");
     }
 
+    [Fact]
+    public async Task An_existing_out_file_is_kept_unless_force_is_given()
+    {
+        // s14-03 rehearsal: deriving over the reviewed reference mapping silently replaced it with an all-draft file.
+        var output = Path.Combine(_dir, "asd-essentials-enterprise-it.yaml");
+        await File.WriteAllTextAsync(output, "reviewed", TestContext.Current.CancellationToken);
+        string[] derive =
+        [
+            "mapping", "derive", Repo("mappings", "essential-eight-2023.yaml"),
+            "--from", Repo("frameworks", "essential-eight-2023.json"),
+            "--to", Repo("frameworks", "asd-essentials-enterprise-it.json"),
+            "--links", Repo("frameworks", "mapping-essential-eight-2023-and-asd-essentials-enterprise-it.yaml"),
+            "--out", output,
+        ];
+
+        var refused = await Run(derive);
+
+        refused.ShouldBe(ExitCodes.Usage);
+        (await File.ReadAllTextAsync(output, TestContext.Current.CancellationToken)).ShouldBe("reviewed");
+        _logs.Messages.ShouldContain(m => m.Contains("--force", StringComparison.Ordinal));
+
+        var forced = await Run([.. derive, "--force"]);
+
+        forced.ShouldBe(ExitCodes.Ok, _error.ToString());
+        (await File.ReadAllTextAsync(output, TestContext.Current.CancellationToken)).ShouldContain("draft: true");
+    }
+
     public void Dispose()
     {
         _output.Dispose();
