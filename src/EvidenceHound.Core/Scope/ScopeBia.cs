@@ -29,7 +29,11 @@ public sealed record ScopeAssetAssessment(
     bool TargetsMet,
     string? Observation,
     IReadOnlyList<ScopeThreshold> Thresholds,
-    SourceLine At);
+    SourceLine At)
+{
+    /// <summary>The checks named for a recovery flag (<c>documented</c>, <c>tested</c>, <c>targets_met</c>), which each run sets from them (s15-05).</summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<ScopeRef>> Checks { get; init; } = new Dictionary<string, IReadOnlyList<ScopeRef>>();
+}
 
 /// <summary>An escalation threshold: after this long down, the impact (a matrix impact level name), why, and its qualifications.</summary>
 public sealed record ScopeThreshold(Duration After, ScopeRef Impact, IReadOnlyList<string> Qualifications, string? Justification, SourceLine At);

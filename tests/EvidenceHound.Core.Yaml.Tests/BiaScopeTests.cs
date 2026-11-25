@@ -67,6 +67,41 @@ public class BiaScopeTests
     }
 
     [Fact]
+    public void Hand_set_flag_with_checks_conflicts()
+    {
+        // s15-05: a flag named by checks is set by each run, so the file cannot also set it by hand.
+        var problem = Problems(Bia.Replace("{documented: true, tested: false,", "{documented: true, tested: false, tested_by: [backup.restore_tested],", StringComparison.Ordinal))
+            .ShouldHaveSingleItem();
+
+        problem.Code.ShouldBe("scope.result_conflict");
+        problem.Message.ShouldContain("'tested'");
+        problem.Hint.ShouldContain("tested_by");
+    }
+
+    [Fact]
+    public void A_flag_named_by_checks_is_read_and_left_out_of_the_scope_plan()
+    {
+        var parsed = Parse(Bia.Replace("{documented: true, tested: false,", "{documented: true, tested_by: [backup.restore_tested, backup.daily],", StringComparison.Ordinal));
+
+        parsed.Problems.ShouldBeEmpty();
+        var first = parsed.Scope.Bias[0].Assessments[0];
+        first.Checks.ShouldContainKey("tested");
+        first.Checks["tested"].Select(c => c.Value).ShouldBe(["backup.restore_tested", "backup.daily"]);
+        var assessment = BiaObjects.From(parsed.Scope.Bias, RiskFixture.Libraries).First(o => o.Kind == ScopeKind.AssetAssessment);
+        assessment.Fields.ShouldNotContainKey("recovery_tested");
+        assessment.Fields["recovery_documented"].ShouldBe("true");
+    }
+
+    [Fact]
+    public void A_flag_check_id_must_be_a_check_id()
+    {
+        var problem = Problems(Bia.Replace("{documented: true, tested: false,", "{documented: true, tested_by: [Not A Check],", StringComparison.Ordinal))
+            .ShouldHaveSingleItem();
+
+        problem.Code.ShouldBe("scope.value_invalid");
+    }
+
+    [Fact]
     public void Duplicate_system_is_reported()
     {
         var problem = Problems(Bia + "\n  - system: Example 365\n").ShouldHaveSingleItem();
