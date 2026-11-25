@@ -296,3 +296,21 @@ trial_seed_inputs() {
     done
   done
 }
+
+# trial_audit_reading REF COMPLIANT PARTIAL NON_COMPLIANT NOT_ASSESSED NOT_APPLICABLE NO_EVIDENCE -> the audit's compliance percentage
+# as CISO Assistant computes it: compliant plus half of partially compliant, over compliant, partially and non-compliant rows. It leaves
+# not-assessed and not-applicable rows out, so it fails (non-zero) on a 100% while any row is not assessed: the false full mark.
+trial_audit_reading() {
+  local ref="$1" compliant="$2" partial="$3" non="$4" open="$5" na="$6" none="$7"
+  local counted=$((compliant + partial + non))
+  if ((counted == 0)); then
+    printf '%s: CISO Assistant reads no percentage (no row is compliant or non-compliant; %s not assessed, %s not applicable).\n' \
+      "$ref" "$open" "$na"
+    return 0
+  fi
+  local percent=$(((200 * compliant + 100 * partial) / (2 * counted)))
+  printf '%s: CISO Assistant reads %s%% (%s compliant, %s partially compliant, %s non-compliant of which %s have no evidence yet;' \
+    "$ref" "$percent" "$compliant" "$partial" "$non" "$none"
+  printf ' it leaves out %s not applicable and %s not assessed).\n' "$na" "$open"
+  ((percent < 100 || open == 0))
+}

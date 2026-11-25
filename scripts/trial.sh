@@ -625,6 +625,38 @@ scan_dev() {
   trial_scan_source_names "$ws/scan-dev.log" >/dev/null || die "make scan-dev printed no scan sources; see ${ws#"$root"/}/scan-dev.log."
 }
 
+# readings shows each audit's compliance percentage as CISO Assistant computes it, the figure on its Compliance pages. Rows with no
+# evidence go to CISO Assistant as non-compliant ("No evidence yet: ..."); a 100% over rows not assessed stops the trial (s15-14).
+readings() {
+  step "16. What CISO Assistant reads for each audit"
+  local api ref url rows failed=0
+  case "$(cat "$state/ca-mode")" in
+    bundled) api="http://backend:8000/api/" ;;
+    *) api="http://localhost:8000/api/" ;;
+  esac
+  for ref in $(sed -n 's/^ref_id: *//p' "$ws/repo/scope/audits/"*.yaml | tr -d '"'); do
+    url="${api}requirement-assessments/?compliance_assessment__ref_id=$ref&requirement__assessable=true&limit=500"
+    rows='[]'
+    while [[ -n "$url" && "$url" != null ]]; do
+      local page
+      page="$(printf 'header = "Authorization: Token %s"\n' "$(cat "$ws/secrets/ca_token")" | curl -fsS -m 30 -K - "$url")" ||
+        die "CISO Assistant did not list the $ref rows."
+      rows="$(jq -c --argjson rows "$rows" '$rows + .results' <<<"$page")"
+      url="$(jq -r '.next' <<<"$page")"
+    done
+    local counts
+    counts="$(jq -r '[(map(select(.result == "compliant")) | length), (map(select(.result == "partially_compliant")) | length),
+      (map(select(.result == "non_compliant")) | length), (map(select(.result == "not_assessed")) | length),
+      (map(select(.result == "not_applicable")) | length),
+      (map(select((.observation // "") | startswith("No evidence yet: "))) | length)] | @tsv' <<<"$rows")"
+    # shellcheck disable=SC2086 # the six counts, one word each
+    trial_audit_reading "$ref" $counts || failed=1
+  done
+  ((failed == 0)) || die "An audit reads 100% while rows are not assessed: CISO Assistant leaves them out (docs/scope.md)."
+  say "A row with no evidence counts against the figure until its evidence arrives. hound report committee gives each programme's"
+  say "standing: the level met, and compliant of applicable with every open row counted (docs/reporting.md)."
+}
+
 preflight
 build_image
 workspace
@@ -639,5 +671,6 @@ grc_platform_evidence
 sophos
 m365
 scans
+readings
 step "Done"
 say "Run make trial again to repeat any step, or make trial-clean to remove the workspace (CISO Assistant keeps running)."

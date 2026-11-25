@@ -184,6 +184,19 @@ Scanners export files instead of answering an API, so the `vuln-scan` collector 
 
 In a real deployment, each new export goes into the same folder, by hand or with `hound manual upload --source <name>`.
 
+## 16. What CISO Assistant reads for each audit
+
+The trial ends by reading each audit's compliance percentage the way CISO Assistant computes it on its Compliance pages: compliant
+rows, plus half of the partially compliant ones, over compliant, partially compliant and non-compliant rows. CISO Assistant leaves
+not-assessed and not-applicable rows out of that figure, so an audit with three passing checks and every manual row not assessed
+would read 100%. hound therefore sends a row with no evidence as non-compliant, its observation starting "No evidence yet: "
+([why](../scope.md#no-evidence-is-not-compliance)), and the trial prints each audit's figure with those rows counted, for example
+`EX-SYSTEM-2026: CISO Assistant reads 6% (3 compliant, 0 partially compliant, 43 non-compliant of which 43 have no evidence yet; it
+leaves out 61 not applicable and 0 not assessed)`. It stops if any audit reads 100% while a row is not assessed.
+
+For each programme's standing (the maturity level met, and compliant of applicable with every open row counted), use
+`hound report committee` ([reporting](../reporting.md#a-programmes-standing)).
+
 ## Unattended
 
 `HOUND_TRIAL_YES=1 make trial` answers yes to every question and gives the wizards their answers as options (`--yes`). Stages 5 to 11 replay fictional answers through the same commands an agent uses: the four third parties with `hound supplier draft`, each system with `hound onboard <system> pending`, its decisions from the onboarding tutorial's answers ([`answers/`](../../examples/onboarding-tutorial/answers)) typed into `hound onboard`, and its controls with `hound add control`. Because `hound approve` refuses without a person at a terminal, approved copies of the four supplier files stand in for it ([`examples/trial/`](../../examples/trial/README.md)). Steps 12 to 15 use the three dev servers and the fictional scan exports, publish, and collect again with the `drift` and `unsupported-firmware` deviations and the gaps scan estate. No step needs a credential. CI uses it to check the trial against a fresh CISO Assistant, twice: the second run applies nothing new.
