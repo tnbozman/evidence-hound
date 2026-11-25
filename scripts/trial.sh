@@ -634,7 +634,19 @@ readings() {
     bundled) api="http://backend:8000/api/" ;;
     *) api="http://localhost:8000/api/" ;;
   esac
-  for ref in $(sed -n 's/^ref_id: *//p' "$ws/repo/scope/audits/"*.yaml | tr -d '"'); do
+  # Each audit file's ref_id, and a period series' audits, whose ref_ids add the period (EX-E8-Q2-2027FY).
+  local series audits
+  series="$(sed -n 's/^ref_id: *//p' "$ws/repo/scope/audits/"*.yaml | tr -d '"')"
+  audits="$(printf 'header = "Authorization: Token %s"\n' "$(cat "$ws/secrets/ca_token")" |
+    curl -fsS -m 30 -K - "${api}compliance-assessments/?limit=1000" | jq -r '.results[].ref_id // empty')" ||
+    die "CISO Assistant did not list the audits."
+  local patterns=() name
+  for name in $series; do
+    patterns+=(-e "^$name(-(Q[1-4]|M[0-9]{2})-[0-9]{4}FY)?\$")
+  done
+  local refs
+  refs="$(grep -E "${patterns[@]}" <<<"$audits")" || die "CISO Assistant holds none of the audits in repo/scope/audits."
+  while IFS= read -r ref; do
     url="${api}requirement-assessments/?compliance_assessment__ref_id=$ref&requirement__assessable=true&limit=500"
     rows='[]'
     while [[ -n "$url" && "$url" != null ]]; do
@@ -651,7 +663,7 @@ readings() {
       (map(select((.observation // "") | startswith("No evidence yet: "))) | length)] | @tsv' <<<"$rows")"
     # shellcheck disable=SC2086 # the six counts, one word each
     trial_audit_reading "$ref" $counts || failed=1
-  done
+  done <<<"$refs"
   ((failed == 0)) || die "An audit reads 100% while rows are not assessed: CISO Assistant leaves them out (docs/scope.md)."
   say "A row with no evidence counts against the figure until its evidence arrives. hound report committee gives each programme's"
   say "standing: the level met, and compliant of applicable with every open row counted (docs/reporting.md)."

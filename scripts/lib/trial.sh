@@ -303,6 +303,10 @@ trial_seed_inputs() {
 trial_audit_reading() {
   local ref="$1" compliant="$2" partial="$3" non="$4" open="$5" na="$6" none="$7"
   local counted=$((compliant + partial + non))
+  if ((counted + open + na == 0)); then
+    printf '%s: no rows were read from CISO Assistant.\n' "$ref"
+    return 1
+  fi
   if ((counted == 0)); then
     printf '%s: CISO Assistant reads no percentage (no row is compliant or non-compliant; %s not assessed, %s not applicable).\n' \
       "$ref" "$open" "$na"
