@@ -57,7 +57,7 @@ A prompt for a ref ID (`hound add system`, `hound add control`, `hound onboard <
 | `libraries` | Other libraries to load. A URN loads one CISO Assistant already stores, such as the mapping set between the Essential Eight and the Essentials. A map with `urn` and `file` uploads your own library from the repo, such as a custom risk matrix or threat catalogue, and `snapshot` names the snapshot made by `hound library snapshot`. Raise the file's `version` whenever you change it: CISO Assistant only takes a new version, so `hound` stops with `library.version_not_bumped` otherwise, and uploads and updates the library when the version goes up. See [Risk matrices and threats](#risk-matrices-and-threats). |
 | `domains` | Folders. Each has a `name`, a `description`, its `perimeters` (or a single `perimeter`) and its `systems`. |
 | perimeter | `name`, optional `ref_id` and `description`. |
-| system | `name`, `type` (`primary` or `supporting`), optional `ref_id`, `description`, `owner`, `parents` (other systems by name), `tags` (per-framework labels such as `essentials_domain: identity` or `cui: "true"`), `solution` (the third-party solution that provides it, by `ref_id`) `supplied_through` (a reseller or managed service provider, by the third party's `ref_id`) `data` (the [sensitive data](#sensitive-data) it handles) and `ai` (its [AI register entry](#ai-systems), when it is an AI system). A system with either supplier key is registered only once those suppliers are approved: see [Supplier approval](#supplier-approval). |
+| system | `name`, `type` (`primary` or `supporting`), optional `ref_id`, `description`, `owner`, `parents` (other systems by name), `tags` (per-framework labels such as `essentials_domain: identity` or `cui: "true"`), `solution` (the third-party solution that provides it, by `ref_id`) `supplied_through` (a reseller or managed service provider, by the third party's `ref_id`) `data` (the [sensitive data](#sensitive-data) it handles) `ai` (its [AI register entry](#ai-systems), when it is an AI system), `objectives` (security objectives on CISO Assistant's 0 to 4 scale, such as `{confidentiality: 3, availability: 2}`) and `recovery` (recovery objectives `rto`, `rpo` and `mtd` as durations such as `4h` or `2d`; see [Business impact analyses](#biabiayaml)). Objectives and recovery objectives are written only when the file declares them, so values set in CISO Assistant are otherwise kept. A system with either supplier key is registered only once those suppliers are approved: see [Supplier approval](#supplier-approval). |
 | `programmes` | Optional. The compliance programmes the reports are organised by, such as the Essential Eight and later AI6. Each has `id` (a lowercase slug such as `essential-eight`, unique), `name`, `framework` (a framework URN declared above, with a `snapshot`), `groups` (the implementation groups reported against, which must exist in the snapshot), `audit` (the `ref_id` of the audit, or audit series, of record) and optional `group_by` (`parent`, the default: requirements are grouped under their parent node, such as the Essential Eight strategy), and optional `register`, the register its reports summarise: `of` (`ai_systems`, the [AI systems](#ai-systems), or `systems`, every system) and `by` (the fields to count by: `screening`, `use` and `oversight` for AI systems, `type` for systems), such as `register: { of: ai_systems, by: [screening, use] }`. An audit belongs to at most one programme. Programmes create nothing in CISO Assistant and never appear in `hound scope plan`. `hound programme list` shows each one with its requirement counts per group and per parent node, from the snapshot alone, and its register's counts from the scope. |
 
 ### AI systems
@@ -455,6 +455,42 @@ exceptions:
 - When a check fails on a row an approved, unexpired exception covers, `hound run` names the exception in the row's observation, such as
   "Covered by security exception EXC-01 (Legacy finance app without MFA), approved until 2027-03-31." The result itself stays
   non-compliant: an exception explains a gap, it does not close it.
+
+## bia/&lt;bia&gt;.yaml
+
+One file per business impact analysis (BIA): how long each system can be down before the impact grows, on a risk matrix's impact scale.
+The continuity owner proposes it in a pull request; `hound scope apply` writes it to CISO Assistant's BIA, its asset assessments and their
+escalation thresholds, and CISO Assistant draws the impact-over-time chart.
+
+```yaml
+ref_id: EX-BIA-2026
+name: Example Pty Ltd business impact analysis 2026
+domain: Example Pty Ltd
+perimeter: Corporate IT                  # optional
+matrix: urn:example:risk:matrix:example-4x4
+version: "1.0"
+status: in_progress                      # planned, in_progress, in_review, done or deprecated
+authors: [it@example.com]
+due_date: "2026-12-31"
+assessments:
+  - system: Example 365                  # one assessment per system, by name
+    dependencies: [Example laptops]      # systems it needs to run
+    controls: [AC-BACKUP]                # controls that keep it running, by ref_id
+    recovery: {documented: true, tested: false, targets_met: false}
+    observation: Mail and files stop when Example 365 is down.
+    thresholds:                          # in ascending time
+      - {after: 4h, impact: Minor, justification: Staff use phones.}
+      - {after: 1d, impact: Major, qualifications: [Reputation], justification: Customers notice.}
+      - {after: 3d, impact: Severe}
+```
+
+Durations are a whole number and a unit: `m`, `h`, `d` or `w`. `impact` is an impact level name from the matrix's [library
+snapshot](#risk-matrices-and-threats); `qualifications` are CISO Assistant's qualification terms by name, such as Reputation.
+`hound scope validate` reports `bia.system_duplicate` (one assessment per system), `bia.threshold_order` (thresholds must be unique and
+ascend), `bia.impact_unknown`, `bia.system_unknown`, `bia.control_unknown`, `bia.matrix_unknown`, `bia.domain_unknown`,
+`bia.perimeter_unknown`, `scope.duration_invalid`, and the warning `bia.impact_falls` for an impact lower than an earlier one, because
+CISO Assistant carries the highest impact forward. In a plan, an assessment is keyed `bia/system` and a threshold `bia/system/after`, such
+as `EX-BIA-2026/Example 365/1d`.
 
 ## audits/&lt;audit&gt;.yaml
 

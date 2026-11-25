@@ -149,6 +149,18 @@ Result recorded below once CI has run.
 **Functional check**
 - Apply a fictional BIA for two systems to the local CISO Assistant; its impact-over-time view matches the file.
 
+**Notes.** CISO Assistant v4.3.4's BIA has a `ref_id` (`AutoRefIdMixin`), so the file's `ref_id` is the key. An asset assessment has no
+`ref_id` or description: it is keyed `bia/system` and found by its asset; a threshold is keyed `bia/system/after` and found by its point in
+time, held in seconds (`Duration` prints the largest whole unit, so `86400` reads `1d`). Impacts are planned as level names and written as
+positions, as risk ratings are. A system's `objectives` and `recovery` are written to `security_objectives` and
+`disaster_recovery_objectives` only when the file declares them (as labels are), so values set in the UI are kept; the reader reads only
+enabled objectives. Qualifications are CISO Assistant terminologies, found by name. The client tests sit in `ScopeClientTests`
+(`Creates_bia_asset_assessment_and_thresholds`, `System_sends_its_security_and_recovery_objectives_only_when_declared`).
+
+**Functional check result.** `BiaFunctionalTests` (CI) applies a two-system BIA to a copy of the example repo, checks one asset
+assessment per system and the thresholds at 4h Minor and 1d Major, then expects a second plan to change nothing. Result recorded below
+once CI has run.
+
 ### s15-05 Recovery flags from checks
 - [ ] Done
 
