@@ -338,6 +338,9 @@ public sealed partial class ExampleRepoTests : IDisposable
             ("frameworks/essential-eight-2023.json", "frameworks/essential-eight-2023.json"),
             ("frameworks/asd-essentials-enterprise-it.json", "frameworks/asd-essentials-enterprise-it.json"),
             ("mappings/ai6.yaml", "mappings/ai6.yaml"),
+            ("mappings/disp.yaml", "mappings/disp.yaml"),
+            ("frameworks/disp.yaml", "frameworks/disp.yaml"),
+            ("frameworks/disp.json", "frameworks/disp.json"),
             ("frameworks/ai6.yaml", "frameworks/ai6.yaml"),
             ("frameworks/ai6.json", "frameworks/ai6.json"),
         })

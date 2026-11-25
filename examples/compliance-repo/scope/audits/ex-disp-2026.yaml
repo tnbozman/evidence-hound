@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=../../../../schemas/scope.schema.json
+# Example Pty Ltd's DISP membership readiness self-assessment, beside its Essential Eight audit. Everything here is made up.
+# The cyber rows come from the same evidence as the Essential Eight audit; the rest from supplier records, the incident register
+# and the DISP manual sources (docs/collectors/manual-templates.md).
+ref_id: EX-DISP-2026
+name: DISP readiness 2026
+framework: urn:evidence-hound:risk:framework:disp-membership
+groups: ["M"]
+domain: Example Pty Ltd
+perimeter: Corporate IT
+eta: "2026-12-31"
+authors: [it@example.com]
+reviewers: [ceo@example.com]
+systems: [Example 365]
+unlisted:
+  result: not_assessed

@@ -1,0 +1,233 @@
+# yaml-language-server: $schema=../../../schemas/mapping.schema.json
+# DISP membership readiness (frameworks/disp.yaml), for the evidence Evidence Hound has today. s14-02.
+# - Reuses evidence: each cyber security requirement has every check the Essential Eight mapping gives that strategy's maturity level
+#   1 and 2 rows, so one run answers both audits; supply chain uses the supplier records (s10); incident reporting uses the incident
+#   register.
+# - The records no system holds come from manual sources in examples/manual-sources/disp/ (security officers, clearances register,
+#   facility and visitors, annual security report) and examples/manual-sources/essentials/ (training, risk method).
+# - Drafted with AI help (Claude) on 2026-11-25 and not reviewed by a DISP security officer: check it against your membership level.
+framework_urn: urn:evidence-hound:risk:framework:disp-membership
+description: DISP membership readiness from Essential Eight, supplier and incident evidence, and DISP manual sources.
+requirements:
+  # Security officers appointed: manual source disp/security-officer.
+  - ref: DISP-GOV-01
+    rule: all_pass
+    checks:
+      - disp.security_officer_appointed
+  # Security policy and plan: manual source disp/security-officer.
+  - ref: DISP-GOV-02
+    rule: all_pass
+    checks:
+      - disp.security_policy_approved
+  # Foreign ownership, control or influence: manual source disp/security-officer.
+  - ref: DISP-GOV-03
+    rule: all_pass
+    checks:
+      - disp.foreign_interest_declared
+  # Annual security report: manual source disp/annual-security-report.
+  - ref: DISP-GOV-04
+    rule: all_pass
+    checks:
+      - disp.annual_report_submitted
+  # Supply chain security: supplier records (s10): the ciso-assistant profile checks every supplier has a current assessment and contract.
+  - ref: DISP-GOV-05
+    rule: all_pass
+    checks:
+      - supplier.assessments_current
+      - supplier.contracts_current
+  # Security risk management: manual source essentials/cyber-governance (the same risk method the ASD Essentials asks for).
+  - ref: DISP-GOV-06
+    rule: all_pass
+    checks:
+      - governance.risk_method_approved
+  # Security clearances: manual source disp/clearances-register.
+  - ref: DISP-PER-01
+    rule: all_pass
+    checks:
+      - personnel.clearances_register_reviewed
+  # Pre-employment screening: manual source disp/clearances-register.
+  - ref: DISP-PER-02
+    rule: all_pass
+    checks:
+      - personnel.pre_employment_screened
+  # Separation: manual source disp/clearances-register.
+  - ref: DISP-PER-03
+    rule: all_pass
+    checks:
+      - personnel.leavers_offboarded
+  # Security awareness training: manual source essentials/security-awareness-training (the same records answer the ASD Essentials).
+  - ref: DISP-PER-04
+    rule: all_pass
+    checks:
+      - training.awareness_completed
+      - training.awareness_content_current
+  # Contact reporting: manual source disp/annual-security-report.
+  - ref: DISP-PER-05
+    rule: all_pass
+    checks:
+      - disp.incidents_reported
+  # Visitor control: manual source disp/facility-security.
+  - ref: DISP-PHY-01
+    rule: all_pass
+    checks:
+      - physical.visitors_controlled
+  # Access control: manual source disp/facility-security.
+  - ref: DISP-PHY-02
+    rule: all_pass
+    checks:
+      - physical.access_reviewed
+  # Facility security plan: manual source disp/facility-security.
+  - ref: DISP-PHY-03
+    rule: all_pass
+    checks:
+      - physical.facility_plan_current
+  # Security incident reporting: the incident register (example-incident-register) for reports to ASD, and the reports to Defence.
+  - ref: DISP-INF-02
+    rule: all_pass
+    checks:
+      - incident.reported_to_asd
+      - disp.incidents_reported
+  # Incident and contact records: manual source disp/annual-security-report.
+  - ref: DISP-INF-03
+    rule: all_pass
+    checks:
+      - disp.incidents_reported
+  # Application control: every check of the Essential Eight mapping's Application control rows (ML1 and ML2).
+  - ref: DISP-CYB-01
+    rule: all_pass
+    checks:
+      - incident.reported_to_ciso
+      - incident.reported_to_asd
+      - incident.response_plan_followed
+      - endpoint.application_control.enforced
+      - endpoint.application_control.file_types_covered
+      - endpoint.application_control.events_centrally_logged
+      - appcontrol.rulesets_validated
+      - logging.event_logs.protected
+      - logging.internet_facing.analysed
+      - logging.events.triaged
+      - appcontrol.internet_facing_servers
+      - appcontrol.user_profiles_and_temp
+      - appcontrol.all_other_locations
+      - appcontrol.microsoft_blocklist
+  # Patch applications: every check of the Essential Eight mapping's Patch applications rows (ML1 and ML2).
+  - ref: DISP-CYB-02
+    rule: all_pass
+    checks:
+      - vuln.internet_facing.scanned_in_interval
+      - vuln.internet_facing.patched_in_window
+      - vuln.internet_facing.unsupported_removed
+      - vuln.common_apps.scanned_in_interval
+      - vuln.common_apps.patched_in_window
+      - vuln.common_apps.unsupported_removed
+      - vuln.other_apps.scanned_in_interval
+      - vuln.other_apps.patched_in_window
+      - vuln.asset_discovery.fortnightly
+      - vuln.scanner.database_current
+  # Restrict Microsoft Office macros: every check of the Essential Eight mapping's Restrict Microsoft Office macros rows (ML1 and ML2).
+  - ref: DISP-CYB-03
+    rule: all_pass
+    checks:
+      - apps.office.macros_blocked_from_internet
+      - endpoint.asr.office_rules_enabled
+      - office.macros.disabled_without_need
+      - office.macros.antivirus_scanning
+      - office.macros.settings_locked
+  # User application hardening: every check of the Essential Eight mapping's User application hardening rows (ML1 and ML2).
+  - ref: DISP-CYB-04
+    rule: all_pass
+    checks:
+      - endpoint.asr.office_rules_enabled
+      - incident.reported_to_ciso
+      - incident.reported_to_asd
+      - incident.response_plan_followed
+      - logging.event_logs.protected
+      - logging.internet_facing.analysed
+      - logging.events.triaged
+      - logging.powershell.centrally_logged
+      - logging.command_line.centrally_logged
+      - browser.ie11_disabled
+      - browser.java_blocked
+      - browser.ads_blocked
+      - browser.hardened
+      - browser.settings_locked
+      - office.ole_blocked
+      - office.hardened
+      - office.settings_locked
+      - pdf.child_processes_blocked
+      - pdf.hardened
+      - pdf.settings_locked
+  # Restrict administrative privileges: every check of the Essential Eight mapping's Restrict administrative privileges rows (ML1 and ML2).
+  - ref: DISP-CYB-05
+    rule: all_pass
+    checks:
+      - identity.privileged.admins_cloud_only
+      - identity.privileged.global_admin_count
+      - identity.privileged.pim_eligible_not_permanent
+      - network.management.super_admin_count
+      - incident.reported_to_ciso
+      - incident.reported_to_asd
+      - incident.response_plan_followed
+      - logging.event_logs.protected
+      - logging.internet_facing.analysed
+      - logging.events.triaged
+      - logging.privileged_access.centrally_logged
+      - logging.privileged_accounts.changes_logged
+      - privileged.requests.validated
+      - privileged.access.revalidated_yearly
+      - privileged.access.disabled_when_unused
+      - privileged.accounts.no_internet
+      - privileged.environments.separate
+      - privileged.admin.jump_servers
+      - privileged.credentials.unique
+  # Patch operating systems: every check of the Essential Eight mapping's Patch operating systems rows (ML1 and ML2).
+  - ref: DISP-CYB-06
+    rule: all_pass
+    checks:
+      - endpoint.os.supported_versions
+      - network.firewall.firmware_supported
+      - vuln.operating_systems.unsupported_removed
+      - network.firewall.firmware_current
+      - vuln.internet_facing.patched_in_window
+      - endpoint.managed.compliant_ratio
+      - vuln.operating_systems.patched_in_window
+      - vuln.internet_facing.scanned_in_interval
+      - vuln.operating_systems.scanned_in_interval
+      - vuln.asset_discovery.fortnightly
+      - vuln.scanner.database_current
+  # Multi-factor authentication: every check of the Essential Eight mapping's Multi-factor authentication rows (ML1 and ML2).
+  - ref: DISP-CYB-07
+    rule: all_pass
+    checks:
+      - identity.mfa.enforced_conditional_access
+      - identity.mfa.registered_all_users
+      - identity.legacy_auth_blocked
+      - identity.mfa.phishing_resistant_admins
+      - incident.reported_to_ciso
+      - incident.reported_to_asd
+      - incident.response_plan_followed
+      - identity.mfa.third_party_services
+      - identity.mfa.organisation_services
+      - identity.mfa.customers
+      - identity.mfa.systems
+      - identity.mfa.two_factors
+      - identity.mfa.phishing_resistant
+      - logging.event_logs.protected
+      - logging.internet_facing.analysed
+      - logging.events.triaged
+      - logging.mfa_events.centrally_logged
+  # Regular backups: every check of the Essential Eight mapping's Regular backups rows (ML1 and ML2).
+  - ref: DISP-CYB-08
+    rule: all_pass
+    checks:
+      - backup.restore_tested
+      - backup.performed_and_retained
+      - backup.synchronised
+      - backup.retained_securely
+      - backup.unprivileged_cannot_read_others
+      - backup.privileged_cannot_read
+      - backup.unprivileged_cannot_change
+      - backup.privileged_cannot_change
+manual_only:
+  - ref: DISP-INF-01
+    source: the security officer's yearly information handling review (marking, storage, transfer and destruction records)

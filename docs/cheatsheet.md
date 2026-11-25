@@ -8,8 +8,8 @@ file by `scripts/cheatsheet/render.sh`.
 
 ### Set up a repo
 
-- `hound init <folder>`: new compliance repo: config, scope, an Essential Eight audit and its mapping
-  - `--org --code --url --time-zone --level --interval --owner --evidence-root --assistant -y --json`
+- `hound init <folder>`: new compliance repo: config, scope, an Essential Eight audit and its mapping (`--framework disp` adds DISP readiness)
+  - `--org --code --url --time-zone --level --interval --owner --evidence-root --framework --assistant -y --json`
 - `hound agent setup`: set up Claude Code or Copilot in the repo
   - `--assistant --repo`
 - `hound config validate <file>`: check `hound.yaml`

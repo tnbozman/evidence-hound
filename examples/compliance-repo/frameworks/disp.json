@@ -1,0 +1,290 @@
+{
+  "library_urn": "urn:evidence-hound:risk:library:disp-membership",
+  "framework_urn": "urn:evidence-hound:risk:framework:disp-membership",
+  "version": 1,
+  "groups": [
+    {
+      "ref_id": "M",
+      "name": "Membership"
+    }
+  ],
+  "nodes": [
+    {
+      "urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-gov:disp-gov-01",
+      "ref_id": "DISP-GOV-01",
+      "parent_urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-gov",
+      "groups": [
+        "M"
+      ],
+      "title": "Security officers appointed",
+      "description": "A chief security officer and a security officer are named, have done the training Defence asks for, and are known to Defence."
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-gov:disp-gov-02",
+      "ref_id": "DISP-GOV-02",
+      "parent_urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-gov",
+      "groups": [
+        "M"
+      ],
+      "title": "Security policy and plan",
+      "description": "A security policy and a security plan cover the business\u0027s Defence work, are approved by its leaders and are reviewed at least once a year."
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-gov:disp-gov-03",
+      "ref_id": "DISP-GOV-03",
+      "parent_urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-gov",
+      "groups": [
+        "M"
+      ],
+      "title": "Foreign ownership, control or influence",
+      "description": "Foreign ownership, control or influence over the business is declared, and changes to it are told to Defence."
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-gov:disp-gov-04",
+      "ref_id": "DISP-GOV-04",
+      "parent_urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-gov",
+      "groups": [
+        "M"
+      ],
+      "title": "Annual security report",
+      "description": "The yearly security report is sent to Defence on time, and changes to the business that affect membership are reported as they happen."
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-gov:disp-gov-05",
+      "ref_id": "DISP-GOV-05",
+      "parent_urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-gov",
+      "groups": [
+        "M"
+      ],
+      "title": "Supply chain security",
+      "description": "Suppliers and subcontractors who touch Defence information or work are assessed, and their contracts carry the security obligations down."
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-gov:disp-gov-06",
+      "ref_id": "DISP-GOV-06",
+      "parent_urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-gov",
+      "groups": [
+        "M"
+      ],
+      "title": "Security risk management",
+      "description": "Security risks to the Defence work are identified, assessed and treated under an approved method."
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-per:disp-per-01",
+      "ref_id": "DISP-PER-01",
+      "parent_urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-per",
+      "groups": [
+        "M"
+      ],
+      "title": "Security clearances",
+      "description": "Staff who need a security clearance hold one at the right level, the register of clearances is reviewed, and none has lapsed unnoticed."
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-per:disp-per-02",
+      "ref_id": "DISP-PER-02",
+      "parent_urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-per",
+      "groups": [
+        "M"
+      ],
+      "title": "Pre-employment screening",
+      "description": "Identity, right to work and background are checked before a new starter gets access to Defence information or sites."
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-per:disp-per-03",
+      "ref_id": "DISP-PER-03",
+      "parent_urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-per",
+      "groups": [
+        "M"
+      ],
+      "title": "Separation",
+      "description": "When someone leaves, their access ends promptly and Defence is told where a clearance was sponsored."
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-per:disp-per-04",
+      "ref_id": "DISP-PER-04",
+      "parent_urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-per",
+      "groups": [
+        "M"
+      ],
+      "title": "Security awareness training",
+      "description": "Everyone completes security awareness training when they start and every year, and the training is kept current."
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-per:disp-per-05",
+      "ref_id": "DISP-PER-05",
+      "parent_urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-per",
+      "groups": [
+        "M"
+      ],
+      "title": "Contact reporting",
+      "description": "Staff report suspicious, ongoing or unusual contacts, and the security officer passes them to Defence."
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-phy:disp-phy-01",
+      "ref_id": "DISP-PHY-01",
+      "parent_urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-phy",
+      "groups": [
+        "M"
+      ],
+      "title": "Visitor control",
+      "description": "Visitors are signed in, identified, escorted where needed and signed out, and the record is kept."
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-phy:disp-phy-02",
+      "ref_id": "DISP-PHY-02",
+      "parent_urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-phy",
+      "groups": [
+        "M"
+      ],
+      "title": "Access control",
+      "description": "Keys, cards and codes to the site and its secure areas are given only to those who need them, and are reviewed."
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-phy:disp-phy-03",
+      "ref_id": "DISP-PHY-03",
+      "parent_urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-phy",
+      "groups": [
+        "M"
+      ],
+      "title": "Facility security plan",
+      "description": "A facility security plan covers each site doing Defence work, and secure areas and containers meet the standard their information needs."
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-inf:disp-inf-01",
+      "ref_id": "DISP-INF-01",
+      "parent_urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-inf",
+      "groups": [
+        "M"
+      ],
+      "title": "Classification and handling",
+      "description": "Defence information is marked with its classification and stored, sent and destroyed as its marking requires."
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-inf:disp-inf-02",
+      "ref_id": "DISP-INF-02",
+      "parent_urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-inf",
+      "groups": [
+        "M"
+      ],
+      "title": "Security incident reporting",
+      "description": "Security incidents, including cyber incidents, are reported to Defence and to ASD within the times they set."
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-inf:disp-inf-03",
+      "ref_id": "DISP-INF-03",
+      "parent_urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-inf",
+      "groups": [
+        "M"
+      ],
+      "title": "Incident and contact records",
+      "description": "A record is kept of each security incident and contact report sent to Defence."
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-cyb:disp-cyb-01",
+      "ref_id": "DISP-CYB-01",
+      "parent_urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-cyb",
+      "groups": [
+        "M"
+      ],
+      "title": "Application control",
+      "description": "Only approved applications run on the systems that handle Defence information, as the Essential Eight describes."
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-cyb:disp-cyb-02",
+      "ref_id": "DISP-CYB-02",
+      "parent_urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-cyb",
+      "groups": [
+        "M"
+      ],
+      "title": "Patch applications",
+      "description": "Applications on those systems are patched within the Essential Eight\u0027s time frames, and unsupported ones are removed."
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-cyb:disp-cyb-03",
+      "ref_id": "DISP-CYB-03",
+      "parent_urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-cyb",
+      "groups": [
+        "M"
+      ],
+      "title": "Restrict Microsoft Office macros",
+      "description": "Office macros are blocked unless needed and checked, as the Essential Eight describes."
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-cyb:disp-cyb-04",
+      "ref_id": "DISP-CYB-04",
+      "parent_urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-cyb",
+      "groups": [
+        "M"
+      ],
+      "title": "User application hardening",
+      "description": "Web browsers, Office and PDF software are hardened as the Essential Eight describes."
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-cyb:disp-cyb-05",
+      "ref_id": "DISP-CYB-05",
+      "parent_urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-cyb",
+      "groups": [
+        "M"
+      ],
+      "title": "Restrict administrative privileges",
+      "description": "Administrative privileges are limited, validated and separated from everyday use, as the Essential Eight describes."
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-cyb:disp-cyb-06",
+      "ref_id": "DISP-CYB-06",
+      "parent_urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-cyb",
+      "groups": [
+        "M"
+      ],
+      "title": "Patch operating systems",
+      "description": "Operating systems are patched within the Essential Eight\u0027s time frames, and unsupported ones are replaced."
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-cyb:disp-cyb-07",
+      "ref_id": "DISP-CYB-07",
+      "parent_urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-cyb",
+      "groups": [
+        "M"
+      ],
+      "title": "Multi-factor authentication",
+      "description": "Multi-factor authentication protects users and administrators as the Essential Eight describes."
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-cyb:disp-cyb-08",
+      "ref_id": "DISP-CYB-08",
+      "parent_urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-cyb",
+      "groups": [
+        "M"
+      ],
+      "title": "Regular backups",
+      "description": "Important data is backed up, protected and restore-tested as the Essential Eight describes."
+    }
+  ],
+  "parents": [
+    {
+      "urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-gov",
+      "ref_id": "DISP-GOV",
+      "name": "Governance"
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-per",
+      "ref_id": "DISP-PER",
+      "name": "Personnel security"
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-phy",
+      "ref_id": "DISP-PHY",
+      "name": "Physical security"
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-inf",
+      "ref_id": "DISP-INF",
+      "name": "Information security"
+    },
+    {
+      "urn": "urn:evidence-hound:risk:req_node:disp-membership:disp-cyb",
+      "ref_id": "DISP-CYB",
+      "name": "Cyber security"
+    }
+  ]
+}

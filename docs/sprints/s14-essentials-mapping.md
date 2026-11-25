@@ -59,6 +59,8 @@ expectations held as an audit beside the Essential Eight, so that one place show
 
 **Functional check**
 - Apply the example DISP audit to the local CISO Assistant; one `hound run` fills its cyber rows from the Essential Eight evidence.
+- Result (2026-11-25): `hound mapping validate mappings/disp.yaml --framework frameworks/disp.json` printed `valid: 24 requirements` (25 in the library, DISP-INF-01 recorded by hand under `manual_only`); `hound init /tmp/x --yes --framework disp` wrote 15 files, audits EX-E8 and EX-DISP, and the repo validates (`InitCommandTests`). The example compliance repo declares the library and the audit EX-DISP-2026, so the functional fixture's `hound scope apply` uploads and loads it; `DispRunFunctionalTests` then runs the recorded Microsoft 365 tenant against EX-E8-2026 and EX-DISP-2026 and checks DISP-CYB-07 cites the same conditional access evidence as ISM-1504. Run by CI's functional job.
+- Notes: the library is in `frameworks/` like AI6 (not a new `libraries/` folder). It has one group, M (membership): the DSPF's levels of membership are not modelled, so the guide says to check your level's obligations. The security awareness training template is shared with the ASD Essentials. The incident register is the example's `example-incident-register` manual source until the s15 register lands. Guide: `docs/adopt/disp-readiness.md`.
 
 ### s14-03 Rehearse trial, onboarding and sustaining GRC (standing, every sprint)
 - [ ] Done
