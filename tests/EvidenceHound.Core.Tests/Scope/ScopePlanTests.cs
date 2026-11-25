@@ -220,6 +220,20 @@ public class ScopePlanTests
     }
 
     [Fact]
+    public void Custom_library_with_a_raised_version_is_updated()
+    {
+        // s15-01: a custom library is the repo's own, so a raised version is uploaded and CISO Assistant's loaded copy updated.
+        var declared = Declared(ScopeKind.Framework, "urn:example:risk:library:example-risk", ("version", "2")) with { Files = [new ScopeFile("/repo/libraries/example-risk.yaml", "abc")] };
+        ActualObject older = new(Declared(ScopeKind.Framework, declared.Key, ("version", "1")), null);
+
+        var plan = ScopePlanner.Plan([declared], [older], prune: false);
+
+        plan.Drift.ShouldBeEmpty();
+        var change = plan.Changes.ShouldHaveSingleItem();
+        (change.Action, change.Fields.ShouldHaveSingleItem()).ShouldBe((ScopeAction.Update, new FieldChange("version", "1", "2")));
+    }
+
+    [Fact]
     public void Links_are_added_and_kept_unless_pruned()
     {
         var held = Applied(Declared(ScopeKind.Control, "AC-MFA", ("name", "MFA"), ("systems", "Example 365, Example laptops")));

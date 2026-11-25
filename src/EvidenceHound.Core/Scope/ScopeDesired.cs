@@ -402,4 +402,7 @@ public sealed record ScopeInputs(
 
     /// <summary>Each evidence plan runbook's Markdown, by its path as the plan names it.</summary>
     public IReadOnlyDictionary<string, string> Runbooks { get; init; } = new Dictionary<string, string>(StringComparer.Ordinal);
+
+    /// <summary>Each custom library's snapshot, by library URN (s15-01).</summary>
+    public IReadOnlyDictionary<string, LibrarySnapshot> Libraries { get; init; } = new Dictionary<string, LibrarySnapshot>(StringComparer.Ordinal);
 }

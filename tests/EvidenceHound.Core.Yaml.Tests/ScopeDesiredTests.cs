@@ -1,3 +1,4 @@
+using EvidenceHound.Core.Frameworks;
 using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Scope;
 
@@ -136,6 +137,41 @@ public class ScopeDesiredTests
 
         framework.Fields.ShouldBe(new Dictionary<string, string> { ["version"] = ScopeFixture.Snapshot.Version.ToString(System.Globalization.CultureInfo.InvariantCulture) });
         framework.Initial.ShouldBe(new Dictionary<string, string> { ["library"] = ScopeFixture.Snapshot.LibraryUrn });
+    }
+
+    [Fact]
+    public void Custom_library_is_declared_with_its_file_and_version()
+    {
+        const string urn = "urn:example:risk:library:example-risk";
+        var setup = ScopeFixture.Setup.Replace("domains:", $"libraries:\n  - urn: {urn}\n    file: ../libraries/example-risk.yaml\ndomains:", StringComparison.Ordinal);
+        var scope = ScopeFixture.Parse(setup: setup).Scope;
+        var file = new ScopeFile("/repo/libraries/example-risk.yaml", "abc");
+        var inputs = ScopeInputs.None with
+        {
+            Files = new Dictionary<string, IReadOnlyList<ScopeFile>> { [urn] = [file] },
+            Libraries = new Dictionary<string, LibrarySnapshot> { [urn] = new(urn, 2, [], [], []) },
+        };
+
+        var declared = ScopeDesired.From(scope, inputs);
+
+        var library = declared.Single(o => o.Key == urn);
+        library.Kind.ShouldBe(ScopeKind.Framework);
+        library.Fields.ShouldBe(new Dictionary<string, string> { ["version"] = "2" });
+        library.Initial.ShouldBe(new Dictionary<string, string> { ["library"] = urn, ["file"] = "../libraries/example-risk.yaml" });
+        library.Files.ShouldBe([file]);
+        ScopeStateQuery.For(scope, declared).FrameworkUrns.ShouldContain(urn);
+    }
+
+    [Fact]
+    public void Framework_says_what_libraries_it_brings_with_it()
+    {
+        // s15-01: CISO Assistant loads a library's dependencies with it, so a plan says which threat catalogues arrive with a framework.
+        var snapshot = ScopeFixture.Snapshot with { Dependencies = ["urn:example:risk:library:example-catalog", "urn:example:risk:library:example-doc-pol"] };
+        var inputs = ScopeInputs.None with { Snapshots = new Dictionary<string, FrameworkSnapshot> { [ScopeFixture.FrameworkUrn] = snapshot } };
+
+        var framework = ScopeDesired.From(ScopeFixture.Parse().Scope, inputs)[0];
+
+        framework.Initial["brings"].ShouldBe("urn:example:risk:library:example-catalog, urn:example:risk:library:example-doc-pol");
     }
 
     [Fact]

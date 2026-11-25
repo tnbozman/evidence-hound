@@ -42,6 +42,9 @@ public sealed record ScopeSetup(string RootFolder, IReadOnlyList<ScopeFramework>
     /// <summary>Other libraries to load by URN, such as the mapping sets between the frameworks.</summary>
     public IReadOnlyList<ScopeRef> Libraries { get; init; } = [];
 
+    /// <summary>Custom libraries in the repo, such as a risk matrix or threat catalogue (s15-01): uploaded from their file, checked by their snapshot.</summary>
+    public IReadOnlyList<ScopeLibraryFile> LibraryFiles { get; init; } = [];
+
     /// <summary>The organisation's own entity (CISO Assistant's main entity), from <c>organisation.entity</c>. It is only ever updated.</summary>
     public ScopeEntity? Organisation { get; init; }
 
@@ -61,6 +64,9 @@ public sealed record ScopeProgramme(string Id, string Name, ScopeRef Framework, 
 
 /// <summary>A framework to load: its URN, and its library by URN or as a custom library file. A snapshot makes it checkable offline.</summary>
 public sealed record ScopeFramework(string Urn, string? LibraryUrn, string? LibraryFile, string? Snapshot, SourceLine At);
+
+/// <summary>A custom library file to upload, by its URN, with an optional snapshot that makes its matrices and threats checkable offline.</summary>
+public sealed record ScopeLibraryFile(string Urn, string File, string? Snapshot, SourceLine At);
 
 /// <summary>A domain (a CISO Assistant folder) with its perimeters and systems.</summary>
 public sealed record ScopeDomain(string Name, string? Description, IReadOnlyList<ScopePerimeter> Perimeters, IReadOnlyList<ScopeSystem> Systems, SourceLine At);

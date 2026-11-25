@@ -151,6 +151,25 @@ public sealed class ScopeClientTests : IDisposable
     }
 
     [Fact]
+    public async Task Updates_custom_library_to_a_raised_version()
+    {
+        // s15-01: CISO Assistant stores the newer version on upload, then updates its loaded copy on request (GET, by URN).
+        const string library = "urn:example:risk:library:example-risk";
+        Respond("POST", "/api/stored-libraries/upload/", 201, new JsonObject { ["urn"] = library });
+        Respond("GET", $"/api/loaded-libraries/{library}/update/", 200, new JsonObject { ["status"] = "success" });
+        var file = await FileAsync("example-risk.yaml", "urn: urn:example:risk:library:example-risk\nversion: 2\n");
+        var declared = new ScopeObject(ScopeKind.Framework, library, new Dictionary<string, string> { ["version"] = "2" })
+        {
+            Initial = new Dictionary<string, string> { ["library"] = library, ["file"] = "example-risk.yaml" },
+            Files = [file],
+        };
+
+        (await Write(declared, ScopeAction.Update, null)).Value();
+
+        Sent().ShouldBe([("POST", "/api/stored-libraries/upload/"), ("GET", $"/api/loaded-libraries/{library}/update/")]);
+    }
+
+    [Fact]
     public async Task Creates_audit_with_groups_actors_and_marker()
     {
         List("frameworks", new JsonObject { ["id"] = "fw-e8", ["urn"] = E8 });

@@ -1,4 +1,5 @@
 using EvidenceHound.Core.Risk;
+using EvidenceHound.Core.Scope;
 
 namespace EvidenceHound.Core.Tests.Risk;
 
@@ -28,4 +29,20 @@ public class LibraryValidationTests
     [Fact]
     public void Unknown_held_hash_is_not_reported() =>
         LibraryValidation.VersionBump(new LibraryVersion(Urn, 1, "aaa"), new LibraryVersion(Urn, 1, null)).ShouldBeNull();
+
+    [Fact]
+    public void Refused_names_each_custom_library_changed_without_a_version_bump()
+    {
+        var file = new ScopeFile("/repo/libraries/example-risk.yaml", "aaa");
+        var declared = new ScopeObject(ScopeKind.Framework, Urn, new Dictionary<string, string> { ["version"] = "1" }) { Files = [file] };
+        var builtIn = new ScopeObject(ScopeKind.Framework, "urn:intuitem:risk:framework:essential-eight-2023", new Dictionary<string, string> { ["version"] = "3" });
+        ActualObject held = new(new ScopeObject(ScopeKind.Framework, Urn, new Dictionary<string, string> { ["version"] = "1", ["sha256"] = "bbb" }), null);
+        ActualObject heldBuiltIn = new(new ScopeObject(ScopeKind.Framework, builtIn.Key, new Dictionary<string, string> { ["version"] = "3", ["sha256"] = "ccc" }), null);
+
+        var refused = LibraryValidation.Refused([declared, builtIn], [held, heldBuiltIn]);
+
+        var problem = refused.ShouldHaveSingleItem();
+        (problem.Code, problem.At.File).ShouldBe(("library.version_not_bumped", file.Path));
+        LibraryValidation.Refused([declared], [held with { Held = held.Held with { Fields = new Dictionary<string, string> { ["version"] = "1", ["sha256"] = "aaa" } } }]).ShouldBeEmpty();
+    }
 }

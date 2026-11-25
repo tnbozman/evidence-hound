@@ -19,6 +19,9 @@ public sealed record FrameworkSnapshot(
     /// <summary>The named nodes above the requirements, such as an Essential Eight strategy; empty in snapshots made before s13.</summary>
     public IReadOnlyList<SnapshotParent> Parents { get; init; } = [];
 
+    /// <summary>The libraries CISO Assistant loads with this one, such as a threat catalogue (s15-01); empty in older snapshots.</summary>
+    public IReadOnlyList<string> Dependencies { get; init; } = [];
+
     /// <summary>A parent node's name for reports: its library name, else the last part of its URN (such as <c>mfa</c>).</summary>
     public string ParentName(string urn)
     {
