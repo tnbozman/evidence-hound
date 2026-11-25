@@ -57,10 +57,10 @@ internal static class ScopePlanOutput
 
         if (periods.Count > 0)
         {
-            markdown.Append("\n### Audit periods\n\n| Audit | What happens |\n| --- | --- |\n");
+            markdown.Append("\n### Audit periods\n\n| Audit | Covers | What happens |\n| --- | --- | --- |\n");
             foreach (var period in periods)
             {
-                markdown.Append(CultureInfo.InvariantCulture, $"| {Cell(period.Audit)} | {Describe(period)} |\n");
+                markdown.Append(CultureInfo.InvariantCulture, $"| {Cell(period.Audit)} | {AuditPeriods.Covers(period.Audit)} | {Describe(period)} |\n");
             }
         }
 
@@ -152,7 +152,7 @@ internal static class ScopePlanOutput
                 ["issue"] = n.Issue == AccessIssue.MfaOff ? "mfa_off" : "service_account_excess_role",
                 ["detail"] = n.Detail,
             })]),
-            ["periods"] = new JsonArray([.. periods.Select(p => (JsonNode)new JsonObject { ["audit"] = p.Audit, ["event"] = Event(p.Event), ["baseline"] = p.Baseline })]),
+            ["periods"] = new JsonArray([.. periods.Select(p => (JsonNode)new JsonObject { ["audit"] = p.Audit, ["covers"] = AuditPeriods.Covers(p.Audit), ["event"] = Event(p.Event), ["baseline"] = p.Baseline })]),
             ["gaps"] = new JsonArray([.. notes.Gaps.Select(g => (JsonNode)new JsonObject
             {
                 ["mitigation"] = g.Mitigation,
