@@ -28,8 +28,7 @@ public sealed class DispRunFunctionalTests(CisoAssistantFixture ciso) : IDisposa
         // an audit's results from an earlier test, so the audits come from the plan.
         var planned = summary["collectors"]![0]!["changes"]!.AsArray();
         planned.Select(a => a!["compliance_assessment"]!.GetValue<string>()).ShouldBe(["EX-E8-2026", "EX-DISP-2026"]);
-        var audits = summary["collectors"]![0]!["publish"]!["audits"]!.AsArray();
-        audits.Select(a => a!["failed"]!.GetValue<int>()).ShouldAllBe(failed => failed == 0);
+        summary["collectors"]!.AsArray().Select(c => c!["publish"]!["failed"]!.GetValue<int>()).ShouldAllBe(failed => failed == 0, summary.ToJsonString());
 
         var e8 = (await GetAsync("requirement-assessments/?compliance_assessment__ref_id=EX-E8-2026&requirement__ref_id=ISM-1504", ct))["results"]![0]!;
         var mfa = (await GetAsync("requirement-assessments/?compliance_assessment__ref_id=EX-DISP-2026&requirement__ref_id=DISP-CYB-07", ct))["results"]![0]!;
@@ -39,6 +38,7 @@ public sealed class DispRunFunctionalTests(CisoAssistantFixture ciso) : IDisposa
         Ids(e8["evidences"]).ShouldContain(id);
         Ids(mfa["evidences"]).ShouldContain(id);
         mfa["observation"]!.GetValue<string>().ShouldContain("identity.mfa.enforced_conditional_access");
+        mfa["observation"]!.GetValue<string>().ShouldContain("identity.mfa.two_factors");
     }
 
     public void Dispose()
@@ -53,6 +53,29 @@ public sealed class DispRunFunctionalTests(CisoAssistantFixture ciso) : IDisposa
     private async Task<(int ExitCode, JsonNode Summary)> RunAsync(CancellationToken ct)
     {
         var files = Path.Combine(AppContext.BaseDirectory, "files");
+        // s14-05: DISP-CYB-07 joins Microsoft 365's checks with attested ones, so a manual source answers the rest.
+        var drop = Directory.CreateDirectory(Path.Combine(_workDir, "mfa-review")).FullName;
+        var today = DateTime.UtcNow.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+        await File.WriteAllTextAsync(Path.Combine(drop, "mfa-review.csv"), "system,factors\nexample-crm,2\n", ct);
+        await File.WriteAllTextAsync(Path.Combine(drop, "mfa-review.csv.attest.yaml"), $"""
+            who: Alex Example
+            date: {today}
+            note: MFA, logging and incident reporting reviewed for every system.
+            outcomes:
+              incident.reported_to_ciso: pass
+              incident.reported_to_asd: pass
+              incident.response_plan_followed: pass
+              identity.mfa.third_party_services: pass
+              identity.mfa.organisation_services: pass
+              identity.mfa.customers: pass
+              identity.mfa.systems: pass
+              identity.mfa.two_factors: pass
+              identity.mfa.phishing_resistant: pass
+              logging.event_logs.protected: pass
+              logging.internet_facing.analysed: pass
+              logging.events.triaged: pass
+              logging.mfa_events.centrally_logged: pass
+            """, ct);
         var config = Path.Combine(_workDir, "hound.yaml");
         await File.WriteAllTextAsync(config, $$"""
             ciso_assistant:
@@ -70,6 +93,14 @@ public sealed class DispRunFunctionalTests(CisoAssistantFixture ciso) : IDisposa
                   graph_url: {{_tenant.Url}}
                   break_glass_accounts: {{RecordedTenant.BreakGlass}}
                   supported_windows_builds: "10.0.22631, 10.0.26100"
+              - name: example-mfa-review
+                type: manual
+                schedule: "0 6 * * *"
+                settings:
+                  drop_folder: {{drop}}
+                  checks: incident.reported_to_ciso, incident.reported_to_asd, incident.response_plan_followed, identity.mfa.third_party_services, identity.mfa.organisation_services, identity.mfa.customers, identity.mfa.systems, identity.mfa.two_factors, identity.mfa.phishing_resistant, logging.event_logs.protected, logging.internet_facing.analysed, logging.events.triaged, logging.mfa_events.centrally_logged
+                  due_days: 183
+                  owner: Alex Example
             targets:
               - mapping: {{Path.Combine(files, "mappings", "essential-eight-2023.yaml")}}
                 compliance_assessment: EX-E8-2026

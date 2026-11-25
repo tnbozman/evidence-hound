@@ -7,6 +7,7 @@ using EvidenceHound.Core.Results;
 using EvidenceHound.Runtime.Configuration;
 using EvidenceHound.Runtime.Pipeline;
 using EvidenceHound.Runtime.Status;
+using EvidenceHound.Runtime.Storage;
 
 namespace EvidenceHound.Runtime;
 
@@ -76,6 +77,12 @@ public sealed class Runner(
     /// <summary>Where each published run's per-audit counts are appended; by default nowhere.</summary>
     public IRunHistory? History { get; init; }
 
+    /// <summary>
+    /// s14-05: where each collector's latest results are saved and read, so a row whose checks come from several collectors is filled by
+    /// whichever of them runs; by default nothing is saved and each collector fills only the rows it fully reports.
+    /// </summary>
+    public ILatestResults Latest { get; init; } = NoLatestResults.Instance;
+
     /// <summary>A runner that publishes to one audit.</summary>
     public Runner(
         IReadOnlyDictionary<string, ICollector> collectors,
@@ -133,6 +140,11 @@ public sealed class Runner(
             ? collected.Match(_ => Succeeded(instance, null), problems => Failed(instance, problems, null))
             : await PublishAsync(instance, collected, options, runId, cancellationToken);
 
+        if (collected is Result<CollectedRun>.Ok { Value: var run } && RunEvidence.From(run) is Result<CollectorResults>.Ok { Value: var saved })
+        {
+            await Latest.SaveAsync(new LatestResults(instance.Name, saved, run.Stored.Location), cancellationToken);
+        }
+
         var checks = collected.Match(run => run.Output.Checks, _ => []);
         var record = RunRecords.Summarise(instance.Name, started, clock.UtcNow, result.Outcome, checks, result.Problems, result.Publish);
         await records.SaveAsync(record, cancellationToken);
@@ -162,10 +174,15 @@ public sealed class Runner(
     private async Task<CollectorRunResult> PublishAsync(
         CollectorInstance instance, Result<CollectedRun> collected, RunOptions options, string runId, CancellationToken cancellationToken)
     {
-        var inputs = collected.Bind(run => RunEvidence.From(run).Map(results => (
-            Run: run,
-            Results: results,
-            Targets: (IReadOnlyList<TargetResults>)[.. targets.Select(t => new TargetResults(t.Target, Ownership.OwnedResults(t.Mapping, results.Checks)))])));
+        var others = await Latest.OthersAsync(instance.Name, cancellationToken);
+        var otherChecks = others.SelectMany(o => o.Results.Checks).ToArray();
+        var inputs = collected.Bind(run => RunEvidence.From(run).Map(mine =>
+        {
+            IReadOnlyList<TargetResults> owned = [.. targets.Select(t => new TargetResults(t.Target, Ownership.OwnedResults(t.Mapping, mine.Checks, otherChecks)))];
+            var cited = owned.SelectMany(t => t.Results).SelectMany(r => r.EvidenceRefs).ToHashSet(StringComparer.Ordinal);
+            var borrowed = others.SelectMany(o => o.Results.Evidence).Where(e => cited.Contains(e.Id) && mine.Evidence.All(m => m.Id != e.Id)).DistinctBy(e => e.Id);
+            return (Run: run, Results: mine with { Evidence = [.. mine.Evidence, .. borrowed] }, Targets: owned);
+        }));
         var planned = await inputs.BindAsync(async i =>
         {
             var current = options.DryRun
@@ -177,7 +194,7 @@ public sealed class Runner(
         return await planned.Match(
             async p =>
             {
-                var report = options.DryRun ? Publisher.DryRun(p.Plan.Updates) : await SendAsync(RunEvidence.Files(p.Run), p.Plan.Updates, cancellationToken);
+                var report = options.DryRun ? Publisher.DryRun(p.Plan.Updates) : await SendAsync(LatestFiles.Over(RunEvidence.Files(p.Run), others), p.Plan.Updates, cancellationToken);
                 var problems = FailedItems(report);
                 return (problems.Count > 0 ? Failed(instance, problems, report) : Succeeded(instance, report)) with { Changes = p.Plan.Audits, Drift = p.Plan.Drift };
             },

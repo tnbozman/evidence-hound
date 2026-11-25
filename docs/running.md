@@ -89,7 +89,7 @@ WantedBy=timers.target
 
 Each collector runs on its own. If it crashes, cannot find a secret or CISO Assistant rejects one of its updates, that collector is reported as failed with its problems and the others carry on.
 
-A collector only updates the requirements it fully reports on: a requirement whose checks come from two collectors is left alone by each, so one collector never marks another's work as not assessed.
+A collector updates the requirements its own checks answer. Each run also saves its latest results in `_latest/` under the evidence root, so a requirement whose checks come from several collectors (say Microsoft 365 and a manual source) is filled by whichever of them runs once all of them have reported, using each check's newest result and citing every collector's evidence. A requirement some configured collector has not reported yet is left alone, so one collector never marks another's work as not assessed.
 
 ## Evidence in CISO Assistant
 
