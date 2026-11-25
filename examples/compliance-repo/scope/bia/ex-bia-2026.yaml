@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../../../schemas/scope.schema.json
+# A fictional business impact analysis for Example Pty Ltd, on the example 4x4 matrix's impact scale.
+# Guide: docs/bia.md. "tested" comes from the restore test check on each run, not from a hand-ticked box.
+ref_id: EX-BIA-2026
+name: Example Pty Ltd business impact analysis 2026
+domain: Example Pty Ltd
+perimeter: Corporate IT
+matrix: urn:example:risk:matrix:example-4x4
+version: "1.0"
+status: in_progress
+authors: [it@example.com]
+due_date: "2026-12-31"
+assessments:
+  - system: Example 365
+    dependencies: [Example laptops]
+    controls: [AC-BACKUP]
+    recovery: {documented: true, tested_by: [backup.restore_tested], targets_met: false}
+    observation: Mail and files stop when Example 365 is down.
+    thresholds:
+      - {after: 4h, impact: Minor, justification: Staff use phones.}
+      - {after: 1d, impact: Major, justification: Customers notice missed replies.}
+      - {after: 3d, impact: Severe, justification: Invoices and payroll stop.}
+  - system: Example backup service
+    controls: [AC-BACKUP]
+    recovery: {documented: true, tested: false, targets_met: false}
+    thresholds:
+      - {after: 1d, impact: Moderate, justification: No restore point for a day.}

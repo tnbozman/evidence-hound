@@ -25,7 +25,7 @@ public sealed class CollectorsCommandTests : IDisposable
               secrets: none
             fake 1.0.0
               checks: backup.daily, backup.restore_tested, identity.mfa.admins, identity.mfa.users
-              settings: tenant (optional)
+              settings: tenant (optional), fail (optional)
               secrets: none
             m365 1.0.0
               checks: apps.office.macros_blocked_from_internet, endpoint.application_control.enforced, endpoint.application_control.events_centrally_logged, endpoint.application_control.file_types_covered, endpoint.asr.office_rules_enabled, endpoint.managed.compliant_ratio, endpoint.os.supported_versions, identity.legacy_auth_blocked, identity.mfa.enforced_conditional_access, identity.mfa.phishing_resistant_admins, identity.mfa.registered_all_users, identity.privileged.admins_cloud_only, identity.privileged.global_admin_count, identity.privileged.pim_eligible_not_permanent

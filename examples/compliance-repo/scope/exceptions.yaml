@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../../schemas/scope.schema.json
+# Security exceptions Example Pty Ltd requests. The repo requests; the approver decides in CISO Assistant, never here.
+# Guide: docs/risk.md#security-exceptions
+exceptions:
+  - ref_id: EXC-01
+    name: Legacy finance app without MFA
+    description: The finance app cannot use single sign-on until its upgrade.
+    domain: Example Pty Ltd
+    severity: medium
+    owners: [it@example.com]
+    expiration_date: "2027-03-31"
+    observation: Sign-in is limited to the office network.
+    systems: [Example 365]
+    controls: [AC-MFA]
+    scenarios: [EX-RISK-2026/R-01]
