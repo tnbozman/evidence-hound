@@ -20,7 +20,7 @@ x-ca-env: &ca-env
 
 services:
   postgres:
-    image: postgres:16.11
+    image: postgres:16.15
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-ciso_assistant}
