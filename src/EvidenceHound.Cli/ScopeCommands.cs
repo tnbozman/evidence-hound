@@ -499,6 +499,7 @@ internal static class ScopeCommands
         var exceptionsPath = Path.Combine(dir.ToString(), "exceptions.yaml");
         var biaDir = Path.Combine(dir.ToString(), "bia");
         var bias = Directory.Exists(biaDir) ? Directory.GetFiles(biaDir, "*.yaml").Order(StringComparer.Ordinal).ToArray() : [];
+        var metricsPath = Path.Combine(dir.ToString(), "metrics.yaml");
         var parsed = ScopeLoader.Parse(
             await ReadAsync(setupPath, cancellationToken),
             File.Exists(controlsPath) ? await ReadAsync(controlsPath, cancellationToken) : null,
@@ -511,7 +512,8 @@ internal static class ScopeCommands
             File.Exists(sspPath) ? await ReadAsync(sspPath, cancellationToken) : null,
             [.. await Task.WhenAll(risks.Select(r => ReadAsync(r, cancellationToken)))],
             File.Exists(exceptionsPath) ? await ReadAsync(exceptionsPath, cancellationToken) : null,
-            [.. await Task.WhenAll(bias.Select(b => ReadAsync(b, cancellationToken)))]);
+            [.. await Task.WhenAll(bias.Select(b => ReadAsync(b, cancellationToken)))],
+            File.Exists(metricsPath) ? await ReadAsync(metricsPath, cancellationToken) : null);
 
         var snapshots = await SnapshotsAsync(parsed.Scope.Setup.Frameworks, Path.GetDirectoryName(Path.GetFullPath(setupPath))!, cancellationToken);
         var deployment = configFile is null ? Result.Ok(Deployment.None) : await DeploymentAsync(configFile, registry, cancellationToken);
@@ -531,6 +533,7 @@ internal static class ScopeCommands
             .. SupplierValidator.Validate(scope, today),
             .. RiskValidator.Validate(scope, libraries.Snapshots),
             .. BiaValidator.Validate(scope, libraries.Snapshots),
+            .. MetricValidator.Validate(scope),
             .. (await ReportingAsync(dir, cancellationToken, ReadAsync)).Problems,
             .. (await IrpAsync(dir, scope, cancellationToken, ReadAsync)).Problems,
             .. RunbooksMissing(scope, repoDir),

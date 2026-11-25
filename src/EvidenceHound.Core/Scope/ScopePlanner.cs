@@ -188,7 +188,7 @@ public static class ScopePlanner
     /// </summary>
     /// <summary>Kinds whose applied state is recorded in their description; the rest (no description in CISO Assistant) are compared field by field.</summary>
     private static bool Marked(ScopeKind kind) => kind is not (ScopeKind.Framework or ScopeKind.Assessment or ScopeKind.FeatureFlag or ScopeKind.Setting or ScopeKind.MainEntity
-        or ScopeKind.AssetAssessment or ScopeKind.EscalationThreshold);
+        or ScopeKind.AssetAssessment or ScopeKind.EscalationThreshold or ScopeKind.DashboardWidget);
 
     /// <summary>
     /// Objects the scope does not declare are drift when <c>hound</c> manages them, or when they are structure (domains, perimeters, systems,

@@ -24,6 +24,9 @@ public sealed record ScopeStateQuery(string RootFolder, IReadOnlyList<string> Fr
     /// <summary>Whether to read business impact analyses, their asset assessments and thresholds: only when the scope declares BIAs (s15-04).</summary>
     public bool Bias { get; init; }
 
+    /// <summary>Whether to read metric definitions, instances, dashboards and widgets: only when the scope declares metrics (s16-02).</summary>
+    public bool Metrics { get; init; }
+
     /// <summary>Whether to read the organisation's own entity (the builtin main entity): only when setup declares it.</summary>
     public bool Organisation { get; init; }
 
@@ -63,6 +66,7 @@ public sealed record ScopeStateQuery(string RootFolder, IReadOnlyList<string> Fr
             EvidencePlan = scope.EvidencePlan is not null,
             Risks = scope.RiskStudies.Count > 0 || scope.Exceptions.Count > 0,
             Bias = scope.Bias.Count > 0,
+            Metrics = scope.Metrics.Definitions.Count + scope.Metrics.Instances.Count + scope.Metrics.Dashboards.Count > 0,
             CustomLibraries = declared.Where(d => d.Kind == ScopeKind.Framework && d.Files.Count > 0 && d.Initial.ContainsKey("library"))
                 .GroupBy(d => d.Key, StringComparer.Ordinal)
                 .ToDictionary(g => g.Key, g => g.First().Initial["library"], StringComparer.Ordinal),

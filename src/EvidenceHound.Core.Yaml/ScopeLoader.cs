@@ -66,7 +66,7 @@ public static partial class ScopeLoader
 
     public static ScopeParse Parse(
         ScopeSource setup, ScopeSource? controls, IReadOnlyList<ScopeSource> audits, ScopeSource? access = null, ScopeSource? settings = null, IReadOnlyList<ScopeSource>? thirdParties = null,
-        ScopeSource? capabilities = null, ScopeSource? evidencePlan = null, ScopeSource? ssp = null, IReadOnlyList<ScopeSource>? risks = null, ScopeSource? exceptions = null, IReadOnlyList<ScopeSource>? bias = null)
+        ScopeSource? capabilities = null, ScopeSource? evidencePlan = null, ScopeSource? ssp = null, IReadOnlyList<ScopeSource>? risks = null, ScopeSource? exceptions = null, IReadOnlyList<ScopeSource>? bias = null, ScopeSource? metrics = null)
     {
         ArgumentNullException.ThrowIfNull(setup);
         ArgumentNullException.ThrowIfNull(audits);
@@ -95,13 +95,15 @@ public static partial class ScopeLoader
         var parsedBias = biaFiles.Select(file => file.Root() is { } root ? ReadBia(root, file) : null).OfType<ScopeBia>().ToArray();
         var exceptionsFile = exceptions is null ? null : new FileReader(exceptions);
         var parsedExceptions = exceptionsFile?.Root() is { } exceptionsRoot ? ReadExceptions(exceptionsRoot, exceptionsFile) : [];
+        var metricsFile = metrics is null ? null : new FileReader(metrics);
+        var parsedMetrics = metricsFile?.Root() is { } metricsRoot ? ReadMetrics(metricsRoot, metricsFile) : ScopeMetrics.None;
 
         return new ScopeParse(
-            new ScopeDocument(parsedSetup, parsedControls, parsedAudits) { Access = parsedAccess, Settings = parsedSettings, ThirdParties = parsedThirdParties, Capabilities = parsedCapabilities, EvidencePlan = parsedPlan, Ssps = parsedSsps, RiskStudies = parsedRisks, Exceptions = parsedExceptions, Bias = parsedBias },
+            new ScopeDocument(parsedSetup, parsedControls, parsedAudits) { Access = parsedAccess, Settings = parsedSettings, ThirdParties = parsedThirdParties, Capabilities = parsedCapabilities, EvidencePlan = parsedPlan, Ssps = parsedSsps, RiskStudies = parsedRisks, Exceptions = parsedExceptions, Bias = parsedBias, Metrics = parsedMetrics },
             [
                 .. setupFile.Problems, .. controlsFile?.Problems ?? [], .. auditFiles.SelectMany(f => f.Problems), .. accessFile?.Problems ?? [],
                 .. settingsFile?.Problems ?? [], .. thirdPartyFiles.SelectMany(f => f.Problems), .. capabilitiesFile?.Problems ?? [], .. planFile?.Problems ?? [], .. sspFile?.Problems ?? [],
-                .. riskFiles.SelectMany(f => f.Problems), .. exceptionsFile?.Problems ?? [], .. biaFiles.SelectMany(f => f.Problems),
+                .. riskFiles.SelectMany(f => f.Problems), .. exceptionsFile?.Problems ?? [], .. biaFiles.SelectMany(f => f.Problems), .. metricsFile?.Problems ?? [],
             ]);
     }
 

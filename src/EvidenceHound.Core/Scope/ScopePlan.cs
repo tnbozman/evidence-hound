@@ -31,6 +31,10 @@ public enum ScopeKind
     Bia,
     AssetAssessment,
     EscalationThreshold,
+    MetricDefinition,
+    MetricInstance,
+    Dashboard,
+    DashboardWidget,
 }
 
 /// <summary>

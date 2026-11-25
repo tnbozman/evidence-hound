@@ -62,6 +62,7 @@ public static partial class ScopeDesired
             .. EvidencePlan(scope, inputs),
             .. RiskObjects.From(scope.RiskStudies, inputs.Libraries, scope.Exceptions),
             .. BiaObjects.From(scope.Bias, inputs.Libraries),
+            .. MetricObjects.From(scope.Metrics),
         ];
     }
 
