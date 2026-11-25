@@ -70,9 +70,20 @@ internal sealed class InMemoryCisoAssistant : ICisoAssistantClient
         Calls.Add($"list {complianceAssessmentRefId}");
         return Task.FromResult(MissingAudits.Contains(complianceAssessmentRefId)
             ? Result.Fail<IReadOnlyList<CurrentRow>>(new Problem("ciso_assistant.not_found", $"No audit {complianceAssessmentRefId}."))
-            : Result.Ok<IReadOnlyList<CurrentRow>>([.. Rows.Select(r => Requirements.TryGetValue(r.Id, out var v)
+            : Result.Ok<IReadOnlyList<CurrentRow>>([.. Rows.Select(r => (Requirements.TryGetValue(r.Id, out var v)
                 ? new CurrentRow(r.Id, r.Urn, r.RefId, r.Groups, v.Result, v.Observation, v.EvidenceIds)
-                : new CurrentRow(r.Id, r.Urn, r.RefId, r.Groups, ComplianceResult.NotAssessed, "", []))]));
+                : new CurrentRow(r.Id, r.Urn, r.RefId, r.Groups, ComplianceResult.NotAssessed, "", [])) with { ExceptionIds = RowExceptionIds.GetValueOrDefault(r.Id, []) })]));
+    }
+
+    /// <summary>The IDs of the security exceptions linked to each row, by row ID.</summary>
+    public Dictionary<string, IReadOnlyList<string>> RowExceptionIds { get; } = [];
+
+    public List<RemoteWaiver> SecurityExceptions { get; } = [];
+
+    public Task<Result<IReadOnlyList<RemoteWaiver>>> ListSecurityExceptionsAsync(CancellationToken cancellationToken)
+    {
+        Calls.Add("security exceptions");
+        return Task.FromResult(Result.Ok<IReadOnlyList<RemoteWaiver>>([.. SecurityExceptions]));
     }
 
     public Task<Result<IReadOnlyList<RemoteEvidence>>> FindEvidenceAsync(string refId, CancellationToken cancellationToken)

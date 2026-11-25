@@ -36,7 +36,7 @@ public sealed class NoCurrentState : ICurrentStateSource
 }
 
 /// <summary>Reads the current state from CISO Assistant.</summary>
-public sealed class ClientStateSource(ICisoAssistantClient client) : ICurrentStateSource
+public sealed class ClientStateSource(ICisoAssistantClient client, DateOnly? today = null) : ICurrentStateSource
 {
     public async Task<CurrentState> ReadAsync(StateQuery query, CancellationToken cancellationToken)
     {
@@ -65,6 +65,6 @@ public sealed class ClientStateSource(ICisoAssistantClient client) : ICurrentSta
         }
 
         var documents = await client.ListScopeDocumentIdsAsync(cancellationToken);
-        return new CurrentState(audits, evidence, controls) { ScopeDocumentIds = documents.Match(ids => ids, _ => []) };
+        return new CurrentState(audits, evidence, controls) { ScopeDocumentIds = documents.Match(ids => ids, _ => []), Today = today };
     }
 }

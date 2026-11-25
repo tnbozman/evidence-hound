@@ -314,6 +314,23 @@ public class PlanTests
     }
 
     [Fact]
+    public async Task State_source_names_the_security_exceptions_on_each_row_and_the_day()
+    {
+        // s15-03: a row lists its exceptions by ID; their ref_id, name, status and expiry come from CISO Assistant's security exceptions.
+        var ca = new InMemoryCisoAssistant();
+        ca.Rows.Add(new RemoteRequirementAssessment("ra-EX-1.1", "urn:example:req:ex-1.1", "EX-1.1", []));
+        ca.RowExceptionIds["ra-EX-1.1"] = ["se-1"];
+        ca.SecurityExceptions.Add(new RemoteWaiver("se-1", "EXC-01", "Legacy finance app without MFA", "approved", new DateOnly(2027, 3, 31)));
+        var today = new DateOnly(2026, 11, 25);
+
+        var state = await new ClientStateSource(ca, today).ReadAsync(new StateQuery([Target.ComplianceAssessmentRefId], [], []), TestContext.Current.CancellationToken);
+
+        state.Today.ShouldBe(today);
+        state.Audits.ShouldHaveSingleItem().Rows.ShouldHaveSingleItem().Exceptions
+            .ShouldBe([new RowWaiver("EXC-01", "Legacy finance app without MFA", "approved", new DateOnly(2027, 3, 31))]);
+    }
+
+    [Fact]
     public void Scope_documents_on_a_row_are_kept_and_are_not_drift()
     {
         RequirementResult[] results = [Requirement("EX-1.1", ComplianceResult.Compliant)];

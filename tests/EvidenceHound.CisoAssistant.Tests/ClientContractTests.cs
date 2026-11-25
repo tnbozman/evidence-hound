@@ -310,6 +310,26 @@ public sealed class ClientContractTests : IDisposable
     }
 
     [Fact]
+    public async Task Rows_list_their_security_exceptions_and_exceptions_are_read_with_status_and_expiry()
+    {
+        var row = Row("ra-1", "bnd");
+        row["security_exceptions"] = new JsonArray(new JsonObject { ["id"] = "se-1", ["str"] = "EXC-01" });
+        RespondPage("0", 1, row);
+        Respond("/api/security-exceptions/", 200, Page(
+            new JsonObject { ["id"] = "se-1", ["ref_id"] = "EXC-01", ["name"] = "Legacy finance app without MFA", ["status"] = "approved", ["expiration_date"] = "2027-03-31" },
+            new JsonObject { ["id"] = "se-2", ["ref_id"] = "", ["name"] = "Old kiosk", ["status"] = "draft", ["expiration_date"] = null }));
+
+        var rows = await _ca.Client.ListRequirementAssessmentsAsync("EX-E8-2026", _ct);
+        var exceptions = await _ca.Client.ListSecurityExceptionsAsync(_ct);
+
+        rows.Match(r => r.ShouldHaveSingleItem().ExceptionIds, _ => []).ShouldBe(["se-1"]);
+        exceptions.Match(e => e, _ => []).ShouldBe([
+            new RemoteWaiver("se-1", "EXC-01", "Legacy finance app without MFA", "approved", new DateOnly(2027, 3, 31)),
+            new RemoteWaiver("se-2", null, "Old kiosk", "draft", null),
+        ]);
+    }
+
+    [Fact]
     public async Task Listing_rows_stops_at_an_empty_page_whatever_the_count_says()
     {
         RespondPage("0", 5, Row("ra-1", "bnd"));

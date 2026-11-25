@@ -25,6 +25,10 @@ public interface ICisoAssistantClient
     /// <summary>Every row of the audit with its current result, observation and evidence IDs.</summary>
     Task<Result<IReadOnlyList<CurrentRow>>> ListRequirementAssessmentsAsync(string complianceAssessmentRefId, CancellationToken cancellationToken);
 
+    /// <summary>Every security exception with its status and expiry (s15-03), so a row's exceptions can be named.</summary>
+    Task<Result<IReadOnlyList<RemoteWaiver>>> ListSecurityExceptionsAsync(CancellationToken cancellationToken) =>
+        Task.FromResult(Result.Ok<IReadOnlyList<RemoteWaiver>>([]));
+
     /// <summary>The evidence with this ref_id and its latest hash; empty when there is none. Creates nothing.</summary>
     Task<Result<IReadOnlyList<RemoteEvidence>>> FindEvidenceAsync(string refId, CancellationToken cancellationToken);
 
@@ -54,6 +58,9 @@ public sealed record RequirementAssessmentValues(ComplianceResult Result, string
 
 /// <summary>An evidence object in CISO Assistant and the SHA-256 of its latest revision's file, if it has one.</summary>
 public sealed record RemoteEvidence(string Id, string? LatestSha256);
+
+/// <summary>A security exception as CISO Assistant holds it: its ID, ref_id, name, approval status and expiry.</summary>
+public sealed record RemoteWaiver(string Id, string? RefId, string Name, string Status, DateOnly? Expires);
 
 /// <summary>A file to upload as an evidence revision.</summary>
 public sealed record EvidenceFile(string FileName, ReadOnlyMemory<byte> Content);

@@ -31,6 +31,9 @@ public sealed record CurrentRow(
 {
     /// <summary>The security exceptions linked to the row (s15-03), with their status and expiry.</summary>
     public IReadOnlyList<RowWaiver> Exceptions { get; init; } = [];
+
+    /// <summary>The CISO Assistant IDs of the security exceptions linked to the row, as listed; <see cref="Exceptions"/> names them.</summary>
+    public IReadOnlyList<string> ExceptionIds { get; init; } = [];
 }
 
 /// <summary>A security exception linked to a row: its ref_id, name, CISO Assistant status and expiry.</summary>
