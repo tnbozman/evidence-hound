@@ -290,8 +290,8 @@ public class ScopePlanTests
     public void Systems_added_to_an_audit_in_the_ui_are_kept_while_the_scope_names_none()
     {
         // s15-D2: an audit's systems are compared only when the scope names some, so systems a person added in CISO Assistant stay.
-        var applied = Applied(Declared(ScopeKind.Audit, "EX-E8-2026", ("name", "E8"), ("systems", "Example 365")));
         var declared = Declared(ScopeKind.Audit, "EX-E8-2026", ("name", "E8"));
+        var applied = new ActualObject(Declared(ScopeKind.Audit, "EX-E8-2026", ("name", "E8"), ("systems", "Example 365")), ScopeMarker.State(ScopeKind.Audit, declared.Fields));
 
         ScopePlanner.Plan([declared], [applied], prune: false).IsEmpty.ShouldBeTrue();
     }
