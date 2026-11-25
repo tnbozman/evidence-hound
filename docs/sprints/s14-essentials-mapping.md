@@ -125,6 +125,20 @@ A run only filled a row one collector fully reported, so those rows were never f
 **Tests to write first**
 - Ownership with other collectors' results; a runner test where two collectors on separate runs fill one row with both evidence.
 
+### s14-06 A devcontainer for the GRC team (added 2026-11-25)
+- [ ] Done
+
+**Story.** As a GRC team member, I open our compliance repo in a devcontainer and have released `hound` and my coding assistant
+(Claude Code or GitHub Copilot) ready, so my machine needs only Docker and VS Code, and the tools stay the same for everyone.
+
+**Acceptance criteria**
+- The compliance repo template has `.devcontainer/` with `hound` from the released runner image (no .NET SDK or build tools), the
+  Claude Code and GitHub Copilot extensions, and a writable default evidence root. `hound init` writes it too.
+- Its runner image is pinned to the same release as the deployment, and `scripts/stamp-release.sh` moves it.
+
+**Tests to write first**
+- Example repo: the pin agrees and the devcontainer has no SDK; init writes the files; the stamp script moves the pin.
+
 ## Discovered work
 
 - s14-03: `hound mapping coverage` and `validate` exit 0 with uncovered or draft rows; a `--fail-on-uncovered` (and draft) flag would let

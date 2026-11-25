@@ -5,7 +5,8 @@ setup() {
   root="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
   copy="$(mktemp -d)"
   for file in deploy/compose/.env.example examples/compliance-repo/deploy/deploy.env \
-    examples/compliance-repo/.github/workflows/compliance.yml docs/tutorials/first-deployment.md; do
+    examples/compliance-repo/.github/workflows/compliance.yml docs/tutorials/first-deployment.md \
+    examples/compliance-repo/.devcontainer/Dockerfile; do
     mkdir -p "$copy/$(dirname "$file")"
     cp "$root/$file" "$copy/$file"
   done
@@ -23,7 +24,8 @@ teardown() {
   grep -q '^  EVIDENCE_HOUND_REF: v1.2.3$' "$copy/examples/compliance-repo/.github/workflows/compliance.yml"
   grep -q 'ghcr.io/tnbozman/evidence-hound:1.2.3' "$copy/docs/tutorials/first-deployment.md"
   ! grep -q 'evidence-hound:1\.0\.0' "$copy/docs/tutorials/first-deployment.md"
-  [[ "$output" == *"4 files"* ]]
+  grep -qx 'ARG HOUND_IMAGE=ghcr.io/tnbozman/evidence-hound:1.2.3' "$copy/examples/compliance-repo/.devcontainer/Dockerfile"
+  [[ "$output" == *"5 files"* ]]
 }
 
 @test "refuses a version that is not x.y.z" {

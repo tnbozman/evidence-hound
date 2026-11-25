@@ -15,7 +15,7 @@ public sealed class InitCommandTests : IDisposable
         var exitCode = await Run("", "init", Repo, "--yes");
 
         exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
-        foreach (var file in new[] { "hound.yaml", "scope/setup.yaml", "scope/controls.yaml", "mappings/essential-eight-2023.yaml", "frameworks/essential-eight-2023.json", ".gitignore", "README.md" })
+        foreach (var file in new[] { "hound.yaml", "scope/setup.yaml", "scope/controls.yaml", "mappings/essential-eight-2023.yaml", "frameworks/essential-eight-2023.json", ".gitignore", "README.md", ".devcontainer/devcontainer.json", ".devcontainer/Dockerfile" })
         {
             File.Exists(Path.Combine(Repo, file)).ShouldBeTrue(file);
         }

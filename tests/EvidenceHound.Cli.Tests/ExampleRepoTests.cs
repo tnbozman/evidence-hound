@@ -266,6 +266,23 @@ public sealed partial class ExampleRepoTests : IDisposable
         workflow.Trim().ShouldBe($"EVIDENCE_HOUND_REF: v{version}");
         tutorial.ShouldNotContain("evidence-hound:dev");
         tutorial.ShouldContain($"evidence-hound:{version}");
+        File.ReadLines(Path.Combine(Repo, ".devcontainer", "Dockerfile")).ShouldContain($"ARG HOUND_IMAGE={image}");
+    }
+
+    [Fact]
+    public void The_grc_devcontainer_runs_released_hound_with_ai_assistants_and_no_build_tools()
+    {
+        // s14-06: the GRC team works in a devcontainer of their compliance repo, so the host needs only Docker. It takes hound from the
+        // released runner image, not a .NET SDK, and brings the coding assistants they use.
+        var dockerfile = File.ReadAllText(Path.Combine(Repo, ".devcontainer", "Dockerfile"));
+        var devcontainer = File.ReadAllText(Path.Combine(Repo, ".devcontainer", "devcontainer.json"));
+
+        dockerfile.ShouldContain("FROM ${HOUND_IMAGE} AS hound");
+        dockerfile.ShouldNotContain("dotnet/sdk");
+        dockerfile.ShouldContain("/var/lib/evidence-hound");
+        devcontainer.ShouldContain("anthropic.claude-code");
+        devcontainer.ShouldContain("github.copilot-chat");
+        devcontainer.ShouldContain("hound --version");
     }
 
     [Fact]
