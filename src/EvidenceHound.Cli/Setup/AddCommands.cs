@@ -286,7 +286,8 @@ internal static class AddCommands
                     await File.WriteAllTextAsync(configFile.FullName, edited, cancellationToken);
                     await terminal.Output.WriteLineAsync($"Added collector {collectorName} ({typeName}) to {configFile.FullName}.");
                     await terminal.Output.WriteLineAsync(
-                        $"Next: hound config validate {configFile.Name} --check-secrets, then hound run --config {configFile.Name} --only {collectorName} --dry-run");
+                        $"Next: hound config validate {configFile.Name}, then hound run --config {configFile.Name} --only {collectorName} --dry-run. "
+                        + "Add --check-secrets once its secrets are set (and CISO Assistant's token).");
                     return ExitCodes.Ok;
                 },
                 problems => Task.FromResult(Log.Problems(logger, problems)));
