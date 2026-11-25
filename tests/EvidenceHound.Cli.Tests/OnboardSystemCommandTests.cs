@@ -130,6 +130,27 @@ public sealed class OnboardSystemCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task System_audit_joins_the_series_setup_names_without_an_organisation_audit()
+    {
+        // s18-08: hound init names the series in setup.yaml instead of writing an organisation audit no source feeds; the system's audit
+        // still runs in its periods, and approving it adds its target.
+        var setupFile = Path.Combine(Repo, "scope", "setup.yaml");
+        var setupText = await File.ReadAllTextAsync(setupFile, _ct);
+        await File.WriteAllTextAsync(setupFile, setupText.Replace("organisation:\n", "organisation:\n  audit_series: {ref_id: EX-E8, groups: [\"1\", \"2\"], cycle: {period: quarter, starts: \"2026-07-01\"}}\n", StringComparison.Ordinal), _ct);
+        await RunAsync(SupplierAnswers);
+        var supplierFile = Path.Combine(Repo, "scope", "third-parties", "sup-example.yaml");
+        await File.WriteAllTextAsync(supplierFile, (await File.ReadAllTextAsync(supplierFile, _ct)).Replace("status: draft", "status: active", StringComparison.Ordinal), _ct);
+
+        var (exit, output, error) = await RunAsync("m\nAsk the owner for the patch report.\nn\nNo privileged users.\nOnly the supplier administers it.\nSam Example\nc\nGET /v1/devices shows backups.\n");
+
+        exit.ShouldBe(ExitCodes.Ok, error);
+        var audit = await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "audits", "example-assets-example-framework.yaml"), _ct);
+        audit.ShouldContain("ref_id: \"EX-E8-EXAMPLE-ASSETS\"");
+        audit.ShouldContain("cycle: {period: quarter, starts: \"2026-07-01\"}");
+        output.ShouldContain("EX-E8-EXAMPLE-ASSETS, a series of EX-E8");
+    }
+
+    [Fact]
     public async Task Ref_id_prompts_show_the_prefix_and_take_the_rest()
     {
         // The solution's first answer has a space, so it is asked again with the rule.
