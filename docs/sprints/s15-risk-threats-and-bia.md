@@ -243,7 +243,7 @@ weekly review lists each report an open incident still owes when CISO Assistant 
 checks that `hound incident obligations` lists `dfars-7012` due 72 hours later. Result recorded once CI has run.
 
 ### s15-08 Supply-chain flow-down (added 2026-11-24)
-- [ ] Done
+- [x] Done
 
 Added at the maintainer's request (2026-11-24): primes push requirements to their subcontractors, and a supplier must pass them on to its
 own.
@@ -265,6 +265,25 @@ against my own suppliers' contracts, so that I can show a prime what I flow down
 
 **Functional check**
 - The machine-shop rehearsal records its prime's DFARS clauses and finds the one supplier contract that does not carry them.
+
+**Notes**
+- A customer is a third party whose every contract has `customer: true`, with the `CUS-` prefix. `obligations` name a clause, a
+  framework and level, the data kinds it covers and `flow_down`. `contract.flow_down_missing` is a warning, like the sensitive-data
+  findings (s10-05): recording the truth must not lock the repo, and it joins the weekly review. `contract.framework_unknown` and
+  `contract.flow_down_invalid` are errors.
+- `hound programme list` adds "Required by <customer> (<contract>): <clause>, level N." under each programme with that framework
+  (`required_by` in JSON). `hound supplier list --data` adds a "Flowed-down clauses" column (`clauses` in JSON), carried or missing.
+
+**Functional check (2026-11-25)**
+```
+$ hound scope validate scope     # example repo + CUS-EXAMPLE-PRIME (DFARS 252.204-7012, flow_down, cui) + SUP-EXCLOUD storing cui
+warning: scope/third-parties/sup-excloud.yaml line 15: contract 'CTR-EXCLOUD-2026' with SUP-EXCLOUD lacks 'DFARS 252.204-7012', which customer contract 'CTR-PRIME-PARTS' flows down. [contract.flow_down_missing]
+scope valid: 1 domain(s), 6 control(s), 5 audit(s), 2 third party(ies), 1 risk study(ies) with 2 scenario(s)
+$ hound supplier list --data cui --repo .
+| SUP-EXCLOUD | SOL-EXCLOUD-HOST | stores |  | FedRAMP Moderate equivalent |  | 2027-06-30 |  | DFARS 252.204-7012 (missing) |
+$ hound programme list --scope scope
+Required by Example Prime Pty Ltd (CTR-PRIME-PARTS): Essential Eight maturity level 2, level 2.
+```
 
 ### s15-09 Incident response plan document (added 2026-11-24)
 - [ ] Done
@@ -344,5 +363,9 @@ As [s12-10](s12-e8-mapping-and-adoption.md#s12-10-improve-quality-and-flow-stand
   loopback, so every request fails with `rest.host_not_allowed`. Fixed (the maintainer chose to keep the rule): dev servers are
   always on localhost, and while the config reads one the trial runs hound on the host network, reaching a `make ca-up` stack on its
   published port, as the Microsoft 365 step already did. local-trial.md and sophos-dev-server.md say so.
+- **s15-D7 `hound approve` wrote an audit domain and perimeter it never checked** (found 2026-11-25 in a person's first approve).
+  Asked for the audit's domain, the person typed "y", taking it for a yes/no question; approve wrote `domain: "y"` and an empty
+  perimeter, and `scope validate` then failed with `scope.value_invalid`. The audit's systems were also not linked in CISO
+  Assistant, which s15-D2 fixed after that release.
 
 ## Sprint review
