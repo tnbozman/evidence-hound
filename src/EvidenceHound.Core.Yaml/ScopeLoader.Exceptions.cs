@@ -22,6 +22,9 @@ public static partial class ScopeLoader
         return (parsed, file.Problems);
     }
 
+    /// <summary><c>scope/reporting.yaml</c>: the reports an incident owes (s15-07).</summary>
+    public static (IReadOnlyList<ReportingObligation> Obligations, IReadOnlyList<ScopeProblem> Problems) ParseReporting(ScopeSource reporting) => ([], []);
+
     private static ScopeExceptionRequest[] ReadExceptions(YamlMappingNode root, FileReader file)
     {
         file.Keys(root, ["exceptions"]);
