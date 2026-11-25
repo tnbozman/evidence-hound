@@ -1,0 +1,19 @@
+# An approved exception expired on 2026-09-30 and is still approved; one with no expiry date stays current.
+description: An approved exception past its expiry date fails.
+now: 2026-11-24T02:00:00Z
+settings:
+  base_url: https://ciso.example.com/api/
+secrets:
+  token: example-test-token
+responses:
+  - { get: /api/assets/, file: recordings/assets.json }
+  - { get: /api/risk-scenarios/, file: recordings/risk-scenarios.json }
+  - { get: /api/solutions/, file: recordings/solutions.json }
+  - { get: /api/entity-assessments/, file: recordings/entity-assessments.json }
+  - { get: /api/contracts/, file: recordings/contracts.json }
+  - { get: /api/risk-assessments/, file: recordings/risk-assessments.json }
+  - { get: /api/security-exceptions/, file: recordings/security-exceptions-expired.json }
+  - { get: /api/resilience/asset-assessments/, file: recordings/asset-assessments.json }
+expect:
+  risk.exceptions_current: fail
+  risk.studies_reviewed: pass

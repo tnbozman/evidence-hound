@@ -1,0 +1,20 @@
+# The current risk study was last updated on 2025-08-14, over a year before the run; the deprecated 2024 study is not counted.
+description: A risk study not reviewed within the interval fails.
+now: 2026-11-24T02:00:00Z
+settings:
+  base_url: https://ciso.example.com/api/
+secrets:
+  token: example-test-token
+responses:
+  - { get: /api/assets/, file: recordings/assets.json }
+  - { get: /api/risk-scenarios/, file: recordings/risk-scenarios.json }
+  - { get: /api/solutions/, file: recordings/solutions.json }
+  - { get: /api/entity-assessments/, file: recordings/entity-assessments.json }
+  - { get: /api/contracts/, file: recordings/contracts.json }
+  - { get: /api/risk-assessments/, file: recordings/risk-assessments-stale.json }
+  - { get: /api/security-exceptions/, file: recordings/security-exceptions.json }
+  - { get: /api/resilience/asset-assessments/, file: recordings/asset-assessments.json }
+expect:
+  risk.studies_reviewed: fail
+  risk.exceptions_current: pass
+  bia.recovery_tested: pass

@@ -8,31 +8,80 @@
       "name": "Example Chat",
       "ref_id": "SYS-CHAT",
       "filtering_labels": [
-        { "str": "ai-oversight-in-the-loop", "id": "00000000-0000-4000-8000-00000001ab01", "folder": null },
-        { "str": "ai-system", "id": "00000000-0000-4000-8000-00000001ab02", "folder": null },
-        { "str": "ai-screening-normal", "id": "00000000-0000-4000-8000-00000001ab03", "folder": null },
-        { "str": "ai-use-customised", "id": "00000000-0000-4000-8000-00000001ab04", "folder": null }
+        {
+          "str": "ai-oversight-in-the-loop",
+          "id": "00000000-0000-4000-8000-00000001ab01",
+          "folder": null
+        },
+        {
+          "str": "ai-system",
+          "id": "00000000-0000-4000-8000-00000001ab02",
+          "folder": null
+        },
+        {
+          "str": "ai-screening-normal",
+          "id": "00000000-0000-4000-8000-00000001ab03",
+          "folder": null
+        },
+        {
+          "str": "ai-use-customised",
+          "id": "00000000-0000-4000-8000-00000001ab04",
+          "folder": null
+        }
       ],
-      "solutions": []
+      "solutions": [],
+      "disaster_recovery_objectives": {}
     },
     {
       "id": "00000000-0000-4000-8000-0000000a5e02",
       "name": "Example lead scoring",
       "ref_id": "SYS-SCORING",
       "filtering_labels": [
-        { "str": "ai-oversight-on-the-loop", "id": "00000000-0000-4000-8000-00000001ab05", "folder": null },
-        { "str": "ai-system", "id": "00000000-0000-4000-8000-00000001ab02", "folder": null },
-        { "str": "ai-screening-elevated", "id": "00000000-0000-4000-8000-00000001ab06", "folder": null },
-        { "str": "ai-use-third-party", "id": "00000000-0000-4000-8000-00000001ab07", "folder": null }
+        {
+          "str": "ai-oversight-on-the-loop",
+          "id": "00000000-0000-4000-8000-00000001ab05",
+          "folder": null
+        },
+        {
+          "str": "ai-system",
+          "id": "00000000-0000-4000-8000-00000001ab02",
+          "folder": null
+        },
+        {
+          "str": "ai-screening-elevated",
+          "id": "00000000-0000-4000-8000-00000001ab06",
+          "folder": null
+        },
+        {
+          "str": "ai-use-third-party",
+          "id": "00000000-0000-4000-8000-00000001ab07",
+          "folder": null
+        }
       ],
-      "solutions": [{ "str": "Example CRM lead scoring", "id": "00000000-0000-4000-8000-0000000501e1" }]
+      "solutions": [
+        {
+          "str": "Example CRM lead scoring",
+          "id": "00000000-0000-4000-8000-0000000501e1"
+        }
+      ],
+      "disaster_recovery_objectives": {
+        "objectives": {
+          "rto": {
+            "value": 14400
+          },
+          "rpo": {
+            "value": 86400
+          }
+        }
+      }
     },
     {
       "id": "00000000-0000-4000-8000-0000000a5e03",
       "name": "Example laptops",
       "ref_id": "SYS-LAPTOPS",
       "filtering_labels": [],
-      "solutions": []
+      "solutions": [],
+      "disaster_recovery_objectives": {}
     }
   ]
 }
