@@ -965,8 +965,14 @@
           "$ref": "#/$defs/names"
         },
         "tags": {
-          "description": "Per-framework labels, such as an Essentials domain or cui: \"true\".",
+          "description": "Per-framework labels, such as an Essentials domain, cui: \"true\" or a cmmc_asset_category.",
           "type": "object",
+          "properties": {
+            "cmmc_asset_category": {
+              "description": "The system's CMMC asset category (32 CFR 170.19(c)(1), Table 1), shown in the nist-800-171 system security plan.",
+              "enum": ["cui", "security_protection", "contractor_risk_managed", "specialized", "out_of_scope"]
+            }
+          },
           "additionalProperties": {
             "type": "string"
           }

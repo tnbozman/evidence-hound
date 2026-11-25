@@ -18,7 +18,7 @@ hound builds most of the plan from what you already keep up to date: the records
 | Annex (section 13) | The framework, in the ASD SSP annex template's columns, one row per control |
 | POA&M appendix | Every requirement not yet met, with its control, owner and ETA |
 
-Every value carries its source (`hound ssp build --json`), so a reviewer can check where it came from. The layout is NIST SP 800-18 Rev 1, Appendix A, for every framework; for the Essential Eight (`profile: ism`) the annex lists ISM controls by strategy.
+Every value carries its source (`hound ssp build --json`), so a reviewer can check where it came from. The layout is NIST SP 800-18 Rev 1, Appendix A, for every framework; for the Essential Eight (`profile: ism`) the annex lists ISM controls by strategy, and for CMMC Level 2 (`profile: nist-800-171`) it lists the NIST SP 800-171 requirements by family ([below](#nist-sp-800-171-and-cmmc-level-2)).
 
 ## What people write or draw
 
@@ -94,3 +94,34 @@ hound ssp diff ssp-essential-eight-1.0.json ssp-essential-eight-1.1.json
 ```
 
 The diff lists boundary and inventory changes first, then suppliers, statuses, statements and sections. Review the plan at least once a year and whenever the boundary, a system or a supplier changes.
+
+## NIST SP 800-171 and CMMC Level 2
+
+For CMMC Level 2, the plan is the same layout with `profile: nist-800-171`. The example's second entry in `examples/compliance-repo/scope/ssp.yaml` is the CMMC plan for the programme `cmmc-level-2` (audit `EX-CMMC-2026`, CISO Assistant's `cmmc-2.0` framework at groups L1 and L2), with its own sections in `examples/compliance-repo/ssp/cmmc/`.
+
+```sh
+hound ssp build --programme cmmc-level-2 --strict
+```
+
+The profile changes three things.
+
+**CMMC asset categories.** The inventory in section 10 gains a column for each system's category from 32 CFR 170.19: CUI asset, security protection asset, contractor risk managed asset, specialized asset or out-of-scope asset. Give each system a `cmmc_asset_category` tag in `scope/setup.yaml`:
+
+```yaml
+systems:
+  - name: Example 365
+    tags:
+      cmmc_asset_category: cui   # or security_protection, contractor_risk_managed, specialized, out_of_scope
+```
+
+It is a tag rather than a CISO Assistant field because asset custom fields are a CISO Assistant Enterprise feature. A system without a category is listed as a gap, and an unknown value fails `hound scope validate`. Out of scope is a claim an assessor will test: say in the environment section why the system never handles CUI.
+
+**External service providers.** Section 11 lists the supplier solutions that provide systems in the boundary, as for every plan. For CMMC, a cloud service provider that stores, processes or sends CUI needs FedRAMP Moderate or equivalent assurance (DFARS 252.204-7012): record it on the supplier in CISO Assistant and name it in the environment section.
+
+**The annex and the POA&M.** The annex lists all 110 requirements, grouped by family, each with its status, statement, responsible party, evidence and POA&M item. CMMC limits what a Conditional Level 2 status may leave on a POA&M (32 CFR 170.21(a)(2)):
+
+- only requirements worth 1 point in the DoD Assessment Methodology, except SC.L2-3.13.11 when encryption is used but is not FIPS-validated (3 points, which a person decides);
+- never AC.L2-3.1.20, AC.L2-3.1.22, CA.L2-3.12.4, PE.L2-3.10.3, PE.L2-3.10.4 or PE.L2-3.10.5;
+- the SPRS score must be at least 88 (0.8 of 110), and every item must close within 180 days.
+
+hound reads the points from the bundled methodology that `hound sprs score` uses, marks each unmet requirement CMMC does not allow as "not allowed" in the annex, lists it under the POA&M and in the gaps, so `--strict` fails until it is met. Work those first: they decide whether you can claim a Conditional status at all. The [CMMC Level 2 guide](../adopt/cmmc-level-2.md) covers the score.

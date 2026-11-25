@@ -113,7 +113,7 @@ public sealed partial class ExampleRepoTests : IDisposable
         var ssp = File.ReadAllText(Path.Combine(Repo, "scope", "ssp.yaml"));
         ssp.ShouldStartWith("# yaml-language-server: $schema=../../../schemas/scope.schema.json");
         var plan = ScopeLoader.Parse(
-            new ScopeSource("setup.yaml", File.ReadAllText(Path.Combine(Repo, "scope", "setup.yaml"))), null, [], ssp: new ScopeSource("ssp.yaml", ssp)).Scope.Ssps.ShouldHaveSingleItem();
+            new ScopeSource("setup.yaml", File.ReadAllText(Path.Combine(Repo, "scope", "setup.yaml"))), null, [], ssp: new ScopeSource("ssp.yaml", ssp)).Scope.Ssps[0];
 
         plan.Programme.Value.ShouldBe("essential-eight");
         plan.Sections.Select(s => s.Name).ShouldBe(SspProfile.RequiredSections(plan.Profile), ignoreOrder: true);

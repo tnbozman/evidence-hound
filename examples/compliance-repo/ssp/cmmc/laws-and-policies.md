@@ -1,0 +1,3 @@
+- DFARS 252.204-7012 (Safeguarding Covered Defense Information and Cyber Incident Reporting): NIST SP 800-171 Rev 2 and 72-hour incident reporting.
+- 32 CFR Part 170, the CMMC Program: Level 2 self-assessment, the POA&M conditions in 170.21 and the yearly affirmation.
+- Example Pty Ltd information security policy, identity and access policy, and backup procedure.

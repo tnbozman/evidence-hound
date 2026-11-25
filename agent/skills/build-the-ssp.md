@@ -9,7 +9,10 @@ The guide is [docs/ssp.md](https://github.com/tnbozman/evidence-hound/blob/main/
 1. Find the programme: `hound programme list --scope scope/ --json` lists each programme's id, framework, groups, audit of record and
    requirement counts.
 2. Build the plan, gaps first: `hound ssp build --programme <id> --scope scope/ --config hound.yaml --json`. Each value names its source.
-   Tell the person the gaps in order: requirements with no statement, no owner, or not applicable without a justification.
+   Tell the person the gaps in order: requirements with no statement, no owner, or not applicable without a justification. For a
+   CMMC Level 2 plan (`profile: nist-800-171`), the gaps also list systems with no `cmmc_asset_category` tag in `scope/setup.yaml`
+   and unmet requirements CMMC does not allow on a POA&M (32 CFR 170.21): put those first, as they block a Conditional status. Propose
+   a category for an untagged system only from what the scope says it handles; the person decides.
 3. Draft what is missing, for review: `hound ssp suggest --programme <id> --scope scope/ --config hound.yaml` lists the controls with no
    description. For each, read the control and its systems, then write a description with
    `hound ssp describe --control <ref_id> --text "<what it does and on which systems>" --scope scope/`. It is marked for review in the

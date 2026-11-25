@@ -112,7 +112,9 @@ public sealed class SspFunctionalTests(CisoAssistantFixture ciso)
         // s11-07: with the example's own scope/ssp.yaml, as docs/govern/system-security-plan.md walks through it.
         var ct = TestContext.Current.CancellationToken;
         var scope = CopyOfExampleScope();
+        // Only the example's Essential Eight plan: sign-offs are appended to the end of the entry (s17-04 added the CMMC plan after it).
         var example = await File.ReadAllTextAsync(Path.Combine(scope, "ssp.yaml"), ct);
+        example = example[..example.IndexOf("  # CMMC Level 2", StringComparison.Ordinal)];
         var sections = Directory.CreateDirectory(Path.Combine(Directory.GetParent(scope)!.FullName, "ssp")).FullName;
         var purpose = Path.Combine(sections, "purpose.md");
         var output = Directory.CreateDirectory(Path.Combine(CisoAssistantFixture.RepoRoot, "test-results", "ssp")).FullName;
@@ -153,6 +155,34 @@ public sealed class SspFunctionalTests(CisoAssistantFixture ciso)
     }
 
     [Fact]
+    public async Task Renders_the_cmmc_level_2_plan_with_the_annex_by_family_and_the_poam_rules()
+    {
+        // s17-03, s17-04: the example's own CMMC plan (scope/ssp.yaml, profile nist-800-171) against the seeded EX-CMMC-2026 audit. Runs cap
+        // CMMC rows at partially compliant (covers: part), so AC.L1-3.1.1, worth 5 SPRS points, is unmet and CMMC does not allow it on a POA&M.
+        var ct = TestContext.Current.CancellationToken;
+        var scope = CopyOfExampleScope();
+        var output = Directory.CreateDirectory(Path.Combine(CisoAssistantFixture.RepoRoot, "test-results", "ssp")).FullName;
+
+        var (exit, markdown) = await RunAsync(["ssp", "build", "--programme", "cmmc-level-2", "--scope", scope], ct);
+        await File.WriteAllTextAsync(Path.Combine(output, "ssp-cmmc-level-2.md"), markdown, ct);
+        var (poamExit, poam) = await RunAsync(["ssp", "poam", "--programme", "cmmc-level-2", "--scope", scope], ct);
+        await File.WriteAllTextAsync(Path.Combine(output, "poam-cmmc-level-2.md"), poam, ct);
+
+        exit.ShouldBe(ExitCodes.Ok, markdown);
+        markdown.ShouldContain("NIST SP 800-171 requirement 3.12.4", Case.Sensitive, markdown);
+        markdown.ShouldContain("| System | Type | Owner | Description | CMMC asset category |", Case.Sensitive, markdown);
+        markdown.Split('\n').Single(l => l.StartsWith("| Example 365 |", StringComparison.Ordinal)).ShouldEndWith("| CUI asset |", Case.Sensitive, markdown);
+        markdown.Split('\n').Count(l => l.StartsWith("### ", StringComparison.Ordinal)).ShouldBe(14, markdown);
+        markdown.ShouldContain("### Access control (AC)", Case.Sensitive, markdown);
+        markdown.Split('\n').Count(l => System.Text.RegularExpressions.Regex.IsMatch(l, @"^\| [A-Z]{2}\.L[12]-3\.")).ShouldBe(110 + PoamRows(markdown), markdown);
+        markdown.ShouldContain("| POAM-AC.L1-3.1.1 (not allowed) |", Case.Sensitive, markdown);
+        markdown.ShouldContain("- AC.L1-3.1.1: worth 5 points; CMMC allows only 1-point requirements on a POA&M", Case.Sensitive, markdown);
+        markdown.ShouldContain("A Conditional CMMC Level 2 status also needs an SPRS score of at least 88", Case.Sensitive, markdown);
+        poamExit.ShouldBe(ExitCodes.Ok, poam);
+        poam.ShouldContain("CMMC does not allow these on a POA&M (32 CFR 170.21(a)(2)):", Case.Sensitive, poam);
+    }
+
+    [Fact]
     public async Task Suggest_briefs_your_agent_and_describe_feeds_the_next_scope_plan()
     {
         // s11-06: the brief lists only controls the example leaves undescribed; a description written with 'ssp describe' is a scope change
@@ -180,6 +210,11 @@ public sealed class SspFunctionalTests(CisoAssistantFixture ciso)
         JsonNode.Parse(plan)!["changes"]!.AsArray().Where(c => c!["key"]!.GetValue<string>() == "AC-BACKUP").ShouldNotBeEmpty(plan);
         plan.ShouldContain(text, Case.Sensitive, plan);
     }
+
+    /// <summary>The POA&amp;M appendix's rows, which also start with a practice id.</summary>
+    private static int PoamRows(string markdown) =>
+        markdown[markdown.IndexOf("## Appendix: plan of action and milestones", StringComparison.Ordinal)..].Split('\n')
+            .Count(l => System.Text.RegularExpressions.Regex.IsMatch(l, @"^\| [A-Z]{2}\.L[12]-3\."));
 
     private static string Lines(List<string> signOffs) => signOffs.Count == 0 ? "" : "\n    sign_offs:\n" + string.Join('\n', signOffs) + "\n";
 
