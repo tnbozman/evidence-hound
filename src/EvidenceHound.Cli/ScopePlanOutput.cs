@@ -311,6 +311,8 @@ internal static class ScopePlanOutput
         ScopeKind.EntityAssessment => "supplier_assessment",
         ScopeKind.RiskStudy => "risk_study",
         ScopeKind.RiskScenario => "risk_scenario",
+        ScopeKind.SecurityException => "security_exception",
+        ScopeKind.RiskAcceptance => "risk_acceptance",
         _ => kind.ToString().ToLowerInvariant(),
     };
 

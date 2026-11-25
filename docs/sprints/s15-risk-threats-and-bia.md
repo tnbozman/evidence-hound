@@ -113,6 +113,22 @@ CISO Assistant places R-01 at High and R-03 at Medium on the 4x4 grid, then chan
 **Functional check**
 - Apply a fictional exception, approve it in the local CISO Assistant as an approver, and confirm the next run's observation names it and `scope plan` shows it approved.
 
+**Notes.** Exceptions are read from `scope/exceptions.yaml` (`ScopeExceptionRequest`; CA1711 forbids type names ending in
+"Exception", so the row-side record is `RowWaiver` and the client's is `RemoteWaiver`). A scenario treated by `accept` declares a
+`RiskAcceptance` keyed by the scenario, written under the ref_id `ACC-<study>-<scenario>`. Neither is ever written with a status or
+state. The reader takes an exception's controls and rows from their own `security_exceptions` lists, and observes status and expiry
+(`ExceptionReview` turns them into the plan's notes, with a 60-day window). On the publish side the row list gives each row's exception
+IDs and `ClientStateSource` names them from `security-exceptions/`; `AuditPlanner` appends the observation only to a failing result,
+and adds the exception to the row fingerprint, so an approval or expiry rewrites the row once. `hound status --scope` lists expiring
+exceptions offline from their declared expiry, since status reads no CISO Assistant. The test `Approval_status_in_file_is_rejected`
+first expected an `approved` key on a scenario to be ignored; it is an unknown key like any other, so the test now says so.
+
+**Functional check result.** `SecurityExceptionFunctionalTests` (CI) applies an exception and an accepted scenario to a copy of the
+example repo, checks both are held as requests (draft, not accepted), approves the exception through the API as an approver would, and
+expects the next plan to show it approved with no change to apply. The observation on a run is covered by
+`PlanTests.Failed_check_under_approved_exception_names_it_in_observation` and `State_source_names_the_security_exceptions_on_each_row_and_the_day`.
+Result recorded below once CI has run.
+
 ### s15-04 Business impact analysis files
 - [ ] Done
 
