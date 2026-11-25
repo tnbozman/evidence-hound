@@ -1,6 +1,6 @@
 # s14 ASD Essentials mapping
 
-Status: Planned
+Status: In progress
 
 Release: 2
 
