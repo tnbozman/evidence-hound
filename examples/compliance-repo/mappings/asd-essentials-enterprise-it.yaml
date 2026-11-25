@@ -9,7 +9,7 @@
 # - Checked row by row with AI help (Claude) on 2026-11-25 and the draft marks removed; not yet reviewed by an assessor, so review it
 #   in your own copy before you rely on it. Additions to the derived draft say why in the row's
 #   comment: the six Essential Eight controls ASD does not link (in the homes docs/migrations/essential-eight-to-asd-essentials.md
-#   suggests), legacy authentication from Microsoft 365, supplier assurance from the ciso-assistant profile, and the new ground
+#   suggests), legacy authentication from Microsoft 365, supplier assurance, risk review and recovery testing from the ciso-assistant profile, and the new ground
 #   from the manual sources in examples/manual-sources/essentials/.
 # - Rows name one action in one domain by URN (an action is rated in every domain it applies to). Phase 2 and 3 rows are not mapped
 #   yet: derive them with `hound mapping derive ... --groups 2` when your programme reaches that phase.
@@ -37,10 +37,13 @@ requirements:
       - governance.cyber_resourcing_reviewed
   # IT.GOV-03.1 (governance-and-culture), no Essential Eight source. Establish and maintain an approved risk management methodology and plan that…
   #   + manual source essentials/cyber-governance
+  #   + ciso-assistant profile: risk studies reviewed within the interval, no approved exception past its expiry date
   - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:governance-and-culture:gov-03:it.gov-03.1
     rule: all_pass
     checks:
       - governance.risk_method_approved
+      - risk.studies_reviewed
+      - risk.exceptions_current
   # IT.GOV-11.1 (governance-and-culture), no Essential Eight source. Select and engage suppliers of software, hardware and services on the basis of…
   #   + ciso-assistant profile: every supplier has a current assessment
   - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:governance-and-culture:gov-11:it.gov-11.1
@@ -158,10 +161,12 @@ requirements:
       - build.pipeline_controls_enforced
   # IT.PRO-16.1 (boundary-services), no Essential Eight source. Assess the integrity and authenticity of software, components and updates…
   #   + manual source essentials/supply-chain-security
+  #   + ciso-assistant profile: suppliers of software and services have a current assessment
   - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-16:it.pro-16.1
     rule: all_pass
     checks:
       - supply_chain.software_integrity_verified
+      - supplier.assessments_current
   # IT.PRO-16.2 (boundary-services), no Essential Eight source. Use vendor advisories and threat intelligence to maintain awareness of…
   #   + manual source essentials/supply-chain-security
   - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-16:it.pro-16.2
@@ -347,11 +352,13 @@ requirements:
       - backup.privileged_cannot_read
       - backup.privileged_cannot_change
   # IT.PRO-10.3 (boundary-services), from ISM-1511, ISM-1515. Conduct regular testing of backup and restoration procedures to ensure that…
+  #   + ciso-assistant profile: every critical system in the business impact analysis has recovery tested
   - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-10:it.pro-10.3
     rule: all_pass
     checks:
       - backup.restore_tested
       - backup.performed_and_retained
+      - bia.recovery_tested
   # IT.PRO-18.1 (boundary-services), no Essential Eight source. Isolate systems within network zones based on business criticality and trust…
   #   + manual source essentials/network-segmentation
   - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:boundary-services:pro-18:it.pro-18.1
@@ -435,10 +442,12 @@ requirements:
       - build.pipeline_controls_enforced
   # IT.PRO-16.1 (identity-services), no Essential Eight source. Assess the integrity and authenticity of software, components and updates…
   #   + manual source essentials/supply-chain-security
+  #   + ciso-assistant profile: suppliers of software and services have a current assessment
   - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-16:it.pro-16.1
     rule: all_pass
     checks:
       - supply_chain.software_integrity_verified
+      - supplier.assessments_current
   # IT.PRO-16.2 (identity-services), no Essential Eight source. Use vendor advisories and threat intelligence to maintain awareness of…
   #   + manual source essentials/supply-chain-security
   - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-16:it.pro-16.2
@@ -624,11 +633,13 @@ requirements:
       - backup.privileged_cannot_read
       - backup.privileged_cannot_change
   # IT.PRO-10.3 (identity-services), from ISM-1511, ISM-1515. Conduct regular testing of backup and restoration procedures to ensure that…
+  #   + ciso-assistant profile: every critical system in the business impact analysis has recovery tested
   - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-10:it.pro-10.3
     rule: all_pass
     checks:
       - backup.restore_tested
       - backup.performed_and_retained
+      - bia.recovery_tested
   # IT.PRO-18.1 (identity-services), no Essential Eight source. Isolate systems within network zones based on business criticality and trust…
   #   + manual source essentials/network-segmentation
   - urn: urn:intuitem:risk:req_node:asd-essentials-enterprise-it:identity-services:pro-18:it.pro-18.1

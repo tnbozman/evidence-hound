@@ -2,12 +2,14 @@
 # suppliers. The AI register entries (screening, use, oversight, dates) live in the compliance repo and are checked by the built-in
 # ai-register collector; `hound scope apply` copies them to CISO Assistant as filtering labels, which this profile reads to find
 # the AI systems. It checks that elevated AI systems are linked to a risk scenario, and that suppliers' solutions have
-# a current assessment and an active contract. See docs/collectors/ciso-assistant.md.
+# a current assessment and an active contract. It also checks that risk studies are reviewed within an interval, that no approved
+# exception is past its expiry date, and that every critical system (one with a recovery time objective) has its recovery tested
+# in the business impact analysis. See docs/collectors/ciso-assistant.md.
 # Token: a CISO Assistant API token for a user whose role can only read (for example the built-in Reader role) on the domains checked.
 profile: ciso-assistant
-version: "1.1.0"
+version: "1.2.0"
 source: evidence-hound/profiles/ciso-assistant.yaml
-description: CISO Assistant's AI systems, risk scenarios, supplier assessments and contracts, read with a read-only token.
+description: CISO Assistant's AI systems, supplier assessments and contracts, risk studies, exceptions and business impact analysis, read with a read-only token.
 requires:
   hound: ">=0.1"
 
@@ -16,6 +18,10 @@ parameters:
     type: url
     required: true
     description: CISO Assistant's API, ending in /api/, for example https://ciso.example.com/api/.
+  risk_review_interval:
+    type: duration
+    default: P365D
+    description: A risk study not updated for longer than this is overdue for review, as an ISO 8601 duration.
 
 secrets:
   token:
@@ -35,7 +41,7 @@ queries:
     get: assets/
     paging: { style: offset, offset_param: offset, limit_param: limit, limit: 100, total: $.count }
     items: $.results
-    keep: [id, name, ref_id, filtering_labels, solutions]
+    keep: [id, name, ref_id, filtering_labels, solutions, disaster_recovery_objectives]
   risk_scenarios:
     get: risk-scenarios/
     paging: { style: offset, offset_param: offset, limit_param: limit, limit: 100, total: $.count }
@@ -56,6 +62,21 @@ queries:
     paging: { style: offset, offset_param: offset, limit_param: limit, limit: 100, total: $.count }
     items: $.results
     keep: [id, ref_id, name, status, end_date, solutions]
+  risk_assessments:
+    get: risk-assessments/
+    paging: { style: offset, offset_param: offset, limit_param: limit, limit: 100, total: $.count }
+    items: $.results
+    keep: [id, ref_id, name, status, updated_at]
+  security_exceptions:
+    get: security-exceptions/
+    paging: { style: offset, offset_param: offset, limit_param: limit, limit: 100, total: $.count }
+    items: $.results
+    keep: [id, ref_id, name, status, expiration_date]
+  asset_assessments:
+    get: resilience/asset-assessments/
+    paging: { style: offset, offset_param: offset, limit_param: limit, limit: 100, total: $.count }
+    items: $.results
+    keep: [id, str, asset, bia, recovery_tested]
 
 datasets:
   # Assessments concluded ok whose conclusion has not expired (no expiry date counts as current).
@@ -94,6 +115,14 @@ datasets:
       - with: assets
         on: { left: "$.assets[*].id", right: $.id }
         as: provided
+        optional: true
+  # Each business impact analysis assessment, with the system it assesses (for its recovery objectives).
+  bia_systems:
+    from: asset_assessments
+    join:
+      - with: assets
+        on: { left: $.asset.id, right: $.id }
+        as: system
         optional: true
   # The solutions that provide a third-party AI system.
   ai_supplier_solutions:
@@ -140,3 +169,30 @@ checks:
     require: all
     when_empty: not_applicable
     describe: "{passed} of {total} suppliers' solutions have an active contract not past its end date."
+
+  - id: risk.studies_reviewed
+    title: Risk studies are reviewed within the interval
+    over: risk_assessments
+    where: { field: $.status, equals: deprecated, negate: true, missing: pass }
+    each: { field: $.updated_at, within: "${risk_review_interval}" }
+    require: all
+    when_empty: fail
+    describe: "{passed} of {matched} risk studies in use were updated within ${risk_review_interval}. Review each overdue study with its owner and record the outcome in CISO Assistant."
+
+  - id: risk.exceptions_current
+    title: No approved exception is past its expiry date
+    over: security_exceptions
+    where: { field: $.status, equals: approved }
+    each: { field: $.expiration_date, older_than: P0D, negate: true, missing: pass }
+    require: all
+    when_empty: not_applicable
+    describe: "{passed} of {matched} approved exceptions are not past their expiry date. Renew each expired one with a new expiry date, or resolve it."
+
+  - id: bia.recovery_tested
+    title: Critical systems have their recovery tested
+    over: bia_systems
+    where: { field: "$.system[0].disaster_recovery_objectives.objectives.rto.value", at_least: 1, missing: fail }
+    each: { field: $.recovery_tested, equals: true, missing: fail }
+    require: all
+    when_empty: not_applicable
+    describe: "{passed} of {matched} business impact analysis assessments of critical systems (those with a recovery time objective) have recovery tested. Test each one's restore and record it in the business impact analysis."
