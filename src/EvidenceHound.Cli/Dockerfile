@@ -32,7 +32,7 @@ RUN rid="linux-$([ "$TARGETARCH" = arm64 ] && echo arm64 || echo x64)" \
 # so a named volume mounted there starts writable.
 RUN mkdir -p /data/var/lib/evidence-hound
 
-FROM mcr.microsoft.com/dotnet/runtime:10.0-noble-chiseled@sha256:1b234cef150624fe8cc7d027e8d742c0f03a16aef2484dc469eb8c872167255e
+FROM mcr.microsoft.com/dotnet/runtime:10.0-noble-chiseled@sha256:d7841dcba3234bd757f835cdaf03de1cae42b301e7f19677cd87a7bbc2064b27
 LABEL org.opencontainers.image.title="Evidence Hound runner" \
       org.opencontainers.image.description="Collects compliance evidence and publishes it to CISO Assistant" \
       org.opencontainers.image.source="https://github.com/tnbozman/evidence-hound" \
