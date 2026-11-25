@@ -107,5 +107,7 @@ public static class ApiEndpoints
         new("POST", "/api/metrology/dashboard-widgets/"),
         new("PATCH", "/api/metrology/dashboard-widgets/{id}/"),
         new("DELETE", "/api/metrology/dashboard-widgets/{id}/"),
+        new("GET", "/api/metrology/custom-metric-samples/"),
+        new("POST", "/api/metrology/custom-metric-samples/"),
     ];
 }

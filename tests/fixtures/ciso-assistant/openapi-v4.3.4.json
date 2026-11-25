@@ -2043,6 +2043,14 @@
         "operationId": "entity_assessments_list"
       }
     },
+    "/api/metrology/custom-metric-samples/": {
+      "get": {
+        "operationId": "metrology_custom_metric_samples_list"
+      },
+      "post": {
+        "operationId": "metrology_custom_metric_samples_create"
+      }
+    },
     "/api/metrology/metric-definitions/": {
       "get": {
         "operationId": "metrology_metric_definitions_list"

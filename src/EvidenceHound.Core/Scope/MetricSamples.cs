@@ -3,6 +3,9 @@ namespace EvidenceHound.Core.Scope;
 /// <summary>A value a run measured for a metric instance CISO Assistant holds, by its id, with the instance's frequency and why.</summary>
 public sealed record MetricMeasured(string Instance, string InstanceId, string? Frequency, double Value, string Why);
 
+/// <summary>A metric instance as CISO Assistant holds it: its id and its collection frequency code, which names its periods.</summary>
+public sealed record HeldMetric(string Id, string? Frequency);
+
 /// <summary>A sample CISO Assistant holds for the period starting at <see cref="PeriodStart"/>.</summary>
 public sealed record HeldSample(DateTimeOffset PeriodStart, double? Value);
 

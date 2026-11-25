@@ -78,6 +78,43 @@ internal sealed class CisoAssistantClient(HttpClient http) : ICisoAssistantClien
             $"to set {field} on asset assessment {assessmentId}",
             cancellationToken)).Map(_ => Unit.Value);
 
+    public async Task<Result<IReadOnlyDictionary<string, HeldMetric>>> ListMetricInstancesAsync(CancellationToken cancellationToken) =>
+        (await http.ListAllAsync("metrology/metric-instances/", cancellationToken)).Map(all =>
+            (IReadOnlyDictionary<string, HeldMetric>)all
+                .Where(i => (string?)i["ref_id"] is { Length: > 0 })
+                .DistinctBy(i => (string)i["ref_id"]!)
+                .ToDictionary(i => (string)i["ref_id"]!, i => new HeldMetric(Id(i), (string?)i["collection_frequency_value"]), StringComparer.Ordinal));
+
+    /// <summary>A sample's value is <c>{"result": n}</c>, stored as a JSON string by clients before CISO Assistant 3.21.5.</summary>
+    public async Task<Result<IReadOnlyList<HeldSample>>> ListMetricSamplesAsync(string instanceId, CancellationToken cancellationToken) =>
+        (await http.ListAllAsync($"metrology/custom-metric-samples/?metric_instance={Uri.EscapeDataString(instanceId)}", cancellationToken)).Map(all =>
+            (IReadOnlyList<HeldSample>)[.. all
+                .Where(s => (string?)s["period_start"] is { Length: > 0 })
+                .Select(s => new HeldSample(DateTimeOffset.Parse((string)s["period_start"]!, CultureInfo.InvariantCulture), SampleResult(s["value"])))]);
+
+    public async Task<Result<Unit>> RecordMetricSampleAsync(MetricSampleWrite sample, DateTimeOffset at, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(sample);
+        var body = new JsonObject
+        {
+            ["metric_instance"] = sample.InstanceId,
+            ["timestamp"] = at.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:sszzz", CultureInfo.InvariantCulture),
+            ["period_start"] = sample.PeriodStart.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:sszzz", CultureInfo.InvariantCulture),
+            ["value"] = new JsonObject { ["result"] = sample.Value },
+            ["observation"] = $"Measured by hound run: {sample.Why}",
+        };
+        return (await SendAsync(
+            new HttpRequestMessage(HttpMethod.Post, "metrology/custom-metric-samples/") { Content = Json(body) },
+            $"to record a sample of metric {sample.Instance}",
+            cancellationToken)).Map(_ => Unit.Value);
+    }
+
+    private static double? SampleResult(JsonNode? value)
+    {
+        var parsed = value is JsonValue text && text.TryGetValue<string>(out var json) ? JsonNode.Parse(json) : value;
+        return parsed?["result"] is JsonValue result && result.TryGetValue<double>(out var number) ? number : null;
+    }
+
     private static readonly string[] RecoveryFlagFields = ["recovery_documented", "recovery_tested", "recovery_targets_met"];
 
     /// <summary>An asset assessment's recovery flags and linked evidence; the read serializer lists evidence as <c>{"id", "str"}</c> objects.</summary>

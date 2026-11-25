@@ -38,6 +38,18 @@ public interface ICisoAssistantClient
     Task<Result<Unit>> UpdateRecoveryAsync(string assessmentId, string field, bool value, IReadOnlyList<string> evidenceIds, CancellationToken cancellationToken) =>
         Task.FromResult(Result.Ok(Unit.Value));
 
+    /// <summary>Every metric instance with a ref_id, by ref_id, with its id and frequency (s16-03).</summary>
+    Task<Result<IReadOnlyDictionary<string, HeldMetric>>> ListMetricInstancesAsync(CancellationToken cancellationToken) =>
+        Task.FromResult(Result.Ok<IReadOnlyDictionary<string, HeldMetric>>(new Dictionary<string, HeldMetric>()));
+
+    /// <summary>The samples of a metric instance that answer for a period, with their numeric values.</summary>
+    Task<Result<IReadOnlyList<HeldSample>>> ListMetricSamplesAsync(string instanceId, CancellationToken cancellationToken) =>
+        Task.FromResult(Result.Ok<IReadOnlyList<HeldSample>>([]));
+
+    /// <summary>Records a sample for its period, taken at <paramref name="at"/>; CISO Assistant replaces the period's earlier value.</summary>
+    Task<Result<Unit>> RecordMetricSampleAsync(MetricSampleWrite sample, DateTimeOffset at, CancellationToken cancellationToken) =>
+        Task.FromResult(Result.Ok(Unit.Value));
+
     /// <summary>The evidence with this ref_id and its latest hash; empty when there is none. Creates nothing.</summary>
     Task<Result<IReadOnlyList<RemoteEvidence>>> FindEvidenceAsync(string refId, CancellationToken cancellationToken);
 
