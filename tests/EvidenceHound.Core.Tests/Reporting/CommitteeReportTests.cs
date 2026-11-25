@@ -76,6 +76,25 @@ public class CommitteeReportTests
     }
 
     [Fact]
+    public void Overdue_incident_reports_are_listed_and_carried_into_actions()
+    {
+        // s15-07: each report an incident owes is in the snapshot; an overdue one is an open action.
+        var dfars = new IncidentReport("dfars-7012", "DFARS 252.204-7012 cyber incident report", "DoD, through the DIBNet portal", new DateTimeOffset(2026, 11, 28, 9, 30, 0, TimeSpan.Zero), "overdue");
+        var made = new IncidentReport("reportcyber", "Report to ASD's ACSC through ReportCyber", "ASD's ACSC", new DateTimeOffset(2026, 11, 26, 9, 30, 0, TimeSpan.Zero), "made");
+        var month = NovemberSnapshot with { Incidents = [.. NovemberSnapshot.Incidents.Select(i => i.RefId == "INC-8" ? i with { Reports = [made, dfars] } : i)] };
+
+        var report = CommitteeReport.Render(month, October);
+
+        var reports = Part(Section(report, "## 6."), "### Reports overdue");
+        reports.ShouldContain("INC-8");
+        reports.ShouldContain("dfars-7012");
+        reports.ShouldContain("2026-11-28");
+        reports.ShouldNotContain("reportcyber");
+        Section(report, "## 8.").ShouldContain("DFARS 252.204-7012 cyber incident report");
+        Report.ShouldNotContain("### Reports overdue");
+    }
+
+    [Fact]
     public void Sensitive_data_warnings_join_the_actions()
     {
         Section(Report, "## 8.").ShouldContain("data.authority_expired");
