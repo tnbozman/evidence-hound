@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace EvidenceHound.Cli.Tests;
@@ -20,6 +21,23 @@ public sealed class StderrLoggerTests : IDisposable
         provider.CreateLogger("hound.test").Log(level, "hello");
 
         _error.ToString().ShouldBe(expected + Environment.NewLine);
+    }
+
+    [Theory]
+    [InlineData("Polly")]
+    [InlineData("System.Net.Http.HttpClient.ICisoAssistantClient.LogicalHandler")]
+    public void Retry_and_request_chatter_is_hidden_below_warnings(string category)
+    {
+        // s15-D5: Polly logged "Execution attempt" at information for every request, flooding stderr on each scope plan and apply.
+        using var services = new Microsoft.Extensions.DependencyInjection.ServiceCollection()
+            .AddLogging(logging => HoundCli.DefaultLogging(logging, _error))
+            .BuildServiceProvider();
+        var logger = services.GetRequiredService<ILoggerFactory>().CreateLogger(category);
+
+        logger.LogInformation("Execution attempt.");
+        logger.LogWarning("Retrying.");
+
+        _error.ToString().ShouldBe($"warn: Retrying.{Environment.NewLine}");
     }
 
     [Fact]

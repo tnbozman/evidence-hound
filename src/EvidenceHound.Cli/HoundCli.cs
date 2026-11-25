@@ -226,6 +226,10 @@ public static class HoundCli
         };
     }
 
+    /// <summary>Logs to <paramref name="error"/>, with each HTTP request's own information lines hidden below warnings.</summary>
+    internal static ILoggingBuilder DefaultLogging(ILoggingBuilder logging, TextWriter error) =>
+        logging.AddFilter("System.Net.Http.HttpClient", LogLevel.Warning).AddProvider(new StderrLoggerProvider(error));
+
     /// <summary>One host per run. Logs go to <paramref name="error"/>; the level comes from configuration (for example <c>Logging__LogLevel__Default</c>).</summary>
     private static IHost BuildHost(
         TextWriter error,
@@ -237,8 +241,7 @@ public static class HoundCli
         builder.Configuration.AddInMemoryCollection(settings);
         builder.Configuration.AddFileVariables();
         builder.Logging.ClearProviders();
-        builder.Logging.AddFilter("System.Net.Http.HttpClient", LogLevel.Warning);
-        builder.Logging.AddProvider(new StderrLoggerProvider(error));
+        DefaultLogging(builder.Logging, error);
         configureLogging?.Invoke(builder.Logging);
         builder.Services.AddHttpClient();
         builder.Services.AddBuiltInCollectors();
