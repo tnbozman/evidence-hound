@@ -12,8 +12,11 @@ using EvidenceHound.Runtime.Storage;
 
 namespace EvidenceHound.Runtime;
 
-/// <summary>What <c>hound run</c> does. <paramref name="DryRun"/> plans without sending; <paramref name="NoPublish"/> stops after storing evidence.</summary>
-public sealed record RunOptions(string? Only = null, bool DryRun = false, bool NoPublish = false);
+/// <summary>
+/// What <c>hound run</c> does. <paramref name="DryRun"/> plans without sending; <paramref name="NoPublish"/> stops after storing evidence;
+/// <paramref name="Parallel"/> is how many collectors may collect at once.
+/// </summary>
+public sealed record RunOptions(string? Only = null, bool DryRun = false, bool NoPublish = false, int Parallel = 1);
 
 public enum CollectorOutcome
 {

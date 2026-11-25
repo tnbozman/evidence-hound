@@ -276,6 +276,52 @@ public sealed class RunnerTests : IDisposable
         summary.Collectors.Select(c => c.Record).ShouldBe(saved);
     }
 
+    [Fact]
+    public async Task Independent_collectors_run_in_parallel()
+    {
+        // s18-04: the first collector waits for the second to start, which only happens when they collect at the same time; each still
+        // publishes in config order.
+        var secondStarted = new TaskCompletionSource();
+        var first = new AsyncCollector(async (context, ct) =>
+        {
+            await secondStarted.Task.WaitAsync(TimeSpan.FromSeconds(10), ct);
+            return await Reporting("identity.mfa.admins", "admins.json").CollectAsync(context, ct);
+        });
+        var second = new AsyncCollector((context, ct) =>
+        {
+            secondStarted.TrySetResult();
+            return Reporting("backup.daily", "jobs.json").CollectAsync(context, ct);
+        });
+        var summary = await new Runner(
+            new Dictionary<string, ICollector> { ["idp"] = first, ["backup"] = second },
+            new CollectStep(Secrets.From(new Dictionary<string, string>()), new FileEvidenceStore(_root), new FixedClock(Now), retentionDays: null, TestCollectorServices.None),
+            [new RunTarget(Mapping, Target, "AC-AUTO")],
+            files => _sink.With(files),
+            new FixedClock(Now),
+            new FileRunRecordStore(_root)).RunAsync([Instance("example-idp", "idp"), Instance("example-backup", "backup")], new RunOptions(Parallel: 2), TestContext.Current.CancellationToken);
+
+        summary.Collectors.Select(c => (c.Collector, c.Outcome)).ShouldBe([("example-idp", CollectorOutcome.Succeeded), ("example-backup", CollectorOutcome.Succeeded)]);
+        _sink.Main.Select(b => b.OfType<AuditUpdate.UpdateRequirementAssessment>().Single().RequirementRefId).ShouldBe(["R-MFA", "R-BACKUP"]);
+    }
+
+    [Fact]
+    public async Task One_at_a_time_unless_asked()
+    {
+        var running = 0;
+        var most = 0;
+        var collector = new AsyncCollector(async (context, ct) =>
+        {
+            most = Math.Max(most, Interlocked.Increment(ref running));
+            await Task.Delay(20, ct);
+            Interlocked.Decrement(ref running);
+            return await Reporting("identity.mfa.admins", "admins.json").CollectAsync(context, ct);
+        });
+
+        await Runner(new() { ["idp"] = collector }).RunAsync([Instance("one", "idp"), Instance("two", "idp"), Instance("three", "idp")], new RunOptions(NoPublish: true), TestContext.Current.CancellationToken);
+
+        most.ShouldBe(1);
+    }
+
     public void Dispose() => Directory.Delete(_root, recursive: true);
 
     /// <summary>Records each batch of updates and reads every evidence file through the files it was given.</summary>
