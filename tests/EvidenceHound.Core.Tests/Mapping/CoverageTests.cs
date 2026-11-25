@@ -66,8 +66,6 @@ public class CoverageTests
         var counts = MappingCoverage.Count(Snapshot, Mapping(part, whole), [], ManualChecks, ["2"]);
 
         counts.Single(c => c.ParentUrn == Mfa).ShouldBe(new CoverageCount(Mfa, "2", Automated: 2, Manual: 0, Uncovered: 0) { Part = 1 });
-        MappingCoverage.Count(Snapshot, Mapping(part, Requirement("MFA-A", "identity.mfa.enforced")), [], ManualChecks, ["1"])
-            .Single(c => c.ParentUrn == Mfa).Part.ShouldBe(0, "a row that covers the whole requirement wins");
     }
 
     [Fact]

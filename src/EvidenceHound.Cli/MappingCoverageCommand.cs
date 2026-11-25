@@ -136,6 +136,9 @@ internal static class MappingCoverageCommand
         return text
             .AppendLine()
             .AppendLine(CultureInfo.InvariantCulture, $"Total: {report.Automated} automated, {report.Manual} manual, {report.Draft} draft, {report.Uncovered} uncovered (one per requirement row and group).")
+            .Append(report.Part > 0
+                ? string.Create(CultureInfo.InvariantCulture, $"{report.Part} of the automated cover only part of their requirement: a person assesses the rest.{Environment.NewLine}")
+                : string.Empty)
             .ToString();
     }
 
@@ -145,6 +148,7 @@ internal static class MappingCoverageCommand
             ["framework"] = report.Snapshot.FrameworkUrn,
             ["groups"] = new JsonArray([.. report.Groups.Select(g => (JsonNode)g)]),
             ["automated"] = report.Automated,
+            ["part"] = report.Part,
             ["manual"] = report.Manual,
             ["draft"] = report.Draft,
             ["uncovered"] = report.Uncovered,
@@ -153,6 +157,7 @@ internal static class MappingCoverageCommand
                 ["parent"] = r.ParentUrn,
                 ["group"] = r.Group,
                 ["automated"] = r.Automated,
+                ["part"] = r.Part,
                 ["manual"] = r.Manual,
                 ["draft"] = r.Draft,
                 ["uncovered"] = r.Uncovered,
@@ -163,6 +168,7 @@ internal static class MappingCoverageCommand
                 ["name"] = report.Snapshot.ParentName(r.ParentUrn),
                 ["group"] = r.Group,
                 ["automated"] = r.Automated,
+                ["part"] = r.Part,
                 ["manual"] = r.Manual,
                 ["draft"] = r.Draft,
                 ["uncovered"] = r.Uncovered,
@@ -184,6 +190,9 @@ internal static class MappingCoverageCommand
     private sealed record CoverageReport(FrameworkSnapshot Snapshot, IReadOnlyList<string> Groups, IReadOnlyList<CoverageCount> Rows, IReadOnlyList<CoverageCount> Top)
     {
         public int Automated => Rows.Sum(r => r.Automated);
+
+        /// <summary>Automated requirements whose mapping row covers only part of them.</summary>
+        public int Part => Rows.Sum(r => r.Part);
 
         public int Manual => Rows.Sum(r => r.Manual);
 

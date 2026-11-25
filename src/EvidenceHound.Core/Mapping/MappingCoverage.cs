@@ -71,7 +71,7 @@ public static class MappingCoverage
     {
         var kinds = new Dictionary<string, CoverageKind>(StringComparer.Ordinal);
         var answered = mapping.Requirements
-            .Select(r => (r.Key, Kind: r.Draft ? CoverageKind.Draft : r.Checks.All(manualChecks.Contains) ? CoverageKind.Manual : CoverageKind.Automated))
+            .Select(r => (r.Key, Kind: r.Draft ? CoverageKind.Draft : r.Checks.All(manualChecks.Contains) ? CoverageKind.Manual : r.CoversPart ? CoverageKind.AutomatedPart : CoverageKind.Automated))
             .Concat(manualOnly.Select(key => (Key: key, Kind: CoverageKind.Manual)));
         foreach (var (key, kind) in answered)
         {
@@ -87,15 +87,19 @@ public static class MappingCoverage
     private static CoverageCount Counted(string parent, string group, IReadOnlyList<CoverageKind> kinds) => new(
         parent,
         group,
-        kinds.Count(k => k == CoverageKind.Automated),
+        kinds.Count(k => k is CoverageKind.Automated or CoverageKind.AutomatedPart),
         kinds.Count(k => k == CoverageKind.Manual),
         kinds.Count(k => k == CoverageKind.Uncovered),
-        kinds.Count(k => k == CoverageKind.Draft));
+        kinds.Count(k => k == CoverageKind.Draft))
+    {
+        Part = kinds.Count(k => k == CoverageKind.AutomatedPart),
+    };
 
     /// <summary>In order of strength: where two rows answer one requirement, the stronger kind counts.</summary>
     private enum CoverageKind
     {
         Automated,
+        AutomatedPart,
         Manual,
         Draft,
         Uncovered,
