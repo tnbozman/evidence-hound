@@ -30,7 +30,7 @@
         }
       ],
       "solutions": [],
-      "disaster_recovery_objectives": {}
+      "disaster_recovery_objectives": []
     },
     {
       "id": "00000000-0000-4000-8000-0000000a5e02",
@@ -64,16 +64,14 @@
           "id": "00000000-0000-4000-8000-0000000501e1"
         }
       ],
-      "disaster_recovery_objectives": {
-        "objectives": {
-          "rto": {
-            "value": 14400
-          },
-          "rpo": {
-            "value": 86400
-          }
+      "disaster_recovery_objectives": [
+        {
+          "str": "rto: 4h"
+        },
+        {
+          "str": "rpo: 1d"
         }
-      }
+      ]
     },
     {
       "id": "00000000-0000-4000-8000-0000000a5e03",
@@ -81,7 +79,7 @@
       "ref_id": "SYS-LAPTOPS",
       "filtering_labels": [],
       "solutions": [],
-      "disaster_recovery_objectives": {}
+      "disaster_recovery_objectives": []
     }
   ]
 }
