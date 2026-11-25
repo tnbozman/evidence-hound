@@ -139,6 +139,11 @@ A run only filled a row one collector fully reported, so those rows were never f
 **Tests to write first**
 - Example repo: the pin agrees and the devcontainer has no SDK; init writes the files; the stamp script moves the pin.
 
+**Functional check**
+- Result (2026-11-25): `hound init` writes `.devcontainer/` (`InitCommandTests`); the pins agree (`ExampleRepoTests`); `stamp-release.bats`
+  moves the devcontainer's image. The container is not built in this cloud session (no Docker) and needs the v1.0.0 runner image, which is
+  published when the release is tagged; the next local trial runs inside it.
+
 ## Discovered work
 
 - s14-03: `hound mapping coverage` and `validate` exit 0 with uncovered or draft rows; a `--fail-on-uncovered` (and draft) flag would let
