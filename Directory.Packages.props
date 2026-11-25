@@ -31,7 +31,7 @@
     <PackageVersion Include="Testcontainers" Version="4.17.0" />
     <PackageVersion Include="Testcontainers.Redpanda" Version="4.17.0" />
     <PackageVersion Include="WireMock.Net" Version="2.33.0" />
-    <PackageVersion Include="xunit.v3" Version="4.0.2" />
+    <PackageVersion Include="xunit.v3" Version="4.0.3" />
     <PackageVersion Include="xunit.v3.assert" Version="4.0.3" />
     <PackageVersion Include="xunit.v3.extensibility.core" Version="4.0.3" />
   </ItemGroup>
