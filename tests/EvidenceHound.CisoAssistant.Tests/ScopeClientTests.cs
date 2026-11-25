@@ -412,6 +412,23 @@ public sealed class ScopeClientTests : IDisposable
     }
 
     [Fact]
+    public async Task An_audit_names_its_systems_as_assets()
+    {
+        // s15-D2: an audit's systems were never written, so audits in CISO Assistant showed no systems.
+        List("frameworks", new JsonObject { ["id"] = "fw-e8", ["urn"] = E8 });
+        List("compliance-assessments");
+        List("assets", new JsonObject { ["id"] = "a-365", ["name"] = "Example 365" }, new JsonObject { ["id"] = "a-laptops", ["name"] = "Example laptops" });
+        Respond("POST", "/api/compliance-assessments/", 201, new JsonObject { ["id"] = "ca-new" });
+        var audit = Declared(ScopeKind.Audit, "EX-E8-2026",
+            ("name", "Essential Eight ML2 2026"), ("framework", E8), ("groups", "2"), ("domain", "Example Pty Ltd"), ("perimeter", "Corporate IT"),
+            ("systems", "Example 365, Example laptops"));
+
+        (await Create(audit)).Value();
+
+        JsonNode.Parse(Posted("compliance-assessments"))!["assets"]!.ToJsonString().ShouldBe("[\"a-365\",\"a-laptops\"]");
+    }
+
+    [Fact]
     public async Task Opens_a_period_audit_from_the_previous_period_as_baseline()
     {
         List("frameworks", new JsonObject { ["id"] = "fw-e8", ["urn"] = E8 });

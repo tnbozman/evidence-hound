@@ -56,6 +56,7 @@ public class ScopeDesiredTests
             ["due_date"] = "2026-07-31",
             ["authors"] = "it@example.com",
             ["reviewers"] = "ceo@example.com",
+            ["systems"] = "Example 365, Example laptops",
         });
         declared[(ScopeKind.Document, "mfa-policy")].Fields.ShouldBe(new Dictionary<string, string> { ["name"] = "MFA policy", ["domain"] = "Example Pty Ltd" });
         declared[(ScopeKind.Assessment, "EXAMPLE-BASELINE-2026/EX-1.2")].Fields.ShouldBe(new Dictionary<string, string>

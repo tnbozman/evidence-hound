@@ -75,6 +75,7 @@ public sealed class ScopeStateReaderTests : IDisposable
             ["authors"] = "it@example.com",
             ["status"] = "in_review",
             ["locked"] = "true",
+            ["systems"] = "Example 365, Example laptops",
         }, ignoreOrder: true);
         held[(ScopeKind.Document, "identity-policy")].Held.Fields.ShouldBe(
             new Dictionary<string, string> { ["name"] = "Identity policy", ["domain"] = "Example Pty Ltd", ["hashes"] = "aaaa, bbbb" }, ignoreOrder: true);
@@ -442,6 +443,7 @@ public sealed class ScopeStateReaderTests : IDisposable
             ["is_locked"] = true,
             ["authors"] = new JsonArray("act-it"),
             ["reviewers"] = new JsonArray(),
+            ["assets"] = new JsonArray("a-365", "a-laptops"),
         });
         List("evidences", Listed("ev-policy", "f-ex"));
         Object("evidences", "ev-policy", new JsonObject { ["id"] = "ev-policy", ["name"] = "Identity policy", ["ref_id"] = "identity-policy", ["folder"] = "f-ex" });
