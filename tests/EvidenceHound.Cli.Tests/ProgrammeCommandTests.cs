@@ -44,6 +44,38 @@ public sealed class ProgrammeCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task List_says_which_customer_requires_the_programme()
+    {
+        // s15-08: a customer contract's obligations become the programme's targets, so a report says which customer requires what.
+        Directory.CreateDirectory(Path.Combine(Scope, "third-parties"));
+        await File.WriteAllTextAsync(Path.Combine(Scope, "third-parties", "cus-prime.yaml"), """
+            ref_id: CUS-PRIME
+            name: Example Prime Pty Ltd
+            domain: Example Pty Ltd
+            contracts:
+              - ref_id: CTR-PRIME-PARTS
+                name: Machined parts subcontract
+                status: active
+                customer: true
+                obligations:
+                  - clause: Essential Eight maturity level 2
+                    framework: urn:intuitem:risk:framework:essential-eight-2023
+                    level: "2"
+            """, _ct);
+
+        var (exit, output, error) = await RunAsync(["programme", "list", "--scope", Scope, "--json"]);
+
+        exit.ShouldBe(ExitCodes.Ok, error);
+        var required = JsonNode.Parse(output)!["programmes"]!.AsArray().Single(p => p!["id"]!.GetValue<string>() == "essential-eight")!["required_by"]!.AsArray().ShouldHaveSingleItem()!;
+        (required["customer"]!.GetValue<string>(), required["contract"]!.GetValue<string>(), required["clause"]!.GetValue<string>(), required["level"]!.GetValue<string>())
+            .ShouldBe(("CUS-PRIME", "CTR-PRIME-PARTS", "Essential Eight maturity level 2", "2"));
+
+        (exit, output, error) = await RunAsync(["programme", "list", "--scope", Scope]);
+        exit.ShouldBe(ExitCodes.Ok, error);
+        output.ShouldContain("Required by Example Prime Pty Ltd (CTR-PRIME-PARTS): Essential Eight maturity level 2, level 2.");
+    }
+
+    [Fact]
     public async Task List_shows_the_register_counts()
     {
         var setup = Path.Combine(Scope, "setup.yaml");
