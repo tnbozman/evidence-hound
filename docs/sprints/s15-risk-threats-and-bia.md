@@ -370,4 +370,12 @@ As [s12-10](s12-e8-mapping-and-adoption.md#s12-10-improve-quality-and-flow-stand
   ("Domain for the system's audit, one of: Example Pty Ltd [Example Pty Ltd]"), Enter takes the first, and any other answer is asked
   again with the reason; with none declared, approve stops with `onboard.place_missing` and writes nothing (test, then fix).
 
+- **s15-D8 The organisation's audit of record can be an empty shell, its name is opaque, and onboarding steers to blanket
+  attestations** (found 2026-11-25 in a person's own setup). `hound init` always creates the organisation-wide audit (such as
+  `EX-E8-Q2-2027FY`); with no organisation-wide collector feeding it and only per-system audits doing the work, the person could not
+  tell what it was for and removed it. `Q2-2027FY` for October to December 2026 needs explaining. The manual sources onboarding drafted
+  were one `evidence_attested` check per strategy, too coarse to show what was checked. Triage: s15-11 explains the audit of record and
+  the period name where `hound init` and `hound audit` print them, and steers onboarding to the per-check manual-source templates;
+  creating the organisation's audit only when an organisation-wide source exists goes to s18 (fewer steps for the agent).
+
 ## Sprint review
