@@ -1,0 +1,50 @@
+# yaml-language-server: $schema=../../../schemas/scope.schema.json
+# What Example Pty Ltd measures for its monthly security committee, filled in by each hound run. Values are never typed here.
+# Guide: docs/metrics.md
+definitions:
+  - ref_id: EX-MET-MFA-CHECKS
+    name: MFA checks passing
+    description: Share of the automated MFA checks that pass.
+    unit: percentage
+    direction: higher_is_better
+    decimals: 0
+    frequency: monthly
+    target: 100
+  - ref_id: EX-MET-E8-COMPLIANT
+    name: Essential Eight requirements compliant
+    description: Share of the applicable Essential Eight requirements that are compliant; rows not assessed count against it.
+    unit: percentage
+    direction: higher_is_better
+    decimals: 0
+    frequency: monthly
+    target: 85
+instances:
+  - ref_id: EX-MET-MFA-CHECKS-CORP
+    name: MFA checks passing
+    definition: EX-MET-MFA-CHECKS
+    domain: Example Pty Ltd
+    grace_days: 5
+    owners: [it@example.com]
+    controls: [AC-MFA]
+    source: hound
+    measure: check_pass_rate
+    checks: [identity.mfa.*]
+  - ref_id: EX-MET-E8-COMPLIANT-CORP
+    name: Essential Eight requirements compliant
+    definition: EX-MET-E8-COMPLIANT
+    domain: Example Pty Ltd
+    grace_days: 5
+    owners: [it@example.com]
+    source: hound
+    measure: requirements_compliant_pct
+    audit: EX-E8-2026
+dashboards:
+  - ref_id: EX-DASH-COMMITTEE
+    name: Security committee
+    description: The figures the monthly security committee reads first.
+    domain: Example Pty Ltd
+    widgets:
+      - {title: MFA checks passing, metric: EX-MET-MFA-CHECKS-CORP, chart: line, time_range: last_year}
+      - {title: Essential Eight compliant, metric: EX-MET-E8-COMPLIANT-CORP, chart: line, time_range: last_year, x: 6}
+      - {title: Essential Eight progress, audit: EX-E8-2026, builtin: progress, y: 2}
+      - {title: How to read this, text: Each figure is measured by hound on every run and kept once a month. Rows not yet assessed count as not met., x: 6, y: 2}

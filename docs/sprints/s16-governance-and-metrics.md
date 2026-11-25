@@ -1,6 +1,6 @@
 # s16 Governance collector and metrics
 
-Status: Planned
+Status: Done
 
 Release: 2
 
@@ -15,7 +15,7 @@ Builds on s06 (scope files, plan, apply, inventory), s10 (suppliers), s14 (the E
 | Metric definitions, metric instances, dashboards | Manually entered metric samples |
 
 ### s16-01 Risk and recovery checks in the `ciso-assistant` profile
-- [ ] Done
+- [x] Done
 
 Changed in the AI governance planning PR (Nov 2026): s11-05 builds the `ciso-assistant` REST collector profile and its supplier checks (`supplier.assessments_current`, `supplier.contracts_current`), so this task extends that profile instead of building a coded collector.
 
@@ -37,8 +37,17 @@ Changed in the AI governance planning PR (Nov 2026): s11-05 builds the `ciso-ass
 **Functional check**
 - Against the local CISO Assistant with the example suppliers, study and BIA, `hound run` produces the supplier, risk and BIA checks with the expected outcomes and publishes them.
 
+**Notes**
+- Tests are YAML cases in `profiles/ciso-assistant.tests/` (run by `LibraryProfileTests` with the unit suite): `risk-study-past-interval`, `expired-approved-exception` and `critical-bia-without-recovery-test`, with `all-pass` extended.
+- A critical system is one with a recovery time objective (`recovery: {rto: ...}`), so the check needs nothing new in the scope. `risk.studies_reviewed` skips deprecated studies and fails when there is no study at all; the interval is the `risk_review_interval` setting (default a year).
+- Mapped: GOV-03.1 gains both risk checks, PRO-16.1 (both domains) gains `supplier.assessments_current`, PRO-10.3 (both domains) gains `bia.recovery_tested`. GOV-11 already had the supplier checks from s14. The migration guide says which manual-only actions are now partly automated.
+- Functional: `RiskRecoveryChecksFunctionalTests` runs the profile against the seeded CISO Assistant and works out each expected outcome from CISO Assistant's own lists.
+- Found by the functional check: CISO Assistant's asset list gives `disaster_recovery_objectives` as display text (`[{"str": "RTO: 4h"}]`, only objectives above zero), not the stored seconds that `/object/` gives. The first recordings were hand-made in the stored shape, so `bia.recovery_tested` passed its cases but would always have been not applicable against a real CISO Assistant. The recordings now hold the list's shape and the check matches `(?i)^rto: `.
+
+**Functional check result.** CI run 45661679058 (2026-11-25): `RiskRecoveryChecksFunctionalTests` passed against CISO Assistant v4.3.4 seeded with the example scope: `risk.studies_reviewed` passed for EX-RISK-2026, `risk.exceptions_current` matched the approved exceptions' expiry dates, and `bia.recovery_tested` counted the BIA assessments of Example 365 (RTO 4h) and gave the outcome their recovery-tested flags give.
+
 ### s16-02 Metric definitions and instances
-- [ ] Done
+- [x] Done
 
 **Story:** As the capability owner, I want the metrics we track declared in the repo, so that what we measure, its targets and owners are reviewed and the same everywhere.
 
@@ -55,8 +64,17 @@ Changed in the AI governance planning PR (Nov 2026): s11-05 builds the `ciso-ass
 **Functional check**
 - Apply a fictional "MFA coverage" metric with a 95 % target and a dashboard widget to the local CISO Assistant.
 
+**Notes**
+- `scope/metrics.yaml` is read by `ScopeLoader.Metrics`, checked by `MetricValidator`, compared by `MetricObjects` and written by `ScopeWriter.Metrics` to CISO Assistant v4.3.4's metrology API. Four new plan kinds: `metric_definition`, `metric_instance`, `dashboard` (marked by state, as other `ref_id` kinds) and `dashboard_widget` (keyed `dashboard/title`, compared field by field).
+- A qualitative target is written as its level's position counted from 1, as CISO Assistant stores it, and read back as the level name. A unit is CISO Assistant's terminology with `field_path` `metric_definition.unit`; another unit is a warning, not an error, because an organisation can add one in CISO Assistant.
+- "In the computed instance's domain or below it" is read as: an instance in the root folder may read any domain; an instance in a domain reads only that domain, as CISO Assistant's formula engine does.
+- An instance with no `frequency` or `target` takes its definition's, so the plan compares what CISO Assistant copies.
+- Functional: `MetricsFunctionalTests` applies an MFA coverage formula with a 95 target, a qualitative policy metric and a dashboard with metric, builtin and text widgets, then checks a second plan is empty and a new target is one update.
+
+**Functional check result.** CI run 45640153076 (2026-11-25): `MetricsFunctionalTests.Metrics_and_a_dashboard_are_applied_and_a_second_plan_changes_nothing` passed against CISO Assistant v4.3.4: definitions (unit, target 95, formula inputs, four levels with target 3), the instance (target 95, grace 5 days, owner, control) and four widgets written; the second plan held no metric change and a new target of 90 was one instance update.
+
 ### s16-03 Metric samples from runs
-- [ ] Done
+- [x] Done
 
 **Story:** As the security committee, I want metrics filled in from collection runs, so that trends are measured every period without anyone typing numbers.
 
@@ -73,8 +91,17 @@ Changed in the AI governance planning PR (Nov 2026): s11-05 builds the `ciso-ass
 **Functional check**
 - Two runs on different days of one month against the local CISO Assistant leave one sample for that month, holding the second run's value.
 
+**Notes**
+- Samples go to CISO Assistant v4.3.4's `custom-metric-samples` with `period_start`: CISO Assistant keeps one sample per instance and period and a later write for the period replaces it, so hound reads the instance's period samples and sends only a changed value (to two decimals). Periods are counted as CISO Assistant counts them (`MetricSamples.PeriodStart`, UTC, ISO weeks).
+- "Cannot also be fed by hand" is read as: an instance whose definition has a formula is filled in by CISO Assistant, which refuses typed values, so `source: hound` there is `scope.result_conflict`. A person can still type a value for a run-fed instance's period in CISO Assistant; the next run whose value differs replaces it.
+- `collector_success_rate` counts the collectors the run ran (all of them unless `--only`). `evidence_freshness_pct` counts a result fresh for 7 days, the committee report's stale window.
+- `HOUND_TODAY` moves the measuring time to that day (never later than now), so the functional test runs twice in last month.
+- Functional: `MetricsFunctionalTests.Two_runs_in_one_month_leave_one_sample_holding_the_second_value` measures `backup.*` with the fake collector, passing then failing one check.
+
+**Functional check result.** CI run 45640153076 (2026-11-25): `MetricsFunctionalTests.Two_runs_in_one_month_leave_one_sample_holding_the_second_value` passed: runs on the 3rd (100) and 20th (50) of last month left one October sample holding 50, and a third run in the month sent nothing.
+
 ### s16-04 Documentation and example repo
-- [ ] Done
+- [x] Done
 
 **Acceptance criteria**
 - `docs/metrics.md` and a governance collector section in `docs/collectors/`: file formats, the governance collector checks, metric measures, and what stays in CISO Assistant.
@@ -87,18 +114,72 @@ Changed in the AI governance planning PR (Nov 2026): s11-05 builds the `ciso-ass
 **Functional check**
 - Following the guides verbatim, add a metric to the example repo and apply it.
 
+**Notes**
+- The governance collector is the `rest` collector with the `ciso-assistant` profile (s14, extended in s16-01); its page, `docs/collectors/ciso-assistant.md`, is retitled for governance and `docs/metrics.md` links its checks as metric inputs.
+- The example repo's `scope/metrics.yaml`: MFA checks passing (`check_pass_rate` over `identity.mfa.*`), Essential Eight requirements compliant (`requirements_compliant_pct` for EX-E8-2026), and the committee dashboard with both, the audit's builtin progress and a note. The local CISO Assistant is seeded by applying the example scope, so every CI run applies them (`ScopePlanFunctionalTests` lists the four new kinds, and its second plan must be empty).
+- `hound scope validate` now counts metrics and dashboards in its summary line. The example repo's `CLAUDE.md` and the `prepare-the-reports` skill say where metrics live and that values are never typed.
+
+**Functional check result.** CI run 45640153076 (2026-11-25): the seed applied the example scope with its two metrics and committee dashboard (`ScopePlanFunctionalTests`, four new kinds written, second plan empty). Following `docs/metrics.md` on a copy of the example repo, a third metric (`collector_success_rate`) validated after the two mistakes it names were fixed (see s16-05).
+
+### s16-07 `hound status` gives each programme's standing (carried from s15-D10)
+- [x] Done
+
+**Story:** As a GRC member with a few hours a week, I want `hound status` to say how much of each programme is assessed and met, so
+that I see the real position without opening a report or trusting CISO Assistant's percentage.
+
+**Acceptance criteria**
+- With `--scope`, `hound status` gives each programme's standing from the latest posture snapshot (s15-14's level met, compliant of
+  applicable with not-assessed rows as not met, rounded down, and "not assessed: N"), and says when there is no snapshot yet and how
+  to make one (`hound report snapshot`).
+- `--json` carries the same figures.
+
+**Tests first**
+- `StatusCommandTests.Gives_each_programmes_standing_from_the_latest_snapshot`
+- `StatusCommandTests.Says_how_to_make_a_snapshot_when_there_is_none`
+
+**Functional check**
+- After the trial's runs and a snapshot, `hound status --scope scope/` gives the Essential Eight standing with the open rows counted.
+
+**Notes**
+- The standing is `Standing.Of` from s15-14, so status, the committee report and the board report give the same line. "Latest" is the snapshot in `<evidence root>/reports/` taken most recently, whatever its period.
+- `hound status` had no `--json`; it now has one carrying the tables too (collectors with their problems, audits, and with `--scope` the standing and exceptions due). s18-agent-speed extends it (CISO Assistant reachable, token expiry, rejected writes).
+- Functional: `ReportFunctionalTests.Status_gives_the_essential_eight_standing_from_the_snapshot` takes a snapshot of the seeded CISO Assistant and checks the status text and JSON against the snapshot's own rows.
+
+**Functional check result.** CI run 45640153076 (2026-11-25): `ReportFunctionalTests.Status_gives_the_essential_eight_standing_from_the_snapshot` passed: after a 2026-11 snapshot of the seeded instance, `hound status --scope` gave the Essential Eight line the committee report gives, and `--json` counted the same rows not assessed.
+
 ### s16-05 Rehearse trial, onboarding and sustaining GRC (standing, every sprint)
-- [ ] Done
+- [x] Done
 
 As [s12-09](s12-e8-mapping-and-adoption.md#s12-09-rehearse-trial-onboarding-and-sustaining-grc-standing-every-sprint), including this sprint's new commands and guides.
 The rehearsal drives hound through the agent skills, and the sprint ends with the Claude Code and Copilot skills and agents
 accurate for the CLI and its workflows (sprint lifecycle step 5 in [README.md](README.md)).
 
+**Result.** `hound agent setup --assistant both` on a copy of the example repo wrote the skills and agents; the `prepare-the-reports`
+skill now says where metrics live, and `operate-collectors` reads `hound status --scope scope/ --json` and quotes the standing as it is.
+Following `docs/metrics.md` verbatim, a metric with `measure` but no `source: hound` was refused with `metric.measure_invalid` and its
+fix, and a misspelt measure with `scope.value_invalid` listing the four; both messages were enough to fix them. `hound status --scope`
+on the copy said there was no snapshot and how to take one. `AgentCommandTests` confirm every command the skills name exists.
+
 ### s16-06 Improve: quality and flow (standing, about 15% of each sprint)
-- [ ] Done
+- [x] Done
 
 As [s12-10](s12-e8-mapping-and-adoption.md#s12-10-improve-quality-and-flow-standing-about-15-of-each-sprint).
+
+**Result.** The functional tests share `TestRepo.CopyExample` and `TestRepo.ExampleDeploymentAsync` instead of 15 copies of the same
+loop (144 lines removed). The docs lint pins `katex` 0.19.1 over markdownlint's vulnerable transitive 0.16.47 (Dependabot alert 10,
+GHSA-238p-pmpm-9mq7, dev only; no markdownlint release takes a fixed version yet). `hound scope validate` counts metrics and dashboards.
+The risk and recovery functional test reads CISO Assistant's asset lists by shape and keeps them with its results.
 
 ## Discovered work
 
 ## Sprint review
+
+**2026-11-25.** Metrics now live in the repo: definitions, instances and committee dashboards are planned and applied to CISO
+Assistant's metrology (s16-02), and each `hound run` records the value of every metric it can measure (check pass rate, an audit's
+compliant share, evidence freshness, collector success), one value a period (s16-03). The example repo has an MFA metric, an Essential
+Eight metric and a committee dashboard, with a guide in `docs/metrics.md` (s16-04). The `ciso-assistant` profile checks risk studies
+reviewed, approved exceptions not expired and critical systems' recovery tested (s16-01). Its functional check found that CISO
+Assistant's asset list gives recovery objectives as text ("RTO: 4h"), not the stored seconds the hand-made recordings held, so the
+recovery check would have always read not applicable on a real instance; the recordings and check now use the real shape. `hound status
+--scope` gives each programme's standing from the latest snapshot, with `--json` for agents (s16-07). The skills and agents are
+accurate for these commands (s16-05).

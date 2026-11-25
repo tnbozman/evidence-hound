@@ -26,6 +26,7 @@ public sealed partial class ExampleRepoTests : IDisposable
     {
         (await Hound("config", "validate", Path.Combine(Repo, "hound.yaml"))).ShouldBe(ExitCodes.Ok, _error.ToString());
         (await Hound("scope", "validate", Path.Combine(Repo, "scope"), "--config", Path.Combine(Repo, "hound.yaml"))).ShouldBe(ExitCodes.Ok, _error.ToString());
+        _output.ToString().ShouldContain(", 2 metric(s) with 1 dashboard(s)");
         foreach (var mapping in Directory.GetFiles(Path.Combine(Repo, "mappings"), "*.yaml"))
         {
             (await Hound("mapping", "validate", mapping)).ShouldBe(ExitCodes.Ok, $"{mapping}: {_error}");
@@ -49,6 +50,20 @@ public sealed partial class ExampleRepoTests : IDisposable
             text.ShouldContain("## What stays in CISO Assistant", Case.Sensitive, guide);
             text.ShouldContain("examples/compliance-repo/scope/", Case.Sensitive, guide);
         }
+    }
+
+    [Fact]
+    public void Example_declares_two_metrics_filled_in_by_runs_and_a_dashboard()
+    {
+        // s16-04: Example_compliance_repo_validates checks metrics.yaml with the rest of the scope; here, that the example has them and the guide shows them.
+        var metrics = File.ReadAllText(Path.Combine(Repo, "scope", "metrics.yaml"));
+        metrics.ShouldStartWith("# yaml-language-server: $schema=../../../schemas/scope.schema.json");
+        metrics.ShouldContain("measure: check_pass_rate");
+        metrics.ShouldContain("measure: requirements_compliant_pct");
+        metrics.ShouldContain("dashboards:");
+        var guide = File.ReadAllText(Path.Combine(RepoRoot, "docs", "metrics.md"));
+        guide.ShouldContain("## What stays in CISO Assistant");
+        guide.ShouldContain("examples/compliance-repo/scope/metrics.yaml");
     }
 
     [Fact]

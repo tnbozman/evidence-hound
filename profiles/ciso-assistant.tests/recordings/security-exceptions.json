@@ -1,0 +1,28 @@
+{
+  "count": 3,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": "00000000-0000-4000-8000-0000000se001",
+      "ref_id": "EX-EXC-01",
+      "name": "Legacy scanner keeps SMBv1 until replaced",
+      "status": "approved",
+      "expiration_date": "2027-03-31"
+    },
+    {
+      "id": "00000000-0000-4000-8000-0000000se002",
+      "ref_id": "EX-EXC-02",
+      "name": "Kiosk without application control",
+      "status": "approved",
+      "expiration_date": null
+    },
+    {
+      "id": "00000000-0000-4000-8000-0000000se003",
+      "ref_id": "EX-EXC-03",
+      "name": "Old firewall rule for the retired CRM",
+      "status": "expired",
+      "expiration_date": "2026-06-30"
+    }
+  ]
+}

@@ -11,6 +11,9 @@ responses:
   - { get: /api/solutions/, file: recordings/solutions.json }
   - { get: /api/entity-assessments/, file: recordings/entity-assessments.json }
   - { get: /api/contracts/, file: recordings/contracts.json }
+  - { get: /api/risk-assessments/, file: recordings/risk-assessments.json }
+  - { get: /api/security-exceptions/, file: recordings/security-exceptions.json }
+  - { get: /api/resilience/asset-assessments/, file: recordings/asset-assessments.json }
 expect:
   ai.risks_in_register: fail
   ai.suppliers_assessed: pass

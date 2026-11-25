@@ -1,4 +1,4 @@
-# The AI register and suppliers, checked on every run
+# Governance checked on every run: the AI register, suppliers, risk and recovery
 
 Two collectors check the AI register and your suppliers. Each reads the place where the facts are kept.
 
@@ -64,6 +64,11 @@ check. It is not the token `hound` publishes with.
 | `ai.supplier_contracts_current` | each of those solutions has an *active* contract not past its end date |
 | `supplier.assessments_current` | the same, for every supplier's solution |
 | `supplier.contracts_current` | the same, for every supplier's solution |
+| `risk.studies_reviewed` | every risk study (risk assessment) not *deprecated* was updated within `risk_review_interval` (default `P365D`, a year). No risk study at all fails |
+| `risk.exceptions_current` | no *approved* security exception is past its expiry date (one with no expiry date counts as current) |
+| `bia.recovery_tested` | every business impact analysis assessment of a critical system has *recovery tested* ticked. A critical system is one with a recovery time objective (`recovery: {rto: ...}` on the system in your scope) |
+
+To review risk studies more often, set the interval in the collector's settings, for example `risk_review_interval: P180D`.
 
 The labels come from your scope: `hound scope apply` writes them. A list the token cannot read makes the checks over it **unable to
 assess**, never a fail; the other checks still run. The profile's recorded test cases are in `profiles/ciso-assistant.tests/`; run

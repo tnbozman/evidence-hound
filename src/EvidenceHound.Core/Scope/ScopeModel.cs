@@ -43,6 +43,9 @@ public sealed record ScopeDocument(ScopeSetup Setup, IReadOnlyList<ScopeControl>
 
     /// <summary><c>scope/bia/*.yaml</c>: business impact analyses, one per file (s15-04).</summary>
     public IReadOnlyList<ScopeBia> Bias { get; init; } = [];
+
+    /// <summary><c>scope/metrics.yaml</c>: metric definitions, instances and dashboards (s16-02); none when the repo has no such file.</summary>
+    public ScopeMetrics Metrics { get; init; } = ScopeMetrics.None;
 }
 
 /// <summary><c>scope/setup.yaml</c>: the root folder, the frameworks to load and the domains.</summary>

@@ -81,7 +81,7 @@ public sealed class BiaFunctionalTests(CisoAssistantFixture ciso) : IDisposable
         var applied = await StepAsync("flags-1-apply", ["scope", "apply", Scope], ct);
         applied.Exit.ShouldBe(ExitCodes.Ok, applied.Output + applied.Error);
 
-        var passed = await StepAsync("flags-2-run-pass", ["run", "--config", await ConfigAsync(fail: null, ct)], ct);
+        var passed = await StepAsync("flags-2-run-pass", ["run", "--config", await TestRepo.ExampleDeploymentAsync(_repo, fail: null, ct)], ct);
         passed.Exit.ShouldBe(ExitCodes.Ok, passed.Output + passed.Error);
         // The example repo's own BIA names the same check, so its flag is set too.
         JsonNode.Parse(passed.Output)!["recovery"]!.AsArray().Single(r => r!["assessment"]!.GetValue<string>() == "EX-BIA-FLAGS/Example 365")!["value"]!.GetValue<bool>().ShouldBeTrue();
@@ -89,11 +89,11 @@ public sealed class BiaFunctionalTests(CisoAssistantFixture ciso) : IDisposable
         tested["recovery_tested"]!.GetValue<bool>().ShouldBeTrue();
         tested["evidences"]!.AsArray().ShouldNotBeEmpty();
 
-        var failed = await StepAsync("flags-3-run-fail", ["run", "--config", await ConfigAsync(fail: "backup.restore_tested", ct)], ct);
+        var failed = await StepAsync("flags-3-run-fail", ["run", "--config", await TestRepo.ExampleDeploymentAsync(_repo, fail: "backup.restore_tested", ct)], ct);
         failed.Exit.ShouldBe(ExitCodes.Ok, failed.Output + failed.Error);
         (await AssessmentAsync(ct))["recovery_tested"]!.GetValue<bool>().ShouldBeFalse();
 
-        var again = await StepAsync("flags-4-run-unchanged", ["run", "--config", await ConfigAsync(fail: "backup.restore_tested", ct)], ct);
+        var again = await StepAsync("flags-4-run-unchanged", ["run", "--config", await TestRepo.ExampleDeploymentAsync(_repo, fail: "backup.restore_tested", ct)], ct);
         JsonNode.Parse(again.Output)!["recovery"]!.AsArray().ShouldBeEmpty();
         var plan = await StepAsync("flags-5-scope-plan", ["scope", "plan", Scope, "--format", "json"], ct);
         JsonNode.Parse(plan.Output)!["changes"]!.AsArray().ShouldNotContain(c => c!["key"]!.GetValue<string>() == "EX-BIA-FLAGS/Example 365", plan.Output);
@@ -107,31 +107,10 @@ public sealed class BiaFunctionalTests(CisoAssistantFixture ciso) : IDisposable
         return (await SendAsync(HttpMethod.Get, $"resilience/asset-assessments/?bia={bia["id"]!.GetValue<string>()}", null, ct))["results"]!.AsArray().ShouldHaveSingleItem()!;
     }
 
-    /// <summary>The example deployment, with its scope, its evidence under the test's repo, and the fake collector's fail setting.</summary>
-    private async Task<string> ConfigAsync(string? fail, CancellationToken ct)
-    {
-        var files = Path.Combine(AppContext.BaseDirectory, "files");
-        var config = Path.Combine(_repo, "hound-test.yaml");
-        var text = (await File.ReadAllTextAsync(Path.Combine(files, "examples", "example-pty-ltd.yaml"), ct))
-            .Replace("root: ../.dev/evidence", $"root: {Path.Combine(_repo, "evidence")}", StringComparison.Ordinal)
-            .Replace("mapping: ../mappings/example.yaml", $"mapping: {Path.Combine(files, "mappings", "example.yaml")}", StringComparison.Ordinal)
-            .Replace("      tenant: example.com\n", fail is null ? "      tenant: example.com\n" : $"      tenant: example.com\n      fail: {fail}\n", StringComparison.Ordinal);
-        await File.WriteAllTextAsync(config, $"scope: {Scope}\n{text}", ct);
-
-        // Each run needs its own second: evidence folders and run IDs are named by the start time.
-        await Task.Delay(TimeSpan.FromSeconds(1.1), ct);
-        return config;
-    }
 
     private async Task WriteRepoAsync(CancellationToken ct)
     {
-        var example = Path.Combine(CisoAssistantFixture.RepoRoot, "examples", "compliance-repo");
-        foreach (var file in Directory.GetFiles(example, "*", SearchOption.AllDirectories))
-        {
-            var copy = Path.Combine(_repo, Path.GetRelativePath(example, file));
-            Directory.CreateDirectory(Path.GetDirectoryName(copy)!);
-            File.Copy(file, copy);
-        }
+        TestRepo.CopyExample(_repo);
 
         // Its own library URNs, so this test never shares a stored library with the other risk tests.
         var library = await ExampleRiskLibrary.CopyAsync("bia", ct);

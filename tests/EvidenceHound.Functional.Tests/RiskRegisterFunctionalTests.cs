@@ -85,13 +85,7 @@ public sealed class RiskRegisterFunctionalTests(CisoAssistantFixture ciso) : IDi
 
     private async Task WriteRepoAsync(CancellationToken ct)
     {
-        var example = Path.Combine(CisoAssistantFixture.RepoRoot, "examples", "compliance-repo");
-        foreach (var file in Directory.GetFiles(example, "*", SearchOption.AllDirectories))
-        {
-            var copy = Path.Combine(_repo, Path.GetRelativePath(example, file));
-            Directory.CreateDirectory(Path.GetDirectoryName(copy)!);
-            File.Copy(file, copy);
-        }
+        TestRepo.CopyExample(_repo);
 
         // Its own library URNs, so this test and the library test never share a stored library.
         var library = await ExampleRiskLibrary.CopyAsync("register", ct);

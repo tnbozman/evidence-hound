@@ -128,7 +128,10 @@ internal static class RunCommand
         var recovery = sinks.Client is { } client && config.Scope is { } scopeDir && !options.DryRun && !options.NoPublish
             ? await RecoveryAsync(client, scopeDir, latest, cancellationToken)
             : RecoveryReport.None;
-        foreach (var problem in recovery.Problems)
+        var metrics = sinks.Client is { } metricClient && config.Scope is { } metricScope && !options.DryRun && !options.NoPublish
+            ? await MetricsAsync(metricClient, metricScope, latest, summary, Now(configuration), cancellationToken)
+            : MetricReport.None;
+        foreach (var problem in recovery.Problems.Concat(metrics.Problems))
         {
             Log.Warning(logger, $"{problem.Message} ({problem.Code})");
         }
@@ -153,6 +156,13 @@ internal static class RunCommand
             ["value"] = r.Value,
             ["why"] = r.Why,
         })]);
+        json["metrics"] = new JsonArray([.. metrics.Recorded.Select(m => new JsonObject
+        {
+            ["instance"] = m.Instance,
+            ["period_start"] = m.PeriodStart.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", System.Globalization.CultureInfo.InvariantCulture),
+            ["value"] = m.Value,
+            ["why"] = m.Why,
+        })]);
         await output.WriteLineAsync(json.ToJsonString(Indented));
         return summary.Outcome == CollectorOutcome.Failed ? ExitCodes.CollectorFailed : ExitCodes.Ok;
     }
@@ -174,6 +184,39 @@ internal static class RunCommand
         var bias = ScopeLoader.Parse(new ScopeSource(Path.Combine(scopeDir, "setup.yaml"), "organisation:\n  root_folder: Global\n"), null, [], bias: sources).Scope.Bias;
         var results = (await latest.OthersAsync("", cancellationToken)).SelectMany(l => l.Results.Checks).ToList();
         return await RecoveryPublisher.PublishAsync(client, bias, results, cancellationToken);
+    }
+
+    /// <summary>
+    /// s16-03: the metric instances with <c>source: hound</c>, measured from every collector's latest results and this run's collectors, each
+    /// recorded for its current period. <c>metrics.yaml</c> is read on its own, as <c>hound scope plan</c> has already checked it.
+    /// </summary>
+    private static async Task<MetricReport> MetricsAsync(ICisoAssistantClient client, string scopeDir, FileLatestResults latest, RunSummary summary, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        var path = Path.Combine(scopeDir, "metrics.yaml");
+        if (!File.Exists(path))
+        {
+            return MetricReport.None;
+        }
+
+        var metrics = ScopeLoader.Parse(
+            new ScopeSource(Path.Combine(scopeDir, "setup.yaml"), "organisation:\n  root_folder: Global\n"), null, [], metrics: new ScopeSource(path, await File.ReadAllTextAsync(path, cancellationToken))).Scope.Metrics;
+        if (!metrics.Instances.Any(i => i.Source is not null))
+        {
+            return MetricReport.None;
+        }
+
+        var results = (await latest.OthersAsync("", cancellationToken)).SelectMany(l => l.Results.Checks).ToList();
+        var run = new RunMeasures(results, summary.Collectors.Count, summary.Collectors.Count(c => c.Outcome == CollectorOutcome.Succeeded), now);
+        return await MetricPublisher.PublishAsync(client, metrics.Instances, run, cancellationToken);
+    }
+
+    /// <summary>When a run measures: now, or the same time of day on <c>HOUND_TODAY</c> when it names an earlier day.</summary>
+    private static DateTimeOffset Now(IConfiguration configuration)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var today = AuditSeries.Today(configuration);
+        var moved = new DateTimeOffset(today.ToDateTime(TimeOnly.FromTimeSpan(now.TimeOfDay)), TimeSpan.Zero);
+        return moved < now ? moved : now;
     }
 
     /// <summary>The configured transport. The URL comes from the config unless <c>HOUND_CA_URL</c> overrides it; the token is a secret reference.</summary>

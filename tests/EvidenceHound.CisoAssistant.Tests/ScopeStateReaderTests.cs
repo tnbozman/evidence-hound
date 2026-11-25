@@ -394,6 +394,191 @@ public sealed class ScopeStateReaderTests : IDisposable
         held.Single(a => a.Held.Kind == ScopeKind.Framework && a.Held.Key == urn).Held.Fields["content"].ShouldBe(LibraryContent.Digest(objects));
     }
 
+    /// <summary>s16-02 (MetricClientTests in the plan): metrology objects read back exactly as MetricObjects writes them; library definitions are not the scope's.</summary>
+    [Fact]
+    public async Task Reads_metric_definitions_instances_dashboards_and_widgets_as_the_scope_writes_them()
+    {
+        List("metrology/metric-definitions",
+            new JsonObject
+            {
+                ["id"] = "md-mfa",
+                ["ref_id"] = "EX-MET-MFA",
+                ["name"] = "MFA coverage",
+                ["description"] = $"Share of accounts.\n[hound scope {Fingerprint}]",
+                ["folder"] = new JsonObject { ["id"] = "f-global", ["str"] = "Global" },
+                ["library"] = null,
+                ["category"] = "quantitative",
+                ["unit"] = new JsonObject { ["id"] = "t-pct", ["name"] = "percentage" },
+                ["choices_definition"] = null,
+                ["higher_is_better"] = true,
+                ["decimals"] = 1,
+                ["default_collection_frequency"] = "monthly",
+                ["default_target"] = 95.0,
+                ["expression"] = "covered / total * 100",
+                ["inputs"] = new JsonArray(
+                    new JsonObject { ["key"] = "total", ["definition"] = "urn:example:metric:staff", ["combine"] = "one" },
+                    new JsonObject { ["key"] = "covered", ["definition"] = "md-cov", ["combine"] = "sum" }),
+            },
+            new JsonObject
+            {
+                ["id"] = "md-cov",
+                ["ref_id"] = "EX-MET-COV",
+                ["name"] = "Accounts with MFA",
+                ["folder"] = new JsonObject { ["id"] = "f-ex", ["str"] = "Example Pty Ltd" },
+                ["category"] = "quantitative",
+                ["unit"] = new JsonObject { ["id"] = "t-users", ["name"] = "users" },
+                ["higher_is_better"] = null,
+                ["expression"] = "",
+            },
+            new JsonObject
+            {
+                ["id"] = "md-pol",
+                ["ref_id"] = "EX-MET-POL",
+                ["name"] = "Policy maturity",
+                ["folder"] = new JsonObject { ["id"] = "f-global", ["str"] = "Global" },
+                ["category"] = "qualitative",
+                ["unit"] = null,
+                ["higher_is_better"] = true,
+                ["default_target"] = 3.0,
+                ["expression"] = "",
+                ["choices_definition"] = new JsonArray(
+                    new JsonObject { ["ref_id"] = "missing", ["name"] = "Missing" }, new JsonObject { ["ref_id"] = "drafted", ["name"] = "Drafted" },
+                    new JsonObject { ["ref_id"] = "approved", ["name"] = "Approved" }),
+            },
+            new JsonObject
+            {
+                ["id"] = "md-lib",
+                ["urn"] = "urn:example:metric:staff",
+                ["name"] = "Staff",
+                ["folder"] = new JsonObject { ["id"] = "f-global", ["str"] = "Global" },
+                ["library"] = new JsonObject { ["id"] = "lib-1", ["name"] = "Example metrics" },
+                ["category"] = "quantitative",
+            });
+        List("metrology/metric-instances",
+            new JsonObject
+            {
+                ["id"] = "mi-mfa",
+                ["ref_id"] = "EX-MET-MFA-CORP",
+                ["name"] = "MFA coverage",
+                ["description"] = $"[hound scope {Fingerprint}]",
+                ["folder"] = new JsonObject { ["id"] = "f-ex", ["str"] = "Example Pty Ltd" },
+                ["metric_definition"] = new JsonObject { ["id"] = "md-mfa", ["ref_id"] = "EX-MET-MFA" },
+                ["status"] = "Active",
+                ["collection_frequency"] = "Monthly",
+                ["collection_frequency_value"] = "monthly",
+                ["collection_grace_days"] = 5,
+                ["target_value"] = 95.0,
+                ["owner"] = new JsonArray(new JsonObject { ["id"] = "act-it", ["str"] = "it@example.com" }),
+                ["applied_controls"] = new JsonArray(new JsonObject { ["id"] = "ac-mfa", ["str"] = "Multi-factor authentication" }),
+            },
+            new JsonObject
+            {
+                ["id"] = "mi-pol",
+                ["ref_id"] = "EX-MET-POL-CORP",
+                ["name"] = "Policy maturity",
+                ["folder"] = new JsonObject { ["id"] = "f-ex", ["str"] = "Example Pty Ltd" },
+                ["metric_definition"] = new JsonObject { ["id"] = "md-pol", ["ref_id"] = "EX-MET-POL" },
+                ["target_value"] = 2.0,
+                ["owner"] = new JsonArray(),
+                ["applied_controls"] = new JsonArray(),
+            });
+        List("metrology/dashboards", new JsonObject
+        {
+            ["id"] = "d-1",
+            ["ref_id"] = "EX-DASH",
+            ["name"] = "Security committee",
+            ["description"] = $"[hound scope {Fingerprint}]",
+            ["folder"] = new JsonObject { ["id"] = "f-ex", ["str"] = "Example Pty Ltd" },
+        });
+        List("metrology/dashboard-widgets",
+            new JsonObject
+            {
+                ["id"] = "w-1",
+                ["dashboard"] = new JsonObject { ["id"] = "d-1", ["name"] = "Security committee" },
+                ["title"] = "MFA coverage",
+                ["metric_instance"] = new JsonObject { ["id"] = "mi-mfa", ["ref_id"] = "EX-MET-MFA-CORP" },
+                ["chart_type"] = "line",
+                ["time_range"] = "last_year",
+                ["aggregation"] = "none",
+                ["position_x"] = 0,
+                ["position_y"] = 0,
+                ["width"] = 6,
+                ["height"] = 2,
+            },
+            new JsonObject
+            {
+                ["id"] = "w-2",
+                ["dashboard"] = new JsonObject { ["id"] = "d-1", ["name"] = "Security committee" },
+                ["title"] = "E8 progress",
+                ["metric_instance"] = null,
+                ["target_content_type_display"] = "ComplianceAssessment",
+                ["target_object_id"] = "ca-e8",
+                ["metric_key"] = "progress",
+                ["chart_type"] = "kpi_card",
+                ["time_range"] = "last_30_days",
+                ["aggregation"] = "none",
+                ["position_x"] = 6,
+                ["position_y"] = 0,
+                ["width"] = 6,
+                ["height"] = 2,
+            });
+
+        var held = (await _ca.Scope.ReadAsync(Query with { Metrics = true }, _ct)).Value().ToDictionary(a => (a.Held.Kind, a.Held.Key));
+
+        held.Keys.Where(k => k.Kind == ScopeKind.MetricDefinition).Select(k => k.Key).ShouldBe(["EX-MET-MFA", "EX-MET-COV", "EX-MET-POL"], ignoreOrder: true);
+        held[(ScopeKind.MetricDefinition, "EX-MET-MFA")].Held.Fields.ShouldBe(new Dictionary<string, string>
+        {
+            ["name"] = "MFA coverage",
+            ["description"] = "Share of accounts.",
+            ["unit"] = "percentage",
+            ["direction"] = "higher_is_better",
+            ["decimals"] = "1",
+            ["frequency"] = "monthly",
+            ["target"] = "95",
+            ["expression"] = "covered / total * 100",
+            ["inputs"] = "covered=EX-MET-COV sum, total=urn:example:metric:staff one",
+        }, ignoreOrder: true);
+        held[(ScopeKind.MetricDefinition, "EX-MET-MFA")].AppliedState.ShouldBe(Fingerprint);
+        held[(ScopeKind.MetricDefinition, "EX-MET-COV")].Held.Fields.ShouldBe(new Dictionary<string, string>
+        {
+            ["name"] = "Accounts with MFA",
+            ["domain"] = "Example Pty Ltd",
+            ["unit"] = "users",
+            ["direction"] = "none",
+        }, ignoreOrder: true);
+        held[(ScopeKind.MetricDefinition, "EX-MET-POL")].Held.Fields.ShouldBe(new Dictionary<string, string>
+        {
+            ["name"] = "Policy maturity",
+            ["levels"] = "Missing, Drafted, Approved",
+            ["direction"] = "higher_is_better",
+            ["target"] = "Approved",
+        }, ignoreOrder: true);
+        held[(ScopeKind.MetricInstance, "EX-MET-MFA-CORP")].Held.Fields.ShouldBe(new Dictionary<string, string>
+        {
+            ["name"] = "MFA coverage",
+            ["definition"] = "EX-MET-MFA",
+            ["domain"] = "Example Pty Ltd",
+            ["frequency"] = "monthly",
+            ["grace_days"] = "5",
+            ["target"] = "95",
+            ["owners"] = "it@example.com",
+            ["controls"] = "AC-MFA",
+        }, ignoreOrder: true);
+        held[(ScopeKind.MetricInstance, "EX-MET-POL-CORP")].Held.Fields["target"].ShouldBe("Drafted");
+        held[(ScopeKind.Dashboard, "EX-DASH")].Held.Fields.ShouldBe(new Dictionary<string, string> { ["name"] = "Security committee", ["domain"] = "Example Pty Ltd" }, ignoreOrder: true);
+        held[(ScopeKind.DashboardWidget, "EX-DASH/MFA coverage")].Held.Fields.ShouldBe(new Dictionary<string, string>
+        {
+            ["dashboard"] = "EX-DASH",
+            ["title"] = "MFA coverage",
+            ["metric"] = "EX-MET-MFA-CORP",
+            ["chart"] = "line",
+            ["time_range"] = "last_year",
+            ["aggregation"] = "none",
+            ["position"] = "0, 0, 6, 2",
+        }, ignoreOrder: true);
+        held[(ScopeKind.DashboardWidget, "EX-DASH/E8 progress")].Held.Fields["builtin"].ShouldBe("audit EX-E8-2026 progress");
+    }
+
     private void RecordInstance()
     {
         List("folders", Folder("f-global", "Global", null), Folder("f-ex", "Example Pty Ltd", "f-global"), Folder("f-other", "Other Pty Ltd", "f-other-parent"));

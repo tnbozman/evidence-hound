@@ -91,6 +91,7 @@ public static class ScopeApplier
             ("existing_controls", ScopeKind.Control), ("planned_controls", ScopeKind.Control), ("study", ScopeKind.RiskStudy),
             ("exceptions", ScopeKind.SecurityException), ("scenario", ScopeKind.RiskScenario),
             ("bia", ScopeKind.Bia), ("system", ScopeKind.System), ("dependencies", ScopeKind.System), ("assessment", ScopeKind.AssetAssessment),
+            ("definition", ScopeKind.MetricDefinition), ("metric", ScopeKind.MetricInstance), ("dashboard", ScopeKind.Dashboard),
         })
         {
             foreach (var name in Split(fields.GetValueOrDefault(field)))

@@ -1,0 +1,19 @@
+# Example lead scoring has a recovery time objective, so it is critical, and its recovery is not tested. Example laptops has none and is not counted.
+description: A critical system's BIA assessment without a recovery test fails.
+now: 2026-11-24T02:00:00Z
+settings:
+  base_url: https://ciso.example.com/api/
+secrets:
+  token: example-test-token
+responses:
+  - { get: /api/assets/, file: recordings/assets.json }
+  - { get: /api/risk-scenarios/, file: recordings/risk-scenarios.json }
+  - { get: /api/solutions/, file: recordings/solutions.json }
+  - { get: /api/entity-assessments/, file: recordings/entity-assessments.json }
+  - { get: /api/contracts/, file: recordings/contracts.json }
+  - { get: /api/risk-assessments/, file: recordings/risk-assessments.json }
+  - { get: /api/security-exceptions/, file: recordings/security-exceptions.json }
+  - { get: /api/resilience/asset-assessments/, file: recordings/asset-assessments-untested.json }
+expect:
+  bia.recovery_tested: fail
+  supplier.assessments_current: pass

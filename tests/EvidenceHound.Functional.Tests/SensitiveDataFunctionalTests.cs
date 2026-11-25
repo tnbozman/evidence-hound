@@ -47,13 +47,7 @@ public sealed class SensitiveDataFunctionalTests(CisoAssistantFixture ciso) : ID
     public async Task Data_kinds_are_labels_on_the_solution_a_replan_lists_no_changes_and_the_supplier_list_names_the_authority()
     {
         var ct = TestContext.Current.CancellationToken;
-        var example = Path.Combine(CisoAssistantFixture.RepoRoot, "examples", "compliance-repo");
-        foreach (var file in Directory.GetFiles(example, "*", SearchOption.AllDirectories))
-        {
-            var copy = Path.Combine(_repo, Path.GetRelativePath(example, file));
-            Directory.CreateDirectory(Path.GetDirectoryName(copy)!);
-            File.Copy(file, copy);
-        }
+        TestRepo.CopyExample(_repo);
 
         var thirdParties = Directory.CreateDirectory(Path.Combine(_repo, "scope", "third-parties")).FullName;
         await File.WriteAllTextAsync(Path.Combine(thirdParties, "sup-ft-data.yaml"), Supplier, ct);

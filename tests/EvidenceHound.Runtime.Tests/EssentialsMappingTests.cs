@@ -17,8 +17,8 @@ public class EssentialsMappingTests
     private static readonly string[] ReferenceTypes = ["m365", "vuln-scan"];
     private static readonly string[] ReferenceProfiles = ["sophos-central", "ciso-assistant"];
 
-    /// <summary>Of the ciso-assistant profile's checks, the supplier ones answer the Essentials' supplier assurance; its AI ones answer AI6.</summary>
-    private static bool Relevant(string profile, string check) => profile != "ciso-assistant" || check.StartsWith("supplier.", StringComparison.Ordinal);
+    /// <summary>Of the ciso-assistant profile's checks, the supplier, risk and recovery ones answer the Essentials; its AI ones answer AI6.</summary>
+    private static bool Relevant(string profile, string check) => profile != "ciso-assistant" || check.StartsWith("supplier.", StringComparison.Ordinal) || check.StartsWith("risk.", StringComparison.Ordinal) || check.StartsWith("bia.", StringComparison.Ordinal);
 
     private static LoadedMapping Mapping { get; } =
         MappingLoader.Parse(File.ReadAllText(Path.Combine(Files, "mappings", "asd-essentials-enterprise-it.yaml")), "mappings/asd-essentials-enterprise-it.yaml").Value();

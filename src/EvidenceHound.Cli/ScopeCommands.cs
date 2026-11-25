@@ -499,6 +499,7 @@ internal static class ScopeCommands
         var exceptionsPath = Path.Combine(dir.ToString(), "exceptions.yaml");
         var biaDir = Path.Combine(dir.ToString(), "bia");
         var bias = Directory.Exists(biaDir) ? Directory.GetFiles(biaDir, "*.yaml").Order(StringComparer.Ordinal).ToArray() : [];
+        var metricsPath = Path.Combine(dir.ToString(), "metrics.yaml");
         var parsed = ScopeLoader.Parse(
             await ReadAsync(setupPath, cancellationToken),
             File.Exists(controlsPath) ? await ReadAsync(controlsPath, cancellationToken) : null,
@@ -511,7 +512,8 @@ internal static class ScopeCommands
             File.Exists(sspPath) ? await ReadAsync(sspPath, cancellationToken) : null,
             [.. await Task.WhenAll(risks.Select(r => ReadAsync(r, cancellationToken)))],
             File.Exists(exceptionsPath) ? await ReadAsync(exceptionsPath, cancellationToken) : null,
-            [.. await Task.WhenAll(bias.Select(b => ReadAsync(b, cancellationToken)))]);
+            [.. await Task.WhenAll(bias.Select(b => ReadAsync(b, cancellationToken)))],
+            File.Exists(metricsPath) ? await ReadAsync(metricsPath, cancellationToken) : null);
 
         var snapshots = await SnapshotsAsync(parsed.Scope.Setup.Frameworks, Path.GetDirectoryName(Path.GetFullPath(setupPath))!, cancellationToken);
         var deployment = configFile is null ? Result.Ok(Deployment.None) : await DeploymentAsync(configFile, registry, cancellationToken);
@@ -531,6 +533,7 @@ internal static class ScopeCommands
             .. SupplierValidator.Validate(scope, today),
             .. RiskValidator.Validate(scope, libraries.Snapshots),
             .. BiaValidator.Validate(scope, libraries.Snapshots),
+            .. MetricValidator.Validate(scope),
             .. (await ReportingAsync(dir, cancellationToken, ReadAsync)).Problems,
             .. (await IrpAsync(dir, scope, cancellationToken, ReadAsync)).Problems,
             .. RunbooksMissing(scope, repoDir),
@@ -538,7 +541,7 @@ internal static class ScopeCommands
         ];
         return new(
             [.. problems.Where(p => !p.Warning)],
-            string.Create(CultureInfo.InvariantCulture, $"scope valid: {scope.Setup.Domains.Count} domain(s), {scope.Controls.Count} control(s), {scope.Audits.Count} audit(s){ThirdPartyCount(scope)}{RiskCount(scope)}"),
+            string.Create(CultureInfo.InvariantCulture, $"scope valid: {scope.Setup.Domains.Count} domain(s), {scope.Controls.Count} control(s), {scope.Audits.Count} audit(s){ThirdPartyCount(scope)}{RiskCount(scope)}{MetricCount(scope)}"),
             scope,
             new ScopeInputs(snapshots.Loaded, configFile is null ? null : targets.Match(t => t, _ => []), files.Found.Concat(libraries.Files).ToDictionary(StringComparer.Ordinal))
             {
@@ -583,6 +586,11 @@ internal static class ScopeCommands
                 "Add the runbook (what to export, from where, and how to send it to the GRC team), or fix the path: it is relative to the folder that holds scope/."));
 
     /// <summary>", N third party(ies)" when the scope declares any, so a scope without them reads as before.</summary>
+    private static string MetricCount(ScopeDocument scope) =>
+        scope.Metrics.Instances.Count + scope.Metrics.Dashboards.Count == 0
+            ? ""
+            : string.Create(CultureInfo.InvariantCulture, $", {scope.Metrics.Instances.Count} metric(s) with {scope.Metrics.Dashboards.Count} dashboard(s)");
+
     private static string ThirdPartyCount(ScopeDocument scope) =>
         scope.ThirdParties.Count == 0 ? "" : string.Create(CultureInfo.InvariantCulture, $", {scope.ThirdParties.Count} third party(ies)");
 

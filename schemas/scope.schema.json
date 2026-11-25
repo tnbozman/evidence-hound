@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/tnbozman/evidence-hound/schemas/scope.schema.json",
   "title": "Evidence Hound scope file",
-  "description": "One file of a compliance repo's scope: setup.yaml (organisation, frameworks, domains), controls.yaml (applied controls), audits/<audit>.yaml (one compliance assessment), access.yaml (users, teams and role assignments), settings.yaml (feature flags and general settings), third-parties/<entity>.yaml (one supplier or other third party), capabilities.yaml (which system provides each mitigation), evidence-plan.yaml (how each control's evidence arrives, from whom and how often), ssp.yaml (one system security plan per programme), or risks/<study>.yaml (one risk study and its scenarios). Guide: docs/scope.md.",
+  "description": "One file of a compliance repo's scope: setup.yaml (organisation, frameworks, domains), controls.yaml (applied controls), audits/<audit>.yaml (one compliance assessment), access.yaml (users, teams and role assignments), settings.yaml (feature flags and general settings), third-parties/<entity>.yaml (one supplier or other third party), capabilities.yaml (which system provides each mitigation), evidence-plan.yaml (how each control's evidence arrives, from whom and how often), ssp.yaml (one system security plan per programme), risks/<study>.yaml (one risk study and its scenarios), or metrics.yaml (metric definitions, instances and dashboards). Guide: docs/scope.md.",
   "oneOf": [
     {
       "$ref": "#/$defs/setup"
@@ -45,9 +45,393 @@
     },
     {
       "$ref": "#/$defs/reporting"
+    },
+    {
+      "$ref": "#/$defs/metrics"
     }
   ],
   "$defs": {
+    "metrics": {
+      "description": "metrics.yaml (s16-02): metric definitions, metric instances and dashboards. Samples are not declared: runs write them (source: hound) or people enter them in CISO Assistant. Guide: docs/metrics.md.",
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "definitions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/metricDefinition"
+          }
+        },
+        "instances": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/metricInstance"
+          }
+        },
+        "dashboards": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/dashboard"
+          }
+        }
+      }
+    },
+    "metricDefinition": {
+      "description": "What is measured: quantitative with a unit, or qualitative with levels written worst first. A formula computes it from other definitions' instances in the same domain.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ref_id",
+        "name"
+      ],
+      "properties": {
+        "ref_id": {
+          "$ref": "#/$defs/text"
+        },
+        "name": {
+          "$ref": "#/$defs/text"
+        },
+        "description": {
+          "type": "string"
+        },
+        "domain": {
+          "description": "The domain the definition belongs to; the root folder when left out.",
+          "$ref": "#/$defs/text"
+        },
+        "unit": {
+          "description": "count, users, bytes, percentage, score, days, hours or events per second, or a unit added to CISO Assistant's terminologies.",
+          "$ref": "#/$defs/text"
+        },
+        "levels": {
+          "description": "For a qualitative metric: two or more levels, worst first.",
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "direction": {
+          "enum": [
+            "higher_is_better",
+            "lower_is_better",
+            "none"
+          ]
+        },
+        "decimals": {
+          "type": ["integer", "string"],
+          "pattern": "^[0-6]$",
+          "minimum": 0,
+          "maximum": 6
+        },
+        "frequency": {
+          "enum": [
+            "15min",
+            "hourly",
+            "daily",
+            "weekly",
+            "monthly",
+            "quarterly",
+            "yearly"
+          ]
+        },
+        "target": {
+          "description": "A number (from 0 to 100 for a percentage), or for a metric with levels, one of its levels.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/$defs/text"
+            }
+          ]
+        },
+        "formula": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "expression",
+            "inputs"
+          ],
+          "properties": {
+            "expression": {
+              "description": "A CEL expression over the input keys, previous, now and today.",
+              "$ref": "#/$defs/text"
+            },
+            "inputs": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "key",
+                  "definition"
+                ],
+                "properties": {
+                  "key": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,63}$"
+                  },
+                  "definition": {
+                    "description": "A definition's ref_id, or a library definition's URN.",
+                    "$ref": "#/$defs/text"
+                  },
+                  "combine": {
+                    "description": "How the input's instances in the domain combine; one (the default) reads a single instance.",
+                    "enum": [
+                      "one",
+                      "sum",
+                      "avg",
+                      "min",
+                      "max",
+                      "count"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "metricInstance": {
+      "description": "One definition measured in one domain: how often, its target, its owners and the applied controls it tells about.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ref_id",
+        "name",
+        "definition"
+      ],
+      "properties": {
+        "ref_id": {
+          "$ref": "#/$defs/text"
+        },
+        "name": {
+          "$ref": "#/$defs/text"
+        },
+        "description": {
+          "type": "string"
+        },
+        "definition": {
+          "description": "A definition's ref_id, or a library definition's URN.",
+          "$ref": "#/$defs/text"
+        },
+        "domain": {
+          "description": "The domain measured; the root folder (all domains) when left out.",
+          "$ref": "#/$defs/text"
+        },
+        "frequency": {
+          "enum": [
+            "15min",
+            "hourly",
+            "daily",
+            "weekly",
+            "monthly",
+            "quarterly",
+            "yearly"
+          ]
+        },
+        "grace_days": {
+          "type": ["integer", "string"],
+          "pattern": "^\\d+$",
+          "minimum": 0
+        },
+        "target": {
+          "description": "A number (from 0 to 100 for a percentage), or for a metric with levels, one of its levels.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/$defs/text"
+            }
+          ]
+        },
+        "owners": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/email"
+          }
+        },
+        "controls": {
+          "$ref": "#/$defs/names"
+        },
+        "source": {
+          "description": "hound: each run measures it and writes one value for the current period. Left out, people or a formula fill it in.",
+          "enum": [
+            "hound"
+          ]
+        },
+        "measure": {
+          "description": "What a run measures, as a percentage: the share of 'checks' passing, of an 'audit''s requirements compliant, of evidence collected in the last week, or of collectors that succeeded.",
+          "enum": [
+            "check_pass_rate",
+            "requirements_compliant_pct",
+            "evidence_freshness_pct",
+            "collector_success_rate"
+          ]
+        },
+        "checks": {
+          "description": "Check ids, or every check below one such as identity.mfa.*.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*(\\.\\*)?$"
+          }
+        },
+        "audit": {
+          "description": "The audit whose requirements requirements_compliant_pct counts, by ref_id.",
+          "$ref": "#/$defs/text"
+        }
+      },
+      "dependentRequired": {
+        "source": [
+          "measure"
+        ],
+        "measure": [
+          "source"
+        ]
+      }
+    },
+    "dashboard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ref_id",
+        "name"
+      ],
+      "properties": {
+        "ref_id": {
+          "$ref": "#/$defs/text"
+        },
+        "name": {
+          "$ref": "#/$defs/text"
+        },
+        "description": {
+          "type": "string"
+        },
+        "domain": {
+          "$ref": "#/$defs/text"
+        },
+        "widgets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/widget"
+          }
+        }
+      }
+    },
+    "widget": {
+      "description": "One widget, found again by its title: a metric instance, a builtin metric of one audit, risk study or domain, or text.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "title"
+      ],
+      "oneOf": [
+        {
+          "required": [
+            "metric"
+          ]
+        },
+        {
+          "required": [
+            "builtin"
+          ]
+        },
+        {
+          "required": [
+            "text"
+          ]
+        }
+      ],
+      "properties": {
+        "title": {
+          "$ref": "#/$defs/text"
+        },
+        "metric": {
+          "$ref": "#/$defs/text"
+        },
+        "builtin": {
+          "description": "The builtin metric, such as progress for an audit or total_scenarios for a risk study.",
+          "$ref": "#/$defs/text"
+        },
+        "audit": {
+          "$ref": "#/$defs/text"
+        },
+        "risk_study": {
+          "$ref": "#/$defs/text"
+        },
+        "domain": {
+          "$ref": "#/$defs/text"
+        },
+        "text": {
+          "$ref": "#/$defs/text"
+        },
+        "chart": {
+          "enum": [
+            "kpi_card",
+            "donut",
+            "pie",
+            "bar",
+            "line",
+            "area",
+            "gauge",
+            "sparkline",
+            "small_multiples",
+            "table",
+            "text"
+          ]
+        },
+        "time_range": {
+          "enum": [
+            "last_hour",
+            "last_24_hours",
+            "last_7_days",
+            "last_30_days",
+            "last_90_days",
+            "last_year",
+            "all_time"
+          ]
+        },
+        "aggregation": {
+          "enum": [
+            "none",
+            "avg",
+            "sum",
+            "min",
+            "max",
+            "count",
+            "last"
+          ]
+        },
+        "x": {
+          "type": ["integer", "string"],
+          "pattern": "^([0-9]|1[01])$",
+          "minimum": 0,
+          "maximum": 11
+        },
+        "y": {
+          "type": ["integer", "string"],
+          "pattern": "^\\d+$",
+          "minimum": 0
+        },
+        "width": {
+          "type": ["integer", "string"],
+          "pattern": "^([1-9]|1[0-2])$",
+          "minimum": 1,
+          "maximum": 12
+        },
+        "height": {
+          "type": ["integer", "string"],
+          "pattern": "^[1-9]\\d*$",
+          "minimum": 1
+        }
+      }
+    },
     "irp": {
       "type": "object",
       "description": "scope/irp.yaml: the incident response plan's programme, version, role holders and judgement sections (s15-09).",

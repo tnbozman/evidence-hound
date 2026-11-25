@@ -15,6 +15,7 @@ Instructions for an AI assistant working in this compliance repo. The repo says 
 - `scope/irp.yaml` and `irp/`: the incident response plan's roles and the judgement sections people write; `hound irp build` derives the rest (docs/incidents.md).
 - `scope/reporting.yaml`: the reports an incident owes, to whom and within how long of discovery (docs/incidents.md); incidents themselves live in CISO Assistant.
 - `scope/bia/<bia>.yaml`: business impact analyses; a recovery flag named by checks (`tested_by`) is set by each run, never by hand (docs/bia.md).
+- `scope/metrics.yaml`: metric definitions, instances and dashboards; values are never written here: an instance with `source: hound` is filled in by each run, others by people in CISO Assistant (docs/metrics.md).
 - `libraries/`: custom libraries such as the risk matrix and threats, with their snapshots (`hound library snapshot`). Raise a library's `version` whenever you change it.
 - `mappings/<framework>.yaml`: which checks satisfy which requirements.
 - `frameworks/`: snapshots (`hound framework snapshot`) and custom framework libraries.

@@ -93,6 +93,26 @@ internal sealed class InMemoryCisoAssistant : ICisoAssistantClient
         return Task.FromResult(Result.Ok<IReadOnlyList<RemoteEvidence>>(_evidenceByRefId.TryGetValue(refId, out var found) ? [found] : []));
     }
 
+    /// <summary>Metric instances by ref_id (s16-03).</summary>
+    public Dictionary<string, HeldMetric> Metrics { get; } = new(StringComparer.Ordinal);
+
+    /// <summary>Period samples by instance id.</summary>
+    public Dictionary<string, List<HeldSample>> Samples { get; } = new(StringComparer.Ordinal);
+
+    public List<(MetricSampleWrite Sample, DateTimeOffset At)> Recorded { get; } = [];
+
+    public Task<Result<IReadOnlyDictionary<string, HeldMetric>>> ListMetricInstancesAsync(CancellationToken cancellationToken) =>
+        Task.FromResult(Result.Ok<IReadOnlyDictionary<string, HeldMetric>>(Metrics));
+
+    public Task<Result<IReadOnlyList<HeldSample>>> ListMetricSamplesAsync(string instanceId, CancellationToken cancellationToken) =>
+        Task.FromResult(Result.Ok<IReadOnlyList<HeldSample>>(Samples.TryGetValue(instanceId, out var held) ? [.. held] : []));
+
+    public Task<Result<Unit>> RecordMetricSampleAsync(MetricSampleWrite sample, DateTimeOffset at, CancellationToken cancellationToken)
+    {
+        Recorded.Add((sample, at));
+        return Task.FromResult(Result.Ok(Unit.Value));
+    }
+
     /// <summary>Asset assessments by BIA ref_id, then system name (s15-05).</summary>
     public Dictionary<string, Dictionary<string, HeldRecovery>> Recovery { get; } = [];
 

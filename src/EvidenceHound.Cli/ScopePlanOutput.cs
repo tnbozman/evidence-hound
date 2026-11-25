@@ -315,6 +315,9 @@ internal static class ScopePlanOutput
         ScopeKind.RiskAcceptance => "risk_acceptance",
         ScopeKind.AssetAssessment => "asset_assessment",
         ScopeKind.EscalationThreshold => "escalation_threshold",
+        ScopeKind.MetricDefinition => "metric_definition",
+        ScopeKind.MetricInstance => "metric_instance",
+        ScopeKind.DashboardWidget => "dashboard_widget",
         _ => kind.ToString().ToLowerInvariant(),
     };
 

@@ -1,0 +1,39 @@
+{
+  "count": 2,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": "00000000-0000-4000-8000-0000000aa001",
+      "str": "Example Pty Ltd business impact analysis 2026 - Example lead scoring",
+      "asset": {
+        "str": "Example lead scoring",
+        "id": "00000000-0000-4000-8000-0000000a5e02"
+      },
+      "bia": {
+        "id": "00000000-0000-4000-8000-0000000b1a01",
+        "name": "Example Pty Ltd business impact analysis 2026",
+        "is_locked": false
+      },
+      "recovery_documented": true,
+      "recovery_tested": false,
+      "recovery_targets_met": false
+    },
+    {
+      "id": "00000000-0000-4000-8000-0000000aa002",
+      "str": "Example Pty Ltd business impact analysis 2026 - Example laptops",
+      "asset": {
+        "str": "Example laptops",
+        "id": "00000000-0000-4000-8000-0000000a5e03"
+      },
+      "bia": {
+        "id": "00000000-0000-4000-8000-0000000b1a01",
+        "name": "Example Pty Ltd business impact analysis 2026",
+        "is_locked": false
+      },
+      "recovery_documented": true,
+      "recovery_tested": false,
+      "recovery_targets_met": false
+    }
+  ]
+}

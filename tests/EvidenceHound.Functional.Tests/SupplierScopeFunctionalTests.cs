@@ -66,13 +66,7 @@ public sealed class SupplierScopeFunctionalTests(CisoAssistantFixture ciso) : ID
     public async Task The_organisation_and_two_suppliers_apply_reapply_writes_nothing_and_a_new_end_date_is_one_update()
     {
         var ct = TestContext.Current.CancellationToken;
-        var example = Path.Combine(CisoAssistantFixture.RepoRoot, "examples", "compliance-repo");
-        foreach (var file in Directory.GetFiles(example, "*", SearchOption.AllDirectories))
-        {
-            var copy = Path.Combine(_repo, Path.GetRelativePath(example, file));
-            Directory.CreateDirectory(Path.GetDirectoryName(copy)!);
-            File.Copy(file, copy);
-        }
+        TestRepo.CopyExample(_repo);
 
         // The organisation's own entity: CISO Assistant made it itself, so apply only ever patches it, and a re-plan reads it back unchanged.
         var setup = Path.Combine(_repo, "scope", "setup.yaml");

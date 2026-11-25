@@ -1,3 +1,7 @@
+using System.Text.Json.Nodes;
+using EvidenceHound.Core.Frameworks;
+using EvidenceHound.Core.Mapping;
+using EvidenceHound.Core.Reporting;
 using EvidenceHound.Runtime;
 using EvidenceHound.Runtime.Status;
 
@@ -161,6 +165,83 @@ public sealed class StatusCommandTests : IDisposable
 
         exitCode.ShouldBe(ExitCodes.Configuration);
         _error.ToString().ShouldContain("missing.yaml");
+    }
+
+    [Fact]
+    public async Task Gives_each_programmes_standing_from_the_latest_snapshot()
+    {
+        // s16-07: the standing of s15-14, from the newest snapshot: a row not assessed counts as not met, and the share rounds down.
+        var config = await StandingConfigAsync();
+        await SaveSnapshotAsync(Posture("2026-10", Start.AddMonths(-1), ComplianceResult.Compliant, ComplianceResult.Compliant, ComplianceResult.Compliant, ComplianceResult.NotApplicable));
+        await SaveSnapshotAsync(Posture("2026-11", Start, ComplianceResult.Compliant, ComplianceResult.Compliant, ComplianceResult.NotAssessed, ComplianceResult.NotApplicable));
+        var scope = Directory.CreateDirectory(Path.Combine(_workDir, "scope")).FullName;
+
+        var exitCode = await HoundCli.RunAsync(["status", "--config", config, "--scope", scope], _output, _error, cancellationToken: TestContext.Current.CancellationToken);
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var text = _output.ToString();
+        text.ShouldContain("Standing from the 2026-11 snapshot taken 2026-06-30 02:00 UTC:");
+        text.ShouldContain("Example Essential Eight: Level met: none (level 0). Compliant 2 of 3 applicable (66%), counting rows not assessed as not met; assessed 3 of 4; not assessed: 1.");
+
+        _output.GetStringBuilder().Clear();
+        exitCode = await HoundCli.RunAsync(["status", "--config", config, "--scope", scope, "--json"], _output, _error, cancellationToken: TestContext.Current.CancellationToken);
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var standing = JsonNode.Parse(_output.ToString())!["standing"]!;
+        standing["snapshot"]!.GetValue<string>().ShouldBe("2026-11");
+        var programme = standing["programmes"]!.AsArray().ShouldHaveSingleItem()!;
+        (programme["id"]!.GetValue<string>(), programme["level_met"], programme["compliant"]!.GetValue<int>(), programme["applicable"]!.GetValue<int>(),
+            programme["compliant_pct"]!.GetValue<int>(), programme["assessed"]!.GetValue<int>(), programme["total"]!.GetValue<int>(), programme["not_assessed"]!.GetValue<int>())
+            .ShouldBe(("e8", null, 2, 3, 66, 3, 4, 1));
+        JsonNode.Parse(_output.ToString())!["collectors"]!.AsArray().ShouldHaveSingleItem()!["collector"]!.GetValue<string>().ShouldBe("example-fake");
+    }
+
+    [Fact]
+    public async Task Says_how_to_make_a_snapshot_when_there_is_none()
+    {
+        var config = await StandingConfigAsync();
+        var scope = Directory.CreateDirectory(Path.Combine(_workDir, "scope")).FullName;
+
+        var exitCode = await HoundCli.RunAsync(["status", "--config", config, "--scope", scope], _output, _error, cancellationToken: TestContext.Current.CancellationToken);
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        _output.ToString().ShouldContain("No posture snapshot yet, so no programme standing. Take one with: hound report snapshot --period YYYY-MM --scope <scope> --config <hound.yaml>");
+
+        _output.GetStringBuilder().Clear();
+        await HoundCli.RunAsync(["status", "--config", config, "--scope", scope, "--json"], _output, _error, cancellationToken: TestContext.Current.CancellationToken);
+
+        var standing = JsonNode.Parse(_output.ToString())!["standing"]!;
+        standing["snapshot"].ShouldBeNull();
+        standing["hint"]!.GetValue<string>().ShouldContain("hound report snapshot");
+    }
+
+    private async Task<string> StandingConfigAsync()
+    {
+        var config = Path.Combine(_workDir, "hound.yaml");
+        await File.WriteAllTextAsync(config, """
+            ciso_assistant: {url: "http://localhost:8000/api/", token: "env:HOUND_CA_TOKEN"}
+            evidence: {root: ./evidence}
+            collectors:
+              - {name: example-fake, type: fake, schedule: "0 2 * * *"}
+            target: {mapping: ./mapping.yaml, compliance_assessment: EXAMPLE-1}
+            """, TestContext.Current.CancellationToken);
+        return config;
+    }
+
+    private static PostureSnapshot Posture(string period, DateTimeOffset takenAt, params ComplianceResult[] results) => new(
+        ReportingPeriod.Parse(period).Match(p => p, _ => throw new InvalidOperationException()),
+        takenAt,
+        [
+            new ProgrammePosture(
+                "e8", "Example Essential Eight", "urn:example:risk:framework:example-e8", 1, "EX-E8-2026", [new ImplementationGroup("ML1", "Maturity Level One")], [],
+                [.. results.Select((r, i) => new RequirementPosture($"urn:example:req:{i}", $"R{i}", null, ["ML1"], r))], []),
+        ],
+        [], [], [], [], [], [], []);
+
+    private Task SaveSnapshotAsync(PostureSnapshot snapshot)
+    {
+        var folder = Directory.CreateDirectory(Path.Combine(_workDir, "evidence", "reports")).FullName;
+        return File.WriteAllTextAsync(Path.Combine(folder, $"posture-{snapshot.Period}.json"), PostureSnapshotJson.Write(snapshot), TestContext.Current.CancellationToken);
     }
 
     public void Dispose()

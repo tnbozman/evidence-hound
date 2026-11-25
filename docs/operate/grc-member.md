@@ -10,7 +10,8 @@ is built so that everything waiting on you arrives in one queue, with a recommen
    sources, for each item (manual evidence, onboarding decisions, suppliers, drafted audits).
 3. In your own terminal: `hound review --for 60m`. Read each item, then accept, challenge with a note, or skip. Challenged items come
    back next week with the agent's answer. Accepted items are applied in one batch at the end ([guided review](../manual-evidence.md#the-weekly-review)).
-4. Look at `hound status --config hound.yaml`. A collector that failed or has not run is the one thing to chase this week.
+4. Look at `hound status --config hound.yaml --scope scope/`. A collector that failed or has not run is the one thing to chase this
+   week. The standing lines say how much of each programme is met and how many rows are still not assessed, from last month's snapshot.
 
 What the agent does for you: reads every export and proposal, drafts the recommendations, answers your challenges, and keeps the queue
 in order of urgency. What only you can do: accept, approve and attest.
