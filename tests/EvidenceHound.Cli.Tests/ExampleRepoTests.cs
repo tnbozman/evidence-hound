@@ -53,6 +53,26 @@ public sealed partial class ExampleRepoTests : IDisposable
     }
 
     [Fact]
+    public void Example_declares_a_cmmc_level_2_programme_and_its_system_security_plan()
+    {
+        // s17-04: Example_compliance_repo_validates checks these with the rest of the scope; here, that the example has them.
+        var setup = File.ReadAllText(Path.Combine(Repo, "scope", "setup.yaml"));
+        setup.ShouldContain("  - id: cmmc-level-2\n");
+        setup.ShouldContain("cmmc_asset_category: cui");
+        var ssp = File.ReadAllText(Path.Combine(Repo, "scope", "ssp.yaml"));
+        ssp.ShouldContain("  - programme: cmmc-level-2\n    profile: nist-800-171\n");
+        foreach (var section in new[] { "purpose", "environment", "management", "laws-and-policies" })
+        {
+            File.Exists(Path.Combine(Repo, "ssp", "cmmc", section + ".md")).ShouldBeTrue(section);
+        }
+
+        var guide = File.ReadAllText(Path.Combine(RepoRoot, "docs", "govern", "system-security-plan.md"));
+        guide.ShouldContain("## NIST SP 800-171 and CMMC Level 2");
+        guide.ShouldContain("cmmc_asset_category");
+        guide.ShouldContain("32 CFR 170.21");
+    }
+
+    [Fact]
     public void Example_declares_two_metrics_filled_in_by_runs_and_a_dashboard()
     {
         // s16-04: Example_compliance_repo_validates checks metrics.yaml with the rest of the scope; here, that the example has them and the guide shows them.
