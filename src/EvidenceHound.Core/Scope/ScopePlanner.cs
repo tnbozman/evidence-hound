@@ -121,13 +121,14 @@ public static class ScopePlanner
         held.Where(h => kind == ScopeKind.Assessment || Optional(kind, h.Key) ? wanted.ContainsKey(h.Key) : h.Key != "ref_id" || wanted.ContainsKey(h.Key)).ToDictionary(StringComparer.Ordinal);
 
     /// <summary>
-    /// Fields compared only when the scope declares them: an audit's status and lock, which only a period audit declares, and a supplier
+    /// Fields compared only when the scope declares them: an audit's status and lock, which only a period audit declares, its systems
+    /// (s15-D2), which a person may add in CISO Assistant instead, and a supplier
     /// review's conclusion, which the scope declares once a person concludes it with <c>hound approve</c>, and a supplier's levels and a
     /// solution's criticality, which a drafted supplier leaves to decide and CISO Assistant fills in with its defaults.
     /// </summary>
     private static bool Optional(ScopeKind kind, string field) => kind switch
     {
-        ScopeKind.Audit => field is "status" or "locked",
+        ScopeKind.Audit => field is "status" or "locked" or "systems",
         ScopeKind.EntityAssessment => field == "conclusion",
         ScopeKind.Entity => field is "dependency" or "penetration" or "maturity" or "trust",
         ScopeKind.Solution => field == "criticality",
