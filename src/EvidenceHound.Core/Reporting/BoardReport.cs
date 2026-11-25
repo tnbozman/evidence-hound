@@ -127,7 +127,7 @@ public static class BoardReport
         var text = new StringBuilder("Proposed by management for the authorising official to confirm.\n\n");
         foreach (var p in positions)
         {
-            text.Append(CultureInfo.InvariantCulture, $"- **{p.Programme.Name}: {Name(p.Position)}**. {string.Join(" ", p.Reasons)} Audit of record: {Linked(p.Programme.Audit, p.Programme.Link)}.\n");
+            text.Append(CultureInfo.InvariantCulture, $"- **{p.Programme.Name}: {Name(p.Position)}**. {string.Join(" ", p.Reasons)} {Standing.Of(p.Programme).Text()} Audit of record: {Linked(p.Programme.Audit, p.Programme.Link)}.\n");
         }
 
         return text.ToString();

@@ -49,7 +49,7 @@ public static class CommitteeReport
 
     private static string Summary(View view)
     {
-        var lines = new List<string>();
+        var lines = view.Month.Programmes.Select(p => $"{p.Name}: {Standing.Of(p).Text()}").ToList();
         if (view.Previous is not null)
         {
             var changed = view.Diff!.Requirements;
