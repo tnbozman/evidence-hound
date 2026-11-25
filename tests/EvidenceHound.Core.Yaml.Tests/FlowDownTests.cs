@@ -44,6 +44,7 @@ public class FlowDownTests
         problem.Message.ShouldContain("CTR-EXCLOUD-2026");
         problem.Message.ShouldContain("DFARS 252.204-7012");
         problem.Message.ShouldContain("CTR-PRIME-PARTS");
+        problem.Warning.ShouldBeTrue("a missing clause is a finding about the contracts: reviewed weekly, and it blocks nothing (as s10-05 decided for sensitive data)");
 
         var carried = Supplier.Replace(
             "    solutions: [SOL-EXCLOUD-HOST, SOL-EXCLOUD-BACKUP]\n",
