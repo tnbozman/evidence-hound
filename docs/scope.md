@@ -554,8 +554,26 @@ not one).
 | `assessments` | Hand-written results for requirements no check covers: `ref` (or `urn`), `status` (`to_do`, `in_progress`, `in_review`, `done`), `result`, `observation`, and `provided_by` (the systems that meet it, when another system does: the row stays open, never `not_applicable`, and `hound scope plan` lists it under "Open dependencies" with that system's audit and its result there). |
 | `cycle`, `sign_offs` | Optional, for an audit that runs in periods: `cycle: {period: month\|quarter, starts: YYYY-MM-DD, close: sign_off\|auto}` and `sign_offs: [{period, by, date}]`. See [Audit periods](#audit-periods). |
 | `unlisted` | Required. What happens to in-group requirements the file does not list: `{result: not_assessed}`, or `{result: not_applicable, reason: …}` for an audit scoped to one system. Nothing is marked not applicable silently. It is applied only with `--config`, because the deployment's mappings say which rows a run computes, and those are left alone. |
+| `no_evidence` | Optional. What a row the file leaves `not_assessed` (a hand-written row still to do, or the `unlisted` rule) is applied as: `non_compliant` (the default), with the observation "No evidence yet: …", or `not_assessed` to opt out. See [No evidence is not compliance](#no-evidence-is-not-compliance). |
 
 A requirement is named by its ref_id, or by its URN when the value starts with `urn:` (needed when a framework repeats a ref).
+
+### No evidence is not compliance
+
+CISO Assistant's compliance percentage, on an audit's page and in Compliance > Overview, counts compliant rows (and half of each
+partially compliant row) over the compliant, partially compliant and non-compliant rows. Rows not applicable and rows not assessed are
+both left out. An audit whose only results are a few passing automated checks, with every manual row still waiting, therefore reads
+100% compliant, however many rows nobody has assessed.
+
+So hound applies a row that waits for evidence as `non_compliant`, with an observation that starts "No evidence yet:" and keeps the
+file's own note (such as which manual source answers it). This covers a hand-written row still `not_assessed`, the `unlisted` rule's
+rows, and a row a run computes whose check is missing or failed to run (see [publishing.md](publishing.md)). The row's status stays
+as the file says, so it is still open work, and the percentage now counts it as a gap. When the evidence arrives the row takes its
+real result. `hound scope export` gives such a row back as the `not_assessed` row the file declared.
+
+To keep CISO Assistant's behaviour for an audit, set `no_evidence: not_assessed` in its file (and on its target in `hound.yaml` for
+the rows a run computes). hound's own committee and board reports never leave unassessed rows out: each programme's standing gives the
+level met, compliant of applicable with rows not assessed counted as not met, and "not assessed: N" ([reporting.md](reporting.md)).
 
 Start an audit file with every in-group requirement listed, titled in a comment, to do and not assessed:
 

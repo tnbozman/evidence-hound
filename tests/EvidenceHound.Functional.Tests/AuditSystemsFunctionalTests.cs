@@ -28,7 +28,7 @@ public sealed class AuditSystemsFunctionalTests(CisoAssistantFixture ciso) : IDi
     public async Task An_audits_systems_are_its_assets_on_create_and_update_and_drift_shows_in_the_plan()
     {
         var ct = TestContext.Current.CancellationToken;
-        CopyExampleRepo();
+        TestRepo.CopyExample(_repo);
         await File.WriteAllTextAsync(Audit, (await File.ReadAllTextAsync(Path.Combine(Scope, "audits", "example-baseline-2026.yaml"), ct))
             .Replace("ref_id: EXAMPLE-BASELINE-2026", $"ref_id: {RefId}", StringComparison.Ordinal)
             .Replace("name: Example baseline 2026", "name: Example baseline systems test", StringComparison.Ordinal), ct);
@@ -77,17 +77,6 @@ public sealed class AuditSystemsFunctionalTests(CisoAssistantFixture ciso) : IDi
     {
         var listed = await SendAsync(HttpMethod.Get, $"compliance-assessments/?ref_id={RefId}", null, ct);
         return listed?["results"]!.AsArray().FirstOrDefault() is { } found ? await SendAsync(HttpMethod.Get, $"compliance-assessments/{found["id"]!.GetValue<string>()}/", null, ct) : null;
-    }
-
-    private void CopyExampleRepo()
-    {
-        var example = Path.Combine(CisoAssistantFixture.RepoRoot, "examples", "compliance-repo");
-        foreach (var file in Directory.GetFiles(example, "*", SearchOption.AllDirectories))
-        {
-            var copy = Path.Combine(_repo, Path.GetRelativePath(example, file));
-            Directory.CreateDirectory(Path.GetDirectoryName(copy)!);
-            File.Copy(file, copy);
-        }
     }
 
     private async Task<(int Exit, string Output, string Error)> StepAsync(string name, string[] args, CancellationToken ct)

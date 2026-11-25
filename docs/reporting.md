@@ -38,7 +38,7 @@ $ hound report committee --month 2026-11 --config hound.yaml --out committee-202
 
 It compares November's snapshot with October's. If October's is missing, it says so and reports November alone. Sections, in order:
 
-1. **Summary**: the few lines that need the committee's attention.
+1. **Summary**: each programme's standing, then the few lines that need the committee's attention.
 2. **Collector health**: each collector's last run and outcome; a collector with no run in the last 7 days of the month is marked stale.
 3. **Control status changes**: per programme and parent (an Essential Eight strategy, an AI6 practice), and the register summary.
 4. **Exceptions and risk acceptances**: new, expiring within 60 days, and expired.
@@ -49,6 +49,17 @@ It compares November's snapshot with October's. If October's is missing, it says
    here until it is done, because the committee is the escalation after the reminder emails.
 
 How to run the meeting is in [the security committee guide](govern/security-committee.md).
+
+### A programme's standing
+
+Both reports give each programme's standing in one line, for example "Level met: none (level 0). Compliant 3 of 46 applicable (6%),
+counting rows not assessed as not met; assessed 64 of 107; not assessed: 43." A level (an Essential Eight maturity level, or any
+programme group) is met only when every row at it and below is compliant or not applicable, so one row not assessed holds it back. The
+percentage is rounded down, so it never reads 100% while a row is open.
+
+Quote this line rather than CISO Assistant's compliance percentage. CISO Assistant leaves rows not assessed out of its percentage, so
+a few passing checks among many unassessed rows read 100%; hound applies a row with no evidence as non-compliant for that reason
+([scope.md](scope.md#no-evidence-is-not-compliance)).
 
 ## 3. The board report
 
