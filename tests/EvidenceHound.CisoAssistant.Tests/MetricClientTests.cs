@@ -134,6 +134,49 @@ public sealed class MetricClientTests : IDisposable
         (widget["metric_instance"]!.GetValue<string>(), widget["target_model"], widget["width"]!.GetValue<int>()).ShouldBe(("mi-pol", null, 12));
     }
 
+    [Fact]
+    public async Task Reads_run_fed_instances_and_their_samples()
+    {
+        // s16-03: an instance's frequency code is collection_frequency_value; collection_frequency is its label.
+        List("metrology/metric-instances",
+            new JsonObject { ["id"] = "mi-pass", ["ref_id"] = "EX-MET-PASS-CORP", ["collection_frequency"] = "Monthly", ["collection_frequency_value"] = "monthly" },
+            new JsonObject { ["id"] = "mi-none", ["ref_id"] = null, ["collection_frequency_value"] = null });
+        _ca.Server.Given(Request.Create().WithPath("/api/metrology/custom-metric-samples/").WithParam("metric_instance", "mi-pass").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject
+            {
+                ["count"] = 3,
+                ["results"] = new JsonArray(
+                    new JsonObject { ["id"] = "s-1", ["period_start"] = "2026-06-01T00:00:00Z", ["value"] = new JsonObject { ["result"] = 80.5 } },
+                    new JsonObject { ["id"] = "s-2", ["period_start"] = null, ["value"] = new JsonObject { ["result"] = 12 } },
+                    new JsonObject { ["id"] = "s-3", ["period_start"] = "2026-05-01T00:00:00Z", ["value"] = "{\"result\": 70}" }),
+            }.ToJsonString()));
+
+        var instances = (await _ca.Client.ListMetricInstancesAsync(_ct)).Value();
+        var samples = (await _ca.Client.ListMetricSamplesAsync("mi-pass", _ct)).Value();
+
+        instances.ShouldHaveSingleItem().ShouldBe(KeyValuePair.Create("EX-MET-PASS-CORP", new HeldMetric("mi-pass", "monthly")));
+        samples.ShouldBe([new HeldSample(new DateTimeOffset(2026, 6, 1, 0, 0, 0, TimeSpan.Zero), 80.5), new HeldSample(new DateTimeOffset(2026, 5, 1, 0, 0, 0, TimeSpan.Zero), 70)]);
+    }
+
+    [Fact]
+    public async Task Records_a_sample_for_its_period()
+    {
+        Respond("POST", "/api/metrology/custom-metric-samples/", 201, new JsonObject { ["id"] = "s-new" });
+        var at = new DateTimeOffset(2026, 6, 20, 2, 0, 0, TimeSpan.Zero);
+
+        (await _ca.Client.RecordMetricSampleAsync(
+            new MetricSampleWrite("EX-MET-PASS-CORP", "mi-pass", new DateTimeOffset(2026, 6, 1, 0, 0, 0, TimeSpan.Zero), 66.67, "2 of 3 checks passed."), at, _ct)).Value();
+
+        Json(JsonNode.Parse(Logged("/api/metrology/custom-metric-samples/"))!).ShouldBe(Json(new JsonObject
+        {
+            ["metric_instance"] = "mi-pass",
+            ["timestamp"] = "2026-06-20T02:00:00+00:00",
+            ["period_start"] = "2026-06-01T00:00:00+00:00",
+            ["value"] = new JsonObject { ["result"] = 66.67 },
+            ["observation"] = "Measured by hound run: 2 of 3 checks passed.",
+        }));
+    }
+
     private Task<Core.Results.Result<Core.Results.Unit>> Create(ScopeObject declared) =>
         _ca.Writer.WriteAsync(new ScopeWrite(new ScopeChange(declared.Kind, declared.Key, ScopeAction.Create, [], State), declared, "Global"), _ct);
 
