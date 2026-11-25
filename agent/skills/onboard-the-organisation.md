@@ -4,7 +4,9 @@ description: Start a new compliance repo for an organisation with hound init. Us
 ---
 ## Onboard the organisation
 
-`hound init` writes a new compliance repo: the config, the scope, an Essential Eight audit and its mapping. Give every answer as an option, so nothing is asked:
+`hound init` writes a new compliance repo: the config, the scope and the Essential Eight mapping, with the audit series each system's
+audit joins; it writes no organisation-wide audit unless asked (`--organisation-audit`, only when an organisation-wide source such as
+policies feeds it). Give every answer as an option, so nothing is asked:
 
 `hound init <folder> --org "<organisation name>" --code <short code> --url <CISO Assistant API address> --time-zone <IANA zone> --level <1|2|3> --interval <quarter|month> --owner <email> --assistant <claude|copilot|both|none> --json`
 

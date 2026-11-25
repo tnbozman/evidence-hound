@@ -24,7 +24,8 @@ public static partial class ScopeLoader
     private static readonly string[] ProgrammeKeys = ["id", "name", "framework", "groups", "audit", "group_by", "register"];
     private static readonly string[] RegisterKeys = ["of", "by"];
     private static readonly string[] GroupBys = ["parent"];
-    private static readonly string[] OrganisationKeys = ["root_folder", "entity"];
+    private static readonly string[] OrganisationKeys = ["root_folder", "entity", "audit_series"];
+    private static readonly string[] AuditSeriesKeys = ["ref_id", "groups", "cycle"];
     private static readonly string[] FrameworkKeys = ["urn", "library", "file", "snapshot"];
     private static readonly string[] LibraryFileKeys = ["urn", "file", "snapshot"];
     private static readonly string[] DomainKeys = ["name", "description", "perimeters", "perimeter", "systems"];
@@ -237,7 +238,23 @@ public static partial class ScopeLoader
             LibraryFiles = [.. file.Entries(root, "libraries").OfType<YamlMappingNode>().Select(item => ReadLibraryFile(item, file)).OfType<ScopeLibraryFile>()],
             Organisation = organisation is not null && file.Map(organisation, "entity") is { } entity ? ReadOrganisation(entity, file) : null,
             Programmes = [.. file.Items(root, "programmes").Select(item => ReadProgramme(item, file)).OfType<ScopeProgramme>()],
+            AuditSeries = organisation is not null && file.Map(organisation, "audit_series") is { } series ? ReadAuditSeries(series, file) : null,
         };
+    }
+
+    private static ScopeAuditSeries? ReadAuditSeries(YamlMappingNode map, FileReader file)
+    {
+        file.Keys(map, AuditSeriesKeys);
+        var refId = file.Required(map, "ref_id");
+        var node = file.Map(map, "cycle");
+        if (node is null)
+        {
+            file.Required(map, "cycle");
+        }
+
+        var cycle = node is null ? null : ReadCycle(node, file);
+
+        return refId is null || cycle is null ? null : new ScopeAuditSeries(refId, [.. file.Refs(map, "groups").Select(g => g.Value)], cycle);
     }
 
     private static ScopeProgramme? ReadProgramme(YamlMappingNode item, FileReader file)

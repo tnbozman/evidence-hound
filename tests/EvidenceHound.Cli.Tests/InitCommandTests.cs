@@ -221,8 +221,8 @@ public sealed class InitCommandTests : IDisposable
         var config = await File.ReadAllTextAsync(Path.Combine(Repo, "hound.yaml"), ct);
         config.ShouldContain("targets: []");
         var readme = await File.ReadAllTextAsync(Path.Combine(Repo, "README.md"), ct);
-        readme.ShouldContain("hound audit draft");
-        readme.ShouldContain("one audit per system");
+        readme.ShouldContain("hound onboard <system>");
+        readme.ShouldContain("its own audit");
         (await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "setup.yaml"), ct)).ShouldContain("audit_series: {ref_id: EX-E8, groups: [\"1\", \"2\"], cycle: {period: quarter, starts: ");
         await ShouldValidateAsync();
 

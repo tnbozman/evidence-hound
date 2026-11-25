@@ -62,6 +62,12 @@ public sealed record ScopeSetup(string RootFolder, IReadOnlyList<ScopeFramework>
 
     /// <summary>The compliance programmes the organisation reports on (s11-01): each a framework, its groups and the audit of record.</summary>
     public IReadOnlyList<ScopeProgramme> Programmes { get; init; } = [];
+
+    /// <summary>
+    /// s18-08: the series each system's audit joins, from <c>organisation.audit_series</c>, when no organisation-wide audit carries it:
+    /// its ref ID, groups and periods.
+    /// </summary>
+    public ScopeAuditSeries? AuditSeries { get; init; }
 }
 
 /// <summary>
@@ -165,6 +171,9 @@ public sealed record AuditCycle(string Period, string Starts, SourceLine At)
 {
     public string Close { get; init; } = "sign_off";
 }
+
+/// <summary>s18-08: a series of per-system audits (<c>EX-E8</c>, so <c>EX-E8-&lt;SYSTEM&gt;</c>), its groups and its periods.</summary>
+public sealed record ScopeAuditSeries(string RefId, IReadOnlyList<string> Groups, AuditCycle Cycle);
 
 /// <summary>A period's sign-off, recorded in the audit file so the approval is itself a reviewed commit: the period's label, who signed and when.</summary>
 public sealed record SignOff(string Period, string By, string Date)

@@ -413,9 +413,18 @@ internal static partial class OnboardSystemCommand
             ?? RefIds.Suggest(RefIdKind.System, session.System);
         var place = new AuditPlace(domain, perimeter) { Series = series, SystemRefId = systemRef };
         await WriteFileAsync(settings.Repo, auditFile, OnboardOutput.Audit(session, snapshot.FrameworkUrn, settings.FrameworkName, place, today), cancellationToken);
+        var auditRef = series is null ? OnboardOutput.AuditRefId(session.System, settings.FrameworkName) : OnboardOutput.SeriesRefId(series, systemRef);
         var seriesNote = series is null
-            ? $"No audit series in scope/audits, so the system's audit is {OnboardOutput.AuditRefId(session.System, settings.FrameworkName)} without a cycle; hound init writes the organisation's audit as a series (docs/scope.md, Audit periods)."
-            : $"The system's audit is {OnboardOutput.SeriesRefId(series, systemRef)}, a series of {series.RefId} by {series.Period}.";
+            ? $"No audit series in scope/audits, so the system's audit is {auditRef} without a cycle (docs/scope.md, Audit periods)."
+            : $"The system's audit is {auditRef}, a series of {series.RefId} by {series.Period}.";
+        if (await AuditTargets.AddAsync(settings.Repo, auditRef, snapshot.FrameworkUrn, [session.System], cancellationToken) is { } targeted)
+        {
+            seriesNote += $" {targeted.Note}";
+            if (targeted.Written)
+            {
+                written.Add("hound.yaml");
+            }
+        }
 
         var mappingFile = Path.Combine("mappings", $"{settings.FrameworkName}.yaml").Replace('\\', '/');
         var mappingNote = $"No {mappingFile} to add manual rows to; add the manual requirements to your mapping by hand.";
@@ -464,7 +473,17 @@ internal static partial class OnboardSystemCommand
         var chosen = organisation.Length == 1
             ? organisation[0]
             : organisation.FirstOrDefault(c => targeted is { Success: true } && c.Key == targeted.Groups[1].Value);
-        return chosen.Value is { } cycle ? new OrganisationSeries(chosen.Key, cycle.Period, cycle.Starts) : null;
+        if (chosen.Value is { } cycle)
+        {
+            return new OrganisationSeries(chosen.Key, cycle.Period, cycle.Starts);
+        }
+
+        // s18-08: without an organisation audit, the series setup.yaml names.
+        var setup = Path.Combine(repo, "scope", "setup.yaml");
+        return File.Exists(setup)
+            && ScopeLoader.Parse(new ScopeSource(setup, await File.ReadAllTextAsync(setup, cancellationToken)), null, []).Scope.Setup.AuditSeries is { } series
+            ? new OrganisationSeries(series.RefId, series.Cycle.Period, series.Cycle.Starts)
+            : null;
     }
 
     [System.Text.RegularExpressions.GeneratedRegex("compliance_assessment:\\s*\"?([A-Z0-9-]+)")]
