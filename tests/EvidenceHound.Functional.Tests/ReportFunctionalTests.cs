@@ -58,7 +58,54 @@ public sealed class ReportFunctionalTests(CisoAssistantFixture ciso) : IDisposab
         }
     }
 
+    [Fact]
+    public async Task Status_gives_the_essential_eight_standing_from_the_snapshot()
+    {
+        // s16-07: after a snapshot, hound status --scope gives each programme's standing with the open rows counted.
+        var ct = TestContext.Current.CancellationToken;
+        var config = Path.Combine(_workDir, "hound.yaml");
+        await File.WriteAllTextAsync(config, $$"""
+            ciso_assistant:
+              url: http://localhost:8000/api/
+              token: env:HOUND_CA_TOKEN
+            evidence:
+              root: {{Path.Combine(_workDir, "evidence")}}
+            collectors: []
+            target:
+              mapping: {{Path.Combine(AppContext.BaseDirectory, "files", "mappings", "essential-eight-2023.yaml")}}
+              compliance_assessment: EX-E8-2026
+            """, ct);
+        var snapshot = await SnapshotAsync("2026-11", config, ct);
+        var e8 = snapshot.Programmes.Single(p => p.Id == "essential-eight");
+
+        var text = await StatusAsync(config, "status.txt", ct);
+        var json = JsonNode.Parse(await StatusAsync(config, "status.json", ct, "--json"))!;
+
+        text.ShouldContain("Standing from the 2026-11 snapshot");
+        text.ShouldContain($"- {e8.Name}: {Standing.Of(e8).Text()}");
+        var programme = json["standing"]!["programmes"]!.AsArray().Single(p => p!["id"]!.GetValue<string>() == "essential-eight")!;
+        programme["not_assessed"]!.GetValue<int>().ShouldBe(e8.Requirements.Count(r => r.Result == Core.Mapping.ComplianceResult.NotAssessed));
+        programme["total"]!.GetValue<int>().ShouldBe(e8.Requirements.Count);
+    }
+
     public void Dispose() => Directory.Delete(_workDir, recursive: true);
+
+    private async Task<string> StatusAsync(string config, string name, CancellationToken ct, params string[] extra)
+    {
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+        var exit = await HoundCli.RunAsync(
+            ["status", "--config", config, "--scope", CisoAssistantFixture.ExampleScope, .. extra],
+            output,
+            error,
+            configureLogging: null,
+            new Dictionary<string, string?> { ["HOUND_CA_URL"] = ciso.ApiUrl.ToString(), ["HOUND_CA_TOKEN"] = ciso.Token },
+            ct);
+        exit.ShouldBe(ExitCodes.Ok, output.ToString() + error);
+        var results = Directory.CreateDirectory(Path.Combine(CisoAssistantFixture.RepoRoot, "test-results", "reports")).FullName;
+        await File.WriteAllTextAsync(Path.Combine(results, name), output.ToString(), ct);
+        return output.ToString();
+    }
 
     private async Task<PostureSnapshot> SnapshotAsync(string period, string config, CancellationToken ct)
     {

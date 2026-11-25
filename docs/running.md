@@ -110,4 +110,21 @@ EXAMPLE-BASELINE-2026  2026-11-21 05:21:21  20261121T052121Z  0        4        
 
 The audit table, from the history files, appears once any run has published.
 
+With `--scope scope/`, status also gives each programme's standing from the newest posture snapshot in `<evidence root>/reports/`: the
+level met, compliant of applicable with rows not assessed counted as not met (rounded down, so a part never reads 100%), and how many rows
+are not assessed. It is the same line the committee report gives, so you see the real position without opening a report or trusting
+CISO Assistant's own percentage. With no snapshot yet it says so and how to take one (`hound report snapshot`). It then lists the
+security exceptions that expire within 60 days.
+
+```console
+$ hound status --config hound.yaml --scope scope/
+...
+Standing from the 2026-11 snapshot taken 2026-11-28 02:00 UTC:
+- Example Essential Eight: Level met: none (level 0). Compliant 2 of 3 applicable (66%), counting rows not assessed as not met; assessed 3 of 4; not assessed: 1.
+```
+
+`--json` gives the same figures for an agent: `collectors` (each latest run, with its problems), `audits`, and with `--scope`
+`standing` (the snapshot's period and each programme's `level_met`, `compliant`, `applicable`, `compliant_pct`, `assessed`, `total` and
+`not_assessed`, or `snapshot: null` with a `hint`) and `exceptions_due`.
+
 With `target.health_control` set, each run also uploads the record as "collector health" evidence (`hound-health/<collector>`) and links it to that applied control, so the security committee sees in CISO Assistant when each collector last ran. Over the Kafka transport the record is uploaded but not linked, because the dispatcher cannot link evidence to controls.

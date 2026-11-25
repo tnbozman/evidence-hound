@@ -126,6 +126,11 @@ that I see the real position without opening a report or trusting CISO Assistant
 **Functional check**
 - After the trial's runs and a snapshot, `hound status --scope scope/` gives the Essential Eight standing with the open rows counted.
 
+**Notes**
+- The standing is `Standing.Of` from s15-14, so status, the committee report and the board report give the same line. "Latest" is the snapshot in `<evidence root>/reports/` taken most recently, whatever its period.
+- `hound status` had no `--json`; it now has one carrying the tables too (collectors with their problems, audits, and with `--scope` the standing and exceptions due). s18-agent-speed extends it (CISO Assistant reachable, token expiry, rejected writes).
+- Functional: `ReportFunctionalTests.Status_gives_the_essential_eight_standing_from_the_snapshot` takes a snapshot of the seeded CISO Assistant and checks the status text and JSON against the snapshot's own rows.
+
 ### s16-05 Rehearse trial, onboarding and sustaining GRC (standing, every sprint)
 - [ ] Done
 
