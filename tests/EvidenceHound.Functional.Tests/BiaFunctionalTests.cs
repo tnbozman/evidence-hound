@@ -8,7 +8,7 @@ namespace EvidenceHound.Functional.Tests;
 /// <summary>
 /// s15-04: a fictional BIA for two systems, in a copy of the example repo, is applied to CISO Assistant: one asset assessment per system and
 /// its escalation thresholds, with each impact on the matrix as the file names it. A second plan changes nothing. Each step's output lands in
-/// <c>test-results/bia/</c>.
+/// <c>test-results/bia/</c>. s15-05: a recovery flag named by a check follows it as runs report it passing, then failing.
 /// </summary>
 [Trait("Category", "Functional")]
 [Collection(SharedCisoAssistant.Name)]
@@ -63,7 +63,64 @@ public sealed class BiaFunctionalTests(CisoAssistantFixture ciso) : IDisposable
             .Where(c => c!["kind"]!.GetValue<string>() is "bia" or "asset_assessment" or "escalation_threshold").ShouldBeEmpty(plan.Output);
     }
 
+    [Fact]
+    public async Task A_recovery_flag_named_by_a_check_follows_it_from_pass_to_fail_with_its_evidence()
+    {
+        // s15-05: the fake collector reports backup.restore_tested as pass, then (with its fail setting) as fail.
+        var ct = TestContext.Current.CancellationToken;
+        await WriteRepoAsync(ct);
+        await File.WriteAllTextAsync(Path.Combine(Scope, "bia", "ex-bia-flags.yaml"), """
+            ref_id: EX-BIA-FLAGS
+            name: Example Pty Ltd BIA (recovery flags from checks)
+            domain: Example Pty Ltd
+            matrix: urn:example:risk:matrix:example-bia-4x4
+            assessments:
+              - system: Example 365
+                recovery: {documented: true, tested_by: [backup.restore_tested]}
+            """, ct);
+        var applied = await StepAsync("flags-1-apply", ["scope", "apply", Scope], ct);
+        applied.Exit.ShouldBe(ExitCodes.Ok, applied.Output + applied.Error);
+
+        var passed = await StepAsync("flags-2-run-pass", ["run", "--config", await ConfigAsync(fail: null, ct)], ct);
+        passed.Exit.ShouldBe(ExitCodes.Ok, passed.Output + passed.Error);
+        JsonNode.Parse(passed.Output)!["recovery"]!.AsArray().ShouldHaveSingleItem()!["value"]!.GetValue<bool>().ShouldBeTrue();
+        var tested = await AssessmentAsync(ct);
+        tested["recovery_tested"]!.GetValue<bool>().ShouldBeTrue();
+        tested["evidences"]!.AsArray().ShouldNotBeEmpty();
+
+        var failed = await StepAsync("flags-3-run-fail", ["run", "--config", await ConfigAsync(fail: "backup.restore_tested", ct)], ct);
+        failed.Exit.ShouldBe(ExitCodes.Ok, failed.Output + failed.Error);
+        (await AssessmentAsync(ct))["recovery_tested"]!.GetValue<bool>().ShouldBeFalse();
+
+        var again = await StepAsync("flags-4-run-unchanged", ["run", "--config", await ConfigAsync(fail: "backup.restore_tested", ct)], ct);
+        JsonNode.Parse(again.Output)!["recovery"]!.AsArray().ShouldBeEmpty();
+        var plan = await StepAsync("flags-5-scope-plan", ["scope", "plan", Scope, "--format", "json"], ct);
+        JsonNode.Parse(plan.Output)!["changes"]!.AsArray().ShouldNotContain(c => c!["key"]!.GetValue<string>() == "EX-BIA-FLAGS/Example 365", plan.Output);
+    }
+
     public void Dispose() => Directory.Delete(_repo, recursive: true);
+
+    private async Task<JsonNode> AssessmentAsync(CancellationToken ct)
+    {
+        var bia = (await SendAsync(HttpMethod.Get, "business-impact-analysis/?limit=500", null, ct))["results"]!.AsArray().Single(b => b!["ref_id"]?.GetValue<string>() == "EX-BIA-FLAGS")!;
+        return (await SendAsync(HttpMethod.Get, $"asset-assessments/?bia={bia["id"]!.GetValue<string>()}", null, ct))["results"]!.AsArray().ShouldHaveSingleItem()!;
+    }
+
+    /// <summary>The example deployment, with its scope, its evidence under the test's repo, and the fake collector's fail setting.</summary>
+    private async Task<string> ConfigAsync(string? fail, CancellationToken ct)
+    {
+        var files = Path.Combine(AppContext.BaseDirectory, "files");
+        var config = Path.Combine(_repo, "hound-test.yaml");
+        var text = (await File.ReadAllTextAsync(Path.Combine(files, "examples", "example-pty-ltd.yaml"), ct))
+            .Replace("root: ../.dev/evidence", $"root: {Path.Combine(_repo, "evidence")}", StringComparison.Ordinal)
+            .Replace("mapping: ../mappings/example.yaml", $"mapping: {Path.Combine(files, "mappings", "example.yaml")}", StringComparison.Ordinal)
+            .Replace("      tenant: example.com\n", fail is null ? "      tenant: example.com\n" : $"      tenant: example.com\n      fail: {fail}\n", StringComparison.Ordinal);
+        await File.WriteAllTextAsync(config, $"scope: {Scope}\n{text}", ct);
+
+        // Each run needs its own second: evidence folders and run IDs are named by the start time.
+        await Task.Delay(TimeSpan.FromSeconds(1.1), ct);
+        return config;
+    }
 
     private async Task WriteRepoAsync(CancellationToken ct)
     {
