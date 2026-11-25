@@ -47,6 +47,35 @@ public sealed class ReviewCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task A_report_an_open_incident_still_owes_waits_with_its_deadline()
+    {
+        // s15-07: with CISO Assistant reachable, each report an open incident has not made joins the weekly review, due by its deadline.
+        using var ca = WireMock.Server.WireMockServer.Start();
+        static JsonObject List(params JsonObject[] items) => new() { ["count"] = items.Length, ["results"] = new JsonArray([.. items]) };
+        ca.Given(WireMock.RequestBuilders.Request.Create().WithPath("/api/incidents/").UsingGet()).RespondWith(WireMock.ResponseBuilders.Response.Create().WithBody(List(
+            new JsonObject { ["id"] = "in-9", ["ref_id"] = "INC-9", ["name"] = "Malware on a laptop", ["status"] = "ongoing", ["reported_at"] = "2026-11-20T12:00:00Z", ["assets"] = new JsonArray() },
+            new JsonObject { ["id"] = "in-1", ["ref_id"] = "INC-1", ["name"] = "Phishing email clicked", ["status"] = "closed", ["reported_at"] = "2026-10-02T12:00:00Z", ["assets"] = new JsonArray() }).ToJsonString()));
+        ca.Given(WireMock.RequestBuilders.Request.Create().WithPath("/api/timeline-entries/").UsingGet()).RespondWith(WireMock.ResponseBuilders.Response.Create().WithBody(List(
+            new JsonObject { ["timestamp"] = "2026-11-20T09:30:00Z", ["entry_type"] = "detection", ["entry"] = "Found." }).ToJsonString()));
+
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+        var settings = new Dictionary<string, string?>(StringComparer.Ordinal)
+        {
+            ["XDG_CONFIG_HOME"] = Path.Combine(_root, "home"), ["HOUND_TODAY"] = "2026-11-23", ["HOUND_CA_URL"] = $"{ca.Url}/api/", ["HOUND_CA_TOKEN"] = "example-token-for-cli-tests",
+        };
+        var exit = await HoundCli.RunAsync(["review", "pending", "--json", "--repo", Repo, "--config", Config], new StringReader(""), output, error, settings, false, _ct);
+
+        exit.ShouldBe(ExitCodes.Ok, error.ToString());
+        var item = JsonNode.Parse(output.ToString())!["items"]!.AsArray().Single(i => i!["key"]!.GetValue<string>().StartsWith("incident_report:", StringComparison.Ordinal))!;
+        item["key"]!.GetValue<string>().ShouldBe("incident_report:INC-9/reportcyber");
+        item["deadline"]!.GetValue<string>().ShouldBe("2026-11-21");
+        item["title"]!.GetValue<string>().ShouldContain("overdue");
+        item["effect"]!.GetValue<string>().ShouldContain("Reported: reportcyber");
+        ca.LogEntries.ShouldNotContain(e => e.RequestMessage!.Method != "GET");
+    }
+
+    [Fact]
     public async Task Refuses_without_a_terminal()
     {
         await File.WriteAllTextAsync(Path.Combine(Repo, "scope", "capabilities.yaml"), ApproveCommandTests.Capabilities, _ct);
