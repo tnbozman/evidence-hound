@@ -259,7 +259,7 @@ public sealed partial class ExampleRepoTests : IDisposable
 
         parsed.Problems.ShouldBeEmpty();
         var manual = parsed.Scope.EvidencePlan!.Rows.Where(r => r.Method == EvidenceMethod.Manual).ToArray();
-        manual.Length.ShouldBe(6);
+        manual.Length.ShouldBe(7);
         var contacts = parsed.Scope.Access.Teams.Where(t => t.IsOwnerContact).Select(t => t.Name).ToArray();
         manual.ShouldContain(r => contacts.Contains(r.Owner!.Value));
 

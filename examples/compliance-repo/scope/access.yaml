@@ -24,6 +24,11 @@ teams:
     description: Runs the systems and the evidence collection.
     domain: Example Pty Ltd
     leader: it@example.com
+  # The person who affirms continuing CMMC Level 2 compliance each year (32 CFR 170.22); the evidence plan reminds them.
+  - name: Affirming official
+    description: Reads the affirmation pack and affirms in SPRS each year.
+    domain: Example Pty Ltd
+    leader: ceo@example.com
   # An owner contact: a team email and no people, so CISO Assistant emails it evidence reminders and it has no login
   # (docs/manual-evidence.md). It holds no role.
   - name: Backup owners

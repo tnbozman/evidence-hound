@@ -7,6 +7,7 @@ using EvidenceHound.CisoAssistant;
 using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Planning;
 using EvidenceHound.Core.Publishing;
+using EvidenceHound.Core.Reporting;
 using EvidenceHound.Core.Results;
 using EvidenceHound.Core.Sprs;
 using EvidenceHound.Core.Yaml;
@@ -49,7 +50,58 @@ internal static class SprsCommands
             configuration,
             registry,
             cancellationToken));
-        return new Command("sprs", "The NIST SP 800-171 DoD Assessment Methodology score that suppliers holding CUI enter in SPRS.") { score };
+        return new Command("sprs", "The NIST SP 800-171 DoD Assessment Methodology score that suppliers holding CUI enter in SPRS.")
+        {
+            score, AffirmationPack(output, loggers, logger, configuration, registry, config, methodology),
+        };
+    }
+
+    /// <summary>s17-06: <c>hound sprs affirmation-pack</c>, what the affirming official reads before the yearly affirmation.</summary>
+    private static Command AffirmationPack(
+        TextWriter output, ILoggerFactory loggers, ILogger logger, IConfiguration configuration, CollectorRegistry registry, Option<FileInfo> config, Option<FileInfo?> methodology)
+    {
+        var programme = new Option<string>("--programme") { Description = "The CMMC Level 2 programme's id from scope/setup.yaml, with its plan in scope/ssp.yaml, such as cmmc-level-2.", Required = true };
+        var period = new Option<string>("--period") { Description = "The month (YYYY-MM) of the posture snapshot to read freshness and lapsed sources from: take it first with hound report snapshot.", Required = true };
+        var scope = new Option<DirectoryInfo>("--scope") { Description = "The scope folder. Default: scope/ in the current folder." };
+        var outFile = new Option<FileInfo?>("--out") { Description = "Write the pack to this file instead of printing it. Keep it out of the repo." };
+        var command = new Command(
+            "affirmation-pack",
+            "Gather what the affirming official reads before the yearly CMMC affirmation: the SPRS score, open POA&M items with their dates, evidence freshness and lapsed manual sources. Reads only; the official affirms.")
+        {
+            programme, period, scope, config, methodology, outFile,
+        };
+        command.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var configFile = parseResult.GetRequiredValue(config);
+            var weights = await MethodologyAsync(parseResult.GetValue(methodology), cancellationToken);
+            var deployment = await ConfigCommands.LoadAsync(configFile, registry, cancellationToken);
+            var posture = await ReportingPeriod.Parse(parseResult.GetRequiredValue(period))
+                .Bind(p => deployment.Map(d => (Period: p, d.Evidence.Root)))
+                .BindAsync(x => ReportCommands.ReadSnapshotAsync(x.Root, x.Period, cancellationToken));
+            var inputs = weights.Bind(w => posture.Map(p => (Weights: w, Posture: p)));
+            if (inputs is not Result<(SprsMethodology Weights, PostureSnapshot Posture)>.Ok { Value: var read })
+            {
+                return Log.Problems(logger, inputs.Match(_ => [], ps => ps));
+            }
+
+            var scopeDir = parseResult.GetValue(scope) ?? new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "scope"));
+            var (exit, plan) = await SspCommands.PlanAsync(parseResult.GetRequiredValue(programme), scopeDir, configFile, configuration, registry, loggers, logger, cancellationToken);
+            if (plan is null)
+            {
+                return exit;
+            }
+
+            var pack = Core.Sprs.AffirmationPack.Markdown(plan, read.Weights, read.Posture, AuditSeries.Today(configuration));
+            if (parseResult.GetValue(outFile) is { } file)
+            {
+                await File.WriteAllTextAsync(file.FullName, pack, cancellationToken);
+                return ExitCodes.Ok;
+            }
+
+            await output.WriteAsync(pack);
+            return ExitCodes.Ok;
+        });
+        return command;
     }
 
     private static async Task<int> ScoreAsync(

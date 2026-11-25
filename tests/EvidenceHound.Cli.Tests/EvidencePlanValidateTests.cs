@@ -93,7 +93,7 @@ public sealed class EvidencePlanValidateTests : IDisposable
         checkedScope.Inputs.Runbooks.Keys.ShouldBe(
             [
                 "manual-sources/backup-restore-test.md", "manual-sources/incident-response-test.md", "manual-sources/mfa-exceptions-review.md", "manual-sources/weekly-compliance-review.md",
-                "manual-sources/ai-governance.md", "manual-sources/ai-operations.md",
+                "manual-sources/ai-governance.md", "manual-sources/ai-operations.md", "manual-sources/cmmc-affirmation.md",
             ],
             ignoreOrder: true);
     }

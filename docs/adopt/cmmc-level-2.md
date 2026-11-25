@@ -71,3 +71,32 @@ are in `frameworks/sprs/dod-assessment-methodology-1.2.1.yaml`, copied from the 
 
 `--format json` gives the same for an agent. `--control AC-SPRS` uploads the score as evidence on the applied control you keep for it,
 so its history stays in CISO Assistant. A person reviews each deduction and enters the score in SPRS; hound never does.
+
+## 4. Affirm each year
+
+CMMC asks the affirming official to affirm continuing compliance every year (32 CFR 170.22). The evidence plan reminds them: a manual
+row with `every: 12 months` and `first_due` set a little before the anniversary of the last assessment, so the reminder lands on time
+whenever the plan is applied (a past date rolls forward a year at a time).
+
+```yaml
+# scope/evidence-plan.yaml
+  - ref_id: EV-CMMC-AFFIRMATION
+    control: AC-SPRS
+    method: manual
+    owner: Affirming official
+    every: 12 months
+    first_due: "2026-12-15"
+    runbook: manual-sources/cmmc-affirmation.md
+```
+
+Before they affirm, give them the pack. It needs the month's posture snapshot and the CMMC plan in `scope/ssp.yaml`
+([system security plan](../govern/system-security-plan.md#nist-sp-800-171-and-cmmc-level-2)):
+
+```sh
+hound report snapshot --period 2026-11 --config hound.yaml
+hound sprs affirmation-pack --programme cmmc-level-2 --period 2026-11 --config hound.yaml --out affirmation-2026.md
+```
+
+The pack lists the SPRS score, every open POA&M item with its owner and ETA (marking those past their date and those CMMC does not allow
+on a POA&M), each collector's freshness, and the manual sources past their due date. It decides nothing. The official affirms in SPRS
+themselves; the GRC team attaches the pack and the date to the yearly task at the weekly review. Keep the pack out of the repo.

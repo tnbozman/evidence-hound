@@ -32,6 +32,30 @@ public sealed record ScopeEvidenceRow(string RefId, ScopeRef Control, EvidenceMe
 
     public string? Runbook { get; init; }
 
+    /// <summary>When the first reminder is due, such as just before the anniversary of an assessment (s17-06); null for one interval from today.</summary>
+    public DateOnly? FirstDue { get; init; }
+
+    /// <summary>The first due date on or after <paramref name="today"/>: <see cref="FirstDue"/> rolled forward by the interval, else one interval from today.</summary>
+    public DateOnly? FirstDueFrom(DateOnly today)
+    {
+        if (Every is not { } every)
+        {
+            return null;
+        }
+
+        if (FirstDue is not { } due)
+        {
+            return every.After(today);
+        }
+
+        while (due < today)
+        {
+            due = every.After(due);
+        }
+
+        return due;
+    }
+
     /// <summary>A person provides this row's evidence, so CISO Assistant reminds them.</summary>
     public bool NeedsPerson => Method is EvidenceMethod.Manual or EvidenceMethod.Hybrid;
 

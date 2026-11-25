@@ -52,6 +52,51 @@ public sealed class SprsFunctionalTests(CisoAssistantFixture ciso) : IDisposable
         score["score"]!.GetValue<int>().ShouldBe(110 - score["deductions"]!.AsArray().Sum(d => d!["points"]!.GetValue<int>()));
     }
 
+    [Fact]
+    public async Task The_affirmation_pack_lists_the_open_poam_items_of_the_example_cmmc_plan()
+    {
+        // s17-06: the month's snapshot, then the pack from the example's CMMC plan. Runs cap CMMC rows at partially compliant, so
+        // AC.L1-3.1.1 is open and, worth 5 points, not allowed on a CMMC POA&M.
+        var ct = TestContext.Current.CancellationToken;
+        var config = Path.Combine(_workDir, "hound.yaml");
+        await File.WriteAllTextAsync(config, $$"""
+            ciso_assistant:
+              url: http://localhost:8000/api/
+              token: env:HOUND_CA_TOKEN
+            evidence:
+              root: {{Path.Combine(_workDir, "evidence")}}
+            collectors: []
+            targets: []
+            """, ct);
+        var period = DateTime.UtcNow.ToString("yyyy-MM", System.Globalization.CultureInfo.InvariantCulture);
+        var env = new Dictionary<string, string?> { ["HOUND_CA_URL"] = ciso.ApiUrl.ToString(), ["HOUND_CA_TOKEN"] = ciso.Token };
+        var results = Directory.CreateDirectory(Path.Combine(CisoAssistantFixture.RepoRoot, "test-results", "sprs")).FullName;
+
+        using var snapshotOutput = new StringWriter();
+        var snapshot = await HoundCli.RunAsync(
+            ["report", "snapshot", "--period", period, "--config", config, "--scope", CisoAssistantFixture.ExampleScope], snapshotOutput, snapshotOutput, null, env, ct);
+        snapshot.ShouldBe(ExitCodes.Ok, snapshotOutput.ToString());
+
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+        var exit = await HoundCli.RunAsync(
+            ["sprs", "affirmation-pack", "--programme", "cmmc-level-2", "--period", period, "--config", config, "--scope", CisoAssistantFixture.ExampleScope],
+            output,
+            error,
+            null,
+            env,
+            ct);
+        await File.WriteAllTextAsync(Path.Combine(results, "affirmation-pack.md"), $"{output}{error}", ct);
+
+        exit.ShouldBe(ExitCodes.Ok, $"{output}{error}");
+        var pack = output.ToString();
+        pack.ShouldStartWith("# Annual affirmation pack: cmmc-level-2, ", Case.Sensitive, pack);
+        pack.ShouldContain("SPRS score: ", Case.Sensitive, pack);
+        pack.Split('\n').ShouldContain(l => l.StartsWith("| AC.L1-3.1.1 |", StringComparison.Ordinal) && l.Contains("not allowed on a CMMC POA&M", StringComparison.Ordinal), pack);
+        pack.ShouldContain("## Evidence freshness", Case.Sensitive, pack);
+        pack.ShouldContain("## Lapsed manual sources", Case.Sensitive, pack);
+    }
+
     public void Dispose() => Directory.Delete(_workDir, recursive: true);
 
     private async Task<List<(string Practice, string Result)>> RowsAsync(CancellationToken ct)

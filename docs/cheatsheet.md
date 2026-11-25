@@ -162,6 +162,8 @@ file by `scripts/cheatsheet/render.sh`.
 
 - `hound sprs score --audit EX-CMMC-2026`: the NIST SP 800-171 DoD Assessment Methodology score from the CMMC Level 2 audit, with each deduction, for a person to review before entering it in SPRS
   - `--config` (req) `--methodology --control --format json`
+- `hound sprs affirmation-pack --programme cmmc-level-2 --period 2026-11`: what the affirming official reads before the yearly affirmation: score, open POA&M items with dates, evidence freshness, lapsed manual sources
+  - `--config` (req) `--scope --methodology --out`
 
 ## Typical paths
 

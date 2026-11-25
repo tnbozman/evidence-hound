@@ -55,3 +55,11 @@ controls:
     priority: "2"
     category: process
     systems: [Example ticket triage, Example proposal assistant]
+  - ref_id: AC-SPRS
+    name: SPRS score kept current and affirmed each year
+    description: The NIST SP 800-171 score is worked out from the CMMC Level 2 audit (hound sprs score) and kept here as evidence; the affirming official affirms continuing compliance each year after reading the affirmation pack.
+    domain: Example Pty Ltd
+    owner: ceo@example.com
+    status: to_do
+    priority: "1"
+    category: process

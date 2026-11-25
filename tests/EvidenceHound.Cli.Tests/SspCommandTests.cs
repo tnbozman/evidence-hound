@@ -121,7 +121,7 @@ public sealed class SspCommandTests : IDisposable
         var evidence = Path.Combine(_workDir, "evidence");
         Directory.CreateDirectory(Path.Combine(evidence, "reports"));
         var config = Path.Combine(_workDir, "hound.yaml");
-        await File.WriteAllTextAsync(config, $"ciso_assistant:\n  url: {_ca.Url}/api/\n  token: env:HOUND_CA_TOKEN\nevidence:\n  root: {evidence}\ncollectors: []\n", _ct);
+        await File.WriteAllTextAsync(config, $"ciso_assistant:\n  url: {_ca.Url}/api/\n  token: env:HOUND_CA_TOKEN\nevidence:\n  root: {evidence}\ncollectors: []\ntarget:\n  mapping: {Path.Combine(ExampleRepoTests.RepoRoot, "mappings", "essential-eight-2023.yaml")}\n  compliance_assessment: EXAMPLE-BASELINE-2026\n", _ct);
         var posture = new PostureSnapshot(
             new ReportingPeriod(PeriodKind.Month, 2026, 11), new DateTimeOffset(2026, 12, 1, 8, 0, 0, TimeSpan.Zero), [], [], [], [], [], [], [],
             [new DueItem(DueKind.ManualEvidence, "EV-BACKUP-RESTORE: Daily backups", "Backup owners", new DateOnly(2026, 11, 15), "pending")]);
