@@ -13,7 +13,7 @@ only in the one weekly `hound review` session.
 feature up to s17, and runs finish sooner. Measured by steps and requests, so the targets hold in CI.
 
 ### s18-01 One read-only "what now" for the agent
-- [ ] Done
+- [x] Done
 
 **Story:** As the GRC member's agent, I want one command that says what needs doing and in what order, so that I do not run five
 commands and join their output before I can help.
@@ -49,7 +49,7 @@ Notes:
 - Functional: `NextFunctionalTests` runs it on a copy of the example repo against the local CISO Assistant.
 
 ### s18-02 Prepare the week in one step
-- [ ] Done
+- [x] Done
 
 **Story:** As the agent, I want to prepare the weekly session with one command, so that the person's session starts with every item
 ready and nothing left to look up.
@@ -103,7 +103,7 @@ Notes:
 - Ask an agent in the GRC devcontainer to "add a risk and request an exception for it"; it follows the skills to a reviewed plan.
 
 ### s18-04 Faster runs
-- [ ] Done
+- [x] Done
 
 **Story:** As the GRC member, I want runs and plans to finish quickly, so that the agent's loop is short and a scheduled run does not
 hold the instance.
@@ -122,8 +122,22 @@ hold the instance.
 **Functional check**
 - Time `scope plan` and `run` on the example repo before and after against the local CISO Assistant and record both.
 
+Notes:
+- `scope plan` read the folder and user lists twice, once for the state and once for the access review. The reader now keeps the lists
+  of its last state read for the access read that follows, so each list is read once per command; a later state read starts afresh.
+  For the example repo against an empty instance: 30 requests before, 28 after, all reads.
+- `RequestBudgetTests` holds the budget: every read `scope plan` makes for the example scope, by path, with the reason for each. A new
+  read fails the test until it is added with its reason. A second test holds `run` to one read of each audit and one listing of its
+  rows per collector, with no row-by-row lookups.
+- `hound run --parallel <n>` (default 4): collectors collect at the same time, up to n; each then plans and publishes in config order.
+  A collector's publish still reads the current state of its audits itself, so a later collector sees what an earlier one wrote.
+  Reading the state once for the whole run was not done: it would compare later collectors with rows an earlier collector had just
+  changed, and report drift that is not there.
+- Functional: no local CISO Assistant in this environment, so the timings are the CI functional job's (see the sprint review). The
+  request counts above are the measure that holds in CI.
+
 ### s18-05 Health in the agent's readout
-- [ ] Done
+- [x] Done
 
 **Story:** As the agent, I want collector and integration health as JSON, so that I can tell the person what is broken without a console.
 

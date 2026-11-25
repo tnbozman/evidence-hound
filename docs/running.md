@@ -41,6 +41,7 @@ Before planning, `hound run` reads each target audit's rows, the evidence it cit
 | `--only <name>` | Run one collector. An unknown name is a usage error (exit 2). |
 | `--dry-run` | Collect and store evidence, then plan, but send nothing. |
 | `--no-publish` | Collect and store evidence only. |
+| `--parallel <n>` | How many collectors collect at once (default 4, at least 1). Each still plans and publishes in config order, reading what CISO Assistant holds for its audits once, so a later collector sees what an earlier one wrote. |
 
 Exit codes: 0 every collector succeeded, 1 any collector failed, 2 usage, 3 configuration or secrets.
 

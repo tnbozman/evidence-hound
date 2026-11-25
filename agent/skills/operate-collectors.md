@@ -23,6 +23,7 @@ The guides are [docs/configuration.md](https://github.com/tnbozman/evidence-houn
    non-compliant with "No evidence yet" until a run succeeds. Tell the person which check failed and why, from the run's problems; never
    guess a cause.
 6. Real runs belong to the runner: `hound serve --config hound.yaml` runs each collector on its schedule (the runner container's default);
-   `hound run --config hound.yaml` runs them once and publishes. Run either only when the person asks.
+   `hound run --config hound.yaml` runs them once and publishes, collecting up to four at once (`--parallel <n>` changes that; each
+   still publishes in config order). Run either only when the person asks.
 
 Never copy evidence, an export or a token into the repo, a message or a web search.
