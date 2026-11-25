@@ -83,7 +83,7 @@ internal static class InitCommand
 
             // The offer at the end: the assistant files, as hound agent setup writes them.
             var wanted = await wizard.AskAsync(AssistantQuestion, parseResult.GetValue(assistant), "none", cancellationToken);
-            var setUp = AgentCommands.Parse(wanted) is { } chosen ? await AgentCommands.SetupAsync(target.FullName, chosen, steps, logger, cancellationToken) : ExitCodes.Ok;
+            var setUp = AgentCommands.Parse(wanted) is { } chosen ? await AgentCommands.SetupAsync(target.FullName, chosen, parseResult.RootCommandResult.Command, steps, logger, cancellationToken) : ExitCodes.Ok;
             if (asJson && setUp == ExitCodes.Ok)
             {
                 var organisation = checkedAnswers.Match(o => o, _ => throw new InvalidOperationException());

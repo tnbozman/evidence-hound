@@ -175,6 +175,25 @@ public sealed class OnboardAgentCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Approve_asks_again_for_a_domain_or_perimeter_setup_does_not_declare()
+    {
+        // s15-D7: a person who took the domain question for a yes/no one answered "y", and approve wrote domain: "y".
+        await DraftEverythingAsync();
+        var audit = Path.Combine(Repo, "scope", "audits", "example-assets-example-framework.yaml");
+
+        var (exit, _, error) = await RunAsync(["approve", "--repo", Repo], "Sam Example\ny\nok\ny\ny\ny\n\nn\n\n", terminal: true);
+
+        exit.ShouldBe(ExitCodes.Ok, error);
+        error.ShouldContain("Domain for the system's audit, one of: ");
+        error.ShouldContain("'y' is not a domain in scope/setup.yaml");
+        error.ShouldContain("'n' is not a perimeter of ");
+        var written = await File.ReadAllTextAsync(audit, _ct);
+        written.ShouldNotContain("domain: y");
+        written.ShouldNotContain("perimeter: \"\"");
+        written.ShouldNotContain("perimeter: n");
+    }
+
+    [Fact]
     public async Task Approve_without_a_terminal_is_refused()
     {
         await DraftEverythingAsync();

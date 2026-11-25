@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=../../../schemas/scope.schema.json
+# The fictional Example Pty Ltd's incident response plan. Everything here is made up.
+# Guide: docs/incidents.md. Build it with: hound irp build --programme essential-eight
+# hound derives the contacts, systems, suppliers, customers and reports; people write only the judgement sections below.
+programme: essential-eight
+version: "0.1"
+roles:
+  incident_manager: it@example.com
+  deputy: IT team
+  executive: ceo@example.com
+  legal_privacy: ceo@example.com
+  authorising_officer: ceo@example.com
+# The parts people judge: Markdown files in this repo, reviewed by pull request like the rest of the scope.
+sections:
+  severity: irp/severity.md
+  escalation: irp/escalation.md
+  containment: irp/containment.md
+  communication: irp/communication.md
+  lessons_learned: irp/lessons-learned.md

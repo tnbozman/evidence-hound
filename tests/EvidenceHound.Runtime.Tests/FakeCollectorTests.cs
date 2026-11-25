@@ -37,8 +37,21 @@ public class FakeCollectorTests
         var description = new FakeCollector().Describe();
 
         description.Checks.ShouldBe(output.Checks.Select(c => c.CheckId.Value), ignoreOrder: true);
-        description.Settings.ShouldHaveSingleItem().ShouldBe(new SettingDescription("tenant", "Tenant domain named in the evidence. Default: example.com.", Required: false));
+        description.Settings.Select(s => s.Name).ShouldBe(["tenant", "fail"]);
         description.Secrets.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task Fail_setting_turns_the_named_checks_to_fail()
+    {
+        // s15-05: so a functional test can see a recovery flag follow a check from pass to fail.
+        var failing = Context with { Settings = new CollectorSettings(new Dictionary<string, string> { ["fail"] = "backup.restore_tested, backup.daily" }) };
+
+        var output = (await new FakeCollector().CollectAsync(failing, TestContext.Current.CancellationToken)).Value();
+
+        output.Checks.Where(c => c.Outcome == Core.Checks.CheckOutcome.Fail).Select(c => c.CheckId.Value)
+            .ShouldBe(["identity.mfa.users", "backup.daily", "backup.restore_tested"]);
+        output.Checks.Single(c => c.CheckId.Value == "backup.restore_tested").Observation.ShouldContain("failed");
     }
 
     [Fact]

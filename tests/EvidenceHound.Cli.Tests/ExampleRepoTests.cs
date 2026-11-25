@@ -33,6 +33,44 @@ public sealed partial class ExampleRepoTests : IDisposable
     }
 
     [Fact]
+    public void Example_declares_a_risk_library_study_exception_and_bia()
+    {
+        // s15-06: Example_compliance_repo_validates checks these with the rest of the scope; here, that the example has each of them.
+        var setup = File.ReadAllText(Path.Combine(Repo, "scope", "setup.yaml"));
+        setup.ShouldContain("file: ../libraries/example-risk.yaml");
+        setup.ShouldContain("snapshot: ../libraries/example-risk.json");
+        File.Exists(Path.Combine(Repo, "libraries", "example-risk.json")).ShouldBeTrue();
+        Directory.GetFiles(Path.Combine(Repo, "scope", "risks"), "*.yaml").ShouldNotBeEmpty();
+        File.ReadAllText(Path.Combine(Repo, "scope", "exceptions.yaml")).ShouldContain("ref_id:");
+        File.ReadAllText(Directory.GetFiles(Path.Combine(Repo, "scope", "bia"), "*.yaml").ShouldHaveSingleItem()).ShouldContain("tested_by:");
+        foreach (var guide in new[] { "risk.md", "bia.md" })
+        {
+            var text = File.ReadAllText(Path.Combine(RepoRoot, "docs", guide));
+            text.ShouldContain("## What stays in CISO Assistant", Case.Sensitive, guide);
+            text.ShouldContain("examples/compliance-repo/scope/", Case.Sensitive, guide);
+        }
+    }
+
+    [Fact]
+    public void Example_declares_reporting_obligations_and_an_incident_response_plan_tested_each_year()
+    {
+        // s15-07: the reports an incident owes are configuration; the plan and its annual test are a manual source with a runbook.
+        var reporting = File.ReadAllText(Path.Combine(Repo, "scope", "reporting.yaml"));
+        reporting.ShouldStartWith("# yaml-language-server: $schema=../../../schemas/scope.schema.json");
+        foreach (var id in new[] { "dfars-7012", "ndb-assessment", "reportcyber" })
+        {
+            reporting.ShouldContain($"id: {id}");
+        }
+
+        File.ReadAllText(Path.Combine(Repo, "hound.yaml")).ShouldContain("checks: incident.response_plan_approved, incident.response_plan_tested");
+        var plan = File.ReadAllText(Path.Combine(Repo, "scope", "evidence-plan.yaml"));
+        plan.ShouldContain("collector: example-incident-response-plan");
+        plan.ShouldContain("runbook: manual-sources/incident-response-test.md");
+        File.Exists(Path.Combine(Repo, "manual-sources", "incident-response-test.md")).ShouldBeTrue();
+        File.ReadAllText(Path.Combine(RepoRoot, "docs", "incidents.md")).ShouldContain("hound incident obligations");
+    }
+
+    [Fact]
     public void Example_declares_the_essential_eight_plan_with_its_written_sections()
     {
         // s11-07: the example's plan validates with the rest of the scope (above); here, that every section it names is written, the
@@ -186,7 +224,7 @@ public sealed partial class ExampleRepoTests : IDisposable
 
         parsed.Problems.ShouldBeEmpty();
         var manual = parsed.Scope.EvidencePlan!.Rows.Where(r => r.Method == EvidenceMethod.Manual).ToArray();
-        manual.Length.ShouldBe(5);
+        manual.Length.ShouldBe(6);
         var contacts = parsed.Scope.Access.Teams.Where(t => t.IsOwnerContact).Select(t => t.Name).ToArray();
         manual.ShouldContain(r => contacts.Contains(r.Owner!.Value));
 
@@ -299,9 +337,10 @@ public sealed partial class ExampleRepoTests : IDisposable
     [Fact]
     public void Every_yaml_file_but_the_workflow_and_custom_libraries_links_a_schema_that_exists()
     {
-        // A custom library under frameworks/ is CISO Assistant's own format, which has no schema here.
+        // A custom library under frameworks/ or libraries/ is CISO Assistant's own format, which has no schema here.
         var files = Directory.GetFiles(Repo, "*.yaml", SearchOption.AllDirectories)
-            .Where(f => !f.Contains(".github", StringComparison.Ordinal) && !f.Contains($"{Path.DirectorySeparatorChar}frameworks{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+            .Where(f => !f.Contains(".github", StringComparison.Ordinal) && !f.Contains($"{Path.DirectorySeparatorChar}frameworks{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                && !f.Contains($"{Path.DirectorySeparatorChar}libraries{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
             .ToArray();
 
         files.ShouldNotBeEmpty();

@@ -2002,11 +2002,17 @@
     "/api/risk-acceptances/": {
       "get": {
         "operationId": "risk_acceptances_list"
+      },
+      "post": {
+        "operationId": "risk_acceptances_create"
       }
     },
     "/api/security-exceptions/": {
       "get": {
         "operationId": "security_exceptions_list"
+      },
+      "post": {
+        "operationId": "security_exceptions_create"
       }
     },
     "/api/findings/": {
@@ -2022,6 +2028,9 @@
     "/api/risk-scenarios/": {
       "get": {
         "operationId": "risk_scenarios_list"
+      },
+      "post": {
+        "operationId": "risk_scenarios_create"
       }
     },
     "/api/task-nodes/": {
@@ -2032,6 +2041,109 @@
     "/api/entity-assessments/": {
       "get": {
         "operationId": "entity_assessments_list"
+      }
+    },
+    "/api/risk-assessments/": {
+      "get": {
+        "operationId": "risk_assessments_list"
+      },
+      "post": {
+        "operationId": "risk_assessments_create"
+      }
+    },
+    "/api/risk-assessments/{id}/": {
+      "patch": {
+        "operationId": "risk_assessments_partial_update"
+      },
+      "delete": {
+        "operationId": "risk_assessments_destroy"
+      }
+    },
+    "/api/risk-assessments/{id}/object/": {
+      "get": {
+        "operationId": "risk_assessments_object_retrieve"
+      }
+    },
+    "/api/risk-scenarios/{id}/": {
+      "patch": {
+        "operationId": "risk_scenarios_partial_update"
+      },
+      "delete": {
+        "operationId": "risk_scenarios_destroy"
+      }
+    },
+    "/api/threats/": {
+      "get": {
+        "operationId": "threats_list"
+      }
+    },
+    "/api/security-exceptions/{id}/": {
+      "patch": {
+        "operationId": "security_exceptions_partial_update"
+      },
+      "delete": {
+        "operationId": "security_exceptions_destroy"
+      }
+    },
+    "/api/risk-acceptances/{id}/": {
+      "patch": {
+        "operationId": "risk_acceptances_partial_update"
+      },
+      "delete": {
+        "operationId": "risk_acceptances_destroy"
+      }
+    },
+    "/api/resilience/business-impact-analysis/": {
+      "get": {
+        "operationId": "business_impact_analysis_list"
+      },
+      "post": {
+        "operationId": "business_impact_analysis_create"
+      }
+    },
+    "/api/resilience/business-impact-analysis/{id}/": {
+      "patch": {
+        "operationId": "business_impact_analysis_partial_update"
+      },
+      "delete": {
+        "operationId": "business_impact_analysis_destroy"
+      }
+    },
+    "/api/resilience/asset-assessments/": {
+      "get": {
+        "operationId": "asset_assessments_list"
+      },
+      "post": {
+        "operationId": "asset_assessments_create"
+      }
+    },
+    "/api/resilience/asset-assessments/{id}/": {
+      "patch": {
+        "operationId": "asset_assessments_partial_update"
+      },
+      "delete": {
+        "operationId": "asset_assessments_destroy"
+      }
+    },
+    "/api/resilience/escalation-thresholds/": {
+      "get": {
+        "operationId": "escalation_thresholds_list"
+      },
+      "post": {
+        "operationId": "escalation_thresholds_create"
+      }
+    },
+    "/api/resilience/escalation-thresholds/{id}/": {
+      "patch": {
+        "operationId": "escalation_thresholds_partial_update"
+      },
+      "delete": {
+        "operationId": "escalation_thresholds_destroy"
+      }
+    },
+    "/api/terminologies/": {
+      "get": {
+        "operationId": "terminologies_list"
       }
     }
   }

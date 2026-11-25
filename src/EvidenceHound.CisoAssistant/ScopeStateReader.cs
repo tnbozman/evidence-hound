@@ -4,6 +4,7 @@ using EvidenceHound.Core.Frameworks;
 using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Publishing;
 using EvidenceHound.Core.Results;
+using EvidenceHound.Core.Risk;
 using EvidenceHound.Core.Scope;
 
 namespace EvidenceHound.CisoAssistant;
@@ -125,6 +126,7 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
         var frameworkList = await reading.ListAsync("frameworks/");
         var frameworks = frameworkList.ToDictionary(Id, f => Text(f["urn"]) ?? Id(f), StringComparer.Ordinal);
         var libraries = await reading.ListAsync("loaded-libraries/");
+        var storedContent = await StoredContentAsync(reading, query.CustomLibraries);
         HashSet<string> inScope = [rootId, .. domainIds];
         var perimeters = await reading.ObjectsInAsync("perimeters", inScope);
         var assets = await reading.ObjectsInAsync("assets", inScope);
@@ -134,6 +136,8 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
         var tasks = query.EvidencePlan ? (await reading.ListAsync("task-templates/")).Where(t => RelationId(t["folder"]) is { } f && inScope.Contains(f)).ToArray() : [];
         var controls = await reading.ObjectsInAsync("applied-controls", inScope);
         var hashes = await HashesAsync(reading, evidences);
+        var risks = query.Risks ? await RisksAsync(reading, inScope) : RiskLists.None;
+        var bias = query.Bias ? await BiasAsync(reading, inScope) : BiaLists.None;
         var access = query.Access ? await AccessAsync(reading, folders, userList, inScope) : [];
         var settings = query.Settings ? await SettingsAsync(reading) : [];
         var entityList = query.ThirdParties || query.Organisation ? await reading.ListAsync("entities/") : [];
@@ -182,17 +186,23 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
         };
         IReadOnlyList<ActualObject> objects =
         [
-            .. Frameworks(query, frameworkList, libraries),
+            .. Frameworks(query, frameworkList, libraries).Select(f => storedContent.TryGetValue(f.Held.Key, out var content)
+                ? f with { Held = f.Held with { Fields = new Dictionary<string, string>(f.Held.Fields, StringComparer.Ordinal) { ["content"] = content } } }
+                : f),
             .. domainObjects.Select(d => Marked(ScopeKind.Domain, Text(d["name"]), d)),
+            .. RiskObjects(risks, names),
+            .. ExceptionObjects(risks, names, controls, rows.Select(r => r.Row).ToArray(), rowKeys),
+            .. BiaObjects(bias, names),
             .. perimeters.Select(p => Marked(ScopeKind.Perimeter, ScopeDesired.PerimeterKey(names.Domain(p) ?? names.Root, Text(p["name"]) ?? Id(p)), p,
                 ("name", Text(p["name"])), ("ref_id", Text(p["ref_id"])), ("domain", names.Domain(p)))),
             .. assets.Select(a => Marked(ScopeKind.System, Text(a["name"]), a,
                 ("ref_id", Text(a["ref_id"])), ("type", AssetType(Text(a["type"]))), ("owner", Joined(a["owner"], names.Users)), ("domain", names.Domain(a)),
-                ("parents", Joined(a["parent_assets"], names.Assets)), ("labels", Joined(a["filtering_labels"], labels)))),
+                ("parents", Joined(a["parent_assets"], names.Assets)), ("labels", Joined(a["filtering_labels"], labels)),
+                ("objectives", Objectives(a["security_objectives"])), ("recovery", RecoveryObjectives(a["disaster_recovery_objectives"])))),
             .. audits.Select(a => Marked(ScopeKind.Audit, AuditKey(a), a,
                 ("name", Text(a["name"])), ("framework", Lookup(a["framework"], frameworks)), ("groups", ScopeDesired.Joined(Strings(a["selected_implementation_groups"]))),
                 ("domain", names.Domain(a)), ("perimeter", Lookup(a["perimeter"], names.Perimeters)), ("eta", Text(a["eta"])), ("due_date", Text(a["due_date"])),
-                ("authors", Joined(a["authors"], names.Users)), ("reviewers", Joined(a["reviewers"], names.Users)), ("status", Text(a["status"])),
+                ("authors", Joined(a["authors"], names.Users)), ("reviewers", Joined(a["reviewers"], names.Users)), ("systems", Joined(a["assets"], names.Assets)), ("status", Text(a["status"])),
                 ("locked", IsLocked(a) ? "true" : null)) with { Locked = IsLocked(a) }),
             .. planned.Select(e => Marked(ScopeKind.Evidence, Text(e["ref_id"]), e,
                 ("name", Text(e["name"])), ("domain", names.Domain(e)), ("owner", Joined(e["owner"], names.Users)), ("controls", Joined(e["applied_controls"], names.Controls)),
@@ -337,6 +347,192 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
                 yield return new ActualObject(new ScopeObject(ScopeKind.Framework, urn, Fields(("version", version.Version))), null);
             }
         }
+    }
+
+    /// <summary>
+    /// The digest of each custom library's stored objects (<see cref="LibraryContent"/>), by the key of the object that loads it (s15-01).
+    /// CISO Assistant v4.3.4 shows no checksum, so its stored <c>content</c> is digested as the repo's file is. A library it does not store has none.
+    /// </summary>
+    private static async Task<Dictionary<string, string>> StoredContentAsync(Reading reading, IReadOnlyDictionary<string, string> custom)
+    {
+        var digests = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var (key, urn) in custom)
+        {
+            var stored = (await reading.ListAsync($"stored-libraries/?urn={Uri.EscapeDataString(urn)}")).FirstOrDefault(l => Text(l["urn"]) == urn);
+            if (stored is not null && await reading.ObjectAsync($"stored-libraries/{Uri.EscapeDataString(Id(stored))}/content/", $"to read library {urn}") is { } content)
+            {
+                digests[key] = LibraryContent.Digest(content);
+            }
+        }
+
+        return digests;
+    }
+
+    /// <summary>
+    /// The risk studies under the root folder and each one's scenarios, with the matrix and threat URNs by ID (s15-02). Scenarios come from the
+    /// list view, which gives each rating with its level name.
+    /// </summary>
+    private static async Task<RiskLists> RisksAsync(Reading reading, HashSet<string> inScope)
+    {
+        var studies = await reading.ObjectsInAsync("risk-assessments", inScope);
+        var exceptions = await reading.ObjectsInAsync("security-exceptions", inScope);
+        var acceptances = await reading.ObjectsInAsync("risk-acceptances", inScope);
+        if (studies.Count == 0)
+        {
+            return RiskLists.None with { Exceptions = exceptions, Acceptances = acceptances };
+        }
+
+        var scenarios = new List<(string Study, JsonNode Scenario)>();
+        foreach (var study in studies)
+        {
+            var key = RefIdOrName(ScopeKind.RiskStudy, study);
+            scenarios.AddRange((await reading.ListAsync($"risk-scenarios/?risk_assessment={Uri.EscapeDataString(Id(study))}")).Select(s => (key, s)));
+        }
+
+        return new RiskLists(
+            studies,
+            scenarios,
+            Names(await reading.ListAsync("risk-matrices/"), "urn"),
+            scenarios.Count > 0 ? Names(await reading.ListAsync("threats/"), "urn") : [])
+        {
+            Exceptions = exceptions,
+            Acceptances = acceptances,
+        };
+    }
+
+    /// <summary>
+    /// Security exceptions and risk acceptances (s15-03). An exception's controls and rows are read from their side (each one's
+    /// <c>security_exceptions</c>); an acceptance is keyed by the scenario it accepts. Status and expiry are observed, never compared.
+    /// </summary>
+    private static IEnumerable<ActualObject> ExceptionObjects(RiskLists risks, Lookups names, List<JsonNode> controls, JsonNode[] rows, Dictionary<string, string> rowKeys)
+    {
+        string? LinkedFrom(IEnumerable<JsonNode> linking, string exception, Func<JsonNode, string?> key) =>
+            ScopeDesired.Joined(linking.Where(o => (o["security_exceptions"] as JsonArray ?? []).Select(RelationId).Contains(exception)).Select(key).OfType<string>().Distinct(StringComparer.Ordinal));
+
+        var scenarios = risks.Scenarios.ToDictionary(x => Id(x.Scenario), x => Core.Scope.RiskObjects.ScenarioKey(x.Study, Text(x.Scenario["ref_id"]) ?? Id(x.Scenario)), StringComparer.Ordinal);
+        foreach (var e in risks.Exceptions)
+        {
+            yield return Marked(ScopeKind.SecurityException, RefIdOrName(ScopeKind.SecurityException, e), e,
+                ("name", Text(e["name"])), ("domain", names.Domain(e)), ("severity", Severity(e["severity"])), ("owners", Joined(e["owners"], names.Users)),
+                ("expiration_date", Text(e["expiration_date"])), ("observation", Text(e["observation"])), ("systems", Joined(e["assets"], names.Assets)),
+                ("controls", LinkedFrom(controls, Id(e), c => names.Controls.GetValueOrDefault(Id(c)))),
+                ("requirements", LinkedFrom(rows, Id(e), r => rowKeys.GetValueOrDefault(Id(r))))) with
+            {
+                Observed = Fields(("status", Text(e["status"])), ("expiration_date", Text(e["expiration_date"]))),
+            };
+        }
+
+        foreach (var a in risks.Acceptances)
+        {
+            var scenario = (a["risk_scenarios"] as JsonArray ?? []).Select(RelationId).OfType<string>().Select(id => scenarios.GetValueOrDefault(id)).OfType<string>().FirstOrDefault();
+            yield return Marked(ScopeKind.RiskAcceptance, scenario ?? Text(a["ref_id"]), a,
+                ("name", Text(a["name"])), ("domain", names.Domain(a)), ("scenario", scenario), ("justification", Text(a["justification"]))) with
+            {
+                Observed = Fields(("status", Text(a["state"])), ("expiration_date", Text(a["expiry_date"]))),
+            };
+        }
+    }
+
+    /// <summary>The BIAs under the root folder (s15-04), each one's asset assessments, and each assessment's thresholds.</summary>
+    private static async Task<BiaLists> BiasAsync(Reading reading, HashSet<string> inScope)
+    {
+        var bias = await reading.ObjectsInAsync("resilience/business-impact-analysis", inScope);
+        if (bias.Count == 0)
+        {
+            return BiaLists.None;
+        }
+
+        var assessments = new List<(string Bia, JsonNode Assessment)>();
+        var thresholds = new List<(string Assessment, JsonNode Threshold)>();
+        foreach (var bia in bias)
+        {
+            var key = RefIdOrName(ScopeKind.Bia, bia);
+            foreach (var assessment in await reading.ListAsync($"resilience/asset-assessments/?bia={Uri.EscapeDataString(Id(bia))}"))
+            {
+                var assessmentKey = Core.Scope.BiaObjects.AssessmentKey(key, Text(assessment["asset"]?["str"]) ?? Id(assessment));
+                assessments.Add((key, assessment));
+                thresholds.AddRange((await reading.ListAsync($"resilience/escalation-thresholds/?asset_assessment={Uri.EscapeDataString(Id(assessment))}")).Select(t => (assessmentKey, t)));
+            }
+        }
+
+        return new BiaLists(bias, assessments, thresholds, Names(await reading.ListAsync("risk-matrices/"), "urn"));
+    }
+
+    private static IEnumerable<ActualObject> BiaObjects(BiaLists bias, Lookups names) =>
+    [
+        .. bias.Bias.Select(b => Marked(ScopeKind.Bia, RefIdOrName(ScopeKind.Bia, b), b,
+            ("name", Text(b["name"])), ("domain", names.Domain(b)), ("perimeter", Lookup(b["perimeter"], names.Perimeters)), ("matrix", Lookup(b["risk_matrix"], bias.Matrices)),
+            ("version", Text(b["version"])), ("status", Text(b["status"])), ("due_date", Text(b["due_date"])),
+            ("authors", Joined(b["authors"], names.Users)), ("reviewers", Joined(b["reviewers"], names.Users)))),
+        .. bias.Assessments.Select(x => Marked(ScopeKind.AssetAssessment, Core.Scope.BiaObjects.AssessmentKey(x.Bia, Text(x.Assessment["asset"]?["str"]) ?? Id(x.Assessment)), x.Assessment,
+            ("bia", x.Bia), ("system", Text(x.Assessment["asset"]?["str"])), ("dependencies", Joined(x.Assessment["dependencies"], names.Assets)),
+            ("controls", Joined(x.Assessment["associated_controls"], names.Controls)), ("recovery_documented", Flag(x.Assessment["recovery_documented"])),
+            ("recovery_tested", Flag(x.Assessment["recovery_tested"])), ("recovery_targets_met", Flag(x.Assessment["recovery_targets_met"])),
+            ("observation", Text(x.Assessment["observation"])))),
+        .. bias.Thresholds.Select(x =>
+        {
+            var seconds = x.Threshold["point_in_time"] is JsonValue v && v.TryGetValue<int>(out var pit) ? pit : 0;
+            return Marked(ScopeKind.EscalationThreshold, Core.Scope.BiaObjects.ThresholdKey(x.Assessment, new Duration(seconds)), x.Threshold,
+                ("assessment", x.Assessment), ("point_in_time", seconds.ToString(CultureInfo.InvariantCulture)), ("impact", Level(x.Threshold["quali_impact"])),
+                ("qualifications", ScopeDesired.Joined((x.Threshold["qualifications"] as JsonArray ?? []).Select(q => Text(q?["str"])).OfType<string>())),
+                ("justification", Text(x.Threshold["justification"])));
+        }),
+    ];
+
+    private static string Flag(JsonNode? value) => value is JsonValue v && v.TryGetValue<bool>(out var flag) && flag ? "true" : "false";
+
+    /// <summary>A system's enabled security objectives, as <c>name=value</c> in name order.</summary>
+    private static string? Objectives(JsonNode? held) =>
+        ScopeDesired.Joined((held?["objectives"] as JsonObject ?? []).Where(o => o.Value?["is_enabled"] is JsonValue e && e.TryGetValue<bool>(out var on) && on)
+            .Where(o => o.Value?["value"] is JsonValue v && v.TryGetValue<int>(out _)).OrderBy(o => o.Key, StringComparer.Ordinal)
+            .Select(o => string.Create(CultureInfo.InvariantCulture, $"{o.Key}={o.Value!["value"]!.GetValue<int>()}")));
+
+    /// <summary>A system's recovery objectives, as <c>name=duration</c> in name order.</summary>
+    private static string? RecoveryObjectives(JsonNode? held) =>
+        ScopeDesired.Joined((held?["objectives"] as JsonObject ?? []).Where(o => o.Value?["value"] is JsonValue v && v.TryGetValue<int>(out var s) && s > 0)
+            .OrderBy(o => o.Key, StringComparer.Ordinal).Select(o => $"{o.Key}={new Duration(o.Value!["value"]!.GetValue<int>())}"));
+
+    private sealed record BiaLists(
+        List<JsonNode> Bias, List<(string Bia, JsonNode Assessment)> Assessments, List<(string Assessment, JsonNode Threshold)> Thresholds, Dictionary<string, string> Matrices)
+    {
+        public static BiaLists None { get; } = new([], [], [], []);
+    }
+
+    /// <summary>A severity's name from CISO Assistant's number (-1 undefined to 4 critical).</summary>
+    private static string? Severity(JsonNode? severity) =>
+        severity is JsonValue v && v.TryGetValue<int>(out var number) && number >= -1 && number + 1 < ScopeExceptionRequest.Severities.Count
+            ? ScopeExceptionRequest.Severities[number + 1]
+            : null;
+
+    private static IEnumerable<ActualObject> RiskObjects(RiskLists risks, Lookups names) =>
+    [
+        .. risks.Studies.Select(r => Marked(ScopeKind.RiskStudy, RefIdOrName(ScopeKind.RiskStudy, r), r,
+            ("name", Text(r["name"])), ("domain", names.Domain(r)), ("perimeter", Lookup(r["perimeter"], names.Perimeters)), ("matrix", Lookup(r["risk_matrix"], risks.Matrices)),
+            ("status", Text(r["status"])), ("eta", Text(r["eta"])), ("due_date", Text(r["due_date"])),
+            ("authors", Joined(r["authors"], names.Users)), ("reviewers", Joined(r["reviewers"], names.Users)))),
+        .. risks.Scenarios.Select(x => Marked(ScopeKind.RiskScenario, Core.Scope.RiskObjects.ScenarioKey(x.Study, Text(x.Scenario["ref_id"]) ?? Id(x.Scenario)), x.Scenario,
+            ("ref_id", Text(x.Scenario["ref_id"])), ("name", Text(x.Scenario["name"])), ("study", x.Study),
+            ("systems", Joined(x.Scenario["assets"], names.Assets)), ("threats", Joined(x.Scenario["threats"], risks.Threats)),
+            ("existing_controls", Joined(x.Scenario["existing_applied_controls"], names.Controls)), ("planned_controls", Joined(x.Scenario["applied_controls"], names.Controls)),
+            ("current_probability", Level(x.Scenario["current_proba"])), ("current_impact", Level(x.Scenario["current_impact"])),
+            ("residual_probability", Level(x.Scenario["residual_proba"])), ("residual_impact", Level(x.Scenario["residual_impact"])),
+            ("inherent_probability", Level(x.Scenario["inherent_proba"])), ("inherent_impact", Level(x.Scenario["inherent_impact"])),
+            ("treatment", Text(x.Scenario["treatment"])), ("justification", Text(x.Scenario["justification"])),
+            ("exceptions", Joined(x.Scenario["security_exceptions"], risks.Exceptions.ToDictionary(Id, e => RefIdOrName(ScopeKind.SecurityException, e) ?? Id(e), StringComparer.Ordinal))))),
+    ];
+
+    /// <summary>A rating's level name from the list view's <c>{"name", "value"}</c>; null when not rated (<c>--</c>).</summary>
+    private static string? Level(JsonNode? rating) =>
+        Text(rating?["name"]) is { } name && name != RiskRating.NotRatedName ? name : null;
+
+    private sealed record RiskLists(
+        List<JsonNode> Studies, List<(string Study, JsonNode Scenario)> Scenarios, Dictionary<string, string> Matrices, Dictionary<string, string> Threats)
+    {
+        public static RiskLists None { get; } = new([], [], [], []);
+
+        public List<JsonNode> Exceptions { get; init; } = [];
+
+        public List<JsonNode> Acceptances { get; init; } = [];
     }
 
     /// <summary>Each evidence item's file hashes, from its revisions.</summary>

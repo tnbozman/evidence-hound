@@ -17,6 +17,17 @@ public class CommitteeReportTests
     }
 
     [Fact]
+    public void Summary_gives_each_programmes_standing_with_what_is_not_assessed()
+    {
+        // s15-14: the committee sees, for each programme, the level met and how much is not yet assessed, never a bare percentage.
+        var summary = Section(Report, "## 1.");
+
+        summary.ShouldContain("Level met:");
+        summary.ShouldContain("not assessed:");
+        summary.ShouldContain("applicable (");
+    }
+
+    [Fact]
     public void Expiring_exceptions_use_60_day_window()
     {
         var section = Section(Report, "## 4.");
@@ -73,6 +84,25 @@ public class CommitteeReportTests
         due.ShouldContain("second month");
         Section(Report, "## 8.").ShouldContain("Backups: restore test");
         Section(Report, "## 8.").ShouldContain("Example backup owner");
+    }
+
+    [Fact]
+    public void Overdue_incident_reports_are_listed_and_carried_into_actions()
+    {
+        // s15-07: each report an incident owes is in the snapshot; an overdue one is an open action.
+        var dfars = new IncidentReport("dfars-7012", "DFARS 252.204-7012 cyber incident report", "DoD, through the DIBNet portal", new DateTimeOffset(2026, 11, 28, 9, 30, 0, TimeSpan.Zero), "overdue");
+        var made = new IncidentReport("reportcyber", "Report to ASD's ACSC through ReportCyber", "ASD's ACSC", new DateTimeOffset(2026, 11, 26, 9, 30, 0, TimeSpan.Zero), "made");
+        var month = NovemberSnapshot with { Incidents = [.. NovemberSnapshot.Incidents.Select(i => i.RefId == "INC-8" ? i with { Reports = [made, dfars] } : i)] };
+
+        var report = CommitteeReport.Render(month, October);
+
+        var reports = Part(Section(report, "## 6."), "### Reports overdue");
+        reports.ShouldContain("INC-8");
+        reports.ShouldContain("dfars-7012");
+        reports.ShouldContain("2026-11-28");
+        reports.ShouldNotContain("reportcyber");
+        Section(report, "## 8.").ShouldContain("DFARS 252.204-7012 cyber incident report");
+        Report.ShouldNotContain("### Reports overdue");
     }
 
     [Fact]

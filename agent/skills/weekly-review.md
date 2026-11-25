@@ -26,7 +26,8 @@ run in their own terminal. Your job is to have every item ready before they star
    a challenge and a recommendation go once the person accepts the item.
 4. Run `hound review pending --repo . --config hound.yaml --json` again and check that every item has a recommendation.
 5. Tell the person, in a few lines: how many items, about how long the session takes, what is most urgent and why, and how you answered
-   each challenge. Then tell them to run `hound review` in their own terminal (`--for 30m` if they have less time).
+   each challenge. Then tell them to run `hound review` in their own terminal (`--for 30m` if they have less time), or, to go through the items
+   with you one at a time first, use the skill "work-through-pending-decisions" and accept each with `hound review --only <key>`.
 
 ## Your part and the person's
 

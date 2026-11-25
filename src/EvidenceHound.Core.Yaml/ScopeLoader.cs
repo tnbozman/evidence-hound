@@ -26,9 +26,10 @@ public static partial class ScopeLoader
     private static readonly string[] GroupBys = ["parent"];
     private static readonly string[] OrganisationKeys = ["root_folder", "entity"];
     private static readonly string[] FrameworkKeys = ["urn", "library", "file", "snapshot"];
+    private static readonly string[] LibraryFileKeys = ["urn", "file", "snapshot"];
     private static readonly string[] DomainKeys = ["name", "description", "perimeters", "perimeter", "systems"];
     private static readonly string[] PerimeterKeys = ["name", "ref_id", "description"];
-    private static readonly string[] SystemKeys = ["name", "ref_id", "type", "description", "owner", "parents", "tags", "solution", "supplied_through", "data", "ai"];
+    private static readonly string[] SystemKeys = ["name", "ref_id", "type", "description", "owner", "parents", "tags", "solution", "supplied_through", "data", "ai", "objectives", "recovery"];
     private static readonly string[] ControlsKeys = ["controls"];
     private static readonly string[] ControlKeys =
         ["ref_id", "name", "description", "domain", "owner", "status", "priority", "category", "eta", "systems", "reference_control", "documents", "responsible_entity"];
@@ -36,7 +37,7 @@ public static partial class ScopeLoader
     private static readonly string[] AuditKeys =
     [
         "ref_id", "name", "framework", "groups", "domain", "perimeter", "eta", "due_date", "authors", "reviewers", "field_visibility",
-        "systems", "documents", "controls", "assessments", "cycle", "sign_offs", "unlisted",
+        "systems", "documents", "controls", "assessments", "cycle", "sign_offs", "unlisted", "no_evidence",
     ];
 
     private static readonly string[] FieldAccessKeys = ["auditor", "respondent"];
@@ -65,7 +66,7 @@ public static partial class ScopeLoader
 
     public static ScopeParse Parse(
         ScopeSource setup, ScopeSource? controls, IReadOnlyList<ScopeSource> audits, ScopeSource? access = null, ScopeSource? settings = null, IReadOnlyList<ScopeSource>? thirdParties = null,
-        ScopeSource? capabilities = null, ScopeSource? evidencePlan = null, ScopeSource? ssp = null)
+        ScopeSource? capabilities = null, ScopeSource? evidencePlan = null, ScopeSource? ssp = null, IReadOnlyList<ScopeSource>? risks = null, ScopeSource? exceptions = null, IReadOnlyList<ScopeSource>? bias = null)
     {
         ArgumentNullException.ThrowIfNull(setup);
         ArgumentNullException.ThrowIfNull(audits);
@@ -88,12 +89,19 @@ public static partial class ScopeLoader
         var parsedPlan = planFile?.Root() is { } planRoot ? ReadEvidencePlan(planRoot, planFile) : null;
         var sspFile = ssp is null ? null : new FileReader(ssp);
         var parsedSsps = sspFile?.Root() is { } sspRoot ? ReadSsps(sspRoot, sspFile) : [];
+        var riskFiles = (risks ?? []).Select(r => new FileReader(r)).ToArray();
+        var parsedRisks = riskFiles.Select(file => file.Root() is { } root ? ReadRiskStudy(root, file) : null).OfType<ScopeRiskStudy>().ToArray();
+        var biaFiles = (bias ?? []).Select(b => new FileReader(b)).ToArray();
+        var parsedBias = biaFiles.Select(file => file.Root() is { } root ? ReadBia(root, file) : null).OfType<ScopeBia>().ToArray();
+        var exceptionsFile = exceptions is null ? null : new FileReader(exceptions);
+        var parsedExceptions = exceptionsFile?.Root() is { } exceptionsRoot ? ReadExceptions(exceptionsRoot, exceptionsFile) : [];
 
         return new ScopeParse(
-            new ScopeDocument(parsedSetup, parsedControls, parsedAudits) { Access = parsedAccess, Settings = parsedSettings, ThirdParties = parsedThirdParties, Capabilities = parsedCapabilities, EvidencePlan = parsedPlan, Ssps = parsedSsps },
+            new ScopeDocument(parsedSetup, parsedControls, parsedAudits) { Access = parsedAccess, Settings = parsedSettings, ThirdParties = parsedThirdParties, Capabilities = parsedCapabilities, EvidencePlan = parsedPlan, Ssps = parsedSsps, RiskStudies = parsedRisks, Exceptions = parsedExceptions, Bias = parsedBias },
             [
                 .. setupFile.Problems, .. controlsFile?.Problems ?? [], .. auditFiles.SelectMany(f => f.Problems), .. accessFile?.Problems ?? [],
                 .. settingsFile?.Problems ?? [], .. thirdPartyFiles.SelectMany(f => f.Problems), .. capabilitiesFile?.Problems ?? [], .. planFile?.Problems ?? [], .. sspFile?.Problems ?? [],
+                .. riskFiles.SelectMany(f => f.Problems), .. exceptionsFile?.Problems ?? [], .. biaFiles.SelectMany(f => f.Problems),
             ]);
     }
 
@@ -223,7 +231,8 @@ public static partial class ScopeLoader
             [.. file.Items(root, "frameworks").Select(item => ReadFramework(item, file)).OfType<ScopeFramework>()],
             [.. file.Items(root, "domains").Select(item => ReadDomain(item, file)).OfType<ScopeDomain>()])
         {
-            Libraries = file.Refs(root, "libraries"),
+            Libraries = [.. file.Entries(root, "libraries").OfType<YamlScalarNode>().Select(item => file.Ref(item)).OfType<ScopeRef>()],
+            LibraryFiles = [.. file.Entries(root, "libraries").OfType<YamlMappingNode>().Select(item => ReadLibraryFile(item, file)).OfType<ScopeLibraryFile>()],
             Organisation = organisation is not null && file.Map(organisation, "entity") is { } entity ? ReadOrganisation(entity, file) : null,
             Programmes = [.. file.Items(root, "programmes").Select(item => ReadProgramme(item, file)).OfType<ScopeProgramme>()],
         };
@@ -275,6 +284,15 @@ public static partial class ScopeLoader
         return urn is null ? null : new ScopeFramework(urn, file.Text(item, "library"), file.Text(item, "file"), file.Text(item, "snapshot"), file.At(item));
     }
 
+    /// <summary>A custom library in the repo (s15-01): its URN and file, and optionally its snapshot.</summary>
+    private static ScopeLibraryFile? ReadLibraryFile(YamlMappingNode item, FileReader file)
+    {
+        file.Keys(item, LibraryFileKeys);
+        var urn = file.Required(item, "urn");
+        var path = file.Required(item, "file");
+        return urn is null || path is null ? null : new ScopeLibraryFile(urn, path, file.Text(item, "snapshot"), file.At(item));
+    }
+
     private static ScopeDomain? ReadDomain(YamlMappingNode item, FileReader file)
     {
         file.Keys(item, DomainKeys);
@@ -321,6 +339,8 @@ public static partial class ScopeLoader
                 SuppliedThrough = file.Ref(item, "supplied_through"),
                 Data = ReadData(item, file, authority: false),
                 Ai = ReadAi(item, name, file),
+                Objectives = ReadObjectives(item, file),
+                Recovery = ReadRecovery(item, file),
             };
     }
 
@@ -389,6 +409,7 @@ public static partial class ScopeLoader
                 Cycle = cycle,
                 SignOffs = signOffs,
                 Unlisted = unlisted,
+                NoEvidence = file.OneOf(root, "no_evidence", ["non_compliant", "not_assessed"], required: false) == "not_assessed" ? ComplianceResult.NotAssessed : ComplianceResult.NonCompliant,
             };
     }
 
@@ -565,6 +586,13 @@ public static partial class ScopeLoader
         public IReadOnlyList<ScopeRef> Refs(YamlMappingNode map, string key) =>
             [.. Sequence(map, key).Select(item => item is YamlScalarNode { Value: { Length: > 0 } value } ? new ScopeRef(value, At(item)) : Reject<ScopeRef>(item, $"each item of '{key}' must be a text value."))
                 .OfType<ScopeRef>()];
+
+        /// <summary>Each item of a list that may mix text values and maps; any other item is reported.</summary>
+        public YamlNode[] Entries(YamlMappingNode map, string key) =>
+            [.. Sequence(map, key).Where(item => item is YamlScalarNode { Value.Length: > 0 } or YamlMappingNode || Reject<YamlNode>(item, $"each item of '{key}' must be a URN or a map.") is not null)];
+
+        /// <summary>A text value as a reference, with where it was written.</summary>
+        public ScopeRef? Ref(YamlScalarNode node) => node.Value is { Length: > 0 } value ? new ScopeRef(value, At(node)) : null;
 
         public YamlMappingNode? Map(YamlMappingNode map, string key) => Child(map, key) switch
         {

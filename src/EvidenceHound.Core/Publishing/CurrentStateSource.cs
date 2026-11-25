@@ -36,7 +36,7 @@ public sealed class NoCurrentState : ICurrentStateSource
 }
 
 /// <summary>Reads the current state from CISO Assistant.</summary>
-public sealed class ClientStateSource(ICisoAssistantClient client) : ICurrentStateSource
+public sealed class ClientStateSource(ICisoAssistantClient client, DateOnly? today = null) : ICurrentStateSource
 {
     public async Task<CurrentState> ReadAsync(StateQuery query, CancellationToken cancellationToken)
     {
@@ -64,7 +64,17 @@ public sealed class ClientStateSource(ICisoAssistantClient client) : ICurrentSta
             controls.AddRange(status.Match<CurrentControl[]>(s => [new CurrentControl(refId, s)], _ => []));
         }
 
+        if (audits.Any(a => a.Rows.Any(r => r.ExceptionIds.Count > 0)))
+        {
+            var waivers = (await client.ListSecurityExceptionsAsync(cancellationToken)).Match(all => all, _ => []).ToDictionary(w => w.Id, StringComparer.Ordinal);
+            audits = [.. audits.Select(a => a with { Rows = [.. a.Rows.Select(r => r with { Exceptions = Named(r.ExceptionIds, waivers) })] })];
+        }
+
         var documents = await client.ListScopeDocumentIdsAsync(cancellationToken);
-        return new CurrentState(audits, evidence, controls) { ScopeDocumentIds = documents.Match(ids => ids, _ => []) };
+        return new CurrentState(audits, evidence, controls) { ScopeDocumentIds = documents.Match(ids => ids, _ => []), Today = today };
     }
+
+    /// <summary>A row's security exceptions by ID, named; one that cannot be read is left out, so it covers nothing.</summary>
+    private static RowWaiver[] Named(IReadOnlyList<string> ids, Dictionary<string, RemoteWaiver> waivers) =>
+        [.. ids.Select(id => waivers.GetValueOrDefault(id)).OfType<RemoteWaiver>().Select(w => new RowWaiver(w.RefId ?? w.Name, w.Name, w.Status, w.Expires))];
 }

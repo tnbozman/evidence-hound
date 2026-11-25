@@ -17,6 +17,16 @@ public class BoardReportTests
     }
 
     [Fact]
+    public void Position_gives_the_level_met_and_what_is_not_assessed()
+    {
+        // s15-14: the board's position for each programme carries the level met and the rows not assessed, counted as not met.
+        var position = Body[Body.IndexOf("## 1.", StringComparison.Ordinal)..Body.IndexOf("## 2.", StringComparison.Ordinal)];
+
+        position.ShouldContain("Level met:");
+        position.ShouldContain("not assessed:");
+    }
+
+    [Fact]
     public void Trend_uses_last_four_quarters()
     {
         var posture = Body[Body.IndexOf("## 2.", StringComparison.Ordinal)..];

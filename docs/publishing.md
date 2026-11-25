@@ -30,6 +30,14 @@ They are read through .NET configuration, so environment variables work everywhe
 
 Every item is attempted: a failure is recorded and the rest go on. Running the same plan twice creates no duplicate evidence or revisions, and leaves results as they were.
 
+### A requirement with no evidence
+
+When a check a requirement needs is missing from the run or ended in an error, the requirement has no evidence, and it is published as
+`non_compliant` with an observation that starts "No evidence yet:" and names each check and what happened to it. CISO Assistant leaves
+not-assessed rows out of its compliance percentage, so publishing them as not assessed would let a few passes read 100%. A target can
+opt out with `no_evidence: not_assessed` ([configuration.md](configuration.md)); see
+[scope.md](scope.md#no-evidence-is-not-compliance) for the same rule on the rows the scope writes.
+
 ## The report
 
 Stdout is a JSON report; logs go to stderr.

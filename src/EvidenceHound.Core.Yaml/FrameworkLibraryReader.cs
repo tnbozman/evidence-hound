@@ -40,6 +40,7 @@ public static partial class FrameworkLibraryReader
             assessable)
         {
             Parents = Parents(nodes, assessable),
+            Dependencies = [.. (Child(root, "dependencies") as YamlSequenceNode ?? []).OfType<YamlScalarNode>().Select(d => d.Value ?? "").Where(d => d.Length > 0)],
         });
     }
 

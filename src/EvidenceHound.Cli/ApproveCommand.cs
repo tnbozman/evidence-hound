@@ -37,7 +37,14 @@ internal static class ApproveCommand
             }
 
             var prompt = new Prompt(terminal);
-            var walk = new Walk(parseResult.GetValue(repo)?.FullName ?? Directory.GetCurrentDirectory(), terminal, prompt, AuditSeries.Today(configuration), new PromptApprovals(terminal, prompt));
+            var root = parseResult.GetValue(repo)?.FullName ?? Directory.GetCurrentDirectory();
+            var listing = new Listing();
+            if (await new Walk(root, terminal, prompt, AuditSeries.Today(configuration), listing).RunAsync(cancellationToken) is Result<Unit>.Ok && listing.Items.Count > 0)
+            {
+                await terminal.Error.WriteLineAsync(Summary(listing.Items).AsMemory(), cancellationToken);
+            }
+
+            var walk = new Walk(root, terminal, prompt, AuditSeries.Today(configuration), new PromptApprovals(terminal, prompt));
             var walked = await walk.RunAsync(cancellationToken);
             if (walked is Result<Unit>.Ok)
             {
@@ -51,6 +58,11 @@ internal static class ApproveCommand
         });
         return command;
     }
+
+    /// <summary>The size of the job, by kind, and where to get help with a long list.</summary>
+    internal static string Summary(IReadOnlyList<ReviewItem> items) =>
+        $"{items.Count} item(s) wait for approval: {string.Join(", ", ReviewOrder.Summary(items).GroupBy(g => g.Kind).OrderBy(g => g.Key).Select(g => $"{g.Sum(x => x.Count)} {ReviewOrder.Code(g.Key).Replace('_', ' ')}"))}. More can follow once these are approved.\n"
+        + "For more than a few, ask your agent to work through them with you first (skill work-through-pending-decisions), then accept each with hound review --only <key>.";
 
     /// <summary>What decides each item: a person at the prompt, a review session's answers, or a listing that decides nothing.</summary>
     internal interface IApprovals

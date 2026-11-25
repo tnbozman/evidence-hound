@@ -100,6 +100,22 @@ public class ScopePlanTests
     }
 
     [Fact]
+    public void Users_and_teams_are_created_before_the_systems_and_controls_they_own()
+    {
+        ScopeObject[] declared =
+        [
+            Declared(ScopeKind.System, "Example 365", ("type", "primary"), ("owner", "it@example.com")),
+            Declared(ScopeKind.Team, "IT team", ("leader", "it@example.com")),
+            Declared(ScopeKind.User, "it@example.com"),
+            Declared(ScopeKind.Domain, "Example Pty Ltd"),
+        ];
+
+        var plan = ScopePlanner.Plan(declared, [], prune: false);
+
+        plan.Changes.Select(c => c.Kind).ShouldBe([ScopeKind.Domain, ScopeKind.User, ScopeKind.Team, ScopeKind.System]);
+    }
+
+    [Fact]
     public void Unmanaged_object_that_matches_the_scope_is_marked_as_managed()
     {
         var declared = Declared(ScopeKind.Domain, "Example Pty Ltd");
@@ -220,6 +236,20 @@ public class ScopePlanTests
     }
 
     [Fact]
+    public void Custom_library_with_a_raised_version_is_updated()
+    {
+        // s15-01: a custom library is the repo's own, so a raised version is uploaded and CISO Assistant's loaded copy updated.
+        var declared = Declared(ScopeKind.Framework, "urn:example:risk:library:example-risk", ("version", "2")) with { Files = [new ScopeFile("/repo/libraries/example-risk.yaml", "abc")] };
+        ActualObject older = new(Declared(ScopeKind.Framework, declared.Key, ("version", "1")), null);
+
+        var plan = ScopePlanner.Plan([declared], [older], prune: false);
+
+        plan.Drift.ShouldBeEmpty();
+        var change = plan.Changes.ShouldHaveSingleItem();
+        (change.Action, change.Fields.ShouldHaveSingleItem()).ShouldBe((ScopeAction.Update, new FieldChange("version", "1", "2")));
+    }
+
+    [Fact]
     public void Links_are_added_and_kept_unless_pruned()
     {
         var held = Applied(Declared(ScopeKind.Control, "AC-MFA", ("name", "MFA"), ("systems", "Example 365, Example laptops")));
@@ -254,6 +284,42 @@ public class ScopePlanTests
         var declared = Declared(ScopeKind.Audit, "EX-PERIOD-Q2-2027FY", ("name", "Backups Q2-2027FY"));
 
         ScopePlanner.Plan([declared], [applied], prune: false).IsEmpty.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void Systems_added_to_an_audit_in_the_ui_are_kept_while_the_scope_names_none()
+    {
+        // s15-D2: an audit's systems are compared only when the scope names some, so systems a person added in CISO Assistant stay.
+        var declared = Declared(ScopeKind.Audit, "EX-E8-2026", ("name", "E8"));
+        var applied = new ActualObject(Declared(ScopeKind.Audit, "EX-E8-2026", ("name", "E8"), ("systems", "Example 365")), ScopeMarker.State(ScopeKind.Audit, declared.Fields));
+
+        ScopePlanner.Plan([declared], [applied], prune: false).IsEmpty.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void A_recovery_flag_set_by_checks_is_not_compared()
+    {
+        // s15-05: each run sets a flag named by checks, so the scope plan neither resets it nor reports it as edited.
+        var declared = Declared(ScopeKind.AssetAssessment, "EX-BIA-2026/Example 365", ("system", "Example 365"), ("recovery_documented", "true"));
+        var applied = new ActualObject(
+            Declared(ScopeKind.AssetAssessment, declared.Key, ("system", "Example 365"), ("recovery_documented", "true"), ("recovery_tested", "true")),
+            ScopeMarker.State(declared.Kind, declared.Fields));
+
+        ScopePlanner.Plan([declared], [applied], prune: false).IsEmpty.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void A_bia_status_the_scope_leaves_out_is_left_as_ciso_assistant_sets_it()
+    {
+        // CISO Assistant gives a new BIA the status planned. A file that declares none leaves it there, so the plan after an apply is empty.
+        // A status the file declares is still compared.
+        var declared = Declared(ScopeKind.Bia, "EX-BIA-2026", ("name", "Example BIA"));
+        var applied = new ActualObject(Declared(ScopeKind.Bia, declared.Key, ("name", "Example BIA"), ("status", "planned")), ScopeMarker.State(ScopeKind.Bia, declared.Fields));
+
+        ScopePlanner.Plan([declared], [applied], prune: false).IsEmpty.ShouldBeTrue();
+
+        var done = Declared(ScopeKind.Bia, declared.Key, ("name", "Example BIA"), ("status", "done"));
+        ScopePlanner.Plan([done], [applied], prune: false).Changes.ShouldHaveSingleItem().Fields.ShouldContain(new FieldChange("status", "planned", "done"));
     }
 
     [Fact]

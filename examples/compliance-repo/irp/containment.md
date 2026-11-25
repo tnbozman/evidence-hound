@@ -1,0 +1,4 @@
+- **Malware on a laptop:** take it off the network through the endpoint console, keep it powered on, and give the user a spare.
+- **A compromised account:** reset the password, revoke sessions and tokens, and check the mailbox rules and sign-in log.
+- **Ransomware:** isolate affected systems, protect the backups first, and do not pay before the executive and legal contact decide.
+- **A supplier's breach:** ask the supplier which of our data and accounts are affected, and rotate any shared credentials.

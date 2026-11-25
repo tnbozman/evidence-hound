@@ -48,11 +48,35 @@ public class PlanTests
 
         var updates = plan.OfType<AuditUpdate.UpdateRequirementAssessment>().ToArray();
         updates.Select(u => (u.ComplianceAssessmentRefId, u.RequirementRefId, u.Result)).ShouldBe([
-            ("EXAMPLE-BASELINE-2026", "EX-2.1", ComplianceResult.NotAssessed),
+            ("EXAMPLE-BASELINE-2026", "EX-2.1", ComplianceResult.NonCompliant),
             ("EXAMPLE-BASELINE-2026", "EX-1.1", ComplianceResult.Compliant),
             ("EXAMPLE-BASELINE-2026", "EX-1.2", ComplianceResult.NotApplicable),
         ]);
         updates[1].EvidenceRefIds.ShouldBe(["ev-0001"]);
+    }
+
+    [Fact]
+    public void A_row_with_no_evidence_is_published_non_compliant_and_says_so()
+    {
+        // s15-14: CISO Assistant leaves not-assessed rows out of its compliance percentage, so a few passes read as 100%. With no
+        // evidence there is no compliance: the row goes as non-compliant, its observation saying why.
+        var plan = Plan([Requirement("EX-2.1", ComplianceResult.NotAssessed)], [], []);
+
+        var update = plan.OfType<AuditUpdate.UpdateRequirementAssessment>().ShouldHaveSingleItem();
+        update.Result.ShouldBe(ComplianceResult.NonCompliant);
+        update.Observation.ShouldStartWith("No evidence yet: ");
+    }
+
+    [Fact]
+    public void An_audit_can_opt_out_and_keep_rows_with_no_evidence_not_assessed()
+    {
+        var target = Target with { NoEvidence = ComplianceResult.NotAssessed };
+
+        var plan = AuditPlanner.PlanUpdates([new TargetResults(target, [Requirement("EX-2.1", ComplianceResult.NotAssessed)])], [], []).Value();
+
+        var update = plan.OfType<AuditUpdate.UpdateRequirementAssessment>().ShouldHaveSingleItem();
+        update.Result.ShouldBe(ComplianceResult.NotAssessed);
+        update.Observation.ShouldNotStartWith("No evidence yet");
     }
 
     [Fact]
@@ -314,6 +338,23 @@ public class PlanTests
     }
 
     [Fact]
+    public async Task State_source_names_the_security_exceptions_on_each_row_and_the_day()
+    {
+        // s15-03: a row lists its exceptions by ID; their ref_id, name, status and expiry come from CISO Assistant's security exceptions.
+        var ca = new InMemoryCisoAssistant();
+        ca.Rows.Add(new RemoteRequirementAssessment("ra-EX-1.1", "urn:example:req:ex-1.1", "EX-1.1", []));
+        ca.RowExceptionIds["ra-EX-1.1"] = ["se-1"];
+        ca.SecurityExceptions.Add(new RemoteWaiver("se-1", "EXC-01", "Legacy finance app without MFA", "approved", new DateOnly(2027, 3, 31)));
+        var today = new DateOnly(2026, 11, 25);
+
+        var state = await new ClientStateSource(ca, today).ReadAsync(new StateQuery([Target.ComplianceAssessmentRefId], [], []), TestContext.Current.CancellationToken);
+
+        state.Today.ShouldBe(today);
+        state.Audits.ShouldHaveSingleItem().Rows.ShouldHaveSingleItem().Exceptions
+            .ShouldBe([new RowWaiver("EXC-01", "Legacy finance app without MFA", "approved", new DateOnly(2027, 3, 31))]);
+    }
+
+    [Fact]
     public void Scope_documents_on_a_row_are_kept_and_are_not_drift()
     {
         RequirementResult[] results = [Requirement("EX-1.1", ComplianceResult.Compliant)];
@@ -339,6 +380,28 @@ public class PlanTests
 
         plan.Updates.OfType<AuditUpdate.UpdateRequirementAssessment>().ShouldBeEmpty();
         plan.Drift.ShouldHaveSingleItem().Code.ShouldBe("plan.audit_closed");
+    }
+
+    [Fact]
+    public void Failed_check_under_approved_exception_names_it_in_observation()
+    {
+        // s15-03: an approved, unexpired security exception covers the requirement, so the observation says so; the result stands.
+        var covered = Row("EX-1.1") with { Exceptions = [new RowWaiver("EXC-01", "Legacy finance app without MFA", "approved", new DateOnly(2027, 3, 31))] };
+        var state = new CurrentState([new CurrentAudit(Target.ComplianceAssessmentRefId, [], [covered])], [], []) { Today = new DateOnly(2026, 11, 25) };
+
+        var update = Changes([Requirement("EX-1.1", ComplianceResult.NonCompliant)], [], [], state, Run1).Updates.OfType<AuditUpdate.UpdateRequirementAssessment>().ShouldHaveSingleItem();
+
+        update.Result.ShouldBe(ComplianceResult.NonCompliant);
+        update.Observation.ShouldContain("security exception EXC-01 (Legacy finance app without MFA), approved until 2027-03-31");
+
+        var passing = Changes([Requirement("EX-1.1", ComplianceResult.Compliant)], [], [], state, Run1).Updates.OfType<AuditUpdate.UpdateRequirementAssessment>().Single();
+        passing.Observation.ShouldNotContain("EXC-01", customMessage: "a passing check needs no exception");
+        var expired = state with { Today = new DateOnly(2027, 4, 1) };
+        Changes([Requirement("EX-1.1", ComplianceResult.NonCompliant)], [], [], expired, Run1).Updates.OfType<AuditUpdate.UpdateRequirementAssessment>().Single()
+            .Observation.ShouldNotContain("EXC-01", customMessage: "an expired exception covers nothing");
+        var draft = new CurrentState([new CurrentAudit(Target.ComplianceAssessmentRefId, [], [covered with { Exceptions = [covered.Exceptions[0] with { Status = "draft" }] }])], [], []);
+        Changes([Requirement("EX-1.1", ComplianceResult.NonCompliant)], [], [], draft, Run1).Updates.OfType<AuditUpdate.UpdateRequirementAssessment>().Single()
+            .Observation.ShouldNotContain("EXC-01", customMessage: "only an approved exception counts");
     }
 
     private static readonly string Run1 = "20261120T020000Z";

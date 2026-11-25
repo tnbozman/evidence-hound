@@ -1,0 +1,40 @@
+{
+  "library_urn": "urn:example:risk:library:example-risk",
+  "version": 1,
+  "dependencies": [],
+  "matrices": [
+    {
+      "urn": "urn:example:risk:matrix:example-4x4",
+      "name": "Example 4x4",
+      "probability": [
+        "Rare",
+        "Unlikely",
+        "Possible",
+        "Likely"
+      ],
+      "impact": [
+        "Minor",
+        "Moderate",
+        "Major",
+        "Severe"
+      ],
+      "risk": [
+        "Low",
+        "Medium",
+        "High"
+      ]
+    }
+  ],
+  "threats": [
+    {
+      "urn": "urn:example:risk:threat:example-risk:thr-01",
+      "ref_id": "THR-01",
+      "name": "Loss of the only backup administrator"
+    },
+    {
+      "urn": "urn:example:risk:threat:example-risk:thr-02",
+      "ref_id": "THR-02",
+      "name": "Supplier remote access misused"
+    }
+  ]
+}

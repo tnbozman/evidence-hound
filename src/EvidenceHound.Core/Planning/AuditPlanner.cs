@@ -1,3 +1,4 @@
+using System.Globalization;
 using EvidenceHound.Core.Checks;
 using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Publishing;
@@ -84,7 +85,7 @@ public static class AuditPlanner
             var audits = current.Audits.DistinctBy(a => a.RefId).ToDictionary(a => a.RefId, StringComparer.Ordinal);
             var documents = current.ScopeDocumentIds.ToHashSet(StringComparer.Ordinal);
             var rows = Publishable(targets)
-                .SelectMany(t => t.Results.Select(r => PlanRows(t.Target, audits.GetValueOrDefault(t.Target.ComplianceAssessmentRefId), r, hashes, known, documents, runId)))
+                .SelectMany(t => t.Results.Select(r => PlanRows(t.Target, audits.GetValueOrDefault(t.Target.ComplianceAssessmentRefId), Waived(r, audits.GetValueOrDefault(t.Target.ComplianceAssessmentRefId), current.Today), hashes, known, documents, runId)))
                 .ToArray();
             var statuses = current.Controls.DistinctBy(c => c.RefId).ToDictionary(c => c.RefId, c => c.Status, StringComparer.Ordinal);
 
@@ -99,9 +100,17 @@ public static class AuditPlanner
         });
     }
 
-    /// <summary>s14-01: the targets without the results of draft mapping rows, which nobody has reviewed yet.</summary>
+    /// <summary>
+    /// s14-01: the targets without the results of draft mapping rows, which nobody has reviewed yet. s15-14: a result with no evidence (a
+    /// check missing or in error) goes as the target's <see cref="AuditTarget.NoEvidence"/> result, its observation saying so.
+    /// </summary>
     private static IEnumerable<TargetResults> Publishable(IReadOnlyList<TargetResults> targets) =>
-        targets.Select(t => t with { Results = [.. t.Results.Where(r => !r.Draft)] });
+        targets.Select(t => t with
+        {
+            Results = [.. t.Results.Where(r => !r.Draft).Select(r => r.Result == ComplianceResult.NotAssessed
+                ? r with { Result = t.Target.NoEvidence, Observation = NoEvidence.Observation(t.Target.NoEvidence, r.Observation)! }
+                : r)],
+        });
 
     private static IEnumerable<Problem> DraftNotices(IReadOnlyList<TargetResults> targets) =>
         targets.SelectMany(t => t.Results.Where(r => r.Draft).Select(r => new Problem(
@@ -164,6 +173,41 @@ public static class AuditPlanner
 
     private static string Marked(RequirementResult result, Dictionary<string, string> hashes, string runId) =>
         RowState.Mark(result.Observation, runId, Fingerprint(result, hashes));
+
+    /// <summary>
+    /// A failing result whose rows an approved, unexpired security exception covers names the exception in its observation (s15-03). The result
+    /// stands: the exception explains the gap, it does not close it. The exception joins the fingerprint, so its approval or expiry rewrites the row.
+    /// </summary>
+    private static RequirementResult Waived(RequirementResult result, CurrentAudit? audit, DateOnly? today)
+    {
+        if (audit is null || result.Result is not (ComplianceResult.NonCompliant or ComplianceResult.PartiallyCompliant))
+        {
+            return result;
+        }
+
+        var key = result.Key;
+        var waivers = audit.Rows
+            .Where(r => key.Kind == RequirementKeyKind.Urn ? r.Urn == key.Value : r.RefId == key.Value)
+            .SelectMany(r => r.Exceptions)
+            .Where(e => e.Status == "approved" && (today is null || e.Expires is null || e.Expires >= today))
+            .DistinctBy(e => e.RefId)
+            .OrderBy(e => e.RefId, StringComparer.Ordinal)
+            .ToArray();
+        if (waivers.Length == 0)
+        {
+            return result;
+        }
+
+        var lines = waivers.Select(w =>
+            $"Covered by security exception {w.RefId} ({w.Name}), approved{(w.Expires is { } date ? $" until {Day(date)}" : "")}.");
+        return result with
+        {
+            Observation = string.Join('\n', [result.Observation, .. lines]),
+            CheckOutcomes = [.. result.CheckOutcomes, .. waivers.Select(w => $"exception:{w.RefId}:{(w.Expires is { } date ? Day(date) : "none")}")],
+        };
+    }
+
+    private static string Day(DateOnly date) => date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
     private static RowsPlan PlanRows(
         AuditTarget target,

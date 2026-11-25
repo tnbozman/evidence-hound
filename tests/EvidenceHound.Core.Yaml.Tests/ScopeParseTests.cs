@@ -76,6 +76,31 @@ public class ScopeParseTests
     }
 
     [Fact]
+    public void Library_can_be_a_custom_file_with_a_snapshot()
+    {
+        // s15-01: a custom risk matrix or threat catalogue is a library file in the repo, uploaded like a custom framework.
+        var setup = ScopeFixture.Setup.Replace(
+            "domains:",
+            "libraries:\n  - urn:example:risk:library:mapping-example\n  - urn: urn:example:risk:library:example-risk\n    file: ../libraries/example-risk.yaml\n    snapshot: ../libraries/example-risk.json\ndomains:",
+            StringComparison.Ordinal);
+
+        var parsed = ScopeFixture.Parse(setup: setup);
+
+        parsed.Problems.ShouldBeEmpty();
+        parsed.Scope.Setup.Libraries.ShouldHaveSingleItem().Value.ShouldBe("urn:example:risk:library:mapping-example");
+        var custom = parsed.Scope.Setup.LibraryFiles.ShouldHaveSingleItem();
+        (custom.Urn, custom.File, custom.Snapshot).ShouldBe(("urn:example:risk:library:example-risk", "../libraries/example-risk.yaml", "../libraries/example-risk.json"));
+    }
+
+    [Fact]
+    public void Custom_library_needs_a_urn_and_a_file()
+    {
+        var setup = ScopeFixture.Setup.Replace("domains:", "libraries:\n  - urn: urn:example:risk:library:example-risk\ndomains:", StringComparison.Ordinal);
+
+        ScopeFixture.Parse(setup: setup).Problems.ShouldContain(p => p.Message.Contains("'file'"));
+    }
+
+    [Fact]
     public void Single_perimeter_is_read_as_one_item_list()
     {
         var setup = ScopeFixture.Setup.Replace("    perimeters:\n      - name: Example baseline\n        ref_id: PER-BASE", "    perimeter:\n      name: Example baseline\n      ref_id: PER-BASE", StringComparison.Ordinal);

@@ -5,6 +5,7 @@ using System.Text.Json.Nodes;
 using EvidenceHound.CisoAssistant;
 using EvidenceHound.Core.Frameworks;
 using EvidenceHound.Core.Results;
+using EvidenceHound.Core.Risk;
 using EvidenceHound.Core.Scope;
 using EvidenceHound.Core.Yaml;
 using EvidenceHound.Runtime.Collectors;
@@ -173,9 +174,10 @@ internal static class ScopeCommands
             async held =>
             {
                 var suppliers = Suppliers(checkedScope, held);
-                if (suppliers.Refused.Count > 0)
+                IReadOnlyList<ScopeProblem> refused = [.. suppliers.Refused, .. LibraryValidation.Refused(declared, held)];
+                if (refused.Count > 0)
                 {
-                    return await ReportAsync(suppliers.Refused, "", "text", output, logger);
+                    return await ReportAsync(refused, "", "text", output, logger);
                 }
 
                 var plan = ScopePlanner.Plan(declared, held, prune);
@@ -187,6 +189,7 @@ internal static class ScopeCommands
                         Periods = ScopePeriods.Notes(declared, plan),
                         Compliance = compliance,
                         Suppliers = suppliers.Notes,
+                        Exceptions = ExceptionReview.Notes(held, checkedScope.Inputs.Today ?? DateOnly.FromDateTime(DateTime.UtcNow)),
                         Gaps = CapabilityMap.Gaps(checkedScope.Scope, checkedScope.Inputs.Snapshots),
                         Dependencies = OpenDependencies.Of(checkedScope.Scope, checkedScope.Inputs.Targets ?? []),
                     }));
@@ -367,15 +370,17 @@ internal static class ScopeCommands
             async read =>
             {
                 var suppliers = Suppliers(checkedScope, read.Held);
-                if (suppliers.Refused.Count > 0)
+                IReadOnlyList<ScopeProblem> refused = [.. suppliers.Refused, .. LibraryValidation.Refused(declared, read.Held)];
+                if (refused.Count > 0)
                 {
-                    return await ReportAsync(suppliers.Refused, "", options.Format == "json" ? "json" : "text", output, logger);
+                    return await ReportAsync(refused, "", options.Format == "json" ? "json" : "text", output, logger);
                 }
 
                 var plan = ScopePlanner.Plan(declared, read.Held, options.Prune);
                 var notes = new PlanNotes(ScopePeriods.Notes(declared, plan), AccessReview.Notes(checkedScope.Scope.Access, read.Users))
                 {
                     Suppliers = suppliers.Notes,
+                    Exceptions = ExceptionReview.Notes(read.Held, checkedScope.Inputs.Today ?? DateOnly.FromDateTime(DateTime.UtcNow)),
                     Gaps = CapabilityMap.Gaps(checkedScope.Scope, checkedScope.Inputs.Snapshots),
                     Dependencies = OpenDependencies.Of(checkedScope.Scope, checkedScope.Inputs.Targets ?? []),
                     Unmanaged = options.ShowUnmanaged ? UnmanagedSettings(declared, read.Held) : [],
@@ -439,6 +444,30 @@ internal static class ScopeCommands
         public IReadOnlyList<ScopeProblem> Warnings { get; init; } = [];
     }
 
+    /// <summary>The reporting obligations in <c>reporting.yaml</c> (s15-07); none when the scope has no such file.</summary>
+    internal static async Task<(IReadOnlyList<ReportingObligation> Obligations, IReadOnlyList<ScopeProblem> Problems)> ReportingAsync(
+        DirectoryInfo dir, CancellationToken cancellationToken, Func<string, CancellationToken, Task<ScopeSource>>? read = null)
+    {
+        var path = Path.Combine(dir.ToString(), "reporting.yaml");
+        return File.Exists(path) ? ScopeLoader.ParseReporting(await (read ?? ReadAsync)(path, cancellationToken)) : ([], []);
+    }
+
+    /// <summary>The incident response plan in <c>irp.yaml</c> (s15-09), with its problems; null when the scope has no such file.</summary>
+    internal static async Task<(ScopeIrp? Irp, IReadOnlyList<ScopeProblem> Problems)> IrpAsync(
+        DirectoryInfo dir, ScopeDocument scope, CancellationToken cancellationToken, Func<string, CancellationToken, Task<ScopeSource>>? read = null)
+    {
+        var path = Path.Combine(dir.ToString(), "irp.yaml");
+        if (!File.Exists(path))
+        {
+            return (null, []);
+        }
+
+        var (irp, problems) = ScopeLoader.ParseIrp(await (read ?? ReadAsync)(path, cancellationToken));
+        return irp is not null && scope.Setup.Programmes.All(p => p.Id != irp.Programme.Value)
+            ? (irp, [.. problems, new ScopeProblem("irp.programme_unknown", irp.Programme.At, $"programme '{irp.Programme.Value}' is not declared.", "Name a programme from 'programmes:' in scope/setup.yaml.")])
+            : (irp, problems);
+    }
+
     /// <summary>
     /// Checks the scope folder offline. <paramref name="edits"/> stands in for files by full path, so a wizard checks its change before
     /// it writes anything.
@@ -465,6 +494,11 @@ internal static class ScopeCommands
         var capabilitiesPath = Path.Combine(dir.ToString(), "capabilities.yaml");
         var planPath = Path.Combine(dir.ToString(), "evidence-plan.yaml");
         var sspPath = Path.Combine(dir.ToString(), "ssp.yaml");
+        var risksDir = Path.Combine(dir.ToString(), "risks");
+        var risks = Directory.Exists(risksDir) ? Directory.GetFiles(risksDir, "*.yaml").Order(StringComparer.Ordinal).ToArray() : [];
+        var exceptionsPath = Path.Combine(dir.ToString(), "exceptions.yaml");
+        var biaDir = Path.Combine(dir.ToString(), "bia");
+        var bias = Directory.Exists(biaDir) ? Directory.GetFiles(biaDir, "*.yaml").Order(StringComparer.Ordinal).ToArray() : [];
         var parsed = ScopeLoader.Parse(
             await ReadAsync(setupPath, cancellationToken),
             File.Exists(controlsPath) ? await ReadAsync(controlsPath, cancellationToken) : null,
@@ -474,7 +508,10 @@ internal static class ScopeCommands
             [.. await Task.WhenAll(thirdParties.Select(t => ReadAsync(t, cancellationToken)))],
             File.Exists(capabilitiesPath) ? await ReadAsync(capabilitiesPath, cancellationToken) : null,
             File.Exists(planPath) ? await ReadAsync(planPath, cancellationToken) : null,
-            File.Exists(sspPath) ? await ReadAsync(sspPath, cancellationToken) : null);
+            File.Exists(sspPath) ? await ReadAsync(sspPath, cancellationToken) : null,
+            [.. await Task.WhenAll(risks.Select(r => ReadAsync(r, cancellationToken)))],
+            File.Exists(exceptionsPath) ? await ReadAsync(exceptionsPath, cancellationToken) : null,
+            [.. await Task.WhenAll(bias.Select(b => ReadAsync(b, cancellationToken)))]);
 
         var snapshots = await SnapshotsAsync(parsed.Scope.Setup.Frameworks, Path.GetDirectoryName(Path.GetFullPath(setupPath))!, cancellationToken);
         var deployment = configFile is null ? Result.Ok(Deployment.None) : await DeploymentAsync(configFile, registry, cancellationToken);
@@ -482,26 +519,42 @@ internal static class ScopeCommands
         var scope = parsed.Scope;
         var repoDir = Path.GetDirectoryName(Path.GetFullPath(dir.ToString().TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)))!;
         var files = await FilesAsync(scope, repoDir, Path.GetDirectoryName(Path.GetFullPath(setupPath))!, cancellationToken);
+        var libraries = await ScopeLibraries.LoadAsync(scope.Setup.LibraryFiles, Path.GetDirectoryName(Path.GetFullPath(setupPath))!, cancellationToken);
         IReadOnlyList<ScopeProblem> problems =
         [
             .. parsed.Problems,
             .. snapshots.Problems,
+            .. libraries.Problems,
             .. files.Problems,
             .. targets.Match(_ => [], ps => ps.Select(p => new ScopeProblem(p.Code, new SourceLine(configFile!.ToString(), 0), p.Message, "Fix the deployment config first."))),
             .. ScopeValidator.Validate(scope, snapshots.Loaded, targets.Match(t => t, _ => [])),
             .. SupplierValidator.Validate(scope, today),
+            .. RiskValidator.Validate(scope, libraries.Snapshots),
+            .. BiaValidator.Validate(scope, libraries.Snapshots),
+            .. (await ReportingAsync(dir, cancellationToken, ReadAsync)).Problems,
+            .. (await IrpAsync(dir, scope, cancellationToken, ReadAsync)).Problems,
             .. RunbooksMissing(scope, repoDir),
             .. configFile is null ? [] : deployment.Match(d => EvidencePlanValidator.Collectors(scope, d.Collectors), _ => []),
         ];
         return new(
             [.. problems.Where(p => !p.Warning)],
-            string.Create(CultureInfo.InvariantCulture, $"scope valid: {scope.Setup.Domains.Count} domain(s), {scope.Controls.Count} control(s), {scope.Audits.Count} audit(s){ThirdPartyCount(scope)}"),
+            string.Create(CultureInfo.InvariantCulture, $"scope valid: {scope.Setup.Domains.Count} domain(s), {scope.Controls.Count} control(s), {scope.Audits.Count} audit(s){ThirdPartyCount(scope)}{RiskCount(scope)}"),
             scope,
-            new ScopeInputs(snapshots.Loaded, configFile is null ? null : targets.Match(t => t, _ => []), files.Found) { Today = today, Runbooks = await RunbooksAsync(scope, repoDir, cancellationToken) })
+            new ScopeInputs(snapshots.Loaded, configFile is null ? null : targets.Match(t => t, _ => []), files.Found.Concat(libraries.Files).ToDictionary(StringComparer.Ordinal))
+            {
+                Today = today,
+                Runbooks = await RunbooksAsync(scope, repoDir, cancellationToken),
+                Libraries = libraries.Snapshots,
+            })
         {
             Warnings = [.. problems.Where(p => p.Warning)],
         };
     }
+
+    private static string RiskCount(ScopeDocument scope) =>
+        scope.RiskStudies.Count == 0
+            ? ""
+            : string.Create(CultureInfo.InvariantCulture, $", {scope.RiskStudies.Count} risk study(ies) with {scope.RiskStudies.Sum(r => r.Scenarios.Count)} scenario(s)");
 
     /// <summary>Each runbook the evidence plan names that is in the repo, by its path as the plan names it: the text of its task.</summary>
     private static async Task<Dictionary<string, string>> RunbooksAsync(ScopeDocument scope, string repoDir, CancellationToken cancellationToken)

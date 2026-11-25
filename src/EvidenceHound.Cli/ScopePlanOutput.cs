@@ -57,10 +57,10 @@ internal static class ScopePlanOutput
 
         if (periods.Count > 0)
         {
-            markdown.Append("\n### Audit periods\n\n| Audit | What happens |\n| --- | --- |\n");
+            markdown.Append("\n### Audit periods\n\n| Audit | Covers | What happens |\n| --- | --- | --- |\n");
             foreach (var period in periods)
             {
-                markdown.Append(CultureInfo.InvariantCulture, $"| {Cell(period.Audit)} | {Describe(period)} |\n");
+                markdown.Append(CultureInfo.InvariantCulture, $"| {Cell(period.Audit)} | {AuditPeriods.Covers(period.Audit)} | {Describe(period)} |\n");
             }
         }
 
@@ -79,6 +79,25 @@ internal static class ScopePlanOutput
             foreach (var note in notes.Suppliers)
             {
                 markdown.Append(CultureInfo.InvariantCulture, $"| {Cell(note.Supplier)} | {Cell(note.System ?? "")} | {Cell(note.Detail)} [{note.Code}] |\n");
+            }
+        }
+
+        if (notes.Exceptions.Count > 0)
+        {
+            markdown.Append("\n### Security exceptions and risk acceptances\n\nRead from CISO Assistant, where an approver decides each one; the repo only requests them.\n\n| Kind | Ref | Name | Status | Expires |\n| --- | --- | --- | --- | --- |\n");
+            foreach (var note in notes.Exceptions.Where(n => n.Code == "exception.status"))
+            {
+                markdown.Append(CultureInfo.InvariantCulture, $"| {note.Kind} | {Cell(note.RefId)} | {Cell(note.Name)} | {note.Status} | {note.Expires} |\n");
+            }
+
+            var due = notes.Exceptions.Where(n => n.Code != "exception.status").ToArray();
+            if (due.Length > 0)
+            {
+                markdown.Append("\nTo renew or close:\n\n");
+                foreach (var note in due)
+                {
+                    markdown.Append(CultureInfo.InvariantCulture, $"- {note.RefId}: {note.Detail} [{note.Code}]\n");
+                }
             }
         }
 
@@ -133,7 +152,7 @@ internal static class ScopePlanOutput
                 ["issue"] = n.Issue == AccessIssue.MfaOff ? "mfa_off" : "service_account_excess_role",
                 ["detail"] = n.Detail,
             })]),
-            ["periods"] = new JsonArray([.. periods.Select(p => (JsonNode)new JsonObject { ["audit"] = p.Audit, ["event"] = Event(p.Event), ["baseline"] = p.Baseline })]),
+            ["periods"] = new JsonArray([.. periods.Select(p => (JsonNode)new JsonObject { ["audit"] = p.Audit, ["covers"] = AuditPeriods.Covers(p.Audit), ["event"] = Event(p.Event), ["baseline"] = p.Baseline })]),
             ["gaps"] = new JsonArray([.. notes.Gaps.Select(g => (JsonNode)new JsonObject
             {
                 ["mitigation"] = g.Mitigation,
@@ -148,6 +167,10 @@ internal static class ScopePlanOutput
                 ["result_there"] = d.ResultThere,
             })]),
             ["suppliers"] = new JsonArray([.. notes.Suppliers.Select(n => (JsonNode)new JsonObject { ["code"] = n.Code, ["supplier"] = n.Supplier, ["system"] = n.System, ["detail"] = n.Detail })]),
+            ["exceptions"] = new JsonArray([.. notes.Exceptions.Select(n => (JsonNode)new JsonObject
+            {
+                ["code"] = n.Code, ["kind"] = n.Kind, ["ref_id"] = n.RefId, ["name"] = n.Name, ["status"] = n.Status, ["expires"] = n.Expires, ["detail"] = n.Detail,
+            })]),
             ["changes"] = new JsonArray([.. plan.Changes.Select(c => (JsonNode)new JsonObject
             {
                 ["kind"] = Kind(c.Kind),
@@ -286,6 +309,12 @@ internal static class ScopePlanOutput
     {
         ScopeKind.FeatureFlag => "feature_flag",
         ScopeKind.EntityAssessment => "supplier_assessment",
+        ScopeKind.RiskStudy => "risk_study",
+        ScopeKind.RiskScenario => "risk_scenario",
+        ScopeKind.SecurityException => "security_exception",
+        ScopeKind.RiskAcceptance => "risk_acceptance",
+        ScopeKind.AssetAssessment => "asset_assessment",
+        ScopeKind.EscalationThreshold => "escalation_threshold",
         _ => kind.ToString().ToLowerInvariant(),
     };
 
@@ -305,6 +334,9 @@ internal sealed record PlanNotes(IReadOnlyList<PeriodNote> Periods, IReadOnlyLis
 
     /// <summary>Lapsed supplier approvals and tiers that differ from the forced one.</summary>
     public IReadOnlyList<SupplierNote> Suppliers { get; init; } = [];
+
+    /// <summary>The security exceptions and risk acceptances CISO Assistant holds, with their status and any renewal due (s15-03).</summary>
+    public IReadOnlyList<ExceptionNote> Exceptions { get; init; } = [];
 
     /// <summary>Mitigations the capability map says no product provides.</summary>
     public IReadOnlyList<CapabilityGap> Gaps { get; init; } = [];

@@ -6,8 +6,9 @@ A fictional Example Pty Ltd Sophos Central tenant that answers the `sophos-centr
 make sophos-dev                                   # every control in place, on port 5370
 make sophos-dev ARGS="--variant gaps"             # every deviation below
 make sophos-dev ARGS="--deviation third-super-admin --port 5371"
-make sophos-dev ARGS="--public-url http://host.docker.internal:5370/"   # when hound runs in a container on another network
 ```
+
+Run hound where the server is on `localhost` (in a container, with `--network host`): hound sends credentials over plain http only to the machine it runs on, so an address such as `http://host.docker.internal:5370/` fails with `rest.host_not_allowed`.
 
 The server prints the settings for a `rest` collector with the `sophos-central` profile: `client_id`, `id_url` and `api_url` (both the server's address) and `supported_firewall_firmware`. The secret `client_secret` can be any text.
 

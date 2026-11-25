@@ -55,7 +55,7 @@ At the end `hound init` asks whether to set up a coding assistant in the new rep
 hound add system --scope scope --audit EX-E8
 ```
 
-Adds a system to a domain in `scope/setup.yaml`: its name, ref ID (default `SYS-` and the name), type (`primary` or `supporting`), owner, description and the systems it supports (`--name`, `--ref-id`, `--type`, `--owner`, `--description`, `--parents`). The domain is asked only when the scope has more than one (`--domain`). Each `--audit` adds the system to that audit's `systems`.
+Adds a system to a domain in `scope/setup.yaml`: its name, ref ID (default `SYS-` and the name), type (`primary` or `supporting`), owner, description and the systems it supports, by name (`--name`, `--ref-id`, `--type`, `--owner`, `--description`, `--parents "Example 365"`). The domain is asked only when the scope has more than one (`--domain`). Each `--audit` adds the system to that audit's `systems`.
 
 ## hound add control
 

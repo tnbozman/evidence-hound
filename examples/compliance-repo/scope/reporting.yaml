@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=../../../schemas/scope.schema.json
+# The reports Example Pty Ltd owes when an incident happens, and how soon after discovery. Incidents themselves live in CISO
+# Assistant; 'hound incident obligations <incident>' lists the reports one owes from the data its systems handle.
+# Record each report you make as a timeline entry on the incident: 'Reported: <id>, <their reference>'.
+# Guide: docs/incidents.md. Check each clock against the source before you rely on it.
+obligations:
+  - id: dfars-7012
+    name: DFARS 252.204-7012 cyber incident report
+    report_to: DoD, through the DIBNet portal (needs a medium assurance certificate)
+    within: 72h
+    when: {data: [cui]}
+    reference: DFARS 252.204-7012(c)
+  - id: ndb-assessment
+    name: Notifiable Data Breaches assessment
+    report_to: The privacy officer assesses; the OAIC and the people affected are told if the breach is eligible
+    within: 30d
+    when: {data: [pii]}
+    reference: Privacy Act 1988 s 26WH
+  - id: reportcyber
+    name: Report to ASD's ACSC through ReportCyber
+    report_to: ASD's ACSC (cyber.gov.au/report)
+    within: 1d
+    when: {always: true}

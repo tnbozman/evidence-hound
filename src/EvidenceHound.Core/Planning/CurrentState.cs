@@ -13,6 +13,9 @@ public sealed record CurrentState(IReadOnlyList<CurrentAudit> Audits, IReadOnlyL
     /// undo a document the scope links to the same row.
     /// </summary>
     public IReadOnlyList<string> ScopeDocumentIds { get; init; } = [];
+
+    /// <summary>The day of the run, which decides whether a security exception has expired (s15-03); null treats none as expired.</summary>
+    public DateOnly? Today { get; init; }
 }
 
 /// <summary>An audit, the implementation groups it selects (none selects all) and every one of its rows.</summary>
@@ -24,7 +27,17 @@ public sealed record CurrentAudit(string RefId, IReadOnlyList<string> SelectedGr
 
 /// <summary>One requirement assessment as CISO Assistant holds it. <paramref name="EvidenceIds"/> are CISO Assistant IDs.</summary>
 public sealed record CurrentRow(
-    string Id, string Urn, string? RefId, IReadOnlyList<string> Groups, ComplianceResult Result, string Observation, IReadOnlyList<string> EvidenceIds);
+    string Id, string Urn, string? RefId, IReadOnlyList<string> Groups, ComplianceResult Result, string Observation, IReadOnlyList<string> EvidenceIds)
+{
+    /// <summary>The security exceptions linked to the row (s15-03), with their status and expiry.</summary>
+    public IReadOnlyList<RowWaiver> Exceptions { get; init; } = [];
+
+    /// <summary>The CISO Assistant IDs of the security exceptions linked to the row, as listed; <see cref="Exceptions"/> names them.</summary>
+    public IReadOnlyList<string> ExceptionIds { get; init; } = [];
+}
+
+/// <summary>A security exception linked to a row: its ref_id, name, CISO Assistant status and expiry.</summary>
+public sealed record RowWaiver(string RefId, string Name, string Status, DateOnly? Expires);
 
 /// <summary>An evidence item: its ref_id, CISO Assistant ID and the SHA-256 of its latest revision, if it has one.</summary>
 public sealed record CurrentEvidence(string RefId, string Id, string? LatestSha256);

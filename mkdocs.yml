@@ -83,6 +83,9 @@ nav:
   - Adopt:
       - Onboarding: onboarding.md
       - Scope files: scope.md
+      - Risk studies and exceptions: risk.md
+      - Business impact analysis: bia.md
+      - Incidents and reporting deadlines: incidents.md
       - Third parties: third-parties.md
       - Move off spreadsheets: adopt/migrate-from-spreadsheets.md
       - Answer a prime's questionnaire: adopt/answer-a-prime-questionnaire.md

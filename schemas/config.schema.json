@@ -209,6 +209,13 @@
           "description": "ref_id of the applied control that each collector's health evidence is linked to, for example \"Automated evidence collection\".",
           "type": "string",
           "minLength": 1
+        },
+        "no_evidence": {
+          "description": "What a row with no evidence goes to CISO Assistant as. Default non_compliant: CISO Assistant leaves not-assessed rows out of its compliance percentage, so they would read as compliant. not_assessed opts out.",
+          "enum": [
+            "non_compliant",
+            "not_assessed"
+          ]
         }
       }
     }

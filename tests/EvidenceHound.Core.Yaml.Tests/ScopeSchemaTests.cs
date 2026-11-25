@@ -45,7 +45,21 @@ public class ScopeSchemaTests
         Errors(ProgrammeScopeTests.WithProgrammes(ProgrammeScopeTests.Programme() + "    register:\n      of: ai_systems\n      by: [screening, use]\n")).ShouldBeEmpty();
         Errors(AiRegisterScopeTests.Setup().Replace("screening: elevated", "screening: extreme", StringComparison.Ordinal)).ShouldNotBeEmpty();
         Errors(SspFixture.Ssp).ShouldBeEmpty();
+        Errors(RiskFixture.Study).ShouldBeEmpty();
+        Errors(RiskFixture.Study.Replace("treatment: accept", "treatment: ignore", StringComparison.Ordinal)).ShouldNotBeEmpty();
+        Errors(ExceptionScopeTests.Exceptions).ShouldBeEmpty();
+        Errors(BiaScopeTests.Bia).ShouldBeEmpty();
+        Errors(BiaScopeTests.Setup).ShouldBeEmpty();
+        Errors(BiaScopeTests.Bia.Replace("after: 4h", "after: soon", StringComparison.Ordinal)).ShouldNotBeEmpty();
+        Errors(BiaScopeTests.Bia.Replace("tested: false,", "tested_by: [backup.restore_tested],", StringComparison.Ordinal)).ShouldBeEmpty();
+        Errors(BiaScopeTests.Bia.Replace("tested: false,", "tested_by: [Restore Test],", StringComparison.Ordinal)).ShouldNotBeEmpty();
+        Errors(ReportingObligationTests.Reporting).ShouldBeEmpty();
+        Errors(ReportingObligationTests.Reporting.Replace("within: 72h", "within: three days", StringComparison.Ordinal)).ShouldNotBeEmpty();
+        Errors(ReportingObligationTests.Reporting.Replace("{data: [cui]}", "{data: [secrets]}", StringComparison.Ordinal)).ShouldNotBeEmpty();
+        Errors(ExceptionScopeTests.Exceptions.Replace("    severity: medium", "    severity: medium\n    status: approved", StringComparison.Ordinal)).ShouldNotBeEmpty();
         Errors(SspFixture.Setup).ShouldBeEmpty();
+        Errors(FlowDownTests.Prime).ShouldBeEmpty();
+        Errors(FlowDownTests.Prime.Replace("data: [cui]", "data: [secrets]", StringComparison.Ordinal)).ShouldNotBeEmpty();
         Errors(SspFixture.Ssp.Replace("profile: ism", "profile: iso27001", StringComparison.Ordinal)).ShouldNotBeEmpty();
     }
 

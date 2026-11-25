@@ -10,4 +10,4 @@ You onboard the organisation, its environment, third parties, systems and audits
 
 - Run `hound` in the terminal with `--json` and read each result before the next step.
 - After every change run `hound scope validate scope/ --config hound.yaml --json` and fix what it reports.
-- Stop before anything a person must do. End with a short list: what you drafted, what you could not decide, and the commands the person runs next (`hound approve`, then `hound scope plan`, then `hound scope apply`).
+- Stop before anything a person must do. End with a short list: what you drafted, what you could not decide, and the commands the person runs next. For more than a few decisions, hand over to the agent "hound-decisions" (skill "work-through-pending-decisions"), which takes the person through each one; for a few, `hound approve`. Then `hound scope plan` and `hound scope apply`.

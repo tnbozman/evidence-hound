@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace EvidenceHound.Core.Scope;
 
@@ -17,7 +18,7 @@ public sealed record AuditPeriod(string Series, string Label, DateOnly Start, Da
 /// the financial year its first day falls in, 1 July to 30 June, named by the year it ends: a quarter of that year (<c>Q1-2027FY</c> is July
 /// to September 2026) or a calendar month (<c>M07-2027FY</c> is July 2026). A period is as long as the unit that labels it, so labels never repeat.
 /// </summary>
-public static class AuditPeriods
+public static partial class AuditPeriods
 {
     /// <summary>The period lengths a cycle can have.</summary>
     public static IReadOnlyList<string> Lengths { get; } = ["month", "quarter"];
@@ -67,6 +68,39 @@ public static class AuditPeriods
         ArgumentNullException.ThrowIfNull(cycle);
         return DateOnly.ParseExact(cycle.Starts, "yyyy-MM-dd", CultureInfo.InvariantCulture);
     }
+
+    /// <summary>
+    /// The months a period audit covers, in words, from the label in its ref_id: <c>October to December 2026</c> for <c>Q2-2027FY</c>,
+    /// <c>July 2026</c> for <c>M07-2027FY</c>; null for an audit without a period (s15-D8).
+    /// </summary>
+    public static string? Covers(string auditRefId)
+    {
+        ArgumentNullException.ThrowIfNull(auditRefId);
+        var match = PeriodLabel().Match(auditRefId);
+        if (!match.Success)
+        {
+            return null;
+        }
+
+        var endYear = int.Parse(match.Groups["year"].Value, CultureInfo.InvariantCulture);
+        static DateOnly Month(int monthOfYear, int endYear) =>
+            new DateOnly(endYear - 1, FinancialYearStart, 1).AddMonths(monthOfYear);
+        static string Name(DateOnly month) => month.ToString("MMMM yyyy", CultureInfo.InvariantCulture);
+        if (match.Groups["quarter"].Success)
+        {
+            var first = Month((int.Parse(match.Groups["quarter"].Value, CultureInfo.InvariantCulture) - 1) * 3, endYear);
+            var last = first.AddMonths(2);
+            return first.Year == last.Year
+                ? $"{first.ToString("MMMM", CultureInfo.InvariantCulture)} to {Name(last)}"
+                : $"{Name(first)} to {Name(last)}";
+        }
+
+        var calendarMonth = int.Parse(match.Groups["month"].Value, CultureInfo.InvariantCulture);
+        return Name(new DateOnly(calendarMonth >= FinancialYearStart ? endYear - 1 : endYear, calendarMonth, 1));
+    }
+
+    [GeneratedRegex(@"-(?:Q(?<quarter>[1-4])|M(?<month>0[1-9]|1[0-2]))-(?<year>\d{4})FY(?:-|$)", RegexOptions.CultureInvariant)]
+    private static partial Regex PeriodLabel();
 
     private static int Months(string length) => length switch
     {

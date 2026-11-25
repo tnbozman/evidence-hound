@@ -200,6 +200,7 @@ public static class HoundCli
             CollectorsCommand.Build(output, registry),
             ConfigCommands.Build(output, loggers, configuration, registry),
             FrameworkCommands.Build(output, loggers),
+            LibraryCommands.Build(output, loggers),
             Setup.InitCommand.Build(terminal, loggers, configuration, registry),
             Setup.AddCommands.Build(terminal, loggers, configuration, registry),
             ExplainCommand.Build(terminal, loggers),
@@ -216,6 +217,8 @@ public static class HoundCli
             PlanCommand.Build(output, loggers, configuration, registry),
             ProfileCommands.Build(output, loggers, configuration),
             ProgrammeCommands.Build(output, loggers, configuration, registry),
+            IncidentCommands.Build(output, loggers, configuration, registry),
+            IrpCommands.Build(output, loggers, configuration, registry),
             ReportCommands.Build(output, loggers, configuration, registry),
             SspCommands.Build(output, loggers, configuration, registry),
             PublishCommand.Build(output, loggers, configuration, registry),
@@ -224,6 +227,10 @@ public static class HoundCli
             StatusCommand.Build(output, loggers, configuration, registry),
         };
     }
+
+    /// <summary>Logs to <paramref name="error"/>, with each HTTP request's information lines and each retry attempt (Polly) hidden below warnings.</summary>
+    internal static ILoggingBuilder DefaultLogging(ILoggingBuilder logging, TextWriter error) =>
+        logging.AddFilter("System.Net.Http.HttpClient", LogLevel.Warning).AddFilter("Polly", LogLevel.Warning).AddProvider(new StderrLoggerProvider(error));
 
     /// <summary>One host per run. Logs go to <paramref name="error"/>; the level comes from configuration (for example <c>Logging__LogLevel__Default</c>).</summary>
     private static IHost BuildHost(
@@ -236,8 +243,7 @@ public static class HoundCli
         builder.Configuration.AddInMemoryCollection(settings);
         builder.Configuration.AddFileVariables();
         builder.Logging.ClearProviders();
-        builder.Logging.AddFilter("System.Net.Http.HttpClient", LogLevel.Warning);
-        builder.Logging.AddProvider(new StderrLoggerProvider(error));
+        DefaultLogging(builder.Logging, error);
         configureLogging?.Invoke(builder.Logging);
         builder.Services.AddHttpClient();
         builder.Services.AddBuiltInCollectors();

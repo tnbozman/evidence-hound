@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../../../schemas/scope.schema.json
+# A fictional risk study for Example Pty Ltd, rated on the example 4x4 matrix (../../libraries/example-risk.yaml).
+# Guide: docs/risk.md. Levels and approvals are CISO Assistant's: this file says what is rated and why.
+ref_id: EX-RISK-2026
+name: Example Pty Ltd risk register 2026
+domain: Example Pty Ltd
+perimeter: Corporate IT
+matrix: urn:example:risk:matrix:example-4x4
+status: in_progress
+authors: [it@example.com]
+eta: "2026-12-31"
+scenarios:
+  - ref_id: R-01
+    name: Ransomware encrypts the file shares
+    description: Staff files are encrypted and held to ransom.
+    systems: [Example 365]
+    threats: [THR-02]
+    existing_controls: [AC-BACKUP]
+    current: {probability: Possible, impact: Major}
+    residual: {probability: Unlikely, impact: Major}
+    treatment: mitigate
+    justification: Backups are restored and tested each month.
+  - ref_id: R-02
+    name: The only backup administrator leaves
+    threats: [THR-01]
+    systems: [Example backup service]
+    current: {probability: Unlikely, impact: Moderate}
+    treatment: accept
+    justification: A second administrator is trained by March; until then the runbook covers restores.

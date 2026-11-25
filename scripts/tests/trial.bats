@@ -37,10 +37,15 @@ setup() {
   [ "$(trial_network_args "network hound-ciso-assistant_default")" = "--network hound-ciso-assistant_default --add-host host.docker.internal:host-gateway" ]
 }
 
-@test "the Sophos Central dev server's address as hound's container sees it, for each case" {
-  [ "$(trial_dev_url bundled 5370)" = "http://localhost:5370/" ]
-  [ "$(trial_dev_url local 5370)" = "http://localhost:5370/" ]
-  [ "$(trial_dev_url "network hound-ciso-assistant_default" 5370)" = "http://host.docker.internal:5370/" ]
+@test "a dev server is always reached on localhost, as credentials go over plain http only to this machine" {
+  [ "$(trial_dev_url 5370)" = "http://localhost:5370/" ]
+}
+
+@test "hound reading a dev server shares the host network, reaching a make ca-up stack on its published port" {
+  [ "$(trial_run_mode bundled yes)" = "bundled" ]
+  [ "$(trial_run_mode local yes)" = "local" ]
+  [ "$(trial_run_mode "network hound-ciso-assistant_default" yes)" = "local" ]
+  [ "$(trial_run_mode "network hound-ciso-assistant_default" no)" = "network hound-ciso-assistant_default" ]
 }
 
 @test "the sophos collector for the dev server reads it with the sophos-central profile and asks for no credential" {
@@ -273,4 +278,23 @@ LOG
   printf 'mine\n' >"$ws/inbox/oracle.md"
   trial_seed_inputs "$BATS_TEST_DIRNAME/../.." "$ws"
   [ "$(cat "$ws/inbox/oracle.md")" = mine ]
+}
+
+@test "an audit's reading in CISO Assistant counts rows with no evidence, and a 100% over rows not assessed fails the trial" {
+  # REF COMPLIANT PARTIAL NON_COMPLIANT NOT_ASSESSED NOT_APPLICABLE NO_EVIDENCE: CISO Assistant leaves not-assessed and
+  # not-applicable rows out of its percentage, so 3 passes over 43 rows nobody assessed read 100%.
+  run trial_audit_reading EX-SYSTEM-2026 3 0 0 43 61 0
+  [ "$status" -ne 0 ]
+  [[ "$output" == "EX-SYSTEM-2026: CISO Assistant reads 100%"* ]]
+  [[ "$output" == *"43 not assessed"* ]]
+  run trial_audit_reading EX-SYSTEM-2026 3 0 43 0 61 43
+  [ "$status" -eq 0 ]
+  [ "$output" = "EX-SYSTEM-2026: CISO Assistant reads 6% (3 compliant, 0 partially compliant, 43 non-compliant of which 43 have no evidence yet; it leaves out 61 not applicable and 0 not assessed)." ]
+  run trial_audit_reading EX-EMPTY-2026 0 0 0 0 5 0
+  [ "$status" -eq 0 ]
+  [[ "$output" == "EX-EMPTY-2026: CISO Assistant reads no percentage"* ]]
+  # An audit with no rows at all was not read: the check must not pass on nothing.
+  run trial_audit_reading EX-NONE-2026 0 0 0 0 0 0
+  [ "$status" -ne 0 ]
+  [[ "$output" == "EX-NONE-2026: no rows were read"* ]]
 }

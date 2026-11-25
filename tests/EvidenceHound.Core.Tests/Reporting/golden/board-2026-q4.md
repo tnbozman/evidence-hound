@@ -6,8 +6,8 @@ As at 2026-12-31. Figures come from the quarter-end snapshots in CISO Assistant;
 
 Proposed by management for the authorising official to confirm.
 
-- **Essential Eight: off track**. 2 of 3 requirements compliant at Maturity Level Two. 1 got worse since last quarter (E8-2). 1 non-compliant. Audit of record: [EX-E8-2026](https://ciso.example.com/compliance-assessments/ca-e8).
-- **AI governance (AI6 Foundations): on track**. 1 of 1 requirements compliant at Foundations. Audit of record: [EX-AI6-2026](https://ciso.example.com/compliance-assessments/ca-ai6).
+- **Essential Eight: off track**. 2 of 3 requirements compliant at Maturity Level Two. 1 got worse since last quarter (E8-2). 1 non-compliant. Level met: Maturity Level One. Compliant 2 of 3 applicable (66%), counting rows not assessed as not met; assessed 3 of 3; not assessed: 0. Audit of record: [EX-E8-2026](https://ciso.example.com/compliance-assessments/ca-e8).
+- **AI governance (AI6 Foundations): on track**. 1 of 1 requirements compliant at Foundations. Level met: Foundations. Compliant 1 of 1 applicable (100%), counting rows not assessed as not met; assessed 1 of 1; not assessed: 0. Audit of record: [EX-AI6-2026](https://ciso.example.com/compliance-assessments/ca-ai6).
 
 ## 2. Posture
 

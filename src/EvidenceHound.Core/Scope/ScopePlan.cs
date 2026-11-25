@@ -8,9 +8,10 @@ public enum ScopeKind
     Framework,
     Domain,
     Perimeter,
-    System,
+    // Users and teams come before the systems and controls that name them as owners, so one apply on an empty CISO Assistant writes both.
     User,
     Team,
+    System,
     Audit,
     Document,
     Control,
@@ -23,6 +24,13 @@ public enum ScopeKind
     Assessment,
     Evidence,
     TaskTemplate,
+    SecurityException,
+    RiskStudy,
+    RiskScenario,
+    RiskAcceptance,
+    Bia,
+    AssetAssessment,
+    EscalationThreshold,
 }
 
 /// <summary>
@@ -36,10 +44,20 @@ public sealed record ScopeObject(ScopeKind Kind, string Key, IReadOnlyDictionary
 
     /// <summary>A document's files, with their SHA-256, for the writer to upload; the plan compares their hashes (the <c>hashes</c> field).</summary>
     public IReadOnlyList<ScopeFile> Files { get; init; } = [];
+
+    /// <summary>
+    /// Values the writer sends as numbers but the plan shows as names, such as a risk scenario's ratings by their position on the matrix
+    /// (s15-02). Never compared: the matching named fields are.
+    /// </summary>
+    public IReadOnlyDictionary<string, int> Levels { get; init; } = new Dictionary<string, int>();
 }
 
 /// <summary>A file of a document: its path and the SHA-256 of its content, as lowercase hex.</summary>
-public sealed record ScopeFile(string Path, string Sha256);
+public sealed record ScopeFile(string Path, string Sha256)
+{
+    /// <summary>For a custom library's file, the digest of its objects (<see cref="Risk.LibraryContent"/>), compared with the stored library's.</summary>
+    public string? Content { get; init; }
+}
 
 /// <summary>
 /// An object CISO Assistant holds, with the state fingerprint <c>hound</c> last wrote on it (from the marker at the end of its description),

@@ -314,6 +314,18 @@ public class ConfigTests
     }
 
     [Fact]
+    public void A_target_publishes_rows_with_no_evidence_as_non_compliant_unless_it_opts_out()
+    {
+        // s15-14: CISO Assistant leaves not-assessed rows out of its compliance percentage, so they go as non-compliant by default.
+        ConfigLoader.Parse(Valid, Source, Known).Value().Targets[0].NoEvidence.ShouldBe(EvidenceHound.Core.Mapping.ComplianceResult.NonCompliant);
+        var yaml = Valid.Replace("  compliance_assessment: EXAMPLE-1", "  compliance_assessment: EXAMPLE-1\n  no_evidence: not_assessed", StringComparison.Ordinal);
+
+        ConfigLoader.Parse(yaml, Source, Known).Value().Targets[0].NoEvidence.ShouldBe(EvidenceHound.Core.Mapping.ComplianceResult.NotAssessed);
+        ConfigLoader.Parse(yaml.Replace("no_evidence: not_assessed", "no_evidence: compliant", StringComparison.Ordinal), Source, Known).Problems()
+            .ShouldContain(p => p.Code == "config.no_evidence_invalid");
+    }
+
+    [Fact]
     public void Retention_is_optional()
     {
         var yaml = Valid.Replace("  retention_days: 30\n", "", StringComparison.Ordinal);

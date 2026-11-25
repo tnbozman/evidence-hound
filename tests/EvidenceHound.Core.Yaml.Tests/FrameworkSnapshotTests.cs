@@ -116,4 +116,17 @@ public class FrameworkSnapshotTests
         snapshot.Resolve(Mapping.RequirementKey.Urn("urn:example:risk:req_node:example-repeated:idn:act-03")).ShouldHaveSingleItem().RefId.ShouldBe("ACT-03");
         snapshot.Resolve(Mapping.RequirementKey.Ref("ACT-99")).ShouldBeEmpty();
     }
+
+    [Fact]
+    public void Keeps_the_libraries_the_framework_brings_with_it()
+    {
+        // s15-01: the Essential Eight library declares the Common Catalog as a dependency, so its threats arrive with the framework.
+        var yaml = RepoFiles.RepeatedLibrary.Replace("objects:", "dependencies:\n- urn:example:risk:library:example-catalog\nobjects:", StringComparison.Ordinal);
+
+        var snapshot = FrameworkLibraryReader.Snapshot(yaml, Source).Value();
+
+        snapshot.Dependencies.ShouldBe(["urn:example:risk:library:example-catalog"]);
+        FrameworkSnapshotJson.Read(FrameworkSnapshotJson.Write(snapshot), "s.json").Value().Dependencies.ShouldBe(snapshot.Dependencies);
+        FrameworkSnapshotJson.Write(FrameworkLibraryReader.Snapshot(RepoFiles.RepeatedLibrary, Source).Value()).ShouldNotContain("dependencies");
+    }
 }

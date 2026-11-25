@@ -32,7 +32,7 @@ internal static class AgentCommands
                 return ExitCodes.Usage;
             }
 
-            return await SetupAsync(parseResult.GetValue(repo)?.FullName ?? Directory.GetCurrentDirectory(), chosen, terminal, logger, cancellationToken);
+            return await SetupAsync(parseResult.GetValue(repo)?.FullName ?? Directory.GetCurrentDirectory(), chosen, parseResult.RootCommandResult.Command, terminal, logger, cancellationToken);
         });
 
         return new Command("agent", "Set up a coding assistant (Claude Code or GitHub Copilot) to work in the config repo with hound.") { setup };
@@ -43,8 +43,8 @@ internal static class AgentCommands
         : null;
 
     /// <summary>Writes the assistant's files into <paramref name="repo"/> and says, on the output, what happened to each.</summary>
-    public static Task<int> SetupAsync(string repo, Assistant assistant, Terminal terminal, ILogger logger, CancellationToken cancellationToken) =>
-        AgentKit.Files(assistant, Version()).Match(
+    public static Task<int> SetupAsync(string repo, Assistant assistant, Command root, Terminal terminal, ILogger logger, CancellationToken cancellationToken) =>
+        AgentKit.Files(assistant, Version(), Reference(root)).Match(
             files => WriteAsync(repo, files, terminal, cancellationToken),
             problems => Task.FromResult(Log.Problems(logger, problems)));
 
@@ -84,6 +84,29 @@ internal static class AgentCommands
 
         await terminal.Output.WriteLineAsync("Review and commit these files. Then ask your assistant to onboard a system with hound; you approve with hound approve in a terminal.".AsMemory(), cancellationToken);
         return ExitCodes.Ok;
+    }
+
+    /// <summary>Every visible command under <paramref name="root"/>, depth first, with its usage, description and options (s15-13).</summary>
+    internal static IReadOnlyList<CommandEntry> Reference(Command root)
+    {
+        ArgumentNullException.ThrowIfNull(root);
+        var entries = new List<CommandEntry>();
+        void Walk(Command command, string path)
+        {
+            foreach (var sub in command.Subcommands.Where(c => !c.Hidden))
+            {
+                var at = $"{path} {sub.Name}";
+                var arguments = sub.Arguments.Where(a => !a.Hidden).Select(a => a.Arity.MinimumNumberOfValues == 0 ? $"[<{a.Name}>]" : $"<{a.Name}>");
+                entries.Add(new CommandEntry(
+                    string.Join(' ', [at, .. arguments]),
+                    sub.Description ?? "",
+                    [.. sub.Options.Where(o => !o.Hidden && o.Name is not ("--help" or "--version")).Select(o => new CommandOption(o.Name, o.Description ?? ""))]));
+                Walk(sub, at);
+            }
+        }
+
+        Walk(root, "hound");
+        return entries;
     }
 
     /// <summary>Removes <paramref name="folder"/> and its parents while they are empty, stopping at <paramref name="repo"/>.</summary>

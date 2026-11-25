@@ -2315,5 +2315,9 @@
       "ref_id": null,
       "name": "Regular backups"
     }
+  ],
+  "dependencies": [
+    "urn:intuitem:risk:library:doc-pol",
+    "urn:intuitem:risk:library:intuitem-common-catalog"
   ]
 }

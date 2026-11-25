@@ -77,4 +77,15 @@ public sealed class PeriodTests
         AuditPeriods.Target("EX-E8", series, new DateOnly(2027, 1, 1)).ShouldBe("EX-E8-Q3-2027FY");
         AuditPeriods.Target("EX-E8-2026", series, new DateOnly(2027, 1, 1)).ShouldBe("EX-E8-2026");
     }
+
+    [Fact]
+    public void A_period_audit_says_the_months_it_covers()
+    {
+        // s15-D8: a person could not tell that Q2-2027FY was October to December 2026.
+        AuditPeriods.Covers("EX-E8-Q2-2027FY").ShouldBe("October to December 2026");
+        AuditPeriods.Covers("EX-E8-Q3-2027FY-BACKUP").ShouldBe("January to March 2027");
+        AuditPeriods.Covers("EX-E8-M07-2027FY").ShouldBe("July 2026");
+        AuditPeriods.Covers("EX-E8-M02-2027FY-BACKUP").ShouldBe("February 2027");
+        AuditPeriods.Covers("EX-E8-2026").ShouldBeNull();
+    }
 }

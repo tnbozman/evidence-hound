@@ -1,0 +1,66 @@
+# A fictional custom library for Example Pty Ltd: a 4x4 risk matrix and two threats (s15-01).
+urn: urn:example:risk:library:example-risk
+locale: en
+ref_id: example-risk
+name: Example Pty Ltd risk matrix and threats
+description: The risk matrix and extra threats Example Pty Ltd rates its risk studies on.
+version: 1
+publication_date: 2026-11-25
+provider: Example Pty Ltd
+packager: example
+objects:
+  risk_matrix:
+    - urn: urn:example:risk:matrix:example-4x4
+      ref_id: example-4x4
+      name: Example 4x4
+      description: Four probability and four impact levels.
+      probability:
+        - abbreviation: R
+          name: Rare
+          description: Less than once in ten years
+        - abbreviation: U
+          name: Unlikely
+          description: Once in three to ten years
+        - abbreviation: P
+          name: Possible
+          description: Once in one to three years
+        - abbreviation: L
+          name: Likely
+          description: More than once a year
+      impact:
+        - abbreviation: Mi
+          name: Minor
+          description: Hours of disruption, no data lost
+        - abbreviation: Mo
+          name: Moderate
+          description: A day of disruption or a small data loss
+        - abbreviation: Ma
+          name: Major
+          description: Several days of disruption or a reportable breach
+        - abbreviation: Se
+          name: Severe
+          description: Loss of a contract or regulatory action
+      risk:
+        - abbreviation: L
+          name: Low
+          description: Accept and monitor
+        - abbreviation: M
+          name: Medium
+          description: Treat within the quarter
+        - abbreviation: H
+          name: High
+          description: Treat now; the CTO is told
+      grid:
+        - [0, 0, 1, 1]
+        - [0, 1, 1, 2]
+        - [1, 1, 2, 2]
+        - [1, 2, 2, 2]
+  threats:
+    - urn: urn:example:risk:threat:example-risk:thr-01
+      ref_id: THR-01
+      name: Loss of the only backup administrator
+      description: The one person who can restore backups leaves or is unavailable.
+    - urn: urn:example:risk:threat:example-risk:thr-02
+      ref_id: THR-02
+      name: Supplier remote access misused
+      description: A managed service provider's remote access is used beyond its contract.

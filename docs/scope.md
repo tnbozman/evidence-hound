@@ -42,6 +42,7 @@ Every ref ID reads the same way whoever wrote it: its kind's prefix, then upper 
 | perimeter | `PER-` | `PER-CORP` |
 | supplier assessment | `EA-` | `EA-SUP-EXAMPLE` |
 | evidence plan row | `EV-` | `EV-BACKUP-RESTORE` |
+| customer | `CUS-` | `CUS-EXAMPLE-PRIME` |
 
 An audit has no prefix. An audit that runs in periods, as `hound init` writes it, is a series `<CODE>-<FRAMEWORK>`, such as `EX-E8`, or `<CODE>-<FRAMEWORK>-<SYSTEM>` for one system; each period reads `<CODE>-<FRAMEWORK>-<INTERVAL>-<YEAR>FY[-<SYSTEM>]`, such as `EX-E8-Q2-2027FY` ([Audit periods](#audit-periods)). An audit without a cycle reads `<CODE>-<FRAMEWORK>-<YEAR>`, such as `EX-E8-2026`.
 
@@ -54,10 +55,10 @@ A prompt for a ref ID (`hound add system`, `hound add control`, `hound onboard <
 | `organisation.root_folder` | The existing folder the domains sit under. Default `Global`. |
 | `organisation.entity` | Optional. The organisation's own entity, which CISO Assistant creates itself as its main entity: `name`, and optional `description`, `mission`, `country`, `currency` and `identifiers`, as for a [third party](#third-partiesentityyaml). `hound scope apply` only ever updates it in place, never creates or deletes it, and it carries no `[hound scope]` marker. Left out, the main entity is not read or changed. |
 | `frameworks` | Each framework to load: `urn` (the framework URN), and `library` (a library URN from CISO Assistant's stored libraries) or `file` (a custom library file). `snapshot` names the framework snapshot made by `hound framework snapshot`, so groups and requirements can be checked offline; Paths are relative to setup.yaml. |
-| `libraries` | Other libraries to load by URN, such as the mapping set between the Essential Eight and the Essentials. |
+| `libraries` | Other libraries to load. A URN loads one CISO Assistant already stores, such as the mapping set between the Essential Eight and the Essentials. A map with `urn` and `file` uploads your own library from the repo, such as a custom risk matrix or threat catalogue, and `snapshot` names the snapshot made by `hound library snapshot`. Raise the file's `version` whenever you change it: CISO Assistant only takes a new version, so `hound` stops with `library.version_not_bumped` otherwise, and uploads and updates the library when the version goes up. See [Risk matrices and threats](#risk-matrices-and-threats). |
 | `domains` | Folders. Each has a `name`, a `description`, its `perimeters` (or a single `perimeter`) and its `systems`. |
 | perimeter | `name`, optional `ref_id` and `description`. |
-| system | `name`, `type` (`primary` or `supporting`), optional `ref_id`, `description`, `owner`, `parents` (other systems by name), `tags` (per-framework labels such as `essentials_domain: identity` or `cui: "true"`), `solution` (the third-party solution that provides it, by `ref_id`) `supplied_through` (a reseller or managed service provider, by the third party's `ref_id`) `data` (the [sensitive data](#sensitive-data) it handles) and `ai` (its [AI register entry](#ai-systems), when it is an AI system). A system with either supplier key is registered only once those suppliers are approved: see [Supplier approval](#supplier-approval). |
+| system | `name`, `type` (`primary` or `supporting`), optional `ref_id`, `description`, `owner`, `parents` (other systems by name), `tags` (per-framework labels such as `essentials_domain: identity` or `cui: "true"`), `solution` (the third-party solution that provides it, by `ref_id`) `supplied_through` (a reseller or managed service provider, by the third party's `ref_id`) `data` (the [sensitive data](#sensitive-data) it handles) `ai` (its [AI register entry](#ai-systems), when it is an AI system), `objectives` (security objectives on CISO Assistant's 0 to 4 scale, such as `{confidentiality: 3, availability: 2}`) and `recovery` (recovery objectives `rto`, `rpo` and `mtd` as durations such as `4h` or `2d`; see [Business impact analyses](#biabiayaml)). Objectives and recovery objectives are written only when the file declares them, so values set in CISO Assistant are otherwise kept. A system with either supplier key is registered only once those suppliers are approved: see [Supplier approval](#supplier-approval). |
 | `programmes` | Optional. The compliance programmes the reports are organised by, such as the Essential Eight and later AI6. Each has `id` (a lowercase slug such as `essential-eight`, unique), `name`, `framework` (a framework URN declared above, with a `snapshot`), `groups` (the implementation groups reported against, which must exist in the snapshot), `audit` (the `ref_id` of the audit, or audit series, of record) and optional `group_by` (`parent`, the default: requirements are grouped under their parent node, such as the Essential Eight strategy), and optional `register`, the register its reports summarise: `of` (`ai_systems`, the [AI systems](#ai-systems), or `systems`, every system) and `by` (the fields to count by: `screening`, `use` and `oversight` for AI systems, `type` for systems), such as `register: { of: ai_systems, by: [screening, use] }`. An audit belongs to at most one programme. Programmes create nothing in CISO Assistant and never appear in `hound scope plan`. `hound programme list` shows each one with its requirement counts per group and per parent node, from the snapshot alone, and its register's counts from the scope. |
 
 ### AI systems
@@ -105,6 +106,41 @@ In CISO Assistant the asset gets the labels `ai-system`, `ai-screening-elevated`
 questions 1, 5), third party, human on the loop." `hound scope validate` reports `ai.screening_disagrees` (normal with a yes, or
 elevated with none), `ai.impact_date_without_approval`, `ai.retired_before_use`, and `ai.solution_missing` for a third-party AI system
 with no `solution`.
+
+### Risk matrices and threats
+
+Risk studies are rated on a risk matrix and name threats from a threat catalogue. Both come from CISO Assistant libraries. Many arrive
+with a framework: CISO Assistant loads a library's declared `dependencies` with it, so loading the Essential Eight also loads intuitem's
+Common Catalog of threats (and its policy and reference controls catalogue). The ASD Essentials library declares none. `hound scope plan`
+shows what a framework brings in a `brings` line, read from its snapshot. Declare only what does not arrive with a framework.
+
+A built-in matrix, such as `urn:intuitem:risk:library:critical_risk_matrix_5x5`, is a URN under `libraries`. Your own matrix or threats
+go in a library file under `libraries/` in the repo, listed with its URN and file:
+
+```yaml
+libraries:
+  - urn: urn:intuitem:risk:library:critical_risk_matrix_5x5
+  - urn: urn:example:risk:library:example-risk
+    file: ../libraries/example-risk.yaml
+    snapshot: ../libraries/example-risk.json
+```
+
+Check the file offline, then snapshot it so risk studies are checked by level name and threat without CISO Assistant:
+
+```console
+$ hound library validate libraries/example-risk.yaml
+valid: 1 risk matrix, 2 threats
+$ hound library snapshot libraries/example-risk.yaml --out libraries/example-risk.json
+```
+
+`hound library validate` reports `library.matrix_urn_invalid` (a matrix URN not of the form `urn:<packager>:risk:matrix:<id>`),
+`library.matrix_level_gap` (an explicit level `id` that is not its position, counting from 0), `library.matrix_grid_shape` (not one grid
+row per probability level with one cell per impact level) and `library.matrix_grid_unknown_risk` (a cell that is not a risk level).
+`hound scope validate` runs the same checks on every library file the setup lists.
+
+CISO Assistant only takes a changed library when its `version` goes up. If the file differs from the one it stores at the same version,
+`hound scope plan` and `hound scope apply` stop with `library.version_not_bumped`. Raise the version, and the apply uploads the file and
+updates the loaded library.
 
 ## controls.yaml
 
@@ -269,6 +305,35 @@ assessments:
 
 Validation reports an assessment naming a solution the entity does not provide (`supplier.solution_unknown`), an unknown perimeter, domain or questionnaire, a criticality outside 1 to 4, `review_every` without a `due_date` (`supplier.review_without_due_date`), a conclusion naming a review that is not one of the assessment's (`supplier.conclusion_review_unknown`) and a forced tier without a reason (`supplier.forced_tier_reason_missing`).
 
+### Customer contracts and flow-down
+
+A prime you supply is declared like a supplier, in its own file under `scope/third-parties/`, with `CUS-` in place of `SUP-` and `customer: true` on each of its contracts. The contract's `obligations` list the clauses it imposes:
+
+```yaml
+ref_id: CUS-EXAMPLE-PRIME
+name: Example Prime Pty Ltd
+domain: Example Pty Ltd
+contracts:
+  - ref_id: CTR-PRIME-PARTS
+    name: Machined parts subcontract
+    status: active
+    customer: true
+    obligations:
+      - clause: DFARS 252.204-7012
+        framework: urn:intuitem:risk:framework:nist-sp-800-171-rev2
+        level: "2"
+        data: [cui]
+        flow_down: true
+      - clause: Essential Eight maturity level 2
+        framework: urn:intuitem:risk:framework:essential-eight-2023
+        level: "2"
+```
+
+- `clause` is the clause as the contract names it. `framework` (a URN in `setup.yaml`) and `level` say what it requires; `hound programme list` then names, under each programme with that framework, the customer that requires it.
+- `flow_down: true` means your own suppliers must carry the clause. `data` limits it to suppliers whose solutions handle those kinds of sensitive data; with no `data`, every supplier contract must carry it.
+- A supplier contract lists the clauses it carries under its own `obligations`, by `clause` alone. `hound scope validate` warns with `contract.flow_down_missing` for each supplier contract that lacks one it owes (a finding that joins the weekly review and blocks nothing), also warns with `contract.framework_unknown` for a framework `setup.yaml` does not load (a requirement no programme tracks yet: add the framework and a programme for it), and reports `contract.flow_down_invalid` for `flow_down` on a supplier contract.
+- `hound supplier list --data cui` shows each supplier's flowed-down clauses as carried or missing: the answer to a prime's supply-chain questionnaire.
+
 ### Supplier approval
 
 A supplier is **approved** when its latest concluded assessment is concluded `ok`, that conclusion has not expired, no later review is past its due date without a conclusion, and it has an `active` contract. A person approves in this repo with `hound approve` (in a terminal; an agent or a pipe is refused), which makes the contract `active` and records the review's conclusion in the supplier's file. What the file records counts before it is applied, and wins over what CISO Assistant holds for the same review, so one `hound scope apply` can write the supplier, its conclusion and the system together. `scope plan` and `scope apply` check this before planning:
@@ -339,7 +404,158 @@ Each requirement row gets a status from its result: `compliant` is *Implemented*
 
 External services are the solutions the scope links the boundary's systems to (`solution:` in `setup.yaml`), with their suppliers as CISO Assistant holds them. Controls and requirement rows come from the programme's audit of record. Problems: `ssp.programme_unknown`, `ssp.perimeter_unknown`, `ssp.role_missing`, `ssp.role_unknown`, `ssp.document_unknown`, `ssp.section_missing`, and `scope.duplicate` for a second plan for the same programme.
 
+## risks/&lt;study&gt;.yaml
+
+One file per risk study (CISO Assistant's risk assessment) and its scenarios. Ratings, treatment and justification are proposed and
+reviewed in a pull request like any other change; accepting a risk and approving it stays with the Approver in CISO Assistant. Ratings
+use the matrix's level names from its [library snapshot](#risk-matrices-and-threats). CISO Assistant computes the risk levels, so they
+are never written.
+
+```yaml
+ref_id: EX-RISK-2026
+name: Example Pty Ltd risk register 2026
+domain: Example Pty Ltd
+perimeter: Corporate IT                  # optional
+matrix: urn:example:risk:matrix:example-4x4
+status: in_progress                      # planned, in_progress, in_review, done or deprecated
+authors: [it@example.com]
+reviewers: [ceo@example.com]
+eta: "2026-12-31"
+scenarios:
+  - ref_id: R-01
+    name: Ransomware encrypts the file shares
+    systems: [Example 365]               # impacted systems, by name
+    threats: [THR-02]                    # by URN or ref_id, from a library snapshot
+    existing_controls: [AC-BACKUP]       # by ref_id from controls.yaml
+    planned_controls: [AC-MFA]
+    current: {probability: Possible, impact: Major}
+    residual: {probability: Unlikely, impact: Major}
+    # inherent: {probability: Likely, impact: Severe}   # when CISO Assistant's inherent risk flag is on
+    treatment: mitigate                  # open (the default), mitigate, accept, avoid or transfer
+    justification: Backups are restored and tested each month.
+```
+
+`--` (or leaving a rating out) means not rated. `hound scope validate` reports `risk.matrix_unknown` (no library snapshot holds the
+matrix), `risk.level_unknown` (a level name the matrix does not have, with its line), `risk.residual_above_current` (treatment can only
+lower a risk, as CISO Assistant's own consistency check says), `risk.system_unknown`, `risk.threat_unknown`, `risk.control_unknown`,
+`risk.domain_unknown`, `risk.perimeter_unknown`, duplicate `ref_id`s, and the warning `risk.planned_control_active` for a planned control
+that controls.yaml says is already active.
+
+`hound scope plan` shows a rating change by level name, such as `current_probability: Likely → Possible`, so a reviewer reads what
+changed without the matrix to hand.
+
+### Risk acceptances
+
+A scenario with `treatment: accept` asks CISO Assistant for a risk acceptance, under the ref_id `ACC-<study>-<scenario>` with the
+scenario's justification. `hound` never sets its state: the Approver accepts or rejects it in CISO Assistant, and `hound scope plan`
+shows what they decided.
+
+## exceptions.yaml
+
+Security exceptions: a known gap the organisation lives with for a time, such as an application that cannot use single sign-on until its
+upgrade. The request is written and reviewed in the repo; only an approver in CISO Assistant approves it, so the decision keeps its
+separation of duties.
+
+```yaml
+exceptions:
+  - ref_id: EXC-01
+    name: Legacy finance app without MFA
+    description: The finance app cannot use single sign-on until its upgrade.
+    domain: Example Pty Ltd
+    severity: medium                     # undefined, info, low, medium, high or critical
+    owners: [it@example.com]
+    expiration_date: "2027-03-31"
+    observation: Sign-in is limited to the office network.
+    systems: [Example 365]               # by name, from setup.yaml
+    controls: [AC-MFA]                   # by ref_id, from controls.yaml
+    scenarios: [EX-RISK-2026/R-01]       # <study ref_id>/<scenario ref_id>
+    requirements:                        # audit rows the exception covers
+      - audit: EXAMPLE-BASELINE-2026
+        requirement: EX-1.1
+```
+
+- A `status` in the file is an error (`scope.approval_not_configurable`). Apply the exception as a request; its approver decides in
+  CISO Assistant.
+- `hound scope validate` reports `exception.domain_unknown`, `exception.system_unknown`, `exception.control_unknown`,
+  `exception.scenario_unknown`, `exception.audit_unknown` and duplicate `ref_id`s.
+- `hound scope plan` lists each exception and risk acceptance with its CISO Assistant status (`draft`, `in_review`, `approved`,
+  `rejected`, `resolved`, `expired` or `deprecated`), then what to renew or close: `exception.expiring` (an approved one that expires
+  within 60 days) and `exception.expired_but_approved`.
+- `hound status --config hound.yaml --scope scope` lists, offline, the exceptions whose declared expiry is within 60 days or past.
+- When a check fails on a row an approved, unexpired exception covers, `hound run` names the exception in the row's observation, such as
+  "Covered by security exception EXC-01 (Legacy finance app without MFA), approved until 2027-03-31." The result itself stays
+  non-compliant: an exception explains a gap, it does not close it.
+
+## bia/&lt;bia&gt;.yaml
+
+One file per business impact analysis (BIA): how long each system can be down before the impact grows, on a risk matrix's impact scale.
+The continuity owner proposes it in a pull request; `hound scope apply` writes it to CISO Assistant's BIA, its asset assessments and their
+escalation thresholds, and CISO Assistant draws the impact-over-time chart.
+
+```yaml
+ref_id: EX-BIA-2026
+name: Example Pty Ltd business impact analysis 2026
+domain: Example Pty Ltd
+perimeter: Corporate IT                  # optional
+matrix: urn:example:risk:matrix:example-4x4
+version: "1.0"
+status: in_progress                      # planned, in_progress, in_review, done or deprecated
+authors: [it@example.com]
+due_date: "2026-12-31"
+assessments:
+  - system: Example 365                  # one assessment per system, by name
+    dependencies: [Example laptops]      # systems it needs to run
+    controls: [AC-BACKUP]                # controls that keep it running, by ref_id
+    recovery: {documented: true, tested: false, targets_met: false}
+    observation: Mail and files stop when Example 365 is down.
+    thresholds:                          # in ascending time
+      - {after: 4h, impact: Minor, justification: Staff use phones.}
+      - {after: 1d, impact: Major, qualifications: [Reputation], justification: Customers notice.}
+      - {after: 3d, impact: Severe}
+```
+
+Durations are a whole number and a unit: `m`, `h`, `d` or `w`. `impact` is an impact level name from the matrix's [library
+snapshot](#risk-matrices-and-threats); `qualifications` are CISO Assistant's qualification terms by name, such as Reputation.
+`hound scope validate` reports `bia.system_duplicate` (one assessment per system), `bia.threshold_order` (thresholds must be unique and
+ascend), `bia.impact_unknown`, `bia.system_unknown`, `bia.control_unknown`, `bia.matrix_unknown`, `bia.domain_unknown`,
+`bia.perimeter_unknown`, `scope.duration_invalid`, and the warning `bia.impact_falls` for an impact lower than an earlier one, because
+CISO Assistant carries the highest impact forward. In a plan, an assessment is keyed `bia/system` and a threshold `bia/system/after`, such
+as `EX-BIA-2026/Example 365/1d`.
+
+### Recovery flags from checks
+
+A recovery flag can come from evidence instead of a hand-set value: name the checks that prove it with `documented_by`, `tested_by` or
+`targets_met_by`.
+
+```yaml
+    recovery: {documented: true, tested_by: [backup.restore_tested]}
+```
+
+After collecting, each `hound run` sets the flag from every collector's latest results: true only when every named check passed, false
+when any failed or has no result. It writes only when the value changes, and links the checks' evidence to the asset assessment when
+CISO Assistant already holds it (evidence a run published for a requirement); evidence it does not hold is named in a
+`recovery.evidence_not_published` warning, and the flag is still set. The run's JSON lists each flag it set under `recovery`, with why.
+`hound scope plan` leaves such a flag alone, and an asset assessment that `hound scope apply` has not created yet waits for it. A flag
+cannot be both set by hand and named by checks (`scope.result_conflict`), and a check is named by its id (`scope.value_invalid` if it is
+not one).
+
 ## audits/&lt;audit&gt;.yaml
+
+### One audit per system, and one per shared platform
+
+Give each system its own audit, rather than one audit for the whole organisation. Each audit then shows that system's gaps, and
+what has and has not been assessed is plain to see. Name it after the system and the framework, such as `EX-LAPTOPS-E8`, and list
+the one system under `systems`.
+
+- **A shared platform gets its own audit.** A cloud tenancy or hosting platform that other systems run on is audited once, as a
+  system of its own. A system that relies on it for a requirement names it in that row's `provided_by`: the row stays open, and
+  `hound scope plan` lists it under "Open dependencies" until the platform's audit shows the requirement met.
+- **Answer each piece of evidence once.** A document is declared in one audit and linked in every audit of the same framework that
+  shares one of its systems. A collector's run feeds every audit that a `targets` entry in `hound.yaml` names, so one backup test or
+  admin review reaches several audits. A manual source is attested once and its checks reach each audit whose mapping uses them.
+  Prefer a specific source per check (the restore test, the privileged-account review) over one blanket attestation.
+- **An organisation-wide audit only when organisation-wide sources feed it,** such as governance documents and policies. It is not a
+  summary of the system audits.
 
 | Key | Meaning |
 | --- | --- |
@@ -348,14 +564,32 @@ External services are the solutions the scope links the boundary's systems to (`
 | `domain`, `perimeter` | Where the audit sits. |
 | `eta`, `due_date`, `authors`, `reviewers` | Optional audit fields (dates as `YYYY-MM-DD`). |
 | `field_visibility` | Optional, per field: `{auditor: edit\|read\|hidden, respondent: …}`.`result`,`observation` and `evidences` must stay `edit` for the auditor, because CISO Assistant silently ignores writes to fields the writer can only read. |
-| `systems` | The systems in scope. |
+| `systems` | The systems in scope, by name. They are written to the audit's assets in CISO Assistant; systems added there by hand are kept until the scope names some. |
 | `documents` | Static evidence such as policies and reports: `id`, `name`, `files` (paths or globs, relative to the compliance repo, the scope folder's parent), `systems` and `requirements` it supports. A document is linked to the rows it cites in its own audit, and in every other audit of the same framework that shares one of its systems. |
 | `controls` | The applied controls this audit relies on, by `ref_id`, each with the `requirements` it supports in this framework. |
 | `assessments` | Hand-written results for requirements no check covers: `ref` (or `urn`), `status` (`to_do`, `in_progress`, `in_review`, `done`), `result`, `observation`, and `provided_by` (the systems that meet it, when another system does: the row stays open, never `not_applicable`, and `hound scope plan` lists it under "Open dependencies" with that system's audit and its result there). |
 | `cycle`, `sign_offs` | Optional, for an audit that runs in periods: `cycle: {period: month\|quarter, starts: YYYY-MM-DD, close: sign_off\|auto}` and `sign_offs: [{period, by, date}]`. See [Audit periods](#audit-periods). |
 | `unlisted` | Required. What happens to in-group requirements the file does not list: `{result: not_assessed}`, or `{result: not_applicable, reason: …}` for an audit scoped to one system. Nothing is marked not applicable silently. It is applied only with `--config`, because the deployment's mappings say which rows a run computes, and those are left alone. |
+| `no_evidence` | Optional. What a row the file leaves `not_assessed` (a hand-written row still to do, or the `unlisted` rule) is applied as: `non_compliant` (the default), with the observation "No evidence yet: …", or `not_assessed` to opt out. See [No evidence is not compliance](#no-evidence-is-not-compliance). |
 
 A requirement is named by its ref_id, or by its URN when the value starts with `urn:` (needed when a framework repeats a ref).
+
+### No evidence is not compliance
+
+CISO Assistant's compliance percentage, on an audit's page and in Compliance > Overview, counts compliant rows (and half of each
+partially compliant row) over the compliant, partially compliant and non-compliant rows. Rows not applicable and rows not assessed are
+both left out. An audit whose only results are a few passing automated checks, with every manual row still waiting, therefore reads
+100% compliant, however many rows nobody has assessed.
+
+So hound applies a row that waits for evidence as `non_compliant`, with an observation that starts "No evidence yet:" and keeps the
+file's own note (such as which manual source answers it). This covers a hand-written row still `not_assessed`, the `unlisted` rule's
+rows, and a row a run computes whose check is missing or failed to run (see [publishing.md](publishing.md)). The row's status stays
+as the file says, so it is still open work, and the percentage now counts it as a gap. When the evidence arrives the row takes its
+real result. `hound scope export` gives such a row back as the `not_assessed` row the file declared.
+
+To keep CISO Assistant's behaviour for an audit, set `no_evidence: not_assessed` in its file (and on its target in `hound.yaml` for
+the rows a run computes). hound's own committee and board reports never leave unassessed rows out: each programme's standing gives the
+level met, compliant of applicable with rows not assessed counted as not met, and "not assessed: N" ([reporting.md](reporting.md)).
 
 Start an audit file with every in-group requirement listed, titled in a comment, to do and not assessed:
 
@@ -479,7 +713,7 @@ Below the change table, the plan shows what the change does to each audit's resu
 
 Rows that collector runs own are never changed by the scope, so they are left out; `hound plan` shows their effect. A plan with no result changes has no such section. JSON plans have the same as `compliance[]`, each `{audit, groups[{group, name, before, after, total}], rows[{requirement, title, parent, old, new, why, regresses}]}`, and `scope apply` puts it in its report, so the record of each apply carries the effect it had.
 
-Changes come in dependency order: frameworks, domains, perimeters, systems, audits, documents, controls, then assessments. Deletes come last, in reverse.
+Changes come in dependency order: frameworks, domains, perimeters, users and teams, systems, audits, documents, controls, then assessments. Deletes come last, in reverse.
 
 How objects are matched: a framework by URN, a domain and a system by name, a perimeter by domain and name, an audit and a control by `ref_id`, a document by its id (the evidence's `ref_id`), and a hand-written assessment by audit and requirement. Only objects in the root folder and the domains directly under it are read.
 

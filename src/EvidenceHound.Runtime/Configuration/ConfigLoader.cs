@@ -19,7 +19,7 @@ public static partial class ConfigLoader
     private static readonly string[] CisoAssistantKeys = ["url", "token", "transport", "kafka_bootstrap_servers"];
     private static readonly string[] EvidenceKeys = ["root", "retention_days", "period_retention_years"];
     private static readonly string[] CollectorKeys = ["name", "type", "schedule", "settings", "secrets"];
-    private static readonly string[] TargetKeys = ["mapping", "compliance_assessment", "controls", "health_control"];
+    private static readonly string[] TargetKeys = ["mapping", "compliance_assessment", "controls", "health_control", "no_evidence"];
     private static readonly string[] Transports = ["rest", "kafka"];
     private static readonly int NoRetention = -1;
     private static readonly int DefaultPeriodRetentionYears = 7;
@@ -256,10 +256,18 @@ public static partial class ConfigLoader
         var controls = OptionalMap(map, "controls", at).Bind(m => Strings(m, at));
         var health = OptionalScalar(map, "health_control", at).Map(node => node.Value!);
 
-        Problem[] problems = [.. UnknownKeys(map, TargetKeys, at), .. ProblemsOf(mapping), .. ProblemsOf(audit), .. ProblemsOf(controls), .. ProblemsOf(health)];
+        var noEvidence = OptionalScalar(map, "no_evidence", at).Bind(node => node.Value switch
+        {
+            "" or "non_compliant" => Result.Ok(EvidenceHound.Core.Mapping.ComplianceResult.NonCompliant),
+            "not_assessed" => Result.Ok(EvidenceHound.Core.Mapping.ComplianceResult.NotAssessed),
+            var other => Result.Fail<EvidenceHound.Core.Mapping.ComplianceResult>(at.Problem(
+                node.Start, "config.no_evidence_invalid", $"no_evidence '{other}' is not non_compliant or not_assessed. A row with no evidence is not compliant; not_assessed leaves it out of CISO Assistant's percentage.")),
+        });
+
+        Problem[] problems = [.. UnknownKeys(map, TargetKeys, at), .. ProblemsOf(mapping), .. ProblemsOf(audit), .. ProblemsOf(controls), .. ProblemsOf(health), .. ProblemsOf(noEvidence)];
         return problems.Length > 0
             ? Result.Fail<TargetConfig>(problems)
-            : mapping.Bind(m => audit.Bind(a => controls.Bind(c => health.Map(h => new TargetConfig(m, a, c, h.Length > 0 ? h : null)))));
+            : mapping.Bind(m => audit.Bind(a => controls.Bind(c => health.Bind(h => noEvidence.Map(n => new TargetConfig(m, a, c, h.Length > 0 ? h : null) { NoEvidence = n })))));
     }
 
     private static Result<IReadOnlyDictionary<string, string>> Settings(YamlMappingNode map, Locator at) =>

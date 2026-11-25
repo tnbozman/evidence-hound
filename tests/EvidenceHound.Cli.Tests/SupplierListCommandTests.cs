@@ -97,6 +97,57 @@ public sealed class SupplierListCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Lists_the_flowed_down_clauses_each_supplier_carries()
+    {
+        // s15-08: the prime's questionnaire asks which of its clauses each supplier handling CUI carries.
+        await File.WriteAllTextAsync(Path.Combine(Repo, "scope", "third-parties", "cus-prime.yaml"), """
+            ref_id: CUS-PRIME
+            name: Example Prime Pty Ltd
+            domain: Example Pty Ltd
+            contracts:
+              - ref_id: CTR-PRIME-PARTS
+                name: Machined parts subcontract
+                status: active
+                customer: true
+                obligations:
+                  - clause: DFARS 252.204-7012
+                    data: [cui]
+                    flow_down: true
+                  - clause: DFARS 252.204-7020
+                    data: [cui]
+                    flow_down: true
+                  - clause: Privacy schedule
+                    data: [pii]
+                    flow_down: true
+            """, _ct);
+        var supplier = Path.Combine(Repo, "scope", "third-parties", "sup-excloud.yaml");
+        await File.WriteAllTextAsync(supplier, Supplier + """
+
+            contracts:
+              - ref_id: CTR-EXCLOUD-2026
+                name: Hosting agreement
+                status: active
+                solutions: [SOL-EXCLOUD-HOST]
+                obligations:
+                  - clause: DFARS 252.204-7012
+            """, _ct);
+
+        var (exit, output, error) = await RunAsync(["supplier", "list", "--data", "cui", "--repo", Repo, "--json"]);
+
+        exit.ShouldBe(ExitCodes.Ok, error);
+        var row = JsonNode.Parse(output)!["solutions"]!.AsArray().ShouldHaveSingleItem()!;
+        row["clauses"]!.AsArray().Select(c => (c!["clause"]!.GetValue<string>(), c["required_by"]!.GetValue<string>(), c["carried"]!.GetValue<bool>())).ShouldBe(
+        [
+            ("DFARS 252.204-7012", "CTR-PRIME-PARTS", true),
+            ("DFARS 252.204-7020", "CTR-PRIME-PARTS", false),
+        ]);
+
+        (exit, output, error) = await RunAsync(["supplier", "list", "--data", "cui", "--repo", Repo]);
+        exit.ShouldBe(ExitCodes.Ok, error);
+        output.ShouldContain("DFARS 252.204-7012 (carried); DFARS 252.204-7020 (missing)");
+    }
+
+    [Fact]
     public async Task An_unknown_kind_is_refused()
     {
         var (exit, _, error) = await RunAsync(["supplier", "list", "--data", "secret_sauce", "--repo", Repo]);

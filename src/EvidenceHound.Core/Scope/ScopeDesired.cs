@@ -30,17 +30,20 @@ public static partial class ScopeDesired
             .. scope.Settings.General.Select(g => new ScopeObject(ScopeKind.Setting, g.Name, Fields(("value", g.Json)))),
             .. setup.Frameworks.Select(f => Framework(f, inputs)),
             .. setup.Libraries.Select(l => new ScopeObject(ScopeKind.Framework, l.Value, Fields()) { Initial = Fields(("library", l.Value)) }),
+            .. setup.LibraryFiles.Select(l => LibraryFile(l, inputs)),
             .. setup.Domains.Select(d => new ScopeObject(ScopeKind.Domain, d.Name, Fields(("description", d.Description)))),
             .. setup.Domains.SelectMany(d => d.Perimeters.Select(p => new ScopeObject(
                 ScopeKind.Perimeter, PerimeterKey(d.Name, p.Name), Fields(("name", p.Name), ("ref_id", p.RefId), ("description", p.Description), ("domain", d.Name))))),
             .. setup.Domains.SelectMany(d => d.Systems.Select(s => new ScopeObject(ScopeKind.System, s.Name, Fields(
                 ("ref_id", s.RefId), ("type", s.Type == SystemType.Primary ? "primary" : "supporting"), ("description", AiRegister.Description(s.Description, s.Ai)),
                 ("owner", s.Owner), ("domain", d.Name), ("parents", Joined(s.Parents.Select(p => p.Value))),
-                ("labels", Joined([.. DataLabelCodes(s.Data), .. AiRegister.Labels(s.Ai)])))))),
+                ("labels", Joined([.. DataLabelCodes(s.Data), .. AiRegister.Labels(s.Ai)])),
+                ("objectives", Joined(s.Objectives.OrderBy(o => o.Key, StringComparer.Ordinal).Select(o => string.Create(CultureInfo.InvariantCulture, $"{o.Key}={o.Value}")))),
+                ("recovery", Joined(s.Recovery.OrderBy(r => r.Key, StringComparer.Ordinal).Select(r => $"{r.Key}={r.Value}"))))))),
             .. scope.Audits.Select(a => new ScopeObject(ScopeKind.Audit, a.RefId, Fields(
                 ("name", a.Name), ("framework", a.Framework.Value), ("groups", Joined(a.Groups.Select(g => g.Value))), ("domain", a.Domain.Value),
                 ("perimeter", a.Perimeter.Value), ("eta", a.Eta), ("due_date", a.DueDate), ("authors", Joined(a.Authors)), ("reviewers", Joined(a.Reviewers)),
-                ("status", a.Period?.Status), ("locked", a.Period is { Locked: true } ? "true" : null)))
+                ("systems", Joined(a.Systems.Select(s => s.Value))), ("status", a.Period?.Status), ("locked", a.Period is { Locked: true } ? "true" : null)))
             {
                 Initial = Fields(("baseline", a.Period?.Baseline)),
             }),
@@ -57,6 +60,8 @@ public static partial class ScopeDesired
             .. scope.ThirdParties.SelectMany(ThirdParty),
             .. Reviews(scope, inputs.Today),
             .. EvidencePlan(scope, inputs),
+            .. RiskObjects.From(scope.RiskStudies, inputs.Libraries, scope.Exceptions),
+            .. BiaObjects.From(scope.Bias, inputs.Libraries),
         ];
     }
 
@@ -224,8 +229,22 @@ public static partial class ScopeDesired
         var snapshot = inputs.Snapshots.GetValueOrDefault(framework.Urn);
         return new ScopeObject(ScopeKind.Framework, framework.Urn, Fields(("version", snapshot?.Version.ToString(CultureInfo.InvariantCulture))))
         {
-            Initial = Fields(("library", framework.LibraryUrn ?? snapshot?.LibraryUrn), ("file", framework.LibraryFile)),
+            Initial = Fields(("library", framework.LibraryUrn ?? snapshot?.LibraryUrn), ("file", framework.LibraryFile), ("brings", Joined(snapshot?.Dependencies ?? []))),
             Files = framework.LibraryFile is null ? [] : inputs.Files.GetValueOrDefault(framework.Urn) ?? [],
+        };
+    }
+
+    /// <summary>
+    /// A custom library in the repo, such as a risk matrix or threat catalogue (s15-01), keyed by its library URN, with its version from its
+    /// snapshot and its file to upload. A raised version is uploaded and CISO Assistant's loaded copy updated.
+    /// </summary>
+    private static ScopeObject LibraryFile(ScopeLibraryFile library, ScopeInputs inputs)
+    {
+        var snapshot = inputs.Libraries.GetValueOrDefault(library.Urn);
+        return new ScopeObject(ScopeKind.Framework, library.Urn, Fields(("version", snapshot?.Version.ToString(CultureInfo.InvariantCulture))))
+        {
+            Initial = Fields(("library", library.Urn), ("file", library.File), ("brings", Joined(snapshot?.Dependencies ?? []))),
+            Files = inputs.Files.GetValueOrDefault(library.Urn) ?? [],
         };
     }
 
@@ -300,6 +319,11 @@ public static partial class ScopeDesired
             {
                 row[name] = value;
             }
+        }
+
+        foreach (var row in rows.Values.Where(r => r.GetValueOrDefault("result") == Names.Of(ComplianceResult.NotAssessed)))
+        {
+            (row["result"], row["observation"]) = (Names.Of(audit.NoEvidence), NoEvidence.Observation(audit.NoEvidence, row.GetValueOrDefault("observation")));
         }
 
         return rows.Select(r => new ScopeObject(ScopeKind.Assessment, $"{audit.RefId}/{r.Key}", Fields([.. r.Value.Select(f => (f.Key, f.Value))])));
@@ -402,4 +426,7 @@ public sealed record ScopeInputs(
 
     /// <summary>Each evidence plan runbook's Markdown, by its path as the plan names it.</summary>
     public IReadOnlyDictionary<string, string> Runbooks { get; init; } = new Dictionary<string, string>(StringComparer.Ordinal);
+
+    /// <summary>Each custom library's snapshot, by library URN (s15-01).</summary>
+    public IReadOnlyDictionary<string, LibrarySnapshot> Libraries { get; init; } = new Dictionary<string, LibrarySnapshot>(StringComparer.Ordinal);
 }

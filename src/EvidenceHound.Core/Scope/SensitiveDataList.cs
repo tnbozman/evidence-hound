@@ -1,7 +1,11 @@
 namespace EvidenceHound.Core.Scope;
 
 /// <summary>One supplier's solution that handles a kind of sensitive data, with the systems that hold that kind through it.</summary>
-public sealed record SensitiveDataHolder(string Supplier, string SupplierName, string Solution, string SolutionName, SensitiveData Data, IReadOnlyList<string> Systems);
+public sealed record SensitiveDataHolder(string Supplier, string SupplierName, string Solution, string SolutionName, SensitiveData Data, IReadOnlyList<string> Systems)
+{
+    /// <summary>The clauses customers flow down to this solution, carried or missing (s15-08).</summary>
+    public IReadOnlyList<FlowedClause> Clauses { get; init; } = [];
+}
 
 /// <summary>Who handles a kind of sensitive data, and on what authority: the list a prime or an auditor asks for. Pure.</summary>
 public static class SensitiveDataList
@@ -21,7 +25,10 @@ public static class SensitiveDataList
                from data in solution.Data.Where(d => d.Kind == kind)
                select new SensitiveDataHolder(
                    entity.RefId, entity.Name, solution.RefId, solution.Name, data,
-                   [.. systems.Where(s => s.Solution?.Value == solution.RefId || (s.Solution is null && s.SuppliedThrough?.Value == entity.RefId)).Select(s => s.Name)]),
+                   [.. systems.Where(s => s.Solution?.Value == solution.RefId || (s.Solution is null && s.SuppliedThrough?.Value == entity.RefId)).Select(s => s.Name)])
+               {
+                   Clauses = CustomerObligations.Flowed(scope, entity, solution.RefId, kind),
+               },
         ];
     }
 }

@@ -3,6 +3,7 @@ using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Planning;
 using EvidenceHound.Core.Publishing;
 using EvidenceHound.Core.Results;
+using EvidenceHound.Core.Scope;
 
 namespace EvidenceHound.Core.Tests.Publishing;
 
@@ -70,15 +71,41 @@ internal sealed class InMemoryCisoAssistant : ICisoAssistantClient
         Calls.Add($"list {complianceAssessmentRefId}");
         return Task.FromResult(MissingAudits.Contains(complianceAssessmentRefId)
             ? Result.Fail<IReadOnlyList<CurrentRow>>(new Problem("ciso_assistant.not_found", $"No audit {complianceAssessmentRefId}."))
-            : Result.Ok<IReadOnlyList<CurrentRow>>([.. Rows.Select(r => Requirements.TryGetValue(r.Id, out var v)
+            : Result.Ok<IReadOnlyList<CurrentRow>>([.. Rows.Select(r => (Requirements.TryGetValue(r.Id, out var v)
                 ? new CurrentRow(r.Id, r.Urn, r.RefId, r.Groups, v.Result, v.Observation, v.EvidenceIds)
-                : new CurrentRow(r.Id, r.Urn, r.RefId, r.Groups, ComplianceResult.NotAssessed, "", []))]));
+                : new CurrentRow(r.Id, r.Urn, r.RefId, r.Groups, ComplianceResult.NotAssessed, "", [])) with { ExceptionIds = RowExceptionIds.GetValueOrDefault(r.Id, []) })]));
+    }
+
+    /// <summary>The IDs of the security exceptions linked to each row, by row ID.</summary>
+    public Dictionary<string, IReadOnlyList<string>> RowExceptionIds { get; } = [];
+
+    public List<RemoteWaiver> SecurityExceptions { get; } = [];
+
+    public Task<Result<IReadOnlyList<RemoteWaiver>>> ListSecurityExceptionsAsync(CancellationToken cancellationToken)
+    {
+        Calls.Add("security exceptions");
+        return Task.FromResult(Result.Ok<IReadOnlyList<RemoteWaiver>>([.. SecurityExceptions]));
     }
 
     public Task<Result<IReadOnlyList<RemoteEvidence>>> FindEvidenceAsync(string refId, CancellationToken cancellationToken)
     {
         Calls.Add($"evidence {refId}");
         return Task.FromResult(Result.Ok<IReadOnlyList<RemoteEvidence>>(_evidenceByRefId.TryGetValue(refId, out var found) ? [found] : []));
+    }
+
+    /// <summary>Asset assessments by BIA ref_id, then system name (s15-05).</summary>
+    public Dictionary<string, Dictionary<string, HeldRecovery>> Recovery { get; } = [];
+
+    /// <summary>Each recovery flag set: assessment id, field, value and the evidence ids sent.</summary>
+    public List<(string Assessment, string Field, bool Value, IReadOnlyList<string> Evidence)> RecoverySet { get; } = [];
+
+    public Task<Result<IReadOnlyDictionary<string, HeldRecovery>>> ListRecoveryAsync(string biaRefId, CancellationToken cancellationToken) =>
+        Task.FromResult(Result.Ok<IReadOnlyDictionary<string, HeldRecovery>>(Recovery.TryGetValue(biaRefId, out var held) ? held : []));
+
+    public Task<Result<Unit>> UpdateRecoveryAsync(string assessmentId, string field, bool value, IReadOnlyList<string> evidenceIds, CancellationToken cancellationToken)
+    {
+        RecoverySet.Add((assessmentId, field, value, evidenceIds));
+        return Task.FromResult(Result.Ok(Unit.Value));
     }
 
     public Task<Result<ControlState>> FindAppliedControlStatusAsync(string refId, CancellationToken cancellationToken)

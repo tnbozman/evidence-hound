@@ -65,6 +65,22 @@ public sealed class ApproveCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Opens_with_a_grouped_summary_and_points_to_the_agent()
+    {
+        // s15-12: a long list is the person's cue to work through it with their agent and accept each item by its key.
+        await OnboardAgentCommandTests.DraftEverythingAsync(Repo, _ct);
+        await File.WriteAllTextAsync(CapabilitiesFile, Capabilities, _ct);
+
+        var (exit, _, error) = await ApproveAsync("Sam Example\n");
+
+        exit.ShouldBe(ExitCodes.Ok, error);
+        error.ShouldContain("3 item(s) wait for approval: 1 capability, 1 supplier, 1 not applicable. More can follow once these are approved.", Case.Sensitive, "a supplier review and the system wait on the supplier and the decision, so they are counted once ready");
+        error.ShouldContain("work-through-pending-decisions");
+        error.ShouldContain("hound review --only <key>");
+        error.IndexOf("wait for approval:", StringComparison.Ordinal).ShouldBeLessThan(error.IndexOf("[capability] EX", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task What_a_person_declines_stays_a_draft_and_holds_back_what_depends_on_it()
     {
         await OnboardAgentCommandTests.DraftEverythingAsync(Repo, _ct);

@@ -86,6 +86,29 @@ public sealed record ScopeContract(string RefId, string Name, string Status, Sou
     public string? ApprovedBy { get; init; }
 
     public string? ApprovedOn { get; init; }
+
+    /// <summary>True for a contract a customer (such as a prime) holds with the organisation, rather than one it holds with a supplier (s15-08).</summary>
+    public bool Customer { get; init; }
+
+    /// <summary>The security clauses the contract carries (s15-08).</summary>
+    public IReadOnlyList<ScopeObligation> Obligations { get; init; } = [];
+}
+
+/// <summary>
+/// A security clause on a contract (s15-08), such as DFARS 252.204-7012: on a customer contract, the framework and level it imposes and
+/// whether it must flow down to every supplier contract whose solutions handle its data kinds (every supplier contract when it names none).
+/// </summary>
+public sealed record ScopeObligation(string Clause, SourceLine At)
+{
+    public ScopeRef? Framework { get; init; }
+
+    public string? Level { get; init; }
+
+    public IReadOnlyList<SensitiveDataKind> Data { get; init; } = [];
+
+    public bool FlowDown { get; init; }
+
+    public SourceLine? FlowDownAt { get; init; }
 }
 
 /// <summary>A person at the entity, matched by email. <c>hound</c> never gives a representative a login.</summary>

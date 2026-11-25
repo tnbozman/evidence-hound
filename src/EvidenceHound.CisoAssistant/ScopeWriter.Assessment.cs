@@ -17,6 +17,11 @@ internal sealed partial class ScopeWriter
     /// </summary>
     private async Task<Result<Unit>> FrameworkAsync(ScopeWrite write, CancellationToken cancellationToken)
     {
+        if (write.Change.Action == ScopeAction.Update && write.Declared is { Files: [var newer, ..] } custom)
+        {
+            return await UpdateLibraryAsync(custom.Initial.GetValueOrDefault("library") ?? custom.Key, newer, cancellationToken);
+        }
+
         if (write.Change.Action != ScopeAction.Create || write.Declared is not { } declared)
         {
             return Result.Ok(Unit.Value);
@@ -34,6 +39,25 @@ internal sealed partial class ScopeWriter
             : SendAsync(HttpMethod.Post, $"stored-libraries/{library}/import/", null, $"to load library {library}", cancellationToken));
     }
 
+    /// <summary>
+    /// Brings a custom library to its raised version (s15-01): uploads the file, which CISO Assistant stores in place of the older version, then
+    /// asks it to update the loaded library (a GET, by URN).
+    /// </summary>
+    private async Task<Result<Unit>> UpdateLibraryAsync(string library, ScopeFile file, CancellationToken cancellationToken)
+    {
+        var uploaded = await http.SendForJsonAsync(UploadRequest(await File.ReadAllBytesAsync(file.Path, cancellationToken), file.Path), $"to upload library {Path.GetFileName(file.Path)}", cancellationToken);
+        return await uploaded.BindAsync(_ => SendAsync(HttpMethod.Get, $"loaded-libraries/{library}/update/", null, $"to update library {library}", cancellationToken));
+    }
+
+    /// <summary>CISO Assistant reads an upload with a file upload parser: the raw file as the body, named by Content-Disposition.</summary>
+    private static HttpRequestMessage UploadRequest(byte[] bytes, string path)
+    {
+        var content = new ByteArrayContent(bytes);
+        content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+        content.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment") { FileName = Path.GetFileName(path) };
+        return new HttpRequestMessage(HttpMethod.Post, "stored-libraries/upload/") { Content = content };
+    }
+
     /// <summary>Uploads a custom library file unless CISO Assistant already stores the library; true when it was uploaded.</summary>
     private async Task<Result<bool>> UploadLibraryAsync(string library, ScopeFile file, CancellationToken cancellationToken)
     {
@@ -45,11 +69,7 @@ internal sealed partial class ScopeWriter
                 return Result.Ok(false);
             }
 
-            // CISO Assistant reads the upload with a file upload parser: the raw file as the body, named by Content-Disposition.
-            var content = new ByteArrayContent(await File.ReadAllBytesAsync(file.Path, cancellationToken));
-            content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-            content.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment") { FileName = Path.GetFileName(file.Path) };
-            var request = new HttpRequestMessage(HttpMethod.Post, "stored-libraries/upload/") { Content = content };
+            var request = UploadRequest(await File.ReadAllBytesAsync(file.Path, cancellationToken), file.Path);
             return (await http.SendForJsonAsync(request, $"to upload library {Path.GetFileName(file.Path)}", cancellationToken)).Map(_ => true);
         });
     }
@@ -71,7 +91,8 @@ internal sealed partial class ScopeWriter
             var perimeter = await folder.BindAsync(f => PerimeterIdAsync(Field(declared, "perimeter"), f, cancellationToken));
             var authors = await ActorsAsync(Split(Field(declared, "authors")), cancellationToken);
             var reviewers = await ActorsAsync(Split(Field(declared, "reviewers")), cancellationToken);
-            return await Result.Combine([folder.Map(Node), framework.Map(Node), perimeter.Map(Node), authors.Map(a => (JsonNode)a), reviewers.Map(r => (JsonNode)r)]).BindAsync(async resolved =>
+            var systems = await IdsAsync("assets/", "name", Split(Field(declared, "systems")), "system", cancellationToken);
+            return await Result.Combine([folder.Map(Node), framework.Map(Node), perimeter.Map(Node), authors.Map(a => (JsonNode)a), reviewers.Map(r => (JsonNode)r), systems.Map(s => (JsonNode)s)]).BindAsync(async resolved =>
             {
                 var body = new JsonObject
                 {
@@ -86,6 +107,7 @@ internal sealed partial class ScopeWriter
                     ["due_date"] = Field(declared, "due_date"),
                     ["authors"] = resolved[3].DeepClone(),
                     ["reviewers"] = resolved[4].DeepClone(),
+                    ["assets"] = resolved[5].DeepClone(),
                 };
                 // A period audit: its status and lock go in the same write, because a locked audit refuses any later one.
                 body["status"] = Field(declared, "status");
@@ -102,6 +124,11 @@ internal sealed partial class ScopeWriter
 
                 Drop(body, write.Change, "eta", "due_date");
                 Drop(body, "status", "baseline");
+                // Systems are sent only when the scope names some or has just removed them, so systems added in the UI are otherwise kept.
+                if (!declared.Fields.ContainsKey("systems") && write.Change.Fields.All(c => c.Field != "systems"))
+                {
+                    body.Remove("assets");
+                }
                 return write.Change.Action == ScopeAction.Create
                     ? await SendAsync(HttpMethod.Post, "compliance-assessments/", body, $"to create audit {declared.Key}", cancellationToken)
                     : await UpdateAsync("compliance-assessments", existing, body, write, cancellationToken);

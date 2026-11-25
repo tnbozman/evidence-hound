@@ -1,6 +1,6 @@
 # s15 Risk, threats and business impact analysis as configuration
 
-Status: Planned
+Status: Done
 
 Release: 2
 
@@ -17,7 +17,7 @@ What is configuration here, and what is not:
 | Custom risk matrices and threats (as libraries); risk studies and their scenarios, ratings, treatment and justification; security exceptions; BIAs, their asset assessments and escalation thresholds; systems' security and recovery objectives | Risk acceptance and exception approval (the Approver role and validation flows); computed risk levels; EBIOS RM and quantitative risk studies |
 
 ### s15-01 Risk matrices and threats from libraries
-- [ ] Done
+- [x] Done
 
 **Story:** As a risk owner, I want the risk matrix and threat catalogue our studies use declared in the repo, so that every study is rated on the same reviewed scales.
 
@@ -38,8 +38,29 @@ What is configuration here, and what is not:
 **Functional check**
 - A fictional 4×4 matrix and two fictional threats are uploaded to the local CISO Assistant and appear in its catalog; re-applying with no change writes nothing.
 
+**What CISO Assistant brings with a library (checked 2026-11-25 against v4.3.4).** A library's own `dependencies` list decides it: CISO
+Assistant loads each dependency with the library. `essential-eight-2023` declares `doc-pol` and `intuitem-common-catalog`, which is why the
+Common Catalog's 28 threats arrived with it in the s08-08 trial. `asd-essentials-enterprise-it` declares none. Framework snapshots now keep
+`dependencies`, and `hound scope plan` shows them as a `brings` line on the framework. CISO Assistant keeps the SHA-256 of an uploaded file
+as the stored library's `hash_checksum`, and at the same version it only updates that hash and refuses the content, which is what
+`library.version_not_bumped` guards against. A loaded library is updated with `GET loaded-libraries/<urn>/update/`.
+
+**Decision.** `frameworks` stays as it is (each framework with its snapshot), and `libraries` now also takes a map with `urn`, `file` and
+`snapshot` for a custom library. Renaming `frameworks` to `libraries` would break every existing repo for no gain.
+
+**Functional check result**
+```
+$ hound library validate tests/fixtures/frameworks/example-risk-library.yaml
+valid: 1 risk matrix, 2 threats
+$ hound scope validate <repo>/scope    # setup lists the library file; a grid cell changed to 9
+error: .../setup.yaml line 4: ../libraries/example-risk.yaml: risk matrix 'urn:example:risk:matrix:example-4x4': the cell for probability 'Likely' and impact 'Severe' is 9, which is not a risk level (0 to 2). [library.matrix_grid_unknown_risk]
+```
+Against CISO Assistant: `RiskLibraryFunctionalTests` (CI) uploads the 4x4 matrix and two threats, plans again with no change, is refused
+with `library.version_not_bumped` after a change at the same version, then applies version 2 with a third threat. Result recorded below
+once CI has run.
+
 ### s15-02 Risk register files
-- [ ] Done
+- [x] Done
 
 **Story:** As a risk owner working with an assistant, I want each risk study and its scenarios in a file, so that ratings and treatments are proposed, reviewed and recorded like any other change.
 
@@ -60,8 +81,19 @@ What is configuration here, and what is not:
 **Functional check**
 - Apply a fictional study with three scenarios to the local CISO Assistant; the matrix view places them as expected; changing one rating in the file produces a one-line plan and a single update.
 
+**Notes.** The risk client tests are in `ScopeClientTests` (`Creates_risk_study_on_its_matrix_with_actors_and_marker`,
+`Creates_risk_scenario_with_links_and_ratings_by_position`), next to the other recorded writes, and the rating plan test is
+`RiskPlanTests.Rating_change_is_shown_as_level_names`, because the plan's fields come from the parsed scope. A scenario's ratings are
+planned as level names and written as their positions on the matrix (`ScopeObject.Levels`); CISO Assistant's list view gives each rating
+back with its name, so a plan never needs the matrix to read what is held. The seven risk endpoints were added by hand to the OpenAPI
+snapshot, as s12-04 did for the posture lists.
+
+**Functional check result.** `RiskRegisterFunctionalTests` (CI) applies a three-scenario study to a copy of the example repo, checks
+CISO Assistant places R-01 at High and R-03 at Medium on the 4x4 grid, then changes R-03's probability and expects one planned change
+(`current_probability: Likely → Possible`) and one write. Result recorded below once CI has run.
+
 ### s15-03 Security exceptions and risk acceptances
-- [ ] Done
+- [x] Done
 
 **Story:** As an authorising official, I want exceptions and acceptances requested through the repo but approved only by an approver in CISO Assistant, so that the request is reviewed and versioned and the decision keeps its separation of duties.
 
@@ -81,8 +113,24 @@ What is configuration here, and what is not:
 **Functional check**
 - Apply a fictional exception, approve it in the local CISO Assistant as an approver, and confirm the next run's observation names it and `scope plan` shows it approved.
 
+**Notes.** Exceptions are read from `scope/exceptions.yaml` (`ScopeExceptionRequest`; CA1711 forbids type names ending in
+"Exception", so the row-side record is `RowWaiver` and the client's is `RemoteWaiver`). A scenario treated by `accept` declares a
+`RiskAcceptance` keyed by the scenario, written under the ref_id `ACC-<study>-<scenario>`. Neither is ever written with a status or
+state. The reader takes an exception's controls and rows from their own `security_exceptions` lists, and observes status and expiry
+(`ExceptionReview` turns them into the plan's notes, with a 60-day window). On the publish side the row list gives each row's exception
+IDs and `ClientStateSource` names them from `security-exceptions/`; `AuditPlanner` appends the observation only to a failing result,
+and adds the exception to the row fingerprint, so an approval or expiry rewrites the row once. `hound status --scope` lists expiring
+exceptions offline from their declared expiry, since status reads no CISO Assistant. The test `Approval_status_in_file_is_rejected`
+first expected an `approved` key on a scenario to be ignored; it is an unknown key like any other, so the test now says so.
+
+**Functional check result.** `SecurityExceptionFunctionalTests` (CI) applies an exception and an accepted scenario to a copy of the
+example repo, checks both are held as requests (draft, not accepted), approves the exception through the API as an approver would, and
+expects the next plan to show it approved with no change to apply. The observation on a run is covered by
+`PlanTests.Failed_check_under_approved_exception_names_it_in_observation` and `State_source_names_the_security_exceptions_on_each_row_and_the_day`.
+Result recorded below once CI has run.
+
 ### s15-04 Business impact analysis files
-- [ ] Done
+- [x] Done
 
 **Story:** As a continuity owner, I want each BIA declared in the repo, so that recovery objectives and impact over time are reviewed and kept with the systems they describe.
 
@@ -101,8 +149,20 @@ What is configuration here, and what is not:
 **Functional check**
 - Apply a fictional BIA for two systems to the local CISO Assistant; its impact-over-time view matches the file.
 
+**Notes.** CISO Assistant v4.3.4's BIA has a `ref_id` (`AutoRefIdMixin`), so the file's `ref_id` is the key. An asset assessment has no
+`ref_id` or description: it is keyed `bia/system` and found by its asset; a threshold is keyed `bia/system/after` and found by its point in
+time, held in seconds (`Duration` prints the largest whole unit, so `86400` reads `1d`). Impacts are planned as level names and written as
+positions, as risk ratings are. A system's `objectives` and `recovery` are written to `security_objectives` and
+`disaster_recovery_objectives` only when the file declares them (as labels are), so values set in the UI are kept; the reader reads only
+enabled objectives. Qualifications are CISO Assistant terminologies, found by name. The client tests sit in `ScopeClientTests`
+(`Creates_bia_asset_assessment_and_thresholds`, `System_sends_its_security_and_recovery_objectives_only_when_declared`).
+
+**Functional check result.** `BiaFunctionalTests` (CI) applies a two-system BIA to a copy of the example repo, checks one asset
+assessment per system and the thresholds at 4h Minor and 1d Major, then expects a second plan to change nothing. Result recorded below
+once CI has run.
+
 ### s15-05 Recovery flags from checks
-- [ ] Done
+- [x] Done
 
 **Story:** As a continuity owner, I want "recovery tested" to come from evidence rather than a hand-ticked box, so that the BIA shows what was actually proven.
 
@@ -118,8 +178,19 @@ What is configuration here, and what is not:
 **Functional check**
 - With the fake collector reporting `backup.restore_tested` as pass, then fail: the flag in the local CISO Assistant follows, with evidence linked.
 
+**Notes.** `documented_by`, `tested_by` and `targets_met_by` name checks by id. `RecoveryFlags.Plan` (pure) compares each such flag with
+the asset assessment CISO Assistant holds; `RecoveryPublisher` runs after the collectors in `hound run` (REST only, not in a dry run),
+reads every collector's latest results (s14-05), sets each changed flag and links the evidence CISO Assistant already holds. The scope
+plan treats recovery flags as optional fields, so it neither resets a flag set by checks nor reports it as edited, and apply leaves an
+undeclared flag out of its update. The fake collector gained a `fail` setting (check ids to report as failed) for the functional check.
+
+**Functional check result.** `BiaFunctionalTests.A_recovery_flag_named_by_a_check_follows_it_from_pass_to_fail_with_its_evidence` (CI)
+applies a BIA with `tested_by: [backup.restore_tested]`, runs the fake collector (flag true, evidence linked), runs it with
+`fail: backup.restore_tested` (flag false), runs again (nothing set) and plans the scope (no change to the assessment). Result: pending
+the CI run.
+
 ### s15-06 Documentation and example repo
-- [ ] Done
+- [x] Done
 
 **Acceptance criteria**
 - `docs/risk.md` and `docs/bia.md`: file formats, validation, plan and apply, what stays in CISO Assistant (approvals, computed levels) and why.
@@ -132,8 +203,12 @@ What is configuration here, and what is not:
 **Functional check**
 - Following the guides verbatim, add a scenario to the example study and apply it.
 
+**Functional check result (2026-11-25).** The CI seed applies the example repo with its matrix, threats, risk study, exception and BIA:
+every kind is written (`ScopePlanFunctionalTests`), and the plan and a second apply after it change nothing. `RiskRegisterFunctionalTests`
+adds scenarios to a study as docs/risk.md describes and applies them.
+
 ### s15-07 Incident response and reporting deadlines (added 2026-11-24)
-- [ ] Done
+- [x] Done
 
 Added at the maintainer's request (2026-11-24): both regimes require incidents to be reported on a clock, and incident response had no
 home in the plan.
@@ -159,8 +234,20 @@ regulator's and customer's clock without knowing them by heart.
 - Record a fictional incident on a CUI system in the local CISO Assistant; `hound incident obligations` lists the DFARS report due
   72 hours after discovery.
 
+**Notes.** `scope/reporting.yaml` declares the obligations (id, name, report_to, within, when {data, always}, reference), checked by
+`hound scope validate` and the scope schema. `ReportingObligations.Owed` (pure) gives each report owed, due from discovery: the first
+*detection* timeline entry, else when the incident was reported. A timeline entry `Reported: <id>, ...` marks a report as made.
+`hound incident obligations <incident>` (text or JSON) reads the incident from CISO Assistant (`IIncidentSource`, read only). The posture
+snapshot records each incident's reports; the committee report lists overdue ones in section 6 and proposes actions in section 8; the
+weekly review lists each report an open incident still owes when CISO Assistant is configured. The example repo has `reporting.yaml`
+(DFARS 252.204-7012, NDB assessment, ReportCyber), the control `AC-INCIDENT-RESPONSE`, and the plan's yearly test as the manual source
+`example-incident-response-plan` with its runbook and evidence plan row. Guide: docs/incidents.md.
+
+**Functional check result.** `IncidentFunctionalTests` (CI) records `INC-FUNC-01` on Example laptops (CUI) with a detection entry and
+checks that `hound incident obligations` lists `dfars-7012` due 72 hours later. Result recorded once CI has run.
+
 ### s15-08 Supply-chain flow-down (added 2026-11-24)
-- [ ] Done
+- [x] Done
 
 Added at the maintainer's request (2026-11-24): primes push requirements to their subcontractors, and a supplier must pass them on to its
 own.
@@ -183,8 +270,27 @@ against my own suppliers' contracts, so that I can show a prime what I flow down
 **Functional check**
 - The machine-shop rehearsal records its prime's DFARS clauses and finds the one supplier contract that does not carry them.
 
+**Notes**
+- A customer is a third party whose every contract has `customer: true`, with the `CUS-` prefix. `obligations` name a clause, a
+  framework and level, the data kinds it covers and `flow_down`. `contract.flow_down_missing` is a warning, like the sensitive-data
+  findings (s10-05): recording the truth must not lock the repo, and it joins the weekly review. `contract.framework_unknown` and
+  `contract.flow_down_invalid` are errors (s15-D9 made the first a warning).
+- `hound programme list` adds "Required by <customer> (<contract>): <clause>, level N." under each programme with that framework
+  (`required_by` in JSON). `hound supplier list --data` adds a "Flowed-down clauses" column (`clauses` in JSON), carried or missing.
+
+**Functional check (2026-11-25)**
+```
+$ hound scope validate scope     # example repo + CUS-EXAMPLE-PRIME (DFARS 252.204-7012, flow_down, cui) + SUP-EXCLOUD storing cui
+warning: scope/third-parties/sup-excloud.yaml line 15: contract 'CTR-EXCLOUD-2026' with SUP-EXCLOUD lacks 'DFARS 252.204-7012', which customer contract 'CTR-PRIME-PARTS' flows down. [contract.flow_down_missing]
+scope valid: 1 domain(s), 6 control(s), 5 audit(s), 2 third party(ies), 1 risk study(ies) with 2 scenario(s)
+$ hound supplier list --data cui --repo .
+| SUP-EXCLOUD | SOL-EXCLOUD-HOST | stores |  | FedRAMP Moderate equivalent |  | 2027-06-30 |  | DFARS 252.204-7012 (missing) |
+$ hound programme list --scope scope
+Required by Example Prime Pty Ltd (CTR-PRIME-PARTS): Essential Eight maturity level 2, level 2.
+```
+
 ### s15-09 Incident response plan document (added 2026-11-24)
-- [ ] Done
+- [x] Done
 
 Added at the maintainer's request (2026-11-24): both regimes require a written incident response plan (ISM-0043; NIST SP 800-171
 family 3.6, with DFARS 252.204-7012's 72-hour report for CMMC Level 2), and a small team should not have to write one from a blank page.
@@ -229,16 +335,242 @@ suppliers change.
 - Build the example programme's plan against the local CISO Assistant; it lists the fictional CUI system's DFARS 72-hour report and the
   supplier contacts, and reports no gaps once the example judgement sections are present.
 
+**Notes**
+- `scope/irp.yaml` names the programme, version, five roles (incident manager, deputy, executive, legal and privacy, and the
+  authorising officer for ISM-0047) and five judgement sections. Everything else is derived from the repo with its file and line:
+  systems with their data and recovery objectives, suppliers and customers with contacts and clauses, and each report with its
+  deadline in words ("72 hours") and what triggers it in this scope. It reads no CISO Assistant: every value it uses is in the repo
+  that apply writes to CISO Assistant.
+- The example repo's plan and sections are fictional; the section files are excluded from markdownlint like the SSP's.
+
+**Functional check (2026-11-25)**
+```
+$ hound irp build --programme essential-eight --scope scope --strict   # example repo, Example laptops processing cui
+exit 0
+## 1. Govern ... ## 2. Identify ... ## 3. Protect ... ## 4. Detect ... ## 5. Respond ... ## 6. Recover ... ## References
+### ... (ISM-0043 item 1) to (ISM-0043 item 8)
+| DFARS 252.204-7012 cyber incident report | DoD, through the DIBNet portal (needs a medium assurance certificate) | 72 hours | an incident on a system handling cui (Example laptops) | DFARS 252.204-7012(c) |
+```
+The supplier contacts are covered by `IrpBuilderTests` (the example repo declares no third party).
+
 ### s15-10 Rehearse trial, onboarding and sustaining GRC (standing, every sprint)
-- [ ] Done
+- [x] Done
 
 As [s12-09](s12-e8-mapping-and-adoption.md#s12-09-rehearse-trial-onboarding-and-sustaining-grc-standing-every-sprint), including this sprint's new commands and guides.
+From s15 the rehearsal drives hound through the agent skills, as the person's agent would, and records any skill that was wrong or
+missing (the maintainer's standing rule, 2026-11-25: every sprint ends with the Claude Code and Copilot skills and agents accurate for
+the CLI and its workflows; see the sprint lifecycle in [README.md](README.md)).
+
+**Rehearsal (2026-11-25).** The trial ran unattended end to end in CI, twice (the second run skips finished steps and plans nothing
+new), and from this sprint ends by printing each audit's percentage as CISO Assistant computes it (step 16). Following the docs and
+the agent skills found s15-D1 to s15-D10 and the false 100% that became s15-14; the person's first real `hound approve` found what
+became s15-12 and s15-D7. Driving hound through the skills: `hound agent setup --assistant both` on a copy of the example repo, then
+each skill's commands checked against the CLI tree for Claude Code and for Copilot (`AgentCommandTests`). The work-through-pending-
+decisions skill on the example repos found nothing waiting (they hold no drafts), so its walk is covered by `ReviewCommandTests` and
+`AgentSkillTests.Decisions_skill_recommends_and_never_accepts`. No skill named a command that does not exist.
 
 ### s15-11 Improve: quality and flow (standing, about 15% of each sprint)
-- [ ] Done
+- [x] Done
 
 As [s12-10](s12-e8-mapping-and-adoption.md#s12-10-improve-quality-and-flow-standing-about-15-of-each-sprint).
 
+**Done (2026-11-25).** CI lists the failed functional tests last, so the log's tail names them (`scripts/failed-tests.py`); a shared
+`TestRepo.CopyExample` for functional tests; functional expectations brought up to date with the plan's Covers column and the seed's new
+kinds; `scope export` round-trips a system's security and recovery objectives; a BIA status CISO Assistant defaults is no change; the
+scope and onboarding guides and the audit skill say one audit per system and one per shared platform; the definition of done and the
+sprint lifecycle keep the agent kit accurate every sprint.
+
+### s15-12 Approve one decision at a time, with the person's agent (added 2026-11-25)
+- [x] Done
+
+Added at the maintainer's request (2026-11-25), after a first real `hound approve`: the terminal loop asked about each item with no
+help, so 240 not-applicable rows and a typo went through. The maintainer's direction: every decision waiting for a person is written
+out first; their own agent (Claude Code or GitHub Copilot) works through them with them one at a time, researching and checking around
+the edges; the person then approves or challenges each with a command against a stable id. A person still approves at a terminal: no
+agent can.
+
+**Story:** As a GRC member with a few hours a week, I want to see every pending decision grouped, with the agent's case, its sources
+and a risk flag, and to approve or challenge one at a time by id, so that I decide with help and nothing slips through in a long loop.
+
+**Acceptance criteria**
+- Builds on the weekly review (s10-05), which already has the pieces: `hound review pending --json` lists every waiting item by a stable
+  key, `hound review recommend <key>` records the agent's case and sources, and `hound review` is the person's session at a terminal.
+- `hound review pending --json` adds a risk flag to each item (`high` for a not-applicable decision, a supplier approval, a finding, or
+  an item with no recommendation or one without a source; else `normal`) and a summary grouped by kind and recommendation with counts
+  and minutes, so the agent opens with the size of the job.
+- `hound review --only <key>` (repeatable) runs the session for just those items: the person reads the item with the agent's case and
+  answers accept, challenge or skip. Nothing else is asked or written. An unknown key is refused with the nearest keys. It needs a
+  person at a terminal, as now: an agent or a pipe is refused.
+- `hound approve` opens with the grouped summary and points to `hound review` with an agent for long lists.
+- The onboarding and review guides describe the flow with an agent: list, discuss, then the person accepts or challenges by key.
+
+**Tests first**
+- `ReviewCommandTests.Pending_flags_risk_and_groups_a_summary`
+- `ReviewCommandTests.Only_the_named_item_is_asked_and_the_rest_wait`
+- `ReviewCommandTests.An_unknown_key_is_refused_with_the_nearest`
+- `ReviewCommandTests.Refuses_without_a_terminal` (extended to `--only`)
+
+**Functional check**
+- On a copy of the example repo with a drafted onboarding: the agent lists the items, records a recommendation, and the person
+  accepts one item and challenges another by key; the sign-off records only those.
+
+**Functional check result (2026-11-25).** `ReviewCommandTests` run the flow at the CLI with a scripted terminal on a repo with drafted
+items: `hound review pending --json` gives each item's risk and the grouped summary, `hound review --only <key>` asks only the named
+item and writes only its answer, an unknown key is refused with the nearest keys, and a pipe is refused. `hound approve` opens with
+the grouped summary (`ApproveCommandTests`). The review writes scope files only, so no CISO Assistant is needed.
+
+### s15-14 A report never reads 100% while rows are not assessed (added 2026-11-25, top priority)
+- [x] Done
+
+Found by the maintainer on a trial run (2026-11-25): per-system Essential Eight audits whose only results were a few passing automated
+checks, many not-applicable rows and every manual row not assessed read as 100% compliant. hound's own reports did not compute that
+figure (the board gives "X of Y compliant" and the committee counts each result), so it was most likely CISO Assistant's view, whose
+compliance figures can leave not-assessed rows out. Either way the person must never be shown, or show a prime, a full mark that
+rests on rows nobody assessed.
+
+**Story:** As a GRC member reporting upward, I want every figure hound gives to count a not-assessed row as not met and to say how
+much is assessed, so that a few automated passes can never read as compliance.
+
+**Acceptance criteria**
+- A programme's standing: the highest group (maturity level) met, where a level is met only when every row at it and below is
+  compliant or not applicable; compliant of applicable, counting not assessed as not met, rounded down so an open row never reads
+  100%; and "not assessed: N". 3 compliant, 61 not applicable and 43 not assessed give level 0 and "not assessed: 43".
+- The committee summary and the board position give each programme's standing.
+- The reporting guide says which CISO Assistant figures leave not-assessed rows out, and to quote hound's standing instead.
+- The figure CISO Assistant itself shows is fixed at the data: its compliance percentage counts compliant (and half of partially
+  compliant) over compliant, partial and non-compliant rows, leaving not-assessed and not-applicable rows out, so three passes over
+  forty-odd open rows read 100%. A row with no evidence is therefore published as `non_compliant`, its observation starting
+  "No evidence yet: ", from `scope apply` and from a run. An audit file or a `hound.yaml` target can opt out with
+  `no_evidence: not_assessed`. `hound scope export` gives back the not-assessed row the file declared, so a re-plan shows nothing.
+- Reproduced in the trial before s15 closes.
+
+**Tests first**
+- `PlanTests.A_row_with_no_evidence_is_published_non_compliant_and_says_so`
+- `PlanTests.An_audit_can_opt_out_and_keep_rows_with_no_evidence_not_assessed`
+- `NoEvidenceScopeTests`, `ScopeExportTests.A_row_sent_non_compliant_for_want_of_evidence_exports_as_not_assessed`
+- `ConfigTests.A_target_publishes_rows_with_no_evidence_as_non_compliant_unless_it_opts_out`
+- `StandingTests.Not_assessed_rows_block_the_level_and_count_as_not_met`
+- `StandingTests.A_level_is_met_only_when_every_row_at_it_and_below_is_compliant_or_not_applicable`
+- `StandingTests.The_percentage_never_rounds_up_to_100_while_a_row_is_open`
+- `CommitteeReportTests.Summary_gives_each_programmes_standing_with_what_is_not_assessed`
+- `BoardReportTests.Position_gives_the_level_met_and_what_is_not_assessed`
+
+**Functional check**
+- In the trial, an audit with passing automated rows, not-applicable rows and open manual rows: the committee and board reports give
+  level 0 with the open rows counted.
+- `NoEvidenceFunctionalTests` (CI): an Essential Eight audit with one compliant row and no evidence for the rest reads under 5% in
+  CISO Assistant, every open row non-compliant with "No evidence yet: ", and a re-plan shows no change.
+
+**Functional check result (2026-11-25).** `NoEvidenceFunctionalTests` passed in CI: no row in the audit's levels is left not assessed,
+one compliant row, the rest non-compliant with "No evidence yet: ", and a re-plan shows nothing. The trial now ends by reading each
+audit as CISO Assistant computes it: `EX-E8-Q2-2027FY: CISO Assistant reads 15% (17 compliant, 0 partially compliant, 90 non-compliant
+of which 80 have no evidence yet; it leaves out 0 not applicable and 0 not assessed)`. Before this task the same audit's open rows were
+left out, so it read close to 100%.
+
+### s15-13 Skills and agents for every hound workflow, for Claude Code and GitHub Copilot (added 2026-11-25)
+- [x] Done
+
+Added at the maintainer's request (2026-11-25): "I need skills or agents written for both github copilot and claude that supports all
+workflows and understand the hounds commands", now rather than in s18. A gap check of what `hound agent setup` wrote found no skill,
+agent or instructions for collect, collectors, config, status, publish, serve, ssp, incident, irp, programme, framework, library or
+skill. s18-08 then extends the kit only for what s18 adds.
+
+**Story:** As a GRC member who leans on my coding assistant, whichever one I use, I want it to know every hound command and to have a
+skill for every job hound does, so that it can run the job with me and never invents a command.
+
+**Acceptance criteria**
+- `hound agent setup` writes a command reference skill, `hound-commands`, built from the CLI's own command tree when it runs (every
+  command and sub-command with its description and options), so it cannot fall behind. Every agent loads it, and the instructions
+  point to it.
+- New skills, in the one source (`agent/skills/`) and so for both assistants: `work-through-pending-decisions` (lists by key with risk
+  first, researches each item, records its case with `hound review recommend`, and gives the person the one `hound review --only <key>`
+  to run, never running it), `operate-collectors` (config validate, collectors list, add collector, collect, plan, publish, run,
+  serve, status, and reading a collector's errors), `build-the-ssp` (programme list, ssp and mapping coverage and crosswalk),
+  `respond-to-an-incident` (incident obligations and irp build) and `keep-frameworks-and-libraries` (framework and library
+  snapshots, mapping derive and validate, profile validate, test and diff, and the organisation's own skills).
+- Two more agents: `hound-decisions` (walks the person through pending decisions; changes no scope file) and `hound-operations`
+  (collectors, runs, the SSP, incidents, frameworks and libraries). The onboarding and review agents hand pending decisions to
+  `hound-decisions`.
+- Every top-level command is named by at least one skill, agent or the instructions, and every `hound ...` command any of them names
+  exists in the CLI. Both checks run on what is written for Claude Code and for Copilot.
+
+**Tests first**
+- `AgentCommandTests.The_reference_names_every_command_for_both_assistants`
+- `AgentCommandTests.Every_top_level_command_has_a_skill`
+- `AgentCommandTests.Every_command_a_skill_names_exists`
+- `AgentCommandTests.Every_agent_loads_the_command_reference`
+- `AgentSkillTests.Decisions_skill_recommends_and_never_accepts`
+
+**Functional check**
+- `hound agent setup --assistant both` on a copy of the example repo; count the skills and agents written and check the reference
+  against `hound --help`.
+
+**Functional check result (2026-11-25).** `hound agent setup --assistant both --repo <copy of examples/compliance-repo>` wrote 21
+skills (twenty plus `hound-commands`) under `.claude/skills`, four agents under `.claude/agents` and four under `.github/agents`. The
+reference lists 83 commands and sub-commands, covering all 29 top-level commands in `hound --help`.
+
 ## Discovered work
 
+- **s15-D1 First apply on an empty CISO Assistant failed to create systems whose owner the same apply creates** (found
+  2026-11-25 rehearsing `hound init`, `hound add system` and `hound scope apply`). The plan ordered systems before users, so a
+  system owned by a user from `scope/access.yaml` was refused (owner not found) and only a second apply created it. Fixed: users
+  and teams are planned before systems (test, then fix). `hound add system --parents` takes system names, not ref IDs; the guided
+  setup page now says so.
+- **s15-D2 An audit's systems were never written to CISO Assistant** (found 2026-11-25 in the rehearsal). The scope plan did not
+  compare an audit's `systems`, and the audit's assets in CISO Assistant stayed empty. Fixed: the plan compares them, apply writes
+  them as the audit's assets, and systems added in the UI are kept until the scope names some (test, then fix).
+- **s15-D3 A collector whose every check errored reported success** (found 2026-11-25 in the rehearsal: refused credentials gave
+  "succeeded" and `hound status` showed 0 passed, 0 failed with no warning). Fixed: such a run fails with
+  `collector.all_checks_errored`, quoting the first error, and `hound status` lists each failed collector's problems below the table.
+- **s15-D4 `config validate --check-secrets` accepted an empty secret file** (found 2026-11-25 in the rehearsal). Fixed: an empty or
+  blank secret file is missing (`secret.missing`, "the file is empty").
+- **s15-D5 Retry attempts flooded stderr** (found 2026-11-25 in the rehearsal: an information line per request on every scope plan
+  and apply). Fixed: retry logging starts at warnings, like the HTTP client's own.
+- **s15-D6 The trial's dev server is unreachable on a `make ca-up` network** (found 2026-11-25 in the rehearsal). The trial and
+  local-trial.md point the REST collector at `http://host.docker.internal:5370/`, but credentials go over plain http only to
+  loopback, so every request fails with `rest.host_not_allowed`. Fixed (the maintainer chose to keep the rule): dev servers are
+  always on localhost, and while the config reads one the trial runs hound on the host network, reaching a `make ca-up` stack on its
+  published port, as the Microsoft 365 step already did. local-trial.md and sophos-dev-server.md say so.
+- **s15-D7 `hound approve` wrote an audit domain and perimeter it never checked** (found 2026-11-25 in a person's first approve).
+  Asked for the audit's domain, the person typed "y", taking it for a yes/no question; approve wrote `domain: "y"` and an empty
+  perimeter, and `scope validate` then failed with `scope.value_invalid`. The audit's systems were also not linked in CISO
+  Assistant, which s15-D2 fixed after that release. Fixed: the prompt lists the domains and perimeters setup.yaml declares
+  ("Domain for the system's audit, one of: Example Pty Ltd [Example Pty Ltd]"), Enter takes the first, and any other answer is asked
+  again with the reason; with none declared, approve stops with `onboard.place_missing` and writes nothing (test, then fix).
+
+- **s15-D8 The organisation's audit of record can be an empty shell, its name is opaque, and onboarding steers to blanket
+  attestations** (found 2026-11-25 in a person's own setup). `hound init` always creates the organisation-wide audit (such as
+  `EX-E8-Q2-2027FY`); with no organisation-wide collector feeding it and only per-system audits doing the work, the person could not
+  tell what it was for and removed it. `Q2-2027FY` for October to December 2026 needs explaining. The manual sources onboarding drafted
+  were one `evidence_attested` check per strategy, too coarse to show what was checked. Maintainer's direction (2026-11-25): audits are
+  per system, so gaps and coverage stay visible; a shared platform gets its own audit that the systems on it rely on; duplicate work is
+  cut by shared, specific evidence sources feeding many audits, not by merging audits. Triage: s15-11 puts this in the onboarding and
+  scope guides, explains the period name where `hound init` and `hound audit` print it, and steers onboarding to the per-check
+  manual-source templates; making per-system and platform audits the onboarding default, with an organisation audit only when an
+  organisation-wide source feeds it, goes to s18 (fewer steps for the agent).
+- **s15-D9 Copying the guide's customer contract locked the example repo** (found 2026-11-25 rehearsing docs/scope.md). The
+  example names NIST SP 800-171, which the example repo does not load, so `contract.framework_unknown` failed validation: recording a
+  prime's true requirement stopped every other command. Fixed: it is a warning that names the gap (no programme tracks the framework
+  yet) and joins the weekly review (test, then fix).
+- **s15-D10 `hound status` gives no coverage** (raised 2026-11-25 with s15-14). `hound status` reads only the run store, so it cannot
+  say how much of each audit is assessed. The committee and board reports and the trial now give it. Carried to s16 (governance
+  metrics), where status gains each programme's standing from the latest snapshot.
+
 ## Sprint review
+
+**2026-11-25.** Risk matrices, threats, risk studies and scenarios, security exceptions and business impact analyses now live in the
+repo as YAML and are applied to CISO Assistant; approvals stay with people there, and a recovery flag follows the check that proves it.
+Incidents get their reporting deadlines (DFARS 72 hours, ACSC) and `hound irp build` writes the incident response plan. Supply-chain
+flow-down is recorded and checked. Added during the sprint at the maintainer's request: pending decisions are listed by key with a risk
+flag and a grouped summary, and `hound review --only <key>` lets the person accept or challenge one at a time after working through
+them with their agent (s15-12); skills and agents for every hound command and workflow, for Claude Code and GitHub Copilot, with a
+command reference built from the CLI (s15-13); and the top-priority fix for audits reading 100% in CISO Assistant while manual rows
+were not assessed (s15-14). CISO Assistant leaves not-assessed rows out of its percentage, so hound now sends a row with no evidence as
+non-compliant ("No evidence yet: ..."), the reports give each programme's standing with open rows counted, and the trial reads each
+audit's figure: the trial's Essential Eight audit reads 15%, with 80 rows waiting for evidence.
+
+**Retro.** What slowed the sprint: the functional job's log was cut at 5000 lines, so failures were invisible until CI listed them last;
+five functional expectations had drifted from changes made earlier in the sprint (a plan column, the seed's new kinds, a shared risk
+acceptance name) because pushes cancelled the runs that would have shown them. The no-evidence check first counted rows outside the
+audit's maturity levels, which CISO Assistant keeps but does not count. Next sprint: push once per finished task and let the functional
+job finish; when a check reads CISO Assistant's figures, filter rows by the audit's levels as CISO Assistant does.

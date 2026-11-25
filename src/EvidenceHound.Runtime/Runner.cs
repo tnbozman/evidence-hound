@@ -1,5 +1,6 @@
 using EvidenceHound.Collectors;
 using EvidenceHound.Core;
+using EvidenceHound.Core.Checks;
 using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Planning;
 using EvidenceHound.Core.Publishing;
@@ -139,6 +140,10 @@ public sealed class Runner(
         var result = options.NoPublish
             ? collected.Match(_ => Succeeded(instance, null), problems => Failed(instance, problems, null))
             : await PublishAsync(instance, collected, options, runId, cancellationToken);
+        if (collected is Result<CollectedRun>.Ok { Value: var errored } && AllErrored(errored.Output.Checks) is { } allErrored)
+        {
+            result = Failed(instance, [.. result.Problems, allErrored], result.Publish) with { Changes = result.Changes, Drift = result.Drift };
+        }
 
         if (collected is Result<CollectedRun>.Ok { Value: var run } && RunEvidence.From(run) is Result<CollectorResults>.Ok { Value: var saved })
         {
@@ -216,6 +221,17 @@ public sealed class Runner(
 
     private static IReadOnlyList<Problem> FailedItems(PublishReport report) =>
         [.. report.Items.Where(i => i.Outcome == PublishOutcome.Failed).SelectMany(i => i.Problems.Select(p => new Problem(p.Code, $"{i.Description}: {p.Message}")))];
+
+    /// <summary>
+    /// s15-D3: a collector that ran but whose every check errored (such as refused credentials) proved nothing, so its run fails rather
+    /// than reporting success over no results.
+    /// </summary>
+    private static Problem? AllErrored(IReadOnlyList<CheckResult> checks) =>
+        checks.Count > 0 && checks.All(c => c.Outcome == CheckOutcome.Error)
+            ? new Problem(
+                "collector.all_checks_errored",
+                $"All {checks.Count} checks errored, so this run proved nothing; the first said: {checks[0].Observation} Fix the cause (often the collector's credentials) and run it again.")
+            : null;
 
     private static CollectorRunResult Succeeded(CollectorInstance instance, PublishReport? report) => new(instance.Name, CollectorOutcome.Succeeded, [], report);
 

@@ -151,6 +151,259 @@ public sealed class ScopeClientTests : IDisposable
     }
 
     [Fact]
+    public async Task Updates_custom_library_to_a_raised_version()
+    {
+        // s15-01: CISO Assistant stores the newer version on upload, then updates its loaded copy on request (GET, by URN).
+        const string library = "urn:example:risk:library:example-risk";
+        Respond("POST", "/api/stored-libraries/upload/", 201, new JsonObject { ["urn"] = library });
+        Respond("GET", $"/api/loaded-libraries/{library}/update/", 200, new JsonObject { ["status"] = "success" });
+        var file = await FileAsync("example-risk.yaml", "urn: urn:example:risk:library:example-risk\nversion: 2\n");
+        var declared = new ScopeObject(ScopeKind.Framework, library, new Dictionary<string, string> { ["version"] = "2" })
+        {
+            Initial = new Dictionary<string, string> { ["library"] = library, ["file"] = "example-risk.yaml" },
+            Files = [file],
+        };
+
+        (await Write(declared, ScopeAction.Update, null)).Value();
+
+        Sent().ShouldBe([("POST", "/api/stored-libraries/upload/")]);
+        Logged("GET", $"/api/loaded-libraries/{library}/update/").ShouldNotBeNull();
+    }
+
+    [Fact]
+    public async Task System_sends_its_security_and_recovery_objectives_only_when_declared()
+    {
+        // s15-04: objectives on CISO Assistant's 0-4 scale, recovery objectives in seconds; left out when the scope declares none, so the UI's stay.
+        List("assets");
+        Respond("POST", "/api/assets/", 201, new JsonObject { ["id"] = "a-new" });
+        var system = Declared(ScopeKind.System, "Example tablets", ("type", "supporting"), ("domain", "Example Pty Ltd"),
+            ("objectives", "availability=2, confidentiality=3"), ("recovery", "mtd=3d, rto=4h"));
+
+        (await Create(system)).Value();
+
+        var posted = JsonNode.Parse(Logged("POST", "/api/assets/").Body!)!;
+        Json(posted["security_objectives"]!).ShouldBe(Json(new JsonObject
+        {
+            ["objectives"] = new JsonObject
+            {
+                ["availability"] = new JsonObject { ["value"] = 2, ["is_enabled"] = true },
+                ["confidentiality"] = new JsonObject { ["value"] = 3, ["is_enabled"] = true },
+            },
+        }));
+        Json(posted["disaster_recovery_objectives"]!).ShouldBe(Json(new JsonObject
+        {
+            ["objectives"] = new JsonObject { ["mtd"] = new JsonObject { ["value"] = 259200 }, ["rto"] = new JsonObject { ["value"] = 14400 } },
+        }));
+    }
+
+    [Fact]
+    public async Task An_asset_assessment_update_leaves_the_flags_set_by_checks()
+    {
+        // s15-05: a flag named by checks is not declared; each run sets it, so the scope's update must not reset it to false.
+        List("resilience/business-impact-analysis", new JsonObject { ["id"] = "bia-1", ["ref_id"] = "EX-BIA-2026" });
+        List("assets", new JsonObject { ["id"] = "a-365", ["name"] = "Example 365" });
+        List("applied-controls");
+        List("resilience/asset-assessments", new JsonObject { ["id"] = "aa-1", ["asset"] = new JsonObject { ["id"] = "a-365", ["str"] = "Example 365" } });
+        Respond("PATCH", "/api/resilience/asset-assessments/aa-1/", 200, new JsonObject { ["id"] = "aa-1" });
+        var assessment = Declared(ScopeKind.AssetAssessment, "EX-BIA-2026/Example 365",
+            ("bia", "EX-BIA-2026"), ("system", "Example 365"), ("recovery_documented", "true"), ("observation", "Restores are tested monthly."));
+
+        (await _ca.Writer.WriteAsync(new ScopeWrite(new ScopeChange(assessment.Kind, assessment.Key, ScopeAction.Update, [new FieldChange("observation", null, "Restores are tested monthly.")], State), assessment, "Global"), _ct)).Value();
+
+        var patched = JsonNode.Parse(Logged("PATCH", "/api/resilience/asset-assessments/aa-1/").Body!)!.AsObject();
+        patched["recovery_documented"]!.GetValue<bool>().ShouldBeTrue();
+        patched.ContainsKey("recovery_tested").ShouldBeFalse();
+        patched.ContainsKey("recovery_targets_met").ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task Creates_bia_asset_assessment_and_thresholds()
+    {
+        // s15-04 (BiaClientTests in the plan): the BIA on its matrix, one asset assessment per system, thresholds by seconds and impact position.
+        List("risk-matrices", new JsonObject { ["id"] = "rm-4x4", ["urn"] = "urn:example:risk:matrix:example-4x4" });
+        List("resilience/business-impact-analysis", new JsonObject { ["id"] = "bia-1", ["ref_id"] = "EX-BIA-2026" });
+        List("assets", new JsonObject { ["id"] = "a-365", ["name"] = "Example 365" }, new JsonObject { ["id"] = "a-laptops", ["name"] = "Example laptops" });
+        List("applied-controls", new JsonObject { ["id"] = "ac-backup", ["ref_id"] = "AC-BACKUP" });
+        List("resilience/asset-assessments", new JsonObject { ["id"] = "aa-1", ["asset"] = new JsonObject { ["id"] = "a-365", ["str"] = "Example 365" } });
+        List("resilience/escalation-thresholds");
+        List("terminologies", new JsonObject { ["id"] = "t-rep", ["name"] = "Reputation", ["field_path"] = "qualifications" });
+        Respond("POST", "/api/resilience/business-impact-analysis/", 201, new JsonObject { ["id"] = "bia-new" });
+        Respond("POST", "/api/resilience/asset-assessments/", 201, new JsonObject { ["id"] = "aa-new" });
+        Respond("POST", "/api/resilience/escalation-thresholds/", 201, new JsonObject { ["id"] = "et-new" });
+        var bia = Declared(ScopeKind.Bia, "EX-BIA-2026-NEW",
+            ("name", "Example BIA"), ("domain", "Example Pty Ltd"), ("perimeter", "Corporate IT"), ("matrix", "urn:example:risk:matrix:example-4x4"),
+            ("version", "1.0"), ("status", "in_progress"), ("due_date", "2026-12-31"), ("authors", "it@example.com"));
+        var assessment = Declared(ScopeKind.AssetAssessment, "EX-BIA-2026/Example laptops",
+            ("bia", "EX-BIA-2026"), ("system", "Example laptops"), ("dependencies", "Example 365"), ("controls", "AC-BACKUP"),
+            ("recovery_documented", "true"), ("recovery_tested", "false"), ("recovery_targets_met", "false"), ("observation", "Staff use phones."));
+        var threshold = Declared(ScopeKind.EscalationThreshold, "EX-BIA-2026/Example 365/1d",
+            ("assessment", "EX-BIA-2026/Example 365"), ("point_in_time", "86400"), ("impact", "Major"), ("qualifications", "Reputation"), ("justification", "Customers notice.")) with
+        {
+            Levels = new Dictionary<string, int> { ["quali_impact"] = 2 },
+        };
+
+        (await Create(bia)).Value();
+        (await Create(assessment)).Value();
+        (await Create(threshold)).Value();
+
+        Posted("resilience/business-impact-analysis").ShouldBe(Json(new JsonObject
+        {
+            ["name"] = "Example BIA",
+            ["ref_id"] = "EX-BIA-2026-NEW",
+            ["description"] = $"[hound scope {State}]",
+            ["folder"] = "f-ex",
+            ["perimeter"] = "p-corp",
+            ["risk_matrix"] = "rm-4x4",
+            ["version"] = "1.0",
+            ["status"] = "in_progress",
+            ["due_date"] = "2026-12-31",
+            ["authors"] = new JsonArray("act-it"),
+            ["reviewers"] = new JsonArray(),
+        }));
+        Posted("resilience/asset-assessments").ShouldBe(Json(new JsonObject
+        {
+            ["bia"] = "bia-1",
+            ["asset"] = "a-laptops",
+            ["dependencies"] = new JsonArray("a-365"),
+            ["associated_controls"] = new JsonArray("ac-backup"),
+            ["recovery_documented"] = true,
+            ["recovery_tested"] = false,
+            ["recovery_targets_met"] = false,
+            ["observation"] = "Staff use phones.",
+        }));
+        Posted("resilience/escalation-thresholds").ShouldBe(Json(new JsonObject
+        {
+            ["asset_assessment"] = "aa-1",
+            ["point_in_time"] = 86400,
+            ["quali_impact"] = 2,
+            ["qualifications"] = new JsonArray("t-rep"),
+            ["justification"] = "Customers notice.",
+        }));
+    }
+
+    [Fact]
+    public async Task Creates_risk_study_on_its_matrix_with_actors_and_marker()
+    {
+        // s15-02 (RiskClientTests in the plan): a risk study is a risk assessment in its domain and perimeter, on a matrix found by URN.
+        List("risk-matrices", new JsonObject { ["id"] = "rm-4x4", ["urn"] = "urn:example:risk:matrix:example-4x4" });
+        List("risk-assessments");
+        Respond("POST", "/api/risk-assessments/", 201, new JsonObject { ["id"] = "ra-new" });
+        var study = Declared(ScopeKind.RiskStudy, "EX-RISK-2026",
+            ("name", "Example Pty Ltd risk register 2026"), ("domain", "Example Pty Ltd"), ("perimeter", "Corporate IT"), ("matrix", "urn:example:risk:matrix:example-4x4"),
+            ("status", "in_progress"), ("eta", "2026-12-31"), ("authors", "it@example.com"));
+
+        (await Create(study)).Value();
+
+        Posted("risk-assessments").ShouldBe(Json(new JsonObject
+        {
+            ["name"] = "Example Pty Ltd risk register 2026",
+            ["ref_id"] = "EX-RISK-2026",
+            ["description"] = $"[hound scope {State}]",
+            ["folder"] = "f-ex",
+            ["perimeter"] = "p-corp",
+            ["risk_matrix"] = "rm-4x4",
+            ["status"] = "in_progress",
+            ["eta"] = "2026-12-31",
+            ["authors"] = new JsonArray("act-it"),
+            ["reviewers"] = new JsonArray(),
+        }));
+    }
+
+    [Fact]
+    public async Task Creates_risk_scenario_with_links_and_ratings_by_position()
+    {
+        List("risk-assessments", new JsonObject { ["id"] = "ra-1", ["ref_id"] = "EX-RISK-2026" });
+        List("threats", new JsonObject { ["id"] = "th-2", ["urn"] = "urn:example:risk:threat:example-risk:thr-02" });
+        List("applied-controls", new JsonObject { ["id"] = "ac-backup", ["ref_id"] = "AC-BACKUP" }, new JsonObject { ["id"] = "ac-mfa", ["ref_id"] = "AC-MFA" });
+        List("risk-scenarios");
+        Respond("POST", "/api/risk-scenarios/", 201, new JsonObject { ["id"] = "rs-new" });
+        var scenario = Declared(ScopeKind.RiskScenario, "EX-RISK-2026/R-01",
+            ("ref_id", "R-01"), ("name", "Ransomware encrypts the file shares"), ("study", "EX-RISK-2026"), ("systems", "Example 365"),
+            ("threats", "urn:example:risk:threat:example-risk:thr-02"), ("existing_controls", "AC-BACKUP"), ("planned_controls", "AC-MFA"),
+            ("current_probability", "Possible"), ("current_impact", "Major"), ("treatment", "mitigate"), ("justification", "Tested monthly.")) with
+        {
+            Levels = new Dictionary<string, int> { ["current_proba"] = 2, ["current_impact"] = 2 },
+        };
+
+        (await Create(scenario)).Value();
+
+        Posted("risk-scenarios").ShouldBe(Json(new JsonObject
+        {
+            ["ref_id"] = "R-01",
+            ["name"] = "Ransomware encrypts the file shares",
+            ["description"] = $"[hound scope {State}]",
+            ["risk_assessment"] = "ra-1",
+            ["assets"] = new JsonArray("a-365"),
+            ["threats"] = new JsonArray("th-2"),
+            ["existing_applied_controls"] = new JsonArray("ac-backup"),
+            ["applied_controls"] = new JsonArray("ac-mfa"),
+            ["current_proba"] = 2,
+            ["current_impact"] = 2,
+            ["residual_proba"] = -1,
+            ["residual_impact"] = -1,
+            ["treatment"] = "mitigate",
+            ["justification"] = "Tested monthly.",
+        }));
+    }
+
+    [Fact]
+    public async Task Creates_security_exception_with_links_and_never_a_status()
+    {
+        // s15-03: the exception carries its links to systems, controls and rows; its approval stays with an approver in CISO Assistant.
+        List("security-exceptions");
+        List("applied-controls", new JsonObject { ["id"] = "ac-mfa", ["ref_id"] = "AC-MFA" });
+        List("compliance-assessments", new JsonObject { ["id"] = "ca-base", ["ref_id"] = "EXAMPLE-BASELINE-2026" });
+        _ca.Server.Given(Request.Create().WithPath("/api/compliance-assessments/ca-base/object/").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject { ["id"] = "ca-base", ["selected_implementation_groups"] = new JsonArray() }.ToJsonString()));
+        List("requirement-assessments", new JsonObject { ["id"] = "ra-1", ["requirement"] = new JsonObject { ["urn"] = "urn:example:req:ex-1.1", ["ref_id"] = "EX-1.1" } });
+        Respond("POST", "/api/security-exceptions/", 201, new JsonObject { ["id"] = "se-new" });
+        var exception = Declared(ScopeKind.SecurityException, "EXC-01",
+            ("name", "Legacy finance app without MFA"), ("domain", "Example Pty Ltd"), ("severity", "medium"), ("owners", "it@example.com"),
+            ("expiration_date", "2027-03-31"), ("observation", "Office network only."), ("systems", "Example 365"), ("controls", "AC-MFA"),
+            ("requirements", "EXAMPLE-BASELINE-2026/EX-1.1"));
+
+        (await Create(exception)).Value();
+
+        Posted("security-exceptions").ShouldBe(Json(new JsonObject
+        {
+            ["ref_id"] = "EXC-01",
+            ["name"] = "Legacy finance app without MFA",
+            ["description"] = $"[hound scope {State}]",
+            ["folder"] = "f-ex",
+            ["severity"] = 2,
+            ["owners"] = new JsonArray("act-it"),
+            ["expiration_date"] = "2027-03-31",
+            ["observation"] = "Office network only.",
+            ["assets"] = new JsonArray("a-365"),
+            ["applied_controls"] = new JsonArray("ac-mfa"),
+            ["requirement_assessments"] = new JsonArray("ra-1"),
+        }));
+    }
+
+    [Fact]
+    public async Task Creates_risk_acceptance_request_without_a_state()
+    {
+        List("risk-assessments", new JsonObject { ["id"] = "ra-1", ["ref_id"] = "EX-RISK-2026" });
+        List("risk-scenarios", new JsonObject { ["id"] = "rs-2", ["ref_id"] = "R-02" });
+        List("risk-acceptances");
+        Respond("POST", "/api/risk-acceptances/", 201, new JsonObject { ["id"] = "rac-new" });
+        var acceptance = Declared(ScopeKind.RiskAcceptance, "EX-RISK-2026/R-02",
+            ("name", "Accept: The only backup administrator leaves"), ("domain", "Example Pty Ltd"), ("scenario", "EX-RISK-2026/R-02"), ("justification", "Training a second."));
+
+        (await Create(acceptance)).Value();
+
+        Posted("risk-acceptances").ShouldBe(Json(new JsonObject
+        {
+            ["ref_id"] = "ACC-EX-RISK-2026-R-02",
+            ["name"] = "Accept: The only backup administrator leaves",
+            ["description"] = $"[hound scope {State}]",
+            ["folder"] = "f-ex",
+            ["risk_scenarios"] = new JsonArray("rs-2"),
+            ["justification"] = "Training a second.",
+        }));
+    }
+
+    [Fact]
     public async Task Creates_audit_with_groups_actors_and_marker()
     {
         List("frameworks", new JsonObject { ["id"] = "fw-e8", ["urn"] = E8 });
@@ -176,6 +429,23 @@ public sealed class ScopeClientTests : IDisposable
             ["authors"] = new JsonArray("act-it"),
             ["reviewers"] = new JsonArray(),
         }));
+    }
+
+    [Fact]
+    public async Task An_audit_names_its_systems_as_assets()
+    {
+        // s15-D2: an audit's systems were never written, so audits in CISO Assistant showed no systems.
+        List("frameworks", new JsonObject { ["id"] = "fw-e8", ["urn"] = E8 });
+        List("compliance-assessments");
+        List("assets", new JsonObject { ["id"] = "a-365", ["name"] = "Example 365" }, new JsonObject { ["id"] = "a-laptops", ["name"] = "Example laptops" });
+        Respond("POST", "/api/compliance-assessments/", 201, new JsonObject { ["id"] = "ca-new" });
+        var audit = Declared(ScopeKind.Audit, "EX-E8-2026",
+            ("name", "Essential Eight ML2 2026"), ("framework", E8), ("groups", "2"), ("domain", "Example Pty Ltd"), ("perimeter", "Corporate IT"),
+            ("systems", "Example 365, Example laptops"));
+
+        (await Create(audit)).Value();
+
+        JsonNode.Parse(Posted("compliance-assessments"))!["assets"]!.ToJsonString().ShouldBe("[\"a-365\",\"a-laptops\"]");
     }
 
     [Fact]

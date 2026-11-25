@@ -34,6 +34,15 @@ public sealed record ScopeDocument(ScopeSetup Setup, IReadOnlyList<ScopeControl>
 
     /// <summary><c>scope/ssp.yaml</c>: the system security plans, one per programme (s11-02); empty when the repo has no such file.</summary>
     public IReadOnlyList<ScopeSsp> Ssps { get; init; } = [];
+
+    /// <summary><c>scope/risks/*.yaml</c>: risk studies and their scenarios, one study per file (s15-02).</summary>
+    public IReadOnlyList<ScopeRiskStudy> RiskStudies { get; init; } = [];
+
+    /// <summary><c>scope/exceptions.yaml</c>: security exceptions requested through the repo, approved only in CISO Assistant (s15-03).</summary>
+    public IReadOnlyList<ScopeExceptionRequest> Exceptions { get; init; } = [];
+
+    /// <summary><c>scope/bia/*.yaml</c>: business impact analyses, one per file (s15-04).</summary>
+    public IReadOnlyList<ScopeBia> Bias { get; init; } = [];
 }
 
 /// <summary><c>scope/setup.yaml</c>: the root folder, the frameworks to load and the domains.</summary>
@@ -41,6 +50,9 @@ public sealed record ScopeSetup(string RootFolder, IReadOnlyList<ScopeFramework>
 {
     /// <summary>Other libraries to load by URN, such as the mapping sets between the frameworks.</summary>
     public IReadOnlyList<ScopeRef> Libraries { get; init; } = [];
+
+    /// <summary>Custom libraries in the repo, such as a risk matrix or threat catalogue (s15-01): uploaded from their file, checked by their snapshot.</summary>
+    public IReadOnlyList<ScopeLibraryFile> LibraryFiles { get; init; } = [];
 
     /// <summary>The organisation's own entity (CISO Assistant's main entity), from <c>organisation.entity</c>. It is only ever updated.</summary>
     public ScopeEntity? Organisation { get; init; }
@@ -61,6 +73,9 @@ public sealed record ScopeProgramme(string Id, string Name, ScopeRef Framework, 
 
 /// <summary>A framework to load: its URN, and its library by URN or as a custom library file. A snapshot makes it checkable offline.</summary>
 public sealed record ScopeFramework(string Urn, string? LibraryUrn, string? LibraryFile, string? Snapshot, SourceLine At);
+
+/// <summary>A custom library file to upload, by its URN, with an optional snapshot that makes its matrices and threats checkable offline.</summary>
+public sealed record ScopeLibraryFile(string Urn, string File, string? Snapshot, SourceLine At);
 
 /// <summary>A domain (a CISO Assistant folder) with its perimeters and systems.</summary>
 public sealed record ScopeDomain(string Name, string? Description, IReadOnlyList<ScopePerimeter> Perimeters, IReadOnlyList<ScopeSystem> Systems, SourceLine At);
@@ -95,6 +110,12 @@ public sealed record ScopeSystem(
 
     /// <summary>The system's entry in the AI register, when it is an AI system (s11-12).</summary>
     public AiRegistration? Ai { get; init; }
+
+    /// <summary>Security objectives by name, such as <c>confidentiality: 3</c>, on CISO Assistant's 0 to 4 scale (s15-04).</summary>
+    public IReadOnlyDictionary<string, int> Objectives { get; init; } = new Dictionary<string, int>();
+
+    /// <summary>Recovery objectives: <c>rto</c>, <c>rpo</c> and <c>mtd</c> as durations (s15-04).</summary>
+    public IReadOnlyDictionary<string, Duration> Recovery { get; init; } = new Dictionary<string, Duration>();
 }
 
 /// <summary>An applied control, declared once in <c>scope/controls.yaml</c> and used by any number of audits.</summary>
@@ -194,4 +215,10 @@ public sealed record ScopeAudit(
 
     /// <summary>Required; null when the file leaves it out, which validation reports.</summary>
     public UnlistedRule? Unlisted { get; init; }
+
+    /// <summary>
+    /// What a row the scope leaves not assessed is applied as (s15-14): non-compliant by default, because CISO Assistant leaves
+    /// not-assessed rows out of its compliance percentage; <c>no_evidence: not_assessed</c> opts out.
+    /// </summary>
+    public ComplianceResult NoEvidence { get; init; } = ComplianceResult.NonCompliant;
 }

@@ -122,7 +122,7 @@ hound add collector rest --name sophos --config hound.yaml --schedule "0 4 * * *
   --secret-file client_secret=/trial/inbox/sophos-dev-secret --yes
 ```
 
-The secret is a placeholder the trial writes; the dev server checks no credential. On a `make ca-up` network the address is `http://host.docker.internal:5370/` instead, because hound runs in its own container there.
+The secret is a placeholder the trial writes; the dev server checks no credential. The address is `localhost` on a `make ca-up` network too: hound sends credentials over plain http only to the machine it runs on, so while the config reads a dev server the trial runs hound on the host network and reaches CISO Assistant on its published port.
 
 ### Your own tenant
 
@@ -183,6 +183,19 @@ Scanners export files instead of answering an API, so the `vuln-scan` collector 
 4. Offers to write the gaps estate and collect again. That estate has a stale internet-facing scan, an exploited web flaw past 48 hours, an unsupported VPN appliance, an overdue browser patch, an overdue operating system update and an unsupported laptop operating system. The patching rows then fail, naming the hosts.
 
 In a real deployment, each new export goes into the same folder, by hand or with `hound manual upload --source <name>`.
+
+## 16. What CISO Assistant reads for each audit
+
+The trial ends by reading each audit's compliance percentage the way CISO Assistant computes it on its Compliance pages: compliant
+rows, plus half of the partially compliant ones, over compliant, partially compliant and non-compliant rows. CISO Assistant leaves
+not-assessed and not-applicable rows out of that figure, so an audit with three passing checks and every manual row not assessed
+would read 100%. hound therefore sends a row with no evidence as non-compliant, its observation starting "No evidence yet: "
+([why](../scope.md#no-evidence-is-not-compliance)), and the trial prints each audit's figure with those rows counted, for example
+`EX-SYSTEM-2026: CISO Assistant reads 6% (3 compliant, 0 partially compliant, 43 non-compliant of which 43 have no evidence yet; it
+leaves out 61 not applicable and 0 not assessed)`. It stops if any audit reads 100% while a row is not assessed.
+
+For each programme's standing (the maturity level met, and compliant of applicable with every open row counted), use
+`hound report committee` ([reporting](../reporting.md#a-programmes-standing)).
 
 ## Unattended
 

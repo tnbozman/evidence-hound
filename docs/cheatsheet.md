@@ -117,6 +117,9 @@ file by `scripts/cheatsheet/render.sh`.
 
 - `hound framework snapshot <library>`: snapshot a framework library
   - `--out`
+- `hound library validate <library>`: check a custom risk matrix or threat library
+- `hound library snapshot <library>`: snapshot its matrix levels and threats
+  - `--out`
 - `hound mapping validate <file>`: check a mapping file
   - `--framework`
 - `hound mapping apply <mapping> <checks>`: map check results to requirements
@@ -139,6 +142,7 @@ file by `scripts/cheatsheet/render.sh`.
 - `hound review recommend <key> --answer ... --reason ... --source ...`: agent: its recommendation
 - `hound review --for 60m`: **Person**: one guided weekly session
   - `--no-apply`: stop at the files
+- `hound review --only <key>`: **Person**: accept or challenge one item, after going through it with your agent (agent `hound-decisions`)
 
 ### Reports
 
@@ -147,6 +151,12 @@ file by `scripts/cheatsheet/render.sh`.
 - `hound report committee --month 2026-11`: the monthly security committee report from the month's and last month's snapshots
 - `hound report board --quarter 2026-Q4`: the quarterly board report from the last four quarter-end snapshots
   - both: `--config` (req) `--out`
+
+### Incidents
+
+- `hound incident obligations INC-2026-01`: each report the incident owes under `scope/reporting.yaml`, due from its discovery, made or overdue
+- `hound irp build --programme essential-eight`: the incident response plan from `scope/irp.yaml` and the repo, NIST SP 800-61 Rev 3 with the Australian reporting, gaps first (`--strict` fails on gaps, `--json` gives each source)
+  - `--config` (req) `--scope --format json`
 
 ## Typical paths
 

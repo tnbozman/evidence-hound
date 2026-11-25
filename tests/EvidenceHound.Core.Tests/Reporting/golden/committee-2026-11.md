@@ -4,6 +4,8 @@ Period 2026-11-01 to 2026-11-30, as at the end of the month. Snapshot taken 2026
 
 ## 1. Summary
 
+- Essential Eight: Level met: none (level 0). Compliant 1 of 3 applicable (33%), counting rows not assessed as not met; assessed 2 of 3; not assessed: 1.
+- AI governance (AI6 Foundations): Level met: none (level 0). Compliant 0 of 1 applicable (0%), counting rows not assessed as not met; assessed 1 of 1; not assessed: 0.
 - Requirement results changed since last month: 2 (1 better, 1 worse).
 - Exceptions and risk acceptances expiring within 60 days: 1. Expired this month: 1.
 - Remediation items overdue: 2.

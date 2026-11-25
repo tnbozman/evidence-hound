@@ -12,7 +12,7 @@ public static class RefIdValidator
             .. scope.Setup.Domains.SelectMany(d => d.Systems).Select(s => (RefIdKind.System, s.RefId, s.At)),
             .. scope.Controls.Select(c => (RefIdKind.Control, (string?)c.RefId, c.At)),
             .. scope.Audits.Select(a => (RefIdKind.Audit, (string?)a.RefId, a.At)),
-            .. scope.ThirdParties.Select(e => (RefIdKind.Supplier, (string?)e.RefId, e.At)),
+            .. scope.ThirdParties.Select(e => (IsCustomer(e) ? RefIdKind.Customer : RefIdKind.Supplier, (string?)e.RefId, e.At)),
             .. scope.ThirdParties.SelectMany(e => e.Solutions).Select(s => (RefIdKind.Solution, (string?)s.RefId, s.At)),
             .. scope.ThirdParties.SelectMany(e => e.Contracts).Select(c => (RefIdKind.Contract, (string?)c.RefId, c.At)),
             .. scope.ThirdParties.SelectMany(e => e.Assessments).Select(a => (RefIdKind.EntityAssessment, (string?)a.RefId, a.At)),
@@ -22,6 +22,10 @@ public static class RefIdValidator
             .Where(d => d.RefId is { Length: > 0 } refId && !RefIds.Follows(d.Kind, refId))
             .Select(d => Problem(d.Kind, d.RefId!, d.At));
     }
+
+    /// <summary>A third party the organisation only sells to (s15-08): every contract it holds is a customer contract.</summary>
+    public static bool IsCustomer(ScopeEntity entity) =>
+        entity is { Contracts.Count: > 0 } && entity.Contracts.All(c => c.Customer);
 
     private static ScopeProblem Problem(RefIdKind kind, string refId, SourceLine at)
     {

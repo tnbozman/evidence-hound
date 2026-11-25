@@ -39,14 +39,17 @@ trial_network_args() {
   esac
 }
 
-# trial_dev_url MODE PORT -> a dev server's address, listening in the dev container on PORT, as hound's container sees it
-# With the host network hound shares the dev container's namespace; on a make ca-up network it reaches the dev container,
-# which is its Docker host, as host.docker.internal.
+# trial_dev_url PORT -> a dev server's address, listening in the dev container on PORT, as hound's container sees it
+# Always localhost: hound sends credentials over plain http only to this machine, so hound reading a dev server shares the
+# host network (trial_run_mode).
 trial_dev_url() {
-  case "$1" in
-    "network "*) echo "http://host.docker.internal:$2/" ;;
-    *) echo "http://localhost:$2/" ;;
-  esac
+  echo "http://localhost:$1/"
+}
+
+# trial_run_mode MODE READS_DEV(yes|no) -> the CISO Assistant mode for one hound container: the host network's when the config
+# reads a dev server, as only there is the dev server on localhost
+trial_run_mode() {
+  if [[ "$2" == yes ]]; then trial_host_mode "$1"; else echo "$1"; fi
 }
 
 # trial_sophos_dev_sets URL -> the hound add collector rest settings, one word per line, for the Sophos Central dev server at URL
@@ -292,4 +295,26 @@ trial_seed_inputs() {
       [[ -e "$ws/$kind/${file##*/}" ]] || cp "$file" "$ws/$kind/"
     done
   done
+}
+
+# trial_audit_reading REF COMPLIANT PARTIAL NON_COMPLIANT NOT_ASSESSED NOT_APPLICABLE NO_EVIDENCE -> the audit's compliance percentage
+# as CISO Assistant computes it: compliant plus half of partially compliant, over compliant, partially and non-compliant rows. It leaves
+# not-assessed and not-applicable rows out, so it fails (non-zero) on a 100% while any row is not assessed: the false full mark.
+trial_audit_reading() {
+  local ref="$1" compliant="$2" partial="$3" non="$4" open="$5" na="$6" none="$7"
+  local counted=$((compliant + partial + non))
+  if ((counted + open + na == 0)); then
+    printf '%s: no rows were read from CISO Assistant.\n' "$ref"
+    return 1
+  fi
+  if ((counted == 0)); then
+    printf '%s: CISO Assistant reads no percentage (no row is compliant or non-compliant; %s not assessed, %s not applicable).\n' \
+      "$ref" "$open" "$na"
+    return 0
+  fi
+  local percent=$(((200 * compliant + 100 * partial) / (2 * counted)))
+  printf '%s: CISO Assistant reads %s%% (%s compliant, %s partially compliant, %s non-compliant of which %s have no evidence yet;' \
+    "$ref" "$percent" "$compliant" "$partial" "$non" "$none"
+  printf ' it leaves out %s not applicable and %s not assessed).\n' "$na" "$open"
+  ((percent < 100 || open == 0))
 }

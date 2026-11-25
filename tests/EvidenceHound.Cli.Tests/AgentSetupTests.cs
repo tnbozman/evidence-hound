@@ -13,6 +13,7 @@ public sealed partial class AgentSetupTests : IDisposable
         "onboard-a-system-with-hound", "assess-a-supplier", "read-an-api-specification", "import-an-audit-workbook", "write-a-profile", "review-before-apply",
         "onboard-the-organisation", "onboard-the-environment", "onboard-a-third-party", "onboard-an-audit", "process-manual-evidence", "weekly-review",
         "move-registers-from-spreadsheets", "prepare-the-reports", "answer-a-prime-questionnaire",
+        "work-through-pending-decisions", "operate-collectors", "build-the-ssp", "respond-to-an-incident", "keep-frameworks-and-libraries", "hound-commands",
     ];
 
     internal static readonly string[] Rules =
@@ -70,12 +71,12 @@ public sealed partial class AgentSetupTests : IDisposable
         var onboarding = await ReadAsync(".github", "agents", "hound-onboarding.agent.md");
         onboarding.ShouldStartWith("---\nname: hound-onboarding\ndescription: ");
         onboarding.ShouldContain("\ntools: [\"read\", \"search\", \"edit\", \"execute\"]\n");
-        onboarding.ShouldContain("\nskills: [\"onboard-the-organisation\", \"onboard-the-environment\", \"onboard-a-third-party\", \"assess-a-supplier\", \"onboard-a-system-with-hound\", \"read-an-api-specification\", \"onboard-an-audit\", \"import-an-audit-workbook\", \"write-a-profile\", \"process-manual-evidence\", \"weekly-review\", \"move-registers-from-spreadsheets\", \"prepare-the-reports\", \"answer-a-prime-questionnaire\"]\n");
+        onboarding.ShouldContain("\nskills: [\"onboard-the-organisation\", \"onboard-the-environment\", \"onboard-a-third-party\", \"assess-a-supplier\", \"onboard-a-system-with-hound\", \"read-an-api-specification\", \"onboard-an-audit\", \"import-an-audit-workbook\", \"write-a-profile\", \"process-manual-evidence\", \"weekly-review\", \"move-registers-from-spreadsheets\", \"prepare-the-reports\", \"answer-a-prime-questionnaire\", \"hound-commands\"]\n");
 
         // The review agent reads and runs hound; it cannot edit a file.
         var review = await ReadAsync(".github", "agents", "hound-review.agent.md");
         review.ShouldContain("\ntools: [\"read\", \"search\", \"execute\"]\n");
-        review.ShouldContain("\nskills: [\"review-before-apply\"]\n");
+        review.ShouldContain("\nskills: [\"review-before-apply\", \"hound-commands\"]\n");
 
         File.Exists(Path.Combine(_root, ".github", "copilot-instructions.md")).ShouldBeTrue();
         foreach (var skill in Skills)
@@ -139,7 +140,7 @@ public sealed partial class AgentSetupTests : IDisposable
             .. Directory.GetFiles(Path.Combine(_root, ".claude"), "*.md", SearchOption.AllDirectories),
             .. Directory.GetFiles(Path.Combine(_root, ".github"), "*.md", SearchOption.AllDirectories),
         ];
-        written.Length.ShouldBe(1 + Skills.Length + 2 + 2 + 1 + Skills.Length);
+        written.Length.ShouldBe(1 + Skills.Length + 4 + 4 + 1 + Skills.Length);
         foreach (var file in written)
         {
             // After any frontmatter comes hound's marker with its version, then the rules, before anything else.

@@ -119,7 +119,13 @@ public sealed record RemediationItem(string RefId, string Name, string? Owner, D
 public sealed record IncidentItem(string RefId, string Name, string Status, string? Severity, DateOnly? ReportedOn, DateOnly? ClosedOn)
 {
     public string? Link { get; init; }
+
+    /// <summary>The reports it owes under the scope's reporting obligations (s15-07), with their deadlines.</summary>
+    public IReadOnlyList<IncidentReport> Reports { get; init; } = [];
 }
+
+/// <summary>A report an incident owes (s15-07): to whom, by when, and whether it is made, due or overdue.</summary>
+public sealed record IncidentReport(string Id, string Name, string ReportTo, DateTimeOffset Due, string Status);
 
 /// <summary>A risk scenario: its current and residual level, owner, treatment and target date.</summary>
 public sealed record RiskItem(string RefId, string Name, string? CurrentLevel, string? ResidualLevel, int Rank, string? Owner, string? Treatment, DateOnly? Target)

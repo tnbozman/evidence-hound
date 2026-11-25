@@ -49,6 +49,27 @@ public sealed class ScopeExportTests
     }
 
     [Fact]
+    public void A_row_sent_non_compliant_for_want_of_evidence_exports_as_not_assessed()
+    {
+        // s15-14: hound sends a row with no evidence as non-compliant; the export gives back what the file said, so a round trip keeps it open.
+        var held = Held() with
+        {
+            Objects =
+            [
+                .. Held().Objects.Where(o => o.Held.Key is not ("EX-E8-2026/ISM-1173" or "EX-E8-2026/ISM-1486")),
+                Row("EX-E8-2026/ISM-1173", ("status", "to_do"), ("result", "non_compliant"), ("observation", "No evidence yet: Manual evidence: the quarterly allow-list review.")),
+                Row("EX-E8-2026/ISM-1486", ("status", "to_do"), ("result", "non_compliant"), ("observation", "No evidence yet: nothing is recorded for this requirement.")),
+            ],
+        };
+
+        var audit = ScopeExport.Write(held)["audits/ex-e8-2026.yaml"];
+
+        audit.ShouldContain("  - ref: ISM-1173\n    status: to_do\n    result: not_assessed\n    observation: \"Manual evidence: the quarterly allow-list review.\"");
+        audit.ShouldNotContain("ISM-1486", Case.Sensitive, "an unlisted row with nothing recorded is the unlisted rule's, not a hand-written row");
+        audit.ShouldNotContain("No evidence yet");
+    }
+
+    [Fact]
     public void Output_is_sorted_and_stable()
     {
         var held = Held();
@@ -123,6 +144,30 @@ public sealed class ScopeExportTests
     }
 
     [Fact]
+    public void A_systems_security_and_recovery_objectives_are_exported_and_plan_nothing()
+    {
+        var held = Held();
+        held = held with
+        {
+            Objects =
+            [
+                .. held.Objects.Where(o => o.Held.Key != "Example 365"),
+                Managed(ScopeKind.System, "Example 365", ("ref_id", "SYS-365"), ("type", "primary"), ("owner", "it@example.com"), ("domain", "Example Pty Ltd"),
+                    ("objectives", "availability=2, confidentiality=3, integrity=3"), ("recovery", "mtd=3d, rpo=1d, rto=4h")),
+            ],
+        };
+
+        var files = ScopeExport.Write(held);
+
+        files["setup.yaml"].ShouldContain("        objectives: {availability: 2, confidentiality: 3, integrity: 3}\n");
+        files["setup.yaml"].ShouldContain("        recovery: {mtd: 3d, rpo: 1d, rto: 4h}\n");
+        var (scope, problems) = Parse(files);
+        problems.ShouldBeEmpty(string.Join("\n", problems.Select(p => $"{p.Code} {p.At.File}:{p.At.Line} {p.Message}")));
+        var declared = ScopeDesired.From(scope, new ScopeInputs(Snapshots(files), null, new Dictionary<string, IReadOnlyList<ScopeFile>>()));
+        ScopePlanner.Plan(declared, held.Objects, prune: false).Changes.ShouldBeEmpty();
+    }
+
+    [Fact]
     public void Objects_without_a_ref_id_are_given_one()
     {
         ScopeRefIds.For(ScopeKind.Audit, "Essential Eight review 2026").ShouldBe("ESSENTIAL-EIGHT-REVIEW-2026");
@@ -154,7 +199,7 @@ public sealed class ScopeExportTests
             Managed(ScopeKind.System, "Example 365", ("ref_id", "SYS-365"), ("type", "primary"), ("description", "Mail: files, identity \"and\" devices."), ("owner", "it@example.com"), ("domain", "Example Pty Ltd")),
             Managed(ScopeKind.System, "Example laptops", ("ref_id", "SYS-LAPTOPS"), ("type", "supporting"), ("owner", "it@example.com"), ("domain", "Example Pty Ltd"), ("parents", "Example 365")),
             Managed(ScopeKind.Audit, "EX-E8-2026", ("name", "Essential Eight ML2 2026"), ("framework", E8), ("groups", "1, 2"), ("domain", "Example Pty Ltd"),
-                ("perimeter", "Corporate IT"), ("eta", "2026-06-30"), ("due_date", "2026-07-31"), ("authors", "it@example.com"), ("reviewers", "ceo@example.com"), ("status", "in_progress")),
+                ("perimeter", "Corporate IT"), ("eta", "2026-06-30"), ("due_date", "2026-07-31"), ("authors", "it@example.com"), ("reviewers", "ceo@example.com"), ("systems", "Example 365, Example laptops"), ("status", "in_progress")),
             Managed(ScopeKind.Document, "identity-policy", ("name", "Identity and access policy"), ("domain", "Example Pty Ltd"), ("hashes", new string('a', 64))),
             new ActualObject(new ScopeObject(ScopeKind.Document, "ev-0001", Fields(("name", "mfa-admins.json"))), null),
             Managed(ScopeKind.Control, "AC-MFA", ("name", "Multi-factor authentication"), ("description", "Every user signs in with MFA."), ("domain", "Example Pty Ltd"),

@@ -47,6 +47,38 @@ public sealed class ReviewCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task A_report_an_open_incident_still_owes_waits_with_its_deadline()
+    {
+        // s15-07: with CISO Assistant reachable, each report an open incident has not made joins the weekly review, due by its deadline.
+        using var ca = WireMock.Server.WireMockServer.Start();
+        static JsonObject List(params JsonObject[] items) => new() { ["count"] = items.Length, ["results"] = new JsonArray([.. items]) };
+        ca.Given(WireMock.RequestBuilders.Request.Create().WithPath("/api/incidents/").UsingGet()).RespondWith(WireMock.ResponseBuilders.Response.Create().WithBody(List(
+            new JsonObject { ["id"] = "in-9", ["ref_id"] = "INC-9", ["name"] = "Malware on a laptop", ["status"] = "ongoing", ["reported_at"] = "2026-11-20T12:00:00Z", ["assets"] = new JsonArray() },
+            new JsonObject { ["id"] = "in-1", ["ref_id"] = "INC-1", ["name"] = "Phishing email clicked", ["status"] = "closed", ["reported_at"] = "2026-10-02T12:00:00Z", ["assets"] = new JsonArray() }).ToJsonString()));
+        ca.Given(WireMock.RequestBuilders.Request.Create().WithPath("/api/timeline-entries/").UsingGet()).RespondWith(WireMock.ResponseBuilders.Response.Create().WithBody(List(
+            new JsonObject { ["timestamp"] = "2026-11-20T09:30:00Z", ["entry_type"] = "detection", ["entry"] = "Found." }).ToJsonString()));
+
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+        var settings = new Dictionary<string, string?>(StringComparer.Ordinal)
+        {
+            ["XDG_CONFIG_HOME"] = Path.Combine(_root, "home"),
+            ["HOUND_TODAY"] = "2026-11-23",
+            ["HOUND_CA_URL"] = $"{ca.Url}/api/",
+            ["HOUND_CA_TOKEN"] = "example-token-for-cli-tests",
+        };
+        var exit = await HoundCli.RunAsync(["review", "pending", "--json", "--repo", Repo, "--config", Config], new StringReader(""), output, error, settings, false, _ct);
+
+        exit.ShouldBe(ExitCodes.Ok, error.ToString());
+        var item = JsonNode.Parse(output.ToString())!["items"]!.AsArray().Single(i => i!["key"]!.GetValue<string>().StartsWith("incident_report:", StringComparison.Ordinal))!;
+        item["key"]!.GetValue<string>().ShouldBe("incident_report:INC-9/reportcyber");
+        item["deadline"]!.GetValue<string>().ShouldBe("2026-11-21");
+        item["title"]!.GetValue<string>().ShouldContain("overdue");
+        item["effect"]!.GetValue<string>().ShouldContain("Reported: reportcyber");
+        ca.LogEntries.ShouldNotContain(e => e.RequestMessage!.Method != "GET");
+    }
+
+    [Fact]
     public async Task Refuses_without_a_terminal()
     {
         await File.WriteAllTextAsync(Path.Combine(Repo, "scope", "capabilities.yaml"), ApproveCommandTests.Capabilities, _ct);
@@ -56,6 +88,74 @@ public sealed class ReviewCommandTests : IDisposable
         exit.ShouldBe(ExitCodes.Usage);
         error.ShouldContain("needs a person at a terminal");
         (await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "capabilities.yaml"), _ct)).ShouldNotContain("approved_by");
+
+        // s15-12: accepting one item by its key is still the person's, at a terminal; an agent or a pipe is refused the same way.
+        (exit, _, error) = await RunAsync(["review", "--repo", Repo, "--no-apply", "--only", "capability:EX"], terminal: false, "Sam Example\na\n");
+
+        exit.ShouldBe(ExitCodes.Usage);
+        error.ShouldContain("needs a person at a terminal");
+        (await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "capabilities.yaml"), _ct)).ShouldNotContain("approved_by");
+    }
+
+    [Fact]
+    public async Task Pending_flags_risk_and_groups_a_summary()
+    {
+        // s15-12: the agent opens with the size of the job, and the decisions that most need the person's own eyes are flagged high.
+        await OnboardAgentCommandTests.DraftEverythingAsync(Repo, _ct);
+        var export = Path.Combine(_root, "firewall-export.txt");
+        await File.WriteAllTextAsync(export, "rule 14: deny any any\n", _ct);
+        (await ManualProposeTests.ProposeAsync(Repo, export, "--result", "pass", "--observation", "The last rule denies any to any.", "--supports", "rule 14: deny any any")).Exit.ShouldBe(ExitCodes.Ok);
+
+        var (exit, output, error) = await RunAsync(["review", "pending", "--json", "--repo", Repo, "--config", Config], terminal: false);
+
+        exit.ShouldBe(ExitCodes.Ok, error);
+        var queue = JsonNode.Parse(output)!;
+        string Risk(string kind) => queue["items"]!.AsArray().Single(i => i!["kind"]!.GetValue<string>() == kind)!["risk"]!.GetValue<string>();
+        Risk("not_applicable").ShouldBe("high", "a not-applicable decision removes a requirement from the audit");
+        Risk("supplier").ShouldBe("high", "a supplier approval lets a third party hold the organisation's data");
+        Risk("manual_evidence").ShouldBe("normal", "a proposal quoting the file it rests on");
+
+        var summary = queue["summary"]!.AsArray();
+        summary.Select(g => (g!["kind"]!.GetValue<string>(), g["count"]!.GetValue<int>())).ShouldBe(
+            [("not_applicable", 1), ("supplier", 1), ("manual_evidence", 1)], ignoreOrder: true);
+        summary.ShouldAllBe(g => g!["recommendation"] != null && g["minutes"]!.GetValue<int>() > 0);
+        queue["high"]!.GetValue<int>().ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task Only_the_named_item_is_asked_and_the_rest_wait()
+    {
+        // s15-12: after talking an item through with the agent, the person accepts that one by its key; nothing else is asked or written.
+        await OnboardAgentCommandTests.DraftEverythingAsync(Repo, _ct);
+
+        var (exit, output, error) = await RunAsync(
+            ["review", "--repo", Repo, "--no-apply", "--only", "not_applicable:EXAMPLE-ASSETS/EX-2"], terminal: true, "Sam Example\na\n");
+
+        exit.ShouldBe(ExitCodes.Ok, error);
+        error.ShouldContain("[1/1] [not applicable] EXAMPLE-ASSETS EX-2");
+        error.ShouldNotContain("[supplier]");
+        output.ShouldContain("Accepted 1, challenged 0, skipped 0.");
+        var record = await File.ReadAllTextAsync(Directory.GetFiles(Path.Combine(Repo, "review", "sign-offs"), "*.yaml").ShouldHaveSingleItem(), _ct);
+        record.ShouldContain("not_applicable:EXAMPLE-ASSETS/EX-2");
+        record.ShouldNotContain("supplier:");
+
+        (exit, output, error) = await RunAsync(["review", "pending", "--json", "--repo", Repo], terminal: false);
+        exit.ShouldBe(ExitCodes.Ok, error);
+        JsonNode.Parse(output)!["items"]!.AsArray().Select(i => i!["key"]!.GetValue<string>()).ShouldBe(["supplier:SUP-EXAMPLE/CTR-EXAMPLE-ASSETS"]);
+    }
+
+    [Fact]
+    public async Task An_unknown_key_is_refused_with_the_nearest()
+    {
+        await OnboardAgentCommandTests.DraftEverythingAsync(Repo, _ct);
+
+        var (exit, _, error) = await RunAsync(
+            ["review", "--repo", Repo, "--no-apply", "--only", "not_applicable:EXAMPLE-ASSETS/EX-3"], terminal: true, "Sam Example\na\n");
+
+        exit.ShouldNotBe(ExitCodes.Ok);
+        error.ShouldContain("'not_applicable:EXAMPLE-ASSETS/EX-3' is not waiting on a person");
+        error.ShouldContain("not_applicable:EXAMPLE-ASSETS/EX-2");
+        Directory.Exists(Path.Combine(Repo, "review", "sign-offs")).ShouldBeFalse("nothing is asked when a key is wrong");
     }
 
     [Fact]

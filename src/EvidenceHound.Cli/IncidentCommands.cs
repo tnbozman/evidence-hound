@@ -1,0 +1,117 @@
+using System.CommandLine;
+using System.Globalization;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using EvidenceHound.CisoAssistant;
+using EvidenceHound.Core.Results;
+using EvidenceHound.Core.Scope;
+using EvidenceHound.Runtime.Collectors;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+namespace EvidenceHound.Cli;
+
+/// <summary>s15-07: <c>hound incident obligations</c>, the reports an incident recorded in CISO Assistant owes and when each is due.</summary>
+internal static class IncidentCommands
+{
+    public static Command Build(TextWriter output, ILoggerFactory loggers, IConfiguration configuration, CollectorRegistry registry)
+    {
+        var logger = loggers.CreateLogger("hound.incident");
+        var incident = new Argument<string>("incident") { Description = "The incident's reference ID in CISO Assistant, such as INC-2026-01." };
+        var scope = new Option<DirectoryInfo?>("--scope") { Description = "The scope folder with reporting.yaml and setup.yaml. Default: scope/ in the current folder." };
+        var config = new Option<FileInfo>("--config") { Description = "The deployment config: the CISO Assistant connection.", Required = true };
+        var format = new Option<string>("--format") { Description = "text (the default) or json.", DefaultValueFactory = _ => "text" };
+        var obligations = new Command(
+            "obligations",
+            "List each report the incident owes under scope/reporting.yaml, due from its discovery (its first detection entry). A timeline entry 'Reported: <id>, ...' marks a report as made. Reads CISO Assistant; writes nothing.")
+        {
+            incident, scope, config, format,
+        };
+        obligations.SetAction((parseResult, cancellationToken) => ObligationsAsync(
+            parseResult.GetRequiredValue(incident),
+            parseResult.GetValue(scope) ?? new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "scope")),
+            parseResult.GetRequiredValue(config),
+            parseResult.GetValue(format) == "json",
+            output,
+            loggers,
+            logger,
+            configuration,
+            registry,
+            cancellationToken));
+        return new Command("incident", "Incidents recorded in CISO Assistant and the reports they owe.") { obligations };
+    }
+
+    private static async Task<int> ObligationsAsync(
+        string refId, DirectoryInfo scopeDir, FileInfo configFile, bool json, TextWriter output, ILoggerFactory loggers, ILogger logger,
+        IConfiguration configuration, CollectorRegistry registry, CancellationToken cancellationToken)
+    {
+        var checkedScope = await ScopeCommands.ValidateAsync(scopeDir, null, registry, AuditSeries.Today(configuration), cancellationToken);
+        if (checkedScope.Problems.Count > 0)
+        {
+            return Log.Problems(logger, checkedScope.Problems.Select(p => p.ToProblem()));
+        }
+
+        var reporting = await ScopeCommands.ReportingAsync(scopeDir, cancellationToken);
+        if (reporting.Obligations.Count == 0)
+        {
+            return Log.Problems(logger, [new Problem("reporting.none", $"{Path.Combine(scopeDir.ToString(), "reporting.yaml")} declares no reporting obligations, so no report is owed. See docs/incidents.md.")]);
+        }
+
+        var connection = await PublishCommand.ConnectionAsync(configuration, configFile, registry, cancellationToken);
+        if (connection is not Result<CisoAssistantOptions>.Ok { Value: var options })
+        {
+            return Log.Problems(logger, connection.Match(_ => [], ps => ps));
+        }
+
+        using var services = new ServiceCollection().AddSingleton(loggers).AddCisoAssistantClient(options).BuildServiceProvider();
+        var read = await services.GetRequiredService<IIncidentSource>().ReadAsync(refId, cancellationToken);
+        if (read is not Result<IncidentFacts>.Ok { Value: var facts })
+        {
+            return Log.Problems(logger, read.Match(_ => [], ps => ps));
+        }
+
+        var systems = checkedScope.Scope.Setup.Domains.SelectMany(d => d.Systems).ToList();
+        var owed = ReportingObligations.Owed(reporting.Obligations, systems, facts, DateTimeOffset.UtcNow);
+        await output.WriteAsync(json ? Json(facts, owed) : Text(facts, owed));
+        return ExitCodes.Ok;
+    }
+
+    internal static string Status(OwedReport report) => report.ReportedAt is not null ? "made" : report.Overdue ? "overdue" : "due";
+
+    private static string Text(IncidentFacts incident, IReadOnlyList<OwedReport> owed)
+    {
+        var lines = new List<string> { $"{incident.RefId} {incident.Name}: discovered {Time(incident.Discovered)}, {owed.Count} report(s) owed" };
+        lines.AddRange(owed.Select(r =>
+            $"  {r.Obligation.Id}  due {Time(r.Due)}  {(r.ReportedAt is { } at ? $"made {Time(at)}" : r.Overdue ? "OVERDUE" : "due")}  to {r.Obligation.ReportTo} ({r.Why})"));
+        if (owed.Any(r => r.ReportedAt is null))
+        {
+            lines.Add($"Record each report you make as a timeline entry on the incident: '{ReportingObligations.ReportedPrefix}<id>, <their reference>'.");
+        }
+
+        return string.Join('\n', lines) + "\n";
+    }
+
+    private static string Json(IncidentFacts incident, IReadOnlyList<OwedReport> owed) =>
+        new JsonObject
+        {
+            ["incident"] = incident.RefId,
+            ["name"] = incident.Name,
+            ["discovered"] = incident.Discovered.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture),
+            ["reports"] = new JsonArray([.. owed.Select(r => (JsonNode)new JsonObject
+            {
+                ["id"] = r.Obligation.Id,
+                ["name"] = r.Obligation.Name,
+                ["report_to"] = r.Obligation.ReportTo,
+                ["reference"] = r.Obligation.Reference,
+                ["due"] = r.Due.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture),
+                ["status"] = Status(r),
+                ["reported_at"] = r.ReportedAt?.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture),
+                ["why"] = r.Why,
+            })]),
+        }.ToJsonString(Indented) + "\n";
+
+    private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
+
+    private static string Time(DateTimeOffset time) => time.ToUniversalTime().ToString("yyyy-MM-dd HH:mm 'UTC'", CultureInfo.InvariantCulture);
+}

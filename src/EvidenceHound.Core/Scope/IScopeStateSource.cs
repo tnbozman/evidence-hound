@@ -18,8 +18,20 @@ public sealed record ScopeStateQuery(string RootFolder, IReadOnlyList<string> Fr
     /// <summary>Whether to read the evidence plan's recurring task templates: only when the scope declares an evidence plan.</summary>
     public bool EvidencePlan { get; init; }
 
+    /// <summary>Whether to read risk studies, their scenarios, security exceptions and risk acceptances: only when the scope declares studies or exceptions (s15-02, s15-03).</summary>
+    public bool Risks { get; init; }
+
+    /// <summary>Whether to read business impact analyses, their asset assessments and thresholds: only when the scope declares BIAs (s15-04).</summary>
+    public bool Bias { get; init; }
+
     /// <summary>Whether to read the organisation's own entity (the builtin main entity): only when setup declares it.</summary>
     public bool Organisation { get; init; }
+
+    /// <summary>
+    /// The custom libraries (s15-01) whose stored file hash to read, so a change without a version bump is caught: the library URN by the key of
+    /// the object that loads it (a framework's URN, or the library's own).
+    /// </summary>
+    public IReadOnlyDictionary<string, string> CustomLibraries { get; init; } = new Dictionary<string, string>(StringComparer.Ordinal);
 
     /// <summary>
     /// The audits, by ref_id, to read every row of, not only the rows the scope writes, so a plan can show its effect on compliance. Rows the
@@ -34,7 +46,7 @@ public sealed record ScopeStateQuery(string RootFolder, IReadOnlyList<string> Fr
         ArgumentNullException.ThrowIfNull(declared);
         return new(
             scope.Setup.RootFolder,
-            [.. scope.Setup.Frameworks.Select(f => f.Urn), .. scope.Setup.Libraries.Select(l => l.Value)],
+            [.. scope.Setup.Frameworks.Select(f => f.Urn), .. scope.Setup.Libraries.Select(l => l.Value), .. scope.Setup.LibraryFiles.Select(l => l.Urn)],
             declared.Where(d => d.Kind == ScopeKind.Assessment)
                 .Select(d => d.Key.Split('/', 2))
                 .Where(parts => parts.Length == 2)
@@ -49,6 +61,11 @@ public sealed record ScopeStateQuery(string RootFolder, IReadOnlyList<string> Fr
             ThirdParties = scope.ThirdParties.Count > 0,
             Organisation = scope.Setup.Organisation is not null,
             EvidencePlan = scope.EvidencePlan is not null,
+            Risks = scope.RiskStudies.Count > 0 || scope.Exceptions.Count > 0,
+            Bias = scope.Bias.Count > 0,
+            CustomLibraries = declared.Where(d => d.Kind == ScopeKind.Framework && d.Files.Count > 0 && d.Initial.ContainsKey("library"))
+                .GroupBy(d => d.Key, StringComparer.Ordinal)
+                .ToDictionary(g => g.Key, g => g.First().Initial["library"], StringComparer.Ordinal),
             AllRowsOf = declared.Where(d => d.Kind == ScopeKind.Audit).Select(d => d.Key).ToHashSet(StringComparer.Ordinal),
         };
     }

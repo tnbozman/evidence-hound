@@ -12,7 +12,7 @@ public static class ScopePlanner
     /// longer match the state <c>hound</c> recorded on it was edited in CISO Assistant: it is reported as drift and written back. Links (a
     /// control's systems and documents, a row's controls and documents, a document's file hashes) are added to what CISO Assistant holds, and
     /// removed only with <paramref name="prune"/>. A locked audit and its rows are never changed, and a framework loaded from an older library
-    /// version is never upgraded: both are reported as drift.
+    /// version is never upgraded: both are reported as drift. A custom library from the repo (one with a file) is upgraded when its version is raised.
     /// </remarks>
     public static ScopePlan Plan(IReadOnlyList<ScopeObject> declared, IReadOnlyList<ActualObject> actual, bool prune)
     {
@@ -44,7 +44,17 @@ public static class ScopePlanner
 
             if (declaredObject.Kind == ScopeKind.Framework)
             {
-                drift.AddRange(Outdated(declaredObject, have));
+                var outdated = Outdated(declaredObject, have).ToList();
+                if (outdated.Count > 0 && declaredObject.Files.Count > 0)
+                {
+                    // The repo's own library: its raised version is uploaded and CISO Assistant's loaded copy updated (s15-01).
+                    changes.Add(new ScopeChange(declaredObject.Kind, declaredObject.Key, ScopeAction.Update, outdated[0].Fields, StateOf(declaredObject)) { Desired = declaredObject });
+                }
+                else
+                {
+                    drift.AddRange(outdated);
+                }
+
                 continue;
             }
 
@@ -111,16 +121,20 @@ public static class ScopePlanner
         held.Where(h => kind == ScopeKind.Assessment || Optional(kind, h.Key) ? wanted.ContainsKey(h.Key) : h.Key != "ref_id" || wanted.ContainsKey(h.Key)).ToDictionary(StringComparer.Ordinal);
 
     /// <summary>
-    /// Fields compared only when the scope declares them: an audit's status and lock, which only a period audit declares, and a supplier
+    /// Fields compared only when the scope declares them: an audit's status and lock, which only a period audit declares, its systems
+    /// (s15-D2), which a person may add in CISO Assistant instead, and a supplier
     /// review's conclusion, which the scope declares once a person concludes it with <c>hound approve</c>, and a supplier's levels and a
-    /// solution's criticality, which a drafted supplier leaves to decide and CISO Assistant fills in with its defaults.
+    /// solution's criticality, which a drafted supplier leaves to decide and CISO Assistant fills in with its defaults, and a BIA's recovery
+    /// flags, which each run sets when checks are named for them (s15-05), and a BIA's status, which CISO Assistant starts at planned.
     /// </summary>
     private static bool Optional(ScopeKind kind, string field) => kind switch
     {
-        ScopeKind.Audit => field is "status" or "locked",
+        ScopeKind.Audit => field is "status" or "locked" or "systems",
         ScopeKind.EntityAssessment => field == "conclusion",
         ScopeKind.Entity => field is "dependency" or "penetration" or "maturity" or "trust",
         ScopeKind.Solution => field == "criticality",
+        ScopeKind.AssetAssessment => field.StartsWith("recovery_", StringComparison.Ordinal),
+        ScopeKind.Bia => field == "status",
         _ => false,
     };
 
@@ -172,7 +186,9 @@ public static class ScopePlanner
     /// Frameworks come from libraries, assessments are rows of an audit, and flags and settings are CISO Assistant's own: none carries a marker,
     /// nor is ever deleted, and those the scope does not name are not drift.
     /// </summary>
-    private static bool Marked(ScopeKind kind) => kind is not (ScopeKind.Framework or ScopeKind.Assessment or ScopeKind.FeatureFlag or ScopeKind.Setting or ScopeKind.MainEntity);
+    /// <summary>Kinds whose applied state is recorded in their description; the rest (no description in CISO Assistant) are compared field by field.</summary>
+    private static bool Marked(ScopeKind kind) => kind is not (ScopeKind.Framework or ScopeKind.Assessment or ScopeKind.FeatureFlag or ScopeKind.Setting or ScopeKind.MainEntity
+        or ScopeKind.AssetAssessment or ScopeKind.EscalationThreshold);
 
     /// <summary>
     /// Objects the scope does not declare are drift when <c>hound</c> manages them, or when they are structure (domains, perimeters, systems,

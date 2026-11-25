@@ -37,6 +37,29 @@ public sealed class StatusCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task A_failed_latest_run_shows_why_below_the_table()
+    {
+        // s15-D3: a collector whose checks all errored showed "0 0" and nothing else; its problems now follow the table.
+        var config = Path.Combine(_workDir, "hound.yaml");
+        await File.WriteAllTextAsync(config, """
+            ciso_assistant: {url: "http://localhost:8000/api/", token: "env:HOUND_CA_TOKEN"}
+            evidence: {root: ./evidence}
+            collectors:
+              - {name: example-fake, type: fake, schedule: "0 2 * * *"}
+            target: {mapping: ./mapping.yaml, compliance_assessment: EXAMPLE-1}
+            """, TestContext.Current.CancellationToken);
+        var store = new FileRunRecordStore(Path.Combine(_workDir, "evidence"));
+        await store.SaveAsync(
+            new RunRecord("example-fake", Start, Start.AddSeconds(3), CollectorOutcome.Failed, 0, 0, 2, [new("collector.all_checks_errored", "All 2 checks errored.")], null),
+            TestContext.Current.CancellationToken);
+
+        var exitCode = await HoundCli.RunAsync(["status", "--config", config], _output, _error, cancellationToken: TestContext.Current.CancellationToken);
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        _output.ToString().ShouldContain("example-fake failed: All 2 checks errored. (collector.all_checks_errored)");
+    }
+
+    [Fact]
     public async Task Shows_changed_unchanged_and_drift_per_audit_from_the_history()
     {
         var config = Path.Combine(_workDir, "hound.yaml");
@@ -97,6 +120,37 @@ public sealed class StatusCommandTests : IDisposable
         var lines = _output.ToString().Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
         var header = Array.FindIndex(lines, l => l.StartsWith("AUDIT", StringComparison.Ordinal));
         lines[header + 1].Split(' ', StringSplitOptions.RemoveEmptyEntries).ShouldBe(["EX-E8-Q2-2027FY", "2026-11-23", "04:00:00", "20261123T040000Z", "0", "3", "0"]);
+    }
+
+    [Fact]
+    public async Task With_a_scope_lists_exceptions_expiring_within_60_days_and_expired_ones()
+    {
+        // s15-03: offline, from the expiry each exception declares; the approval itself is shown by scope plan, which reads CISO Assistant.
+        var config = Path.Combine(_workDir, "hound.yaml");
+        await File.WriteAllTextAsync(config, """
+            ciso_assistant: {url: "http://localhost:8000/api/", token: "env:HOUND_CA_TOKEN"}
+            evidence: {root: ./evidence}
+            collectors:
+              - {name: example-fake, type: fake, schedule: "0 2 * * *"}
+            target: {mapping: ./mapping.yaml, compliance_assessment: EXAMPLE-1}
+            """, TestContext.Current.CancellationToken);
+        var scope = Directory.CreateDirectory(Path.Combine(_workDir, "scope")).FullName;
+        await File.WriteAllTextAsync(Path.Combine(scope, "exceptions.yaml"), """
+            exceptions:
+              - {ref_id: EXC-01, name: Legacy finance app without MFA, domain: Example Pty Ltd, expiration_date: "2027-01-20"}
+              - {ref_id: EXC-02, name: Old kiosk, domain: Example Pty Ltd, expiration_date: "2026-10-31"}
+              - {ref_id: EXC-03, name: Lab printer, domain: Example Pty Ltd, expiration_date: "2027-06-30"}
+            """, TestContext.Current.CancellationToken);
+
+        var exitCode = await HoundCli.RunAsync(
+            ["status", "--config", config, "--scope", scope], TextReader.Null, _output, _error, new Dictionary<string, string?> { ["HOUND_TODAY"] = "2026-11-25" }, TestContext.Current.CancellationToken);
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var lines = _output.ToString().Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+        lines.ShouldContain(l => l.StartsWith("EXCEPTION", StringComparison.Ordinal));
+        lines.Single(l => l.StartsWith("EXC-01 ", StringComparison.Ordinal)).ShouldContain("in 56 days");
+        lines.Single(l => l.StartsWith("EXC-02 ", StringComparison.Ordinal)).ShouldContain("expired 25 days ago");
+        lines.ShouldNotContain(l => l.StartsWith("EXC-03", StringComparison.Ordinal), "it expires after the 60-day window");
     }
 
     [Fact]

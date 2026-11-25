@@ -45,8 +45,8 @@ public sealed class AuditPeriodsFunctionalTests(CisoAssistantFixture ciso) : IDi
         q3Rows["EX-1.1"].Result.ShouldBe("non_compliant");
 
         var plan = await StepAsync("3-plan-2026-10-01", ["scope", "plan", Scope], "2026-10-01", ct);
-        plan.ShouldContain("| EX-PERIOD-Q1-2027FY | closes: in review, awaiting sign-off |");
-        plan.ShouldContain("| EX-PERIOD-Q2-2027FY | opens, from EX-PERIOD-Q1-2027FY |");
+        plan.ShouldContain("| EX-PERIOD-Q1-2027FY | July to September 2026 | closes: in review, awaiting sign-off |");
+        plan.ShouldContain("| EX-PERIOD-Q2-2027FY | October to December 2026 | opens, from EX-PERIOD-Q1-2027FY |");
         await StepAsync("4-apply-2026-10-01", ["scope", "apply", Scope], "2026-10-01", ct);
         (await AuditAsync("EX-PERIOD-Q1-2027FY", ct)).ShouldBe(("in_review", false));
         (await AuditAsync("EX-PERIOD-Q2-2027FY", ct)).ShouldBe(("in_progress", false));

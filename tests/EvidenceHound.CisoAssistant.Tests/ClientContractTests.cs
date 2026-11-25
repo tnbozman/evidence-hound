@@ -4,6 +4,7 @@ using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Planning;
 using EvidenceHound.Core.Publishing;
 using EvidenceHound.Core.Results;
+using EvidenceHound.Core.Scope;
 using WireMock;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
@@ -307,6 +308,55 @@ public sealed class ClientContractTests : IDisposable
             "?compliance_assessment__ref_id=EX-E8-2026&limit=500&offset=0",
             "?compliance_assessment__ref_id=EX-E8-2026&limit=500&offset=1",
         ]);
+    }
+
+    [Fact]
+    public async Task Rows_list_their_security_exceptions_and_exceptions_are_read_with_status_and_expiry()
+    {
+        var row = Row("ra-1", "bnd");
+        row["security_exceptions"] = new JsonArray(new JsonObject { ["id"] = "se-1", ["str"] = "EXC-01" });
+        RespondPage("0", 1, row);
+        Respond("/api/security-exceptions/", 200, Page(
+            new JsonObject { ["id"] = "se-1", ["ref_id"] = "EXC-01", ["name"] = "Legacy finance app without MFA", ["status"] = "approved", ["expiration_date"] = "2027-03-31" },
+            new JsonObject { ["id"] = "se-2", ["ref_id"] = "", ["name"] = "Old kiosk", ["status"] = "draft", ["expiration_date"] = null }));
+
+        var rows = await _ca.Client.ListRequirementAssessmentsAsync("EX-E8-2026", _ct);
+        var exceptions = await _ca.Client.ListSecurityExceptionsAsync(_ct);
+
+        rows.Match(r => r.ShouldHaveSingleItem().ExceptionIds, _ => []).ShouldBe(["se-1"]);
+        exceptions.Match(e => e, _ => []).ShouldBe([
+            new RemoteWaiver("se-1", "EXC-01", "Legacy finance app without MFA", "approved", new DateOnly(2027, 3, 31)),
+            new RemoteWaiver("se-2", null, "Old kiosk", "draft", null),
+        ]);
+    }
+
+    [Fact]
+    public async Task A_bias_asset_assessments_are_read_with_their_recovery_flags_and_a_flag_is_set_with_its_evidence()
+    {
+        // s15-05: each run reads the BIA's asset assessments and sets a flag named by checks, adding the checks' evidence to those linked.
+        Respond("/api/resilience/business-impact-analysis/", 200, Page(new JsonObject { ["id"] = "bia-1", ["ref_id"] = "EX-BIA-2026" }));
+        Respond("/api/resilience/asset-assessments/", 200, Page(new JsonObject
+        {
+            ["id"] = "aa-1",
+            ["asset"] = new JsonObject { ["id"] = "a-365", ["str"] = "Example 365" },
+            ["recovery_documented"] = true,
+            ["recovery_tested"] = false,
+            ["recovery_targets_met"] = false,
+            ["evidences"] = new JsonArray(new JsonObject { ["id"] = "ev-old", ["str"] = "Restore runbook" }),
+        }));
+        Respond("/api/resilience/asset-assessments/aa-1/", 200, """{"id": "aa-1"}""", "PATCH");
+
+        var held = await _ca.Client.ListRecoveryAsync("EX-BIA-2026", _ct);
+        var set = await _ca.Client.UpdateRecoveryAsync("aa-1", "recovery_tested", true, ["ev-old", "ev-new"], _ct);
+
+        var assessment = held.Match(h => h, _ => new Dictionary<string, HeldRecovery>()).ShouldHaveSingleItem();
+        assessment.Key.ShouldBe("Example 365");
+        (assessment.Value.Id, assessment.Value.Flags["recovery_documented"], assessment.Value.Flags["recovery_tested"]).ShouldBe(("aa-1", true, false));
+        assessment.Value.EvidenceIds.ShouldBe(["ev-old"]);
+        set.ShouldBeOfType<Result<Unit>.Ok>();
+        var patch = Requests().Single(r => r.Method == "PATCH");
+        JsonNode.Parse(patch.Body!)!.ToJsonString().ShouldBe("""{"recovery_tested":true,"evidences":["ev-old","ev-new"]}""");
+        Requests().ShouldContain(r => r.Method == "GET" && r.Path == "/api/resilience/asset-assessments/" && r.RawQuery!.Contains("bia=bia-1"));
     }
 
     [Fact]

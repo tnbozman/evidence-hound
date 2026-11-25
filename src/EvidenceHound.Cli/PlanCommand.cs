@@ -56,7 +56,7 @@ internal static class PlanCommand
                 using var services = new ServiceCollection().AddSingleton(loggers).AddCisoAssistantClient(ready.Connection).BuildServiceProvider();
                 var (targets, run) = ready.Inputs;
                 var query = StateQuery.For(targets, run.Evidence, run.ControlStatuses);
-                var current = await new ClientStateSource(services.GetRequiredService<ICisoAssistantClient>()).ReadAsync(query, cancellationToken);
+                var current = await new ClientStateSource(services.GetRequiredService<ICisoAssistantClient>(), AuditSeries.Today(configuration)).ReadAsync(query, cancellationToken);
                 var runId = RunIds.From(DateTimeOffset.UtcNow);
                 return await AuditPlanner.PlanChanges(targets, run.Evidence, run.ControlStatuses, current, runId).Match(
                     async changes =>
@@ -119,7 +119,7 @@ internal static class PlanCommand
         var run = await CheckResultsJson.LoadRunAsync(checksFile, cancellationToken);
 
         return targets.Bind(loaded => run.Map(r => (
-            (IReadOnlyList<TargetResults>)[.. loaded.Select(t => new TargetResults(new AuditTarget(t.Target.ComplianceAssessmentRefId, t.Target.Controls), MappingEngine.ApplyMapping(t.Mapping, r.Checks)))],
+            (IReadOnlyList<TargetResults>)[.. loaded.Select(t => new TargetResults(new AuditTarget(t.Target.ComplianceAssessmentRefId, t.Target.Controls) { NoEvidence = t.Target.NoEvidence }, MappingEngine.ApplyMapping(t.Mapping, r.Checks)))],
             r)));
     }
 

@@ -27,6 +27,10 @@ frameworks:
 # Other libraries to load, such as the mapping between the Essential Eight and the Essentials.
 libraries:
   - urn:intuitem:risk:library:mapping-essential-eight-2023-and-asd-essentials-enterprise-it
+  # A custom risk matrix and threat catalogue (docs/risk.md). Raise its version whenever you change the file.
+  - urn: urn:example:risk:library:example-risk
+    file: ../libraries/example-risk.yaml
+    snapshot: ../libraries/example-risk.json
 domains:
   - name: Example Pty Ltd
     description: The whole company, one office and its cloud services.
@@ -42,6 +46,8 @@ domains:
         owner: it@example.com
         tags:
           essentials_domain: identity
+        objectives: {confidentiality: 3, integrity: 3, availability: 2}
+        recovery: {rto: 4h, rpo: 1d, mtd: 3d}
       - name: Example laptops
         ref_id: SYS-LAPTOPS
         type: supporting

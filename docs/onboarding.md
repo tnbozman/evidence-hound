@@ -50,8 +50,9 @@ Run it in the config repo (or pass `--repo`). The session goes in this order, an
    proposal where a session has one, and `l` every remaining one that is not `not_applicable`), or `s` to save and stop. Not applicable always needs a justification
    and the name of who approves it; another system needs that system's name.
 
-5. **Written for review.** Once every requirement is decided, it asks for the domain and perimeter of the system's audit (the first ones in
-   `scope/setup.yaml` by default) and writes, into the working copy only:
+5. **Written for review.** Once every requirement is decided, it asks for the domain and perimeter of the system's audit. These are
+   names, not yes or no: the prompt lists the ones `scope/setup.yaml` declares, Enter takes the first, and any other answer is asked
+   again. It then writes, into the working copy only:
    - `scope/audits/<system>-<framework>.yaml`: the system's own audit. Not applicable rows are done with result `not_applicable` and the
      justification and approver in the observation; rows another system meets stay open (`to_do`, `not_assessed`) with `provided_by` naming
      that system, until its own audit shows the requirement met; manual rows are to do. Rows checked
@@ -213,18 +214,25 @@ an audit workbook, write a profile and review a plan before you apply it. Withou
 
 | Assistant | Files |
 | --- | --- |
-| Claude Code | `CLAUDE.md`; `.claude/skills/<skill>/SKILL.md`; `.claude/agents/hound-onboarding.md` and `hound-review.md` |
-| GitHub Copilot in VS Code | `.github/copilot-instructions.md`; `.github/agents/hound-onboarding.agent.md` and `hound-review.agent.md`; `.github/skills/<skill>/SKILL.md` |
+| Claude Code | `CLAUDE.md`; `.claude/skills/<skill>/SKILL.md`; `.claude/agents/hound-onboarding.md`, `hound-review.md`, `hound-decisions.md` and `hound-operations.md` |
+| GitHub Copilot in VS Code | `.github/copilot-instructions.md`; `.github/agents/hound-onboarding.agent.md`, `hound-review.agent.md`, `hound-decisions.agent.md` and `hound-operations.agent.md`; `.github/skills/<skill>/SKILL.md` |
 
 With `both`, the skills are written once, under `.claude/skills/`, which Copilot in VS Code reads too.
 
-- **Fifteen skills, from one source.** Onboarding: onboard the organisation, the environment, a third party, a system and an audit;
-  assess a supplier; read an API specification; import an audit workbook; write a profile. Upkeep: process manual evidence, prepare
-  the weekly review, review before apply. Adoption and reporting: move registers from spreadsheets, prepare the committee and board
-  reports, answer a prime's questionnaire. Each is the steps for driving `hound`, linking the guide it follows, and where hound has
-  default guidance for that step (the same text `hound skill list` shows), that guidance too.
-- **Two agents, with the least tools each needs.** `hound-onboarding` reads, searches, edits and runs commands. `hound-review` reads,
-  searches and runs commands; it cannot edit a file.
+- **Twenty skills, from one source, covering every hound command.** Onboarding: onboard the organisation, the environment, a third
+  party, a system and an audit; assess a supplier; read an API specification; import an audit workbook; write a profile. Upkeep:
+  process manual evidence, prepare the weekly review, work through pending decisions with you, review before apply, operate the
+  collectors, keep frameworks, libraries, mappings, profiles and these files current. Documents and response: build the SSP and POA&M,
+  respond to an incident and build the incident response plan, prepare the committee and board reports, answer a prime's
+  questionnaire, move registers from spreadsheets. Each is the steps for driving `hound`, linking the guide it follows, and where hound
+  has default guidance for that step (the same text `hound skill list` shows), that guidance too.
+- **A command reference built from hound itself.** The skill `hound-commands` lists every command and its options, generated from the
+  hound that ran `hound agent setup`, so it matches what is installed. Every agent loads it. Run `hound agent setup` again after
+  upgrading hound.
+- **Four agents, with the least tools each needs.** `hound-onboarding` reads, searches, edits and runs commands. `hound-review` reads,
+  searches and runs commands; it cannot edit a file. `hound-decisions` takes you through the decisions waiting on you, one at a time,
+  highest risk first, and gives you the `hound review --only <key>` to accept or challenge each; it records recommendations and edits
+  no file. `hound-operations` runs the collectors, the SSP, incidents, frameworks and libraries, and the reports.
 - **Every file opens with the same rules:** organisation data stays in this private repo; never open `secrets/`; never approve on the
   person's behalf; nothing reaches CISO Assistant except through `hound scope plan` and `hound scope apply`. The rules guide the
   assistant; what enforces them is `hound` itself: `hound approve` refuses anything but a person at a terminal.
@@ -288,7 +296,7 @@ The agent drafts each kind through a command that asks nothing; `hound` checks i
 - **A reseller or managed service provider** is a third party of its own. Draft the vendor first, then the reseller or provider with
   `--kind` and `--for <vendor ref_id>`; its description names the vendor it stands for. `--document` names a document kept in the repo
   that the draft rests on, and the file records it with its SHA-256. A system bought through one names it as `supplied_through`.
-- **An audit** is checked against the scope as it is drafted: its framework, domain, perimeter and systems must be in `scope/setup.yaml`.
+- **An audit** is drafted per system, with a shared platform audited on its own ([one audit per system](scope.md#one-audit-per-system-and-one-per-shared-platform)). It is checked against the scope as it is drafted: its framework, domain, perimeter and systems must be in `scope/setup.yaml`.
   It stays out of the scope, and out of every plan, until `hound approve` moves it into `scope/audits/`.
 - **An audit workbook** (`.xlsx` or `.csv`) is read where it is; it is never copied into the repo. `hound` finds the columns by their
   headings (requirement, result, observation, evidence, approved by, approved on) or by `--column`. A row the workbook says someone

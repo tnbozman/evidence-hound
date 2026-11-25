@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/tnbozman/evidence-hound/schemas/scope.schema.json",
   "title": "Evidence Hound scope file",
-  "description": "One file of a compliance repo's scope: setup.yaml (organisation, frameworks, domains), controls.yaml (applied controls), audits/<audit>.yaml (one compliance assessment), access.yaml (users, teams and role assignments), settings.yaml (feature flags and general settings), third-parties/<entity>.yaml (one supplier or other third party), capabilities.yaml (which system provides each mitigation), evidence-plan.yaml (how each control's evidence arrives, from whom and how often), or ssp.yaml (one system security plan per programme). Guide: docs/scope.md.",
+  "description": "One file of a compliance repo's scope: setup.yaml (organisation, frameworks, domains), controls.yaml (applied controls), audits/<audit>.yaml (one compliance assessment), access.yaml (users, teams and role assignments), settings.yaml (feature flags and general settings), third-parties/<entity>.yaml (one supplier or other third party), capabilities.yaml (which system provides each mitigation), evidence-plan.yaml (how each control's evidence arrives, from whom and how often), ssp.yaml (one system security plan per programme), or risks/<study>.yaml (one risk study and its scenarios). Guide: docs/scope.md.",
   "oneOf": [
     {
       "$ref": "#/$defs/setup"
@@ -30,9 +30,286 @@
     },
     {
       "$ref": "#/$defs/ssps"
+    },
+    {
+      "$ref": "#/$defs/riskStudy"
+    },
+    {
+      "$ref": "#/$defs/irp"
+    },
+    {
+      "$ref": "#/$defs/exceptions"
+    },
+    {
+      "$ref": "#/$defs/bia"
+    },
+    {
+      "$ref": "#/$defs/reporting"
     }
   ],
   "$defs": {
+    "irp": {
+      "type": "object",
+      "description": "scope/irp.yaml: the incident response plan's programme, version, role holders and judgement sections (s15-09).",
+      "additionalProperties": false,
+      "required": ["programme", "version", "roles", "sections"],
+      "properties": {
+        "programme": { "$ref": "#/$defs/text", "description": "The programme's id from setup.yaml." },
+        "version": { "$ref": "#/$defs/text", "description": "The plan's version; the annual test records it." },
+        "roles": { "type": "object", "additionalProperties": false, "description": "Who holds each role: an email or a team.", "properties": { "incident_manager": { "$ref": "#/$defs/text" }, "deputy": { "$ref": "#/$defs/text" }, "executive": { "$ref": "#/$defs/text" }, "legal_privacy": { "$ref": "#/$defs/text" }, "authorising_officer": { "$ref": "#/$defs/text" } } },
+        "sections": { "type": "object", "additionalProperties": false, "description": "The Markdown file of each judgement section, relative to the repo.", "properties": { "severity": { "$ref": "#/$defs/text" }, "escalation": { "$ref": "#/$defs/text" }, "containment": { "$ref": "#/$defs/text" }, "communication": { "$ref": "#/$defs/text" }, "lessons_learned": { "$ref": "#/$defs/text" } } }
+      }
+    },
+    "reporting": {
+      "description": "reporting.yaml (s15-07): the reports an incident owes, to whom, and within how long of its discovery. Incidents live in CISO Assistant; 'hound incident obligations' lists what one owes.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["obligations"],
+      "properties": {
+        "obligations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "name", "report_to", "within", "when"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$", "description": "Short and stable: a timeline entry 'Reported: <id>, ...' marks the report as made." },
+              "name": { "type": "string" },
+              "report_to": { "type": "string", "description": "Who receives it, and through which channel." },
+              "within": { "$ref": "#/$defs/duration", "description": "How long after the incident's discovery the report is due." },
+              "when": {
+                "type": "object",
+                "additionalProperties": false,
+                "minProperties": 1,
+                "description": "What triggers it: the data kinds an affected system handles, or every incident.",
+                "properties": {
+                  "data": { "type": "array", "minItems": 1, "items": { "enum": ["cui", "pii", "export_controlled", "classified"] } },
+                  "always": { "enum": ["true", "false", true, false] }
+                }
+              },
+              "reference": { "type": "string", "description": "The clause that sets the obligation, such as DFARS 252.204-7012(c)." }
+            }
+          }
+        }
+      }
+    },
+    "recoveryChecks": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$" },
+      "description": "Checks that set this recovery flag on each run: true only when every one passes (s15-05). The flag itself cannot also be set."
+    },
+    "duration": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]*[mhdw]$",
+      "description": "A whole number and a unit: m (minutes), h (hours), d (days) or w (weeks)."
+    },
+    "bia": {
+      "description": "bia/<bia>.yaml (s15-04): one business impact analysis, rated on one risk matrix's impact scale, with one assessment per system.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref_id", "name", "domain", "matrix"],
+      "properties": {
+        "ref_id": { "$ref": "#/$defs/text" },
+        "name": { "$ref": "#/$defs/text" },
+        "description": { "type": "string" },
+        "domain": { "$ref": "#/$defs/text" },
+        "perimeter": { "$ref": "#/$defs/text" },
+        "matrix": { "type": "string", "pattern": "^urn:" },
+        "version": { "$ref": "#/$defs/text" },
+        "status": { "enum": ["planned", "in_progress", "in_review", "done", "deprecated"] },
+        "authors": { "type": "array", "items": { "$ref": "#/$defs/email" } },
+        "reviewers": { "type": "array", "items": { "$ref": "#/$defs/email" } },
+        "due_date": { "$ref": "#/$defs/date" },
+        "assessments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["system"],
+            "properties": {
+              "system": { "$ref": "#/$defs/text" },
+              "dependencies": { "type": "array", "items": { "$ref": "#/$defs/text" } },
+              "controls": { "type": "array", "items": { "$ref": "#/$defs/text" } },
+              "recovery": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "documented": { "enum": ["true", "false", true, false] },
+                  "tested": { "enum": ["true", "false", true, false] },
+                  "targets_met": { "enum": ["true", "false", true, false] },
+                  "documented_by": { "$ref": "#/$defs/recoveryChecks" },
+                  "tested_by": { "$ref": "#/$defs/recoveryChecks" },
+                  "targets_met_by": { "$ref": "#/$defs/recoveryChecks" }
+                }
+              },
+              "observation": { "type": "string" },
+              "thresholds": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["after", "impact"],
+                  "properties": {
+                    "after": { "$ref": "#/$defs/duration" },
+                    "impact": { "$ref": "#/$defs/text", "description": "An impact level name from the matrix." },
+                    "qualifications": { "type": "array", "items": { "$ref": "#/$defs/text" } },
+                    "justification": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "exceptions": {
+      "description": "exceptions.yaml (s15-03): security exceptions requested through the repo. Their status is never declared: an approver sets it in CISO Assistant.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "exceptions"
+      ],
+      "properties": {
+        "exceptions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/securityException"
+          }
+        }
+      }
+    },
+    "securityException": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ref_id",
+        "name",
+        "domain"
+      ],
+      "properties": {
+        "ref_id": {
+          "$ref": "#/$defs/text"
+        },
+        "name": {
+          "$ref": "#/$defs/text"
+        },
+        "description": {
+          "type": "string"
+        },
+        "domain": {
+          "$ref": "#/$defs/text"
+        },
+        "severity": {
+          "enum": [
+            "undefined",
+            "info",
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ]
+        },
+        "owners": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/email"
+          }
+        },
+        "expiration_date": {
+          "$ref": "#/$defs/date"
+        },
+        "observation": {
+          "type": "string"
+        },
+        "systems": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "controls": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "scenarios": {
+          "type": "array",
+          "description": "Risk scenarios as <study ref_id>/<scenario ref_id>.",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "requirements": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "audit",
+              "requirement"
+            ],
+            "properties": {
+              "audit": {
+                "$ref": "#/$defs/text"
+              },
+              "requirement": {
+                "$ref": "#/$defs/text"
+              }
+            }
+          }
+        }
+      }
+    },
+    "riskStudy": {
+      "description": "risks/<study>.yaml (s15-02): one risk study, rated on one risk matrix by URN, and its scenarios. Risk levels are never declared: CISO Assistant computes them.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref_id", "name", "domain", "matrix"],
+      "properties": {
+        "ref_id": { "$ref": "#/$defs/text" },
+        "name": { "$ref": "#/$defs/text" },
+        "description": { "type": "string" },
+        "domain": { "$ref": "#/$defs/text" },
+        "perimeter": { "$ref": "#/$defs/text" },
+        "matrix": { "type": "string", "pattern": "^urn:", "description": "The risk matrix's URN, from a library listed in setup.yaml with a snapshot." },
+        "status": { "enum": ["planned", "in_progress", "in_review", "done", "deprecated"] },
+        "authors": { "type": "array", "items": { "$ref": "#/$defs/email" } },
+        "reviewers": { "type": "array", "items": { "$ref": "#/$defs/email" } },
+        "eta": { "$ref": "#/$defs/date" },
+        "due_date": { "$ref": "#/$defs/date" },
+        "scenarios": { "type": "array", "items": { "$ref": "#/$defs/riskScenario" } }
+      }
+    },
+    "riskScenario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref_id", "name"],
+      "properties": {
+        "ref_id": { "$ref": "#/$defs/text" },
+        "name": { "$ref": "#/$defs/text" },
+        "description": { "type": "string" },
+        "systems": { "$ref": "#/$defs/names", "description": "Impacted systems, by name from setup.yaml." },
+        "threats": { "$ref": "#/$defs/names", "description": "Threats by URN or ref_id, from a library snapshot." },
+        "existing_controls": { "$ref": "#/$defs/names", "description": "Controls in place, by ref_id from controls.yaml." },
+        "planned_controls": { "$ref": "#/$defs/names", "description": "Controls planned to treat the risk, by ref_id from controls.yaml." },
+        "current": { "$ref": "#/$defs/riskRating" },
+        "residual": { "$ref": "#/$defs/riskRating" },
+        "inherent": { "$ref": "#/$defs/riskRating" },
+        "treatment": { "enum": ["open", "mitigate", "accept", "avoid", "transfer"] },
+        "justification": { "type": "string" }
+      }
+    },
+    "riskRating": {
+      "description": "A probability and impact by the matrix's level names; -- is not rated.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "probability": { "$ref": "#/$defs/text" },
+        "impact": { "$ref": "#/$defs/text" }
+      }
+    },
     "text": {
       "type": "string",
       "minLength": 1
@@ -111,10 +388,22 @@
           }
         },
         "libraries": {
-          "description": "Other libraries to load by URN, such as the mapping sets between the frameworks.",
+          "description": "Other libraries to load: a URN CISO Assistant already stores (such as a mapping set or a built-in risk matrix), or your own library file with its URN, such as a custom risk matrix or threat catalogue (s15-01).",
           "type": "array",
           "items": {
-            "$ref": "#/$defs/text"
+            "oneOf": [
+              { "$ref": "#/$defs/text" },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["urn", "file"],
+                "properties": {
+                  "urn": { "$ref": "#/$defs/text", "description": "The library's URN, as in the file." },
+                  "file": { "$ref": "#/$defs/text", "description": "The library file, relative to setup.yaml. Raise its version whenever it changes." },
+                  "snapshot": { "$ref": "#/$defs/text", "description": "The snapshot made by 'hound library snapshot', relative to setup.yaml." }
+                }
+              }
+            ]
           }
         },
         "domains": {
@@ -308,6 +597,21 @@
         },
         "data": {
           "$ref": "#/$defs/sensitiveData"
+        },
+        "objectives": {
+          "description": "Security objectives (s15-04) on CISO Assistant's 0 to 4 scale, such as confidentiality: 3.",
+          "type": "object",
+          "additionalProperties": { "type": ["integer", "string"], "pattern": "^[0-4]$", "minimum": 0, "maximum": 4 }
+        },
+        "recovery": {
+          "description": "Recovery objectives (s15-04) as durations such as 4h or 2d.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "rto": { "$ref": "#/$defs/duration" },
+            "rpo": { "$ref": "#/$defs/duration" },
+            "mtd": { "$ref": "#/$defs/duration" }
+          }
         },
         "ai": {
           "description": "The system's entry in the AI register (s11-12), with the National AI Centre register template's columns (s11-11): written to CISO Assistant as filtering labels and in the description. See docs/scope.md.",
@@ -554,6 +858,13 @@
               }
             }
           }
+        },
+        "no_evidence": {
+          "description": "What a row with no evidence goes to CISO Assistant as. Default non_compliant: CISO Assistant leaves not-assessed rows out of its compliance percentage, so they would read as compliant. not_assessed opts out.",
+          "enum": [
+            "non_compliant",
+            "not_assessed"
+          ]
         },
         "unlisted": {
           "description": "What happens to in-group requirements this file does not list.",
@@ -1171,6 +1482,26 @@
               "approved_on": {
                 "$ref": "#/$defs/date",
                 "description": "The day it was approved, as yyyy-MM-dd."
+              },
+              "customer": {
+                "enum": ["true", "false", true, false],
+                "description": "true when this is a contract a customer (such as a prime) holds with the organisation, rather than one with a supplier."
+              },
+              "obligations": {
+                "type": "array",
+                "description": "The clauses the contract imposes. On a customer contract, flow_down marks a clause every supplier handling its data must carry.",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["clause"],
+                  "properties": {
+                    "clause": { "$ref": "#/$defs/text", "description": "The clause as the contract names it, such as DFARS 252.204-7012." },
+                    "framework": { "$ref": "#/$defs/text", "description": "The URN of the framework the clause requires, declared in setup.yaml." },
+                    "level": { "$ref": "#/$defs/text", "description": "The level of that framework the clause requires, such as 2." },
+                    "data": { "type": "array", "items": { "enum": ["cui", "pii", "export_controlled", "classified"] }, "description": "The data kinds the clause covers; none means every supplier." },
+                    "flow_down": { "enum": ["true", "false", true, false], "description": "On a customer contract only: suppliers handling the data must carry this clause." }
+                  }
+                }
               }
             }
           }

@@ -15,15 +15,19 @@ public sealed class EnvironmentSecretProvider(Func<string, string?> lookup) : IS
     }
 }
 
-/// <summary>Resolves <c>file:/path</c> by reading the file, for example a Docker secret, trimming one trailing newline.</summary>
+/// <summary>Resolves <c>file:/path</c> by reading the file, for example a Docker secret, trimming one trailing newline. An empty or blank file is missing.</summary>
 public sealed class FileSecretProvider : ISecretProvider
 {
     public Result<Secret> Resolve(SecretReference reference)
     {
         ArgumentNullException.ThrowIfNull(reference);
-        return File.Exists(reference.Name)
-            ? Result.Ok(new Secret(ReadSecretFile(reference.Name)))
-            : SecretProblems.Missing(reference, "the file does not exist");
+        if (!File.Exists(reference.Name))
+        {
+            return SecretProblems.Missing(reference, "the file does not exist");
+        }
+
+        var value = ReadSecretFile(reference.Name);
+        return string.IsNullOrWhiteSpace(value) ? SecretProblems.Missing(reference, "the file is empty") : Result.Ok(new Secret(value));
     }
 
     /// <summary>Reads a secrets file as Docker writes them: the contents without one trailing newline.</summary>
