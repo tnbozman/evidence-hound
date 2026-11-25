@@ -159,7 +159,7 @@ public static class NextWork
             15)
         {
             Due = expires,
-            Skill = "review-before-apply",
+            Skill = "keep-exceptions-and-acceptances",
         };
     }
 

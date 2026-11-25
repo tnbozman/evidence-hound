@@ -21,6 +21,10 @@ run in their own terminal. Your job is to have every item ready before they star
    - `supplier`, `supplier_review`: the skills "onboard-a-third-party" and "assess-a-supplier".
    - `audit`, `imported_row`: the skills "onboard-an-audit" and "import-an-audit-workbook".
    - `manual_evidence`: the skill "process-manual-evidence" (`hound manual propose`).
+   - `finding` keyed `incident_report:`: a report an open incident still owes; the skill "respond-to-an-incident".
+   - `finding` keyed `finding:contract.flow_down_missing`: a supplier contract without a clause it owes; the skill
+     "flow-down-to-suppliers". Other findings (sensitive data held where nothing approves it): fix the file the item names.
+   - An `exception` item from `hound next` (one expiring or expired): the skill "keep-exceptions-and-acceptances".
    Then record what you recommend for each item that is not manual evidence (its proposal is already the recommendation):
    `hound review recommend <key> --repo . --answer <accept|decline> --reason "<why>" --source "<file, page or extract>"... --json`
    (a supplier review takes `ok`, `warning` or `blocker`). Give reasons the person can check and the sources you used: a file in the

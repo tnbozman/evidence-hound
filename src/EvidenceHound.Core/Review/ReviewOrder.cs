@@ -63,6 +63,7 @@ public static class ReviewOrder
             ReviewKind.ImportedRow => "import-an-audit-workbook",
             ReviewKind.ManualEvidence => "process-manual-evidence",
             _ when item.Key.StartsWith("incident_report:", StringComparison.Ordinal) => "respond-to-an-incident",
+            _ when item.Key.StartsWith("finding:contract.flow_down_missing/", StringComparison.Ordinal) => "flow-down-to-suppliers",
             _ => "weekly-review",
         };
     }
