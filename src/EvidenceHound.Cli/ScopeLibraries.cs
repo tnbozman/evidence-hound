@@ -30,8 +30,8 @@ internal static class ScopeLibraries
             }
 
             var bytes = await File.ReadAllBytesAsync(path, cancellationToken);
-            files[library.Urn] = [new ScopeFile(path, Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes)))];
             var yaml = System.Text.Encoding.UTF8.GetString(bytes);
+            files[library.Urn] = [new ScopeFile(path, Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes))) { Content = RiskLibraryReader.ContentDigest(yaml) }];
             problems.AddRange(RiskLibraryReader.Validate(yaml, library.File).Select(p => At(p, library, "Fix the library file, then check it with 'hound library validate'.")));
             var snapshot = library.Snapshot is { } snapshotFile
                 ? await SnapshotFileAsync(Path.GetFullPath(snapshotFile, baseDir), snapshotFile, cancellationToken)

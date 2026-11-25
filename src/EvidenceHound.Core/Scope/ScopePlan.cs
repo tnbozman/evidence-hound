@@ -53,7 +53,11 @@ public sealed record ScopeObject(ScopeKind Kind, string Key, IReadOnlyDictionary
 }
 
 /// <summary>A file of a document: its path and the SHA-256 of its content, as lowercase hex.</summary>
-public sealed record ScopeFile(string Path, string Sha256);
+public sealed record ScopeFile(string Path, string Sha256)
+{
+    /// <summary>For a custom library's file, the digest of its objects (<see cref="Risk.LibraryContent"/>), compared with the stored library's.</summary>
+    public string? Content { get; init; }
+}
 
 /// <summary>
 /// An object CISO Assistant holds, with the state fingerprint <c>hound</c> last wrote on it (from the marker at the end of its description),

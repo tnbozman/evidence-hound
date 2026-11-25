@@ -4,6 +4,7 @@ using EvidenceHound.Core.Frameworks;
 using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Publishing;
 using EvidenceHound.Core.Results;
+using EvidenceHound.Core.Risk;
 using EvidenceHound.Core.Scope;
 
 namespace EvidenceHound.CisoAssistant;
@@ -125,7 +126,7 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
         var frameworkList = await reading.ListAsync("frameworks/");
         var frameworks = frameworkList.ToDictionary(Id, f => Text(f["urn"]) ?? Id(f), StringComparer.Ordinal);
         var libraries = await reading.ListAsync("loaded-libraries/");
-        var storedHashes = await StoredHashesAsync(reading, query.CustomLibraries);
+        var storedContent = await StoredContentAsync(reading, query.CustomLibraries);
         HashSet<string> inScope = [rootId, .. domainIds];
         var perimeters = await reading.ObjectsInAsync("perimeters", inScope);
         var assets = await reading.ObjectsInAsync("assets", inScope);
@@ -185,8 +186,8 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
         };
         IReadOnlyList<ActualObject> objects =
         [
-            .. Frameworks(query, frameworkList, libraries).Select(f => storedHashes.TryGetValue(f.Held.Key, out var hash)
-                ? f with { Held = f.Held with { Fields = new Dictionary<string, string>(f.Held.Fields, StringComparer.Ordinal) { ["sha256"] = hash } } }
+            .. Frameworks(query, frameworkList, libraries).Select(f => storedContent.TryGetValue(f.Held.Key, out var content)
+                ? f with { Held = f.Held with { Fields = new Dictionary<string, string>(f.Held.Fields, StringComparer.Ordinal) { ["content"] = content } } }
                 : f),
             .. domainObjects.Select(d => Marked(ScopeKind.Domain, Text(d["name"]), d)),
             .. RiskObjects(risks, names),
@@ -349,23 +350,22 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
     }
 
     /// <summary>
-    /// The SHA-256 of each custom library's stored file, by the key of the object that loads it (s15-01). CISO Assistant keeps it as the stored
-    /// library's <c>hash_checksum</c>, shown only on the library's own view. A library it does not store has none.
+    /// The digest of each custom library's stored objects (<see cref="LibraryContent"/>), by the key of the object that loads it (s15-01).
+    /// CISO Assistant v4.3.4 shows no checksum, so its stored <c>content</c> is digested as the repo's file is. A library it does not store has none.
     /// </summary>
-    private static async Task<Dictionary<string, string>> StoredHashesAsync(Reading reading, IReadOnlyDictionary<string, string> custom)
+    private static async Task<Dictionary<string, string>> StoredContentAsync(Reading reading, IReadOnlyDictionary<string, string> custom)
     {
-        var hashes = new Dictionary<string, string>(StringComparer.Ordinal);
+        var digests = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var (key, urn) in custom)
         {
             var stored = (await reading.ListAsync($"stored-libraries/?urn={Uri.EscapeDataString(urn)}")).FirstOrDefault(l => Text(l["urn"]) == urn);
-            if (stored is not null && await reading.ObjectAsync($"stored-libraries/{Uri.EscapeDataString(Id(stored))}/", $"to read library {urn}") is { } detail
-                && Text(detail["hash_checksum"]) is { } hash)
+            if (stored is not null && await reading.ObjectAsync($"stored-libraries/{Uri.EscapeDataString(Id(stored))}/content/", $"to read library {urn}") is { } content)
             {
-                hashes[key] = hash;
+                digests[key] = LibraryContent.Digest(content);
             }
         }
 
-        return hashes;
+        return digests;
     }
 
     /// <summary>

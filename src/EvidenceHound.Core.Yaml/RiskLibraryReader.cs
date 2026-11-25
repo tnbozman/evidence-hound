@@ -8,7 +8,7 @@ using YamlDotNet.RepresentationModel;
 namespace EvidenceHound.Core.Yaml;
 
 /// <summary>Reads a CISO Assistant library file's risk matrices, threats and dependencies, and checks its matrices offline.</summary>
-public static class RiskLibraryReader
+public static partial class RiskLibraryReader
 {
     /// <summary>The library's snapshot: its matrices' level names, its threats and the libraries it brings with it.</summary>
     public static Result<LibrarySnapshot> Snapshot(string yaml, string source) =>
@@ -24,6 +24,50 @@ public static class RiskLibraryReader
         Read(yaml, source).Match(
             library => [.. library.Matrices.SelectMany(m => RiskMatrixValidation.Check(m, library.Packager)).Select(p => new Problem(p.Code, $"{source}: {p.Message}"))],
             problems => problems);
+
+    /// <summary>
+    /// The digest of the library's <c>objects</c> (<see cref="LibraryContent"/>), with each plain scalar typed as CISO Assistant's YAML loader
+    /// types it (null, boolean, number or text), so it matches the stored library's; null when the file is not valid YAML.
+    /// </summary>
+    public static string? ContentDigest(string yaml)
+    {
+        ArgumentNullException.ThrowIfNull(yaml);
+        var stream = new YamlStream();
+        try
+        {
+            stream.Load(new StringReader(yaml));
+        }
+        catch (YamlException)
+        {
+            return null;
+        }
+
+        return stream.Documents.FirstOrDefault()?.RootNode is YamlMappingNode root ? LibraryContent.Digest(Typed(Child(root, "objects"))) : null;
+    }
+
+    private static readonly HashSet<string> Nulls = new(["", "~", "null", "Null", "NULL"], StringComparer.Ordinal);
+    private static readonly HashSet<string> Trues = new(["true", "True", "TRUE", "yes", "Yes", "YES", "on", "On", "ON", "y", "Y"], StringComparer.Ordinal);
+    private static readonly HashSet<string> Falses = new(["false", "False", "FALSE", "no", "No", "NO", "off", "Off", "OFF", "n", "N"], StringComparer.Ordinal);
+
+    private static System.Text.Json.Nodes.JsonNode? Typed(YamlNode? node) => node switch
+    {
+        YamlMappingNode map => new System.Text.Json.Nodes.JsonObject(map.Children.Select(c => KeyValuePair.Create(((YamlScalarNode)c.Key).Value ?? "", Typed(c.Value)))),
+        YamlSequenceNode list => new System.Text.Json.Nodes.JsonArray([.. list.Children.Select(Typed)]),
+        YamlScalarNode { Style: ScalarStyle.Plain, Value: var plain } => Plain(plain ?? ""),
+        YamlScalarNode scalar => System.Text.Json.Nodes.JsonValue.Create(scalar.Value ?? ""),
+        _ => null,
+    };
+
+    private static System.Text.Json.Nodes.JsonValue? Plain(string value) =>
+        Nulls.Contains(value) ? null
+        : Trues.Contains(value) ? System.Text.Json.Nodes.JsonValue.Create(true)
+        : Falses.Contains(value) ? System.Text.Json.Nodes.JsonValue.Create(false)
+        : NumberPattern().IsMatch(value) && double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var number) ? System.Text.Json.Nodes.JsonValue.Create(number)
+        : System.Text.Json.Nodes.JsonValue.Create(value);
+
+    /// <summary>A YAML 1.1 integer or a float with a decimal point, as Python's YAML loader reads them.</summary>
+    [System.Text.RegularExpressions.GeneratedRegex(@"^[-+]?([0-9]+|[0-9]*\.[0-9]+([eE][-+]?[0-9]+)?|[0-9]+\.[0-9]*([eE][-+]?[0-9]+)?)$")]
+    private static partial System.Text.RegularExpressions.Regex NumberPattern();
 
     private static Result<Library> Read(string yaml, string source)
     {

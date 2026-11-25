@@ -19,5 +19,5 @@ public sealed record RiskMatrix(
 /// <summary>A threat from a library's threat catalogue.</summary>
 public sealed record Threat(string Urn, string? RefId, string Name);
 
-/// <summary>A library's URN and version, and the SHA-256 of its file when known, as the version check compares them.</summary>
-public sealed record LibraryVersion(string Urn, int Version, string? Sha256);
+/// <summary>A library's URN and version, and the digest of its objects (<see cref="LibraryContent"/>) when known, as the version check compares them.</summary>
+public sealed record LibraryVersion(string Urn, int Version, string? Content);

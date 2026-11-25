@@ -7,13 +7,13 @@ namespace EvidenceHound.Core.Risk;
 public static class LibraryValidation
 {
     /// <summary>
-    /// <c>library.version_not_bumped</c> when the file's content differs from the stored library's but its version is not higher: CISO Assistant
+    /// <c>library.version_not_bumped</c> when the file's objects differ from the stored library's but its version is not higher: CISO Assistant
     /// only re-publishes a library when its version goes up, so the edit would never arrive. Null when nothing is held or a hash is unknown.
     /// </summary>
     public static Problem? VersionBump(LibraryVersion declared, LibraryVersion? held)
     {
         ArgumentNullException.ThrowIfNull(declared);
-        return held is { Sha256: { } heldHash } && declared.Sha256 is { } hash && hash != heldHash && declared.Version <= held.Version
+        return held is { Content: { } heldContent } && declared.Content is { } content && content != heldContent && declared.Version <= held.Version
             ? new Problem(
                 "library.version_not_bumped",
                 $"library '{declared.Urn}' changed but its version is still {declared.Version} (CISO Assistant holds version {held.Version}). " +
@@ -23,7 +23,7 @@ public static class LibraryValidation
 
     /// <summary>
     /// Each custom library (a declared framework or library with a file) whose file differs from the one CISO Assistant stores at the same or a
-    /// higher version, read from the held object's <c>version</c> and <c>sha256</c> fields. A plan or apply stops on these.
+    /// higher version, read from the held object's <c>version</c> and <c>content</c> (the digest of its stored objects) fields. A plan or apply stops on these.
     /// </summary>
     public static IReadOnlyList<ScopeProblem> Refused(IReadOnlyList<ScopeObject> declared, IReadOnlyList<ActualObject> held)
     {
@@ -37,8 +37,8 @@ public static class LibraryValidation
                let file = library.Files[0]
                let heldFields = stored[library.Key]
                let problem = VersionBump(
-                   new LibraryVersion(library.Key, Number(library.Fields.GetValueOrDefault("version")), file.Sha256),
-                   new LibraryVersion(library.Key, Number(heldFields.GetValueOrDefault("version")), heldFields.GetValueOrDefault("sha256")))
+                   new LibraryVersion(library.Key, Number(library.Fields.GetValueOrDefault("version")), file.Content),
+                   new LibraryVersion(library.Key, Number(heldFields.GetValueOrDefault("version")), heldFields.GetValueOrDefault("content")))
                where problem is not null
                select new ScopeProblem(problem.Code, new SourceLine(file.Path, 1), problem.Message, "Raise 'version' at the top of the library file, then plan again."),
         ];
