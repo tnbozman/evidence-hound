@@ -100,6 +100,22 @@ public class ScopePlanTests
     }
 
     [Fact]
+    public void Users_and_teams_are_created_before_the_systems_and_controls_they_own()
+    {
+        ScopeObject[] declared =
+        [
+            Declared(ScopeKind.System, "Example 365", ("type", "primary"), ("owner", "it@example.com")),
+            Declared(ScopeKind.Team, "IT team", ("leader", "it@example.com")),
+            Declared(ScopeKind.User, "it@example.com"),
+            Declared(ScopeKind.Domain, "Example Pty Ltd"),
+        ];
+
+        var plan = ScopePlanner.Plan(declared, [], prune: false);
+
+        plan.Changes.Select(c => c.Kind).ShouldBe([ScopeKind.Domain, ScopeKind.User, ScopeKind.Team, ScopeKind.System]);
+    }
+
+    [Fact]
     public void Unmanaged_object_that_matches_the_scope_is_marked_as_managed()
     {
         var declared = Declared(ScopeKind.Domain, "Example Pty Ltd");
