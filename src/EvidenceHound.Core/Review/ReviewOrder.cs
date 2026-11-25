@@ -50,6 +50,23 @@ public sealed record ReviewChallenge(string Note, string By, string On);
 /// <summary>The one review queue. Pure.</summary>
 public static class ReviewOrder
 {
+    /// <summary>The agent skill that drafts a recommendation for an item (s18-02), as the skill "weekly-review" assigns them.</summary>
+    public static string Skill(ReviewItem item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        return item.Kind switch
+        {
+            ReviewKind.Capability or ReviewKind.NotApplicable or ReviewKind.System => "onboard-a-system-with-hound",
+            ReviewKind.Supplier => "onboard-a-third-party",
+            ReviewKind.SupplierReview => "assess-a-supplier",
+            ReviewKind.Audit => "onboard-an-audit",
+            ReviewKind.ImportedRow => "import-an-audit-workbook",
+            ReviewKind.ManualEvidence => "process-manual-evidence",
+            _ when item.Key.StartsWith("incident_report:", StringComparison.Ordinal) => "respond-to-an-incident",
+            _ => "weekly-review",
+        };
+    }
+
     public static string Code(ReviewKind kind) => kind switch
     {
         ReviewKind.SupplierReview => "supplier_review",

@@ -120,7 +120,9 @@ says how to start.
 1. Before the session, the agent prepares the queue with the skill "weekly-review": `hound review pending --json` lists every item
    (manual evidence proposals, onboarding decisions, suppliers, supplier reviews, drafted audits and imported rows), and the agent
    records a recommendation for each with its reasons and sources (`hound review recommend`, kept in `review/recommendations.json`),
-   and answers last week's challenges.
+   and answers last week's challenges. `hound review prepare --json` does the preparation in one step: it refreshes the queue, lists
+   the items still without a recommendation with the skill that drafts each, and saves the scope plan the session applies, in
+   `review/prepared.plan.json` (never committed; `*.plan.json` is in `.gitignore`).
 2. The person runs `hound review` in their own terminal (`--for 30m` to stop after half an hour). Most urgent first, each item shows
    what it is, why it matters, the recommendation and what accepting it does. They accept, challenge (with a note the agent answers
    before the next session; the item stays queued) or skip.
@@ -132,7 +134,9 @@ says how to start.
    the nearest keys, and it still needs you at a terminal. `hound approve` opens with the same count by kind and points here.
 3. Accepted items are written as `hound approve` and `hound manual approve` write them. A session records one sign-off under
    `review/sign-offs/`, naming the person, the time and every item, then shows the plan and applies it after a confirmation
-   (`--no-apply` stops at the files).
+   (`--no-apply` stops at the files). When the agent prepared a plan and no accepted item changed the scope files, the session applies
+   that plan, and refuses it (`scope.plan_stale`) if CISO Assistant changed since it was made; otherwise it plans again. The session ends
+   with one summary: what was accepted and challenged, what was applied to CISO Assistant, and how long it took.
 
 **Standing approvals.** When a source's new export has the same checks and the same results as its last attestation, the session
 offers to accept that source's future unchanged exports for 12 months. The rule is written to `review/standing-approvals.json`, listed

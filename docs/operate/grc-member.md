@@ -9,10 +9,10 @@ is built so that everything waiting on you arrives in one queue, with a recommen
 2. Ask your agent: "Prepare this week's review." It starts with `hound next --json`, one read-only list of everything that needs doing
    this week, most urgent first: the review queue, collectors that failed or missed their schedule, manual evidence due, exceptions
    expiring within 60 days, scope changes not yet applied and whether CISO Assistant accepts hound's token. Then it runs
-   `hound review pending --json` and records a recommendation, with reasons and sources, for each item (manual evidence, onboarding
-   decisions, suppliers, drafted audits).
+   `hound review prepare --json` and records a recommendation, with reasons and sources, for each item (manual evidence, onboarding
+   decisions, suppliers, drafted audits), and saves the scope plan your session applies.
 3. In your own terminal: `hound review --for 60m`. Read each item, then accept, challenge with a note, or skip. Challenged items come
-   back next week with the agent's answer. Accepted items are applied in one batch at the end ([guided review](../manual-evidence.md#the-weekly-review)).
+   back next week with the agent's answer. Accepted items and the prepared plan are applied in one batch at the end, after one confirmation ([guided review](../manual-evidence.md#the-weekly-review)).
 4. Look at `hound status --config hound.yaml --scope scope/`. A collector that failed or has not run is the one thing to chase this
    week. The standing lines say how much of each programme is met and how many rows are still not assessed, from last month's snapshot.
 

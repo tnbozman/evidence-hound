@@ -68,6 +68,20 @@ ready and nothing left to look up.
 **Functional check**
 - Prepare and run one session on a copy of the example repo; record the number of commands the agent ran before and after.
 
+Notes:
+- `hound review prepare --repo --config [--json]`: refreshes the queue, lists `without_recommendation` (each item's key, kind and the
+  skill that drafts it, `ReviewOrder.Skill`, as the skill "weekly-review" assigns them) and the challenged items, and saves the scope
+  plan to `review/prepared.plan.json` (`*.plan.json` is ignored by the repo template). Reads only; offline it says why there is no plan.
+- `hound review`: when a prepared plan exists and the scope files are as it read them (no accepted item changed them), the session shows
+  that plan, applies it after one confirmation and deletes it, and refuses it with `scope.plan_stale` if CISO Assistant changed since;
+  when the files changed it plans again, as before. It applies a prepared plan even with nothing to accept. It ends with one summary:
+  accepted, challenged, what CISO Assistant got, and the minutes taken.
+- Commands the agent runs to prepare a week: before, `review pending`, then `scope plan --out` and a second `review pending` to check
+  (3); after, `review prepare` twice (before and after drafting). The person runs one: `hound review`.
+- Skill `weekly-review`, guides `docs/manual-evidence.md` and `docs/operate/grc-member.md`, cheat sheet. A test helper,
+  `ScopeTestInstance`, holds the small scope and its CISO Assistant stubs for tests outside `ScopePlanCommandTests`.
+- Functional: `NextFunctionalTests.Review_prepare_plans_the_example_scope_against_the_instance`.
+
 ### s18-03 Skills for every feature, checked against the CLI
 - [ ] Done
 

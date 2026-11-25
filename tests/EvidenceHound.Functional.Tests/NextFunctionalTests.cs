@@ -82,5 +82,39 @@ public sealed class NextFunctionalTests(CisoAssistantFixture ciso) : IDisposable
         json["manual_sources"]!.AsArray().ShouldNotBeEmpty();
     }
 
+    [Fact]
+    public async Task Review_prepare_plans_the_example_scope_against_the_instance()
+    {
+        // s18-02: one step prepares the week; the plan is saved for the person's session, or there is nothing to apply.
+        var ct = TestContext.Current.CancellationToken;
+        var repo = Path.Combine(_dir, "repo");
+        TestRepo.CopyExample(repo);
+        var config = Path.Combine(repo, "hound.yaml");
+        await File.WriteAllTextAsync(config, (await File.ReadAllTextAsync(config, ct)).Replace("/var/lib/evidence-hound", Path.Combine(_dir, "var"), StringComparison.Ordinal), ct);
+
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+        var exit = await HoundCli.RunAsync(
+            ["review", "prepare", "--repo", repo, "--config", config, "--json"],
+            output,
+            error,
+            configureLogging: null,
+            new Dictionary<string, string?> { ["HOUND_CA_URL"] = ciso.ApiUrl.ToString(), ["HOUND_CA_TOKEN"] = ciso.Token },
+            ct);
+        var results = Directory.CreateDirectory(Path.Combine(CisoAssistantFixture.RepoRoot, "test-results", "next")).FullName;
+        await File.WriteAllTextAsync(Path.Combine(results, "review-prepare.json"), $"{output}{error}", ct);
+
+        exit.ShouldBe(ExitCodes.Ok, $"{output}{error}");
+        var plan = JsonNode.Parse(output.ToString())!["plan"]!;
+        var note = plan["note"]!.GetValue<string>();
+        note.ShouldNotContain("Could not plan", Case.Sensitive, output.ToString() + error);
+        note.ShouldNotContain("problem(s)", Case.Sensitive, output.ToString() + error);
+        if (plan["saved"] is { } saved)
+        {
+            File.Exists(saved.GetValue<string>()).ShouldBeTrue();
+            plan["changes"]!.GetValue<int>().ShouldBeGreaterThan(0);
+        }
+    }
+
     public void Dispose() => Directory.Delete(_dir, recursive: true);
 }

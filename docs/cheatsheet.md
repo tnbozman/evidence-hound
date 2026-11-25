@@ -141,6 +141,7 @@ file by `scripts/cheatsheet/render.sh`.
 - `hound next --json`: agent: what needs doing now, most urgent first, each with its command, skill and minutes (reads only)
   - `--repo --config`
 - `hound review pending --json`: agent: everything waiting on a person
+- `hound review prepare --json`: agent: the queue, what still lacks a recommendation and its skill, and the saved scope plan the session applies
 - `hound review recommend <key> --answer ... --reason ... --source ...`: agent: its recommendation
 - `hound review --for 60m`: **Person**: one guided weekly session
   - `--no-apply`: stop at the files
@@ -223,6 +224,6 @@ file by `scripts/cheatsheet/render.sh`.
 ### Weekly review
 
 1. CISO Assistant's weekly task alerts the GRC member
-2. Agent: `hound next --json`, then `hound review pending --json`, drafts each recommendation
+2. Agent: `hound next --json`, then `hound review prepare --json`, drafts each recommendation
 3. **Person**: `hound review --for 60m`: read, accept or challenge
 4. Accepted items are applied in one batch
