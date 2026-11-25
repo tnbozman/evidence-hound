@@ -24,8 +24,11 @@ public sealed class DispRunFunctionalTests(CisoAssistantFixture ciso) : IDisposa
         var (exitCode, summary) = await RunAsync(ct);
 
         exitCode.ShouldBe(ExitCodes.Ok, summary.ToJsonString());
+        // Every target audit is planned; publish lists only audits with an update, and the shared CISO Assistant may already hold
+        // an audit's results from an earlier test, so the audits come from the plan.
+        var planned = summary["collectors"]![0]!["changes"]!.AsArray();
+        planned.Select(a => a!["compliance_assessment"]!.GetValue<string>()).ShouldBe(["EX-E8-2026", "EX-DISP-2026"]);
         var audits = summary["collectors"]![0]!["publish"]!["audits"]!.AsArray();
-        audits.Select(a => a!["compliance_assessment"]!.GetValue<string>()).ShouldBe(["EX-E8-2026", "EX-DISP-2026"]);
         audits.Select(a => a!["failed"]!.GetValue<int>()).ShouldAllBe(failed => failed == 0);
 
         var e8 = (await GetAsync("requirement-assessments/?compliance_assessment__ref_id=EX-E8-2026&requirement__ref_id=ISM-1504", ct))["results"]![0]!;

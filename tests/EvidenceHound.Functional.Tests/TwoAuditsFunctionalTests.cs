@@ -27,8 +27,11 @@ public sealed class TwoAuditsFunctionalTests(CisoAssistantFixture ciso) : IDispo
         var (exitCode, summary) = await RunAsync(ct);
 
         exitCode.ShouldBe(ExitCodes.Ok, summary.ToJsonString());
+        // Every target audit is planned; publish lists only audits with an update, and the shared CISO Assistant may already hold
+        // an audit's results from an earlier test, so the audits come from the plan.
+        var planned = summary["collectors"]![0]!["changes"]!.AsArray();
+        planned.Select(a => a!["compliance_assessment"]!.GetValue<string>()).ShouldBe(["EX-E8-2026", "EX-ESSENTIALS-2026"]);
         var audits = summary["collectors"]![0]!["publish"]!["audits"]!.AsArray();
-        audits.Select(a => a!["compliance_assessment"]!.GetValue<string>()).ShouldBe(["EX-E8-2026", "EX-ESSENTIALS-2026"]);
         audits.Select(a => a!["failed"]!.GetValue<int>()).ShouldAllBe(failed => failed == 0);
         var essentialsChanges = summary["collectors"]![0]!["changes"]!.AsArray().Single(a => a!["compliance_assessment"]!.GetValue<string>() == "EX-ESSENTIALS-2026")!;
         (essentialsChanges["changed"]!.GetValue<int>() + essentialsChanges["unchanged"]!.GetValue<int>()).ShouldBe(EssentialsRows(), summary.ToJsonString());
