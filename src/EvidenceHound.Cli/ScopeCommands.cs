@@ -189,6 +189,7 @@ internal static class ScopeCommands
                         Periods = ScopePeriods.Notes(declared, plan),
                         Compliance = compliance,
                         Suppliers = suppliers.Notes,
+                        Exceptions = ExceptionReview.Notes(held, checkedScope.Inputs.Today ?? DateOnly.FromDateTime(DateTime.UtcNow)),
                         Gaps = CapabilityMap.Gaps(checkedScope.Scope, checkedScope.Inputs.Snapshots),
                         Dependencies = OpenDependencies.Of(checkedScope.Scope, checkedScope.Inputs.Targets ?? []),
                     }));
@@ -379,6 +380,7 @@ internal static class ScopeCommands
                 var notes = new PlanNotes(ScopePeriods.Notes(declared, plan), AccessReview.Notes(checkedScope.Scope.Access, read.Users))
                 {
                     Suppliers = suppliers.Notes,
+                    Exceptions = ExceptionReview.Notes(read.Held, checkedScope.Inputs.Today ?? DateOnly.FromDateTime(DateTime.UtcNow)),
                     Gaps = CapabilityMap.Gaps(checkedScope.Scope, checkedScope.Inputs.Snapshots),
                     Dependencies = OpenDependencies.Of(checkedScope.Scope, checkedScope.Inputs.Targets ?? []),
                     Unmanaged = options.ShowUnmanaged ? UnmanagedSettings(declared, read.Held) : [],
@@ -470,6 +472,7 @@ internal static class ScopeCommands
         var sspPath = Path.Combine(dir.ToString(), "ssp.yaml");
         var risksDir = Path.Combine(dir.ToString(), "risks");
         var risks = Directory.Exists(risksDir) ? Directory.GetFiles(risksDir, "*.yaml").Order(StringComparer.Ordinal).ToArray() : [];
+        var exceptionsPath = Path.Combine(dir.ToString(), "exceptions.yaml");
         var parsed = ScopeLoader.Parse(
             await ReadAsync(setupPath, cancellationToken),
             File.Exists(controlsPath) ? await ReadAsync(controlsPath, cancellationToken) : null,
@@ -480,7 +483,8 @@ internal static class ScopeCommands
             File.Exists(capabilitiesPath) ? await ReadAsync(capabilitiesPath, cancellationToken) : null,
             File.Exists(planPath) ? await ReadAsync(planPath, cancellationToken) : null,
             File.Exists(sspPath) ? await ReadAsync(sspPath, cancellationToken) : null,
-            [.. await Task.WhenAll(risks.Select(r => ReadAsync(r, cancellationToken)))]);
+            [.. await Task.WhenAll(risks.Select(r => ReadAsync(r, cancellationToken)))],
+            File.Exists(exceptionsPath) ? await ReadAsync(exceptionsPath, cancellationToken) : null);
 
         var snapshots = await SnapshotsAsync(parsed.Scope.Setup.Frameworks, Path.GetDirectoryName(Path.GetFullPath(setupPath))!, cancellationToken);
         var deployment = configFile is null ? Result.Ok(Deployment.None) : await DeploymentAsync(configFile, registry, cancellationToken);

@@ -13,6 +13,15 @@ public static partial class ScopeLoader
 
     private static readonly string[] ExceptionRequirementKeys = ["audit", "requirement"];
 
+    /// <summary>Only <c>scope/exceptions.yaml</c>, for <c>hound status</c>, which lists what expires without reading the whole scope.</summary>
+    public static (IReadOnlyList<ScopeExceptionRequest> Exceptions, IReadOnlyList<ScopeProblem> Problems) ParseExceptions(ScopeSource exceptions)
+    {
+        ArgumentNullException.ThrowIfNull(exceptions);
+        var file = new FileReader(exceptions);
+        var parsed = file.Root() is { } root ? ReadExceptions(root, file) : [];
+        return (parsed, file.Problems);
+    }
+
     private static ScopeExceptionRequest[] ReadExceptions(YamlMappingNode root, FileReader file)
     {
         file.Keys(root, ["exceptions"]);

@@ -82,6 +82,25 @@ internal static class ScopePlanOutput
             }
         }
 
+        if (notes.Exceptions.Count > 0)
+        {
+            markdown.Append("\n### Security exceptions and risk acceptances\n\nRead from CISO Assistant, where an approver decides each one; the repo only requests them.\n\n| Kind | Ref | Name | Status | Expires |\n| --- | --- | --- | --- | --- |\n");
+            foreach (var note in notes.Exceptions.Where(n => n.Code == "exception.status"))
+            {
+                markdown.Append(CultureInfo.InvariantCulture, $"| {note.Kind} | {Cell(note.RefId)} | {Cell(note.Name)} | {note.Status} | {note.Expires} |\n");
+            }
+
+            var due = notes.Exceptions.Where(n => n.Code != "exception.status").ToArray();
+            if (due.Length > 0)
+            {
+                markdown.Append("\nTo renew or close:\n\n");
+                foreach (var note in due)
+                {
+                    markdown.Append(CultureInfo.InvariantCulture, $"- {note.RefId}: {note.Detail} [{note.Code}]\n");
+                }
+            }
+        }
+
         if (notes.Gaps.Count > 0)
         {
             markdown.Append("\n### Capability gaps\n\nMitigations scope/capabilities.yaml says no product provides: no system's audit answers these requirements, and none fails for them.\n\n| Mitigation | Requirements | Ref IDs |\n| --- | --- | --- |\n");
@@ -148,6 +167,10 @@ internal static class ScopePlanOutput
                 ["result_there"] = d.ResultThere,
             })]),
             ["suppliers"] = new JsonArray([.. notes.Suppliers.Select(n => (JsonNode)new JsonObject { ["code"] = n.Code, ["supplier"] = n.Supplier, ["system"] = n.System, ["detail"] = n.Detail })]),
+            ["exceptions"] = new JsonArray([.. notes.Exceptions.Select(n => (JsonNode)new JsonObject
+            {
+                ["code"] = n.Code, ["kind"] = n.Kind, ["ref_id"] = n.RefId, ["name"] = n.Name, ["status"] = n.Status, ["expires"] = n.Expires, ["detail"] = n.Detail,
+            })]),
             ["changes"] = new JsonArray([.. plan.Changes.Select(c => (JsonNode)new JsonObject
             {
                 ["kind"] = Kind(c.Kind),
