@@ -34,7 +34,7 @@ public class NoEvidenceScopeTests
     [Fact]
     public void An_audit_can_opt_out_and_keep_them_not_assessed()
     {
-        var rows = Rows(ScopeFixture.Audit.Replace(Closed, Open + "no_evidence: not_assessed\n", StringComparison.Ordinal));
+        var rows = Rows(ScopeFixture.Audit.Replace(Closed, Open + "\nno_evidence: not_assessed", StringComparison.Ordinal));
 
         rows["EXAMPLE-BASELINE-2026/EX-1.2"]["result"].ShouldBe("not_assessed");
         rows["EXAMPLE-BASELINE-2026/EX-1.2"]["observation"].ShouldBe("Manual evidence: the admin MFA review each quarter.");
