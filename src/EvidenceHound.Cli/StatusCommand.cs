@@ -3,6 +3,7 @@ using System.Globalization;
 using EvidenceHound.Core.Results;
 using EvidenceHound.Core.Scope;
 using EvidenceHound.Core.Yaml;
+using EvidenceHound.Runtime;
 using EvidenceHound.Runtime.Collectors;
 using EvidenceHound.Runtime.Configuration;
 using EvidenceHound.Runtime.Status;
@@ -38,10 +39,15 @@ internal static class StatusCommand
                 problems => Task.FromResult(Result.Fail<DeploymentConfig>(problems)));
             var latest = await deployment.BindAsync(d => new FileRunRecordStore(d.Evidence.Root).LatestAsync(cancellationToken));
             var history = await deployment.BindAsync(d => new FileRunHistory(d.Evidence.Root).LatestAsync(cancellationToken));
-            return await deployment.Bind(d => latest.Bind(records => history.Map(entries => (Collectors: Rows(d, records), Audits: AuditRows(d, entries), Any: entries.Count > 0)))).Match(
+            return await deployment.Bind(d => latest.Bind(records => history.Map(entries => (Collectors: Rows(d, records), Failures: Failures(d, records), Audits: AuditRows(d, entries), Any: entries.Count > 0)))).Match(
                 async tables =>
                 {
                     await output.WriteAsync(Table([Header, .. tables.Collectors]));
+                    foreach (var failure in tables.Failures)
+                    {
+                        await output.WriteLineAsync(failure);
+                    }
+
                     if (tables.Any)
                     {
                         await output.WriteLineAsync();
@@ -82,6 +88,14 @@ internal static class StatusCommand
     {
         var byName = records.ToDictionary(r => r.Collector, StringComparer.Ordinal);
         return [.. config.Collectors.Select(c => byName.TryGetValue(c.Name, out var r) ? Row(r) : [c.Name, "never run", "-", "-", "-", "-"])];
+    }
+
+    /// <summary>Why each configured collector's latest run failed (s15-D3), so a run that proved nothing is not read as a quiet "0 0".</summary>
+    private static IReadOnlyList<string> Failures(DeploymentConfig config, IReadOnlyList<RunRecord> records)
+    {
+        var names = config.Collectors.Select(c => c.Name).ToHashSet(StringComparer.Ordinal);
+        return [.. records.Where(r => r.Outcome == CollectorOutcome.Failed && names.Contains(r.Collector))
+            .SelectMany(r => r.Problems.Select(p => $"{r.Collector} failed: {p.Message} ({p.Code})"))];
     }
 
     private static IReadOnlyList<string[]> AuditRows(DeploymentConfig config, IReadOnlyList<(string Audit, HistoryEntry Entry)> entries)
