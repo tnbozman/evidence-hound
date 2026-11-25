@@ -200,10 +200,10 @@ public sealed class ScopeClientTests : IDisposable
     public async Task An_asset_assessment_update_leaves_the_flags_set_by_checks()
     {
         // s15-05: a flag named by checks is not declared; each run sets it, so the scope's update must not reset it to false.
-        List("business-impact-analysis", new JsonObject { ["id"] = "bia-1", ["ref_id"] = "EX-BIA-2026" });
+        List("resilience/business-impact-analysis", new JsonObject { ["id"] = "bia-1", ["ref_id"] = "EX-BIA-2026" });
         List("assets", new JsonObject { ["id"] = "a-365", ["name"] = "Example 365" });
         List("applied-controls");
-        List("asset-assessments", new JsonObject { ["id"] = "aa-1", ["asset"] = new JsonObject { ["id"] = "a-365", ["str"] = "Example 365" } });
+        List("resilience/asset-assessments", new JsonObject { ["id"] = "aa-1", ["asset"] = new JsonObject { ["id"] = "a-365", ["str"] = "Example 365" } });
         Respond("PATCH", "/api/resilience/asset-assessments/aa-1/", 200, new JsonObject { ["id"] = "aa-1" });
         var assessment = Declared(ScopeKind.AssetAssessment, "EX-BIA-2026/Example 365",
             ("bia", "EX-BIA-2026"), ("system", "Example 365"), ("recovery_documented", "true"), ("observation", "Restores are tested monthly."));
@@ -221,11 +221,11 @@ public sealed class ScopeClientTests : IDisposable
     {
         // s15-04 (BiaClientTests in the plan): the BIA on its matrix, one asset assessment per system, thresholds by seconds and impact position.
         List("risk-matrices", new JsonObject { ["id"] = "rm-4x4", ["urn"] = "urn:example:risk:matrix:example-4x4" });
-        List("business-impact-analysis", new JsonObject { ["id"] = "bia-1", ["ref_id"] = "EX-BIA-2026" });
+        List("resilience/business-impact-analysis", new JsonObject { ["id"] = "bia-1", ["ref_id"] = "EX-BIA-2026" });
         List("assets", new JsonObject { ["id"] = "a-365", ["name"] = "Example 365" }, new JsonObject { ["id"] = "a-laptops", ["name"] = "Example laptops" });
         List("applied-controls", new JsonObject { ["id"] = "ac-backup", ["ref_id"] = "AC-BACKUP" });
-        List("asset-assessments", new JsonObject { ["id"] = "aa-1", ["asset"] = new JsonObject { ["id"] = "a-365", ["str"] = "Example 365" } });
-        List("escalation-thresholds");
+        List("resilience/asset-assessments", new JsonObject { ["id"] = "aa-1", ["asset"] = new JsonObject { ["id"] = "a-365", ["str"] = "Example 365" } });
+        List("resilience/escalation-thresholds");
         List("terminologies", new JsonObject { ["id"] = "t-rep", ["name"] = "Reputation", ["field_path"] = "qualifications" });
         Respond("POST", "/api/resilience/business-impact-analysis/", 201, new JsonObject { ["id"] = "bia-new" });
         Respond("POST", "/api/resilience/asset-assessments/", 201, new JsonObject { ["id"] = "aa-new" });
@@ -246,7 +246,7 @@ public sealed class ScopeClientTests : IDisposable
         (await Create(assessment)).Value();
         (await Create(threshold)).Value();
 
-        Posted("business-impact-analysis").ShouldBe(Json(new JsonObject
+        Posted("resilience/business-impact-analysis").ShouldBe(Json(new JsonObject
         {
             ["name"] = "Example BIA",
             ["ref_id"] = "EX-BIA-2026-NEW",
@@ -260,7 +260,7 @@ public sealed class ScopeClientTests : IDisposable
             ["authors"] = new JsonArray("act-it"),
             ["reviewers"] = new JsonArray(),
         }));
-        Posted("asset-assessments").ShouldBe(Json(new JsonObject
+        Posted("resilience/asset-assessments").ShouldBe(Json(new JsonObject
         {
             ["bia"] = "bia-1",
             ["asset"] = "a-laptops",
@@ -271,7 +271,7 @@ public sealed class ScopeClientTests : IDisposable
             ["recovery_targets_met"] = false,
             ["observation"] = "Staff use phones.",
         }));
-        Posted("escalation-thresholds").ShouldBe(Json(new JsonObject
+        Posted("resilience/escalation-thresholds").ShouldBe(Json(new JsonObject
         {
             ["asset_assessment"] = "aa-1",
             ["point_in_time"] = 86400,

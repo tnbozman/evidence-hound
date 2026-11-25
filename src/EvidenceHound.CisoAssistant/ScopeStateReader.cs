@@ -436,7 +436,7 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
     /// <summary>The BIAs under the root folder (s15-04), each one's asset assessments, and each assessment's thresholds.</summary>
     private static async Task<BiaLists> BiasAsync(Reading reading, HashSet<string> inScope)
     {
-        var bias = await reading.ObjectsInAsync("business-impact-analysis", inScope);
+        var bias = await reading.ObjectsInAsync("resilience/business-impact-analysis", inScope);
         if (bias.Count == 0)
         {
             return BiaLists.None;
@@ -447,11 +447,11 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
         foreach (var bia in bias)
         {
             var key = RefIdOrName(ScopeKind.Bia, bia);
-            foreach (var assessment in await reading.ListAsync($"asset-assessments/?bia={Uri.EscapeDataString(Id(bia))}"))
+            foreach (var assessment in await reading.ListAsync($"resilience/asset-assessments/?bia={Uri.EscapeDataString(Id(bia))}"))
             {
                 var assessmentKey = Core.Scope.BiaObjects.AssessmentKey(key, Text(assessment["asset"]?["str"]) ?? Id(assessment));
                 assessments.Add((key, assessment));
-                thresholds.AddRange((await reading.ListAsync($"escalation-thresholds/?asset_assessment={Uri.EscapeDataString(Id(assessment))}")).Select(t => (assessmentKey, t)));
+                thresholds.AddRange((await reading.ListAsync($"resilience/escalation-thresholds/?asset_assessment={Uri.EscapeDataString(Id(assessment))}")).Select(t => (assessmentKey, t)));
             }
         }
 

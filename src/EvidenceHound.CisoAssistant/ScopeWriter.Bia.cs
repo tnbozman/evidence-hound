@@ -11,13 +11,13 @@ internal sealed partial class ScopeWriter
     /// <summary>A BIA by <c>ref_id</c>, in its domain and optional perimeter, on a risk matrix found by URN.</summary>
     private async Task<Result<Unit>> BiaAsync(ScopeWrite write, Folders folders, CancellationToken cancellationToken)
     {
-        var listed = await http.ListAllAsync("business-impact-analysis/", cancellationToken);
+        var listed = await http.ListAllAsync("resilience/business-impact-analysis/", cancellationToken);
         return await listed.BindAsync(async bias =>
         {
             var existing = IdByRefId(bias, ScopeKind.Bia).GetValueOrDefault(write.Change.Key);
             if (write.Change.Action == ScopeAction.Delete || write.Declared is not { } declared)
             {
-                return await DeleteAsync("business-impact-analysis", existing, write, cancellationToken);
+                return await DeleteAsync("resilience/business-impact-analysis", existing, write, cancellationToken);
             }
 
             var folder = folders.FolderOf(declared);
@@ -45,8 +45,8 @@ internal sealed partial class ScopeWriter
                 };
                 Drop(body, write.Change, "perimeter", "version", "status", "due_date");
                 return write.Change.Action == ScopeAction.Create
-                    ? await SendAsync(HttpMethod.Post, "business-impact-analysis/", body, $"to create BIA {declared.Key}", cancellationToken)
-                    : await UpdateAsync("business-impact-analysis", existing, body, write, cancellationToken);
+                    ? await SendAsync(HttpMethod.Post, "resilience/business-impact-analysis/", body, $"to create BIA {declared.Key}", cancellationToken)
+                    : await UpdateAsync("resilience/business-impact-analysis", existing, body, write, cancellationToken);
             });
         });
     }
@@ -63,13 +63,13 @@ internal sealed partial class ScopeWriter
                 return write.Change.Action == ScopeAction.Delete ? Result.Ok(Unit.Value) : Result.Fail<Unit>(ApiProblems.NotFound("BIA", $"'{biaRef}'"));
             }
 
-            var listed = await http.ListAllAsync($"asset-assessments/?bia={Uri.EscapeDataString(biaId)}", cancellationToken);
+            var listed = await http.ListAllAsync($"resilience/asset-assessments/?bia={Uri.EscapeDataString(biaId)}", cancellationToken);
             return await listed.BindAsync(async assessments =>
             {
                 var existing = assessments.FirstOrDefault(a => Text(a["asset"]?["str"]) == system) is { } held ? Id(held) : null;
                 if (write.Change.Action == ScopeAction.Delete || write.Declared is not { } declared)
                 {
-                    return await DeleteAsync("asset-assessments", existing, write, cancellationToken);
+                    return await DeleteAsync("resilience/asset-assessments", existing, write, cancellationToken);
                 }
 
                 var asset = await IdsAsync("assets/", "name", [system], "system", cancellationToken);
@@ -99,8 +99,8 @@ internal sealed partial class ScopeWriter
                     }
 
                     return write.Change.Action == ScopeAction.Create
-                        ? await SendAsync(HttpMethod.Post, "asset-assessments/", body, $"to create asset assessment {declared.Key}", cancellationToken)
-                        : await UpdateAsync("asset-assessments", existing, body, write, cancellationToken);
+                        ? await SendAsync(HttpMethod.Post, "resilience/asset-assessments/", body, $"to create asset assessment {declared.Key}", cancellationToken)
+                        : await UpdateAsync("resilience/asset-assessments", existing, body, write, cancellationToken);
                 });
             });
         });
@@ -118,7 +118,7 @@ internal sealed partial class ScopeWriter
         var bia = await BiaIdAsync(biaRef, cancellationToken);
         var assessment = await bia.BindAsync(async biaId => biaId.Length == 0
             ? Result.Ok("")
-            : (await http.ListAllAsync($"asset-assessments/?bia={Uri.EscapeDataString(biaId)}", cancellationToken))
+            : (await http.ListAllAsync($"resilience/asset-assessments/?bia={Uri.EscapeDataString(biaId)}", cancellationToken))
                 .Map(all => all.FirstOrDefault(a => Text(a["asset"]?["str"]) == system) is { } held ? Id(held) : ""));
         return await assessment.BindAsync(async assessmentId =>
         {
@@ -127,13 +127,13 @@ internal sealed partial class ScopeWriter
                 return write.Change.Action == ScopeAction.Delete ? Result.Ok(Unit.Value) : Result.Fail<Unit>(ApiProblems.NotFound("asset assessment", $"'{assessmentKey}'"));
             }
 
-            var listed = await http.ListAllAsync($"escalation-thresholds/?asset_assessment={Uri.EscapeDataString(assessmentId)}", cancellationToken);
+            var listed = await http.ListAllAsync($"resilience/escalation-thresholds/?asset_assessment={Uri.EscapeDataString(assessmentId)}", cancellationToken);
             return await listed.BindAsync(async thresholds =>
             {
                 var existing = thresholds.FirstOrDefault(t => t["point_in_time"] is JsonValue v && v.TryGetValue<int>(out var pit) && pit == seconds) is { } held ? Id(held) : null;
                 if (write.Change.Action == ScopeAction.Delete || write.Declared is not { } declared)
                 {
-                    return await DeleteAsync("escalation-thresholds", existing, write, cancellationToken);
+                    return await DeleteAsync("resilience/escalation-thresholds", existing, write, cancellationToken);
                 }
 
                 var qualifications = await QualificationsAsync(Split(Field(declared, "qualifications")), cancellationToken);
@@ -149,8 +149,8 @@ internal sealed partial class ScopeWriter
                     };
                     Drop(body, write.Change, "justification");
                     return write.Change.Action == ScopeAction.Create
-                        ? await SendAsync(HttpMethod.Post, "escalation-thresholds/", body, $"to create escalation threshold {declared.Key}", cancellationToken)
-                        : await UpdateAsync("escalation-thresholds", existing, body, write, cancellationToken);
+                        ? await SendAsync(HttpMethod.Post, "resilience/escalation-thresholds/", body, $"to create escalation threshold {declared.Key}", cancellationToken)
+                        : await UpdateAsync("resilience/escalation-thresholds", existing, body, write, cancellationToken);
                 });
             });
         });
@@ -158,7 +158,7 @@ internal sealed partial class ScopeWriter
 
     /// <summary>The BIA's ID by <c>ref_id</c>, or empty when CISO Assistant holds none.</summary>
     private async Task<Result<string>> BiaIdAsync(string refId, CancellationToken cancellationToken) =>
-        (await http.ListAllAsync("business-impact-analysis/", cancellationToken)).Map(all => IdByRefId(all, ScopeKind.Bia).GetValueOrDefault(refId) ?? "");
+        (await http.ListAllAsync("resilience/business-impact-analysis/", cancellationToken)).Map(all => IdByRefId(all, ScopeKind.Bia).GetValueOrDefault(refId) ?? "");
 
     /// <summary>Qualifications are CISO Assistant terminologies, found by name.</summary>
     private async Task<Result<JsonArray>> QualificationsAsync(string[] names, CancellationToken cancellationToken) =>

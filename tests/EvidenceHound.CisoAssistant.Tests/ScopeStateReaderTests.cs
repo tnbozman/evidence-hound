@@ -296,8 +296,8 @@ public sealed class ScopeStateReaderTests : IDisposable
     public async Task Reads_bias_their_asset_assessments_thresholds_and_system_objectives()
     {
         // s15-04: thresholds come back with their impact's name and point in time in seconds, keyed bia/system/after.
-        List("business-impact-analysis", Listed("bia-1", "f-ex"));
-        Object("business-impact-analysis", "bia-1", new JsonObject
+        List("resilience/business-impact-analysis", Listed("bia-1", "f-ex"));
+        Object("resilience/business-impact-analysis", "bia-1", new JsonObject
         {
             ["id"] = "bia-1",
             ["ref_id"] = "EX-BIA-2026",

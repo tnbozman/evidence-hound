@@ -61,10 +61,10 @@ internal sealed class CisoAssistantClient(HttpClient http) : ICisoAssistantClien
 
     public async Task<Result<IReadOnlyDictionary<string, HeldRecovery>>> ListRecoveryAsync(string biaRefId, CancellationToken cancellationToken)
     {
-        var bias = await http.ListAllAsync("business-impact-analysis/", cancellationToken);
+        var bias = await http.ListAllAsync("resilience/business-impact-analysis/", cancellationToken);
         return await bias.BindAsync(async all => all.FirstOrDefault(b => (string?)b["ref_id"] == biaRefId) is not { } bia
             ? Result.Ok<IReadOnlyDictionary<string, HeldRecovery>>(new Dictionary<string, HeldRecovery>())
-            : (await http.ListAllAsync($"asset-assessments/?bia={Uri.EscapeDataString(Id(bia))}", cancellationToken)).Map(assessments =>
+            : (await http.ListAllAsync($"resilience/asset-assessments/?bia={Uri.EscapeDataString(Id(bia))}", cancellationToken)).Map(assessments =>
                 (IReadOnlyDictionary<string, HeldRecovery>)assessments
                     .Where(a => (string?)a["asset"]?["str"] is not null)
                     .DistinctBy(a => (string?)a["asset"]!["str"])
@@ -73,7 +73,7 @@ internal sealed class CisoAssistantClient(HttpClient http) : ICisoAssistantClien
 
     public async Task<Result<Unit>> UpdateRecoveryAsync(string assessmentId, string field, bool value, IReadOnlyList<string> evidenceIds, CancellationToken cancellationToken) =>
         (await PatchAsync(
-            $"asset-assessments/{Uri.EscapeDataString(assessmentId)}/",
+            $"resilience/asset-assessments/{Uri.EscapeDataString(assessmentId)}/",
             new JsonObject { [field] = value, ["evidences"] = new JsonArray([.. evidenceIds.Select(id => JsonValue.Create(id))]) },
             $"to set {field} on asset assessment {assessmentId}",
             cancellationToken)).Map(_ => Unit.Value);
