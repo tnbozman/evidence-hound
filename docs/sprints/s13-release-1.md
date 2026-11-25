@@ -1,6 +1,6 @@
 # s13 Release 1
 
-Status: In progress
+Status: Done (the v1.0.0 tag and release wait for the maintainer's approval)
 
 **Goal:** the deployment from s07 gains tested backups and a hardening and update guide, then a tagged, signed, documented first release that others can install and extend.
 
@@ -133,6 +133,16 @@ Tasks s13-01 and s13-02 were s08-04 and s08-05 before the release 1 reorder.
 **Functional check**
 - Tag `v1.0.0` (`git tag -a v1.0.0 -m "Release 1"` and push it), approve the release environment, then check that GitHub shows release `v1.0.0` as the latest release with its assets, and that `ghcr.io/tnbozman/evidence-hound:1.0.0` pulls.
 
+**Review (2026-11-25), before the tag**
+- Alerts: CodeQL (C#, Python, JavaScript, Actions), dependency review and secret scanning pass on the sprint's final head; no new alerts
+  on the branch. The open alert counts on `main` and the OpenSSF Scorecard result are read on `main` after the merge, before tagging.
+- Org-data: `scripts/check-org-data.sh --history` scans every commit's changes and message; the release's `verify` job runs it first,
+  and it passed on the dry run.
+- README badges: CI, CodeQL, Scorecard, licence and latest release.
+- `CHANGELOG.md` written for 1.0.0 (`make changelog VERSION=1.0.0`), and the deployment pins moved to 1.0.0.
+- Left for the maintainer: create the `release` environment with a required reviewer, serve Pages from `gh-pages`, optionally add
+  `NUGET_API_KEY`, then tag `v1.0.0` on `main` and approve the release run. The box above is ticked when the release is published.
+
 ### s13-07 Rehearse trial, onboarding and sustaining GRC (standing, every sprint)
 - [x] Done
 
@@ -200,3 +210,16 @@ As [s12-10](s12-e8-mapping-and-adoption.md#s12-10-improve-quality-and-flow-stand
   could stamp them.
 
 ## Sprint review
+
+**2026-11-25.** Release 1 is ready to tag. The reference deployment gained encrypted backups and a restore test that becomes evidence,
+and hardening and update guides. `hound` ships as a .NET tool and a template pack beside seven libraries, versioned from git tags, with
+a changelog from the commits. The release workflow builds and checks everything from a `v*` tag, waits for a maintainer's approval,
+then publishes the multi-arch runner image with provenance and an SBOM, the packages, the docs site on GitHub Pages and the GitHub
+release. A dry run on every pull request that touches the release proves it without publishing. The standing rehearsal installed the
+release candidate as a customer and found 14 problems, all fixed here; the s11 and s12 carried items were cleared except the board
+report's escalations (s15).
+
+**Retro.** What slowed the sprint: CI cancels a run when the next push lands, so frequent small pushes left the long jobs (compose,
+trial, functional) unproven for most of the sprint, and the release dry run first failed on a version the profiles refuse. Next sprint:
+push in batches after each task's green commit, and run the release dry run early when packaging changes. The rehearsal from installed
+packages found more than the rehearsal from source did; keep installing as a customer.
