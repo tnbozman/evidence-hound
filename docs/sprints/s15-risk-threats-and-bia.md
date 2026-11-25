@@ -1,6 +1,6 @@
 # s15 Risk, threats and business impact analysis as configuration
 
-Status: Planned
+Status: In progress
 
 Release: 2
 
