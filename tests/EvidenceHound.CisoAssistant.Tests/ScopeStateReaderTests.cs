@@ -291,6 +291,92 @@ public sealed class ScopeStateReaderTests : IDisposable
         held[(ScopeKind.RiskScenario, "EX-RISK-2026/R-02")].Held.Fields["exceptions"].ShouldBe("EXC-01");
     }
 
+    [Fact]
+    public async Task Reads_bias_their_asset_assessments_thresholds_and_system_objectives()
+    {
+        // s15-04: thresholds come back with their impact's name and point in time in seconds, keyed bia/system/after.
+        List("business-impact-analysis", Listed("bia-1", "f-ex"));
+        Object("business-impact-analysis", "bia-1", new JsonObject
+        {
+            ["id"] = "bia-1",
+            ["ref_id"] = "EX-BIA-2026",
+            ["name"] = "Example BIA",
+            ["folder"] = "f-ex",
+            ["perimeter"] = "p-corp",
+            ["risk_matrix"] = "rm-4x4",
+            ["version"] = "1.0",
+            ["status"] = "in_progress",
+            ["due_date"] = "2026-12-31",
+            ["authors"] = new JsonArray("act-it"),
+            ["reviewers"] = new JsonArray(),
+        });
+        List("risk-matrices", new JsonObject { ["id"] = "rm-4x4", ["urn"] = "urn:example:risk:matrix:example-4x4" });
+        _ca.Server.Given(Request.Create().WithPath("/api/asset-assessments/").WithParam("bia", "bia-1").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject
+            {
+                ["count"] = 1,
+                ["results"] = new JsonArray(new JsonObject
+                {
+                    ["id"] = "aa-1",
+                    ["asset"] = new JsonObject { ["id"] = "a-365", ["str"] = "Example 365" },
+                    ["dependencies"] = new JsonArray(new JsonObject { ["id"] = "a-laptops", ["str"] = "Example laptops" }),
+                    ["associated_controls"] = new JsonArray(new JsonObject { ["id"] = "ac-mfa", ["name"] = "Multi-factor authentication" }),
+                    ["recovery_documented"] = true,
+                    ["recovery_tested"] = false,
+                    ["recovery_targets_met"] = false,
+                    ["observation"] = "Mail stops.",
+                }),
+            }.ToJsonString()));
+        _ca.Server.Given(Request.Create().WithPath("/api/escalation-thresholds/").WithParam("asset_assessment", "aa-1").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject
+            {
+                ["count"] = 1,
+                ["results"] = new JsonArray(new JsonObject
+                {
+                    ["id"] = "et-1",
+                    ["point_in_time"] = 86400,
+                    ["quali_impact"] = new JsonObject { ["name"] = "Major", ["value"] = 2 },
+                    ["qualifications"] = new JsonArray(new JsonObject { ["id"] = "t-rep", ["str"] = "Reputation" }),
+                    ["justification"] = "Customers notice.",
+                }),
+            }.ToJsonString()));
+
+        var held = (await _ca.Scope.ReadAsync(Query with { Bias = true }, _ct)).Value().ToDictionary(a => (a.Held.Kind, a.Held.Key));
+
+        held[(ScopeKind.Bia, "EX-BIA-2026")].Held.Fields.ShouldBe(new Dictionary<string, string>
+        {
+            ["name"] = "Example BIA",
+            ["domain"] = "Example Pty Ltd",
+            ["perimeter"] = "Corporate IT",
+            ["matrix"] = "urn:example:risk:matrix:example-4x4",
+            ["version"] = "1.0",
+            ["status"] = "in_progress",
+            ["due_date"] = "2026-12-31",
+            ["authors"] = "it@example.com",
+        });
+        held[(ScopeKind.AssetAssessment, "EX-BIA-2026/Example 365")].Held.Fields.ShouldBe(new Dictionary<string, string>
+        {
+            ["bia"] = "EX-BIA-2026",
+            ["system"] = "Example 365",
+            ["dependencies"] = "Example laptops",
+            ["controls"] = "AC-MFA",
+            ["recovery_documented"] = "true",
+            ["recovery_tested"] = "false",
+            ["recovery_targets_met"] = "false",
+            ["observation"] = "Mail stops.",
+        });
+        held[(ScopeKind.EscalationThreshold, "EX-BIA-2026/Example 365/1d")].Held.Fields.ShouldBe(new Dictionary<string, string>
+        {
+            ["assessment"] = "EX-BIA-2026/Example 365",
+            ["point_in_time"] = "86400",
+            ["impact"] = "Major",
+            ["qualifications"] = "Reputation",
+            ["justification"] = "Customers notice.",
+        });
+        held[(ScopeKind.System, "Example 365")].Held.Fields["objectives"].ShouldBe("availability=2, confidentiality=3");
+        held[(ScopeKind.System, "Example 365")].Held.Fields["recovery"].ShouldBe("rto=4h");
+    }
+
     private void RecordInstance()
     {
         List("folders", Folder("f-global", "Global", null), Folder("f-ex", "Example Pty Ltd", "f-global"), Folder("f-other", "Other Pty Ltd", "f-other-parent"));
@@ -309,7 +395,26 @@ public sealed class ScopeStateReaderTests : IDisposable
         List("perimeters", Listed("p-corp", "f-ex"), Listed("p-other", "f-other"));
         Object("perimeters", "p-corp", new JsonObject { ["id"] = "p-corp", ["name"] = "Corporate IT", ["ref_id"] = "PER-CORP", ["description"] = "", ["folder"] = "f-ex" });
         List("assets", Listed("a-365", "f-ex"), Listed("a-laptops", "f-ex"), Listed("a-other", "f-other"));
-        Object("assets", "a-365", new JsonObject { ["id"] = "a-365", ["name"] = "Example 365", ["ref_id"] = "SYS-365", ["type"] = "PR", ["folder"] = "f-ex", ["parent_assets"] = new JsonArray(), ["owner"] = new JsonArray() });
+        Object("assets", "a-365", new JsonObject
+        {
+            ["id"] = "a-365",
+            ["name"] = "Example 365",
+            ["ref_id"] = "SYS-365",
+            ["type"] = "PR",
+            ["folder"] = "f-ex",
+            ["parent_assets"] = new JsonArray(),
+            ["owner"] = new JsonArray(),
+            ["security_objectives"] = new JsonObject
+            {
+                ["objectives"] = new JsonObject
+                {
+                    ["confidentiality"] = new JsonObject { ["value"] = 3, ["is_enabled"] = true },
+                    ["availability"] = new JsonObject { ["value"] = 2, ["is_enabled"] = true },
+                    ["integrity"] = new JsonObject { ["value"] = 1, ["is_enabled"] = false },
+                },
+            },
+            ["disaster_recovery_objectives"] = new JsonObject { ["objectives"] = new JsonObject { ["rto"] = new JsonObject { ["value"] = 14400 } } },
+        });
         Object("assets", "a-laptops", new JsonObject
         {
             ["id"] = "a-laptops",

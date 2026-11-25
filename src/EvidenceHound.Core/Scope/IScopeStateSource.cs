@@ -21,6 +21,9 @@ public sealed record ScopeStateQuery(string RootFolder, IReadOnlyList<string> Fr
     /// <summary>Whether to read risk studies, their scenarios, security exceptions and risk acceptances: only when the scope declares studies or exceptions (s15-02, s15-03).</summary>
     public bool Risks { get; init; }
 
+    /// <summary>Whether to read business impact analyses, their asset assessments and thresholds: only when the scope declares BIAs (s15-04).</summary>
+    public bool Bias { get; init; }
+
     /// <summary>Whether to read the organisation's own entity (the builtin main entity): only when setup declares it.</summary>
     public bool Organisation { get; init; }
 
