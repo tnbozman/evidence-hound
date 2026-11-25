@@ -286,7 +286,7 @@ Required by Example Prime Pty Ltd (CTR-PRIME-PARTS): Essential Eight maturity le
 ```
 
 ### s15-09 Incident response plan document (added 2026-11-24)
-- [ ] Done
+- [x] Done
 
 Added at the maintainer's request (2026-11-24): both regimes require a written incident response plan (ISM-0043; NIST SP 800-171
 family 3.6, with DFARS 252.204-7012's 72-hour report for CMMC Level 2), and a small team should not have to write one from a blank page.
@@ -331,6 +331,24 @@ suppliers change.
 - Build the example programme's plan against the local CISO Assistant; it lists the fictional CUI system's DFARS 72-hour report and the
   supplier contacts, and reports no gaps once the example judgement sections are present.
 
+**Notes**
+- `scope/irp.yaml` names the programme, version, five roles (incident manager, deputy, executive, legal and privacy, and the
+  authorising officer for ISM-0047) and five judgement sections. Everything else is derived from the repo with its file and line:
+  systems with their data and recovery objectives, suppliers and customers with contacts and clauses, and each report with its
+  deadline in words ("72 hours") and what triggers it in this scope. It reads no CISO Assistant: every value it uses is in the repo
+  that apply writes to CISO Assistant.
+- The example repo's plan and sections are fictional; the section files are excluded from markdownlint like the SSP's.
+
+**Functional check (2026-11-25)**
+```
+$ hound irp build --programme essential-eight --scope scope --strict   # example repo, Example laptops processing cui
+exit 0
+## 1. Govern ... ## 2. Identify ... ## 3. Protect ... ## 4. Detect ... ## 5. Respond ... ## 6. Recover ... ## References
+### ... (ISM-0043 item 1) to (ISM-0043 item 8)
+| DFARS 252.204-7012 cyber incident report | DoD, through the DIBNet portal (needs a medium assurance certificate) | 72 hours | an incident on a system handling cui (Example laptops) | DFARS 252.204-7012(c) |
+```
+The supplier contacts are covered by `IrpBuilderTests` (the example repo declares no third party).
+
 ### s15-10 Rehearse trial, onboarding and sustaining GRC (standing, every sprint)
 - [ ] Done
 
@@ -374,8 +392,11 @@ As [s12-10](s12-e8-mapping-and-adoption.md#s12-10-improve-quality-and-flow-stand
   attestations** (found 2026-11-25 in a person's own setup). `hound init` always creates the organisation-wide audit (such as
   `EX-E8-Q2-2027FY`); with no organisation-wide collector feeding it and only per-system audits doing the work, the person could not
   tell what it was for and removed it. `Q2-2027FY` for October to December 2026 needs explaining. The manual sources onboarding drafted
-  were one `evidence_attested` check per strategy, too coarse to show what was checked. Triage: s15-11 explains the audit of record and
-  the period name where `hound init` and `hound audit` print them, and steers onboarding to the per-check manual-source templates;
-  creating the organisation's audit only when an organisation-wide source exists goes to s18 (fewer steps for the agent).
+  were one `evidence_attested` check per strategy, too coarse to show what was checked. Maintainer's direction (2026-11-25): audits are
+  per system, so gaps and coverage stay visible; a shared platform gets its own audit that the systems on it rely on; duplicate work is
+  cut by shared, specific evidence sources feeding many audits, not by merging audits. Triage: s15-11 puts this in the onboarding and
+  scope guides, explains the period name where `hound init` and `hound audit` print it, and steers onboarding to the per-check
+  manual-source templates; making per-system and platform audits the onboarding default, with an organisation audit only when an
+  organisation-wide source feeds it, goes to s18 (fewer steps for the agent).
 
 ## Sprint review
