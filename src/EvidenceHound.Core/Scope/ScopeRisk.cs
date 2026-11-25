@@ -48,3 +48,26 @@ public sealed record RiskRating(string? Probability, string? Impact)
     /// <summary>Where the rating was written, for problems with it.</summary>
     public SourceLine? At { get; init; }
 }
+
+/// <summary>
+/// A security exception requested in <c>scope/exceptions.yaml</c> (s15-03): what it covers (systems, controls, risk scenarios as
+/// <c>study/scenario</c>, and audit rows), its severity, owners and expiry. Its approval status is never declared: an approver sets it in
+/// CISO Assistant.
+/// </summary>
+public sealed record ScopeExceptionRequest(
+    string RefId,
+    string Name,
+    string? Description,
+    ScopeRef Domain,
+    string Severity,
+    IReadOnlyList<ScopeRef> Owners,
+    string? ExpirationDate,
+    string? Observation,
+    IReadOnlyList<ScopeRef> Systems,
+    IReadOnlyList<ScopeRef> Controls,
+    IReadOnlyList<ScopeRef> Scenarios,
+    IReadOnlyList<ExceptionRequirement> Requirements,
+    SourceLine At);
+
+/// <summary>A requirement an exception covers, by its audit's <c>ref_id</c> and the requirement's <c>ref_id</c> or URN.</summary>
+public sealed record ExceptionRequirement(string Audit, string Requirement, SourceLine At);

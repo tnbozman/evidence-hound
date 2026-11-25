@@ -37,6 +37,9 @@ public sealed record ScopeDocument(ScopeSetup Setup, IReadOnlyList<ScopeControl>
 
     /// <summary><c>scope/risks/*.yaml</c>: risk studies and their scenarios, one study per file (s15-02).</summary>
     public IReadOnlyList<ScopeRiskStudy> RiskStudies { get; init; } = [];
+
+    /// <summary><c>scope/exceptions.yaml</c>: security exceptions requested through the repo, approved only in CISO Assistant (s15-03).</summary>
+    public IReadOnlyList<ScopeExceptionRequest> Exceptions { get; init; } = [];
 }
 
 /// <summary><c>scope/setup.yaml</c>: the root folder, the frameworks to load and the domains.</summary>

@@ -236,6 +236,61 @@ public sealed class ScopeClientTests : IDisposable
     }
 
     [Fact]
+    public async Task Creates_security_exception_with_links_and_never_a_status()
+    {
+        // s15-03: the exception carries its links to systems, controls and rows; its approval stays with an approver in CISO Assistant.
+        List("security-exceptions");
+        List("applied-controls", new JsonObject { ["id"] = "ac-mfa", ["ref_id"] = "AC-MFA" });
+        List("compliance-assessments", new JsonObject { ["id"] = "ca-base", ["ref_id"] = "EXAMPLE-BASELINE-2026" });
+        List("requirement-assessments", new JsonObject { ["id"] = "ra-1", ["requirement"] = new JsonObject { ["urn"] = "urn:example:req:ex-1.1", ["ref_id"] = "EX-1.1" } });
+        Respond("POST", "/api/security-exceptions/", 201, new JsonObject { ["id"] = "se-new" });
+        var exception = Declared(ScopeKind.SecurityException, "EXC-01",
+            ("name", "Legacy finance app without MFA"), ("domain", "Example Pty Ltd"), ("severity", "medium"), ("owners", "it@example.com"),
+            ("expiration_date", "2027-03-31"), ("observation", "Office network only."), ("systems", "Example 365"), ("controls", "AC-MFA"),
+            ("requirements", "EXAMPLE-BASELINE-2026/EX-1.1"));
+
+        (await Create(exception)).Value();
+
+        Posted("security-exceptions").ShouldBe(Json(new JsonObject
+        {
+            ["ref_id"] = "EXC-01",
+            ["name"] = "Legacy finance app without MFA",
+            ["description"] = $"[hound scope {State}]",
+            ["folder"] = "f-ex",
+            ["severity"] = 2,
+            ["owners"] = new JsonArray("act-it"),
+            ["expiration_date"] = "2027-03-31",
+            ["observation"] = "Office network only.",
+            ["assets"] = new JsonArray("a-365"),
+            ["applied_controls"] = new JsonArray("ac-mfa"),
+            ["requirement_assessments"] = new JsonArray("ra-1"),
+        }));
+    }
+
+    [Fact]
+    public async Task Creates_risk_acceptance_request_without_a_state()
+    {
+        List("risk-assessments", new JsonObject { ["id"] = "ra-1", ["ref_id"] = "EX-RISK-2026" });
+        List("risk-scenarios", new JsonObject { ["id"] = "rs-2", ["ref_id"] = "R-02" });
+        List("risk-acceptances");
+        Respond("POST", "/api/risk-acceptances/", 201, new JsonObject { ["id"] = "rac-new" });
+        var acceptance = Declared(ScopeKind.RiskAcceptance, "EX-RISK-2026/R-02",
+            ("name", "Accept: The only backup administrator leaves"), ("domain", "Example Pty Ltd"), ("scenario", "EX-RISK-2026/R-02"), ("justification", "Training a second."));
+
+        (await Create(acceptance)).Value();
+
+        Posted("risk-acceptances").ShouldBe(Json(new JsonObject
+        {
+            ["ref_id"] = "ACC-EX-RISK-2026-R-02",
+            ["name"] = "Accept: The only backup administrator leaves",
+            ["description"] = $"[hound scope {State}]",
+            ["folder"] = "f-ex",
+            ["risk_scenarios"] = new JsonArray("rs-2"),
+            ["justification"] = "Training a second.",
+        }));
+    }
+
+    [Fact]
     public async Task Creates_audit_with_groups_actors_and_marker()
     {
         List("frameworks", new JsonObject { ["id"] = "fw-e8", ["urn"] = E8 });

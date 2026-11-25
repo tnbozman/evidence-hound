@@ -23,8 +23,10 @@ public enum ScopeKind
     Assessment,
     Evidence,
     TaskTemplate,
+    SecurityException,
     RiskStudy,
     RiskScenario,
+    RiskAcceptance,
 }
 
 /// <summary>

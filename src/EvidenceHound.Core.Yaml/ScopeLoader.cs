@@ -66,7 +66,7 @@ public static partial class ScopeLoader
 
     public static ScopeParse Parse(
         ScopeSource setup, ScopeSource? controls, IReadOnlyList<ScopeSource> audits, ScopeSource? access = null, ScopeSource? settings = null, IReadOnlyList<ScopeSource>? thirdParties = null,
-        ScopeSource? capabilities = null, ScopeSource? evidencePlan = null, ScopeSource? ssp = null, IReadOnlyList<ScopeSource>? risks = null)
+        ScopeSource? capabilities = null, ScopeSource? evidencePlan = null, ScopeSource? ssp = null, IReadOnlyList<ScopeSource>? risks = null, ScopeSource? exceptions = null)
     {
         ArgumentNullException.ThrowIfNull(setup);
         ArgumentNullException.ThrowIfNull(audits);

@@ -341,6 +341,28 @@ public class PlanTests
         plan.Drift.ShouldHaveSingleItem().Code.ShouldBe("plan.audit_closed");
     }
 
+    [Fact]
+    public void Failed_check_under_approved_exception_names_it_in_observation()
+    {
+        // s15-03: an approved, unexpired security exception covers the requirement, so the observation says so; the result stands.
+        var covered = Row("EX-1.1") with { Exceptions = [new RowWaiver("EXC-01", "Legacy finance app without MFA", "approved", new DateOnly(2027, 3, 31))] };
+        var state = new CurrentState([new CurrentAudit(Target.ComplianceAssessmentRefId, [], [covered])], [], []) { Today = new DateOnly(2026, 11, 25) };
+
+        var update = Changes([Requirement("EX-1.1", ComplianceResult.NonCompliant)], [], [], state, Run1).Updates.OfType<AuditUpdate.UpdateRequirementAssessment>().ShouldHaveSingleItem();
+
+        update.Result.ShouldBe(ComplianceResult.NonCompliant);
+        update.Observation.ShouldContain("security exception EXC-01 (Legacy finance app without MFA), approved until 2027-03-31");
+
+        var passing = Changes([Requirement("EX-1.1", ComplianceResult.Compliant)], [], [], state, Run1).Updates.OfType<AuditUpdate.UpdateRequirementAssessment>().Single();
+        passing.Observation.ShouldNotContain("EXC-01", customMessage: "a passing check needs no exception");
+        var expired = state with { Today = new DateOnly(2027, 4, 1) };
+        Changes([Requirement("EX-1.1", ComplianceResult.NonCompliant)], [], [], expired, Run1).Updates.OfType<AuditUpdate.UpdateRequirementAssessment>().Single()
+            .Observation.ShouldNotContain("EXC-01", customMessage: "an expired exception covers nothing");
+        var draft = new CurrentState([new CurrentAudit(Target.ComplianceAssessmentRefId, [], [covered with { Exceptions = [covered.Exceptions[0] with { Status = "draft" }] }])], [], []);
+        Changes([Requirement("EX-1.1", ComplianceResult.NonCompliant)], [], [], draft, Run1).Updates.OfType<AuditUpdate.UpdateRequirementAssessment>().Single()
+            .Observation.ShouldNotContain("EXC-01", customMessage: "only an approved exception counts");
+    }
+
     private static readonly string Run1 = "20261120T020000Z";
     private static readonly string Run2 = "20261121T020000Z";
 
