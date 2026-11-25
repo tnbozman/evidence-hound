@@ -50,6 +50,9 @@ internal sealed partial class ScopeWriter(HttpClient http, ICisoAssistantClient 
         ScopeKind.RiskScenario => RiskScenarioAsync(write, cancellationToken),
         ScopeKind.SecurityException => SecurityExceptionAsync(write, folders, cancellationToken),
         ScopeKind.RiskAcceptance => RiskAcceptanceAsync(write, folders, cancellationToken),
+        ScopeKind.Bia => BiaAsync(write, folders, cancellationToken),
+        ScopeKind.AssetAssessment => AssetAssessmentAsync(write, cancellationToken),
+        ScopeKind.EscalationThreshold => EscalationThresholdAsync(write, cancellationToken),
         var kind => Task.FromResult(Result.Fail<Unit>(new Problem("scope.kind_not_applied", $"This version of hound does not write {kind.ToString().ToLowerInvariant()}s yet."))),
     };
 
@@ -127,6 +130,17 @@ internal sealed partial class ScopeWriter(HttpClient http, ICisoAssistantClient 
                     ["filtering_labels"] = Labelled(declared, write.Change) ? resolved[3].DeepClone() : null,
                 };
                 Drop(body, "ref_id", "filtering_labels");
+                var (security, recovery) = Objectives(declared);
+                if (Field(declared, "objectives") is not null || write.Change.Fields.Any(f => f.Field == "objectives"))
+                {
+                    body["security_objectives"] = security;
+                }
+
+                if (Field(declared, "recovery") is not null || write.Change.Fields.Any(f => f.Field == "recovery"))
+                {
+                    body["disaster_recovery_objectives"] = recovery;
+                }
+
                 return write.Change.Action == ScopeAction.Create
                     ? await SendAsync(HttpMethod.Post, "assets/", body, $"to create system {declared.Key}", cancellationToken)
                     : await UpdateAsync("assets", existing, body, write, cancellationToken);

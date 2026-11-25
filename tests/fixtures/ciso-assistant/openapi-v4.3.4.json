@@ -2092,6 +2092,59 @@
       "delete": {
         "operationId": "risk_acceptances_destroy"
       }
+    },
+    "/api/business-impact-analysis/": {
+      "get": {
+        "operationId": "business_impact_analysis_list"
+      },
+      "post": {
+        "operationId": "business_impact_analysis_create"
+      }
+    },
+    "/api/business-impact-analysis/{id}/": {
+      "patch": {
+        "operationId": "business_impact_analysis_partial_update"
+      },
+      "delete": {
+        "operationId": "business_impact_analysis_destroy"
+      }
+    },
+    "/api/asset-assessments/": {
+      "get": {
+        "operationId": "asset_assessments_list"
+      },
+      "post": {
+        "operationId": "asset_assessments_create"
+      }
+    },
+    "/api/asset-assessments/{id}/": {
+      "patch": {
+        "operationId": "asset_assessments_partial_update"
+      },
+      "delete": {
+        "operationId": "asset_assessments_destroy"
+      }
+    },
+    "/api/escalation-thresholds/": {
+      "get": {
+        "operationId": "escalation_thresholds_list"
+      },
+      "post": {
+        "operationId": "escalation_thresholds_create"
+      }
+    },
+    "/api/escalation-thresholds/{id}/": {
+      "patch": {
+        "operationId": "escalation_thresholds_partial_update"
+      },
+      "delete": {
+        "operationId": "escalation_thresholds_destroy"
+      }
+    },
+    "/api/terminologies/": {
+      "get": {
+        "operationId": "terminologies_list"
+      }
     }
   }
 }
