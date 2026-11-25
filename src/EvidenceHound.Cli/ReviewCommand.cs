@@ -68,10 +68,11 @@ internal static class ReviewCommand
                 problems => Task.FromResult(Log.Problems(logger, problems)));
         });
         var forTime = new Option<string>("--for") { Description = "How long you have, such as 60m or 2h. The session takes the most urgent items that fit.", DefaultValueFactory = _ => "60m" };
+        var only = new Option<string[]>("--only") { Description = "Ask only this item, by its key from hound review pending --json, once you have talked it through with your agent. Repeat for more." };
         var noApply = new Option<bool>("--no-apply") { Description = "Stop once the accepted items are written to the repo's files; do not plan or apply them to CISO Assistant." };
         var review = new Command("review", "One guided session: read each item that waits on you, with the agent's recommendation, then accept, challenge or skip it. Accepted items are written and applied in one batch. Needs a person at a terminal.")
         {
-            repo, config, forTime, noApply, pending, recommend,
+            repo, config, forTime, only, noApply, pending, recommend,
         };
         review.SetAction(async (parseResult, cancellationToken) =>
         {
@@ -88,7 +89,10 @@ internal static class ReviewCommand
 
             var root = parseResult.GetValue(repo)?.FullName ?? Directory.GetCurrentDirectory();
             var deployment = parseResult.GetValue(config) ?? new FileInfo(Path.Combine(root, "hound.yaml"));
-            var session = new Session(root, deployment, terminal, registry, AuditSeries.Today(configuration), new SystemClock(), configuration);
+            var session = new Session(root, deployment, terminal, registry, AuditSeries.Today(configuration), new SystemClock(), configuration)
+            {
+                Only = [.. parseResult.GetValue(only) ?? []],
+            };
             var done = await session.RunAsync(minutes, cancellationToken);
             if (done is Result<Unit>.Fail { Errors: var problems })
             {
@@ -200,6 +204,15 @@ internal static class ReviewCommand
     private static string Json(IReadOnlyList<ReviewItem> items) => new JsonObject
     {
         ["minutes"] = items.Sum(i => i.Minutes),
+        ["high"] = items.Count(i => ReviewOrder.Risk(i) == "high"),
+        ["summary"] = new JsonArray([.. ReviewOrder.Summary(items).Select(g => (JsonNode)new JsonObject
+        {
+            ["kind"] = ReviewOrder.Code(g.Kind),
+            ["recommendation"] = g.Recommendation,
+            ["count"] = g.Count,
+            ["minutes"] = g.Minutes,
+            ["high"] = g.High,
+        })]),
         ["items"] = new JsonArray([.. items.Select(i => (JsonNode)new JsonObject
         {
             ["kind"] = ReviewOrder.Code(i.Kind),
@@ -208,6 +221,7 @@ internal static class ReviewCommand
             ["why"] = i.Why,
             ["effect"] = i.Effect,
             ["minutes"] = i.Minutes,
+            ["risk"] = ReviewOrder.Risk(i),
             ["deadline"] = i.Deadline?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
             ["file"] = i.File,
             ["recommendation"] = i.Recommendation is { } r
@@ -242,6 +256,11 @@ internal static class ReviewCommand
 
         public IReadOnlyList<string> Accepted => [.. _answers.Keys];
 
+        /// <summary>The keys the person named with <c>--only</c>: just these are asked. Empty: the whole queue, as time allows.</summary>
+        public IReadOnlyList<string> Only { get; init; } = [];
+
+        public bool Wanted(string key) => Only.Count == 0 || Only.Contains(key);
+
         public async Task<Result<Unit>> RunAsync(int minutes, CancellationToken cancellationToken)
         {
             _recommendations = await Recommendations.ReadAsync(repo, cancellationToken);
@@ -252,6 +271,14 @@ internal static class ReviewCommand
             }
 
             var all = queue.Match(q => q, _ => []);
+            if (Only.FirstOrDefault(k => all.All(i => i.Key != k)) is { } unknown)
+            {
+                return Result.Fail<Unit>(new Problem(
+                    "review.item_unknown",
+                    $"'{unknown}' is not waiting on a person. Nearest: {string.Join(", ", ReviewOrder.Nearest(all.Select(i => i.Key), unknown))}. List them all with hound review pending --json."));
+            }
+
+            all = [.. all.Where(i => Wanted(i.Key))];
             if (all.Count == 0)
             {
                 await terminal.Output.WriteLineAsync("Nothing is waiting on you.".AsMemory(), cancellationToken);
@@ -418,7 +445,7 @@ internal static class ReviewCommand
 
         public async Task<ApproveCommand.Verdict> DecideAsync(ReviewItem item, string question, string[] answers, CancellationToken cancellationToken)
         {
-            if (!session.Decided(item.Key) && !session.Quit && ReviewOrder.Ready(item, session.Today))
+            if (!session.Decided(item.Key) && !session.Quit && session.Wanted(item.Key) && ReviewOrder.Ready(item, session.Today))
             {
                 await session.AskAsync(item, "[now ready]", cancellationToken);
             }
