@@ -1,6 +1,6 @@
 # s18 Agent speed: fewer steps, faster runs
 
-Status: In progress
+Status: Done
 
 Release: 2
 
@@ -266,3 +266,20 @@ Notes:
 - **s18-D5 `ScopeTestInstance` repeats helpers of `ScopePlanCommandTests`.** Fold them together when either changes next.
 
 ## Sprint review
+
+**2026-11-25.** The agent now learns the week from one read-only command and prepares it in one more. `hound next --json` lists the
+review queue, failed or overdue collectors, manual sources due, expiring exceptions and acceptances, unapplied scope changes and the
+CISO Assistant connection, most urgent first, each with its command, skill and minutes (s18-01). `hound review prepare` refreshes the
+queue, names each item still without a recommendation and the skill that drafts it, and saves the scope plan the person's `hound review`
+session applies; a plan older than what CISO Assistant now holds is refused (s18-02). Every feature up to s17 has a skill, and
+`AgentFilesTests` fails when a skill or guide names a command, option or skill that does not exist (s18-03). `hound scope plan` reads
+each list once, guarded by a request budget with a reason for every read, and `hound run --parallel` (default 4) collects independent
+collectors together and still publishes in config order (s18-04). `hound status --json` gives the deployment's health (s18-05).
+`hound init` writes an organisation audit only with `--organisation-audit`, for an organisation-wide source; otherwise the setup names
+the audit series and each system's audit joins it, its target added when the person approves it (s18-08). Each review-queue warning
+says why for its own kind (s18-07). The week's agent work fell from five or more commands joined by hand to three (s18-06).
+
+Functional results, CI run 570: the functional job took 28 minutes 46 seconds with `NextFunctionalTests` (`hound next`, `hound status
+--json` and `hound review prepare` against the local CISO Assistant) passing, and the trial ran unattended twice, the second run
+skipping finished steps and planning nothing new. The unit suite has 2193 tests. s19 was replanned at the maintainer's request as a
+principal engineer and CISO review, with the document generators as a droppable part B.
