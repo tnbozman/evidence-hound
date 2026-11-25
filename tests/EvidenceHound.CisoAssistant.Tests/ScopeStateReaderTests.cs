@@ -475,16 +475,16 @@ public sealed class ScopeStateReaderTests : IDisposable
             ["target"] = "95",
             ["expression"] = "covered / total * 100",
             ["inputs"] = "covered=EX-MET-COV sum, total=urn:example:metric:staff one",
-        });
+        }, ignoreOrder: true);
         held[(ScopeKind.MetricDefinition, "EX-MET-MFA")].AppliedState.ShouldBe(Fingerprint);
         held[(ScopeKind.MetricDefinition, "EX-MET-COV")].Held.Fields.ShouldBe(new Dictionary<string, string>
         {
             ["name"] = "Accounts with MFA", ["domain"] = "Example Pty Ltd", ["unit"] = "users", ["direction"] = "none",
-        });
+        }, ignoreOrder: true);
         held[(ScopeKind.MetricDefinition, "EX-MET-POL")].Held.Fields.ShouldBe(new Dictionary<string, string>
         {
             ["name"] = "Policy maturity", ["levels"] = "Missing, Drafted, Approved", ["direction"] = "higher_is_better", ["target"] = "Approved",
-        });
+        }, ignoreOrder: true);
         held[(ScopeKind.MetricInstance, "EX-MET-MFA-CORP")].Held.Fields.ShouldBe(new Dictionary<string, string>
         {
             ["name"] = "MFA coverage",
@@ -495,14 +495,14 @@ public sealed class ScopeStateReaderTests : IDisposable
             ["target"] = "95",
             ["owners"] = "it@example.com",
             ["controls"] = "AC-MFA",
-        });
+        }, ignoreOrder: true);
         held[(ScopeKind.MetricInstance, "EX-MET-POL-CORP")].Held.Fields["target"].ShouldBe("Drafted");
-        held[(ScopeKind.Dashboard, "EX-DASH")].Held.Fields.ShouldBe(new Dictionary<string, string> { ["name"] = "Security committee", ["domain"] = "Example Pty Ltd" });
+        held[(ScopeKind.Dashboard, "EX-DASH")].Held.Fields.ShouldBe(new Dictionary<string, string> { ["name"] = "Security committee", ["domain"] = "Example Pty Ltd" }, ignoreOrder: true);
         held[(ScopeKind.DashboardWidget, "EX-DASH/MFA coverage")].Held.Fields.ShouldBe(new Dictionary<string, string>
         {
             ["dashboard"] = "EX-DASH", ["title"] = "MFA coverage", ["metric"] = "EX-MET-MFA-CORP", ["chart"] = "line", ["time_range"] = "last_year",
             ["aggregation"] = "none", ["position"] = "0, 0, 6, 2",
-        });
+        }, ignoreOrder: true);
         held[(ScopeKind.DashboardWidget, "EX-DASH/E8 progress")].Held.Fields["builtin"].ShouldBe("audit EX-E8-2026 progress");
     }
 

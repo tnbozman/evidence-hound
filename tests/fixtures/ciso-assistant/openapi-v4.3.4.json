@@ -2043,6 +2043,70 @@
         "operationId": "entity_assessments_list"
       }
     },
+    "/api/metrology/metric-definitions/": {
+      "get": {
+        "operationId": "metrology_metric_definitions_list"
+      },
+      "post": {
+        "operationId": "metrology_metric_definitions_create"
+      }
+    },
+    "/api/metrology/metric-definitions/{id}/": {
+      "patch": {
+        "operationId": "metrology_metric_definitions_partial_update"
+      },
+      "delete": {
+        "operationId": "metrology_metric_definitions_destroy"
+      }
+    },
+    "/api/metrology/metric-instances/": {
+      "get": {
+        "operationId": "metrology_metric_instances_list"
+      },
+      "post": {
+        "operationId": "metrology_metric_instances_create"
+      }
+    },
+    "/api/metrology/metric-instances/{id}/": {
+      "patch": {
+        "operationId": "metrology_metric_instances_partial_update"
+      },
+      "delete": {
+        "operationId": "metrology_metric_instances_destroy"
+      }
+    },
+    "/api/metrology/dashboards/": {
+      "get": {
+        "operationId": "metrology_dashboards_list"
+      },
+      "post": {
+        "operationId": "metrology_dashboards_create"
+      }
+    },
+    "/api/metrology/dashboards/{id}/": {
+      "patch": {
+        "operationId": "metrology_dashboards_partial_update"
+      },
+      "delete": {
+        "operationId": "metrology_dashboards_destroy"
+      }
+    },
+    "/api/metrology/dashboard-widgets/": {
+      "get": {
+        "operationId": "metrology_dashboard_widgets_list"
+      },
+      "post": {
+        "operationId": "metrology_dashboard_widgets_create"
+      }
+    },
+    "/api/metrology/dashboard-widgets/{id}/": {
+      "patch": {
+        "operationId": "metrology_dashboard_widgets_partial_update"
+      },
+      "delete": {
+        "operationId": "metrology_dashboard_widgets_destroy"
+      }
+    },
     "/api/risk-assessments/": {
       "get": {
         "operationId": "risk_assessments_list"

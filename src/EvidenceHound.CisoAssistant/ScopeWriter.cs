@@ -53,6 +53,10 @@ internal sealed partial class ScopeWriter(HttpClient http, ICisoAssistantClient 
         ScopeKind.Bia => BiaAsync(write, folders, cancellationToken),
         ScopeKind.AssetAssessment => AssetAssessmentAsync(write, cancellationToken),
         ScopeKind.EscalationThreshold => EscalationThresholdAsync(write, cancellationToken),
+        ScopeKind.MetricDefinition => MetricDefinitionAsync(write, folders, cancellationToken),
+        ScopeKind.MetricInstance => MetricInstanceAsync(write, folders, cancellationToken),
+        ScopeKind.Dashboard => DashboardAsync(write, folders, cancellationToken),
+        ScopeKind.DashboardWidget => DashboardWidgetAsync(write, folders, cancellationToken),
         var kind => Task.FromResult(Result.Fail<Unit>(new Problem("scope.kind_not_applied", $"This version of hound does not write {kind.ToString().ToLowerInvariant()}s yet."))),
     };
 
