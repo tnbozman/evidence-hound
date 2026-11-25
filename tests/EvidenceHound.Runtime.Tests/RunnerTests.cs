@@ -136,6 +136,40 @@ public sealed class RunnerTests : IDisposable
     }
 
     [Fact]
+    public async Task A_collector_whose_every_check_errors_fails_and_says_why()
+    {
+        var unauthorised = new StubCollector(context => Result.Ok(new CollectionResult(
+        [
+            CheckResult.Create(Id("identity.mfa.admins"), CheckOutcome.Error, "The API refused the credentials (401).", [], context.Clock.UtcNow, context.Name).Value(),
+            CheckResult.Create(Id("backup.daily"), CheckOutcome.Error, "The API refused the credentials (401).", [], context.Clock.UtcNow, context.Name).Value(),
+        ], [], [])));
+
+        var summary = await Runner(new() { ["idp"] = unauthorised }).RunAsync([Instance("one", "idp")], new RunOptions(), TestContext.Current.CancellationToken);
+
+        var collector = summary.Collectors.Single();
+        collector.Outcome.ShouldBe(CollectorOutcome.Failed);
+        var problem = collector.Problems.ShouldHaveSingleItem();
+        problem.Code.ShouldBe("collector.all_checks_errored");
+        problem.Message.ShouldContain("2 checks");
+        problem.Message.ShouldContain("401");
+        collector.Record!.Outcome.ShouldBe(CollectorOutcome.Failed);
+    }
+
+    [Fact]
+    public async Task A_collector_with_some_checks_erroring_still_succeeds()
+    {
+        var mixed = new StubCollector(context => Result.Ok(new CollectionResult(
+        [
+            CheckResult.Create(Id("identity.mfa.admins"), CheckOutcome.Pass, "ok", ["admins.json"], context.Clock.UtcNow, context.Name).Value(),
+            CheckResult.Create(Id("backup.daily"), CheckOutcome.Error, "The backup API timed out.", [], context.Clock.UtcNow, context.Name).Value(),
+        ], [CollectedEvidence.FromBytes("admins.json", "application/json", Encoding.UTF8.GetBytes("{}"))], [])));
+
+        var summary = await Runner(new() { ["idp"] = mixed }).RunAsync([Instance("one", "idp")], new RunOptions(), TestContext.Current.CancellationToken);
+
+        summary.Collectors.Single().Outcome.ShouldBe(CollectorOutcome.Succeeded);
+    }
+
+    [Fact]
     public async Task Exit_code_reflects_worst_outcome()
     {
         var ok = await Runner(new() { ["idp"] = Reporting("identity.mfa.admins", "admins.json") })
