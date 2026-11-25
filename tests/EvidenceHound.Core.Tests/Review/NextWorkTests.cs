@@ -92,6 +92,16 @@ public class NextWorkTests
     }
 
     [Fact]
+    public void Each_kind_of_work_names_the_skill_for_it()
+    {
+        // s18-03: an expiring exception is renewed or closed with the exceptions skill; a missing flow-down clause with the flow-down skill.
+        NextWork.Exception(new ExceptionNote("exception.expiring", "security exception", "EXC-01", "Legacy app", "approved", "2026-12-20", "Renew or close it."), Today)
+            .Skill.ShouldBe("keep-exceptions-and-acceptances");
+        ReviewOrder.Skill(new ReviewItem(ReviewKind.Finding, "finding:contract.flow_down_missing/sup-example.yaml:12", "t", "w", "e", 2)).ShouldBe("flow-down-to-suppliers");
+        ReviewOrder.Skill(new ReviewItem(ReviewKind.Finding, "finding:sensitive_data.unapproved/setup.yaml:4", "t", "w", "e", 2)).ShouldBe("weekly-review");
+    }
+
+    [Fact]
     public void Nothing_to_apply_is_not_listed()
     {
         NextWork.Scope(0, 0).ShouldBeNull();
