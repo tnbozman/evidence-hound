@@ -293,4 +293,8 @@ LOG
   run trial_audit_reading EX-EMPTY-2026 0 0 0 0 5 0
   [ "$status" -eq 0 ]
   [[ "$output" == "EX-EMPTY-2026: CISO Assistant reads no percentage"* ]]
+  # An audit with no rows at all was not read: the check must not pass on nothing.
+  run trial_audit_reading EX-NONE-2026 0 0 0 0 0 0
+  [ "$status" -ne 0 ]
+  [[ "$output" == "EX-NONE-2026: no rows were read"* ]]
 }
