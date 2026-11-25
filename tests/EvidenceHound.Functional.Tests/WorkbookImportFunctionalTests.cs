@@ -20,13 +20,7 @@ public sealed class WorkbookImportFunctionalTests(CisoAssistantFixture ciso) : I
     public async Task An_imported_workbook_validates_and_the_plan_shows_each_row_with_its_provenance()
     {
         var ct = TestContext.Current.CancellationToken;
-        var example = Path.Combine(CisoAssistantFixture.RepoRoot, "examples", "compliance-repo");
-        foreach (var file in Directory.GetFiles(example, "*", SearchOption.AllDirectories))
-        {
-            var copy = Path.Combine(_repo, Path.GetRelativePath(example, file));
-            Directory.CreateDirectory(Path.GetDirectoryName(copy)!);
-            File.Copy(file, copy);
-        }
+        TestRepo.CopyExample(_repo);
 
         var config = Path.Combine(_repo, "hound.yaml");
         var scope = Path.Combine(_repo, "scope");

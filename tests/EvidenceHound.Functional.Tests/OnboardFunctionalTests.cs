@@ -45,13 +45,7 @@ public sealed class OnboardFunctionalTests(CisoAssistantFixture ciso) : IDisposa
     public async Task An_onboarded_system_plans_and_applies_and_reapply_writes_nothing()
     {
         var ct = TestContext.Current.CancellationToken;
-        var example = Path.Combine(CisoAssistantFixture.RepoRoot, "examples", "compliance-repo");
-        foreach (var file in Directory.GetFiles(example, "*", SearchOption.AllDirectories))
-        {
-            var copy = Path.Combine(_repo, Path.GetRelativePath(example, file));
-            Directory.CreateDirectory(Path.GetDirectoryName(copy)!);
-            File.Copy(file, copy);
-        }
+        TestRepo.CopyExample(_repo);
 
         var thirdParties = Directory.CreateDirectory(Path.Combine(_repo, "scope", "third-parties")).FullName;
         await File.WriteAllTextAsync(Path.Combine(thirdParties, "sup-ft-assets.yaml"), Supplier, ct);

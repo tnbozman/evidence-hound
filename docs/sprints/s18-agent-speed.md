@@ -101,8 +101,8 @@ hold the instance.
 **Story:** As the agent, I want collector and integration health as JSON, so that I can tell the person what is broken without a console.
 
 **Acceptance criteria**
-- `hound status --json`: each collector's latest run, failures and checks; CISO Assistant reachable, token expiry, recent rejected
-  publishes; manual sources due and overdue. `hound next` uses the same data.
+- `hound status --json` (added in s16-07 with collectors, their problems, audits, standing and exceptions due) gains each collector's
+  checks; CISO Assistant reachable, token expiry, recent rejected publishes; manual sources due and overdue. `hound next` uses the same data.
 - No evidence content is ever returned.
 
 **Tests first**

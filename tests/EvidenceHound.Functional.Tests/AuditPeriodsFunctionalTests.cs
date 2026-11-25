@@ -83,13 +83,7 @@ public sealed class AuditPeriodsFunctionalTests(CisoAssistantFixture ciso) : IDi
     /// <summary>A copy of the example compliance repo with one more audit, a quarterly series, and a deployment config that targets it.</summary>
     private async Task WriteRepoAsync(CancellationToken ct)
     {
-        var example = Path.Combine(CisoAssistantFixture.RepoRoot, "examples", "compliance-repo");
-        foreach (var file in Directory.GetFiles(example, "*", SearchOption.AllDirectories))
-        {
-            var copy = Path.Combine(_repo, Path.GetRelativePath(example, file));
-            Directory.CreateDirectory(Path.GetDirectoryName(copy)!);
-            File.Copy(file, copy);
-        }
+        TestRepo.CopyExample(_repo);
 
         await File.WriteAllTextAsync(Path.Combine(Scope, "audits", "ex-period.yaml"), Series.TrimStart() + "\n", ct);
         var files = Path.Combine(AppContext.BaseDirectory, "files");

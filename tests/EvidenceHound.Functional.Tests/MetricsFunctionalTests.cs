@@ -71,7 +71,7 @@ public sealed class MetricsFunctionalTests(CisoAssistantFixture ciso) : IDisposa
     public async Task Metrics_and_a_dashboard_are_applied_and_a_second_plan_changes_nothing()
     {
         var ct = TestContext.Current.CancellationToken;
-        await CopyExampleRepoAsync(ct);
+        TestRepo.CopyExample(_repo);
         await File.WriteAllTextAsync(Path.Combine(Scope, "metrics.yaml"), Metrics, ct);
 
         var validated = await StepAsync("1-validate", ["scope", "validate", Scope], ct);
@@ -121,7 +121,7 @@ public sealed class MetricsFunctionalTests(CisoAssistantFixture ciso) : IDisposa
     {
         // s16-03: backup.* checks passing, measured by each run. The fake collector passes both, then (with its fail setting) fails one.
         var ct = TestContext.Current.CancellationToken;
-        await CopyExampleRepoAsync(ct);
+        TestRepo.CopyExample(_repo);
         await File.WriteAllTextAsync(Path.Combine(Scope, "metrics.yaml"), """
             definitions:
               - {ref_id: EX-FMET-BACKUP, name: Backup checks passing (functional test), unit: percentage, direction: higher_is_better, frequency: monthly, target: 100}
@@ -140,15 +140,15 @@ public sealed class MetricsFunctionalTests(CisoAssistantFixture ciso) : IDisposa
         string Day(int day) => new DateOnly(month.Year, month.Month, day).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
         var period = new DateOnly(month.Year, month.Month, 1).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
 
-        var first = await StepAsync("runs-2-run-day-3", ["run", "--config", await ConfigAsync(fail: null, ct)], ct, today: Day(3));
+        var first = await StepAsync("runs-2-run-day-3", ["run", "--config", await TestRepo.ExampleDeploymentAsync(_repo, fail: null, ct)], ct, today: Day(3));
         first.Exit.ShouldBe(ExitCodes.Ok, first.Output + first.Error);
         Recorded(first.Output).ShouldBe([("EX-FMET-BACKUP-CORP", $"{period}T00:00:00Z", 100.0)], first.Output);
 
-        var second = await StepAsync("runs-3-run-day-20", ["run", "--config", await ConfigAsync(fail: "backup.daily", ct)], ct, today: Day(20));
+        var second = await StepAsync("runs-3-run-day-20", ["run", "--config", await TestRepo.ExampleDeploymentAsync(_repo, fail: "backup.daily", ct)], ct, today: Day(20));
         second.Exit.ShouldBe(ExitCodes.Ok, second.Output + second.Error);
         Recorded(second.Output).ShouldBe([("EX-FMET-BACKUP-CORP", $"{period}T00:00:00Z", 50.0)], second.Output);
 
-        var unchanged = await StepAsync("runs-4-run-day-21", ["run", "--config", await ConfigAsync(fail: "backup.daily", ct)], ct, today: Day(21));
+        var unchanged = await StepAsync("runs-4-run-day-21", ["run", "--config", await TestRepo.ExampleDeploymentAsync(_repo, fail: "backup.daily", ct)], ct, today: Day(21));
         Recorded(unchanged.Output).ShouldBeEmpty(unchanged.Output);
 
         var instance = ByRef(await ListAsync("metrology/metric-instances/", ct), "EX-FMET-BACKUP-CORP");
@@ -166,21 +166,6 @@ public sealed class MetricsFunctionalTests(CisoAssistantFixture ciso) : IDisposa
             .Select(m => (m!["instance"]!.GetValue<string>(), m["period_start"]!.GetValue<string>(), m["value"]!.GetValue<double>()))
             .Where(m => m.Item1.StartsWith("EX-FMET-", StringComparison.Ordinal))];
 
-    /// <summary>The example deployment, with its scope, its evidence under the test's repo, and the fake collector's fail setting.</summary>
-    private async Task<string> ConfigAsync(string? fail, CancellationToken ct)
-    {
-        var files = Path.Combine(AppContext.BaseDirectory, "files");
-        var config = Path.Combine(_repo, "hound-test.yaml");
-        var text = (await File.ReadAllTextAsync(Path.Combine(files, "examples", "example-pty-ltd.yaml"), ct))
-            .Replace("root: ../.dev/evidence", $"root: {Path.Combine(_repo, "evidence")}", StringComparison.Ordinal)
-            .Replace("mapping: ../mappings/example.yaml", $"mapping: {Path.Combine(files, "mappings", "example.yaml")}", StringComparison.Ordinal)
-            .Replace("      tenant: example.com\n", fail is null ? "      tenant: example.com\n" : $"      tenant: example.com\n      fail: {fail}\n", StringComparison.Ordinal);
-        await File.WriteAllTextAsync(config, $"scope: {Scope}\n{text}", ct);
-
-        // Each run needs its own second: evidence folders and run IDs are named by the start time.
-        await Task.Delay(TimeSpan.FromSeconds(1.1), ct);
-        return config;
-    }
 
     private static (string Kind, string Key)[] MetricChanges(string planJson) =>
         [.. JsonNode.Parse(planJson)!["changes"]!.AsArray()
@@ -191,18 +176,6 @@ public sealed class MetricsFunctionalTests(CisoAssistantFixture ciso) : IDisposa
 
     private static JsonNode ByRef(IEnumerable<JsonNode> items, string refId) => items.Single(i => i["ref_id"]?.GetValue<string>() == refId);
 
-    private async Task CopyExampleRepoAsync(CancellationToken ct)
-    {
-        var example = Path.Combine(CisoAssistantFixture.RepoRoot, "examples", "compliance-repo");
-        foreach (var file in Directory.GetFiles(example, "*", SearchOption.AllDirectories))
-        {
-            var copy = Path.Combine(_repo, Path.GetRelativePath(example, file));
-            Directory.CreateDirectory(Path.GetDirectoryName(copy)!);
-            await using var source = File.OpenRead(file);
-            await using var target = File.Create(copy);
-            await source.CopyToAsync(target, ct);
-        }
-    }
 
     private async Task<(int Exit, string Output, string Error)> StepAsync(string name, string[] args, CancellationToken ct, string? today = null)
     {

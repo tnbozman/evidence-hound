@@ -64,13 +64,7 @@ public sealed class IncidentFunctionalTests(CisoAssistantFixture ciso) : IDispos
 
     private void CopyExampleRepo()
     {
-        var example = Path.Combine(CisoAssistantFixture.RepoRoot, "examples", "compliance-repo");
-        foreach (var file in Directory.GetFiles(example, "*", SearchOption.AllDirectories))
-        {
-            var copy = Path.Combine(_repo, Path.GetRelativePath(example, file));
-            Directory.CreateDirectory(Path.GetDirectoryName(copy)!);
-            File.Copy(file, copy);
-        }
+        TestRepo.CopyExample(_repo);
     }
 
     private async Task<(int Exit, string Output, string Error)> StepAsync(string name, string[] args, CancellationToken ct)

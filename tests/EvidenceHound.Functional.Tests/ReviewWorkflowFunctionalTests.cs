@@ -20,15 +20,9 @@ public sealed class ReviewWorkflowFunctionalTests(CisoAssistantFixture ciso) : I
     public async Task Changing_a_system_owner_validates_plans_one_update_and_applies_it()
     {
         var ct = TestContext.Current.CancellationToken;
-        var example = Path.Combine(CisoAssistantFixture.RepoRoot, "examples", "compliance-repo");
-        foreach (var file in Directory.GetFiles(example, "*", SearchOption.AllDirectories))
-        {
-            var copy = Path.Combine(_repo, Path.GetRelativePath(example, file));
-            Directory.CreateDirectory(Path.GetDirectoryName(copy)!);
-            File.Copy(file, copy);
-        }
+        TestRepo.CopyExample(_repo);
 
-        var restore = new[] { "scope", "apply", CisoAssistantFixture.ExampleScope, "--config", Path.Combine(example, "hound.yaml") };
+        var restore = new[] { "scope", "apply", CisoAssistantFixture.ExampleScope, "--config", Path.Combine(CisoAssistantFixture.RepoRoot, "examples", "compliance-repo", "hound.yaml") };
         var (startExit, started) = await StepAsync("0-start-from-reviewed-state", restore, ct);
         startExit.ShouldBe(ExitCodes.Ok, started);
 

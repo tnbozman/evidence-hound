@@ -24,13 +24,7 @@ public sealed class AgentOnboardingFunctionalTests(CisoAssistantFixture ciso) : 
     public async Task An_agent_drafts_a_person_approves_on_a_terminal_and_one_apply_writes_the_supplier_its_conclusion_and_the_system()
     {
         var ct = TestContext.Current.CancellationToken;
-        var example = Path.Combine(CisoAssistantFixture.RepoRoot, "examples", "compliance-repo");
-        foreach (var file in Directory.GetFiles(example, "*", SearchOption.AllDirectories))
-        {
-            var copy = Path.Combine(_repo, Path.GetRelativePath(example, file));
-            Directory.CreateDirectory(Path.GetDirectoryName(copy)!);
-            File.Copy(file, copy);
-        }
+        TestRepo.CopyExample(_repo);
 
         var config = Path.Combine(_repo, "hound.yaml");
         var scope = Path.Combine(_repo, "scope");

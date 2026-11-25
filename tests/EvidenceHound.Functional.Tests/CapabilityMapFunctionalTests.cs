@@ -27,13 +27,7 @@ public sealed class CapabilityMapFunctionalTests(CisoAssistantFixture ciso) : ID
     public async Task Application_control_from_a_third_party_stays_open_on_microsoft_365_as_a_dependency_and_the_gap_is_listed()
     {
         var ct = TestContext.Current.CancellationToken;
-        var example = Path.Combine(CisoAssistantFixture.RepoRoot, "examples", "compliance-repo");
-        foreach (var file in Directory.GetFiles(example, "*", SearchOption.AllDirectories))
-        {
-            var copy = Path.Combine(_repo, Path.GetRelativePath(example, file));
-            Directory.CreateDirectory(Path.GetDirectoryName(copy)!);
-            File.Copy(file, copy);
-        }
+        TestRepo.CopyExample(_repo);
 
         await File.WriteAllTextAsync(Path.Combine(_repo, "signals.json"), Signals, ct);
         var (onboardExit, onboarded) = await StepAsync(
