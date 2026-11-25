@@ -42,7 +42,9 @@ public sealed class RiskRecoveryChecksFunctionalTests(CisoAssistantFixture ciso)
             .Where(HasRto)
             .Select(a => a["id"]!.GetValue<string>())
             .ToHashSet(StringComparer.Ordinal);
-        critical.ShouldNotBeEmpty("Example 365 has a recovery time objective in the example scope");
+        critical.ShouldNotBeEmpty(
+            "Example 365 has a recovery time objective in the example scope; the list holds "
+            + string.Join("; ", assets.Where(a => a["ref_id"]?.ToString() == "SYS-365").Select(a => a["disaster_recovery_objectives"]?.ToJsonString() ?? "nothing")));
         var assessed = assessments.Where(a => Id(a["asset"]) is { } asset && critical.Contains(asset)).ToList();
         assessed.ShouldNotBeEmpty("the example business impact analysis assesses Example 365");
         var tested = assessed.Count(a => a["recovery_tested"]!.GetValue<bool>());
