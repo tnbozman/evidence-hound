@@ -23,11 +23,11 @@ public sealed class MappingCoverageCommandTests : IDisposable
 
         exitCode.ShouldBe(ExitCodes.Ok);
         var text = _output.ToString();
-        text.ShouldContain("| Parent | Group | Automated | Manual | Uncovered |");
+        text.ShouldContain("| Parent | Group | Automated | Manual | Draft | Uncovered |");
         text.ShouldContain("| mfa | 2 |");
         text.ShouldContain("| rb | 1 |");
         text.ShouldNotContain("| ml3");
-        text.ShouldMatch(@"(?s).*Total: \d+ automated, \d+ manual, 0 uncovered.*");
+        text.ShouldMatch(@"(?s).*Total: \d+ automated, \d+ manual, 0 draft, 0 uncovered.*");
     }
 
     [Fact]
@@ -39,7 +39,7 @@ public sealed class MappingCoverageCommandTests : IDisposable
             "--groups", "1,2");
 
         exitCode.ShouldBe(ExitCodes.Ok);
-        _output.ToString().ShouldMatch(@"(?s).*Total: 155 automated, 0 manual, 0 uncovered.*");
+        _output.ToString().ShouldMatch(@"(?s).*Total: 155 automated, 0 manual, 0 draft, 0 uncovered.*");
     }
 
     [Fact]
@@ -73,7 +73,7 @@ public sealed class MappingCoverageCommandTests : IDisposable
 
         exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
         var text = _output.ToString();
-        text.ShouldContain("| Top level | Group | Automated | Manual | Uncovered |");
+        text.ShouldContain("| Top level | Group | Automated | Manual | Draft | Uncovered |");
         text.ShouldContain("| Boundary services | 1 |");
         text.ShouldContain("| Identity services | 1 |");
         text.ShouldContain("| Governance and culture | 1 |");
@@ -82,7 +82,53 @@ public sealed class MappingCoverageCommandTests : IDisposable
         // s14-04: the same principle sits in several domains, so the per-parent table names the domain too.
         text.ShouldContain("| Boundary services / Secure system lifecycle | 1 |");
         text.ShouldContain("| Identity services / Secure system lifecycle | 1 |");
-        text.ShouldMatch(@"(?s).*Total: \d+ automated, \d+ manual, 0 uncovered.*");
+        text.ShouldMatch(@"(?s).*Total: \d+ automated, \d+ manual, 0 draft, 0 uncovered.*");
+    }
+
+    [Fact]
+    public async Task A_derived_mapping_counts_as_draft_until_reviewed()
+    {
+        // s14-03 rehearsal: an all-draft derived mapping read as "22 automated, 33 manual", yet runs publish none of it.
+        var draft = Path.Combine(Path.GetTempPath(), $"hound-coverage-{Guid.NewGuid():N}.yaml");
+        try
+        {
+            (await Run(
+                "mapping", "derive", Repo("mappings", "essential-eight-2023.yaml"),
+                "--from", Repo("frameworks", "essential-eight-2023.json"),
+                "--to", Repo("frameworks", "asd-essentials-enterprise-it.json"),
+                "--links", Repo("frameworks", "mapping-essential-eight-2023-and-asd-essentials-enterprise-it.yaml"),
+                "--groups", "1",
+                "--out", draft)).ShouldBe(ExitCodes.Ok, _error.ToString());
+            _output.GetStringBuilder().Clear();
+
+            var exitCode = await Run("mapping", "coverage", draft, "--framework", Repo("frameworks", "asd-essentials-enterprise-it.json"), "--groups", "1");
+
+            exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+            _output.ToString().ShouldMatch(@"(?s).*Total: 0 automated, 0 manual, 55 draft, 38 uncovered.*");
+        }
+        finally
+        {
+            File.Delete(draft);
+        }
+    }
+
+    [Fact]
+    public async Task A_manual_folder_with_no_manual_source_is_reported()
+    {
+        // s14-03 rehearsal: --manual pointed at a folder with no sources, so every attested check counted as automated.
+        var empty = Directory.CreateTempSubdirectory("hound-no-manual-");
+        try
+        {
+            var exitCode = await Run(
+                "mapping", "coverage", Repo("mappings", "disp.yaml"), "--framework", Repo("frameworks", "disp.json"), "--manual", empty.FullName);
+
+            exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+            _logs.Messages.ShouldContain(m => m.Contains("no manual source", StringComparison.Ordinal));
+        }
+        finally
+        {
+            empty.Delete(recursive: true);
+        }
     }
 
     [Fact]
