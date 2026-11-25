@@ -42,6 +42,16 @@ collectors:
       due_days: 31
       owner: Alex Example
 
+  # The incident response plan, approved and tested once a year (a tabletop exercise is enough); docs/incidents.md.
+  - name: example-incident-response-plan
+    type: manual
+    schedule: "0 6 * * *"
+    settings:
+      drop_folder: /var/lib/evidence-hound/manual/example-incident-response-plan
+      checks: incident.response_plan_approved, incident.response_plan_tested
+      due_days: 366
+      owner: Alex Example
+
   - name: example-backup-restore-test
     type: manual
     schedule: "0 6 * * *"

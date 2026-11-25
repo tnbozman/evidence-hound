@@ -19,6 +19,15 @@ evidence:
     every: 3 months
     runbook: manual-sources/backup-restore-test.md
 
+  # Once a year the incident response plan is approved and tested with a tabletop exercise, and the record is sent.
+  - ref_id: EV-IR-PLAN-TEST
+    control: AC-INCIDENT-RESPONSE
+    method: manual
+    collector: example-incident-response-plan
+    owner: IT team
+    every: 12 months
+    runbook: manual-sources/incident-response-test.md
+
   # Once a year the IT team lists every account allowed to sign in without MFA, and why.
   - ref_id: EV-MFA-EXCEPTIONS
     control: AC-MFA

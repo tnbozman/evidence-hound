@@ -151,6 +151,11 @@ file by `scripts/cheatsheet/render.sh`.
 - `hound report board --quarter 2026-Q4`: the quarterly board report from the last four quarter-end snapshots
   - both: `--config` (req) `--out`
 
+### Incidents
+
+- `hound incident obligations INC-2026-01`: each report the incident owes under `scope/reporting.yaml`, due from its discovery, made or overdue
+  - `--config` (req) `--scope --format json`
+
 ## Typical paths
 
 ### Start a repo

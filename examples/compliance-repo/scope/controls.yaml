@@ -22,6 +22,14 @@ controls:
     eta: "2026-12-31"
     systems: [Example backup service, Example 365, Example laptops]
     documents: [backup-procedure]
+  - ref_id: AC-INCIDENT-RESPONSE
+    name: Incident response plan, tested each year
+    description: Incidents are recorded in CISO Assistant and reported on each regulator's clock (scope/reporting.yaml).
+    domain: Example Pty Ltd
+    owner: it@example.com
+    status: to_do
+    priority: "1"
+    category: process
   - ref_id: AC-AUTO-EVIDENCE
     name: Automated evidence collection
     description: Evidence Hound collects evidence on a schedule; each collector's health is linked here.
