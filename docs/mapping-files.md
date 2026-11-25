@@ -91,6 +91,9 @@ Total: 46 automated, 109 manual, 0 draft, 0 uncovered (one per requirement row a
 - **Draft**: only `draft: true` rows answer it, and runs publish none of them until a person reviews the row.
 - **Uncovered**: nothing answers it. Map it to a check or a manual source.
 
+A row marked `covers: part` counts as automated, but its checks answer only part of the requirement (every CMMC row is one), so a line
+under the total says how many, and `--json` gives them as `part`: a person assesses the rest of each in CISO Assistant.
+
 For a framework with more than one level above its requirements, such as the ASD Essentials (domain, then principle, then action), a second table counts per top-level node, so you see each domain and priority phase:
 
 ```console

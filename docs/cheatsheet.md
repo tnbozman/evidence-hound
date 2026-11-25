@@ -123,7 +123,7 @@ file by `scripts/cheatsheet/render.sh`.
 - `hound mapping validate <file>`: check a mapping file
   - `--framework`
 - `hound mapping apply <mapping> <checks>`: map check results to requirements
-- `hound mapping coverage <mapping>`: automated, manual and uncovered counts per parent and group (and per domain for the ASD Essentials)
+- `hound mapping coverage <mapping>`: automated (and how many of those cover only part), manual and uncovered counts per parent and group (and per domain for the ASD Essentials)
   - `--framework --groups --manual --json`
 - `hound mapping derive <mapping>`: draft a new framework's mapping from an old one and a transition mapping (rows `draft: true`; `--force` to replace an existing `--out`)
   - `--from --to --links` (req) `--groups --out`
