@@ -32,7 +32,7 @@ public class BiaScopeTests
               - {after: 1d, impact: Moderate}
         """;
 
-    private static readonly string Setup = ScopeFixture.Setup.Replace(
+    public static readonly string Setup = ScopeFixture.Setup.Replace(
         "        description: Mail, files and identity.\n",
         "        description: Mail, files and identity.\n        objectives: {confidentiality: 3, availability: 2}\n        recovery: {rto: 4h, rpo: 1d, mtd: 3d}\n",
         StringComparison.Ordinal);

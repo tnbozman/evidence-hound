@@ -48,6 +48,9 @@ public class ScopeSchemaTests
         Errors(RiskFixture.Study).ShouldBeEmpty();
         Errors(RiskFixture.Study.Replace("treatment: accept", "treatment: ignore", StringComparison.Ordinal)).ShouldNotBeEmpty();
         Errors(ExceptionScopeTests.Exceptions).ShouldBeEmpty();
+        Errors(BiaScopeTests.Bia).ShouldBeEmpty();
+        Errors(BiaScopeTests.Setup).ShouldBeEmpty();
+        Errors(BiaScopeTests.Bia.Replace("after: 4h", "after: soon", StringComparison.Ordinal)).ShouldNotBeEmpty();
         Errors(ExceptionScopeTests.Exceptions.Replace("    severity: medium", "    severity: medium\n    status: approved", StringComparison.Ordinal)).ShouldNotBeEmpty();
         Errors(SspFixture.Setup).ShouldBeEmpty();
         Errors(SspFixture.Ssp.Replace("profile: ism", "profile: iso27001", StringComparison.Ordinal)).ShouldNotBeEmpty();

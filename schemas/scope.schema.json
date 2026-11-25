@@ -36,9 +36,73 @@
     },
     {
       "$ref": "#/$defs/exceptions"
+    },
+    {
+      "$ref": "#/$defs/bia"
     }
   ],
   "$defs": {
+    "duration": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]*[mhdw]$",
+      "description": "A whole number and a unit: m (minutes), h (hours), d (days) or w (weeks)."
+    },
+    "bia": {
+      "description": "bia/<bia>.yaml (s15-04): one business impact analysis, rated on one risk matrix's impact scale, with one assessment per system.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref_id", "name", "domain", "matrix"],
+      "properties": {
+        "ref_id": { "$ref": "#/$defs/text" },
+        "name": { "$ref": "#/$defs/text" },
+        "description": { "type": "string" },
+        "domain": { "$ref": "#/$defs/text" },
+        "perimeter": { "$ref": "#/$defs/text" },
+        "matrix": { "type": "string", "pattern": "^urn:" },
+        "version": { "$ref": "#/$defs/text" },
+        "status": { "enum": ["planned", "in_progress", "in_review", "done", "deprecated"] },
+        "authors": { "type": "array", "items": { "$ref": "#/$defs/email" } },
+        "reviewers": { "type": "array", "items": { "$ref": "#/$defs/email" } },
+        "due_date": { "$ref": "#/$defs/date" },
+        "assessments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["system"],
+            "properties": {
+              "system": { "$ref": "#/$defs/text" },
+              "dependencies": { "type": "array", "items": { "$ref": "#/$defs/text" } },
+              "controls": { "type": "array", "items": { "$ref": "#/$defs/text" } },
+              "recovery": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "documented": { "enum": ["true", "false", true, false] },
+                  "tested": { "enum": ["true", "false", true, false] },
+                  "targets_met": { "enum": ["true", "false", true, false] }
+                }
+              },
+              "observation": { "type": "string" },
+              "thresholds": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["after", "impact"],
+                  "properties": {
+                    "after": { "$ref": "#/$defs/duration" },
+                    "impact": { "$ref": "#/$defs/text", "description": "An impact level name from the matrix." },
+                    "qualifications": { "type": "array", "items": { "$ref": "#/$defs/text" } },
+                    "justification": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "exceptions": {
       "description": "exceptions.yaml (s15-03): security exceptions requested through the repo. Their status is never declared: an approver sets it in CISO Assistant.",
       "type": "object",
@@ -473,6 +537,21 @@
         },
         "data": {
           "$ref": "#/$defs/sensitiveData"
+        },
+        "objectives": {
+          "description": "Security objectives (s15-04) on CISO Assistant's 0 to 4 scale, such as confidentiality: 3.",
+          "type": "object",
+          "additionalProperties": { "type": ["integer", "string"], "pattern": "^[0-4]$", "minimum": 0, "maximum": 4 }
+        },
+        "recovery": {
+          "description": "Recovery objectives (s15-04) as durations such as 4h or 2d.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "rto": { "$ref": "#/$defs/duration" },
+            "rpo": { "$ref": "#/$defs/duration" },
+            "mtd": { "$ref": "#/$defs/duration" }
+          }
         },
         "ai": {
           "description": "The system's entry in the AI register (s11-12), with the National AI Centre register template's columns (s11-11): written to CISO Assistant as filtering labels and in the description. See docs/scope.md.",
