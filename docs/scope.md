@@ -541,6 +541,22 @@ not one).
 
 ## audits/&lt;audit&gt;.yaml
 
+### One audit per system, and one per shared platform
+
+Give each system its own audit, rather than one audit for the whole organisation. Each audit then shows that system's gaps, and
+what has and has not been assessed is plain to see. Name it after the system and the framework, such as `EX-LAPTOPS-E8`, and list
+the one system under `systems`.
+
+- **A shared platform gets its own audit.** A cloud tenancy or hosting platform that other systems run on is audited once, as a
+  system of its own. A system that relies on it for a requirement names it in that row's `provided_by`: the row stays open, and
+  `hound scope plan` lists it under "Open dependencies" until the platform's audit shows the requirement met.
+- **Answer each piece of evidence once.** A document is declared in one audit and linked in every audit of the same framework that
+  shares one of its systems. A collector's run feeds every audit that a `targets` entry in `hound.yaml` names, so one backup test or
+  admin review reaches several audits. A manual source is attested once and its checks reach each audit whose mapping uses them.
+  Prefer a specific source per check (the restore test, the privileged-account review) over one blanket attestation.
+- **An organisation-wide audit only when organisation-wide sources feed it,** such as governance documents and policies. It is not a
+  summary of the system audits.
+
 | Key | Meaning |
 | --- | --- |
 | `ref_id`, `name` | The audit's stable key and title. |

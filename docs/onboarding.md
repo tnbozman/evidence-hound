@@ -296,7 +296,7 @@ The agent drafts each kind through a command that asks nothing; `hound` checks i
 - **A reseller or managed service provider** is a third party of its own. Draft the vendor first, then the reseller or provider with
   `--kind` and `--for <vendor ref_id>`; its description names the vendor it stands for. `--document` names a document kept in the repo
   that the draft rests on, and the file records it with its SHA-256. A system bought through one names it as `supplied_through`.
-- **An audit** is checked against the scope as it is drafted: its framework, domain, perimeter and systems must be in `scope/setup.yaml`.
+- **An audit** is drafted per system, with a shared platform audited on its own ([one audit per system](scope.md#one-audit-per-system-and-one-per-shared-platform)). It is checked against the scope as it is drafted: its framework, domain, perimeter and systems must be in `scope/setup.yaml`.
   It stays out of the scope, and out of every plan, until `hound approve` moves it into `scope/audits/`.
 - **An audit workbook** (`.xlsx` or `.csv`) is read where it is; it is never copied into the repo. `hound` finds the columns by their
   headings (requirement, result, observation, evidence, approved by, approved on) or by `--column`. A row the workbook says someone
