@@ -58,6 +58,13 @@ INC-2026-01 Malware on a laptop: discovered 2026-11-20 09:30 UTC, 2 report(s) ow
 Add a timeline entry to the incident that starts with `Reported:` and the obligation's id, then their reference:
 `Reported: dfars-7012, DIBNet report 12345`. The report then shows as made, and is never overdue.
 
+## Where overdue reports show up
+
+- **The weekly review.** With CISO Assistant configured (`HOUND_CA_URL` and `HOUND_CA_TOKEN`), `hound review` lists each report an
+  open incident has not made, due by its deadline, every week until the incident's timeline records it.
+- **The committee report.** `hound report snapshot` records the reports each incident owes; `hound report committee` lists the
+  overdue ones in section 6 and proposes making each in section 8.
+
 ## The plan and its yearly test
 
 The incident response plan is approved and tested once a year, for example with a one-hour tabletop exercise. Make it a manual

@@ -230,6 +230,18 @@ regulator's and customer's clock without knowing them by heart.
 - Record a fictional incident on a CUI system in the local CISO Assistant; `hound incident obligations` lists the DFARS report due
   72 hours after discovery.
 
+**Notes.** `scope/reporting.yaml` declares the obligations (id, name, report_to, within, when {data, always}, reference), checked by
+`hound scope validate` and the scope schema. `ReportingObligations.Owed` (pure) gives each report owed, due from discovery: the first
+*detection* timeline entry, else when the incident was reported. A timeline entry `Reported: <id>, ...` marks a report as made.
+`hound incident obligations <incident>` (text or JSON) reads the incident from CISO Assistant (`IIncidentSource`, read only). The posture
+snapshot records each incident's reports; the committee report lists overdue ones in section 6 and proposes actions in section 8; the
+weekly review lists each report an open incident still owes when CISO Assistant is configured. The example repo has `reporting.yaml`
+(DFARS 252.204-7012, NDB assessment, ReportCyber), the control `AC-INCIDENT-RESPONSE`, and the plan's yearly test as the manual source
+`example-incident-response-plan` with its runbook and evidence plan row. Guide: docs/incidents.md.
+
+**Functional check result.** `IncidentFunctionalTests` (CI) records `INC-FUNC-01` on Example laptops (CUI) with a detection entry and
+checks that `hound incident obligations` lists `dfars-7012` due 72 hours later. Result recorded once CI has run.
+
 ### s15-08 Supply-chain flow-down (added 2026-11-24)
 - [ ] Done
 
