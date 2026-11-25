@@ -34,6 +34,9 @@ public sealed record ScopeDocument(ScopeSetup Setup, IReadOnlyList<ScopeControl>
 
     /// <summary><c>scope/ssp.yaml</c>: the system security plans, one per programme (s11-02); empty when the repo has no such file.</summary>
     public IReadOnlyList<ScopeSsp> Ssps { get; init; } = [];
+
+    /// <summary><c>scope/risks/*.yaml</c>: risk studies and their scenarios, one study per file (s15-02).</summary>
+    public IReadOnlyList<ScopeRiskStudy> RiskStudies { get; init; } = [];
 }
 
 /// <summary><c>scope/setup.yaml</c>: the root folder, the frameworks to load and the domains.</summary>

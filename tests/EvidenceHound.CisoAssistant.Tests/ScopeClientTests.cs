@@ -171,6 +171,72 @@ public sealed class ScopeClientTests : IDisposable
     }
 
     [Fact]
+    public async Task Creates_risk_study_on_its_matrix_with_actors_and_marker()
+    {
+        // s15-02 (RiskClientTests in the plan): a risk study is a risk assessment in its domain and perimeter, on a matrix found by URN.
+        List("risk-matrices", new JsonObject { ["id"] = "rm-4x4", ["urn"] = "urn:example:risk:matrix:example-4x4" });
+        List("risk-assessments");
+        Respond("POST", "/api/risk-assessments/", 201, new JsonObject { ["id"] = "ra-new" });
+        var study = Declared(ScopeKind.RiskStudy, "EX-RISK-2026",
+            ("name", "Example Pty Ltd risk register 2026"), ("domain", "Example Pty Ltd"), ("perimeter", "Corporate IT"), ("matrix", "urn:example:risk:matrix:example-4x4"),
+            ("status", "in_progress"), ("eta", "2026-12-31"), ("authors", "it@example.com"));
+
+        (await Create(study)).Value();
+
+        Posted("risk-assessments").ShouldBe(Json(new JsonObject
+        {
+            ["name"] = "Example Pty Ltd risk register 2026",
+            ["ref_id"] = "EX-RISK-2026",
+            ["description"] = $"[hound scope {State}]",
+            ["folder"] = "f-ex",
+            ["perimeter"] = "p-corp",
+            ["risk_matrix"] = "rm-4x4",
+            ["status"] = "in_progress",
+            ["eta"] = "2026-12-31",
+            ["due_date"] = null,
+            ["authors"] = new JsonArray("act-it"),
+            ["reviewers"] = new JsonArray(),
+        }));
+    }
+
+    [Fact]
+    public async Task Creates_risk_scenario_with_links_and_ratings_by_position()
+    {
+        List("risk-assessments", new JsonObject { ["id"] = "ra-1", ["ref_id"] = "EX-RISK-2026" });
+        List("threats", new JsonObject { ["id"] = "th-2", ["urn"] = "urn:example:risk:threat:example-risk:thr-02" });
+        List("applied-controls", new JsonObject { ["id"] = "ac-backup", ["ref_id"] = "AC-BACKUP" }, new JsonObject { ["id"] = "ac-mfa", ["ref_id"] = "AC-MFA" });
+        List("risk-scenarios");
+        Respond("POST", "/api/risk-scenarios/", 201, new JsonObject { ["id"] = "rs-new" });
+        var scenario = Declared(ScopeKind.RiskScenario, "EX-RISK-2026/R-01",
+            ("ref_id", "R-01"), ("name", "Ransomware encrypts the file shares"), ("study", "EX-RISK-2026"), ("systems", "Example 365"),
+            ("threats", "urn:example:risk:threat:example-risk:thr-02"), ("existing_controls", "AC-BACKUP"), ("planned_controls", "AC-MFA"),
+            ("current_probability", "Possible"), ("current_impact", "Major"), ("treatment", "mitigate"), ("justification", "Tested monthly.")) with
+        {
+            Levels = new Dictionary<string, int> { ["current_proba"] = 2, ["current_impact"] = 2 },
+        };
+
+        (await Create(scenario)).Value();
+
+        Posted("risk-scenarios").ShouldBe(Json(new JsonObject
+        {
+            ["ref_id"] = "R-01",
+            ["name"] = "Ransomware encrypts the file shares",
+            ["description"] = $"[hound scope {State}]",
+            ["risk_assessment"] = "ra-1",
+            ["assets"] = new JsonArray("a-365"),
+            ["threats"] = new JsonArray("th-2"),
+            ["existing_applied_controls"] = new JsonArray("ac-backup"),
+            ["applied_controls"] = new JsonArray("ac-mfa"),
+            ["current_proba"] = 2,
+            ["current_impact"] = 2,
+            ["residual_proba"] = -1,
+            ["residual_impact"] = -1,
+            ["treatment"] = "mitigate",
+            ["justification"] = "Tested monthly.",
+        }));
+    }
+
+    [Fact]
     public async Task Creates_audit_with_groups_actors_and_marker()
     {
         List("frameworks", new JsonObject { ["id"] = "fw-e8", ["urn"] = E8 });

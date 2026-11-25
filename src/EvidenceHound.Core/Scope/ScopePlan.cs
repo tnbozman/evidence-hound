@@ -23,6 +23,8 @@ public enum ScopeKind
     Assessment,
     Evidence,
     TaskTemplate,
+    RiskStudy,
+    RiskScenario,
 }
 
 /// <summary>
@@ -36,6 +38,12 @@ public sealed record ScopeObject(ScopeKind Kind, string Key, IReadOnlyDictionary
 
     /// <summary>A document's files, with their SHA-256, for the writer to upload; the plan compares their hashes (the <c>hashes</c> field).</summary>
     public IReadOnlyList<ScopeFile> Files { get; init; } = [];
+
+    /// <summary>
+    /// Values the writer sends as numbers but the plan shows as names, such as a risk scenario's ratings by their position on the matrix
+    /// (s15-02). Never compared: the matching named fields are.
+    /// </summary>
+    public IReadOnlyDictionary<string, int> Levels { get; init; } = new Dictionary<string, int>();
 }
 
 /// <summary>A file of a document: its path and the SHA-256 of its content, as lowercase hex.</summary>
