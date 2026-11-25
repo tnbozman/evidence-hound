@@ -1,7 +1,7 @@
 # Manual source templates
 
 One template for each Essential Eight area no collector reads. Each folder holds `source.yaml`, a manual collector to paste under
-`collectors:` in `hound.yaml`, and `README.md`, the runbook the owner follows and the evidence plan row points at. How they fit together
+`collectors:` in `hound.yaml` (a repo from `hound init` starts with `collectors: []`: replace it with `collectors:` first), and `README.md`, the runbook the owner follows and the evidence plan row points at. How they fit together
 is in [Manual evidence](../manual-evidence.md).
 
 | Strategy | Template | Every | Requirements |

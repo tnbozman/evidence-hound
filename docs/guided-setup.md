@@ -24,7 +24,11 @@ Writes a new compliance repo into the folder, which must be missing or empty:
 | Audit interval: each quarter of the financial year (July to June), or each month | `--interval` | quarter |
 | Compliance owner's email | `--owner` | <ceo@example.com> |
 
-`--evidence-root` sets where the runner keeps evidence (default `/var/lib/evidence-hound/evidence`, outside the repo).
+`--evidence-root` sets where the runner keeps evidence (default `/var/lib/evidence-hound/evidence`, outside the repo; only root or
+the runner container can write there, so for a trial as yourself use a folder in your home, such as `--evidence-root ~/hound-evidence`).
+
+`--framework disp` also writes a DISP membership readiness audit beside the Essential Eight one ([DISP readiness](adopt/disp-readiness.md)).
+It is not asked.
 
 It writes:
 
@@ -37,6 +41,7 @@ It writes:
 | `scope/evidence-plan.yaml`, `manual-sources/weekly-compliance-review.md` | The weekly review: a task for the GRC team every week, whose runbook says how to start `hound review` ([the weekly review](manual-evidence.md#the-weekly-review)) |
 | `scope/audits/<code>-e8.yaml` | The audit series `<CODE>-E8` at that maturity level, by quarter or month from the period holding today, with no hand-written results yet. Each period is its own audit, such as `EX-E8-Q2-2027FY` ([Audit periods](scope.md#audit-periods)). `hound scope new-audit` lists every requirement, if you want them all in the file |
 | `mappings/essential-eight-2023.yaml`, `frameworks/essential-eight-2023.json` | The Essential Eight mapping and framework snapshot of this `hound` version |
+| With `--framework disp`: `frameworks/disp.yaml`, `frameworks/disp.json`, `mappings/disp.yaml`, `scope/audits/<code>-disp.yaml` | The DISP library, its snapshot and mapping, and the audit series `<CODE>-DISP`, declared in `scope/setup.yaml` and added to `targets` in `hound.yaml` |
 | `.gitignore`, `README.md` | What never goes in the repo, and the next steps |
 
 For more people, settings and a pull request workflow, copy them from the [example compliance repo](../examples/compliance-repo/README.md), as the [first deployment tutorial](tutorials/first-deployment.md) describes.

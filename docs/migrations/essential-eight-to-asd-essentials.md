@@ -167,7 +167,7 @@ These are the changes Evidence Hound needed before it could publish to the Essen
 
 - Load `essential-eight-2023`, `asd-essentials-enterprise-it` and the transition mapping into CISO Assistant. Check that their URNs match the table at the top of this page.
 - If your current Essential Eight audit uses the legacy library, move it to `essential-eight-2023` first. CISO Assistant ships `mapping-essential-eight-and-essential-eight-2023` for that step.
-- Ship Evidence Hound changes 1 to 3 and 5 above.
+- Use an Evidence Hound release that has changes 1 to 5 above (every release from v1.0.0 does).
 
 **Exit:** `hound mapping validate` passes for the Essential Eight mapping using URNs, and the current Essential Eight audit publishes as before.
 
@@ -180,11 +180,18 @@ These are the changes Evidence Hound needed before it could publish to the Essen
   ```console
   $ hound mapping derive mappings/essential-eight-2023.yaml --from frameworks/essential-eight-2023.json \
       --to frameworks/asd-essentials-enterprise-it.json \
-      --links frameworks/mapping-essential-eight-2023-and-asd-essentials-enterprise-it.yaml --groups 1 --out mappings/asd-essentials-enterprise-it.yaml
+      --links frameworks/mapping-essential-eight-2023-and-asd-essentials-enterprise-it.yaml --groups 1 --out mappings/asd-essentials-draft.yaml
   ```
 
-  Review every action row with the system owner and the assessor. Keep a check only if it evidences the action, add checks where the action asks for more, record the reason in the row's comment, and delete its `draft: true` line.
-- Set up the manual sources for the new ground from `examples/manual-sources/essentials/` (governance, supply chain, training, content filtering, segmentation, secure build and secrets, secure administration, incident learning, asset records), and check `hound mapping coverage ... --groups 1` shows no uncovered row in any domain.
+  Review every action row with the system owner and the assessor. Keep a check only if it evidences the action, add checks where the action asks for more, record the reason in the row's comment, and delete its `draft: true` line. `derive` never replaces an existing file unless you add `--force`, so the reference mapping stays as it is; runs publish no draft row, and `hound mapping validate` and `hound mapping coverage` count the rows still in draft.
+- Set up the manual sources for the new ground from `examples/manual-sources/essentials/` (governance, supply chain, training, content filtering, segmentation, secure build and secrets, secure administration, incident learning, asset records), then check that no domain has an uncovered or draft row:
+
+  ```console
+  $ hound mapping coverage mappings/asd-essentials-enterprise-it.yaml --framework frameworks/asd-essentials-enterprise-it.json \
+      --groups 1 --manual hound.yaml
+  ```
+
+  `--manual hound.yaml` reads the manual sources configured in your repo; a check none of them gives counts as automated, so add the sources before you trust the count.
 - Add a second `target` for the Essentials audit (change 5), so one collection run publishes to both audits.
 
 **Exit:** every phase 1 row in the Essentials audit has a result from Evidence Hound or a named manual source. No row's result depends only on mapping inference.
@@ -192,7 +199,7 @@ These are the changes Evidence Hound needed before it could publish to the Essen
 ### Stage 2: close the gaps
 
 - For each action with no Essential Eight source, either add a manual source with an owner and due interval, or plan a collector. Supplier assurance (GOV-11), supply chain security (PRO-16) and risk management (GOV-03) can be evidenced from CISO Assistant's own records by the governance collector ([s16-01](../sprints/s16-governance-and-metrics.md)), once suppliers and risk studies are managed as configuration.
-- Place the six unmapped ISM controls under their Essentials actions, and record the decision in the mapping file's comments. The reference mapping already places the four that have checks (ISM-0123, ISM-1704, ISM-1705, ISM-1707 and ISM-1905 in the homes above); ISM-1687 has no check of its own.
+- Place the six unmapped ISM controls under their Essentials actions, and record the decision in the mapping file's comments. The reference mapping already places the five that have checks (ISM-0123, ISM-1704, ISM-1705, ISM-1707 and ISM-1905 in the homes above); ISM-1687 has no check of its own.
 - Tag each system with its Essentials domain (change 6), and check the per-domain roll-up matches what an assessor would conclude.
 
 **Exit:** phase 1 has no `not_assessed` rows, and the committee has accepted the Essentials results alongside the Essential Eight results for one reporting period.

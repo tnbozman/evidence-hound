@@ -78,15 +78,16 @@ A `manual_only` entry names a requirement by `ref` or `urn`, as in `requirements
 ```console
 $ hound mapping coverage mappings/essential-eight-2023.yaml --framework frameworks/essential-eight-2023.json --groups 1,2 \
     --manual examples/manual-sources/essential-eight --manual examples/example-essential-eight.yaml
-| Parent | Group | Automated | Manual | Uncovered |
-| --- | --- | --- | --- | --- |
-| pa | 1 | 7 | 2 | 0 |
+| Parent | Group | Automated | Manual | Draft | Uncovered |
+| --- | --- | --- | --- | --- | --- |
+| pa | 1 | 7 | 2 | 0 | 0 |
 ...
-Total: 46 automated, 109 manual, 0 uncovered (one per requirement row and group).
+Total: 46 automated, 109 manual, 0 draft, 0 uncovered (one per requirement row and group).
 ```
 
 - **Automated**: at least one of the requirement's checks comes from a collector.
 - **Manual**: every check is attested by a person through a manual source, or the requirement is under `manual_only`.
+- **Draft**: only `draft: true` rows answer it, and runs publish none of them until a person reviews the row.
 - **Uncovered**: nothing answers it. Map it to a check or a manual source.
 
 For a framework with more than one level above its requirements, such as the ASD Essentials (domain, then principle, then action), a second table counts per top-level node, so you see each domain and priority phase:
@@ -95,17 +96,17 @@ For a framework with more than one level above its requirements, such as the ASD
 $ hound mapping coverage mappings/asd-essentials-enterprise-it.yaml --framework frameworks/asd-essentials-enterprise-it.json --groups 1 \
     --manual examples/manual-sources --manual examples/example-essential-eight.yaml
 ...
-| Top level | Group | Automated | Manual | Uncovered |
-| --- | --- | --- | --- | --- |
-| Governance and culture | 1 | 3 | 6 | 0 |
-| Visibility and response | 1 | 1 | 11 | 0 |
-| Boundary services | 1 | 11 | 26 | 0 |
-| Identity services | 1 | 11 | 24 | 0 |
+| Top level | Group | Automated | Manual | Draft | Uncovered |
+| --- | --- | --- | --- | --- | --- |
+| Governance and culture | 1 | 3 | 6 | 0 | 0 |
+| Visibility and response | 1 | 1 | 11 | 0 | 0 |
+| Boundary services | 1 | 11 | 26 | 0 | 0 |
+| Identity services | 1 | 11 | 24 | 0 | 0 |
 
-Total: 26 automated, 67 manual, 0 uncovered (one per requirement row and group).
+Total: 26 automated, 67 manual, 0 draft, 0 uncovered (one per requirement row and group).
 ```
 
-`--manual` takes your hound config, a manual source template or a folder of them; the checks of every `type: manual` collector in them count as manual. Without `--manual`, every mapped requirement counts as automated. `--groups` is the audit's selected groups (default: all of the framework's), and `--json` prints the same counts for an agent.
+`--manual` takes your hound config, a manual source template or a folder of them; the checks of every `type: manual` collector in them count as manual. Without `--manual`, every mapped requirement counts as automated, and a `--manual` path with no manual source in it is reported. In your own repo, pass `--manual hound.yaml`; the paths above are in the Evidence Hound repo. `--groups` is the audit's selected groups (default: all of the framework's), and `--json` prints the same counts for an agent.
 
 ## Deriving a mapping for a new framework
 
@@ -120,7 +121,7 @@ wrote 55 draft rows to draft.yaml; 38 rows got no checks and are listed at its e
 
 - Each row's comment names its source requirements. A link that only overlaps (`intersect`, as every Essential Eight to Essentials link is) may not cover the whole new requirement, so a person decides whether the checks are enough, adds checks where the new requirement asks for more, then deletes `draft: true`.
 - Rows the old mapping gives no checks are listed as comments at the end. Map each to a manual source's checks, or list it under `manual_only`.
-- `--groups` limits the draft to the new framework's implementation groups (for the Essentials, a priority phase). Without `--out` the draft is printed.
+- `--groups` limits the draft to the new framework's implementation groups (for the Essentials, a priority phase). Without `--out` the draft is printed, and an existing `--out` file is never replaced unless you add `--force`.
 - hound carries the Essential Eight 2023 to Essentials library from CISO Assistant v4.3.4 in `frameworks/`, and a reviewed phase 1 mapping made this way in [`mappings/asd-essentials-enterprise-it.yaml`](../mappings/asd-essentials-enterprise-it.yaml).
 
 ## Crosswalks to another framework
