@@ -12,18 +12,18 @@ public sealed class CheatsheetTests
     {
         var sheet = await File.ReadAllTextAsync(Path.Combine(ExampleRepoTests.RepoRoot, "docs", "cheatsheet.md"), _ct);
 
-        var commands = await CommandsAsync([]);
+        var commands = await CommandsAsync([], _ct);
 
         commands.Count.ShouldBeGreaterThan(40);
         commands.Where(c => !sheet.Contains($"`hound {c}", StringComparison.Ordinal)).ShouldBeEmpty();
     }
 
     /// <summary>Every command path under <paramref name="parent"/>, read from <c>--help</c>.</summary>
-    private async Task<List<string>> CommandsAsync(string[] parent)
+    internal static async Task<List<string>> CommandsAsync(string[] parent, CancellationToken ct)
     {
         using var output = new StringWriter();
         using var error = new StringWriter();
-        await HoundCli.RunAsync([.. parent, "--help"], output, error, logging => logging.AddProvider(new RecordingLoggerProvider()), new Dictionary<string, string?>(), _ct);
+        await HoundCli.RunAsync([.. parent, "--help"], output, error, logging => logging.AddProvider(new RecordingLoggerProvider()), new Dictionary<string, string?>(), ct);
         var lines = output.ToString().Split('\n');
         var names = lines.SkipWhile(l => l.Trim() != "Commands:").Skip(1)
             .Where(l => l.StartsWith("  ", StringComparison.Ordinal) && l.Length > 2 && char.IsAsciiLetterLower(l[2]))
@@ -34,7 +34,7 @@ public sealed class CheatsheetTests
         {
             string[] path = [.. parent.Where(p => !p.StartsWith('<')), name];
             found.Add(string.Join(' ', path));
-            found.AddRange(await CommandsAsync(path));
+            found.AddRange(await CommandsAsync(path, ct));
         }
 
         return found;

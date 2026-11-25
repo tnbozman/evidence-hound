@@ -56,5 +56,29 @@ public sealed class AgentSkillTests : IDisposable
         (await File.ReadAllTextAsync(Path.Combine(_root, "CLAUDE.md"), ct)).ShouldContain("`hound manual approve`");
     }
 
+    [Fact]
+    public async Task Decisions_skill_recommends_and_never_accepts()
+    {
+        // s15-12, s15-13: the agent works through the waiting decisions with the person, one at a time, highest risk first; it records its
+        // case with sources and hands the person the one command to run; it never accepts, challenges or skips for them.
+        var ct = TestContext.Current.CancellationToken;
+        var (exit, _, error) = await OnboardAgentCommandTests.RunAsync(["agent", "setup", "--repo", _root, "--assistant", "both"], "", terminal: false, Path.Combine(_root, "home"), ct);
+        exit.ShouldBe(ExitCodes.Ok, error);
+
+        var text = await File.ReadAllTextAsync(Path.Combine(_root, ".claude", "skills", "work-through-pending-decisions", "SKILL.md"), ct);
+        string[] says = ["hound review pending", "\"risk\"", "\"summary\"", "hound review recommend", "hound review --only <key>", "one at a time", "Never run `hound review`", "Ask the person"];
+        foreach (var phrase in says)
+        {
+            text.ShouldContain(phrase, Case.Sensitive);
+        }
+
+        foreach (var agent in new[] { Path.Combine(_root, ".claude", "agents", "hound-decisions.md"), Path.Combine(_root, ".github", "agents", "hound-decisions.agent.md") })
+        {
+            (await File.ReadAllTextAsync(agent, ct)).ShouldContain("work-through-pending-decisions");
+        }
+
+        (await File.ReadAllTextAsync(Path.Combine(_root, ".claude", "skills", "weekly-review", "SKILL.md"), ct)).ShouldContain("work-through-pending-decisions");
+    }
+
     public void Dispose() => Directory.Delete(_root, recursive: true);
 }
