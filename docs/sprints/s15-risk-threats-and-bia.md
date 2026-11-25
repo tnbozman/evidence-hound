@@ -306,5 +306,15 @@ As [s12-10](s12-e8-mapping-and-adoption.md#s12-10-improve-quality-and-flow-stand
   system owned by a user from `scope/access.yaml` was refused (owner not found) and only a second apply created it. Fixed: users
   and teams are planned before systems (test, then fix). `hound add system --parents` takes system names, not ref IDs; the guided
   setup page now says so.
+- **s15-D2 An audit's systems were never written to CISO Assistant** (found 2026-11-25 in the rehearsal). The scope plan did not
+  compare an audit's `systems`, and the audit's assets in CISO Assistant stayed empty. Fixed: the plan compares them, apply writes
+  them as the audit's assets, and systems added in the UI are kept until the scope names some (test, then fix).
+- **s15-D3 A collector whose every check errored reported success** (found 2026-11-25 in the rehearsal: refused credentials gave
+  "succeeded" and `hound status` showed 0 passed, 0 failed with no warning). Fixed: such a run fails with
+  `collector.all_checks_errored`, quoting the first error, and `hound status` lists each failed collector's problems below the table.
+- **s15-D4 `config validate --check-secrets` accepted an empty secret file** (found 2026-11-25 in the rehearsal). Fixed: an empty or
+  blank secret file is missing (`secret.missing`, "the file is empty").
+- **s15-D5 Retry attempts flooded stderr** (found 2026-11-25 in the rehearsal: an information line per request on every scope plan
+  and apply). Fixed: retry logging starts at warnings, like the HTTP client's own.
 
 ## Sprint review

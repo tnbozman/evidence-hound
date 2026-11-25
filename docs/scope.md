@@ -501,7 +501,7 @@ as `EX-BIA-2026/Example 365/1d`.
 | `domain`, `perimeter` | Where the audit sits. |
 | `eta`, `due_date`, `authors`, `reviewers` | Optional audit fields (dates as `YYYY-MM-DD`). |
 | `field_visibility` | Optional, per field: `{auditor: edit\|read\|hidden, respondent: …}`.`result`,`observation` and `evidences` must stay `edit` for the auditor, because CISO Assistant silently ignores writes to fields the writer can only read. |
-| `systems` | The systems in scope. |
+| `systems` | The systems in scope, by name. They are written to the audit's assets in CISO Assistant; systems added there by hand are kept until the scope names some. |
 | `documents` | Static evidence such as policies and reports: `id`, `name`, `files` (paths or globs, relative to the compliance repo, the scope folder's parent), `systems` and `requirements` it supports. A document is linked to the rows it cites in its own audit, and in every other audit of the same framework that shares one of its systems. |
 | `controls` | The applied controls this audit relies on, by `ref_id`, each with the `requirements` it supports in this framework. |
 | `assessments` | Hand-written results for requirements no check covers: `ref` (or `urn`), `status` (`to_do`, `in_progress`, `in_review`, `done`), `result`, `observation`, and `provided_by` (the systems that meet it, when another system does: the row stays open, never `not_applicable`, and `hound scope plan` lists it under "Open dependencies" with that system's audit and its result there). |
