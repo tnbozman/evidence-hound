@@ -49,6 +49,10 @@ public class ScopeSchemaTests
         Errors(RiskFixture.Study.Replace("treatment: accept", "treatment: ignore", StringComparison.Ordinal)).ShouldNotBeEmpty();
         Errors(ExceptionScopeTests.Exceptions).ShouldBeEmpty();
         Errors(BiaScopeTests.Bia).ShouldBeEmpty();
+        Errors(MetricScopeTests.Metrics).ShouldBeEmpty();
+        Errors(MetricScopeTests.Metrics.Replace("frequency: monthly", "frequency: fortnightly", StringComparison.Ordinal)).ShouldNotBeEmpty();
+        Errors(MetricScopeTests.Metrics.Replace("chart: line", "chart: radar", StringComparison.Ordinal)).ShouldNotBeEmpty();
+        Errors(MetricScopeTests.Metrics.Replace("combine: sum}", "combine: median}", StringComparison.Ordinal)).ShouldNotBeEmpty();
         Errors(BiaScopeTests.Setup).ShouldBeEmpty();
         Errors(BiaScopeTests.Bia.Replace("after: 4h", "after: soon", StringComparison.Ordinal)).ShouldNotBeEmpty();
         Errors(BiaScopeTests.Bia.Replace("tested: false,", "tested_by: [backup.restore_tested],", StringComparison.Ordinal)).ShouldBeEmpty();
