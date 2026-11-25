@@ -1,0 +1,287 @@
+# DISP membership readiness: what Defence looks at when a business applies for or keeps membership of the Defence Industry
+# Security Program, as a CISO Assistant library. s14-02.
+# Written from the public control areas of the Defence Security Principles Framework (DSPF): governance, personnel, physical,
+# information and cyber security. Every description is a paraphrase in Evidence Hound's own words, and each requirement's annotation
+# cites its DSPF area. It is a readiness checklist, not the DSPF: read the DSPF and Defence's DISP guidance for the authoritative text
+# and the level of membership you apply for, and check your obligations with your DISP contact.
+# Group M (membership) holds every requirement. The cyber area has one requirement per Essential Eight strategy, so the Essential Eight
+# evidence answers it (mappings/disp.yaml).
+# Snapshot: hound framework snapshot frameworks/disp.yaml --out frameworks/disp.json
+# Changes (raise `version` with each content change):
+#   version 1 (2026-11-25): first version.
+urn: urn:evidence-hound:risk:library:disp-membership
+locale: en
+ref_id: DISP-READINESS
+name: DISP membership readiness
+description: Governance, personnel, physical, information and cyber security expectations of Defence Industry Security Program membership, paraphrased from the Defence Security Principles Framework control areas.
+copyright: "Evidence Hound contributors, Apache-2.0. Paraphrased from the Defence Security Principles Framework, Commonwealth of Australia (Department of Defence)."
+version: 1
+publication_date: 2026-11-25
+provider: Evidence Hound
+packager: evidence-hound
+objects:
+  framework:
+    urn: urn:evidence-hound:risk:framework:disp-membership
+    ref_id: DISP-READINESS
+    name: DISP membership readiness
+    description: What Defence checks for DISP membership, as a readiness self-assessment beside the Essential Eight.
+    implementation_groups_definition:
+    - ref_id: M
+      name: Membership
+      description: Every requirement a DISP member is expected to meet.
+    requirement_nodes:
+    - urn: urn:evidence-hound:risk:req_node:disp-membership:disp-gov
+      assessable: false
+      depth: 1
+      ref_id: DISP-GOV
+      name: Governance
+      description: "The business has the people, policy, plans and reporting DISP membership expects."
+    - urn: urn:evidence-hound:risk:req_node:disp-membership:disp-gov:disp-gov-01
+      assessable: true
+      depth: 2
+      parent_urn: urn:evidence-hound:risk:req_node:disp-membership:disp-gov
+      ref_id: DISP-GOV-01
+      name: Security officers appointed
+      description: "A chief security officer and a security officer are named, have done the training Defence asks for, and are known to Defence."
+      annotation: "Source: Defence Security Principles Framework (DSPF), Security governance, as Defence applies it to DISP members. Paraphrased; the DSPF and the DISP pages on defence.gov.au are authoritative."
+      implementation_groups: [M]
+    - urn: urn:evidence-hound:risk:req_node:disp-membership:disp-gov:disp-gov-02
+      assessable: true
+      depth: 2
+      parent_urn: urn:evidence-hound:risk:req_node:disp-membership:disp-gov
+      ref_id: DISP-GOV-02
+      name: Security policy and plan
+      description: "A security policy and a security plan cover the business's Defence work, are approved by its leaders and are reviewed at least once a year."
+      annotation: "Source: Defence Security Principles Framework (DSPF), Security governance, as Defence applies it to DISP members. Paraphrased; the DSPF and the DISP pages on defence.gov.au are authoritative."
+      implementation_groups: [M]
+    - urn: urn:evidence-hound:risk:req_node:disp-membership:disp-gov:disp-gov-03
+      assessable: true
+      depth: 2
+      parent_urn: urn:evidence-hound:risk:req_node:disp-membership:disp-gov
+      ref_id: DISP-GOV-03
+      name: Foreign ownership, control or influence
+      description: "Foreign ownership, control or influence over the business is declared, and changes to it are told to Defence."
+      annotation: "Source: Defence Security Principles Framework (DSPF), Security governance, as Defence applies it to DISP members. Paraphrased; the DSPF and the DISP pages on defence.gov.au are authoritative."
+      implementation_groups: [M]
+    - urn: urn:evidence-hound:risk:req_node:disp-membership:disp-gov:disp-gov-04
+      assessable: true
+      depth: 2
+      parent_urn: urn:evidence-hound:risk:req_node:disp-membership:disp-gov
+      ref_id: DISP-GOV-04
+      name: Annual security report
+      description: "The yearly security report is sent to Defence on time, and changes to the business that affect membership are reported as they happen."
+      annotation: "Source: Defence Security Principles Framework (DSPF), Security governance, as Defence applies it to DISP members. Paraphrased; the DSPF and the DISP pages on defence.gov.au are authoritative."
+      implementation_groups: [M]
+    - urn: urn:evidence-hound:risk:req_node:disp-membership:disp-gov:disp-gov-05
+      assessable: true
+      depth: 2
+      parent_urn: urn:evidence-hound:risk:req_node:disp-membership:disp-gov
+      ref_id: DISP-GOV-05
+      name: Supply chain security
+      description: "Suppliers and subcontractors who touch Defence information or work are assessed, and their contracts carry the security obligations down."
+      annotation: "Source: Defence Security Principles Framework (DSPF), Security governance, as Defence applies it to DISP members. Paraphrased; the DSPF and the DISP pages on defence.gov.au are authoritative."
+      implementation_groups: [M]
+    - urn: urn:evidence-hound:risk:req_node:disp-membership:disp-gov:disp-gov-06
+      assessable: true
+      depth: 2
+      parent_urn: urn:evidence-hound:risk:req_node:disp-membership:disp-gov
+      ref_id: DISP-GOV-06
+      name: Security risk management
+      description: "Security risks to the Defence work are identified, assessed and treated under an approved method."
+      annotation: "Source: Defence Security Principles Framework (DSPF), Security governance, as Defence applies it to DISP members. Paraphrased; the DSPF and the DISP pages on defence.gov.au are authoritative."
+      implementation_groups: [M]
+    - urn: urn:evidence-hound:risk:req_node:disp-membership:disp-per
+      assessable: false
+      depth: 1
+      ref_id: DISP-PER
+      name: Personnel security
+      description: "People are screened, cleared where needed, trained and managed when they leave."
+    - urn: urn:evidence-hound:risk:req_node:disp-membership:disp-per:disp-per-01
+      assessable: true
+      depth: 2
+      parent_urn: urn:evidence-hound:risk:req_node:disp-membership:disp-per
+      ref_id: DISP-PER-01
+      name: Security clearances
+      description: "Staff who need a security clearance hold one at the right level, the register of clearances is reviewed, and none has lapsed unnoticed."
+      annotation: "Source: Defence Security Principles Framework (DSPF), Personnel security, as Defence applies it to DISP members. Paraphrased; the DSPF and the DISP pages on defence.gov.au are authoritative."
+      implementation_groups: [M]
+    - urn: urn:evidence-hound:risk:req_node:disp-membership:disp-per:disp-per-02
+      assessable: true
+      depth: 2
+      parent_urn: urn:evidence-hound:risk:req_node:disp-membership:disp-per
+      ref_id: DISP-PER-02
+      name: Pre-employment screening
+      description: "Identity, right to work and background are checked before a new starter gets access to Defence information or sites."
+      annotation: "Source: Defence Security Principles Framework (DSPF), Personnel security, as Defence applies it to DISP members. Paraphrased; the DSPF and the DISP pages on defence.gov.au are authoritative."
+      implementation_groups: [M]
+    - urn: urn:evidence-hound:risk:req_node:disp-membership:disp-per:disp-per-03
+      assessable: true
+      depth: 2
+      parent_urn: urn:evidence-hound:risk:req_node:disp-membership:disp-per
+      ref_id: DISP-PER-03
+      name: Separation
+      description: "When someone leaves, their access ends promptly and Defence is told where a clearance was sponsored."
+      annotation: "Source: Defence Security Principles Framework (DSPF), Personnel security, as Defence applies it to DISP members. Paraphrased; the DSPF and the DISP pages on defence.gov.au are authoritative."
+      implementation_groups: [M]
+    - urn: urn:evidence-hound:risk:req_node:disp-membership:disp-per:disp-per-04
+      assessable: true
+      depth: 2
+      parent_urn: urn:evidence-hound:risk:req_node:disp-membership:disp-per
+      ref_id: DISP-PER-04
+      name: Security awareness training
+      description: "Everyone completes security awareness training when they start and every year, and the training is kept current."
+      annotation: "Source: Defence Security Principles Framework (DSPF), Personnel security, as Defence applies it to DISP members. Paraphrased; the DSPF and the DISP pages on defence.gov.au are authoritative."
+      implementation_groups: [M]
+    - urn: urn:evidence-hound:risk:req_node:disp-membership:disp-per:disp-per-05
+      assessable: true
+      depth: 2
+      parent_urn: urn:evidence-hound:risk:req_node:disp-membership:disp-per
+      ref_id: DISP-PER-05
+      name: Contact reporting
+      description: "Staff report suspicious, ongoing or unusual contacts, and the security officer passes them to Defence."
+      annotation: "Source: Defence Security Principles Framework (DSPF), Personnel security, as Defence applies it to DISP members. Paraphrased; the DSPF and the DISP pages on defence.gov.au are authoritative."
+      implementation_groups: [M]
+    - urn: urn:evidence-hound:risk:req_node:disp-membership:disp-phy
+      assessable: false
+      depth: 1
+      ref_id: DISP-PHY
+      name: Physical security
+      description: "Sites and assets that hold Defence information are protected and visitors controlled."
+    - urn: urn:evidence-hound:risk:req_node:disp-membership:disp-phy:disp-phy-01
+      assessable: true
+      depth: 2
+      parent_urn: urn:evidence-hound:risk:req_node:disp-membership:disp-phy
+      ref_id: DISP-PHY-01
+      name: Visitor control
+      description: "Visitors are signed in, identified, escorted where needed and signed out, and the record is kept."
+      annotation: "Source: Defence Security Principles Framework (DSPF), Physical security, as Defence applies it to DISP members. Paraphrased; the DSPF and the DISP pages on defence.gov.au are authoritative."
+      implementation_groups: [M]
+    - urn: urn:evidence-hound:risk:req_node:disp-membership:disp-phy:disp-phy-02
+      assessable: true
+      depth: 2
+      parent_urn: urn:evidence-hound:risk:req_node:disp-membership:disp-phy
+      ref_id: DISP-PHY-02
+      name: Access control
+      description: "Keys, cards and codes to the site and its secure areas are given only to those who need them, and are reviewed."
+      annotation: "Source: Defence Security Principles Framework (DSPF), Physical security, as Defence applies it to DISP members. Paraphrased; the DSPF and the DISP pages on defence.gov.au are authoritative."
+      implementation_groups: [M]
+    - urn: urn:evidence-hound:risk:req_node:disp-membership:disp-phy:disp-phy-03
+      assessable: true
+      depth: 2
+      parent_urn: urn:evidence-hound:risk:req_node:disp-membership:disp-phy
+      ref_id: DISP-PHY-03
+      name: Facility security plan
+      description: "A facility security plan covers each site doing Defence work, and secure areas and containers meet the standard their information needs."
+      annotation: "Source: Defence Security Principles Framework (DSPF), Physical security, as Defence applies it to DISP members. Paraphrased; the DSPF and the DISP pages on defence.gov.au are authoritative."
+      implementation_groups: [M]
+    - urn: urn:evidence-hound:risk:req_node:disp-membership:disp-inf
+      assessable: false
+      depth: 1
+      ref_id: DISP-INF
+      name: Information security
+      description: "Official and classified information is marked, handled and reported on properly."
+    - urn: urn:evidence-hound:risk:req_node:disp-membership:disp-inf:disp-inf-01
+      assessable: true
+      depth: 2
+      parent_urn: urn:evidence-hound:risk:req_node:disp-membership:disp-inf
+      ref_id: DISP-INF-01
+      name: Classification and handling
+      description: "Defence information is marked with its classification and stored, sent and destroyed as its marking requires."
+      annotation: "Source: Defence Security Principles Framework (DSPF), Information security, as Defence applies it to DISP members. Paraphrased; the DSPF and the DISP pages on defence.gov.au are authoritative."
+      implementation_groups: [M]
+    - urn: urn:evidence-hound:risk:req_node:disp-membership:disp-inf:disp-inf-02
+      assessable: true
+      depth: 2
+      parent_urn: urn:evidence-hound:risk:req_node:disp-membership:disp-inf
+      ref_id: DISP-INF-02
+      name: Security incident reporting
+      description: "Security incidents, including cyber incidents, are reported to Defence and to ASD within the times they set."
+      annotation: "Source: Defence Security Principles Framework (DSPF), Information security, as Defence applies it to DISP members. Paraphrased; the DSPF and the DISP pages on defence.gov.au are authoritative."
+      implementation_groups: [M]
+    - urn: urn:evidence-hound:risk:req_node:disp-membership:disp-inf:disp-inf-03
+      assessable: true
+      depth: 2
+      parent_urn: urn:evidence-hound:risk:req_node:disp-membership:disp-inf
+      ref_id: DISP-INF-03
+      name: Incident and contact records
+      description: "A record is kept of each security incident and contact report sent to Defence."
+      annotation: "Source: Defence Security Principles Framework (DSPF), Information security, as Defence applies it to DISP members. Paraphrased; the DSPF and the DISP pages on defence.gov.au are authoritative."
+      implementation_groups: [M]
+    - urn: urn:evidence-hound:risk:req_node:disp-membership:disp-cyb
+      assessable: false
+      depth: 1
+      ref_id: DISP-CYB
+      name: Cyber security
+      description: "Systems that store or process Defence information are protected with the Essential Eight to the level DISP asks for."
+    - urn: urn:evidence-hound:risk:req_node:disp-membership:disp-cyb:disp-cyb-01
+      assessable: true
+      depth: 2
+      parent_urn: urn:evidence-hound:risk:req_node:disp-membership:disp-cyb
+      ref_id: DISP-CYB-01
+      name: Application control
+      description: "Only approved applications run on the systems that handle Defence information, as the Essential Eight describes."
+      annotation: "Source: Defence Security Principles Framework (DSPF), Cyber security, as Defence applies it to DISP members. Paraphrased; the DSPF and the DISP pages on defence.gov.au are authoritative."
+      implementation_groups: [M]
+    - urn: urn:evidence-hound:risk:req_node:disp-membership:disp-cyb:disp-cyb-02
+      assessable: true
+      depth: 2
+      parent_urn: urn:evidence-hound:risk:req_node:disp-membership:disp-cyb
+      ref_id: DISP-CYB-02
+      name: Patch applications
+      description: "Applications on those systems are patched within the Essential Eight's time frames, and unsupported ones are removed."
+      annotation: "Source: Defence Security Principles Framework (DSPF), Cyber security, as Defence applies it to DISP members. Paraphrased; the DSPF and the DISP pages on defence.gov.au are authoritative."
+      implementation_groups: [M]
+    - urn: urn:evidence-hound:risk:req_node:disp-membership:disp-cyb:disp-cyb-03
+      assessable: true
+      depth: 2
+      parent_urn: urn:evidence-hound:risk:req_node:disp-membership:disp-cyb
+      ref_id: DISP-CYB-03
+      name: Restrict Microsoft Office macros
+      description: "Office macros are blocked unless needed and checked, as the Essential Eight describes."
+      annotation: "Source: Defence Security Principles Framework (DSPF), Cyber security, as Defence applies it to DISP members. Paraphrased; the DSPF and the DISP pages on defence.gov.au are authoritative."
+      implementation_groups: [M]
+    - urn: urn:evidence-hound:risk:req_node:disp-membership:disp-cyb:disp-cyb-04
+      assessable: true
+      depth: 2
+      parent_urn: urn:evidence-hound:risk:req_node:disp-membership:disp-cyb
+      ref_id: DISP-CYB-04
+      name: User application hardening
+      description: "Web browsers, Office and PDF software are hardened as the Essential Eight describes."
+      annotation: "Source: Defence Security Principles Framework (DSPF), Cyber security, as Defence applies it to DISP members. Paraphrased; the DSPF and the DISP pages on defence.gov.au are authoritative."
+      implementation_groups: [M]
+    - urn: urn:evidence-hound:risk:req_node:disp-membership:disp-cyb:disp-cyb-05
+      assessable: true
+      depth: 2
+      parent_urn: urn:evidence-hound:risk:req_node:disp-membership:disp-cyb
+      ref_id: DISP-CYB-05
+      name: Restrict administrative privileges
+      description: "Administrative privileges are limited, validated and separated from everyday use, as the Essential Eight describes."
+      annotation: "Source: Defence Security Principles Framework (DSPF), Cyber security, as Defence applies it to DISP members. Paraphrased; the DSPF and the DISP pages on defence.gov.au are authoritative."
+      implementation_groups: [M]
+    - urn: urn:evidence-hound:risk:req_node:disp-membership:disp-cyb:disp-cyb-06
+      assessable: true
+      depth: 2
+      parent_urn: urn:evidence-hound:risk:req_node:disp-membership:disp-cyb
+      ref_id: DISP-CYB-06
+      name: Patch operating systems
+      description: "Operating systems are patched within the Essential Eight's time frames, and unsupported ones are replaced."
+      annotation: "Source: Defence Security Principles Framework (DSPF), Cyber security, as Defence applies it to DISP members. Paraphrased; the DSPF and the DISP pages on defence.gov.au are authoritative."
+      implementation_groups: [M]
+    - urn: urn:evidence-hound:risk:req_node:disp-membership:disp-cyb:disp-cyb-07
+      assessable: true
+      depth: 2
+      parent_urn: urn:evidence-hound:risk:req_node:disp-membership:disp-cyb
+      ref_id: DISP-CYB-07
+      name: Multi-factor authentication
+      description: "Multi-factor authentication protects users and administrators as the Essential Eight describes."
+      annotation: "Source: Defence Security Principles Framework (DSPF), Cyber security, as Defence applies it to DISP members. Paraphrased; the DSPF and the DISP pages on defence.gov.au are authoritative."
+      implementation_groups: [M]
+    - urn: urn:evidence-hound:risk:req_node:disp-membership:disp-cyb:disp-cyb-08
+      assessable: true
+      depth: 2
+      parent_urn: urn:evidence-hound:risk:req_node:disp-membership:disp-cyb
+      ref_id: DISP-CYB-08
+      name: Regular backups
+      description: "Important data is backed up, protected and restore-tested as the Essential Eight describes."
+      annotation: "Source: Defence Security Principles Framework (DSPF), Cyber security, as Defence applies it to DISP members. Paraphrased; the DSPF and the DISP pages on defence.gov.au are authoritative."
+      implementation_groups: [M]

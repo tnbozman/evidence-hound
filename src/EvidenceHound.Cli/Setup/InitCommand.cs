@@ -32,13 +32,14 @@ internal static class InitCommand
         var due = new Option<string?>("--due") { Hidden = true, Description = "No longer used: the audit runs in periods, each due on its last day." };
         var owner = new Option<string?>("--owner") { Description = $"The email of whoever owns compliance. Default: {DefaultOwner}." };
         var evidenceRoot = new Option<string>("--evidence-root") { Description = "Where the runner keeps evidence, outside the repo.", DefaultValueFactory = _ => DefaultEvidenceRoot };
+        var frameworks = new Option<string?>("--framework") { Description = "Also write an audit beside the Essential Eight one, comma separated: disp (DISP membership readiness). Default: none." };
         var assistant = new Option<string?>("--assistant") { Description = "Also set up a coding assistant in the repo, as 'hound agent setup' does: claude, copilot, both or none. Default: none." };
         var yes = new Option<bool>("--yes", "-y") { Description = "Ask nothing: take the options given and the defaults." };
         var json = new Option<bool>("--json") { Description = "Answer in JSON, for an agent: the organisation, the audit and every file written." };
 
         var init = new Command("init", "Write a new organisation's compliance repo: config, scope, an Essential Eight audit and its mapping. Asks each question it needs.")
         {
-            folder, org, code, url, timeZone, level, interval, due, owner, evidenceRoot, assistant, yes, json,
+            folder, org, code, url, timeZone, level, interval, due, owner, evidenceRoot, frameworks, assistant, yes, json,
         };
         init.SetAction(async (parseResult, cancellationToken) =>
         {
@@ -64,7 +65,8 @@ internal static class InitCommand
                 await wizard.AskAsync("Audit interval (quarter or month)", parseResult.GetValue(interval), DefaultInterval, cancellationToken),
                 await wizard.AskAsync("Compliance owner's email, as a CISO Assistant user", parseResult.GetValue(owner), DefaultOwner, cancellationToken),
                 parseResult.GetRequiredValue(evidenceRoot),
-                AuditSeries.Today(configuration));
+                AuditSeries.Today(configuration),
+                parseResult.GetValue(frameworks) ?? "");
 
             // With --json the steps' own lines are held back, and one JSON answer says what was written.
             var asJson = parseResult.GetValue(json);
@@ -103,7 +105,7 @@ internal static class InitCommand
 
     internal const string AssistantQuestion = "Set up an AI assistant in this repo (claude, copilot, both or none)";
 
-    private sealed record Answers(string Name, string Code, string Url, string TimeZone, string Level, string Interval, string Owner, string EvidenceRoot, DateOnly Today);
+    private sealed record Answers(string Name, string Code, string Url, string TimeZone, string Level, string Interval, string Owner, string EvidenceRoot, DateOnly Today, string Frameworks);
 
     private static Result<NewOrganisation> Check(Answers a)
     {
@@ -145,9 +147,18 @@ internal static class InitCommand
             problems.Add(new Problem("init.answer_invalid", $"The owner '{a.Owner}' must be an email address."));
         }
 
+        var ids = a.Frameworks.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).Select(f => f.ToLowerInvariant()).Distinct().ToList();
+        foreach (var unknown in ids.Where(id => ExtraFramework.All.All(e => e.Id != id)))
+        {
+            problems.Add(new Problem("init.answer_invalid", $"The framework '{unknown}' is not one hound init can add; it can add {string.Join(", ", ExtraFramework.All.Select(e => e.Id))}."));
+        }
+
         return problems.Count > 0
             ? Result.Fail<NewOrganisation>([.. problems])
-            : Result.Ok(new NewOrganisation(a.Name, code, a.Url, a.TimeZone, level, interval, FirstDay(interval, a.Today), a.Owner, a.EvidenceRoot));
+            : Result.Ok(new NewOrganisation(a.Name, code, a.Url, a.TimeZone, level, interval, FirstDay(interval, a.Today), a.Owner, a.EvidenceRoot)
+            {
+                Extras = [.. ExtraFramework.All.Where(e => ids.Contains(e.Id))],
+            });
     }
 
     private static async Task<int> WriteAsync(
@@ -159,7 +170,8 @@ internal static class InitCommand
             await WriteFileAsync(target, relative, text, cancellationToken);
         }
 
-        foreach (var relative in RepoTemplate.Copied)
+        var copied = RepoTemplate.CopiedFor(org);
+        foreach (var relative in copied)
         {
             await WriteFileAsync(target, relative, await BundledAsync(relative, cancellationToken), cancellationToken);
         }
@@ -173,7 +185,7 @@ internal static class InitCommand
             return Log.Problems(logger, problems);
         }
 
-        await terminal.Output.WriteLineAsync(string.Create(CultureInfo.InvariantCulture, $"Wrote {org.Name}'s compliance repo to {target.FullName}: {files.Count + RepoTemplate.Copied.Count} files, audit {org.AuditRef}."));
+        await terminal.Output.WriteLineAsync(string.Create(CultureInfo.InvariantCulture, $"Wrote {org.Name}'s compliance repo to {target.FullName}: {files.Count + copied.Count} files, audit {string.Join(", ", [org.AuditRef, .. org.Extras.Select(org.ExtraAuditRef)])}."));
         await terminal.Output.WriteLineAsync("Next: make it a git repository (git init) and push it to a private repository; add systems, controls and collectors (see README.md), then hound scope plan and apply. hound agent setup writes the files a coding assistant needs to help.");
         return ExitCodes.Ok;
     }

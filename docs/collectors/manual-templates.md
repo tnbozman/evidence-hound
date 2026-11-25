@@ -35,3 +35,16 @@ above cover the actions the Essential Eight already evidences.
 | [Secure build and secrets](../../examples/manual-sources/essentials/secure-build-and-secrets/README.md) | 3 months | IT.PRO-01.1, IT.PRO-01.2, IT.PRO-13.2, IT.PRO-13.3 |
 | [Security awareness training](../../examples/manual-sources/essentials/security-awareness-training/README.md) | 12 months | IT.PRO-14.1, IT.PRO-14.2 |
 | [Supply chain security](../../examples/manual-sources/essentials/supply-chain-security/README.md) | 3 months | IT.PRO-16.1, IT.PRO-16.2 |
+
+## DISP membership readiness (s14)
+
+For the records no system holds, in `examples/manual-sources/disp/`. Each check is mapped in `mappings/disp.yaml`. Security awareness
+training (DISP-PER-04) uses the Essentials [security awareness training](../../examples/manual-sources/essentials/security-awareness-training/README.md)
+template, so one set of training records answers both.
+
+| Template | Every | Requirements |
+| --- | --- | --- |
+| [Annual security report to Defence](../../examples/manual-sources/disp/annual-security-report/README.md) | 12 months | DISP-GOV-04, DISP-INF-03, DISP-PER-05 |
+| [Clearances register review](../../examples/manual-sources/disp/clearances-register/README.md) | 6 months | DISP-PER-01, DISP-PER-02, DISP-PER-03 |
+| [Facility and visitor controls](../../examples/manual-sources/disp/facility-security/README.md) | 6 months | DISP-PHY-01, DISP-PHY-02, DISP-PHY-03 |
+| [Security officer and governance](../../examples/manual-sources/disp/security-officer/README.md) | 12 months | DISP-GOV-01, DISP-GOV-02, DISP-GOV-03 |

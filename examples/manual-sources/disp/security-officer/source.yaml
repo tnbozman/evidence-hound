@@ -1,0 +1,10 @@
+# Security officer and governance: paste this under 'collectors:' in hound.yaml, then set the owner and the drop folder.
+# The runbook is README.md beside this file; point an evidence plan row at your copy of it.
+- name: security-officer
+  type: manual
+  schedule: "0 6 * * *"
+  settings:
+    drop_folder: /var/lib/evidence-hound/manual/security-officer
+    checks: disp.security_officer_appointed, disp.security_policy_approved, disp.foreign_interest_declared
+    due_days: 366
+    owner: Example chief executive

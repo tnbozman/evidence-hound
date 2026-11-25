@@ -33,5 +33,5 @@ Attest each check as pass, partial or fail, and say why in a sentence.
 
 | Check | Requirements | Passes when |
 | --- | --- | --- |
-| `training.awareness_completed` | IT.PRO-14.1 | Everyone completed security awareness training suited to their role in the last year, including new starters. |
-| `training.awareness_content_current` | IT.PRO-14.2 | The training was updated in the last year to reflect current threats. |
+| `training.awareness_completed` | IT.PRO-14.1, DISP-PER-04 | Everyone completed security awareness training suited to their role in the last year, including new starters. |
+| `training.awareness_content_current` | IT.PRO-14.2, DISP-PER-04 | The training was updated in the last year to reflect current threats. |

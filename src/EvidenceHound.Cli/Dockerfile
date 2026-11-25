@@ -9,9 +9,9 @@ WORKDIR /src
 # global.json is left out: it pins the dev SDK band, and this stage uses the SDK image pinned above.
 COPY Directory.Build.props Directory.Packages.props ./
 COPY src/ src/
-# hound init carries the Essential Eight mapping and snapshot, the compliance repo template's .gitignore and the weekly review runbook.
-COPY mappings/essential-eight-2023.yaml mappings/
-COPY frameworks/essential-eight-2023.json frameworks/
+# hound init carries the Essential Eight and DISP mappings and snapshots (and the DISP library), the compliance repo template's .gitignore and the weekly review runbook.
+COPY mappings/essential-eight-2023.yaml mappings/disp.yaml mappings/
+COPY frameworks/essential-eight-2023.json frameworks/disp.yaml frameworks/disp.json frameworks/
 COPY examples/compliance-repo/.gitignore examples/compliance-repo/
 COPY examples/compliance-repo/manual-sources/weekly-compliance-review.md examples/compliance-repo/manual-sources/
 # hound onboard's default skills and the coding-assistant files hound agent setup writes, built into hound.

@@ -1,0 +1,10 @@
+# Annual security report to Defence: paste this under 'collectors:' in hound.yaml, then set the owner and the drop folder.
+# The runbook is README.md beside this file; point an evidence plan row at your copy of it.
+- name: annual-security-report
+  type: manual
+  schedule: "0 6 * * *"
+  settings:
+    drop_folder: /var/lib/evidence-hound/manual/annual-security-report
+    checks: disp.annual_report_submitted, disp.incidents_reported
+    due_days: 366
+    owner: Example security officer
