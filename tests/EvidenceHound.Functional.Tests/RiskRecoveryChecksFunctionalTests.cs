@@ -57,10 +57,10 @@ public sealed class RiskRecoveryChecksFunctionalTests(CisoAssistantFixture ciso)
 
     public void Dispose() => Directory.Delete(_workDir, recursive: true);
 
-    /// <summary>Whether an asset has a recovery time objective: CISO Assistant's asset list gives each one set as text, such as <c>rto: 4h</c>.</summary>
+    /// <summary>Whether an asset has a recovery time objective: CISO Assistant's asset list gives each one set as text, such as <c>RTO: 4h</c>.</summary>
     private static bool HasRto(JsonNode asset) =>
         asset["disaster_recovery_objectives"] is JsonArray objectives
-        && objectives.Any(o => o?["str"] is JsonValue text && text.TryGetValue<string>(out var s) && s.StartsWith("rto: ", StringComparison.Ordinal));
+        && objectives.Any(o => o?["str"] is JsonValue text && text.TryGetValue<string>(out var s) && s.StartsWith("RTO: ", StringComparison.OrdinalIgnoreCase));
 
     private static string? Id(JsonNode? relation) => relation switch
     {

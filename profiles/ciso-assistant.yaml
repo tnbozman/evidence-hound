@@ -191,8 +191,8 @@ checks:
   - id: bia.recovery_tested
     title: Critical systems have their recovery tested
     over: bia_systems
-    # CISO Assistant's asset list gives each recovery objective set above zero as text, such as "rto: 4h".
-    where: { field: "$.system[0].disaster_recovery_objectives[*].str", any_matches: "^rto: ", missing: fail }
+    # CISO Assistant's asset list gives each recovery objective set above zero as text, such as "RTO: 4h".
+    where: { field: "$.system[0].disaster_recovery_objectives[*].str", any_matches: "(?i)^rto: ", missing: fail }
     each: { field: $.recovery_tested, equals: true, missing: fail }
     require: all
     when_empty: not_applicable
