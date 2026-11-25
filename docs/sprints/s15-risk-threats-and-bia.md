@@ -357,10 +357,24 @@ From s15 the rehearsal drives hound through the agent skills, as the person's ag
 missing (the maintainer's standing rule, 2026-11-25: every sprint ends with the Claude Code and Copilot skills and agents accurate for
 the CLI and its workflows; see the sprint lifecycle in [README.md](README.md)).
 
+**Rehearsal (2026-11-25).** The trial ran unattended end to end in CI, twice (the second run skips finished steps and plans nothing
+new), and from this sprint ends by printing each audit's percentage as CISO Assistant computes it (step 16). Following the docs and
+the agent skills found s15-D1 to s15-D10 and the false 100% that became s15-14; the person's first real `hound approve` found what
+became s15-12 and s15-D7. Driving hound through the skills: `hound agent setup --assistant both` on a copy of the example repo, then
+each skill's commands checked against the CLI tree for Claude Code and for Copilot (`AgentCommandTests`). The work-through-pending-
+decisions skill on the example repos found nothing waiting (they hold no drafts), so its walk is covered by `ReviewCommandTests` and
+`AgentSkillTests.Decisions_skill_recommends_and_never_accepts`. No skill named a command that does not exist.
+
 ### s15-11 Improve: quality and flow (standing, about 15% of each sprint)
 - [ ] Done
 
 As [s12-10](s12-e8-mapping-and-adoption.md#s12-10-improve-quality-and-flow-standing-about-15-of-each-sprint).
+
+**Done (2026-11-25).** CI lists the failed functional tests last, so the log's tail names them (`scripts/failed-tests.py`); a shared
+`TestRepo.CopyExample` for functional tests; functional expectations brought up to date with the plan's Covers column and the seed's new
+kinds; `scope export` round-trips a system's security and recovery objectives; a BIA status CISO Assistant defaults is no change; the
+scope and onboarding guides and the audit skill say one audit per system and one per shared platform; the definition of done and the
+sprint lifecycle keep the agent kit accurate every sprint.
 
 ### s15-12 Approve one decision at a time, with the person's agent (added 2026-11-25)
 - [ ] Done
@@ -395,6 +409,11 @@ and a risk flag, and to approve or challenge one at a time by id, so that I deci
 **Functional check**
 - On a copy of the example repo with a drafted onboarding: the agent lists the items, records a recommendation, and the person
   accepts one item and challenges another by key; the sign-off records only those.
+
+**Functional check result (2026-11-25).** `ReviewCommandTests` run the flow at the CLI with a scripted terminal on a repo with drafted
+items: `hound review pending --json` gives each item's risk and the grouped summary, `hound review --only <key>` asks only the named
+item and writes only its answer, an unknown key is refused with the nearest keys, and a pipe is refused. `hound approve` opens with
+the grouped summary (`ApproveCommandTests`). The review writes scope files only, so no CISO Assistant is needed.
 
 ### s15-14 A report never reads 100% while rows are not assessed (added 2026-11-25, top priority)
 - [ ] Done
