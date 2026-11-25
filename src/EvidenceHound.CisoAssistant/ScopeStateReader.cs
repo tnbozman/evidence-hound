@@ -16,6 +16,12 @@ namespace EvidenceHound.CisoAssistant;
 /// </summary>
 internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, IScopeExportSource
 {
+    /// <summary>
+    /// s18-04: the lists the last <see cref="ReadAsync"/> read, which the access read that follows it in the same command uses once, so a
+    /// command reads each list once. A later state read starts afresh.
+    /// </summary>
+    private Dictionary<string, List<JsonNode>>? _lastLists;
+
     public async Task<Result<ScopeExportState>> ReadAllAsync(string rootFolder, CancellationToken cancellationToken)
     {
         var reading = new Reading(http, cancellationToken);
@@ -67,7 +73,8 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
 
     public async Task<Result<IReadOnlyList<UserAccess>>> ReadAccessAsync(CancellationToken cancellationToken)
     {
-        var reading = new Reading(http, cancellationToken);
+        var reading = new Reading(http, cancellationToken, _lastLists ?? []);
+        _lastLists = null;
         var folders = await reading.ListAsync("folders/");
         var users = await reading.ListAsync("users/");
         var roles = await reading.ListAsync("roles/");
@@ -98,7 +105,8 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
     public async Task<Result<IReadOnlyList<ActualObject>>> ReadAsync(ScopeStateQuery query, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(query);
-        return (await ReadHeldAsync(query, allRows: false, new Reading(http, cancellationToken))).Map(h => h.Objects);
+        _lastLists = [];
+        return (await ReadHeldAsync(query, allRows: false, new Reading(http, cancellationToken, _lastLists))).Map(h => h.Objects);
     }
 
     /// <summary>
@@ -780,13 +788,33 @@ internal sealed class ScopeStateReader(HttpClient http) : IScopeStateSource, ISc
     }
 
     /// <summary>One read of CISO Assistant: every request goes on, and the first failures are kept to report at the end.</summary>
-    private sealed class Reading(HttpClient http, CancellationToken cancellationToken)
+    private sealed class Reading(HttpClient http, CancellationToken cancellationToken, Dictionary<string, List<JsonNode>>? lists = null)
     {
+        private readonly Dictionary<string, List<JsonNode>> _lists = lists ?? [];
+
         public List<Problem> Problems { get; } = [];
 
-        /// <summary>Every object of a list. <paramref name="path"/> may carry a query of its own.</summary>
-        public async Task<List<JsonNode>> ListAsync(string path) =>
-            Problems.Count > 0 ? [] : Kept(await http.ListAllAsync(path, cancellationToken)) ?? [];
+        /// <summary>Every object of a list, read once per reading. <paramref name="path"/> may carry a query of its own.</summary>
+        public async Task<List<JsonNode>> ListAsync(string path)
+        {
+            if (Problems.Count > 0)
+            {
+                return [];
+            }
+
+            if (_lists.TryGetValue(path, out var read))
+            {
+                return read;
+            }
+
+            var listed = Kept(await http.ListAllAsync(path, cancellationToken));
+            if (listed is not null)
+            {
+                _lists[path] = listed;
+            }
+
+            return listed ?? [];
+        }
 
         /// <summary>The <c>/object/</c> view of each listed object whose folder is one of <paramref name="folders"/>.</summary>
         public async Task<List<JsonNode>> ObjectsInAsync(string resource, HashSet<string> folders) =>

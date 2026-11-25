@@ -118,10 +118,15 @@ public sealed class Runner(
 
         var started = clock.UtcNow;
         var runId = RunIds.From(started);
+        // s18-04: collectors collect at the same time, up to options.Parallel; each then plans and publishes in config order, so a later
+        // collector still reads what an earlier one wrote and saved.
+        using var gate = new SemaphoreSlim(Math.Max(1, options.Parallel));
+        var collecting = instances.Select(instance => CollectGatedAsync(instance, gate, cancellationToken)).ToList();
         var results = new List<CollectorRunResult>(instances.Count);
-        foreach (var instance in instances)
+        for (var i = 0; i < instances.Count; i++)
         {
-            results.Add(await RunOneAsync(instance, options, runId, cancellationToken));
+            var (collectStarted, collected) = await collecting[i];
+            results.Add(await FinishAsync(instances[i], collectStarted, collected, options, runId, cancellationToken));
         }
 
         var summary = new RunSummary(results) { RunId = runId };
@@ -136,10 +141,23 @@ public sealed class Runner(
         return summary;
     }
 
-    private async Task<CollectorRunResult> RunOneAsync(CollectorInstance instance, RunOptions options, string runId, CancellationToken cancellationToken)
+    private async Task<(DateTimeOffset Started, Result<CollectedRun> Collected)> CollectGatedAsync(CollectorInstance instance, SemaphoreSlim gate, CancellationToken cancellationToken)
     {
-        var started = clock.UtcNow;
-        var collected = await CollectAsync(instance, cancellationToken);
+        await gate.WaitAsync(cancellationToken);
+        try
+        {
+            var started = clock.UtcNow;
+            return (started, await CollectAsync(instance, cancellationToken));
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    private async Task<CollectorRunResult> FinishAsync(
+        CollectorInstance instance, DateTimeOffset started, Result<CollectedRun> collected, RunOptions options, string runId, CancellationToken cancellationToken)
+    {
         var result = options.NoPublish
             ? collected.Match(_ => Succeeded(instance, null), problems => Failed(instance, problems, null))
             : await PublishAsync(instance, collected, options, runId, cancellationToken);
