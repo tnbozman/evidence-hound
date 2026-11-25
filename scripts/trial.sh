@@ -56,8 +56,13 @@ hound() {
   local tty="$1"
   shift
   local mode argv
-  # host_mode, when set, overrides how hound's container reaches CISO Assistant (the Microsoft 365 dev server step).
-  mode="${host_mode:-$(cat "$state/ca-mode")}"
+  # host_mode, when set, overrides how hound's container reaches CISO Assistant (the Microsoft 365 dev server step). A config that
+  # reads a dev server puts hound on the host network too, where the dev server is on localhost.
+  local reads_dev=no
+  if [[ -f "$ws/repo/hound.yaml" ]] && { trial_uses_dev_server "$ws/repo/hound.yaml" "$sophos_port" || trial_uses_dev_server "$ws/repo/hound.yaml" "$iac_port"; }; then
+    reads_dev=yes
+  fi
+  mode="${host_mode:-$(trial_run_mode "$(cat "$state/ca-mode")" "$reads_dev")}"
   mapfile -t argv < <(trial_hound_argv "$image" "$(trial_network_args "$mode")" "$ws" "$(id -u):$(id -g)" "$(trial_ca_url "$mode")" "$tty" "$@")
   show "hound$(printf ' %s' "${@@Q}" | sed "s/ '\([^' ]*\)'/ \1/g")"
   "${argv[@]}"
@@ -331,7 +336,7 @@ wire_audit() {
 # sophos_dev [DEVIATION] (re)starts the Sophos Central dev server in the background, compliant or with one deviation
 sophos_dev() {
   local url args=()
-  url="$(trial_dev_url "$(cat "$state/ca-mode")" "$sophos_port")"
+  url="$(trial_dev_url "$sophos_port")"
   stop_sophos_dev
   args=(--port "$sophos_port" --public-url "$url")
   [[ -n "${1:-}" ]] && args+=(--deviation "$1")
@@ -359,7 +364,7 @@ trap 'stop_sophos_dev; stop_iac_dev' EXIT
 # terraform test wrote, when there is one) and its drift plan, as the IaC repository's GitHub Actions would serve them
 iac_dev() {
   local url args=() report
-  url="$(trial_dev_url "$(cat "$state/ca-mode")" "$iac_port")"
+  url="$(trial_dev_url "$iac_port")"
   stop_iac_dev
   args=(--port "$iac_port" --public-url "$url")
   report="$(trial_controls_report_args "$ws/iac")"
@@ -421,7 +426,7 @@ grc_platform_evidence() {
     if ! grep -q "^  - name: $name\$" "$ws/repo/hound.yaml"; then
       mkdir -p "$ws/inbox"
       printf '%s\n' iac-dev-server-checks-no-token >"$ws/inbox/iac-dev-token"
-      mapfile -t sets < <(trial_iac_dev_sets "$(trial_dev_url "$(cat "$state/ca-mode")" "$iac_port")" "$profile")
+      mapfile -t sets < <(trial_iac_dev_sets "$(trial_dev_url "$iac_port")" "$profile")
       hound no add collector rest --name "$name" --config hound.yaml --schedule "$schedule" --secrets-dir /trial/secrets \
         --secret-file token=/trial/inbox/iac-dev-token "${sets[@]}" --yes
       rm -f "$ws/inbox/iac-dev-token"
@@ -463,7 +468,7 @@ sophos() {
         mkdir -p "$ws/inbox"
         printf '%s\n' sophos-dev-server-checks-no-secret >"$ws/inbox/sophos-dev-secret"
         local sets
-        mapfile -t sets < <(trial_sophos_dev_sets "$(trial_dev_url "$(cat "$state/ca-mode")" "$sophos_port")")
+        mapfile -t sets < <(trial_sophos_dev_sets "$(trial_dev_url "$sophos_port")")
         hound no add collector rest --name sophos --config hound.yaml --schedule "0 4 * * *" --secrets-dir /trial/secrets \
           --secret-file client_secret=/trial/inbox/sophos-dev-secret "${sets[@]}" --yes
         rm -f "$ws/inbox/sophos-dev-secret"

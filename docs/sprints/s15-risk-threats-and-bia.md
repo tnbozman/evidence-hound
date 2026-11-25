@@ -329,8 +329,8 @@ As [s12-10](s12-e8-mapping-and-adoption.md#s12-10-improve-quality-and-flow-stand
   and apply). Fixed: retry logging starts at warnings, like the HTTP client's own.
 - **s15-D6 The trial's dev server is unreachable on a `make ca-up` network** (found 2026-11-25 in the rehearsal). The trial and
   local-trial.md point the REST collector at `http://host.docker.internal:5370/`, but credentials go over plain http only to
-  loopback, so every request fails with `rest.host_not_allowed`. Open: either run the dev server inside hound's network namespace
-  on that path (no change to the rule), or treat Docker's host alias as this machine (a change to a credential rule, so it waits
-  for a person's decision).
+  loopback, so every request fails with `rest.host_not_allowed`. Fixed (the maintainer chose to keep the rule): dev servers are
+  always on localhost, and while the config reads one the trial runs hound on the host network, reaching a `make ca-up` stack on its
+  published port, as the Microsoft 365 step already did. local-trial.md and sophos-dev-server.md say so.
 
 ## Sprint review

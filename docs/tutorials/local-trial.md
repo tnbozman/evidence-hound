@@ -122,7 +122,7 @@ hound add collector rest --name sophos --config hound.yaml --schedule "0 4 * * *
   --secret-file client_secret=/trial/inbox/sophos-dev-secret --yes
 ```
 
-The secret is a placeholder the trial writes; the dev server checks no credential. On a `make ca-up` network the address is `http://host.docker.internal:5370/` instead, because hound runs in its own container there.
+The secret is a placeholder the trial writes; the dev server checks no credential. The address is `localhost` on a `make ca-up` network too: hound sends credentials over plain http only to the machine it runs on, so while the config reads a dev server the trial runs hound on the host network and reaches CISO Assistant on its published port.
 
 ### Your own tenant
 

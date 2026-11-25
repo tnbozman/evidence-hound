@@ -39,14 +39,17 @@ trial_network_args() {
   esac
 }
 
-# trial_dev_url MODE PORT -> a dev server's address, listening in the dev container on PORT, as hound's container sees it
-# With the host network hound shares the dev container's namespace; on a make ca-up network it reaches the dev container,
-# which is its Docker host, as host.docker.internal.
+# trial_dev_url PORT -> a dev server's address, listening in the dev container on PORT, as hound's container sees it
+# Always localhost: hound sends credentials over plain http only to this machine, so hound reading a dev server shares the
+# host network (trial_run_mode).
 trial_dev_url() {
-  case "$1" in
-    "network "*) echo "http://host.docker.internal:$2/" ;;
-    *) echo "http://localhost:$2/" ;;
-  esac
+  echo "http://localhost:$1/"
+}
+
+# trial_run_mode MODE READS_DEV(yes|no) -> the CISO Assistant mode for one hound container: the host network's when the config
+# reads a dev server, as only there is the dev server on localhost
+trial_run_mode() {
+  if [[ "$2" == yes ]]; then trial_host_mode "$1"; else echo "$1"; fi
 }
 
 # trial_sophos_dev_sets URL -> the hound add collector rest settings, one word per line, for the Sophos Central dev server at URL
