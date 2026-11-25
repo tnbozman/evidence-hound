@@ -1,6 +1,8 @@
 using EvidenceHound.Core.Checks;
+using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Publishing;
 using EvidenceHound.Core.Scope;
+using EvidenceHound.Core.Tests.Checks;
 
 namespace EvidenceHound.Core.Tests.Publishing;
 
@@ -48,7 +50,7 @@ public class MetricPublisherTests
         ca.Metrics["EX-MET-E8-CORP"] = new("mi-e8", "monthly");
         ca.Rows.Add(new RemoteRequirementAssessment("ra-1", "urn:example:req:1", "1", []));
         ca.Rows.Add(new RemoteRequirementAssessment("ra-2", "urn:example:req:2", "2", []));
-        ca.Requirements["ra-1"] = new RequirementAssessmentValues(Mapping.ComplianceResult.Compliant, "seen", []);
+        ca.Requirements["ra-1"] = new RequirementAssessmentValues(ComplianceResult.Compliant, "seen", []);
 
         await MetricPublisher.PublishAsync(ca, [Instance("EX-MET-E8-CORP", "requirements_compliant_pct", audit: "EX-E8-2026")], Run(), TestContext.Current.CancellationToken);
 

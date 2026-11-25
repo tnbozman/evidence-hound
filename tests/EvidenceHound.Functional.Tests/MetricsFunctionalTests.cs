@@ -7,7 +7,7 @@ namespace EvidenceHound.Functional.Tests;
 /// <summary>
 /// s16-02: a fictional MFA coverage metric (a formula over two counts, with a 95% target), a qualitative policy metric and a committee
 /// dashboard, in a copy of the example repo, are applied to CISO Assistant. A second plan changes nothing; a new target is one update. Each
-/// step's output lands in <c>test-results/metrics/</c>.
+/// step's output lands in <c>test-results/metrics/</c>. s16-03: runs fill in an instance with <c>source: hound</c>, one sample per period.
 /// </summary>
 [Trait("Category", "Functional")]
 [Collection(SharedCisoAssistant.Name)]
@@ -116,7 +116,69 @@ public sealed class MetricsFunctionalTests(CisoAssistantFixture ciso) : IDisposa
         ByRef(await ListAsync("metrology/metric-instances/", ct), "EX-FMET-MFA-CORP")["target_value"]!.GetValue<double>().ShouldBe(90);
     }
 
+    [Fact]
+    public async Task Two_runs_in_one_month_leave_one_sample_holding_the_second_value()
+    {
+        // s16-03: backup.* checks passing, measured by each run. The fake collector passes both, then (with its fail setting) fails one.
+        var ct = TestContext.Current.CancellationToken;
+        await CopyExampleRepoAsync(ct);
+        await File.WriteAllTextAsync(Path.Combine(Scope, "metrics.yaml"), """
+            definitions:
+              - {ref_id: EX-FMET-BACKUP, name: Backup checks passing (functional test), unit: percentage, direction: higher_is_better, frequency: monthly, target: 100}
+            instances:
+              - ref_id: EX-FMET-BACKUP-CORP
+                name: Backup checks passing
+                definition: EX-FMET-BACKUP
+                domain: Example Pty Ltd
+                source: hound
+                measure: check_pass_rate
+                checks: [backup.*]
+            """, ct);
+        var applied = await StepAsync("runs-1-apply", ["scope", "apply", Scope], ct);
+        applied.Exit.ShouldBe(ExitCodes.Ok, applied.Output + applied.Error);
+        var month = DateTime.UtcNow.AddMonths(-1);
+        string Day(int day) => new DateOnly(month.Year, month.Month, day).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+        var period = new DateOnly(month.Year, month.Month, 1).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+
+        var first = await StepAsync("runs-2-run-day-3", ["run", "--config", await ConfigAsync(fail: null, ct)], ct, today: Day(3));
+        first.Exit.ShouldBe(ExitCodes.Ok, first.Output + first.Error);
+        Recorded(first.Output).ShouldBe([("EX-FMET-BACKUP-CORP", $"{period}T00:00:00Z", 100.0)], first.Output);
+
+        var second = await StepAsync("runs-3-run-day-20", ["run", "--config", await ConfigAsync(fail: "backup.daily", ct)], ct, today: Day(20));
+        second.Exit.ShouldBe(ExitCodes.Ok, second.Output + second.Error);
+        Recorded(second.Output).ShouldBe([("EX-FMET-BACKUP-CORP", $"{period}T00:00:00Z", 50.0)], second.Output);
+
+        var unchanged = await StepAsync("runs-4-run-day-21", ["run", "--config", await ConfigAsync(fail: "backup.daily", ct)], ct, today: Day(21));
+        Recorded(unchanged.Output).ShouldBeEmpty(unchanged.Output);
+
+        var instance = ByRef(await ListAsync("metrology/metric-instances/", ct), "EX-FMET-BACKUP-CORP");
+        var samples = (await ListAsync($"metrology/custom-metric-samples/?metric_instance={instance["id"]!.GetValue<string>()}", ct)).ToArray();
+        var sample = samples.ShouldHaveSingleItem(string.Join("\n", samples.Select(x => x.ToJsonString())));
+        sample["period_start"]!.GetValue<string>().ShouldStartWith(period);
+        sample["value"]!["result"]!.GetValue<double>().ShouldBe(50);
+        await File.WriteAllTextAsync(Path.Combine(_results, "runs-5-samples.json"), new JsonArray([.. samples.Select(x => x.DeepClone())]).ToJsonString(), ct);
+    }
+
     public void Dispose() => Directory.Delete(_repo, recursive: true);
+
+    private static (string Instance, string Period, double Value)[] Recorded(string runJson) =>
+        [.. JsonNode.Parse(runJson)!["metrics"]!.AsArray().Select(m => (m!["instance"]!.GetValue<string>(), m["period_start"]!.GetValue<string>(), m["value"]!.GetValue<double>()))];
+
+    /// <summary>The example deployment, with its scope, its evidence under the test's repo, and the fake collector's fail setting.</summary>
+    private async Task<string> ConfigAsync(string? fail, CancellationToken ct)
+    {
+        var files = Path.Combine(AppContext.BaseDirectory, "files");
+        var config = Path.Combine(_repo, "hound-test.yaml");
+        var text = (await File.ReadAllTextAsync(Path.Combine(files, "examples", "example-pty-ltd.yaml"), ct))
+            .Replace("root: ../.dev/evidence", $"root: {Path.Combine(_repo, "evidence")}", StringComparison.Ordinal)
+            .Replace("mapping: ../mappings/example.yaml", $"mapping: {Path.Combine(files, "mappings", "example.yaml")}", StringComparison.Ordinal)
+            .Replace("      tenant: example.com\n", fail is null ? "      tenant: example.com\n" : $"      tenant: example.com\n      fail: {fail}\n", StringComparison.Ordinal);
+        await File.WriteAllTextAsync(config, $"scope: {Scope}\n{text}", ct);
+
+        // Each run needs its own second: evidence folders and run IDs are named by the start time.
+        await Task.Delay(TimeSpan.FromSeconds(1.1), ct);
+        return config;
+    }
 
     private static (string Kind, string Key)[] MetricChanges(string planJson) =>
         [.. JsonNode.Parse(planJson)!["changes"]!.AsArray()
@@ -140,7 +202,7 @@ public sealed class MetricsFunctionalTests(CisoAssistantFixture ciso) : IDisposa
         }
     }
 
-    private async Task<(int Exit, string Output, string Error)> StepAsync(string name, string[] args, CancellationToken ct)
+    private async Task<(int Exit, string Output, string Error)> StepAsync(string name, string[] args, CancellationToken ct, string? today = null)
     {
         using var output = new StringWriter();
         using var error = new StringWriter();
@@ -149,7 +211,7 @@ public sealed class MetricsFunctionalTests(CisoAssistantFixture ciso) : IDisposa
             output,
             error,
             configureLogging: null,
-            new Dictionary<string, string?> { ["HOUND_CA_URL"] = ciso.ApiUrl.ToString(), ["HOUND_CA_TOKEN"] = ciso.Token },
+            new Dictionary<string, string?> { ["HOUND_CA_URL"] = ciso.ApiUrl.ToString(), ["HOUND_CA_TOKEN"] = ciso.Token, ["HOUND_TODAY"] = today },
             ct);
         await File.WriteAllTextAsync(Path.Combine(_results, $"{name}.txt"), $"$ hound {string.Join(' ', args.Select(Path.GetFileName))}\n{output}{error}", ct);
         return (exitCode, output.ToString(), error.ToString());
