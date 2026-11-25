@@ -55,4 +55,5 @@ teardown() {
   grep -B1 '^## 1.0.0' "$changelog" | head -1 | grep -q '^$'
   ! awk 'prev == "" && $0 == "" && NR > 1 { found = 1 } { prev = $0 } END { exit !found }' "$changelog"
   grep -q 'remind `owner@example.com` before' "$changelog"
+  [ -n "$(tail -c 2 "$changelog" | head -c 1)" ] # one final newline, no blank line at the end
 }

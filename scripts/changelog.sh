@@ -24,4 +24,6 @@ version="${1:?usage: changelog.sh <version> [repo]}"
 [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] || die "the version is semantic, without a v: 1.0.0"
 repo="${2:-$root}"
 git-cliff --config "$root/cliff.toml" --repository "$repo" --tag "v$version" --output "$repo/CHANGELOG.md"
+# git-cliff ends the file with blank lines; Markdown lint wants one final newline.
+printf '%s\n' "$(cat "$repo/CHANGELOG.md")" >"$repo/CHANGELOG.md.tmp" && mv "$repo/CHANGELOG.md.tmp" "$repo/CHANGELOG.md"
 echo "changelog: wrote $repo/CHANGELOG.md for $version"

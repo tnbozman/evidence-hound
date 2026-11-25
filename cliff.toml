@@ -23,8 +23,15 @@ body = """
 {% endfor -%}
 {% endfor %}
 """
-trim = true
+trim = false
 footer = ""
+# Lint-clean Markdown: a blank line before each version heading, never two blank lines, addresses as code (not bare links).
+postprocessors = [
+  { pattern = '([^\n])\n## ', replace = "${1}\n\n## " },
+  { pattern = '\n{3,}', replace = "\n\n" },
+  { pattern = '([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})', replace = "`${1}`" },
+  { pattern = '\n+$', replace = "\n" },
+]
 
 [git]
 conventional_commits = true
