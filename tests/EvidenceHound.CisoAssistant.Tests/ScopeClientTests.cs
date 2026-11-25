@@ -171,6 +171,97 @@ public sealed class ScopeClientTests : IDisposable
     }
 
     [Fact]
+    public async Task System_sends_its_security_and_recovery_objectives_only_when_declared()
+    {
+        // s15-04: objectives on CISO Assistant's 0-4 scale, recovery objectives in seconds; left out when the scope declares none, so the UI's stay.
+        List("assets");
+        Respond("POST", "/api/assets/", 201, new JsonObject { ["id"] = "a-new" });
+        var system = Declared(ScopeKind.System, "Example tablets", ("type", "supporting"), ("domain", "Example Pty Ltd"),
+            ("objectives", "availability=2, confidentiality=3"), ("recovery", "mtd=3d, rto=4h"));
+
+        (await Create(system)).Value();
+
+        var posted = JsonNode.Parse(Logged("POST", "/api/assets/").Body!)!;
+        Json(posted["security_objectives"]!).ShouldBe(Json(new JsonObject
+        {
+            ["objectives"] = new JsonObject
+            {
+                ["availability"] = new JsonObject { ["value"] = 2, ["is_enabled"] = true },
+                ["confidentiality"] = new JsonObject { ["value"] = 3, ["is_enabled"] = true },
+            },
+        }));
+        Json(posted["disaster_recovery_objectives"]!).ShouldBe(Json(new JsonObject
+        {
+            ["objectives"] = new JsonObject { ["mtd"] = new JsonObject { ["value"] = 259200 }, ["rto"] = new JsonObject { ["value"] = 14400 } },
+        }));
+    }
+
+    [Fact]
+    public async Task Creates_bia_asset_assessment_and_thresholds()
+    {
+        // s15-04 (BiaClientTests in the plan): the BIA on its matrix, one asset assessment per system, thresholds by seconds and impact position.
+        List("risk-matrices", new JsonObject { ["id"] = "rm-4x4", ["urn"] = "urn:example:risk:matrix:example-4x4" });
+        List("business-impact-analysis", new JsonObject { ["id"] = "bia-1", ["ref_id"] = "EX-BIA-2026" });
+        List("assets", new JsonObject { ["id"] = "a-365", ["name"] = "Example 365" }, new JsonObject { ["id"] = "a-laptops", ["name"] = "Example laptops" });
+        List("applied-controls", new JsonObject { ["id"] = "ac-backup", ["ref_id"] = "AC-BACKUP" });
+        List("asset-assessments", new JsonObject { ["id"] = "aa-1", ["asset"] = new JsonObject { ["id"] = "a-365", ["str"] = "Example 365" } });
+        List("escalation-thresholds");
+        List("terminologies", new JsonObject { ["id"] = "t-rep", ["name"] = "Reputation", ["field_path"] = "qualifications" });
+        Respond("POST", "/api/business-impact-analysis/", 201, new JsonObject { ["id"] = "bia-new" });
+        Respond("POST", "/api/asset-assessments/", 201, new JsonObject { ["id"] = "aa-new" });
+        Respond("POST", "/api/escalation-thresholds/", 201, new JsonObject { ["id"] = "et-new" });
+        var bia = Declared(ScopeKind.Bia, "EX-BIA-2026-NEW",
+            ("name", "Example BIA"), ("domain", "Example Pty Ltd"), ("perimeter", "Corporate IT"), ("matrix", "urn:example:risk:matrix:example-4x4"),
+            ("version", "1.0"), ("status", "in_progress"), ("due_date", "2026-12-31"), ("authors", "it@example.com"));
+        var assessment = Declared(ScopeKind.AssetAssessment, "EX-BIA-2026/Example laptops",
+            ("bia", "EX-BIA-2026"), ("system", "Example laptops"), ("dependencies", "Example 365"), ("controls", "AC-BACKUP"),
+            ("recovery_documented", "true"), ("recovery_tested", "false"), ("recovery_targets_met", "false"), ("observation", "Staff use phones."));
+        var threshold = Declared(ScopeKind.EscalationThreshold, "EX-BIA-2026/Example 365/1d",
+            ("assessment", "EX-BIA-2026/Example 365"), ("point_in_time", "86400"), ("impact", "Major"), ("qualifications", "Reputation"), ("justification", "Customers notice.")) with
+        {
+            Levels = new Dictionary<string, int> { ["quali_impact"] = 2 },
+        };
+
+        (await Create(bia)).Value();
+        (await Create(assessment)).Value();
+        (await Create(threshold)).Value();
+
+        Posted("business-impact-analysis").ShouldBe(Json(new JsonObject
+        {
+            ["name"] = "Example BIA",
+            ["ref_id"] = "EX-BIA-2026-NEW",
+            ["description"] = $"[hound scope {State}]",
+            ["folder"] = "f-ex",
+            ["perimeter"] = "p-corp",
+            ["risk_matrix"] = "rm-4x4",
+            ["version"] = "1.0",
+            ["status"] = "in_progress",
+            ["due_date"] = "2026-12-31",
+            ["authors"] = new JsonArray("act-it"),
+            ["reviewers"] = new JsonArray(),
+        }));
+        Posted("asset-assessments").ShouldBe(Json(new JsonObject
+        {
+            ["bia"] = "bia-1",
+            ["asset"] = "a-laptops",
+            ["dependencies"] = new JsonArray("a-365"),
+            ["associated_controls"] = new JsonArray("ac-backup"),
+            ["recovery_documented"] = true,
+            ["recovery_tested"] = false,
+            ["recovery_targets_met"] = false,
+            ["observation"] = "Staff use phones.",
+        }));
+        Posted("escalation-thresholds").ShouldBe(Json(new JsonObject
+        {
+            ["asset_assessment"] = "aa-1",
+            ["point_in_time"] = 86400,
+            ["quali_impact"] = 2,
+            ["qualifications"] = new JsonArray("t-rep"),
+            ["justification"] = "Customers notice.",
+        }));
+    }
+
+    [Fact]
     public async Task Creates_risk_study_on_its_matrix_with_actors_and_marker()
     {
         // s15-02 (RiskClientTests in the plan): a risk study is a risk assessment in its domain and perimeter, on a matrix found by URN.
