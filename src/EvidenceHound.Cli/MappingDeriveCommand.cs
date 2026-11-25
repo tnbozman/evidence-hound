@@ -24,12 +24,13 @@ internal static class MappingDeriveCommand
             Required = true,
         };
         var groups = new Option<string?>("--groups") { Description = "Only the new framework's rows in these implementation groups, comma separated (for example 1 for priority phase 1). Default: every row." };
-        var outFile = new Option<FileInfo?>("--out") { Description = "Write the draft here instead of printing it." };
+        var outFile = new Option<FileInfo?>("--out") { Description = "Write the draft here instead of printing it. An existing file is kept unless --force is given." };
+        var force = new Option<bool>("--force") { Description = "Replace an existing --out file (such as a reviewed mapping)." };
         var command = new Command(
             "derive",
             "Draft a mapping for a new framework: each row gets the union of the checks of the rows the transition mapping links to it, marked draft: true.")
         {
-            mapping, from, to, links, groups, outFile,
+            mapping, from, to, links, groups, outFile, force,
         };
         command.SetAction((parseResult, cancellationToken) => RunAsync(
             parseResult.GetRequiredValue(mapping),
@@ -38,6 +39,7 @@ internal static class MappingDeriveCommand
             parseResult.GetRequiredValue(links),
             parseResult.GetValue(groups),
             parseResult.GetValue(outFile),
+            parseResult.GetValue(force),
             output,
             logger,
             cancellationToken));
@@ -45,8 +47,14 @@ internal static class MappingDeriveCommand
     }
 
     private static async Task<int> RunAsync(
-        FileInfo mappingFile, FileInfo fromFile, FileInfo toFile, FileInfo linksFile, string? groupList, FileInfo? outFile, TextWriter output, ILogger logger, CancellationToken cancellationToken)
+        FileInfo mappingFile, FileInfo fromFile, FileInfo toFile, FileInfo linksFile, string? groupList, FileInfo? outFile, bool force, TextWriter output, ILogger logger, CancellationToken cancellationToken)
     {
+        if (outFile is { Exists: true } && !force)
+        {
+            Log.Usage(logger, $"{outFile} already exists, and may be a reviewed mapping. Write the draft to a new file, or add --force to replace it.");
+            return ExitCodes.Usage;
+        }
+
         var loaded = await MappingCommands.LoadAsync(mappingFile, cancellationToken);
         var source = await FrameworkCommands.LoadSnapshotAsync(fromFile, cancellationToken);
         var target = await FrameworkCommands.LoadSnapshotAsync(toFile, cancellationToken);
