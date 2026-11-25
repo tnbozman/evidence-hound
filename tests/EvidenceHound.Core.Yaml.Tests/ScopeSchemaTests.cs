@@ -50,6 +50,10 @@ public class ScopeSchemaTests
         Errors(ExceptionScopeTests.Exceptions).ShouldBeEmpty();
         Errors(BiaScopeTests.Bia).ShouldBeEmpty();
         Errors(MetricScopeTests.Metrics).ShouldBeEmpty();
+        Errors(MetricScopeTests.Measured("    source: hound\n    measure: check_pass_rate\n    checks: [identity.mfa.*]\n")).ShouldBeEmpty();
+        Errors(MetricScopeTests.Measured("    source: hound\n    measure: requirements_compliant_pct\n    audit: EX-E8-2026\n")).ShouldBeEmpty();
+        Errors(MetricScopeTests.Measured("    source: hound\n    measure: uptime\n")).ShouldNotBeEmpty();
+        Errors(MetricScopeTests.Measured("    source: hound\n")).ShouldNotBeEmpty();
         Errors(MetricScopeTests.Metrics.Replace("frequency: monthly", "frequency: fortnightly", StringComparison.Ordinal)).ShouldNotBeEmpty();
         Errors(MetricScopeTests.Metrics.Replace("chart: line", "chart: radar", StringComparison.Ordinal)).ShouldNotBeEmpty();
         Errors(MetricScopeTests.Metrics.Replace("combine: sum}", "combine: median}", StringComparison.Ordinal)).ShouldNotBeEmpty();

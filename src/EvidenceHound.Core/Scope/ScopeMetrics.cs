@@ -16,6 +16,9 @@ public sealed record ScopeMetrics(IReadOnlyList<ScopeMetricDefinition> Definitio
 
     /// <summary>How a formula combines the values of an input's instances in the domain.</summary>
     public static IReadOnlyList<string> Combines { get; } = ["one", "sum", "avg", "min", "max", "count"];
+
+    /// <summary>What a run can measure for an instance with <c>source: hound</c> (s16-03), each a percentage.</summary>
+    public static IReadOnlyList<string> Measures { get; } = ["check_pass_rate", "requirements_compliant_pct", "evidence_freshness_pct", "collector_success_rate"];
 }
 
 /// <summary>
@@ -40,7 +43,18 @@ public sealed record MetricInput(string Key, ScopeRef Definition, string Combine
 /// </summary>
 public sealed record ScopeMetricInstance(
     string RefId, string Name, string? Description, ScopeRef Definition, ScopeRef? Domain, string? Frequency, int? GraceDays, string? Target,
-    IReadOnlyList<ScopeRef> Owners, IReadOnlyList<ScopeRef> Controls, SourceLine At);
+    IReadOnlyList<ScopeRef> Owners, IReadOnlyList<ScopeRef> Controls, SourceLine At)
+{
+    /// <summary>What each run measures for it (s16-03), when it declares <c>source: hound</c>; otherwise people or a formula fill it in.</summary>
+    public MetricSource? Source { get; init; }
+}
+
+/// <summary>
+/// A measure a run computes for a metric instance (s16-03): <see cref="Measure"/> is one of <see cref="ScopeMetrics.Measures"/>,
+/// <see cref="Checks"/> are check ids or patterns such as <c>identity.mfa.*</c>, and <see cref="Audit"/> names the audit for
+/// <c>requirements_compliant_pct</c>.
+/// </summary>
+public sealed record MetricSource(string Measure, IReadOnlyList<string> Checks, ScopeRef? Audit, SourceLine At);
 
 /// <summary>A dashboard and its widgets, by <c>ref_id</c>, in a domain (the root folder when it names none).</summary>
 public sealed record ScopeDashboard(string RefId, string Name, string? Description, ScopeRef? Domain, IReadOnlyList<ScopeWidget> Widgets, SourceLine At);

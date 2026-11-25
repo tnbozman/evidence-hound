@@ -1,3 +1,4 @@
+using EvidenceHound.Core.Checks;
 using EvidenceHound.Core.Scope;
 using YamlDotNet.RepresentationModel;
 
@@ -10,7 +11,7 @@ public static partial class ScopeLoader
     private static readonly string[] DefinitionKeys = ["ref_id", "name", "description", "domain", "unit", "levels", "direction", "decimals", "frequency", "target", "formula"];
     private static readonly string[] FormulaKeys = ["expression", "inputs"];
     private static readonly string[] InputKeys = ["key", "definition", "combine"];
-    private static readonly string[] InstanceKeys = ["ref_id", "name", "description", "definition", "domain", "frequency", "grace_days", "target", "owners", "controls"];
+    private static readonly string[] InstanceKeys = ["ref_id", "name", "description", "definition", "domain", "frequency", "grace_days", "target", "owners", "controls", "source", "measure", "checks", "audit"];
     private static readonly string[] DashboardKeys = ["ref_id", "name", "description", "domain", "widgets"];
     private static readonly string[] WidgetKeys = ["title", "metric", "builtin", "audit", "risk_study", "domain", "text", "chart", "time_range", "aggregation", "x", "y", "width", "height"];
     private static readonly string[] BuiltinOwners = ["audit", "risk_study", "domain"];
@@ -59,12 +60,50 @@ public static partial class ScopeLoader
         var refId = file.Required(item, "ref_id");
         var name = file.Required(item, "name");
         var definition = file.Ref(item, "definition", required: true);
+        var source = ReadMetricSource(item, refId, file);
         return refId is null || name is null || definition is null
             ? null
             : new ScopeMetricInstance(
                 refId, name, file.Text(item, "description"), definition, file.Ref(item, "domain"), file.OneOf(item, "frequency", [.. ScopeMetrics.Frequencies], required: false),
-                Whole(item, "grace_days", file), file.Text(item, "target"), file.Emails(item, "owners"), file.Refs(item, "controls"), file.At(item));
+                Whole(item, "grace_days", file), file.Text(item, "target"), file.Emails(item, "owners"), file.Refs(item, "controls"), file.At(item))
+            {
+                Source = source,
+            };
     }
+
+    /// <summary>s16-03: <c>source: hound</c> with its measure, and the checks or audit the measure reads.</summary>
+    private static MetricSource? ReadMetricSource(YamlMappingNode item, string? refId, FileReader file)
+    {
+        var source = file.OneOf(item, "source", ["hound"], required: false);
+        if (source is null)
+        {
+            var stray = MeasureKeys.Where(k => FileReader.Child(item, k) is not null).ToArray();
+            if (stray.Length > 0)
+            {
+                file.Problem(
+                    "metric.measure_invalid",
+                    file.At(item),
+                    $"metric instance '{refId}' has '{string.Join("', '", stray)}' but no 'source: hound', so no run measures it.",
+                    "Add 'source: hound' for a run to fill it in, or remove the measure for people to enter its values.");
+            }
+
+            return null;
+        }
+
+        var measure = file.OneOf(item, "measure", [.. ScopeMetrics.Measures], required: true);
+        var checks = file.Refs(item, "checks");
+        foreach (var bad in checks.Where(c => !IsCheckPattern(c.Value)))
+        {
+            file.Problem("metric.measure_invalid", bad.At, $"'checks' names '{bad.Value}', which is not a check id or pattern.", "Name checks by id, such as identity.mfa.admins, or every check below one, such as identity.mfa.*.");
+        }
+
+        return measure is null ? null : new MetricSource(measure, [.. checks.Select(c => c.Value)], file.Ref(item, "audit"), file.At(item));
+    }
+
+    private static readonly string[] MeasureKeys = ["measure", "checks", "audit"];
+
+    private static bool IsCheckPattern(string value) =>
+        CheckId.Create(value.EndsWith(".*", StringComparison.Ordinal) ? value[..^2] : value) is Results.Result<CheckId>.Ok;
 
     private static ScopeDashboard? ReadDashboard(YamlMappingNode item, FileReader file)
     {

@@ -258,7 +258,42 @@
         },
         "controls": {
           "$ref": "#/$defs/names"
+        },
+        "source": {
+          "description": "hound: each run measures it and writes one value for the current period. Left out, people or a formula fill it in.",
+          "enum": [
+            "hound"
+          ]
+        },
+        "measure": {
+          "description": "What a run measures, as a percentage: the share of 'checks' passing, of an 'audit''s requirements compliant, of evidence collected in the last week, or of collectors that succeeded.",
+          "enum": [
+            "check_pass_rate",
+            "requirements_compliant_pct",
+            "evidence_freshness_pct",
+            "collector_success_rate"
+          ]
+        },
+        "checks": {
+          "description": "Check ids, or every check below one such as identity.mfa.*.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*(\\.\\*)?$"
+          }
+        },
+        "audit": {
+          "description": "The audit whose requirements requirements_compliant_pct counts, by ref_id.",
+          "$ref": "#/$defs/text"
         }
+      },
+      "dependentRequired": {
+        "source": [
+          "measure"
+        ],
+        "measure": [
+          "source"
+        ]
       }
     },
     "dashboard": {

@@ -26,7 +26,7 @@ public class MetricMeasureTests
             Result("backup.daily", CheckOutcome.Fail),
         ];
 
-        MetricMeasures.CheckPassRate(["identity.mfa.*"], latest).ShouldBe(100.0 / 3, 1e-9);
+        MetricMeasures.CheckPassRate(["identity.mfa.*"], latest).ShouldNotBeNull().ShouldBe(100.0 / 3, 1e-9);
         MetricMeasures.CheckPassRate(["identity.mfa.*", "identity.admin_accounts"], latest).ShouldBe(50);
         MetricMeasures.CheckPassRate(["identity.mfa.admins"], latest).ShouldBe(100);
         MetricMeasures.CheckPassRate(["identity.mfa.guests"], latest).ShouldBeNull();

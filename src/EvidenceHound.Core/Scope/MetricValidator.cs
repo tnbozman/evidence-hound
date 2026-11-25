@@ -163,6 +163,11 @@ public static partial class MetricValidator
             yield return new ScopeProblem("metric.control_unknown", control.At, $"{name} tells about control '{control.Value}', which controls.yaml does not declare.", "Use a control's ref_id from controls.yaml.");
         }
 
+        foreach (var problem in Source(instance, scope, name))
+        {
+            yield return problem;
+        }
+
         if (IsUrn(instance.Definition.Value))
         {
             yield break;
@@ -183,6 +188,24 @@ public static partial class MetricValidator
             yield return target;
         }
 
+        if (instance.Source is { } fed && definition.Qualitative)
+        {
+            yield return new ScopeProblem(
+                "metric.measure_invalid",
+                fed.At,
+                $"{name} is measured by each run as a percentage, but its definition '{definition.RefId}' has levels.",
+                "Measure it with a definition that has a unit, such as percentage.");
+        }
+
+        if (instance.Source is { } computed && definition.Formula is not null)
+        {
+            yield return new ScopeProblem(
+                "scope.result_conflict",
+                computed.At,
+                $"{name} has 'source: hound', but its definition '{definition.RefId}' has a formula, and CISO Assistant fills in a computed metric itself.",
+                "Remove 'source: hound', or measure it with a definition that has no formula.");
+        }
+
         var where = instance.Domain?.Value;
         foreach (var input in definition.Formula?.Inputs ?? [])
         {
@@ -201,6 +224,30 @@ public static partial class MetricValidator
                     $"computed {name} in '{where ?? scope.Setup.RootFolder}' reads '{input.Key}' ({input.Definition.Value}), which has no instance in that domain or below it.",
                     $"Declare an instance of {input.Definition.Value} in '{where ?? scope.Setup.RootFolder}', or move this instance to the root folder so it reads every domain.");
             }
+        }
+    }
+
+    /// <summary>s16-03: a measure names what it reads: checks for a pass rate, a declared audit for the share of compliant requirements.</summary>
+    private static IEnumerable<ScopeProblem> Source(ScopeMetricInstance instance, ScopeDocument scope, string name)
+    {
+        if (instance.Source is not { } source)
+        {
+            yield break;
+        }
+
+        if (source.Measure == "check_pass_rate" && source.Checks.Count == 0)
+        {
+            yield return new ScopeProblem("metric.measure_invalid", source.At, $"{name} measures check_pass_rate but names no 'checks'.", "List the checks it counts, such as checks: [identity.mfa.*].");
+        }
+
+        if (source.Measure == "requirements_compliant_pct" && source.Audit is null)
+        {
+            yield return new ScopeProblem("metric.measure_invalid", source.At, $"{name} measures requirements_compliant_pct but names no 'audit'.", "Name the audit by its ref_id, such as audit: EX-E8-2026.");
+        }
+
+        if (source.Audit is { } audit && !scope.Audits.Any(a => a.RefId == audit.Value))
+        {
+            yield return new ScopeProblem("metric.audit_unknown", audit.At, $"{name} measures audit '{audit.Value}', which the scope does not declare.", "Use the ref_id of an audit under audits/.");
         }
     }
 
