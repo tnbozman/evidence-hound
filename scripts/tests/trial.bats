@@ -279,3 +279,18 @@ LOG
   trial_seed_inputs "$BATS_TEST_DIRNAME/../.." "$ws"
   [ "$(cat "$ws/inbox/oracle.md")" = mine ]
 }
+
+@test "an audit's reading in CISO Assistant counts rows with no evidence, and a 100% over rows not assessed fails the trial" {
+  # REF COMPLIANT PARTIAL NON_COMPLIANT NOT_ASSESSED NOT_APPLICABLE NO_EVIDENCE: CISO Assistant leaves not-assessed and
+  # not-applicable rows out of its percentage, so 3 passes over 43 rows nobody assessed read 100%.
+  run trial_audit_reading EX-SYSTEM-2026 3 0 0 43 61 0
+  [ "$status" -ne 0 ]
+  [[ "$output" == "EX-SYSTEM-2026: CISO Assistant reads 100%"* ]]
+  [[ "$output" == *"43 not assessed"* ]]
+  run trial_audit_reading EX-SYSTEM-2026 3 0 43 0 61 43
+  [ "$status" -eq 0 ]
+  [ "$output" = "EX-SYSTEM-2026: CISO Assistant reads 6% (3 compliant, 0 partially compliant, 43 non-compliant of which 43 have no evidence yet; it leaves out 61 not applicable and 0 not assessed)." ]
+  run trial_audit_reading EX-EMPTY-2026 0 0 0 0 5 0
+  [ "$status" -eq 0 ]
+  [[ "$output" == "EX-EMPTY-2026: CISO Assistant reads no percentage"* ]]
+}
