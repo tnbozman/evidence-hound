@@ -635,8 +635,15 @@ readings() {
     *) api="http://localhost:8000/api/" ;;
   esac
   # Each audit file's ref_id, and a period series' audits, whose ref_ids add the period (EX-E8-Q2-2027FY).
-  local series audits
-  series="$(sed -n 's/^ref_id: *//p' "$ws/repo/scope/audits/"*.yaml | tr -d '"')"
+  local series='' audits file name
+  # Each audit's maturity levels (groups): CISO Assistant keeps a row for every requirement and counts only those in the audit's levels.
+  local -A audit_levels=()
+  for file in "$ws/repo/scope/audits/"*.yaml; do
+    name="$(sed -n 's/^ref_id: *//p' "$file" | tr -d '"')"
+    [[ -n "$name" ]] || continue
+    series+="$name"$'\n'
+    audit_levels[$name]="$(sed -n 's/^groups: *//p' "$file" | tr -d '[]" ')"
+  done
   audits="$(printf 'header = "Authorization: Token %s"\n' "$(cat "$ws/secrets/ca_token")" |
     curl -fsS -m 30 -K - "${api}compliance-assessments/?limit=1000" | jq -r '.results[].ref_id // empty')" ||
     die "CISO Assistant did not list the audits."
@@ -656,7 +663,12 @@ readings() {
       rows="$(jq -c --argjson rows "$rows" '$rows + .results' <<<"$page")"
       url="$(jq -r '.next' <<<"$page")"
     done
-    local counts
+    local counts level='' candidate
+    for candidate in $series; do
+      if [[ "$ref" == "$candidate" || "$ref" == "$candidate"-* ]] && ((${#candidate} > ${#level})); then level="$candidate"; fi
+    done
+    rows="$(jq -c --arg levels "${audit_levels[$level]:-}" '($levels | split(",") | map(select(. != ""))) as $wanted
+      | if ($wanted | length) == 0 then . else map(select((.requirement.implementation_groups // []) | map(tostring) | any(. as $g | $wanted | index($g)))) end' <<<"$rows")"
     counts="$(jq -r '[(map(select(.result == "compliant")) | length), (map(select(.result == "partially_compliant")) | length),
       (map(select(.result == "non_compliant")) | length), (map(select(.result == "not_assessed")) | length),
       (map(select(.result == "not_applicable")) | length),
