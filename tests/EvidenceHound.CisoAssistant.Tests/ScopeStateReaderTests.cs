@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using EvidenceHound.Core.Mapping;
+using EvidenceHound.Core.Risk;
 using EvidenceHound.Core.Scope;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
@@ -376,6 +377,21 @@ public sealed class ScopeStateReaderTests : IDisposable
         });
         held[(ScopeKind.System, "Example 365")].Held.Fields["objectives"].ShouldBe("availability=2, confidentiality=3");
         held[(ScopeKind.System, "Example 365")].Held.Fields["recovery"].ShouldBe("rto=4h");
+    }
+
+    [Fact]
+    public async Task A_custom_librarys_stored_objects_are_read_as_its_content_digest()
+    {
+        // s15-01: v4.3.4 shows no checksum for a stored library, so its objects are digested as the repo's file is.
+        const string urn = "urn:example:risk:library:mapping-example";
+        List("stored-libraries", new JsonObject { ["id"] = "sl-map", ["urn"] = urn, ["version"] = 1 });
+        var objects = new JsonObject { ["threats"] = new JsonArray(new JsonObject { ["ref_id"] = "THR-01", ["name"] = "Loss of the only backup administrator" }) };
+        _ca.Server.Given(Request.Create().WithPath("/api/stored-libraries/sl-map/content/").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(objects.ToJsonString()));
+
+        var held = (await _ca.Scope.ReadAsync(Query with { CustomLibraries = new Dictionary<string, string> { [urn] = urn } }, _ct)).Value();
+
+        held.Single(a => a.Held.Kind == ScopeKind.Framework && a.Held.Key == urn).Held.Fields["content"].ShouldBe(LibraryContent.Digest(objects));
     }
 
     private void RecordInstance()
