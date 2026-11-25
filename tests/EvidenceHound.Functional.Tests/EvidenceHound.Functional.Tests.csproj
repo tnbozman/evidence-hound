@@ -28,6 +28,7 @@
     <None Include="..\..\profiles\*.yaml" Link="files\profiles\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\mappings\*.yaml" Link="files\mappings\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\examples\*.yaml" Link="files\examples\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\fixtures\frameworks\example-risk-library.yaml" Link="files\frameworks\example-risk-library.yaml" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\fixtures\publish\**\*" Link="files\fixtures\publish\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

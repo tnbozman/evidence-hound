@@ -17,7 +17,7 @@ What is configuration here, and what is not:
 | Custom risk matrices and threats (as libraries); risk studies and their scenarios, ratings, treatment and justification; security exceptions; BIAs, their asset assessments and escalation thresholds; systems' security and recovery objectives | Risk acceptance and exception approval (the Approver role and validation flows); computed risk levels; EBIOS RM and quantitative risk studies |
 
 ### s15-01 Risk matrices and threats from libraries
-- [ ] Done
+- [x] Done
 
 **Story:** As a risk owner, I want the risk matrix and threat catalogue our studies use declared in the repo, so that every study is rated on the same reviewed scales.
 
@@ -37,6 +37,27 @@ What is configuration here, and what is not:
 
 **Functional check**
 - A fictional 4×4 matrix and two fictional threats are uploaded to the local CISO Assistant and appear in its catalog; re-applying with no change writes nothing.
+
+**What CISO Assistant brings with a library (checked 2026-11-25 against v4.3.4).** A library's own `dependencies` list decides it: CISO
+Assistant loads each dependency with the library. `essential-eight-2023` declares `doc-pol` and `intuitem-common-catalog`, which is why the
+Common Catalog's 28 threats arrived with it in the s08-08 trial. `asd-essentials-enterprise-it` declares none. Framework snapshots now keep
+`dependencies`, and `hound scope plan` shows them as a `brings` line on the framework. CISO Assistant keeps the SHA-256 of an uploaded file
+as the stored library's `hash_checksum`, and at the same version it only updates that hash and refuses the content, which is what
+`library.version_not_bumped` guards against. A loaded library is updated with `GET loaded-libraries/<urn>/update/`.
+
+**Decision.** `frameworks` stays as it is (each framework with its snapshot), and `libraries` now also takes a map with `urn`, `file` and
+`snapshot` for a custom library. Renaming `frameworks` to `libraries` would break every existing repo for no gain.
+
+**Functional check result**
+```
+$ hound library validate tests/fixtures/frameworks/example-risk-library.yaml
+valid: 1 risk matrix, 2 threats
+$ hound scope validate <repo>/scope    # setup lists the library file; a grid cell changed to 9
+error: .../setup.yaml line 4: ../libraries/example-risk.yaml: risk matrix 'urn:example:risk:matrix:example-4x4': the cell for probability 'Likely' and impact 'Severe' is 9, which is not a risk level (0 to 2). [library.matrix_grid_unknown_risk]
+```
+Against CISO Assistant: `RiskLibraryFunctionalTests` (CI) uploads the 4x4 matrix and two threats, plans again with no change, is refused
+with `library.version_not_bumped` after a change at the same version, then applies version 2 with a third threat. Result recorded below
+once CI has run.
 
 ### s15-02 Risk register files
 - [ ] Done
