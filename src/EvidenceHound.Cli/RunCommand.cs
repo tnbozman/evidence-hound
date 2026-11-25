@@ -149,7 +149,7 @@ internal static class RunCommand
         }
 
         var url = configuration[PublishCommand.UrlSetting] is { Length: > 0 } overridden ? new Uri(overridden.EndsWith('/') ? overridden : overridden + "/") : ca.Url;
-        return ConfigCommands.Secrets(configuration).Resolve(ca.Token).Map(token => Transports.Rest(new CisoAssistantOptions(url, token.Reveal()), loggers));
+        return ConfigCommands.Secrets(configuration).Resolve(ca.Token).Map(token => Transports.Rest(new CisoAssistantOptions(url, token.Reveal()), loggers, AuditSeries.Today(configuration)));
     }
 
     /// <summary>A dry run sends nothing and reads nothing, so its plan lists every update as if CISO Assistant held nothing.</summary>
@@ -212,11 +212,11 @@ internal static class RunCommand
         /// <summary>CISO Assistant's current state over REST; the Kafka dispatcher cannot read, so with it everything is sent.</summary>
         public ICurrentStateSource States { get; } = states ?? NoCurrentState.Instance;
 
-        public static Transports Rest(CisoAssistantOptions options, ILoggerFactory loggers)
+        public static Transports Rest(CisoAssistantOptions options, ILoggerFactory loggers, DateOnly today)
         {
             var services = new ServiceCollection().AddSingleton(loggers).AddCisoAssistantClient(options).BuildServiceProvider();
             var client = services.GetRequiredService<ICisoAssistantClient>();
-            return new Transports(files => new RestSink(client, files), services, new ClientStateSource(client));
+            return new Transports(files => new RestSink(client, files), services, new ClientStateSource(client, today));
         }
 
         public static Transports Kafka(KafkaSinkOptions options) => new(files => new KafkaSink(options, files), null);

@@ -56,7 +56,7 @@ internal static class PlanCommand
                 using var services = new ServiceCollection().AddSingleton(loggers).AddCisoAssistantClient(ready.Connection).BuildServiceProvider();
                 var (targets, run) = ready.Inputs;
                 var query = StateQuery.For(targets, run.Evidence, run.ControlStatuses);
-                var current = await new ClientStateSource(services.GetRequiredService<ICisoAssistantClient>()).ReadAsync(query, cancellationToken);
+                var current = await new ClientStateSource(services.GetRequiredService<ICisoAssistantClient>(), AuditSeries.Today(configuration)).ReadAsync(query, cancellationToken);
                 var runId = RunIds.From(DateTimeOffset.UtcNow);
                 return await AuditPlanner.PlanChanges(targets, run.Evidence, run.ControlStatuses, current, runId).Match(
                     async changes =>

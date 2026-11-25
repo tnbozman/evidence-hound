@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Globalization;
 using System.Text;
 using System.Text.Json.Nodes;
 using EvidenceHound.Core.Mapping;
@@ -50,6 +51,12 @@ internal sealed class CisoAssistantClient(HttpClient http) : ICisoAssistantClien
     // Pages by limit and offset rather than following "next", whose host is whatever the server believes it is.
     public Task<Result<IReadOnlyList<CurrentRow>>> ListRequirementAssessmentsAsync(string complianceAssessmentRefId, CancellationToken cancellationToken) =>
         ListRowsAsync(complianceAssessmentRefId, ImmutableList<CurrentRow>.Empty, cancellationToken);
+
+    public async Task<Result<IReadOnlyList<RemoteWaiver>>> ListSecurityExceptionsAsync(CancellationToken cancellationToken) =>
+        (await http.ListAllAsync("security-exceptions/", cancellationToken)).Map(all => (IReadOnlyList<RemoteWaiver>)
+            [.. all.Select(e => new RemoteWaiver(
+                Id(e), (string?)e["ref_id"] is { Length: > 0 } refId ? refId : null, (string?)e["name"] ?? Id(e), (string?)e["status"] ?? "draft",
+                DateOnly.TryParseExact((string?)e["expiration_date"], "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var expires) ? expires : null))]);
 
     public async Task<Result<IReadOnlyList<RemoteEvidence>>> FindEvidenceAsync(string refId, CancellationToken cancellationToken)
     {
@@ -224,9 +231,16 @@ internal sealed class CisoAssistantClient(HttpClient http) : ICisoAssistantClien
         return Enum.GetValues<ComplianceResult>().Where(r => Names.Of(r) == Normalised(result)).ToArray() is [var known]
             ? Result.Ok(new CurrentRow(
                 at.Id, at.Urn, at.RefId, at.Groups, known, (string?)row["observation"] ?? "",
-                [.. (row["evidences"] as JsonArray ?? []).Select(e => e is JsonObject o ? (string?)o["id"] : (string?)e).OfType<string>()]))
+                [.. Ids(row["evidences"])])
+            {
+                ExceptionIds = [.. Ids(row["security_exceptions"])],
+            })
             : Result.Fail<CurrentRow>(Unexpected($"requirement assessment {at.Id} has result '{result}'"));
     }
+
+    /// <summary>The IDs of a relation list: plain IDs, or the <c>{"id", "str"}</c> objects the read serializers give.</summary>
+    private static IEnumerable<string> Ids(JsonNode? relations) =>
+        (relations as JsonArray ?? []).Select(e => e is JsonObject o ? (string?)o["id"] : (string?)e).OfType<string>();
 
     private static Result<ControlState> ControlStateOf(string? status, string refId) =>
         Enum.GetValues<ControlState>().Where(s => Names.Of(s) == Normalised(status ?? "")).ToArray() is [var known]
