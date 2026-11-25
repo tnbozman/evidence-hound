@@ -50,5 +50,37 @@ public sealed class NextFunctionalTests(CisoAssistantFixture ciso) : IDisposable
         output.ToString().ShouldNotContain(ciso.Token);
     }
 
+    [Fact]
+    public async Task Status_json_shows_the_failed_collector_and_the_connection()
+    {
+        // s18-05: the same deployment's health as JSON, for the agent.
+        var ct = TestContext.Current.CancellationToken;
+        var repo = Path.Combine(_dir, "repo");
+        TestRepo.CopyExample(repo);
+        var config = Path.Combine(repo, "hound.yaml");
+        await File.WriteAllTextAsync(config, (await File.ReadAllTextAsync(config, ct)).Replace("/var/lib/evidence-hound", Path.Combine(_dir, "var"), StringComparison.Ordinal), ct);
+        var ran = new DateTimeOffset(2027, 2, 14, 16, 0, 0, TimeSpan.Zero);
+        await new FileRunRecordStore(Path.Combine(_dir, "var", "evidence")).SaveAsync(
+            new RunRecord("example-m365", ran, ran.AddSeconds(3), CollectorOutcome.Failed, 0, 0, 2, [new("collector.all_checks_errored", "All 2 checks errored.")], null), ct);
+
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+        var exit = await HoundCli.RunAsync(
+            ["status", "--config", config, "--scope", Path.Combine(repo, "scope"), "--json"],
+            output,
+            error,
+            configureLogging: null,
+            new Dictionary<string, string?> { ["HOUND_CA_URL"] = ciso.ApiUrl.ToString(), ["HOUND_CA_TOKEN"] = ciso.Token, ["HOUND_TODAY"] = "2027-02-15" },
+            ct);
+        var results = Directory.CreateDirectory(Path.Combine(CisoAssistantFixture.RepoRoot, "test-results", "next")).FullName;
+        await File.WriteAllTextAsync(Path.Combine(results, "status.json"), $"{output}{error}", ct);
+
+        exit.ShouldBe(ExitCodes.Ok, $"{output}{error}");
+        var json = JsonNode.Parse(output.ToString())!;
+        json["collectors"]!.AsArray().ShouldContain(c => c!["collector"]!.GetValue<string>() == "example-m365" && c["outcome"]!.GetValue<string>() == "failed", output.ToString());
+        json["ciso_assistant"]!["token"]!.GetValue<string>().ShouldBe("accepted", output.ToString());
+        json["manual_sources"]!.AsArray().ShouldNotBeEmpty();
+    }
+
     public void Dispose() => Directory.Delete(_dir, recursive: true);
 }

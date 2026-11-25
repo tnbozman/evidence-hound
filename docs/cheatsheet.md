@@ -82,7 +82,7 @@ file by `scripts/cheatsheet/render.sh`.
   - `--config` (req) `--only --dry-run --no-publish`
 - `hound serve`: run each collector on its schedule
   - `--config` (req)
-- `hound status`: latest run of each collector; with `--scope`, each programme's standing from the latest snapshot; `--json` for an agent
+- `hound status`: latest run of each collector; with `--scope`, each programme's standing from the latest snapshot; `--json` for an agent, with each collector's checks, the CISO Assistant connection and manual sources due
   - `--config` (req)
 - `hound collect`: step 1 of run: collect into the evidence store
   - `--config` (req) `--dry-run`

@@ -125,6 +125,15 @@ hold the instance.
 **Functional check**
 - `hound status --json` on the example deployment shows the seeded failing collector.
 
+Notes:
+- `HoundHealth` (CLI) is the one read both commands share: the connection (one read of the folder list: reachable, token accepted or
+  rejected) and each manual source's newest upload, due date and state. `hound next` was refactored onto it.
+- `hound status --json` gains each collector's latest `checks` (from `_latest/<collector>.json`: check and outcome only, never the
+  observation or evidence) and `publish_failed`, `ciso_assistant` (`reachable`, `token`, `token_expiry` null, `rejected_publishes`) and
+  `manual_sources`. Text output is unchanged and makes no network call.
+- Guide `docs/running.md`, skill `operate-collectors`, cheat sheet.
+- Functional: `NextFunctionalTests.Status_json_shows_the_failed_collector_and_the_connection`.
+
 ### s18-08 The agent walks the person through pending decisions (added 2026-11-25)
 - [ ] Done
 
