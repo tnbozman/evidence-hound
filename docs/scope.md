@@ -331,7 +331,7 @@ contracts:
 
 - `clause` is the clause as the contract names it. `framework` (a URN in `setup.yaml`) and `level` say what it requires; `hound programme list` then names, under each programme with that framework, the customer that requires it.
 - `flow_down: true` means your own suppliers must carry the clause. `data` limits it to suppliers whose solutions handle those kinds of sensitive data; with no `data`, every supplier contract must carry it.
-- A supplier contract lists the clauses it carries under its own `obligations`, by `clause` alone. `hound scope validate` reports `contract.flow_down_missing` for each supplier contract that lacks one it owes, `contract.framework_unknown` for a framework `setup.yaml` does not declare, and `contract.flow_down_invalid` for `flow_down` on a supplier contract.
+- A supplier contract lists the clauses it carries under its own `obligations`, by `clause` alone. `hound scope validate` warns with `contract.flow_down_missing` for each supplier contract that lacks one it owes (a finding that joins the weekly review and blocks nothing), and reports `contract.framework_unknown` for a framework `setup.yaml` does not declare, and `contract.flow_down_invalid` for `flow_down` on a supplier contract.
 - `hound supplier list --data cui` shows each supplier's flowed-down clauses as carried or missing: the answer to a prime's supply-chain questionnaire.
 
 ### Supplier approval

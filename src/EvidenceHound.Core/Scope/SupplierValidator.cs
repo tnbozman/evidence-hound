@@ -48,7 +48,8 @@ public static class SupplierValidator
                 .Select(f => new ScopeProblem(
                     "contract.flow_down_missing", c.Contract.At,
                     $"contract '{c.Contract.RefId}' with {c.Entity.RefId} lacks '{f.Obligation.Clause}', which customer contract '{f.Contract}' flows down.",
-                    $"Add the clause to the supplier contract's obligations once it is in the signed contract, or raise it with {c.Entity.Name}."))),
+                    $"Add the clause to the supplier contract's obligations once it is in the signed contract, or raise it with {c.Entity.Name}.")
+                { Warning = true })),
         ];
     }
 
