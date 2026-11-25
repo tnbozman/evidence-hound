@@ -1,6 +1,6 @@
 # s14 ASD Essentials mapping
 
-Status: In progress
+Status: Done
 
 Release: 2
 
@@ -9,7 +9,7 @@ Was s12-01 before the release 1 reorder. It is the first sprint of release 2 so 
 **Goal:** an ASD Essentials for enterprise IT mapping ready for the migration, priority phase 1 first, derived from the completed Essential Eight mapping (s12-01). The Essential Eight 2023 audit stays the audit of record until the migration's cut-over.
 
 ### s14-01 ASD Essentials mapping file
-- [ ] Done
+- [x] Done
 
 **Story:** As a compliance owner, I want the reference checks mapped to the ASD Essentials for enterprise IT, so that a new deployment produces Essentials results on its first run, and an organisation still on the Essential Eight can run both during its transition.
 
@@ -34,7 +34,7 @@ See [the migration plan](../migrations/essential-eight-to-asd-essentials.md).
 - Notes: the custom library sits in `frameworks/` beside the other libraries, not a new `libraries/` folder. The reference mapping's rows were checked with AI help and the draft marks removed; its header says to review it in your own copy, as the 800-171 crosswalk does.
 
 ### s14-02 DISP membership readiness beyond the Essential Eight (added 2026-11-24)
-- [ ] Done
+- [x] Done
 
 Added at the maintainer's request (2026-11-24): Defence checks DISP membership itself, which covers governance, personnel and physical
 security as well as cyber security.
@@ -63,7 +63,7 @@ expectations held as an audit beside the Essential Eight, so that one place show
 - Notes: the library is in `frameworks/` like AI6 (not a new `libraries/` folder). It has one group, M (membership): the DSPF's levels of membership are not modelled, so the guide says to check your level's obligations. The security awareness training template is shared with the ASD Essentials. The incident register is the example's `example-incident-register` manual source until the s15 register lands. Guide: `docs/adopt/disp-readiness.md`.
 
 ### s14-03 Rehearse trial, onboarding and sustaining GRC (standing, every sprint)
-- [ ] Done
+- [x] Done
 
 As [s12-09](s12-e8-mapping-and-adoption.md#s12-09-rehearse-trial-onboarding-and-sustaining-grc-standing-every-sprint), including this sprint's new commands and guides.
 
@@ -99,7 +99,7 @@ Carried to discovered work: findings 8 (exit codes), 14 and 15.
   file exits 2 and keeps it (`MappingDeriveCommandTests`).
 
 ### s14-04 Improve: quality and flow (standing, about 15% of each sprint)
-- [ ] Done
+- [x] Done
 
 As [s12-10](s12-e8-mapping-and-adoption.md#s12-10-improve-quality-and-flow-standing-about-15-of-each-sprint).
 
@@ -117,7 +117,7 @@ As [s12-10](s12-e8-mapping-and-adoption.md#s12-10-improve-quality-and-flow-stand
 - Cheat sheet PDF re-rendered for `mapping derive` and `init --framework`.
 
 ### s14-05 Fill rows whose checks come from several collectors (added 2026-11-25)
-- [ ] Done
+- [x] Done
 
 **Story.** The DISP cyber rows and many Essentials rows join checks from several collectors (Microsoft 365 and a manual source, say).
 A run only filled a row one collector fully reported, so those rows were never filled. CI's functional tests found it.
@@ -131,8 +131,13 @@ A run only filled a row one collector fully reported, so those rows were never f
 **Tests to write first**
 - Ownership with other collectors' results; a runner test where two collectors on separate runs fill one row with both evidence.
 
+**Functional check**
+- Result (2026-11-25): `DispRunFunctionalTests` runs the recorded Microsoft 365 tenant and a manual MFA, logging and incident source
+  against EX-E8-2026 and EX-DISP-2026; DISP-CYB-07, which joins both collectors' checks, is filled with the conditional access evidence
+  and the attested checks. CI's functional job passed (38 of 38) at 55f7237.
+
 ### s14-06 A devcontainer for the GRC team (added 2026-11-25)
-- [ ] Done
+- [x] Done
 
 **Story.** As a GRC team member, I open our compliance repo in a devcontainer and have released `hound` and my coding assistant
 (Claude Code or GitHub Copilot) ready, so my machine needs only Docker and VS Code, and the tools stay the same for everyone.
@@ -162,3 +167,17 @@ A run only filled a row one collector fully reported, so those rows were never f
 - s14-04: nuget.org trusted publishing (OIDC), carried from s13.
 
 ## Sprint review
+
+**2026-11-25.** The ASD Essentials mapping for priority phase 1 is ready beside the Essential Eight: `hound mapping derive` drafts a new
+framework's mapping from an existing one and CISO Assistant's transition mapping, draft rows never publish until a person reviews them, and
+coverage counts per Essentials domain and shows draft rows. DISP membership readiness beyond the Essential Eight (governance, personnel,
+physical, information and cyber) is a custom library, mapping, four manual source runbooks and a guide, and `hound init --framework disp`
+adds its audit. CI's functional tests found that a row joining several collectors' checks was never filled, which most DISP and Essentials
+rows do; s14-05 fixed it, so each collector's latest results now combine. The GRC team gets a devcontainer with released `hound` and their
+coding assistants (s14-06). The rehearsal and the release candidate's customer install found 24 problems; the important ones are fixed,
+the rest are below. Twelve Dependabot updates were folded in; the project stays on .NET 10 LTS and PostgreSQL 16.
+
+**Retro.** What slowed the sprint: the functional job is the only place CISO Assistant runs, and three of its failures (test order,
+multi-collector rows, the DISP programme in reports) surfaced late because pushes cancelled earlier runs. A mapping that joins checks
+across collectors passed every unit test yet published nothing. Next sprint: when a mapping or the runner changes, write the functional
+test with more than one collector first, and push once per finished task so the functional job completes.
