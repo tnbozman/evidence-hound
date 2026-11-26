@@ -12,8 +12,8 @@ You start from a copy of the template compliance repo, `examples/compliance-repo
 The template itself stays without them, so a new repo still starts empty.
 
 It assumes you have read [Onboarding](../onboarding.md) and, for installing the stack, the
-[first deployment tutorial](../tutorials/first-deployment.md). To try the whole deployment on your machine first, with fictional tenants
-for Sophos Central, Microsoft 365 and the IaC pipeline and no account or key, run [`make trial`](../tutorials/local-trial.md): it walks
+[first deployment tutorial](first-deployment.md). To try the whole deployment on your machine first, with fictional tenants
+for Sophos Central, Microsoft 365 and the IaC pipeline and no account or key, run [`make trial`](local-trial.md): it walks
 the same third parties, systems, audits, controls and collectors.
 
 ## The deployment
@@ -93,7 +93,7 @@ Inside the VM, the reference Compose stack runs Caddy, CISO Assistant's frontend
    shows, and a firewall rule that lets the office reach the VM on 443 only.
 4. **The Bastion.** Create an OCI Bastion for the private subnet. Administrators open a time-limited managed SSH session to the VM; no SSH
    port faces the internet.
-5. **The stack.** Install it as in the [first deployment tutorial](../tutorials/first-deployment.md), from step 3, with
+5. **The stack.** Install it as in the [first deployment tutorial](first-deployment.md), from step 3, with
    `CA_HOSTNAME=ciso.example.com` resolved by the office's DNS to the VM's private address (192.0.2.10). The secrets folder stays on the
    VM; Docker gives each container only the secrets it needs.
 6. **Backups.** Schedule a nightly database dump to an Object Storage bucket in another region with a retention rule, and a weekly backup

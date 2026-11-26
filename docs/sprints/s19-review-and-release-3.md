@@ -263,7 +263,7 @@ Notes:
   image registry. The steps that read CISO Assistant are covered by the functional suite in CI, recorded in the sprint review.
 
 ### s19-08 One path through the docs
-- [ ] Done
+- [x] Done
 
 **Story:** As a new GRC member, I want one route from "what is this" to my first weekly review, so that I am not choosing between
 guides that overlap.
@@ -278,6 +278,22 @@ guides that overlap.
 
 **Functional check**
 - A rehearsal that follows only the route, from install to the first `hound review`.
+
+Notes:
+- The route is [getting-started.md](../getting-started.md): trial, install, guided setup and onboarding, deploy, your week. The home
+  page, the cheat sheet and the README point to it; the site's first section, "Start here", follows it in order.
+- `docs/examples/` merged into `docs/tutorials/` (the onboarding tutorial); every link moved, the repo map row removed.
+- `docs/operate/` and `docs/training/` overlap by design: each training outline teaches an operate guide and links to it. They stay
+  separate; Training now sits under Operate in the navigation. The reference and walk-through pairs (`ssp.md` and
+  `govern/system-security-plan.md`, `reporting.md` and the committee and board guides, `ai-grc.md` and its primer and tutorial) link
+  each other and stay.
+- Functional check: the route followed offline. `hound` packed and installed as a .NET tool into a tool path; `hound init my-compliance
+  --org "Example Pty Ltd" -y`, `git init`, `hound agent setup --assistant claude`, `config validate`, `scope validate`, `hound next`,
+  `review prepare`: each under half a second. `hound next` on the new repo said "Nothing needs doing now", a dead end; it now lists
+  onboarding first (`NextWorkTests.A_scope_with_no_audit_starts_with_onboarding`,
+  `NextCommandTests.A_new_repo_starts_with_onboarding`), and the weekly-review skill names the item. `hound review --for 60m` refused
+  without a person at a terminal, as it must. Deploying needs the CISO Assistant images, which this environment's network policy
+  blocks; the trial job in CI runs that part.
 
 ### s19-09 Release 3
 - [ ] Done

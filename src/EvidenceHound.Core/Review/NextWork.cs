@@ -164,7 +164,18 @@ public static class NextWork
     }
 
     /// <summary>s19-08: the first step for a scope with no audit yet; null once one exists.</summary>
-    public static NextItem? Onboarding(int audits) => audits < 0 ? null : null;
+    public static NextItem? Onboarding(int audits) => audits > 0
+        ? null
+        : new NextItem(
+            NextUrgency.Waiting,
+            "onboarding",
+            "Nothing onboarded yet",
+            "Map the environment first, then onboard each third party and system; each system's onboarding drafts its audit. A person approves every draft.",
+            "hound onboard environment pending --json",
+            60)
+        {
+            Skill = "onboard-the-environment",
+        };
 
     /// <summary>Scope changes not yet applied to CISO Assistant, and values that drifted there; null when there is nothing.</summary>
     public static NextItem? Scope(int changes, int drift) => changes == 0 && drift == 0

@@ -15,6 +15,9 @@ makes that manageable with open-source tools:
 
 ## Where to start
 
+New here? [Getting started](getting-started.md) is one route from a trial on your laptop to your first weekly review. The rest of
+the site is reference that route links to.
+
 | You want to | Read |
 | --- | --- |
 | See it work on your laptop in an hour or two | [Getting started](getting-started.md), then the [local trial](tutorials/local-trial.md) |

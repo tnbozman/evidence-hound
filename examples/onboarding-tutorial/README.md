@@ -1,6 +1,6 @@
 # Onboarding tutorial: the files it writes
 
-What [the onboarding tutorial](../../docs/examples/onboarding-tutorial.md) adds to a copy of the template compliance repo
+What [the onboarding tutorial](../../docs/tutorials/onboarding-tutorial.md) adds to a copy of the template compliance repo
 (`examples/compliance-repo`), at the same paths, so you can compare your result with it. Everything is fictional.
 
 - `answers/`: what the reviewer types at each prompt of `hound onboard`, one file per system and run, to replay the tutorial.

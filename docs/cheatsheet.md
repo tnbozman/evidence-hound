@@ -2,7 +2,7 @@
 
 Every command takes `--help`. `--json` makes a command prompt-free for an agent. **Person** marks a command that refuses an agent or a
 pipe. CISO Assistant calls need `HOUND_CA_URL` and `HOUND_CA_TOKEN`. `(req)` marks a required option. The PDF is rendered from this
-file by `scripts/cheatsheet/render.sh`.
+file by `scripts/cheatsheet/render.sh`. New to hound? Follow the route in [getting started](getting-started.md).
 
 ## Commands
 

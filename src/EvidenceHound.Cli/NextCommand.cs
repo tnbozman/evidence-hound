@@ -76,6 +76,12 @@ internal static class NextCommand
             .Where(c => c.Urgency != NextUrgency.Broken || !manual.Any(m => m.Subject == c.Subject)));
 
         var scope = new DirectoryInfo(Path.Combine(root, "scope"));
+        var audits = Path.Combine(scope.FullName, "audits");
+        if (NextWork.Onboarding(Directory.Exists(audits) ? Directory.EnumerateFiles(audits, "*.yaml").Count() : 0) is { } start)
+        {
+            items.Add(start);
+        }
+
         var exceptions = await StatusCommand.ExceptionsAsync(scope, today, cancellationToken);
         items.AddRange(exceptions.Match(
             notes => notes.Select(n => NextWork.Exception(n, today)),

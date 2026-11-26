@@ -3,6 +3,18 @@
 Evidence Hound has two parts: `hound`, a command line tool, and a reference deployment that runs CISO Assistant and `hound` side by
 side with Docker Compose. Start with the trial on your own machine, then deploy.
 
+This page is the route from "what is this" to your first weekly review. Follow it in order; every other guide on the site is a reference
+one of these steps links to.
+
+1. [Try it locally](#1-try-it-locally): the [local trial](tutorials/local-trial.md), an hour or two.
+2. [Install hound](#2-install-hound).
+3. [Make your compliance repo](#3-make-your-compliance-repo): [guided setup](guided-setup.md), then [onboarding](onboarding.md) with
+   your agent (the [onboarding tutorial](tutorials/onboarding-tutorial.md) is a worked example).
+4. [Deploy](#4-deploy): the [first deployment](tutorials/first-deployment.md), then backups, hardening and updates.
+5. [Run it each week](#5-run-it-each-week): the [GRC member guide](operate/grc-member.md) and your first `hound review`.
+
+The [cheat sheet](cheatsheet.md) lists every command on two pages.
+
 ## 1. Try it locally
 
 You need Docker and an hour or two. The [local trial](tutorials/local-trial.md) starts a local CISO Assistant, sets up a fictional

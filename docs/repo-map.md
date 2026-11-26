@@ -87,14 +87,13 @@ Reviewed 2026-11-26 (s19-01).
 | `docs/collectors/` | One reference page per collector. | person, agent | keep |
 | `docs/deploy/` | Backups, hardening and updates of a deployment. | person | keep |
 | `docs/design/` | Design records: agent-driven onboarding, guided review, REST collector. | person (contributors) | keep |
-| `docs/examples/` | The onboarding tutorial's walk-through. | person | merge into `docs/tutorials/` (s19-08) |
 | `docs/govern/` | Committee, board, SSP and the continuous compliance procedure. | person | keep |
 | `docs/migrations/` | Essential Eight to ASD Essentials migration. | person | keep |
-| `docs/operate/` | Role guides (GRC member, system owner, operator, committee member). | person | keep; s19-08 checks the overlap with `docs/training/` |
+| `docs/operate/` | Role guides (GRC member, system owner, operator, committee member): how to do the job. | person | keep; the training outlines in `docs/training/` teach these guides and link to them, so they stay separate (s19-08) |
 | `docs/reviews/` | The engineering and CISO reviews before release 3 (s19). | person (contributors) | keep |
 | `docs/sprints/` | Sprint plans and reviews. Not on the site. | person, agent | keep |
-| `docs/training/` | Role training (board, committee, system owners, AI governance). | person | keep; s19-08 checks the overlap with `docs/operate/` |
-| `docs/tutorials/` | Trial, first deployment, dev servers, writing a collector or profile. | person | keep |
+| `docs/training/` | Role training (board, committee, system owners, AI governance): sessions built on the operate guides. | person | keep; under Operate in the site navigation (s19-08) |
+| `docs/tutorials/` | Trial, onboarding tutorial, first deployment, dev servers, writing a collector or profile. | person | keep |
 
 ## `examples/`
 

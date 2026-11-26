@@ -7,7 +7,7 @@ services:
     environment:
       # Collector logs at information level; set Debug while setting up a collector.
       Logging__LogLevel__Default: Information
-    # The Sophos Central and IaC pipeline collectors' secrets (docs/examples/onboarding-tutorial.md). Compose merges this list
+    # The Sophos Central and IaC pipeline collectors' secrets (docs/tutorials/onboarding-tutorial.md). Compose merges this list
     # with the stack's own, so the runner keeps hound_ca_token and m365_client_certificate.
     secrets: [sophos_client_secret, iac_actions_token]
 
