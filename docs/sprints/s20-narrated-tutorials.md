@@ -2,7 +2,7 @@
 
 Status: Done
 
-Release: 4
+Release: 1.0.1, a patch to release 3 (the maintainer chose the version on 2026-11-26)
 
 Asked for by the maintainer on 2026-11-26, after release 3. A small-business GRC person with 2 to 8 hours a week learns hound fastest
 by watching and doing, not by reading 300 lines of guide. This sprint adds short interactive tutorials to the docs site, one for each

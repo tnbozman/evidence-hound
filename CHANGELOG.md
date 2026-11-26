@@ -3,6 +3,22 @@
 Features and fixes in each release of Evidence Hound, from its Conventional Commits. The sprint files in
 [docs/sprints](docs/sprints/README.md) say what each task delivered and how it was checked.
 
+## 1.0.1 (2026-11-26)
+
+### Features
+
+- check that a tutorial's next links lead somewhere (s20-01)
+- four narrated tutorials on the getting-started route (s20-04)
+- publish the tutorials with the docs (s20-05)
+- the agent kit points a new person to the tutorials (s20-06)
+- the tutorial player (s20-02)
+- tutorial checks and narration script (s20-01)
+
+### Fixes
+
+- read the tutorial link from the one skills folder both assistants share (s20-06)
+- the release workflow completes a release made by hand for the tag (s20-08)
+
 ## 1.0.0 (2026-11-26)
 
 ### Features

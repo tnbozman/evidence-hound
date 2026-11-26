@@ -1,5 +1,22 @@
 # Release notes
 
+## 1.0.1
+
+A patch to release 3 that adds learning material and changes no command's behaviour.
+
+- **Narrated interactive tutorials** for each step of [getting started](getting-started.md): try it locally, make your compliance
+  repo, deploy it, and your weekly review. Each plays in the browser with captions, lets you type the command and choose what to do
+  with a review item, and works with the sound off. See [interactive tutorials](tutorials/interactive.md).
+- **The narration is spoken on our own machines** by Kokoro, an open-weight speech model, when the release is built. No cloud speech
+  service is used.
+- **CI checks every `hound` command a tutorial teaches**, so a tutorial fails the build if the command line changes under it.
+- **Your agent points you to the tutorial for your step**: `hound agent setup` writes the links into its instructions and the
+  onboarding and weekly review skills. Run it again in your compliance repo to pick them up.
+- **The release workflow** completes a GitHub release made by hand for the tag instead of failing.
+
+To upgrade, pin `ghcr.io/tnbozman/evidence-hound:1.0.1` in `deploy/deploy.env` and run
+`dotnet tool update --global EvidenceHound.Cli --version 1.0.1`.
+
 ## Release 3 (1.0.0)
 
 Release 3 is the first published release of Evidence Hound, and the one the maintainer treats as the product. Releases 1 and 2 were

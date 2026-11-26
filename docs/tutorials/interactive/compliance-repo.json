@@ -34,13 +34,13 @@
       "terminal": [
         {
           "who": "you",
-          "command": "dotnet tool install --global EvidenceHound.Cli --version 1.0.0 --add-source ~/hound-packages",
-          "output": "You can invoke the tool using the following command: hound\nTool 'evidencehound.cli' (version '1.0.0') was successfully installed."
+          "command": "dotnet tool install --global EvidenceHound.Cli --version 1.0.1 --add-source ~/hound-packages",
+          "output": "You can invoke the tool using the following command: hound\nTool 'evidencehound.cli' (version '1.0.1') was successfully installed."
         },
         {
           "who": "you",
           "command": "hound --version",
-          "output": "1.0.0"
+          "output": "1.0.1"
         }
       ]
     },

@@ -33,11 +33,11 @@ Pick one:
   [release](https://github.com/tnbozman/evidence-hound/releases) into a folder, then install with the release's version:
 
   ```console
-  $ dotnet tool install --global EvidenceHound.Cli --version 1.0.0 --add-source ~/hound-packages
+  $ dotnet tool install --global EvidenceHound.Cli --version 1.0.1 --add-source ~/hound-packages
   $ hound --version
   ```
 
-  When the packages are on nuget.org, `dotnet tool install --global EvidenceHound.Cli --version 1.0.0` is enough. Give the version
+  When the packages are on nuget.org, `dotnet tool install --global EvidenceHound.Cli --version 1.0.1` is enough. Give the version
   either way: without it, `dotnet tool install` looks only for the newest version on nuget.org.
 
 ## 3. Make your compliance repo

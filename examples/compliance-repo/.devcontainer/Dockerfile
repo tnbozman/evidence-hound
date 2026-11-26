@@ -1,7 +1,7 @@
 # The GRC team's workspace for this repo: released hound and the .NET runtime it needs, with no SDK or build tools.
 # hound comes from the runner image of the release the deployment runs (deploy/deploy.env), so both use the same version;
 # scripts/stamp-release.sh in the Evidence Hound repo moves this pin with the others at each release.
-ARG HOUND_IMAGE=ghcr.io/tnbozman/evidence-hound:1.0.0
+ARG HOUND_IMAGE=ghcr.io/tnbozman/evidence-hound:1.0.1
 FROM ${HOUND_IMAGE} AS hound
 FROM mcr.microsoft.com/dotnet/runtime:10.0-noble AS runtime
 

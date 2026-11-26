@@ -109,7 +109,7 @@ Do this in two pull requests, so the first apply is small and easy to check.
 **First: setup, settings and access.** Move the audit files out of `scope/audits/` for now and keep `scope/setup.yaml`, `scope/controls.yaml`, `scope/access.yaml` and `scope/settings.yaml`. The template's settings turn on `enforce_mfa`, so everyone must set up multi-factor authentication at their next sign-in, and leave the modules you do not use off. On your own machine, run `hound` from the runner image against your checkout:
 
 ```bash
-hound() { docker run --rm -v "$PWD:/config:ro" -w /config ghcr.io/tnbozman/evidence-hound:1.0.0 "$@"; }
+hound() { docker run --rm -v "$PWD:/config:ro" -w /config ghcr.io/tnbozman/evidence-hound:1.0.1 "$@"; }
 hound config validate hound.yaml
 hound scope validate scope/ --config hound.yaml
 ```
