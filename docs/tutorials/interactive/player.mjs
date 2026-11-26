@@ -112,7 +112,9 @@ function renderTranscript() {
   });
   const guide = el("a", "Read the written guide");
   guide.href = guideUrl(tutorial.guide);
-  article.append(el("p")).append(guide);
+  const end = el("p");
+  end.append(guide);
+  article.append(end);
 }
 
 function render() {

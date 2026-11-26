@@ -1,0 +1,195 @@
+{
+  "id": "first-deployment",
+  "title": "Deploy it",
+  "summary": "From an empty VM to collectors running on a schedule: the stack, its secrets, the runner's token, the first scope apply and the schedule.",
+  "minutes": 7,
+  "guide": "tutorials/first-deployment.md",
+  "voice": "af_heart",
+  "steps": [
+    {
+      "id": "need",
+      "title": "What you need",
+      "narration": [
+        "You need a VM with Docker and four gigabytes of memory, a DNS name for it, and your private compliance repo.",
+        "Two repositories are involved. The public Evidence Hound repo provides the stack. Your private repo holds everything about your organisation.",
+        "Secrets are in neither. They live on the VM."
+      ],
+      "panel": {
+        "title": "Example Pty Ltd's platform",
+        "lines": [
+          "A private VM, here ciso.example.com, with Docker Engine and the Compose plugin",
+          "The compliance repo at /opt/compliance, read-only, with a deploy key",
+          "The stack from /opt/evidence-hound/deploy/compose"
+        ]
+      }
+    },
+    {
+      "id": "secrets",
+      "title": "Make the secrets on the VM",
+      "narration": [
+        "Make a secrets folder that only root can read.",
+        "Generate the database password and CISO Assistant's secret key straight into it.",
+        "The runner's token and the Microsoft 365 certificate start empty, and are filled later.",
+        "No secret is ever typed on a command line or committed."
+      ],
+      "terminal": [
+        {
+          "who": "you",
+          "command": "sudo install -d -m 0700 /etc/evidence-hound/secrets",
+          "output": ""
+        },
+        {
+          "who": "you",
+          "command": "cd /etc/evidence-hound/secrets && sudo sh -c 'umask 022; openssl rand -hex 24 > postgres_password; openssl rand -hex 32 > django_secret_key; : > hound_ca_token; : > m365_client_certificate'",
+          "output": ""
+        }
+      ]
+    },
+    {
+      "id": "stack",
+      "title": "Start the stack",
+      "narration": [
+        "Clone both repositories.",
+        "Link your repo's deploy settings as the stack's environment file, so your settings drive it.",
+        "Then start the stack and wait. The first start loads CISO Assistant's libraries, which takes several minutes."
+      ],
+      "terminal": [
+        {
+          "who": "you",
+          "command": "sudo ln -s /opt/compliance/deploy/deploy.env /opt/evidence-hound/deploy/compose/.env",
+          "output": ""
+        },
+        {
+          "who": "you",
+          "command": "docker compose up -d --wait postgres backend worker frontend caddy",
+          "output": " ✔ Container compose-postgres-1  Healthy\n ✔ Container compose-backend-1   Healthy\n ✔ Container compose-caddy-1     Healthy"
+        }
+      ]
+    },
+    {
+      "id": "token",
+      "title": "A person signs in, and the runner gets its own token",
+      "narration": [
+        "Create the first administrator, who signs in to CISO Assistant as a person.",
+        "Then create the runner's service account and its token.",
+        "The script writes the token straight into the secrets folder. It is never shown or copied.",
+        "Your turn: create the runner's token for hound-runner at example dot com."
+      ],
+      "terminal": [
+        {
+          "who": "you",
+          "command": "./manage.sh createsuperuser",
+          "output": "Email: grc@example.com\nPassword: \nSuperuser created successfully."
+        },
+        {
+          "who": "you",
+          "command": "sudo ./runner-token.sh hound-runner@example.com /etc/evidence-hound/secrets",
+          "output": "Token written to /etc/evidence-hound/secrets/hound_ca_token."
+        }
+      ],
+      "try": {
+        "prompt": "Type the command that creates the runner's token for hound-runner@example.com.",
+        "answer": "sudo ./runner-token.sh hound-runner@example.com /etc/evidence-hound/secrets"
+      }
+    },
+    {
+      "id": "check",
+      "title": "Check the config and its secrets",
+      "narration": [
+        "Register the Microsoft 365 app as its guide says, and store its certificate as a secret.",
+        "Then check the config and that every secret it names resolves.",
+        "hound runs in the runner container, with your repo mounted read-only."
+      ],
+      "terminal": [
+        {
+          "who": "you",
+          "command": "docker compose run --rm runner config validate /config/hound.yaml --check-secrets",
+          "output": "/config/hound.yaml is valid. Every secret resolves."
+        }
+      ]
+    },
+    {
+      "id": "scope",
+      "title": "Apply the scope in two steps",
+      "narration": [
+        "Apply the scope in two pull requests, so the first apply is small and easy to check.",
+        "First access and settings: who signs in, with which roles, and multi-factor authentication for everyone.",
+        "Then the audits. Each time, read the plan before you apply it."
+      ],
+      "terminal": [
+        {
+          "who": "you",
+          "command": "docker compose run --rm runner scope plan /config/scope --config /config/hound.yaml",
+          "output": "+ user grc@example.com (analyst on Example Pty Ltd)\n~ setting enforce_mfa: false -> true\nAccess review: 1 user has not turned on MFA yet."
+        },
+        {
+          "who": "you",
+          "command": "docker compose run --rm runner scope apply /config/scope --config /config/hound.yaml",
+          "output": "Applied."
+        }
+      ],
+      "choice": {
+        "question": "Why apply access and settings before the audits?",
+        "options": [
+          {
+            "text": "So the first apply is small, and a mistake in who can sign in is easy to spot.",
+            "right": true,
+            "feedback": "Yes. Two small plans are easier to read than one big one."
+          },
+          {
+            "text": "Because CISO Assistant refuses audits until MFA is on.",
+            "feedback": "It does not. The order is for you: a small first plan is easy to check."
+          }
+        ]
+      }
+    },
+    {
+      "id": "schedule",
+      "title": "Run once, then turn on the schedule",
+      "narration": [
+        "Run the collectors once by hand, and check the status.",
+        "Then start the runner. It runs each collector on its own schedule, in your time zone.",
+        "In CISO Assistant, the rows the collectors cover now have results and evidence."
+      ],
+      "terminal": [
+        {
+          "who": "you",
+          "command": "docker compose run --rm runner run --config /config/hound.yaml",
+          "output": ""
+        },
+        {
+          "who": "you",
+          "command": "docker compose up -d runner",
+          "output": " ✔ Container compose-runner-1  Started"
+        }
+      ]
+    },
+    {
+      "id": "day-two",
+      "title": "From now on, every change is a pull request",
+      "narration": [
+        "A new starter, a leaver, a setting, a collector or an upgrade: each one is a pull request to the compliance repo.",
+        "The repo's workflow scans it for secrets, validates it, and comments the scope plan on the pull request.",
+        "After the merge, a second reviewer approves the apply."
+      ],
+      "choice": {
+        "question": "Someone leaves Example Pty Ltd. How do you remove their access?",
+        "options": [
+          {
+            "text": "Remove them from scope/access.yaml in a pull request; the apply deactivates them.",
+            "right": true,
+            "feedback": "Yes. The change is reviewed, recorded, and they are deactivated, never deleted."
+          },
+          {
+            "text": "Delete their account in CISO Assistant.",
+            "feedback": "The next apply would put it back, and the change would have no record. Change the repo instead."
+          }
+        ]
+      }
+    }
+  ],
+  "next": [
+    { "title": "Your week: the review", "tutorial": "your-week" },
+    { "title": "Back it up and test a restore", "guide": "deploy/backups.md" }
+  ]
+}
