@@ -87,7 +87,7 @@ public sealed partial class TutorialTests
             text.ShouldContain(expected, Case.Sensitive, $"the tutorial mentions {expected}");
         }
 
-        File.ReadAllText(Path.Combine(ExampleRepoTests.RepoRoot, "docs", "onboarding.md")).ShouldContain("(examples/onboarding-tutorial.md)");
+        File.ReadAllText(Path.Combine(ExampleRepoTests.RepoRoot, "docs", "onboarding.md")).ShouldContain("(tutorials/onboarding-tutorial.md)");
     }
 
     /// <summary>
