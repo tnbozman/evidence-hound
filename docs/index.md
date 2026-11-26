@@ -29,7 +29,8 @@ the site is reference that route links to.
 | Govern your use of AI | [AI governance primer](ai-grc-primer.md) |
 | Connect a system | [Collectors](collectors/README.md), or [write a profile](tutorials/write-a-profile.md) for any REST API |
 
-Every command and its options are on the [cheat sheet](cheatsheet.md).
+Every command and its options are on the [cheat sheet](cheatsheet.md). What is in this release, its known limitations and how to
+upgrade are in the [release notes](release-notes.md).
 
 ## How it fits together
 

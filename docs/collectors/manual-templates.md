@@ -6,7 +6,7 @@ is in [Manual evidence](../manual-evidence.md).
 
 | Strategy | Template | Every | Requirements |
 | --- | --- | --- | --- |
-| Application control | [Application control review](../../examples/manual-sources/essential-eight/application-control-review/README.md) | 12 months | ISM-1490, ISM-1544, ISM-1582, ISM-1870, ISM-1871 |
+| Application control | [Application control review](../../examples/manual-sources/essential-eight/application-control-review/README.md) | 12 months | ISM-1490, ISM-1544, ISM-1582, ISM-1657 (the file types no collector reads), ISM-1870, ISM-1871 |
 | Multi-factor authentication | [Multi-factor authentication configuration](../../examples/manual-sources/essential-eight/mfa-configuration/README.md) | 6 months | ISM-0974, ISM-1401, ISM-1679, ISM-1680, ISM-1681, ISM-1682, ISM-1872, ISM-1873, ISM-1892, ISM-1893 |
 | Multi-factor authentication, Restrict administrative privileges, Application control, User application hardening | [Event logging and analysis](../../examples/manual-sources/essential-eight/event-logging/README.md) | 3 months | ISM-1228, ISM-1509, ISM-1623, ISM-1650, ISM-1683, ISM-1815, ISM-1889, ISM-1906 |
 | Patch applications, Patch operating systems | [Asset discovery and vulnerability scanner](../../examples/manual-sources/essential-eight/asset-discovery/README.md) | 3 months | ISM-1807, ISM-1808 |

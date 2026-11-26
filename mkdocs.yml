@@ -50,6 +50,7 @@ markdown_extensions:
 
 nav:
   - Home: index.md
+  - Release notes: release-notes.md
   - Start here:
       - getting-started.md
       - Local trial: tutorials/local-trial.md
