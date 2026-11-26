@@ -296,7 +296,7 @@ Notes:
   blocks; the trial job in CI runs that part.
 
 ### s19-09 Release 3
-- [ ] Done
+- [x] Done
 
 **Story:** As a small business adopting hound, I want release 3 to say what it does, what it does not, and how to upgrade, so that I can
 trust it.
@@ -311,6 +311,21 @@ trust it.
 
 **Functional check**
 - `scripts/release-build.sh` builds release 3's artefacts on the branch.
+
+Notes:
+- Release 3 ships as version 1.0.0: releases 1 and 2 were built but never tagged, so this is the first published version and the
+  pins already name 1.0.0. The maintainer can choose another number at tag time (`make changelog VERSION=...` and
+  `scripts/stamp-release.sh ...`).
+- [docs/release-notes.md](../release-notes.md): what it is for, what s19 changed, the removals and their replacements, the known
+  limitations from s19-07, and five upgrade steps for an existing compliance repo. Linked from the home page and the navigation;
+  `docs/plan.md` says what release 3 now is.
+- `CHANGELOG.md` regenerated for 1.0.0 (`make changelog VERSION=1.0.0`); `scripts/stamp-release.sh 1.0.0` changed nothing (the pins
+  already agree).
+- Functional check: `scripts/release-build.sh 1.0.0-dry-run` on a local `v1.0.0-dry-run` tag (deleted afterwards, never pushed):
+  packages with their metadata, hound installed from them reporting `1.0.0-dry-run`, the SBOM and the notes; `release-build: ok` in
+  28 s. `make test-image` could not run here: the image's restore step does not trust this environment's proxy certificate. CI builds
+  and tests the image on every push (recorded in the sprint review).
+- The tag waits for the maintainer.
 
 ### s19-10 Rehearse trial, onboarding and sustaining GRC (standing, every sprint)
 - [ ] Done
