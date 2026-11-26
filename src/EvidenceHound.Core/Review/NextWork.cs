@@ -163,6 +163,9 @@ public static class NextWork
         };
     }
 
+    /// <summary>s19-08: the first step for a scope with no audit yet; null once one exists.</summary>
+    public static NextItem? Onboarding(int audits) => audits < 0 ? null : null;
+
     /// <summary>Scope changes not yet applied to CISO Assistant, and values that drifted there; null when there is nothing.</summary>
     public static NextItem? Scope(int changes, int drift) => changes == 0 && drift == 0
         ? null

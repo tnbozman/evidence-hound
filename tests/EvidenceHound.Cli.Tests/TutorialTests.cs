@@ -10,7 +10,7 @@ public sealed partial class TutorialTests
 {
     private static string Tutorial => Path.Combine(ExampleRepoTests.RepoRoot, "docs", "tutorials", "first-deployment.md");
 
-    private static string OnboardingTutorial => Path.Combine(ExampleRepoTests.RepoRoot, "docs", "examples", "onboarding-tutorial.md");
+    private static string OnboardingTutorial => Path.Combine(ExampleRepoTests.RepoRoot, "docs", "tutorials", "onboarding-tutorial.md");
 
     /// <summary>What the reviewer types at each prompt of the onboarding tutorial, one file per system and run.</summary>
     private static string OnboardingAnswers => Path.Combine(ExampleRepoTests.Tutorial, "answers");

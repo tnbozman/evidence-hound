@@ -118,4 +118,16 @@ public class NextWorkTests
         NextWork.Scope(0, 0).ShouldBeNull();
         NextWork.Scope(0, 2)!.Subject.ShouldBe("0 change(s) to apply and 2 drifted value(s)");
     }
+
+    [Fact]
+    public void A_scope_with_no_audit_starts_with_onboarding()
+    {
+        // s19-08: a repo fresh from hound init said "Nothing needs doing now", a dead end on the getting-started route.
+        var start = NextWork.Onboarding(audits: 0)!;
+
+        start.Kind.ShouldBe("onboarding");
+        start.Command.ShouldBe("hound onboard environment pending --json");
+        start.Skill.ShouldBe("onboard-the-environment");
+        NextWork.Onboarding(audits: 1).ShouldBeNull();
+    }
 }
