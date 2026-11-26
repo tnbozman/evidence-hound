@@ -210,13 +210,13 @@ internal static class ReviewCommand
         string repo, IConfiguration configuration, CollectorRegistry registry, DateOnly today, CancellationToken cancellationToken)
     {
         var scope = new DirectoryInfo(Path.Combine(repo, "scope"));
-        var reporting = await ScopeCommands.ReportingAsync(scope, cancellationToken);
+        var reporting = await RepoScope.ReportingAsync(scope, cancellationToken);
         if (reporting.Obligations.Count == 0 || CisoAssistantConnection.FromSettings(configuration) is not Result<CisoAssistantOptions>.Ok { Value: var options })
         {
             return [];
         }
 
-        var checkedScope = await ScopeCommands.ValidateAsync(scope, null, registry, today, cancellationToken);
+        var checkedScope = await RepoScope.ValidateAsync(scope, null, registry, today, cancellationToken);
         var systems = checkedScope.Scope.Setup.Domains.SelectMany(d => d.Systems).ToList();
         using var services = new ServiceCollection().AddLogging().AddCisoAssistantClient(options).BuildServiceProvider();
         var open = await services.GetRequiredService<IIncidentSource>().OpenAsync(cancellationToken);
@@ -247,7 +247,7 @@ internal static class ReviewCommand
             return [];
         }
 
-        var checkedScope = await ScopeCommands.ValidateAsync(scope, null, registry, today, cancellationToken);
+        var checkedScope = await RepoScope.ValidateAsync(scope, null, registry, today, cancellationToken);
         return [.. checkedScope.Warnings.Select(w => new ReviewItem(
             ReviewKind.Finding,
             string.Create(CultureInfo.InvariantCulture, $"finding:{w.Code}/{Path.GetFileName(w.At.File)}:{w.At.Line}"),

@@ -103,7 +103,7 @@ internal static class PlanCommand
     private static async Task<Result<(IReadOnlyList<TargetResults> Targets, RunResults Run)>> InputsAsync(
         FileInfo configFile, FileInfo checksFile, CollectorRegistry registry, DateOnly today, CancellationToken cancellationToken, ILogger? logger = null)
     {
-        var targets = await (await ConfigCommands.LoadAsync(configFile, registry, cancellationToken)).Match(
+        var targets = await (await DeploymentFile.LoadAsync(configFile, registry, cancellationToken)).Match(
             async config =>
             {
                 if (logger is not null)

@@ -183,8 +183,8 @@ internal static class InitCommand
         }
 
         var config = new FileInfo(Path.Combine(target.FullName, "hound.yaml"));
-        var checkedConfig = await ConfigCommands.LoadAsync(config, registry, cancellationToken);
-        var checkedScope = await ScopeCommands.ValidateAsync(new DirectoryInfo(Path.Combine(target.FullName, "scope")), config, registry, AuditSeries.Today(configuration), cancellationToken);
+        var checkedConfig = await DeploymentFile.LoadAsync(config, registry, cancellationToken);
+        var checkedScope = await RepoScope.ValidateAsync(new DirectoryInfo(Path.Combine(target.FullName, "scope")), config, registry, AuditSeries.Today(configuration), cancellationToken);
         Problem[] problems = [.. checkedConfig.Match(_ => [], p => p), .. checkedScope.Problems.Select(p => p.ToProblem())];
         if (problems.Length > 0)
         {

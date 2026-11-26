@@ -55,7 +55,7 @@ internal static class AddCommands
         {
             var folder = parseResult.GetRequiredValue(scope);
             var today = AuditSeries.Today(configuration);
-            var current = await ScopeCommands.ValidateAsync(folder, null, registry, today, cancellationToken);
+            var current = await RepoScope.ValidateAsync(folder, null, registry, today, cancellationToken);
             if (current.Problems.Count > 0)
             {
                 return Log.Problems(logger, current.Problems.Select(p => p.ToProblem()));
@@ -125,7 +125,7 @@ internal static class AddCommands
         {
             var folder = parseResult.GetRequiredValue(scope);
             var today = AuditSeries.Today(configuration);
-            var current = await ScopeCommands.ValidateAsync(folder, null, registry, today, cancellationToken);
+            var current = await RepoScope.ValidateAsync(folder, null, registry, today, cancellationToken);
             if (current.Problems.Count > 0)
             {
                 return Log.Problems(logger, current.Problems.Select(p => p.ToProblem()));
@@ -446,7 +446,7 @@ internal static class AddCommands
     private static async Task<int> CheckAndWriteScopeAsync(
         DirectoryInfo folder, IReadOnlyDictionary<string, string> edits, CollectorRegistry registry, DateOnly today, Terminal terminal, ILogger logger, string done, CancellationToken cancellationToken)
     {
-        var checkedScope = await ScopeCommands.ValidateAsync(folder, null, registry, today, cancellationToken, edits);
+        var checkedScope = await RepoScope.ValidateAsync(folder, null, registry, today, cancellationToken, edits);
         if (checkedScope.Problems.Count > 0)
         {
             return Log.Problems(logger, checkedScope.Problems.Select(p => p.ToProblem()));

@@ -37,7 +37,7 @@ internal static class ManualProposalCommands
         propose.SetAction(async (parseResult, cancellationToken) =>
         {
             var name = parseResult.GetRequiredValue(source);
-            var found = (await ConfigCommands.LoadAsync(parseResult.GetRequiredValue(config), registry, cancellationToken)).Bind(deployment => ManualCommand.Find(deployment, name));
+            var found = (await DeploymentFile.LoadAsync(parseResult.GetRequiredValue(config), registry, cancellationToken)).Bind(deployment => ManualCommand.Find(deployment, name));
             var proposed = await found.BindAsync(manual => ProposeAsync(
                 manual, parseResult.GetRequiredValue(file), new Given(parseResult.GetValue(result), parseResult.GetValue(check) ?? [], parseResult.GetValue(observation), parseResult.GetValue(supports) ?? []),
                 clock, cancellationToken));
@@ -68,7 +68,7 @@ internal static class ManualProposalCommands
                 return ExitCodes.Usage;
             }
 
-            var sources = (await ConfigCommands.LoadAsync(parseResult.GetRequiredValue(config), registry, cancellationToken)).Bind(deployment => Sources(deployment, parseResult.GetValue(only)));
+            var sources = (await DeploymentFile.LoadAsync(parseResult.GetRequiredValue(config), registry, cancellationToken)).Bind(deployment => Sources(deployment, parseResult.GetValue(only)));
             var waiting = await sources.BindAsync(found => WaitingAsync(found, cancellationToken));
             return await waiting.Match(
                 proposals => new Walk(terminal, clock).RunAsync(proposals, cancellationToken),
@@ -81,7 +81,7 @@ internal static class ManualProposalCommands
     internal static async Task<Result<IReadOnlyList<ReviewItem>>> PendingAsync(
         FileInfo config, CollectorRegistry registry, IReadOnlyList<StandingApproval> standing, DateOnly today, CancellationToken cancellationToken)
     {
-        var sources = (await ConfigCommands.LoadAsync(config, registry, cancellationToken)).Bind(deployment => Sources(deployment, null));
+        var sources = (await DeploymentFile.LoadAsync(config, registry, cancellationToken)).Bind(deployment => Sources(deployment, null));
         var waiting = await sources.BindAsync(found => WaitingAsync(found, cancellationToken));
         return await waiting.BindAsync(async all =>
         {
@@ -124,7 +124,7 @@ internal static class ManualProposalCommands
     internal static async Task<Result<IReadOnlyList<string>>> AttestAsync(
         FileInfo config, CollectorRegistry registry, IReadOnlySet<string> keys, string who, IClock clock, CancellationToken cancellationToken)
     {
-        var sources = (await ConfigCommands.LoadAsync(config, registry, cancellationToken)).Bind(deployment => Sources(deployment, null));
+        var sources = (await DeploymentFile.LoadAsync(config, registry, cancellationToken)).Bind(deployment => Sources(deployment, null));
         var waiting = await sources.BindAsync(found => WaitingAsync(found, cancellationToken));
         return await waiting.BindAsync(async all =>
         {

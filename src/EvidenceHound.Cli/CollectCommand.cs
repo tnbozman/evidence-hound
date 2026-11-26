@@ -26,7 +26,7 @@ internal static class CollectCommand
 
         var collect = new Command("collect", "Collect evidence from every configured collector into the evidence store.") { dryRun, config };
         collect.SetAction(async (parseResult, cancellationToken) =>
-            await (await ConfigCommands.LoadAsync(parseResult.GetRequiredValue(config), registry, cancellationToken)).Match(
+            await (await DeploymentFile.LoadAsync(parseResult.GetRequiredValue(config), registry, cancellationToken)).Match(
                 deployment => parseResult.GetValue(dryRun)
                     ? Task.FromResult(Collectors(logger, deployment))
                     : CollectAsync(deployment, configuration, registry, collectorServices, logger, cancellationToken),

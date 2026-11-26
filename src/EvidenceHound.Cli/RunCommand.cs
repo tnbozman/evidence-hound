@@ -68,7 +68,7 @@ internal static class RunCommand
         ILogger logger,
         CancellationToken cancellationToken)
     {
-        var deployment = await ConfigCommands.LoadAsync(config, registry, cancellationToken);
+        var deployment = await DeploymentFile.LoadAsync(config, registry, cancellationToken);
         return await deployment.Match(
             d => Runner.Select(d.Collectors, options.Only).Match(
                 instances => PrepareAndRunAsync(d, instances, options, configuration, registry, collectorServices, output, logger, cancellationToken),
@@ -242,7 +242,7 @@ internal static class RunCommand
         }
 
         var url = configuration[CisoAssistantConnection.UrlSetting] is { Length: > 0 } overridden ? new Uri(overridden.EndsWith('/') ? overridden : overridden + "/") : ca.Url;
-        return ConfigCommands.Secrets(configuration).Resolve(ca.Token).Map(token => Transports.Rest(new CisoAssistantOptions(url, token.Reveal()), loggers, AuditSeries.Today(configuration)));
+        return DeploymentFile.Secrets(configuration).Resolve(ca.Token).Map(token => Transports.Rest(new CisoAssistantOptions(url, token.Reveal()), loggers, AuditSeries.Today(configuration)));
     }
 
     /// <summary>A dry run sends nothing and reads nothing, so its plan lists every update as if CISO Assistant held nothing.</summary>

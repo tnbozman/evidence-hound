@@ -95,7 +95,7 @@ internal static class OnboardProfileCommand
         var secrets = new Dictionary<string, Secret>(StringComparer.Ordinal);
         if (sampling)
         {
-            var provider = ConfigCommands.Secrets(configuration);
+            var provider = DeploymentFile.Secrets(configuration);
             foreach (var (key, reference) in options.Secrets)
             {
                 var resolved = SecretReference.Parse(reference).Bind(provider.Resolve);

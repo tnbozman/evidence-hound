@@ -39,7 +39,7 @@ internal static class StatusCommand
         status.SetAction(async (parseResult, cancellationToken) =>
         {
             var today = AuditSeries.Today(configuration);
-            var loaded = await ConfigCommands.LoadAsync(parseResult.GetRequiredValue(config), registry, cancellationToken);
+            var loaded = await DeploymentFile.LoadAsync(parseResult.GetRequiredValue(config), registry, cancellationToken);
             var deployment = await loaded.Match(
                 async d => Result.Ok(await AuditSeries.ResolveAsync(d, today, cancellationToken)),
                 problems => Task.FromResult(Result.Fail<DeploymentConfig>(problems)));

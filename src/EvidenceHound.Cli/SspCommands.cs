@@ -173,7 +173,7 @@ internal static class SspCommands
         };
         describe.SetAction(async (parseResult, cancellationToken) =>
         {
-            var checkedScope = await ScopeCommands.ValidateAsync(Scope(parseResult, scope), parseResult.GetValue(config), registry, AuditSeries.Today(configuration), cancellationToken);
+            var checkedScope = await RepoScope.ValidateAsync(Scope(parseResult, scope), parseResult.GetValue(config), registry, AuditSeries.Today(configuration), cancellationToken);
             var refId = parseResult.GetRequiredValue(control);
             if (checkedScope.Scope.Controls.FirstOrDefault(c => c.RefId == refId) is not { } declared)
             {
@@ -311,7 +311,7 @@ internal static class SspCommands
         CancellationToken cancellationToken)
     {
         // The config gives only the connection here: the scope is checked on its own, as 'hound ssp build' does without --config.
-        var checkedScope = await ScopeCommands.ValidateAsync(scope, null, registry, AuditSeries.Today(configuration), cancellationToken);
+        var checkedScope = await RepoScope.ValidateAsync(scope, null, registry, AuditSeries.Today(configuration), cancellationToken);
         if (checkedScope.Problems.Count > 0)
         {
             return (Log.Problems(logger, checkedScope.Problems.Select(p => p.ToProblem())), null);
@@ -329,11 +329,11 @@ internal static class SspCommands
     }
 
     /// <summary>Checks the scope and finds the programme's plan; on a problem, the exit code and no plan.</summary>
-    private static async Task<(int Exit, ScopeCommands.CheckedScope? Scope, ScopeSsp? Ssp)> CheckAsync(
+    private static async Task<(int Exit, CheckedScope? Scope, ScopeSsp? Ssp)> CheckAsync(
         ParseResult parseResult, Option<string> programme, Option<DirectoryInfo> scope, Option<FileInfo?> config, IConfiguration configuration, CollectorRegistry registry,
         ILogger logger, CancellationToken cancellationToken)
     {
-        var checkedScope = await ScopeCommands.ValidateAsync(Scope(parseResult, scope), parseResult.GetValue(config), registry, AuditSeries.Today(configuration), cancellationToken);
+        var checkedScope = await RepoScope.ValidateAsync(Scope(parseResult, scope), parseResult.GetValue(config), registry, AuditSeries.Today(configuration), cancellationToken);
         if (checkedScope.Problems.Count > 0)
         {
             return (Log.Problems(logger, checkedScope.Problems.Select(p => p.ToProblem())), null, null);
@@ -359,7 +359,7 @@ internal static class SspCommands
 
     private static async Task<(int Exit, SspSnapshot? Snapshot)> LiveSnapshotAsync(
         ParseResult parseResult, Option<DirectoryInfo> scope, Option<FileInfo?> config, IConfiguration configuration, CollectorRegistry registry,
-        ScopeCommands.CheckedScope checkedScope, ScopeSsp ssp, ILoggerFactory loggers, ILogger logger, CancellationToken cancellationToken)
+        CheckedScope checkedScope, ScopeSsp ssp, ILoggerFactory loggers, ILogger logger, CancellationToken cancellationToken)
     {
         var (exit, document) = await DocumentAsync(parseResult, config, configuration, registry, checkedScope, ssp, loggers, logger, cancellationToken);
         if (document is null)
@@ -373,7 +373,7 @@ internal static class SspCommands
 
     /// <summary>Reads CISO Assistant once and builds the plan; on a problem, the exit code and no plan.</summary>
     private static async Task<(int Exit, SspDocument? Document)> DocumentAsync(
-        ParseResult parseResult, Option<FileInfo?> config, IConfiguration configuration, CollectorRegistry registry, ScopeCommands.CheckedScope checkedScope, ScopeSsp ssp,
+        ParseResult parseResult, Option<FileInfo?> config, IConfiguration configuration, CollectorRegistry registry, CheckedScope checkedScope, ScopeSsp ssp,
         ILoggerFactory loggers, ILogger logger, CancellationToken cancellationToken)
     {
         var connection = await CisoAssistantConnection.ResolveAsync(configuration, parseResult.GetValue(config), registry, cancellationToken);
@@ -383,7 +383,7 @@ internal static class SspCommands
     }
 
     private static async Task<(int Exit, SspDocument? Document)> ReadAsync(
-        ScopeSsp ssp, ScopeCommands.CheckedScope checkedScope, CisoAssistantOptions connection, ILoggerFactory loggers, ILogger logger, CancellationToken cancellationToken)
+        ScopeSsp ssp, CheckedScope checkedScope, CisoAssistantOptions connection, ILoggerFactory loggers, ILogger logger, CancellationToken cancellationToken)
     {
         using var services = new ServiceCollection().AddSingleton(loggers).AddCisoAssistantClient(connection).BuildServiceProvider();
         var programme = checkedScope.Scope.Setup.Programmes.Single(p => p.Id == ssp.Programme.Value);
@@ -404,7 +404,7 @@ internal static class SspCommands
     private static DirectoryInfo Scope(ParseResult parseResult, Option<DirectoryInfo> scope) =>
         parseResult.GetValue(scope) ?? new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "scope"));
 
-    private static FrameworkSnapshot? Snapshot(ScopeCommands.CheckedScope checkedScope, string audit)
+    private static FrameworkSnapshot? Snapshot(CheckedScope checkedScope, string audit)
     {
         var framework = checkedScope.Scope.Setup.Programmes.Single(p => p.Audit.Value == audit).Framework.Value;
         return checkedScope.Inputs.Snapshots.GetValueOrDefault(framework);

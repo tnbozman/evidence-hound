@@ -34,13 +34,13 @@ internal static class CisoAssistantConnection
             return FromSettings(configuration);
         }
 
-        var deployment = await ConfigCommands.LoadAsync(configFile, registry, cancellationToken);
+        var deployment = await DeploymentFile.LoadAsync(configFile, registry, cancellationToken);
         return deployment.Bind(config =>
         {
             var url = configuration[UrlSetting] is { Length: > 0 } overridden ? new Uri(overridden.EndsWith('/') ? overridden : overridden + "/") : config.CisoAssistant.Url;
             return configuration[TokenSetting] is { Length: > 0 } token
                 ? Result.Ok(new CisoAssistantOptions(url, token))
-                : ConfigCommands.Secrets(configuration).Resolve(config.CisoAssistant.Token).Map(secret => new CisoAssistantOptions(url, secret.Reveal()));
+                : DeploymentFile.Secrets(configuration).Resolve(config.CisoAssistant.Token).Map(secret => new CisoAssistantOptions(url, secret.Reveal()));
         });
     }
 }

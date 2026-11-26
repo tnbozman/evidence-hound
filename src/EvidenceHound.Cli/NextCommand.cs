@@ -55,7 +55,7 @@ internal static class NextCommand
     private static async Task<Result<NextView>> GatherAsync(
         string root, FileInfo file, Terminal terminal, ILoggerFactory loggers, IConfiguration configuration, CollectorRegistry registry, DateOnly today, DateTimeOffset now, CancellationToken cancellationToken)
     {
-        var loaded = await ConfigCommands.LoadAsync(file, registry, cancellationToken);
+        var loaded = await DeploymentFile.LoadAsync(file, registry, cancellationToken);
         if (loaded is not Result<DeploymentConfig>.Ok { Value: var deployment })
         {
             return Result.Fail<NextView>(loaded is Result<DeploymentConfig>.Fail { Errors: var errors } ? errors : []);
@@ -107,7 +107,7 @@ internal static class NextCommand
             return reached;
         }
 
-        var checkedScope = await ScopeCommands.ValidateAsync(scope, file, registry, today, cancellationToken);
+        var checkedScope = await RepoScope.ValidateAsync(scope, file, registry, today, cancellationToken);
         if (checkedScope.Problems.Count > 0)
         {
             items.Add(ScopeProblems(checkedScope.Problems.Count));

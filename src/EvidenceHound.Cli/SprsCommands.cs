@@ -73,7 +73,7 @@ internal static class SprsCommands
         {
             var configFile = parseResult.GetRequiredValue(config);
             var weights = await MethodologyAsync(parseResult.GetValue(methodology), cancellationToken);
-            var deployment = await ConfigCommands.LoadAsync(configFile, registry, cancellationToken);
+            var deployment = await DeploymentFile.LoadAsync(configFile, registry, cancellationToken);
             var posture = await ReportingPeriod.Parse(parseResult.GetRequiredValue(period))
                 .Bind(p => deployment.Map(d => (Period: p, d.Evidence.Root)))
                 .BindAsync(x => ReportCommands.ReadSnapshotAsync(x.Root, x.Period, cancellationToken));

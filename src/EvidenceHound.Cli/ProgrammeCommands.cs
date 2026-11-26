@@ -24,7 +24,7 @@ internal static class ProgrammeCommands
         list.SetAction(async (parseResult, cancellationToken) =>
         {
             var dir = parseResult.GetValue(scope) ?? new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "scope"));
-            var checkedScope = await ScopeCommands.ValidateAsync(dir, null, registry, AuditSeries.Today(configuration), cancellationToken);
+            var checkedScope = await RepoScope.ValidateAsync(dir, null, registry, AuditSeries.Today(configuration), cancellationToken);
             if (checkedScope.Problems.Count > 0)
             {
                 return Log.Problems(logger, checkedScope.Problems.Select(p => p.ToProblem()));

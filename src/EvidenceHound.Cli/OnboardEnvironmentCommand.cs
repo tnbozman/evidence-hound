@@ -279,7 +279,7 @@ internal static class OnboardEnvironmentCommand
                 "onboard.graph_collector_unknown", $"{Path.GetFileName(configFile)} has no m365 collector named '{collector}'; --graph names one, such as the one that collects from Microsoft 365."));
         }
 
-        var secrets = ConfigCommands.Secrets(access.Configuration);
+        var secrets = DeploymentFile.Secrets(access.Configuration);
         var read = await Result.Combine(instance.Secrets.Select(pair => secrets.Resolve(pair.Value).Map(secret => KeyValuePair.Create(pair.Key, secret))))
             .BindAsync(resolved => access.Lookup.ReadAsync(new CollectorSettings(instance.Settings), resolved.ToDictionary(), access.HttpClients, cancellationToken));
         return read.Map(found => new EnvironmentFacts($"Microsoft Graph ({collector})", found.Licences, found.ConfigurationTypes) { Collector = collector });

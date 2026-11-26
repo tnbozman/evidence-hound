@@ -86,7 +86,7 @@ public sealed class EvidencePlanValidateTests : IDisposable
     public async Task Each_runbook_is_read_from_the_repo_for_its_task_description()
     {
         // The registry is only read with --config.
-        var checkedScope = await ScopeCommands.ValidateAsync(new DirectoryInfo(Path.Combine(_root, "scope")), null, null!, new DateOnly(2026, 11, 24), _ct);
+        var checkedScope = await RepoScope.ValidateAsync(new DirectoryInfo(Path.Combine(_root, "scope")), null, null!, new DateOnly(2026, 11, 24), _ct);
 
         var runbook = await File.ReadAllTextAsync(Path.Combine(_root, "manual-sources", "backup-restore-test.md"), _ct);
         checkedScope.Inputs.Runbooks["manual-sources/backup-restore-test.md"].ShouldBe(runbook);

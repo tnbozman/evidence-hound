@@ -73,7 +73,7 @@ internal static class MappingCrosswalkCommand
         Request request, TextWriter output, ILoggerFactory loggers, ILogger logger, IConfiguration configuration, CollectorRegistry registry, CancellationToken cancellationToken)
     {
         var today = AuditSeries.Today(configuration);
-        var checkedScope = await ScopeCommands.ValidateAsync(request.Scope, null, registry, today, cancellationToken);
+        var checkedScope = await RepoScope.ValidateAsync(request.Scope, null, registry, today, cancellationToken);
         if (checkedScope.Problems.Count > 0)
         {
             return Log.Problems(logger, checkedScope.Problems.Select(p => p.ToProblem()));
@@ -87,7 +87,7 @@ internal static class MappingCrosswalkCommand
                 $"No programme '{request.From}' in {request.Scope}; the programmes are {string.Join(", ", programmes.Select(p => p.Id))}.")]);
         }
 
-        var deployment = await ConfigCommands.LoadAsync(request.Config, registry, cancellationToken);
+        var deployment = await DeploymentFile.LoadAsync(request.Config, registry, cancellationToken);
         var crosswalk = await FindAsync(request, programme, cancellationToken);
         var mapping = await deployment.BindAsync(d => MappingAsync(d, programme, cancellationToken));
         var setup = deployment.Bind(d => crosswalk.Bind(c => mapping.Map(m => (Deployment: d, Crosswalk: c, Mapping: m))));
