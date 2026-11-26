@@ -59,3 +59,7 @@ site/
 # Python bytecode
 __pycache__/
 *.pyc
+
+# The interactive tutorials: Kokoro and its packages (make tutorials-audio), and the narration it writes
+.venv-tutorials/
+docs/tutorials/interactive/audio/
