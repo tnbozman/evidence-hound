@@ -81,6 +81,19 @@ Notes:
 **Functional check**
 - `make test`, `make lint`, `make docs` and the trial script pass after the removals.
 
+Notes (in progress):
+- The maintainer approved all three removals on 2026-11-26. Removed: the Kafka transport (project, package, compose profiles, `make
+  ca-up-kafka`, guides); a config with `transport: kafka` or `kafka_bootstrap_servers`, or `HOUND_TRANSPORT=kafka`, now stops with
+  `config.transport_removed` and says to publish over REST (`ConfigTests.Bad_transport_is_rejected`,
+  `PublishCommandTests.Kafka_transport_is_removed_and_says_so`). `docs/evidence/` (s00 to s09), `examples/manual-exports/` and the
+  superseded onboarding assistant design: removed, with the 51 links to them pointing at the last commit that held them
+  (`ExampleRepoTests` caught the one the first pass missed).
+- Dead code: IDE0051, IDE0052 and IDE0060 are now build errors. They found two unused parameters in the core and one unused test
+  helper, which are removed, and three M365 checks that take the options they do not need because every check in the table has one
+  signature; those parameters are named `_`. A scan for public and internal types with no reference outside their own declaration
+  found none.
+- Still to send the maintainer, with the CISO review's removals: the hidden retired model options (engineering review E8).
+
 ### s19-03 Principal engineer code review
 - [x] Done
 
@@ -114,7 +127,7 @@ Notes:
   suite 2,195 tests in 29 s; no analyser warnings.
 
 ### s19-04 Refactor the command-line shell
-- [ ] Done
+- [x] Done
 
 **Story:** As a developer adding a command, I want every command built the same way, so that a new one takes a page of code and
 behaves like the rest.
@@ -131,6 +144,19 @@ behaves like the rest.
 
 **Functional check**
 - The functional suite passes unchanged.
+
+Notes:
+- Golden files first (`JsonGoldenTests`): the `--json` answers of `hound next`, `hound status`, `hound review pending` and `hound scope
+  plan` are pinned, byte for byte, with temporary paths and ports normalised. They stayed green through every refactor below.
+- Shared helpers now live under their own names (engineering review E1): `CommandJson` (the two JSON settings, replacing
+  `OnboardAgentCommand.Indented` and nine private copies), `CisoAssistantConnection` (from `PublishCommand`), `DeploymentFile` (from
+  `ConfigCommands`) and `RepoScope` (scope loading and checking, from `ScopeCommands`, 15 callers).
+- `CommonOptions.Repo()` and `CommonOptions.Json()` replace 14 and 17 declarations (E2); `--repo` now reads "The compliance repo to work
+  in", as the guides say. `--config` keeps its per-command descriptions, which differ in meaning.
+- Large files split by responsibility (E3): `ScopeCommands.cs` 851 to 392 lines (`RepoScope.cs`, `ScopeCommands.SavedPlans.cs`),
+  `OnboardSystemCommand.cs` 767 to 553 (`OnboardSystemCommand.Files.cs`), `ReviewCommand.cs` 551 to 334 (`ReviewSession.cs`).
+- Functional: CI's functional job on this branch (see the sprint review). Unit suite 2,200 green, lint clean.
+- Found on the way: the agent answers use relaxed JSON escaping and older reports the default one (s19-D5).
 
 ### s19-05 Refactor the scope pipeline
 - [ ] Done
@@ -248,6 +274,8 @@ See [s19b-security-documents.md](s19b-security-documents.md). Starts after part 
 - **s19-D2 Retired model options are still parsed** (E8). Removing them goes to the maintainer with the s19-02 list.
 - **s19-D3 Two homes for agent guidance** (E9): move `skills/` under `agent/` in a release after 3; a compliance repo's own `skills/`
   folder depends on the name.
+- **s19-D5 Two JSON escaping settings.** Newer agent answers leave `'`, `<` and `+` as they are; older reports and kept files escape
+  them. One setting for all would change the bytes of older outputs, so it waits for a release that can say so.
 - **s19-D4 Two older deployment configs beside the example compliance repo** (E10): fold them in once the shared test repo exists.
 
 ## Sprint review
