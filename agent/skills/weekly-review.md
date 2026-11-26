@@ -5,7 +5,8 @@ description: Prepare the person's weekly review session with hound review pendin
 ## Prepare the weekly review
 
 The person has a few hours a week for compliance. Everything that needs them is signed off in one session, `hound review`, which they
-run in their own terminal. Your job is to have every item ready before they start, so that each one takes a minute to read and decide.
+run in their own terminal. Your job is to have every item ready before they start, so that each one takes a minute to read and decide. Before their first session, give them the seven-minute tutorial on it:
+https://tnbozman.github.io/evidence-hound/tutorials/interactive/play.html#your-week
 
 1. See the whole week first: `hound next --repo . --config hound.yaml --json` lists the review queue with collectors that failed or
    missed their schedule, manual sources due, exceptions expiring and scope changes not yet applied, most urgent first, each with its

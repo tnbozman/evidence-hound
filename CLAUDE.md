@@ -47,6 +47,8 @@ The dev container provides these through the `make` targets in the root `Makefil
 - Functional check run and recorded.
 - No new CodeQL, secret scanning or Dependabot alerts on the branch.
 - Public docs updated if behaviour changed.
+- The interactive tutorials (`docs/tutorials/interactive/*.json`) updated if a command or workflow they teach changed
+  (`AgentFilesTests` fails on a command or option that no longer exists); `make tutorials-audio` re-speaks only the changed sentences.
 - The agent skills and agents in `agent/` (written for Claude Code and GitHub Copilot by `hound agent setup`) updated if a command or
   workflow changed. A sprint is not done until they are accurate for the CLI and its workflows.
 
