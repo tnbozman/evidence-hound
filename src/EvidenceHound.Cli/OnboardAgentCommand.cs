@@ -30,14 +30,12 @@ internal static class OnboardAgentCommand
         onboard.Subcommands.Add(Decide(system, terminal, logger));
     }
 
-    private static Option<DirectoryInfo> Repo() => new("--repo") { Description = "The config repo to work in. Default: the current folder." };
 
-    private static Option<bool> Json() => new("--json") { Description = "Answer in JSON, for an agent." };
 
     private static Command Pending(Argument<string?> system, Terminal terminal, ILogger logger)
     {
-        var repo = Repo();
-        var json = Json();
+        var repo = CommonOptions.Repo();
+        var json = CommonOptions.Json();
         var framework = new Option<FileInfo>("--framework") { Description = "The framework snapshot to decide against. Default: the session's, else frameworks/essential-eight-2023.json in the repo." };
         var groups = new Option<string[]>("--group") { Description = "An implementation group in scope, such as 2. Repeat for more. Used when the session starts.", AllowMultipleArgumentsPerToken = false };
         var specs = new Option<FileInfo[]>("--spec") { Description = "The system's API specification (OpenAPI, JSON or YAML). Repeat for more." };
@@ -73,8 +71,8 @@ internal static class OnboardAgentCommand
 
     private static Command Decide(Argument<string?> system, Terminal terminal, ILogger logger)
     {
-        var repo = Repo();
-        var json = Json();
+        var repo = CommonOptions.Repo();
+        var json = CommonOptions.Json();
         var requirement = new Argument<string>("requirement") { Description = "The requirement, as 'pending' lists it." };
         var kind = new Option<string>("--kind") { Description = "How the requirement is met: api_check, manual, not_applicable or other_system.", Required = true };
         kind.AcceptOnlyFromAmong([.. Enum.GetValues<DecisionKind>().Select(Applicability.Name)]);

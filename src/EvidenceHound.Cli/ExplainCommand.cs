@@ -16,8 +16,8 @@ internal static class ExplainCommand
     {
         var logger = loggers.CreateLogger("hound.explain");
         var files = new Argument<FileInfo[]>("files") { Description = "A saved plan ('hound scope plan' or 'hound plan' output) or a diff; or two versions of one file. None reads a plan or diff from standard input.", Arity = new ArgumentArity(0, 2) };
-        var repo = new Option<DirectoryInfo>("--repo") { Description = "The config repo, whose mappings the change is checked against. Default: the current folder." };
-        var json = new Option<bool>("--json") { Description = "What code reads from the change (counts, objects, flags and topics) as JSON, for an agent." };
+        var repo = CommonOptions.Repo("The compliance repo, whose mappings the change is checked against. Default: the current folder.");
+        var json = CommonOptions.Json("What code reads from the change (counts, objects, flags and topics) as JSON, for an agent.");
         var command = new Command("explain", "Explain a plan or config change in plain English for review, and flag what needs a careful look. Never changes anything.")
         {
             files, repo, json,

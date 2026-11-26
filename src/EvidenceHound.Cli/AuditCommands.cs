@@ -19,7 +19,7 @@ internal static class AuditCommands
     public static Command Build(Terminal terminal, ILoggerFactory loggers, IConfiguration configuration)
     {
         var logger = loggers.CreateLogger("hound.audit");
-        var repo = new Option<DirectoryInfo>("--repo") { Description = "The config repo to work in. Default: the current folder." };
+        var repo = CommonOptions.Repo();
         var refId = new Option<string>("--ref") { Description = "The audit's ref_id, such as EX-E8-2027.", Required = true };
         var name = new Option<string>("--name") { Description = "The audit's name.", Required = true };
         var framework = new Option<string>("--framework") { Description = "The framework's URN, one that scope/setup.yaml loads.", Required = true };
@@ -28,7 +28,7 @@ internal static class AuditCommands
         var perimeter = new Option<string?>("--perimeter") { Description = "The perimeter the audit covers. Default: the domain's only perimeter." };
         var systems = new Option<string[]>("--system") { Description = "A system the audit covers, by name. Repeat for more.", AllowMultipleArgumentsPerToken = false };
         var due = new Option<string?>("--due") { Description = "The audit's due date, yyyy-MM-dd." };
-        var json = new Option<bool>("--json") { Description = "Answer in JSON, for an agent." };
+        var json = CommonOptions.Json();
         var draft = new Command("draft", "Draft an audit for named systems. A person approves it with 'hound approve', which moves it into scope/audits/.")
         {
             repo, refId, name, framework, groups, domain, perimeter, systems, due, json,

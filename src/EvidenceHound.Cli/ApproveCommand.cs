@@ -26,7 +26,7 @@ internal static class ApproveCommand
     public static Command Build(Terminal terminal, ILoggerFactory loggers, IConfiguration configuration)
     {
         var logger = loggers.CreateLogger("hound.approve");
-        var repo = new Option<DirectoryInfo>("--repo") { Description = "The config repo to work in. Default: the current folder." };
+        var repo = CommonOptions.Repo();
         var command = new Command("approve", "Approve what is drafted in the config repo, one item at a time. Needs a person at a terminal; an agent or a pipe is refused.") { repo };
         command.SetAction(async (parseResult, cancellationToken) =>
         {

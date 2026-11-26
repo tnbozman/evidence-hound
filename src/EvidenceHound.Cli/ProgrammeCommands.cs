@@ -16,7 +16,7 @@ internal static class ProgrammeCommands
     {
         var logger = loggers.CreateLogger("hound.programme");
         var scope = new Option<DirectoryInfo>("--scope") { Description = "The scope folder. Default: scope/ in the current folder." };
-        var json = new Option<bool>("--json") { Description = "Answer in JSON, for an agent." };
+        var json = CommonOptions.Json();
         var list = new Command("list", "List the compliance programmes with their framework, groups, audit of record and requirement counts per group and parent node. Reads no CISO Assistant.")
         {
             scope, json,

@@ -35,7 +35,7 @@ internal static class MappingCrosswalkCommand
         var scope = new Option<DirectoryInfo?>("--scope") { Description = "The scope folder. Default: scope/ in the current folder." };
         var config = new Option<FileInfo>("--config") { Description = "The deployment config: the programme's mapping and the CISO Assistant connection.", Required = true };
         var offline = new Option<bool>("--offline") { Description = "Do not read today's results from CISO Assistant; show only what would answer each requirement." };
-        var json = new Option<bool>("--json") { Description = "Print JSON instead of Markdown." };
+        var json = CommonOptions.Json("Print JSON instead of Markdown.");
         var command = new Command(
             "crosswalk",
             "Show which requirements of another framework (such as NIST SP 800-171) the programme's evidence answers today, partly answers or leaves open. Advisory: writes nothing.")

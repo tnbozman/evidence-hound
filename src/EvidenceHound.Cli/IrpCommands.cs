@@ -18,7 +18,7 @@ internal static class IrpCommands
         var logger = loggers.CreateLogger("hound.irp");
         var programme = new Option<string>("--programme") { Description = "The programme's id from scope/setup.yaml that scope/irp.yaml names, such as essential-eight.", Required = true };
         var scope = new Option<DirectoryInfo>("--scope") { Description = "The scope folder. Default: scope/ in the current folder." };
-        var json = new Option<bool>("--json") { Description = "Answer in JSON, each value with its source." };
+        var json = CommonOptions.Json("Answer in JSON, each value with its source.");
         var strict = new Option<bool>("--strict") { Description = "Exit non-zero while any gap remains: a role or judgement section not written." };
         var build = new Command("build", "Build the incident response plan from the repo, gaps first: NIST SP 800-61 Rev 3 with the Australian reporting, covering ISM-0043. Writes nothing.")
         {

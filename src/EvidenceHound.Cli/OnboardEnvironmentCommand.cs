@@ -24,7 +24,7 @@ internal static class OnboardEnvironmentCommand
     public static Command Build(Terminal terminal, ILoggerFactory loggers, GraphAccess access)
     {
         var logger = loggers.CreateLogger("hound.onboard");
-        var repo = new Option<DirectoryInfo>("--repo") { Description = "The config repo to work in. Default: the current folder." };
+        var repo = CommonOptions.Repo();
         var framework = new Option<FileInfo>("--framework") { Description = "The framework snapshot whose mitigations to decide. Default: frameworks/essential-eight-2023.json in the repo." };
         var signals = new Option<FileInfo>("--signals") { Description = "Recorded answers of the read-only Microsoft Graph lookups (subscribed licences and Intune configuration kinds), as JSON." };
         var graph = new Option<string>("--graph") { Description = "Read the licences and Intune configuration kinds live, read-only, as this m365 collector of the deployment config." };

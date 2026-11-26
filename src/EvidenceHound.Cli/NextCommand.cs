@@ -25,9 +25,9 @@ internal static class NextCommand
     public static Command Build(Terminal terminal, ILoggerFactory loggers, IConfiguration configuration, CollectorRegistry registry)
     {
         var logger = loggers.CreateLogger("hound.next");
-        var repo = new Option<DirectoryInfo>("--repo") { Description = "The compliance repo. Default: the current folder." };
+        var repo = CommonOptions.Repo();
         var config = new Option<FileInfo?>("--config") { Description = "The deployment config. Default: hound.yaml in the repo." };
-        var json = new Option<bool>("--json") { Description = "Answer in JSON, for an agent." };
+        var json = CommonOptions.Json();
         var next = new Command("next", "What needs doing now, most urgent first, with the command for each: the review queue, collectors, manual sources, expiring exceptions, scope changes not yet applied and the CISO Assistant connection. Reads only; prompt-free, for an agent.")
         {
             repo, config, json,

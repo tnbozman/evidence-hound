@@ -26,7 +26,7 @@ internal static class OnboardProfileCommand
     {
         var logger = loggers.CreateLogger("hound.onboard");
         var system = new Argument<string>("system") { Description = "The system onboarded with 'hound onboard <system>', whose accepted API checks the profile covers." };
-        var repo = new Option<DirectoryInfo>("--repo") { Description = "The config repo. Default: the current folder." };
+        var repo = CommonOptions.Repo();
         var profiles = new Option<DirectoryInfo>("--profiles") { Description = "The profiles folder. Default: profiles in the repo." };
         var name = new Option<string>("--name") { Description = "The profile's name. Default: the system's name in lower case." };
         var set = new Option<string[]>("--set") { Description = "An instance setting for the sample run, as name=value. Repeat for more.", AllowMultipleArgumentsPerToken = false };

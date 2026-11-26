@@ -28,7 +28,7 @@ internal static class ManualProposalCommands
         var check = new Option<string[]>("--check") { Description = "A different result for one check, as <check id>=<result>. Repeatable." };
         var observation = new Option<string?>("--observation") { Description = "What the file shows, and what is missing, in a sentence or two." };
         var supports = new Option<string[]>("--supports") { Description = "An extract or a location in the file that supports the result. Repeatable; at least one." };
-        var json = new Option<bool>("--json") { Description = "Answer in JSON, for an agent." };
+        var json = CommonOptions.Json();
 
         var propose = new Command("propose", "Record a proposed result for a manual evidence file. It waits for a person to attest it with 'hound manual approve'; no run publishes a proposal.")
         {

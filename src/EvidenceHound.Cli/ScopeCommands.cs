@@ -30,7 +30,7 @@ internal static class ScopeCommands
         var config = new Option<FileInfo?>("--config") { Description = "A deployment config whose targets must be audits and controls the scope declares." };
         var format = new Option<string>("--format") { Description = "text (the default) or json.", DefaultValueFactory = _ => "text" };
         format.AcceptOnlyFromAmong("text", "json");
-        var validateJson = new Option<bool>("--json") { Description = "The same as --format json, for an agent." };
+        var validateJson = CommonOptions.Json("The same as --format json, for an agent.");
         var validate = new Command("validate", "Check the scope files offline and report every problem with its file, line and code.") { dir, config, format, validateJson };
         validate.SetAction(async (parseResult, cancellationToken) =>
         {
@@ -53,7 +53,7 @@ internal static class ScopeCommands
 
         var planFormat = new Option<string>("--format") { Description = "markdown (the default, for a pull request comment) or json.", DefaultValueFactory = _ => "markdown" };
         planFormat.AcceptOnlyFromAmong("markdown", "json");
-        var planJson = new Option<bool>("--json") { Description = "The same as --format json, for an agent." };
+        var planJson = CommonOptions.Json("The same as --format json, for an agent.");
         var prune = new Option<bool>("--prune") { Description = "Also plan deleting the objects hound manages that the scope no longer declares." };
         var showUnmanaged = new Option<bool>("--show-unmanaged") { Description = "Also list the feature flags and general settings settings.yaml does not name, with their values." };
         var detailedExitCode = new Option<bool>(DetailedExitCodeFlag) { Description = "Exit 0 when there is nothing to change and no drift, 2 when there is, and 1 on any error." };

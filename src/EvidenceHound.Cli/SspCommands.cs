@@ -27,7 +27,7 @@ internal static class SspCommands
         var programme = new Option<string>("--programme") { Description = "The programme's id from scope/setup.yaml, such as essential-eight.", Required = true };
         var scope = new Option<DirectoryInfo>("--scope") { Description = "The scope folder. Default: scope/ in the current folder." };
         var config = new Option<FileInfo?>("--config") { Description = "The deployment config, for the CISO Assistant connection when HOUND_CA_URL and HOUND_CA_TOKEN are not set." };
-        var json = new Option<bool>("--json") { Description = "Answer in JSON, each value with its source." };
+        var json = CommonOptions.Json("Answer in JSON, each value with its source.");
         var strict = new Option<bool>("--strict") { Description = "Exit non-zero while any gap remains: a requirement with no statement, no owner, or not applicable without a justification." };
         var snapshotOut = new Option<FileInfo?>("--snapshot-out") { Description = "Also write what the plan was built from to this file, and log the draft's SHA-256 for the sign-off." };
         var fromSnapshot = new Option<FileInfo?>("--from-snapshot") { Description = "Build from a snapshot file instead of CISO Assistant: the signed version when its sign-off matches, else an error." };

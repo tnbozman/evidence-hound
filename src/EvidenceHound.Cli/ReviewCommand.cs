@@ -23,9 +23,9 @@ internal static class ReviewCommand
     public static Command Build(Terminal terminal, ILoggerFactory loggers, IConfiguration configuration, CollectorRegistry registry)
     {
         var logger = loggers.CreateLogger("hound.review");
-        var repo = new Option<DirectoryInfo>("--repo") { Description = "The config repo to work in. Default: the current folder." };
+        var repo = CommonOptions.Repo();
         var config = new Option<FileInfo?>("--config") { Description = "The deployment config, for manual evidence proposals. Default: hound.yaml in the repo, when there is one." };
-        var json = new Option<bool>("--json") { Description = "Answer in JSON, for an agent." };
+        var json = CommonOptions.Json();
         var pending = new Command("pending", "List everything that waits on a person, most urgent first, with the agent's recommendation where one is drafted. Prompt-free, for an agent.")
         {
             repo, config, json,

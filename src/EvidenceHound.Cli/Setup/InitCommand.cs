@@ -35,7 +35,7 @@ internal static class InitCommand
         var frameworks = new Option<string?>("--framework") { Description = "Also write an audit beside the Essential Eight one, comma separated: disp (DISP membership readiness). Default: none." };
         var assistant = new Option<string?>("--assistant") { Description = "Also set up a coding assistant in the repo, as 'hound agent setup' does: claude, copilot, both or none. Default: none." };
         var yes = new Option<bool>("--yes", "-y") { Description = "Ask nothing: take the options given and the defaults." };
-        var json = new Option<bool>("--json") { Description = "Answer in JSON, for an agent: the organisation, the audits and every file written." };
+        var json = CommonOptions.Json("Answer in JSON, for an agent: the organisation, the audits and every file written.");
         var organisationAudit = new Option<bool>("--organisation-audit")
         {
             Description = "Also write one Essential Eight audit for the whole organisation. Only when an organisation-wide source, such as policies, feeds it; otherwise draft one audit per system.",

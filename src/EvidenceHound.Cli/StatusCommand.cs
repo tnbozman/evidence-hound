@@ -34,7 +34,7 @@ internal static class StatusCommand
         {
             Description = "The compliance repo's scope/ folder: also give each programme's standing from the latest posture snapshot, and list security exceptions that expire within 60 days or have expired.",
         };
-        var json = new Option<bool>("--json") { Description = "Answer in JSON, for an agent: the same figures as the tables." };
+        var json = CommonOptions.Json("Answer in JSON, for an agent: the same figures as the tables.");
         var status = new Command("status", "Show the latest run of each configured collector, and with --scope each programme's standing.") { config, scope, json };
         status.SetAction(async (parseResult, cancellationToken) =>
         {

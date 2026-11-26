@@ -26,7 +26,7 @@ internal static partial class OnboardSystemCommand
     {
         var logger = loggers.CreateLogger("hound.onboard");
         var system = new Argument<string?>("system") { Description = "The system to onboard, as an ID such as EXAMPLE-FIREWALL.", Arity = ArgumentArity.ZeroOrOne };
-        var repo = new Option<DirectoryInfo>("--repo") { Description = "The config repo to work in. Default: the current folder." };
+        var repo = CommonOptions.Repo();
         var framework = new Option<FileInfo>("--framework") { Description = "The framework snapshot to decide against. Default: frameworks/essential-eight-2023.json in the repo." };
         var groups = new Option<string[]>("--group") { Description = "An implementation group in scope, such as 2 for maturity level two. Repeat for more; none means every requirement.", AllowMultipleArgumentsPerToken = false };
         var specs = new Option<FileInfo[]>("--spec") { Description = "The system's API specification (OpenAPI, JSON or YAML). Repeat for more." };
