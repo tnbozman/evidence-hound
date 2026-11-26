@@ -165,6 +165,13 @@ jobs:
           fi
           dotnet nuget push "artifacts/packages/*.nupkg" --api-key "$NUGET_API_KEY" \
             --source https://api.nuget.org/v3/index.json --skip-duplicate
+      - name: Speak the interactive tutorials' narration with Kokoro, on this runner (s20-03)
+        # The open-weight model runs here; no text goes to a speech service. Without audio the tutorials still play, with captions,
+        # so a failure here does not hold the release back.
+        continue-on-error: true
+        run: |
+          command -v ffmpeg >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg; }
+          make tutorials-audio
       - name: Publish the documentation site to GitHub Pages (the gh-pages branch)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
