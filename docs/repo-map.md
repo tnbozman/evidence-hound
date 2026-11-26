@@ -54,7 +54,6 @@ Reviewed 2026-11-26 (s19-01).
 | `src/EvidenceHound.Runtime/` | Runner, scheduler, evidence store and config. | hound | keep |
 | `src/EvidenceHound.ScanDev/` | Writes fictional vulnerability scan exports. | person, CI | keep |
 | `src/EvidenceHound.SophosDevServer/` | Fictional Sophos Central tenant for the trial and tests. | person, CI | keep |
-| `src/EvidenceHound.Transport.Kafka/` | Sends updates to CISO Assistant's Kafka dispatcher instead of the REST API (`HOUND_TRANSPORT=kafka`). | person (if anyone runs it) | remove, waiting on the maintainer: the dispatcher cannot read state, link evidence to controls or skip unchanged rows, and a small team would have to run Kafka for it. REST does all of that. |
 
 ## `tests/`
 

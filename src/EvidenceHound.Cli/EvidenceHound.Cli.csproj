@@ -42,6 +42,5 @@
     <ProjectReference Include="..\EvidenceHound.Core.Yaml\EvidenceHound.Core.Yaml.csproj" />
     <ProjectReference Include="..\EvidenceHound.Onboarding\EvidenceHound.Onboarding.csproj" />
     <ProjectReference Include="..\EvidenceHound.Runtime\EvidenceHound.Runtime.csproj" />
-    <ProjectReference Include="..\EvidenceHound.Transport.Kafka\EvidenceHound.Transport.Kafka.csproj" />
   </ItemGroup>
 </Project>

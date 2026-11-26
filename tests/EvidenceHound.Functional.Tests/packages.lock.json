@@ -53,15 +53,6 @@
           "SharpZipLib": "1.4.2"
         }
       },
-      "Testcontainers.Redpanda": {
-        "type": "Direct",
-        "requested": "[4.17.0, )",
-        "resolved": "4.17.0",
-        "contentHash": "xqf+MGIpdaCxGoJeTjA6IUvR2bj1hErtOQIzfuZJITFWKBJG7ahV9TmSet1rEfA/WGU6S730Y/po2nQ3MxkViA==",
-        "dependencies": {
-          "Testcontainers": "4.17.0"
-        }
-      },
       "xunit.v3": {
         "type": "Direct",
         "requested": "[4.0.3, )",
@@ -747,11 +738,6 @@
         "dependencies": {
           "Json.More.Net": "2.2.0"
         }
-      },
-      "librdkafka.redist": {
-        "type": "Transitive",
-        "resolved": "2.16.0",
-        "contentHash": "cr/wX7+G/rqOwN88Imxxco+OMGG6XslgSFh9xMb3utHY7/iWfssD2AY9MF7rsGdGm+mGuRw+1IQ+Zslris9IoQ=="
       },
       "MetadataReferenceService.Abstractions": {
         "type": "Transitive",
@@ -1664,7 +1650,6 @@
           "EvidenceHound.Core.Yaml": "[1.0.0, )",
           "EvidenceHound.Onboarding": "[1.0.0, )",
           "EvidenceHound.Runtime": "[1.0.0, )",
-          "EvidenceHound.Transport.Kafka": "[1.0.0, )",
           "Microsoft.Extensions.Hosting": "[10.0.15, )",
           "System.CommandLine": "[3.0.0, )",
           "YamlDotNet": "[18.1.0, )"
@@ -1746,13 +1731,6 @@
           "YamlDotNet": "[18.1.0, )"
         }
       },
-      "evidencehound.transport.kafka": {
-        "type": "Project",
-        "dependencies": {
-          "Confluent.Kafka": "[2.16.0, )",
-          "EvidenceHound.Core": "[1.0.0, )"
-        }
-      },
       "Azure.Identity": {
         "type": "CentralTransitive",
         "requested": "[1.21.0, )",
@@ -1760,15 +1738,6 @@
         "contentHash": "GeFv8sGwRKvDKwI2WFy8r0mhmlxEVZg24Sit2NogTjiSO8RVjllWM65OT6e1sKjOvG8V74y7hAbaELUUPjZQSw==",
         "dependencies": {
           "Azure.Core": "1.53.0"
-        }
-      },
-      "Confluent.Kafka": {
-        "type": "CentralTransitive",
-        "requested": "[2.16.0, )",
-        "resolved": "2.16.0",
-        "contentHash": "BREXaSYr9BrXpaJ7S4TTSIhI6q5amIjxoxJGbvKLQjAG/08hs223UDt60j42JdCgtD+aFYuduG/oP/tHqNJt8w==",
-        "dependencies": {
-          "librdkafka.redist": "2.16.0"
         }
       },
       "Cronos": {

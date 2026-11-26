@@ -28,31 +28,12 @@
           "$ref": "#/$defs/secretReference"
         },
         "transport": {
+          "description": "Only rest: the Kafka transport was removed in release 3. Leave it out.",
           "enum": [
-            "rest",
-            "kafka"
+            "rest"
           ],
           "default": "rest"
-        },
-        "kafka_bootstrap_servers": {
-          "type": "string",
-          "minLength": 1
         }
-      },
-      "if": {
-        "properties": {
-          "transport": {
-            "const": "kafka"
-          }
-        },
-        "required": [
-          "transport"
-        ]
-      },
-      "then": {
-        "required": [
-          "kafka_bootstrap_servers"
-        ]
       }
     },
     "evidence": {

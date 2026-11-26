@@ -13,7 +13,6 @@
     <Project Path="src/EvidenceHound.IacDevServer/EvidenceHound.IacDevServer.csproj" />
     <Project Path="src/EvidenceHound.ScanDev/EvidenceHound.ScanDev.csproj" />
     <Project Path="src/EvidenceHound.SophosDevServer/EvidenceHound.SophosDevServer.csproj" />
-    <Project Path="src/EvidenceHound.Transport.Kafka/EvidenceHound.Transport.Kafka.csproj" />
   </Folder>
   <Folder Name="/src/Collectors/">
     <Project Path="src/Collectors/EvidenceHound.Collectors.M365/EvidenceHound.Collectors.M365.csproj" />

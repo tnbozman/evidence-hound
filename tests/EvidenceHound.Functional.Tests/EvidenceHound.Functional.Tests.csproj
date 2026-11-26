@@ -6,13 +6,11 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Testcontainers" />
-    <PackageReference Include="Testcontainers.Redpanda" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\EvidenceHound.CisoAssistant\EvidenceHound.CisoAssistant.csproj" />
     <ProjectReference Include="..\..\src\EvidenceHound.Cli\EvidenceHound.Cli.csproj" />
     <ProjectReference Include="..\..\src\EvidenceHound.Collectors.Testing\EvidenceHound.Collectors.Testing.csproj" />
-    <ProjectReference Include="..\..\src\EvidenceHound.Transport.Kafka\EvidenceHound.Transport.Kafka.csproj" />
   </ItemGroup>
   <ItemGroup>
     <!-- The recorded example.com tenant, shared with the M365 collector's own tests. -->

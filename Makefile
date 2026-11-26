@@ -10,7 +10,7 @@ CA_COMPOSE := dev/ciso-assistant/compose.yml
 CA_ENV := HOUND_CA_SECRET_KEY="$$(scripts/ca-secret-key.sh)"
 SHELL_SCRIPTS := $(wildcard scripts/*.sh scripts/lib/*.sh deploy/compose/*.sh .devcontainer/*.sh dev/ciso-assistant/seed/*.sh) .githooks/pre-commit
 
-.PHONY: help docs docs-serve lint-docs test-docs test-packages changelog restore build test test-functional test-profiles test-template test-scripts test-terraform coverage image test-image test-compose compose-smoke lint lint-dotnet lint-shell format run m365-dev sophos-dev iac-dev scan-dev hooks ca-up ca-up-kafka ca-down trial trial-clean
+.PHONY: help docs docs-serve lint-docs test-docs test-packages changelog restore build test test-functional test-profiles test-template test-scripts test-terraform coverage image test-image test-compose compose-smoke lint lint-dotnet lint-shell format run m365-dev sophos-dev iac-dev scan-dev hooks ca-up ca-down trial trial-clean
 
 help: ## List targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-16s %s\n", $$1, $$2}'
@@ -118,11 +118,8 @@ ca-up: ## Start and seed a local CISO Assistant (token in .dev/ca.env)
 	$(CA_ENV) docker compose -f $(CA_COMPOSE) up -d --wait
 	$(CA_ENV) scripts/ca-seed.sh
 
-ca-up-kafka: ca-up ## Also start Redpanda and the CISO Assistant dispatcher (compose profile kafka)
-	set -a && . ./.dev/ca.env && set +a && $(CA_ENV) docker compose -f $(CA_COMPOSE) --profile kafka up -d --build
-
 ca-down: ## Stop the local CISO Assistant (add ARGS=-v to delete its data)
-	$(CA_ENV) docker compose -f $(CA_COMPOSE) --profile kafka down $(ARGS)
+	$(CA_ENV) docker compose -f $(CA_COMPOSE) down $(ARGS)
 
 trial: ## Interactive local trial: hound in a container next to your CISO Assistant (docs/tutorials/local-trial.md)
 	scripts/trial.sh

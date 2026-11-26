@@ -56,33 +56,5 @@ services:
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
 
-  # Optional: `docker compose --profile kafka up -d` (or `make ca-up-kafka`) adds Redpanda and the official
-  # dispatcher, so `HOUND_TRANSPORT=kafka hound publish` goes through the dispatcher's observation topic.
-  redpanda:
-    image: redpandadata/redpanda:v26.3.1
-    profiles: [kafka]
-    command:
-      - redpanda start --mode dev-container --smp 1
-      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
-      - --advertise-kafka-addr internal://redpanda:9092,external://localhost:19092
-    ports:
-      - 127.0.0.1:19092:19092
-
-  dispatcher:
-    # Upstream publishes no dispatcher image, so it is built from the same release tag.
-    build: https://github.com/intuitem/ciso-assistant-community.git#v4.3.4:dispatcher
-    profiles: [kafka]
-    restart: unless-stopped
-    depends_on:
-      backend:
-        condition: service_healthy
-      redpanda:
-        condition: service_started
-    environment:
-      API_URL: http://backend:8000/api
-      USER_TOKEN: ${HOUND_CA_TOKEN:-}  # make ca-up-kafka loads it from .dev/ca.env
-      BOOTSTRAP_SERVERS: redpanda:9092
-      ERRORS_TOPIC: errors
-
 volumes:
   ca-db:

@@ -5,7 +5,6 @@ using EvidenceHound.Core.Planning;
 using EvidenceHound.Core.Publishing;
 using EvidenceHound.Core.Results;
 using EvidenceHound.Runtime.Collectors;
-using EvidenceHound.Transport.Kafka;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -16,7 +15,6 @@ namespace EvidenceHound.Cli;
 internal static class PublishCommand
 {
     public const string TransportSetting = "HOUND_TRANSPORT";
-    public const string KafkaSetting = "HOUND_KAFKA_BOOTSTRAP_SERVERS";
 
 
     public static Command Build(TextWriter output, ILoggerFactory loggers, IConfiguration configuration, CollectorRegistry registry)
@@ -57,10 +55,8 @@ internal static class PublishCommand
             "rest" => CisoAssistantConnection.FromSettings(configuration).Match(
                 options => SendRestAsync(options, files, updates, loggers, output, logger, cancellationToken),
                 problems => Task.FromResult(Log.Problems(logger, problems))),
-            "kafka" => KafkaConnection(configuration).Match(
-                options => SendKafkaAsync(options, files, updates, output, logger, cancellationToken),
-                problems => Task.FromResult(Log.Problems(logger, problems))),
-            var other => Task.FromResult(Log.Problems(logger, [new Problem("config.transport_unknown", $"Unknown {TransportSetting} '{other}'; use rest (the default) or kafka.")])),
+            "kafka" => Task.FromResult(Log.Problems(logger, [new Problem("config.transport_removed", $"{TransportSetting}=kafka: the Kafka transport was removed in release 3; hound publishes over the REST API. Unset {TransportSetting}.")])),
+            var other => Task.FromResult(Log.Problems(logger, [new Problem("config.transport_unknown", $"Unknown {TransportSetting} '{other}'; hound publishes over the REST API, so leave it unset or set it to rest.")])),
         };
     }
 
@@ -74,14 +70,7 @@ internal static class PublishCommand
         return await SendAsync(new RestSink(services.GetRequiredService<ICisoAssistantClient>(), files), updates, output, logger, cancellationToken);
     }
 
-    private static async Task<int> SendKafkaAsync(
-        KafkaSinkOptions options, IEvidenceFiles files, IReadOnlyList<AuditUpdate> updates, TextWriter output, ILogger logger, CancellationToken cancellationToken)
-    {
-        using var sink = new KafkaSink(options, files);
-        return await SendAsync(sink, updates, output, logger, cancellationToken);
-    }
-
-    private static async Task<int> SendAsync(IAuditUpdateSink sink, IReadOnlyList<AuditUpdate> updates, TextWriter output, ILogger logger, CancellationToken cancellationToken)
+    private static async Task<int> SendAsync(RestSink sink, IReadOnlyList<AuditUpdate> updates, TextWriter output, ILogger logger, CancellationToken cancellationToken)
     {
         var report = await sink.SendAsync(updates, cancellationToken);
         await WriteAsync(report, output);
@@ -92,11 +81,6 @@ internal static class PublishCommand
 
         return report.HasFailures ? ExitCodes.PublishFailed : ExitCodes.Ok;
     }
-
-    private static Result<KafkaSinkOptions> KafkaConnection(IConfiguration configuration) =>
-        configuration[KafkaSetting] is { Length: > 0 } servers
-            ? Result.Ok(new KafkaSinkOptions(servers))
-            : Result.Fail<KafkaSinkOptions>(new Problem("config.kafka_servers_missing", $"Set {KafkaSetting} to the Kafka bootstrap servers the dispatcher reads, for example localhost:19092."));
 
     /// <summary>Each audit's requirement items counted, for the publish and run reports.</summary>
     internal static JsonArray AuditsJson(PublishReport report) =>

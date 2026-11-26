@@ -8,8 +8,6 @@
 ciso_assistant:
   url: http://localhost:8000/api/        # HOUND_CA_URL overrides this, for example in tests
   token: env:HOUND_CA_TOKEN              # a personal access token for a service account
-  transport: rest                        # rest (default) or kafka, through CISO Assistant's dispatcher
-  # kafka_bootstrap_servers: localhost:19092
 
 evidence:
   root: ../.dev/evidence                 # one folder per collector, one sub-folder per run

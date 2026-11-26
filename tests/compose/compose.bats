@@ -77,9 +77,9 @@ setup() {
   git -C "$root" check-ignore -q deploy/compose/secrets/postgres_password
 }
 
-@test "the kafka profile adds Redpanda and the official dispatcher" {
+@test "no Kafka profile: the stack is the same with it (removed in release 3)" {
   services="$(config --profile kafka | jq -r '.services | keys | sort | join(" ")')"
-  [ "$services" = "backend caddy dispatcher frontend postgres redpanda runner worker" ]
+  [ "$services" = "backend caddy frontend postgres runner worker" ]
 }
 
 @test "the runner serves the collectors on their schedules and restarts unless stopped" {

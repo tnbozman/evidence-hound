@@ -10,7 +10,6 @@ using EvidenceHound.Runtime.Collectors;
 using EvidenceHound.Runtime.Configuration;
 using EvidenceHound.Runtime.Status;
 using EvidenceHound.Runtime.Storage;
-using EvidenceHound.Transport.Kafka;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -232,15 +231,10 @@ internal static class RunCommand
         return moved < now ? moved : now;
     }
 
-    /// <summary>The configured transport. The URL comes from the config unless <c>HOUND_CA_URL</c> overrides it; the token is a secret reference.</summary>
+    /// <summary>The REST transport. The URL comes from the config unless <c>HOUND_CA_URL</c> overrides it; the token is a secret reference.</summary>
     private static Result<Transports> Transport(DeploymentConfig config, IConfiguration configuration, ILoggerFactory loggers)
     {
         var ca = config.CisoAssistant;
-        if (ca.Transport == "kafka")
-        {
-            return Result.Ok(Transports.Kafka(new KafkaSinkOptions(ca.KafkaBootstrapServers!)));
-        }
-
         var url = configuration[CisoAssistantConnection.UrlSetting] is { Length: > 0 } overridden ? new Uri(overridden.EndsWith('/') ? overridden : overridden + "/") : ca.Url;
         return DeploymentFile.Secrets(configuration).Resolve(ca.Token).Map(token => Transports.Rest(new CisoAssistantOptions(url, token.Reveal()), loggers, AuditSeries.Today(configuration)));
     }
@@ -298,14 +292,14 @@ internal static class RunCommand
     /// <summary>Makes a sink per collector run over that run's files, and owns whatever the sinks share.</summary>
     private sealed class Transports(Func<IEvidenceFiles, IAuditUpdateSink> sinkFor, IDisposable? shared, ICurrentStateSource? states = null, ICisoAssistantClient? client = null) : IDisposable
     {
-        /// <summary>The REST client, for what a run writes besides the audits (s15-05); none over Kafka.</summary>
+        /// <summary>The REST client, for what a run writes besides the audits (s15-05).</summary>
         public ICisoAssistantClient? Client { get; } = client;
 
         public static Transports None { get; } = new(_ => throw new InvalidOperationException("Publishing is off for this run."), null);
 
         public Func<IEvidenceFiles, IAuditUpdateSink> SinkFor { get; } = sinkFor;
 
-        /// <summary>CISO Assistant's current state over REST; the Kafka dispatcher cannot read, so with it everything is sent.</summary>
+        /// <summary>CISO Assistant's current state over REST.</summary>
         public ICurrentStateSource States { get; } = states ?? NoCurrentState.Instance;
 
         public static Transports Rest(CisoAssistantOptions options, ILoggerFactory loggers, DateOnly today)
@@ -314,8 +308,6 @@ internal static class RunCommand
             var client = services.GetRequiredService<ICisoAssistantClient>();
             return new Transports(files => new RestSink(client, files), services, new ClientStateSource(client, today), client);
         }
-
-        public static Transports Kafka(KafkaSinkOptions options) => new(files => new KafkaSink(options, files), null);
 
         public void Dispose() => shared?.Dispose();
     }

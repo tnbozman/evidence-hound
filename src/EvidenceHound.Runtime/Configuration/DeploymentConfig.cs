@@ -25,8 +25,8 @@ public sealed record SchedulerConfig(TimeZoneInfo TimeZone, TimeSpan MaxJitter)
     public static SchedulerConfig Default { get; } = new(TimeZoneInfo.Utc, TimeSpan.FromMinutes(5));
 }
 
-/// <summary>How to reach CISO Assistant. <paramref name="Transport"/> is <c>rest</c> or <c>kafka</c>.</summary>
-public sealed record CisoAssistantConfig(Uri Url, SecretReference Token, string Transport, string? KafkaBootstrapServers);
+/// <summary>How to reach CISO Assistant's REST API.</summary>
+public sealed record CisoAssistantConfig(Uri Url, SecretReference Token);
 
 /// <summary>Where evidence is stored, and for how many days old runs are kept (null keeps everything).</summary>
 public sealed record EvidenceConfig(string Root, int? RetentionDays)

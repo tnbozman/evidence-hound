@@ -17,10 +17,8 @@ Add `--dry-run` to print the report without calling CISO Assistant (no token nee
 | --- | --- |
 | `HOUND_CA_URL` | The API root, for example `http://localhost:8000/api/`. |
 | `HOUND_CA_TOKEN` | A CISO Assistant personal access token. Sent as `Authorization: Token ...`; never logged. |
-| `HOUND_TRANSPORT` | `rest` (default) or `kafka`. |
-| `HOUND_KAFKA_BOOTSTRAP_SERVERS` | Kafka bootstrap servers the dispatcher reads, for `kafka`. |
 
-They are read through .NET configuration, so environment variables work everywhere. The full config schema (s03) will move the URL and transport into the config file.
+They are read through .NET configuration, so environment variables work everywhere.
 
 ## What happens, in order
 
@@ -69,11 +67,6 @@ Stdout is a JSON report; logs go to stderr.
 
 Requests retry with exponential backoff and jitter on 5xx, 408 and 429 (POST is never retried, so a create is never doubled), time out, and stop calling a failing server through a circuit breaker.
 
-## Kafka transport
+## Kafka transport (removed)
 
-`HOUND_TRANSPORT=kafka` writes the same updates as dispatcher JSON to the `observation` topic, for CISO Assistant's official [dispatcher](https://github.com/intuitem/ciso-assistant-community/tree/main/dispatcher) to apply. `make ca-up-kafka` adds Redpanda (Kafka API on `localhost:19092`) and a dispatcher built from the pinned release.
-
-Differences from REST, both because the dispatcher passes `values` straight to the API:
-
-- Requirement messages leave out `evidences`: the API wants evidence IDs, and only the REST transport can look them up. Evidence is still uploaded.
-- "Sent" means Kafka accepted the message; the dispatcher's own errors go to its `errors` topic. Nothing is skipped, so re-running uploads files again.
+Release 3 removed the Kafka transport. CISO Assistant's dispatcher cannot read what it holds, link evidence to controls or skip unchanged rows, and a small team would have to run Kafka for it. A config with `transport: kafka` or `kafka_bootstrap_servers`, or `HOUND_TRANSPORT=kafka`, stops with `config.transport_removed`: remove them and hound publishes over the REST API.

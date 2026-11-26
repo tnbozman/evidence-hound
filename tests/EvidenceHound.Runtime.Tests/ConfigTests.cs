@@ -42,7 +42,6 @@ public class ConfigTests
         var config = (await ConfigLoader.LoadAsync(TestFiles.ExampleConfigPath, Known, TestContext.Current.CancellationToken)).Value();
 
         config.CisoAssistant.Token.ToString().ShouldBe("env:HOUND_CA_TOKEN");
-        config.CisoAssistant.Transport.ShouldBe("rest");
         config.Collectors.ShouldHaveSingleItem().Type.ShouldBe("fake");
         config.Targets[0].ComplianceAssessmentRefId.ShouldBe("EXAMPLE-BASELINE-2026");
         config.Targets[0].HealthControlRefId.ShouldBe("AC-AUTO-EVIDENCE");

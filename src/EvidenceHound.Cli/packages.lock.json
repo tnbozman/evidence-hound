@@ -64,11 +64,6 @@
           "System.Memory.Data": "10.0.3"
         }
       },
-      "librdkafka.redist": {
-        "type": "Transitive",
-        "resolved": "2.16.0",
-        "contentHash": "cr/wX7+G/rqOwN88Imxxco+OMGG6XslgSFh9xMb3utHY7/iWfssD2AY9MF7rsGdGm+mGuRw+1IQ+Zslris9IoQ=="
-      },
       "Microsoft.Bcl.AsyncInterfaces": {
         "type": "Transitive",
         "resolved": "10.0.3",
@@ -539,13 +534,6 @@
           "YamlDotNet": "[18.1.0, )"
         }
       },
-      "evidencehound.transport.kafka": {
-        "type": "Project",
-        "dependencies": {
-          "Confluent.Kafka": "[2.16.0, )",
-          "EvidenceHound.Core": "[1.0.0, )"
-        }
-      },
       "Azure.Identity": {
         "type": "CentralTransitive",
         "requested": "[1.21.0, )",
@@ -553,15 +541,6 @@
         "contentHash": "GeFv8sGwRKvDKwI2WFy8r0mhmlxEVZg24Sit2NogTjiSO8RVjllWM65OT6e1sKjOvG8V74y7hAbaELUUPjZQSw==",
         "dependencies": {
           "Azure.Core": "1.53.0"
-        }
-      },
-      "Confluent.Kafka": {
-        "type": "CentralTransitive",
-        "requested": "[2.16.0, )",
-        "resolved": "2.16.0",
-        "contentHash": "BREXaSYr9BrXpaJ7S4TTSIhI6q5amIjxoxJGbvKLQjAG/08hs223UDt60j42JdCgtD+aFYuduG/oP/tHqNJt8w==",
-        "dependencies": {
-          "librdkafka.redist": "2.16.0"
         }
       },
       "Cronos": {
@@ -621,11 +600,6 @@
       }
     },
     "net10.0/linux-arm64": {
-      "librdkafka.redist": {
-        "type": "Transitive",
-        "resolved": "2.16.0",
-        "contentHash": "cr/wX7+G/rqOwN88Imxxco+OMGG6XslgSFh9xMb3utHY7/iWfssD2AY9MF7rsGdGm+mGuRw+1IQ+Zslris9IoQ=="
-      },
       "System.Diagnostics.EventLog": {
         "type": "Transitive",
         "resolved": "10.0.15",
@@ -638,11 +612,6 @@
       }
     },
     "net10.0/linux-x64": {
-      "librdkafka.redist": {
-        "type": "Transitive",
-        "resolved": "2.16.0",
-        "contentHash": "cr/wX7+G/rqOwN88Imxxco+OMGG6XslgSFh9xMb3utHY7/iWfssD2AY9MF7rsGdGm+mGuRw+1IQ+Zslris9IoQ=="
-      },
       "System.Diagnostics.EventLog": {
         "type": "Transitive",
         "resolved": "10.0.15",
