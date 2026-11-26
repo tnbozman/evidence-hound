@@ -1,0 +1,87 @@
+{
+  "unmanaged_settings": [],
+  "access": [],
+  "periods": [],
+  "gaps": [],
+  "dependencies": [],
+  "suppliers": [],
+  "exceptions": [],
+  "changes": [
+    {
+      "kind": "audit",
+      "key": "EXAMPLE-BASELINE-2026",
+      "action": "create",
+      "fields": [
+        {
+          "field": "name",
+          "old": null,
+          "new": "Example baseline 2026"
+        },
+        {
+          "field": "framework",
+          "old": null,
+          "new": "urn:example:risk:framework:example-baseline"
+        },
+        {
+          "field": "groups",
+          "old": null,
+          "new": "1"
+        },
+        {
+          "field": "domain",
+          "old": null,
+          "new": "Example Pty Ltd"
+        },
+        {
+          "field": "perimeter",
+          "old": null,
+          "new": "Example baseline"
+        },
+        {
+          "field": "systems",
+          "old": null,
+          "new": "Example 365"
+        }
+      ],
+      "state": "f6c5384a27e486bc"
+    },
+    {
+      "kind": "control",
+      "key": "AC-MFA",
+      "action": "create",
+      "fields": [
+        {
+          "field": "name",
+          "old": null,
+          "new": "Multi-factor authentication"
+        },
+        {
+          "field": "domain",
+          "old": null,
+          "new": "Example Pty Ltd"
+        },
+        {
+          "field": "systems",
+          "old": null,
+          "new": "Example 365"
+        }
+      ],
+      "state": "e75d2c119824a20e"
+    },
+    {
+      "kind": "assessment",
+      "key": "EXAMPLE-BASELINE-2026/EX-1.1",
+      "action": "create",
+      "fields": [
+        {
+          "field": "controls",
+          "old": null,
+          "new": "AC-MFA"
+        }
+      ],
+      "state": null
+    }
+  ],
+  "drift": [],
+  "compliance": []
+}

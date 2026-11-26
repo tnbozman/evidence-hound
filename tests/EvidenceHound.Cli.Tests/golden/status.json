@@ -1,0 +1,131 @@
+{
+  "collectors": [
+    {
+      "collector": "example-m365",
+      "last_run": "2027-02-14T16:00:03Z",
+      "outcome": "failed",
+      "passed": 0,
+      "failed": 0,
+      "problems": [
+        {
+          "code": "collector.all_checks_errored",
+          "message": "All 2 checks errored."
+        }
+      ],
+      "publish_failed": 0,
+      "checks": []
+    },
+    {
+      "collector": "example-incident-register",
+      "last_run": null,
+      "outcome": "never_run"
+    },
+    {
+      "collector": "example-incident-response-plan",
+      "last_run": null,
+      "outcome": "never_run"
+    },
+    {
+      "collector": "example-backup-restore-test",
+      "last_run": null,
+      "outcome": "never_run"
+    },
+    {
+      "collector": "example-ai-register",
+      "last_run": null,
+      "outcome": "never_run"
+    },
+    {
+      "collector": "example-ai-governance",
+      "last_run": null,
+      "outcome": "never_run"
+    },
+    {
+      "collector": "example-ai-operations",
+      "last_run": null,
+      "outcome": "never_run"
+    }
+  ],
+  "audits": [
+    {
+      "audit": "EX-E8-2026",
+      "last_run": null
+    },
+    {
+      "audit": "EX-ESSENTIALS-2026",
+      "last_run": null
+    },
+    {
+      "audit": "EX-DISP-2026",
+      "last_run": null
+    },
+    {
+      "audit": "EX-AI6-2026",
+      "last_run": null
+    },
+    {
+      "audit": "EX-CMMC-2026",
+      "last_run": null
+    }
+  ],
+  "ciso_assistant": {
+    "reachable": null,
+    "token": null,
+    "token_expiry": null,
+    "note": "Not checked: Secret env:HOUND_CA_TOKEN could not be resolved: the environment variable is not set.",
+    "rejected_publishes": 0
+  },
+  "manual_sources": [
+    {
+      "source": "example-incident-register",
+      "owner": "Alex Example",
+      "every_days": 31,
+      "last_evidence": null,
+      "due": null,
+      "state": "overdue"
+    },
+    {
+      "source": "example-incident-response-plan",
+      "owner": "Alex Example",
+      "every_days": 366,
+      "last_evidence": "2027-01-15T16:00:00Z",
+      "due": "2028-01-16",
+      "state": "ok"
+    },
+    {
+      "source": "example-backup-restore-test",
+      "owner": "Sam Example",
+      "every_days": 92,
+      "last_evidence": null,
+      "due": null,
+      "state": "overdue"
+    },
+    {
+      "source": "example-ai-governance",
+      "owner": "Sam Example",
+      "every_days": 366,
+      "last_evidence": null,
+      "due": null,
+      "state": "overdue"
+    },
+    {
+      "source": "example-ai-operations",
+      "owner": "Alex Example",
+      "every_days": 92,
+      "last_evidence": null,
+      "due": null,
+      "state": "overdue"
+    }
+  ],
+  "standing": {
+    "snapshot": null,
+    "hint": "No posture snapshot yet, so no programme standing. Take one with: hound report snapshot --period YYYY-MM --scope \u003Cscope\u003E --config \u003Chound.yaml\u003E"
+  },
+  "exceptions_due": [
+    {
+      "ref_id": "EXC-01",
+      "expires": "2027-03-31",
+      "note": "expires in 44 days: renew it, or plan to resolve the gap before then."
+    }
+  ]
+}
