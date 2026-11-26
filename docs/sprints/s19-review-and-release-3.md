@@ -377,3 +377,12 @@ See [s19b-security-documents.md](s19b-security-documents.md). Starts after part 
 - **s19-D4 Two older deployment configs beside the example compliance repo** (E10): fold them in once the shared test repo exists.
 
 ## Sprint review
+
+Draft, completed when s19-02 closes.
+
+- **Part A:** s19-01 and s19-03 to s19-11 done. s19-02: the first removal list (Kafka, `docs/evidence/`, the onboarding
+  assistant design) is removed; the second list (retired model options) and the part B decision wait on the maintainer.
+- **CI on c3a6b12** (run 45738790466): every job green, including build and unit tests (2,213), the functional suite against
+  CISO Assistant, the trial (both runs and the saved plans), the image (built, tested and scanned), the compose smoke test, docs,
+  scripts, packages, terraform, org-data, secret scanning and dependency review.
+- **Release:** release 3 ships as 1.0.0; `scripts/release-build.sh` passed a dry run. The tag waits on the maintainer.
