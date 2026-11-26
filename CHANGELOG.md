@@ -152,6 +152,7 @@ Features and fixes in each release of Evidence Hound, from its Conventional Comm
 - register summary per programme, shown by hound programme list (s11-14)
 - release workflow from v* tags with an approval gate, GHCR image, packages, SBOM, provenance and notes; dry run on pull requests (s13-04)
 - remove the Kafka transport; a config or HOUND_TRANSPORT that asks for it is refused with config.transport_removed (s19-02)
+- remove the options that only served the removed model (s19-02)
 - report data a supplier is not approved for and expired authorities (s10-06)
 - report snapshot records the reports each incident owes, made, due or overdue (s15-07)
 - reporting.yaml in the schema and the example repo, the IR plan's yearly test as a manual source, and the incidents guide (s15-07)

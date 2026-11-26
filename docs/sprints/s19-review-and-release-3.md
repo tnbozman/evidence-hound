@@ -1,6 +1,6 @@
 # s19 Principal engineer and CISO review: release 3
 
-Status: In progress
+Status: Done
 
 Release: 3
 
@@ -383,11 +383,14 @@ Moved after release 3 by the maintainer on 2026-11-26, reordered, with four task
 
 ## Sprint review
 
-Draft, completed when s19-02 closes.
-
-- **Part A:** s19-01 and s19-03 to s19-11 done. s19-02: the first removal list (Kafka, `docs/evidence/`, the onboarding
-  assistant design) is removed; the second list (retired model options) and the part B decision wait on the maintainer.
-- **CI on c3a6b12** (run 45738790466): every job green, including build and unit tests (2,213), the functional suite against
-  CISO Assistant, the trial (both runs and the saved plans), the image (built, tested and scanned), the compose smoke test, docs,
-  scripts, packages, terraform, org-data, secret scanning and dependency review.
-- **Release:** release 3 ships as 1.0.0; `scripts/release-build.sh` passed a dry run. The tag waits on the maintainer.
+- **Part A:** every task done. s19-02 removed both lists the maintainer approved on 2026-11-26: the Kafka transport, `docs/evidence/`
+  with `examples/manual-exports/` and the superseded onboarding assistant design; then the hidden options of the removed model.
+- **Part B:** moved after release 3 by the maintainer, reordered, with s19b-02, s19b-06, s19b-07 and s19b-09 cut.
+- **Mappings:** four claims narrowed so a result never says more than its check (CISO review); the release notes list what an
+  assessor will still ask for.
+- **CI on c3a6b12** (run 45738790466): every job green, including build and unit tests, the functional suite against CISO Assistant,
+  the trial (both runs and the saved plans), the image (built, tested and scanned), the compose smoke test, docs, scripts, packages,
+  terraform, org-data, secret scanning and dependency review. The s19-02 removal after it: `make test`, `make lint-dotnet`,
+  `make lint-docs` and `make docs` pass locally; CI on the final head is in the PR.
+- **Release:** release 3 ships as 1.0.0; `scripts/release-build.sh` passed a dry run; the changelog is generated for 1.0.0. The tag
+  waits on the maintainer.
