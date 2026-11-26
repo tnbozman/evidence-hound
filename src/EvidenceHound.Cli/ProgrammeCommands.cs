@@ -74,7 +74,7 @@ internal static class ProgrammeCommands
                     ["level"] = r.Obligation.Level,
                 })]),
             })]),
-        }.ToJsonString(OnboardAgentCommand.Indented);
+        }.ToJsonString(CommandJson.Readable);
 
     private static JsonObject Register(ProgrammeRegister register, RegisterSummary summary) => new()
     {

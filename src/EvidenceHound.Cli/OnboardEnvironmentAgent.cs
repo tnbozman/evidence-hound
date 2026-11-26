@@ -29,7 +29,7 @@ internal static class OnboardEnvironmentAgent
             return await loaded.Match(
                 async map =>
                 {
-                    await terminal.Output.WriteLineAsync((parseResult.GetValue(pendingJson) ? PendingJson(map).ToJsonString(OnboardAgentCommand.Indented) : PendingText(map)).AsMemory(), cancellationToken);
+                    await terminal.Output.WriteLineAsync((parseResult.GetValue(pendingJson) ? PendingJson(map).ToJsonString(CommandJson.Readable) : PendingText(map)).AsMemory(), cancellationToken);
                     return ExitCodes.Ok;
                 },
                 problems => Task.FromResult(Log.Problems(logger, problems)));
@@ -79,7 +79,7 @@ internal static class OnboardEnvironmentAgent
                 async _ =>
                 {
                     await terminal.Output.WriteLineAsync((parseResult.GetValue(decideJson)
-                        ? new JsonObject { ["mitigation"] = code, ["file"] = "scope/capabilities.yaml", ["drafted_by"] = OnboardAgentCommand.DraftedBy, ["approved"] = false }.ToJsonString(OnboardAgentCommand.Indented)
+                        ? new JsonObject { ["mitigation"] = code, ["file"] = "scope/capabilities.yaml", ["drafted_by"] = OnboardAgentCommand.DraftedBy, ["approved"] = false }.ToJsonString(CommandJson.Readable)
                         : $"Drafted {code} in scope/capabilities.yaml. A person approves it with 'hound approve'.").AsMemory(), cancellationToken);
                     return ExitCodes.Ok;
                 },

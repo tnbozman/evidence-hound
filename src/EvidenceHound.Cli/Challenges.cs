@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using EvidenceHound.Core.Review;
 
@@ -55,7 +54,7 @@ internal static class Challenges
             json[key] = new JsonObject { ["note"] = challenge.Note, ["by"] = challenge.By, ["on"] = challenge.On };
         }
 
-        await File.WriteAllTextAsync(path, json.ToJsonString(new JsonSerializerOptions { WriteIndented = true }) + "\n", cancellationToken);
+        await File.WriteAllTextAsync(path, json.ToJsonString(CommandJson.Escaped) + "\n", cancellationToken);
     }
 
     private static string Text(JsonNode? node) => node is JsonValue v && v.TryGetValue<string>(out var s) ? s : "";

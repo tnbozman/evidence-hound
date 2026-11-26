@@ -252,7 +252,7 @@ internal static class MappingCrosswalkCommand
                     ["result"] = s.Answer.Result is { } r ? ResultText(r).Replace(' ', '_') : null,
                 })]),
             })]),
-        }.ToJsonString(OnboardAgentCommand.Indented) + Environment.NewLine;
+        }.ToJsonString(CommandJson.Readable) + Environment.NewLine;
 
     private static string Status(CrosswalkStatus status) => status switch
     {

@@ -1,6 +1,5 @@
 using System.CommandLine;
 using System.Globalization;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using EvidenceHound.CisoAssistant;
 using EvidenceHound.Core.Frameworks;
@@ -19,7 +18,6 @@ namespace EvidenceHound.Cli;
 /// <summary>The <c>hound scope</c> commands: check a compliance repo's scope files, start a new audit file, and plan the scope against CISO Assistant.</summary>
 internal static class ScopeCommands
 {
-    private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
 
     /// <summary>With <c>--detailed-exitcode</c>, the exit code of a plan that changes something or found drift.</summary>
     internal const int PlanHasChanges = 2;
@@ -813,7 +811,7 @@ internal static class ScopeCommands
         if (format == "json")
         {
             var json = new JsonArray([.. problems.Select(p => Json(p, "error")), .. warnings.Select(p => Json(p, "warning"))]);
-            await output.WriteLineAsync(json.ToJsonString(Indented));
+            await output.WriteLineAsync(json.ToJsonString(CommandJson.Escaped));
             return problems.Count == 0 ? ExitCodes.Ok : ExitCodes.Configuration;
         }
 

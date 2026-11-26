@@ -1,7 +1,6 @@
 using System.CommandLine;
 using System.Globalization;
 using System.Text;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using EvidenceHound.Core.Frameworks;
 using EvidenceHound.Core.Results;
@@ -23,7 +22,6 @@ internal static class OnboardAgentCommand
 {
     public const string DraftedBy = "agent";
 
-    internal static readonly JsonSerializerOptions Indented = new() { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
 
     public static void Attach(Command onboard, Argument<string?> system, Terminal terminal, ILoggerFactory loggers)
     {
@@ -65,7 +63,7 @@ internal static class OnboardAgentCommand
             return await listed.Match(
                 async answer =>
                 {
-                    await terminal.Output.WriteLineAsync((parseResult.GetValue(json) ? answer.ToJsonString(Indented) : Text(answer)).AsMemory(), cancellationToken);
+                    await terminal.Output.WriteLineAsync((parseResult.GetValue(json) ? answer.ToJsonString(CommandJson.Readable) : Text(answer)).AsMemory(), cancellationToken);
                     return ExitCodes.Ok;
                 },
                 problems => Task.FromResult(Log.Problems(logger, problems)));
@@ -110,7 +108,7 @@ internal static class OnboardAgentCommand
                 async answer =>
                 {
                     await terminal.Output.WriteLineAsync((parseResult.GetValue(json)
-                        ? answer.ToJsonString(Indented)
+                        ? answer.ToJsonString(CommandJson.Readable)
                         : $"Drafted {(string?)answer["requirement"]} as {(string?)answer["kind"]}; {(int)answer["remaining"]!} requirement(s) still to decide. A person approves drafts with 'hound approve'.").AsMemory(), cancellationToken);
                     return ExitCodes.Ok;
                 },

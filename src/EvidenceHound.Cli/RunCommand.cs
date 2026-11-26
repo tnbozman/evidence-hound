@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using EvidenceHound.CisoAssistant;
 using EvidenceHound.Core.Planning;
@@ -21,7 +20,6 @@ namespace EvidenceHound.Cli;
 /// <summary><c>hound run</c>: for each collector, collect and store evidence, map, plan and publish; print a JSON summary.</summary>
 internal static class RunCommand
 {
-    private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
 
     /// <summary>s18-04: collectors mostly wait on other systems' APIs, so a few at once shortens a run without crowding any one system.</summary>
     internal const int DefaultParallel = 4;
@@ -178,7 +176,7 @@ internal static class RunCommand
             ["value"] = m.Value,
             ["why"] = m.Why,
         })]);
-        await output.WriteLineAsync(json.ToJsonString(Indented));
+        await output.WriteLineAsync(json.ToJsonString(CommandJson.Escaped));
         return summary.Outcome == CollectorOutcome.Failed ? ExitCodes.CollectorFailed : ExitCodes.Ok;
     }
 

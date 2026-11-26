@@ -45,7 +45,7 @@ internal static class ManualProposalCommands
                 async kept =>
                 {
                     var answer = parseResult.GetValue(json)
-                        ? new JsonObject { ["source"] = name, ["file"] = kept.File, ["sha256"] = kept.Sha256, ["pending"] = true }.ToJsonString(OnboardAgentCommand.Indented)
+                        ? new JsonObject { ["source"] = name, ["file"] = kept.File, ["sha256"] = kept.Sha256, ["pending"] = true }.ToJsonString(CommandJson.Readable)
                         : $"Proposed a result for {kept.File} ({name}). It is pending: a person attests it with 'hound manual approve' in a terminal.";
                     await terminal.Output.WriteLineAsync(answer.AsMemory(), cancellationToken);
                     return ExitCodes.Ok;

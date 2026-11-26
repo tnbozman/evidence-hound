@@ -41,7 +41,7 @@ internal static class ExplainCommand
             var facts = ((Result<ChangeFacts>.Ok)read).Value;
             if (parseResult.GetValue(json))
             {
-                await terminal.Output.WriteLineAsync(Json(facts).ToJsonString(OnboardAgentCommand.Indented).AsMemory(), cancellationToken);
+                await terminal.Output.WriteLineAsync(Json(facts).ToJsonString(CommandJson.Readable).AsMemory(), cancellationToken);
                 return ExitCodes.Ok;
             }
 

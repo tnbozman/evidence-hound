@@ -93,7 +93,7 @@ internal static class SupplierCommands
                 async file =>
                 {
                     await terminal.Output.WriteLineAsync((parseResult.GetValue(json)
-                        ? new JsonObject { ["file"] = file, ["supplier"] = choice.EntityRef, ["kind"] = role, ["approved"] = false }.ToJsonString(OnboardAgentCommand.Indented)
+                        ? new JsonObject { ["file"] = file, ["supplier"] = choice.EntityRef, ["kind"] = role, ["approved"] = false }.ToJsonString(CommandJson.Readable)
                         : $"Drafted {file} with a draft contract. A person approves {choice.EntityRef} and concludes its review with 'hound approve'.").AsMemory(), cancellationToken);
                     return ExitCodes.Ok;
                 },
@@ -168,7 +168,7 @@ internal static class SupplierCommands
                 ["carried"] = c.Carried,
             })]),
         })]),
-    }.ToJsonString(OnboardAgentCommand.Indented);
+    }.ToJsonString(CommandJson.Readable);
 
     private static string Markdown(string kind, IReadOnlyList<SensitiveDataHolder> holders)
     {

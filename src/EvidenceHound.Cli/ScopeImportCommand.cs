@@ -40,7 +40,7 @@ internal static class ScopeImportCommand
             return await imported.Match(
                 async report =>
                 {
-                    await output.WriteLineAsync((parseResult.GetValue(json) ? report.Json().ToJsonString(OnboardAgentCommand.Indented) : report.Text()).AsMemory(), cancellationToken);
+                    await output.WriteLineAsync((parseResult.GetValue(json) ? report.Json().ToJsonString(CommandJson.Readable) : report.Text()).AsMemory(), cancellationToken);
                     return ExitCodes.Ok;
                 },
                 problems => Task.FromResult(Log.Problems(logger, problems)));

@@ -173,7 +173,7 @@ internal static class MappingCoverageCommand
                 ["draft"] = r.Draft,
                 ["uncovered"] = r.Uncovered,
             })]),
-        }.ToJsonString(OnboardAgentCommand.Indented) + Environment.NewLine;
+        }.ToJsonString(CommandJson.Readable) + Environment.NewLine;
 
     /// <summary>
     /// A parent's label: for a framework with levels above the parents (the ASD Essentials), the top node's name and the parent's, as the

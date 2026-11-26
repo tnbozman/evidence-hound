@@ -14,7 +14,6 @@ internal static class SavedPlanFile
     /// <summary>Marks a file as a saved plan, and its layout's version.</summary>
     public static readonly string Format = "hound-scope-plan/1";
 
-    private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
 
     public static string Write(SavedPlan plan)
     {
@@ -71,7 +70,7 @@ internal static class SavedPlanFile
                 })]),
             })]),
             ["read"] = new JsonObject([.. plan.Read.Select(r => KeyValuePair.Create(r.Key, (JsonNode?)r.Value))]),
-        }.ToJsonString(Indented) + "\n";
+        }.ToJsonString(CommandJson.Escaped) + "\n";
     }
 
     /// <summary>The saved plan in <paramref name="json"/>, or <c>scope.plan_invalid</c> naming <paramref name="source"/> when it is not one.</summary>

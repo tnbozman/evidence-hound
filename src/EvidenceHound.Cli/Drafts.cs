@@ -63,7 +63,7 @@ internal static class Drafts
             {
                 ["row"] = r.Row, ["requirement"] = r.Requirement, ["result"] = r.Result, ["observation"] = r.Observation, ["evidence"] = r.Evidence,
             })]),
-        }.ToJsonString(OnboardAgentCommand.Indented) + "\n";
+        }.ToJsonString(CommandJson.Readable) + "\n";
 
         private static string Text(JsonObject row, string key) => row[key]?.GetValue<string>() ?? "";
     }

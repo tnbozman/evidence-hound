@@ -1,6 +1,5 @@
 using System.CommandLine;
 using System.Globalization;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Planning;
@@ -17,7 +16,6 @@ namespace EvidenceHound.Cli;
 /// <summary><c>hound plan</c>: work out the CISO Assistant updates for a run's check results.</summary>
 internal static class PlanCommand
 {
-    private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
 
     public static Command Build(TextWriter output, ILoggerFactory loggers, IConfiguration configuration, CollectorRegistry registry)
     {
@@ -68,7 +66,7 @@ internal static class PlanCommand
                             ["drift"] = new JsonArray([.. changes.Drift.Select(p => new JsonObject { ["code"] = p.Code, ["message"] = p.Message })]),
                             ["messages"] = new JsonArray([.. changes.Updates.Select(u => DispatcherMessages.ToJson(u, DescribeFile))]),
                         };
-                        await output.WriteLineAsync(json.ToJsonString(Indented));
+                        await output.WriteLineAsync(json.ToJsonString(CommandJson.Escaped));
                         return ExitCodes.Ok;
                     },
                     problems => Task.FromResult(Log.Problems(logger, problems)));
@@ -85,7 +83,7 @@ internal static class PlanCommand
             async updates =>
             {
                 var messages = new JsonArray([.. updates.Select(u => DispatcherMessages.ToJson(u, DescribeFile))]);
-                await output.WriteLineAsync(messages.ToJsonString(Indented));
+                await output.WriteLineAsync(messages.ToJsonString(CommandJson.Escaped));
                 return ExitCodes.Ok;
             },
             problems => Task.FromResult(Log.Problems(logger, problems)));

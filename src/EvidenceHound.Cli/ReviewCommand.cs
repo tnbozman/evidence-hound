@@ -61,7 +61,7 @@ internal static class ReviewCommand
                 {
                     await Recommendations.WriteAsync(root, new Dictionary<string, ReviewRecommendation>(StringComparer.Ordinal) { [itemKey] = recommendation }, [], cancellationToken);
                     await terminal.Output.WriteLineAsync((parseResult.GetValue(json)
-                        ? new JsonObject { ["key"] = itemKey, ["answer"] = recommendation.Answer, ["recorded"] = true }.ToJsonString(OnboardAgentCommand.Indented)
+                        ? new JsonObject { ["key"] = itemKey, ["answer"] = recommendation.Answer, ["recorded"] = true }.ToJsonString(CommandJson.Readable)
                         : $"Recorded your recommendation for {itemKey}: {recommendation.Answer}. The person decides in hound review.").AsMemory(), cancellationToken);
                     return ExitCodes.Ok;
                 },
@@ -291,7 +291,7 @@ internal static class ReviewCommand
                 ? new JsonObject { ["rule"] = a.Rule, ["source"] = a.Source, ["approved_by"] = a.ApprovedBy, ["expires"] = StandingApprovalFile.Day(a.Expires) }
                 : null,
         })]),
-    }.ToJsonString(OnboardAgentCommand.Indented);
+    }.ToJsonString(CommandJson.Readable);
 
     private static string PreparedJson(IReadOnlyList<ReviewItem> items, (int Changes, string? Saved, string Note) plan) => new JsonObject
     {
@@ -306,7 +306,7 @@ internal static class ReviewCommand
         })]),
         ["challenged"] = new JsonArray([.. items.Where(i => i.Challenge is not null).Select(i => (JsonNode)i.Key)]),
         ["plan"] = new JsonObject { ["changes"] = plan.Changes, ["saved"] = plan.Saved, ["note"] = plan.Note },
-    }.ToJsonString(OnboardAgentCommand.Indented);
+    }.ToJsonString(CommandJson.Readable);
 
     private static string PreparedText(IReadOnlyList<ReviewItem> items, (int Changes, string? Saved, string Note) plan)
     {

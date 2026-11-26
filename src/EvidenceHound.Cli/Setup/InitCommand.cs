@@ -99,7 +99,7 @@ internal static class InitCommand
                     ["organisation"] = organisation.Name,
                     ["audits"] = new JsonArray([.. organisation.AuditRefs.Select(a => (JsonNode)a)]),
                     ["files"] = new JsonArray([.. files.Select(f => (JsonNode)f)]),
-                }.ToJsonString(OnboardAgentCommand.Indented).AsMemory(), cancellationToken);
+                }.ToJsonString(CommandJson.Readable).AsMemory(), cancellationToken);
             }
 
             return setUp;

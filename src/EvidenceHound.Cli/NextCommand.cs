@@ -174,7 +174,7 @@ internal static class NextCommand
             ["command"] = i.Command,
             ["skill"] = i.Skill,
         })]),
-    }.ToJsonString(OnboardAgentCommand.Indented) + Environment.NewLine;
+    }.ToJsonString(CommandJson.Readable) + Environment.NewLine;
 
     private static string Text(NextView view)
     {

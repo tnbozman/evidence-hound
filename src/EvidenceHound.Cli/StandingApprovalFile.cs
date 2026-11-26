@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using EvidenceHound.Core.Review;
 
@@ -34,7 +33,7 @@ internal static class StandingApprovalFile
             ["approved_on"] = Day(a.ApprovedOn),
             ["expires"] = Day(a.Expires),
         })]);
-        await File.WriteAllTextAsync(path, json.ToJsonString(new JsonSerializerOptions { WriteIndented = true }) + "\n", cancellationToken);
+        await File.WriteAllTextAsync(path, json.ToJsonString(CommandJson.Escaped) + "\n", cancellationToken);
     }
 
     public static string Describe(StandingApproval approval) =>

@@ -1,6 +1,5 @@
 using System.CommandLine;
 using System.Globalization;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using EvidenceHound.CisoAssistant;
 using EvidenceHound.Core.Results;
@@ -158,9 +157,8 @@ internal static class IncidentCommands
                 ["reported_at"] = r.ReportedAt?.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture),
                 ["why"] = r.Why,
             })]),
-        }.ToJsonString(Indented) + "\n";
+        }.ToJsonString(CommandJson.Escaped) + "\n";
 
-    private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
 
     private static string Time(DateTimeOffset time) => time.ToUniversalTime().ToString("yyyy-MM-dd HH:mm 'UTC'", CultureInfo.InvariantCulture);
 }

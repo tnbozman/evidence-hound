@@ -44,7 +44,7 @@ internal static class AuditCommands
                 async file =>
                 {
                     await terminal.Output.WriteLineAsync((parseResult.GetValue(json)
-                        ? new JsonObject { ["file"] = file, ["audit"] = asked.RefId, ["drafted_by"] = OnboardAgentCommand.DraftedBy, ["approved"] = false }.ToJsonString(OnboardAgentCommand.Indented)
+                        ? new JsonObject { ["file"] = file, ["audit"] = asked.RefId, ["drafted_by"] = OnboardAgentCommand.DraftedBy, ["approved"] = false }.ToJsonString(CommandJson.Readable)
                         : $"Drafted {file}. A person approves {asked.RefId} with 'hound approve', which moves it into scope/audits/.").AsMemory(), cancellationToken);
                     return ExitCodes.Ok;
                 },

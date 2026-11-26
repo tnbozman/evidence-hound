@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using EvidenceHound.CisoAssistant;
 using EvidenceHound.Core.Planning;
@@ -21,7 +20,6 @@ internal static class PublishCommand
     public const string TransportSetting = "HOUND_TRANSPORT";
     public const string KafkaSetting = "HOUND_KAFKA_BOOTSTRAP_SERVERS";
 
-    private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
 
     public static Command Build(TextWriter output, ILoggerFactory loggers, IConfiguration configuration, CollectorRegistry registry)
     {
@@ -162,7 +160,7 @@ internal static class PublishCommand
                 ["problems"] = new JsonArray([.. item.Problems.Select(p => new JsonObject { ["code"] = p.Code, ["message"] = p.Message })]),
             })]),
         };
-        await output.WriteLineAsync(json.ToJsonString(Indented));
+        await output.WriteLineAsync(json.ToJsonString(CommandJson.Escaped));
         return ExitCodes.Ok;
     }
 }

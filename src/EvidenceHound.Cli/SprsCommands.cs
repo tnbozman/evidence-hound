@@ -1,7 +1,6 @@
 using System.CommandLine;
 using System.Globalization;
 using System.Text;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using EvidenceHound.CisoAssistant;
 using EvidenceHound.Core.Mapping;
@@ -205,7 +204,7 @@ internal static class SprsCommands
                 ["points"] = d.Points,
                 ["note"] = d.Note,
             })]),
-        }.ToJsonString(Indented) + "\n";
+        }.ToJsonString(CommandJson.Escaped) + "\n";
 
     private static async Task<Result<Unit>> UploadAsync(ICisoAssistantClient client, string name, string title, string control, string json, CancellationToken cancellationToken)
     {
@@ -218,5 +217,4 @@ internal static class SprsCommands
 
     private static string Day(DateOnly date) => date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
-    private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
 }

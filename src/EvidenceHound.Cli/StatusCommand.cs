@@ -1,7 +1,6 @@
 using System.CommandLine;
 using System.Globalization;
 using System.Text;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using EvidenceHound.Core.Reporting;
 using EvidenceHound.Core.Results;
@@ -208,14 +207,13 @@ internal static class StatusCommand
             json["exceptions_due"] = new JsonArray([.. view.Exceptions!.Select(n => new JsonObject { ["ref_id"] = n.RefId, ["expires"] = n.Expires, ["note"] = n.Detail })]);
         }
 
-        return json.ToJsonString(Indented) + Environment.NewLine;
+        return json.ToJsonString(CommandJson.Escaped) + Environment.NewLine;
     }
 
     private static JsonArray Checks(StatusView view, string collector) => view.Health?.Checks.GetValueOrDefault(collector) is { } checks
         ? new JsonArray([.. checks.Select(c => new JsonObject { ["check"] = c.Check, ["outcome"] = c.Outcome })])
         : [];
 
-    private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
 
     private static readonly string NoSnapshot =
         "No posture snapshot yet, so no programme standing. Take one with: hound report snapshot --period YYYY-MM --scope <scope> --config <hound.yaml>";
