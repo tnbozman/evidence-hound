@@ -31,6 +31,16 @@ public class MappingEngineTests
     }
 
     [Fact]
+    public void A_row_covering_part_names_what_the_person_assesses()
+    {
+        var requirement = Requirement("EX-1.1", MappingRule.AllPass, "identity.mfa.admins") with { CoversPart = true, Rest = "MFA on the VPN." };
+
+        var result = Apply(requirement, Check("identity.mfa.admins", CheckOutcome.Pass)).Single();
+
+        result.Observation.ShouldStartWith("These checks cover part of the requirement, so it is at most partially compliant until a person assesses the rest: MFA on the VPN. Rule all_pass.");
+    }
+
+    [Fact]
     public void A_row_covering_part_keeps_a_failure_non_compliant()
     {
         var requirement = Requirement("EX-1.1", MappingRule.AllPass, "identity.mfa.admins") with { CoversPart = true };

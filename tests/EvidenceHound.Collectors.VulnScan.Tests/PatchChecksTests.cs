@@ -63,7 +63,7 @@ public class PatchChecksTests
         var finding = Check(Assess(Folder(Run(Scanned, Finding("web-01.example.com", "A-1", published: Scanned.AddDays(-13))))), "patched_in_window");
 
         finding.Outcome.ShouldBe(CheckOutcome.Pass);
-        finding.Observation.ShouldBe("No open finding in the 2026-11-23 scan (scan.nessus) is past its window (14 days, or 48 hours with an exploit): 1 finding on 1 host.");
+        finding.Observation.ShouldBe("No open finding in the 2026-11-23 scan (scan.nessus) is past its window (14 days, or 48 hours when critical or with an exploit): 1 finding on 1 host.");
         finding.EvidenceRefs.ShouldBe(["scan.nessus.xml", VulnScanCollector.ScanFile, PatchChecks.AssessmentFile]);
     }
 
@@ -75,7 +75,7 @@ public class PatchChecksTests
             "patched_in_window");
 
         finding.Outcome.ShouldBe(CheckOutcome.Fail);
-        finding.Observation.ShouldBe("1 of 2 open findings in the 2026-11-23 scan (scan.nessus) are past their window (14 days, or 48 hours with an exploit): web-01.example.com A-1 (Finding A-1, exploit available, 2 days since the patch was published).");
+        finding.Observation.ShouldBe("1 of 2 open findings in the 2026-11-23 scan (scan.nessus) are past their window (14 days, or 48 hours when critical or with an exploit): web-01.example.com A-1 (Finding A-1, exploit available, 2 days since the patch was published).");
     }
 
     [Fact]
@@ -158,6 +158,18 @@ public class PatchChecksTests
 
     private static IReadOnlyList<CheckResult> Assess(ScanFolder folder) => PatchChecks.Assess(Source(), folder, Now, "vuln-example").Value();
 
+    [Fact]
+    public void Critical_finding_on_an_internet_facing_service_uses_hours_window()
+    {
+        // ISM-1876 and ISM-1877: 48 hours when the vendor rates it critical, or when a working exploit exists.
+        var finding = Check(
+            Assess(Folder(Run(Scanned, Finding("web-01.example.com", "A-1", published: Scanned.AddHours(-50), severity: Severity.Critical), Finding("web-01.example.com", "A-2", published: Scanned.AddHours(-50))))),
+            "patched_in_window");
+
+        finding.Outcome.ShouldBe(CheckOutcome.Fail);
+        finding.Observation.ShouldBe("1 of 2 open findings in the 2026-11-23 scan (scan.nessus) are past their window (14 days, or 48 hours when critical or with an exploit): web-01.example.com A-1 (Finding A-1, critical, 2 days since the patch was published).");
+    }
+
     private static CheckResult Check(IReadOnlyList<CheckResult> checks, string name) => checks.Single(c => c.CheckId.Value == $"vuln.internet_facing.{name}");
 
     private static ScanFolder Folder(ScanRun current) => new(current, []);
@@ -165,6 +177,6 @@ public class PatchChecksTests
     private static ScanRun Run(DateTimeOffset at, params ScanFinding[] findings) =>
         new("scan.nessus", at, [.. findings.Select(f => f.Host).DefaultIfEmpty("web-01.example.com").Distinct(StringComparer.Ordinal)], findings);
 
-    private static ScanFinding Finding(string host, string id, DateTimeOffset? published = null, DateTimeOffset? firstSeen = null, bool exploit = false, bool unsupported = false) =>
-        new(host, id, $"Finding {id}", Severity.High, [], firstSeen, published, exploit, unsupported);
+    private static ScanFinding Finding(string host, string id, DateTimeOffset? published = null, DateTimeOffset? firstSeen = null, bool exploit = false, bool unsupported = false, Severity severity = Severity.High) =>
+        new(host, id, $"Finding {id}", severity, [], firstSeen, published, exploit, unsupported);
 }
