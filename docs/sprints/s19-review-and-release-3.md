@@ -159,7 +159,7 @@ Notes:
 - Found on the way: the agent answers use relaxed JSON escaping and older reports the default one (s19-D5).
 
 ### s19-05 Refactor the scope pipeline
-- [ ] Done
+- [x] Done
 
 **Story:** As a developer changing what hound keeps in CISO Assistant, I want loading, desired state, reading and planning to be
 separate, small and pure where they can be, so that a new kind of object touches each in one obvious place.
@@ -175,6 +175,17 @@ separate, small and pure where they can be, so that a new kind of object touches
 
 **Functional check**
 - `hound scope plan` and `hound run` against the example scope on the local CISO Assistant give the same plan and results as before.
+
+Notes:
+- One file per kind and stage: `ScopeStateReader.cs` 886 lines to 491, with risks, BIA, metrics, third parties and frameworks in
+  `ScopeStateReader.<Kind>.cs`; `ScopeLoader.cs` 699 to 445, with access, settings and audits joining the kinds that already had their own
+  file. [engineering.md](../engineering.md#adding-a-kind-of-scope-object) says where each stage of a new kind goes.
+- `RequestBudgetTests` unchanged and green: no read added.
+- s18-D3 fixed: changed evidence carries the ID the state read found (`PlanTests.Changed_evidence_carries_the_id_the_state_read_found`),
+  and its upload sends the revision without searching again (`PublisherTests.Upload_with_a_known_id_sends_a_revision_without_searching`):
+  one search per evidence item in a run instead of two.
+- s18-D5 (scope test helpers) moves to s19-06, which folds test setup together.
+- Functional: the CI functional job, which plans, applies and runs against a real CISO Assistant (see the sprint review).
 
 ### s19-06 Make the tests cheaper to keep
 - [ ] Done

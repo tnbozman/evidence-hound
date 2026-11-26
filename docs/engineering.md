@@ -71,6 +71,21 @@ One way, in every command:
 - Set the level with standard .NET configuration, for example `Logging__LogLevel__Default=Debug` for stack traces or `Warning` for quiet runs.
 - Log messages live in `src/EvidenceHound.Cli/Log.cs` as `[LoggerMessage]` methods with fixed event IDs.
 
+## Adding a kind of scope object
+
+`hound scope plan` and `hound scope apply` keep everything under `scope/` in CISO Assistant through five stages, and each kind of object
+(risk studies, BIAs, metrics, suppliers and so on) has one file per stage. To add a kind, add one file to each, named after the kind:
+
+| Stage | Where | What it does |
+| --- | --- | --- |
+| Model | `src/EvidenceHound.Core/Scope/Scope<Kind>.cs` | Immutable records of the kind as the YAML declares it. |
+| Load | `src/EvidenceHound.Core.Yaml/ScopeLoader.<Kind>.cs` | Parses the YAML into the records, with a problem for every mistake and its line. |
+| Check | `src/EvidenceHound.Core/Scope/<Kind>Validator.cs` | Pure checks across files (names that must exist, dates, duplicates), called from `ScopeValidator`. |
+| Desired and read | `<Kind>Objects.cs` in the core, `ScopeStateReader.<Kind>.cs` in `EvidenceHound.CisoAssistant` | Both turn the kind into `ScopeObject`s with the same fields, so an unchanged object compares equal and `ScopePlanner` plans nothing for it. Add the kind to `ScopeKind`, and each list the reader fetches to `RequestBudgetTests` with its reason. |
+| Write | `src/EvidenceHound.CisoAssistant/ScopeWriter.<Kind>.cs` | Creates or updates the object in CISO Assistant when `hound scope apply` runs a plan. |
+
+The CLI needs no change: `RepoScope` loads and checks the whole folder, and the plan and apply commands work on every kind.
+
 ## Testing levels
 
 | Level | Scope | Runs | Tooling |
