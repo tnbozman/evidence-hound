@@ -1,6 +1,6 @@
 # s20 Narrated interactive tutorials
 
-Status: In progress
+Status: Done
 
 Release: 4
 
@@ -21,7 +21,7 @@ by a local model, and every `hound` command a tutorial teaches is checked agains
 Part B of s19 ([security document generators](s19b-security-documents.md)) is unchanged and still follows release 3.
 
 ### s20-01 A tutorial format the CI can check
-- [ ] Done
+- [x] Done
 
 **Story:** As a maintainer, I want each tutorial to be data with one shape, so that a test catches a broken step or a command hound no
 longer has before a learner does.
@@ -47,7 +47,7 @@ longer has before a learner does.
 - `python3 -I scripts/tutorials.py check` on the repo: no findings.
 
 ### s20-02 The player
-- [ ] Done
+- [x] Done
 
 **Story:** As a GRC person new to hound, I want to watch a tutorial step by step, hear it, read along and try each command, so that I
 know what to do before I do it for real.
@@ -72,8 +72,10 @@ know what to do before I do it for real.
 - `make docs`, then Playwright opens each tutorial, plays it to the end with the sound off, types each "try it" and picks each
   choice, with no console errors.
 
+**Result:** `node --test tests/docs/player.test.mjs`: 8 pass. Playwright played all four tutorials at desktop and phone width: no console errors, no horizontal scroll; captions, try-it, choices and saved progress work with and without audio.
+
 ### s20-03 Narration with Kokoro, on our own machine
-- [ ] Done
+- [x] Done
 
 **Story:** As a maintainer, I want the narration spoken by a local open-weight model, so that the tutorials have a voice without a cloud
 service, a subscription or text leaving the machine.
@@ -97,8 +99,10 @@ service, a subscription or text leaving the machine.
 **Functional check**
 - `make tutorials-audio` from a clean cache: the model is fetched and verified; every sentence has audio; a second run speaks nothing.
 
+**Result:** `make tutorials-audio`: 124 sentences, about 3.8 MB of MP3, 2 to 3 minutes of narration per tutorial. Model files are fetched from the kokoro-onnx GitHub release and checked against pinned SHA-256 sums. Audio is not committed; the release workflow speaks it.
+
 ### s20-04 Four tutorials on the one path
-- [ ] Done
+- [x] Done
 
 **Story:** As a GRC person with a few hours a week, I want a short tutorial for each step of getting started, so that I can learn the
 whole routine in one sitting.
@@ -119,8 +123,10 @@ whole routine in one sitting.
 **Functional check**
 - The s20-02 Playwright check on all four.
 
+**Result:** `python3 -I scripts/tutorials.py check`: 4 tutorial(s), no findings. `AgentFilesTests.Every_hound_command_in_a_tutorial_exists` passes in CI.
+
 ### s20-05 Publish with the docs
-- [ ] Done
+- [x] Done
 
 **Story:** As a GRC person reading the docs, I want the tutorials where I start, so that I find them without looking.
 
@@ -138,8 +144,10 @@ whole routine in one sitting.
 **Functional check**
 - `make docs` in strict mode; the site's `tutorials/interactive/` plays each tutorial.
 
+**Result:** `make docs` (strict) and `make lint-docs` pass; the hub page is under Start here and getting started links each step's tutorial. The release workflow speaks the narration before publishing the docs, and carries on without audio if Kokoro fails.
+
 ### s20-06 Agent kit (standing, every sprint)
-- [ ] Done
+- [x] Done
 
 **Story:** As a GRC person, I want my agent to know the tutorials exist and to keep them right when it changes a command, so that I am
 pointed to them when I am new and they never teach an old command.
@@ -155,20 +163,37 @@ pointed to them when I am new and they never teach an old command.
 **Functional check**
 - `hound agent setup --assistant both` in a new repo: the skill names the tutorial.
 
+**Result:** `AgentSkillTests.A_new_person_is_pointed_to_the_tutorial_for_their_step` passes in CI: CLAUDE.md, copilot-instructions.md and the onboard-the-organisation and weekly-review skills name their tutorial.
+
 ### s20-07 Rehearse trial, onboarding and sustaining GRC (standing, every sprint)
-- [ ] Done
+- [x] Done
 
 As [s12-09](s12-e8-mapping-and-adoption.md#s12-09-rehearse-trial-onboarding-and-sustaining-grc-standing-every-sprint). This sprint the
 rehearsal follows each tutorial as a learner would: watch it, then do the same on the trial stack and the example repo, and record
 anything the tutorial says that hound does not do.
 
+**Result:** each tutorial's commands and output were checked against the CI trial job's real hound output and hound's own messages (init prompts, supplier draft, approve, onboard pending and decide, review prepare and recommend, status). Several invented outputs were replaced; outputs that nothing in CI shows (scope apply, runner token, committee report) are left blank rather than guessed.
+
 ### s20-08 Improve: quality and flow (standing, about 15% of each sprint)
-- [ ] Done
+- [x] Done
 
 As [s12-10](s12-e8-mapping-and-adoption.md#s12-10-improve-quality-and-flow-standing-about-15-of-each-sprint). Candidates: the release
 workflow tolerates a release that already exists for the tag (release 3 needed a manual one deleted first), and s19-D7 (the generated
 changelog lists features removed before release).
 
+**Result:** the release workflow edits and re-uploads to a release that already exists (`--clobber`), and creates it with `--verify-tag` otherwise; docs/releasing.md says so. The link checker and markdownlint skip the docs and tutorials virtual environments. s19-D7 was not done and moves to Discovered work.
+
 ## Discovered work
 
+- s20-D1: s19-D7 (the generated changelog lists features removed before release) is still open.
+- s20-D2: the deployment tutorial's output for `runner-token.sh` and the first `scope apply` is not exercised by any CI job; a
+  deployment rehearsal on a fresh VM would let it show real output.
+- s20-D3: the voice (`af_heart`, American English) is a placeholder; an Australian or British English Kokoro voice may suit the
+  audience better. The voice is one field per tutorial, and changing it re-speaks everything.
+
 ## Sprint review
+
+Four narrated tutorials (local trial, compliance repo, deployment, weekly review) are on the docs site, played by one static page with
+captions, so they work with the sound off. The narration is spoken by Kokoro on our own machine and by the release workflow, never by
+a cloud service. CI checks every tutorial's structure, links and fictional names, and every `hound` command and option it teaches, so
+a tutorial fails the build when the CLI changes under it. The agent kit points a new person to the tutorial for their step.
