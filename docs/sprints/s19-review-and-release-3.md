@@ -328,17 +328,35 @@ Notes:
 - The tag waits for the maintainer.
 
 ### s19-10 Rehearse trial, onboarding and sustaining GRC (standing, every sprint)
-- [ ] Done
+- [x] Done
 
 As [s12-09](s12-e8-mapping-and-adoption.md#s12-09-rehearse-trial-onboarding-and-sustaining-grc-standing-every-sprint), on the code after
 the removals and refactoring. The rehearsal drives hound through the agent skills, and the sprint ends with the Claude Code and Copilot
 skills and agents accurate for the CLI and its workflows (sprint lifecycle step 5 in [README.md](README.md)).
 
+Notes:
+- The week, following `weekly-review` on a copy of the example repo, offline (`HOUND_TODAY=2027-02-15`): `hound next --json` 0.6 s
+  (8 items, 110 minutes: collectors, manual sources and an expiring exception, each with its command and skill),
+  `hound review prepare --json` 0.6 s. The environment, following `onboard-the-environment`: `hound onboard environment pending --json`
+  0.4 s. A new repo, following `onboard-the-organisation`: see s19-08 (`hound next` now names the first step).
+- Agent kit: `hound agent setup --assistant both` writes 27 skills and the Copilot agents; it keeps a `CLAUDE.md` without its marker.
+  `weekly-review` names the new `onboarding` item from `hound next`. `AgentFilesTests` and `AgentCommandTests` check every command,
+  option and skill the kit names against the CLI; the new `CheatsheetTests.Every_option_the_cheat_sheet_names_exists_on_its_command`
+  does the same for the cheat sheet.
+- The trial against a real CISO Assistant runs in CI's `trial` job (this environment cannot pull its images); recorded in the sprint
+  review.
+
 ### s19-11 Improve: quality and flow (standing)
-- [ ] Done
+- [x] Done
 
 As [s12-10](s12-e8-mapping-and-adoption.md#s12-10-improve-quality-and-flow-standing-about-15-of-each-sprint). This sprint the whole of
 part A is quality work, so this task only collects what the other tasks did not.
+
+Notes:
+- New guards: the cheat sheet's options are checked against each command's help; golden files pin the `--json` answers an agent reads
+  most (s19-04); every CMMC `covers: part` row must say what the person adds (s19-07).
+- Collected as discovered work: s19-D6 (`HoundCli.RunAsync` overloads) and s19-D7 (the generated changelog lists the Kafka sink among
+  1.0.0's features although it was removed before release; the release notes say so).
 
 ## Part B: security document generators (droppable)
 
@@ -354,6 +372,8 @@ See [s19b-security-documents.md](s19b-security-documents.md). Starts after part 
   them. One setting for all would change the bytes of older outputs, so it waits for a release that can say so.
 - **s19-D6 `HoundCli.RunAsync` still has 11 overloads** (E6, the rest). Tests now share `Hound.RunAsync`, but 46 test files call the
   overloads that add logging or test services. Replace them with one options record when those tests next change.
+- **s19-D7 The changelog lists removed features.** It is generated from every commit, so 1.0.0's list names the Kafka sink that s19
+  removed. Teach `cliff.toml` to drop a feature a later `feat!` or removal commit names, or edit the list at tag time.
 - **s19-D4 Two older deployment configs beside the example compliance repo** (E10): fold them in once the shared test repo exists.
 
 ## Sprint review
