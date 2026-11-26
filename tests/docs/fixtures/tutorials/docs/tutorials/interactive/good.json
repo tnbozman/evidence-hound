@@ -1,0 +1,35 @@
+{
+  "id": "good",
+  "title": "Your week",
+  "summary": "The weekly review at Example Pty Ltd.",
+  "minutes": 5,
+  "guide": "operate/grc-member.md",
+  "voice": "af_heart",
+  "steps": [
+    {
+      "id": "prepare",
+      "title": "Your agent prepares the week",
+      "narration": ["Your agent reads what needs doing.", "Then it prepares the queue."],
+      "terminal": [
+        { "who": "agent", "command": "hound next --json", "output": "{ \"items\": [] }" }
+      ]
+    },
+    {
+      "id": "session",
+      "title": "You run the session",
+      "narration": ["Now you start the session."],
+      "terminal": [
+        { "who": "you", "command": "hound review --for 60m", "output": "Nothing is waiting on you." }
+      ],
+      "try": { "prompt": "Start a one hour session.", "answer": "hound review --for 60m" },
+      "choice": {
+        "question": "The agent recommends accept. The export is fourteen months old. What do you do?",
+        "options": [
+          { "text": "Accept", "feedback": "An old export is not evidence for this year." },
+          { "text": "Challenge", "right": true, "feedback": "Yes: ask for a current export." }
+        ]
+      },
+      "panel": { "title": "In CISO Assistant", "lines": ["The audit's rows change."] }
+    }
+  ]
+}

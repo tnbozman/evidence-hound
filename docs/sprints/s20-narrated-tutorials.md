@@ -41,7 +41,7 @@ longer has before a learner does.
 **Tests first**
 - `tests/docs/test_tutorials.py`: `test_a_good_tutorial_has_no_findings`, `test_each_broken_rule_is_reported_with_file_and_step`,
   `test_every_tutorial_is_listed_and_every_listed_one_exists`
-- `TutorialTests.Every_command_a_tutorial_names_exists`, `TutorialTests.Every_option_a_tutorial_uses_exists_on_its_command`
+- `AgentFilesTests.Every_hound_command_in_a_tutorial_exists` (each command, and each option on its command)
 
 **Functional check**
 - `python3 -I scripts/tutorials.py check` on the repo: no findings.
@@ -114,7 +114,7 @@ whole routine in one sitting.
 - Each tutorial ends with what to do next and a link to the written guide.
 
 **Tests first**
-- The s20-01 checks over the four tutorials (`TutorialTests`, `test_tutorials.py`).
+- The s20-01 checks over the four tutorials (`AgentFilesTests`, `test_tutorials.py`).
 
 **Functional check**
 - The s20-02 Playwright check on all four.
@@ -146,7 +146,7 @@ pointed to them when I am new and they never teach an old command.
 
 **Acceptance criteria**
 - The onboarding skills point a new person to the matching tutorial. The contributor guide says that changing a command a tutorial uses
-  means changing the tutorial, which `TutorialTests` enforces. `AgentCommandTests` and `AgentFilesTests` stay green for Claude Code and
+  means changing the tutorial, which `AgentFilesTests` enforces. `AgentCommandTests` and `AgentFilesTests` stay green for Claude Code and
   Copilot.
 
 **Tests first**
