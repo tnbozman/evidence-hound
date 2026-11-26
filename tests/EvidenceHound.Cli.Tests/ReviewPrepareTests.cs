@@ -98,14 +98,8 @@ public sealed class ReviewSessionTests : IDisposable
         _instance.Ca.LogEntries.ShouldAllBe(e => e.RequestMessage!.Method == "GET");
     }
 
-    internal static async Task<(int Exit, string Output, string Error)> RunAsync(ScopeTestInstance instance, string[] args, string input, bool terminal, CancellationToken ct)
-    {
-        using var reader = new StringReader(input);
-        using var output = new StringWriter();
-        using var error = new StringWriter();
-        var exit = await HoundCli.RunAsync(args, reader, output, error, instance.Settings, terminal, ct);
-        return (exit, output.ToString(), error.ToString());
-    }
+    internal static Task<(int Exit, string Output, string Error)> RunAsync(ScopeTestInstance instance, string[] args, string input, bool terminal, CancellationToken ct) =>
+        Hound.RunAsync(args, ct, input, instance.Settings, terminal);
 
     public void Dispose() => _instance.Dispose();
 }

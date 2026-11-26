@@ -11,12 +11,7 @@ namespace EvidenceHound.Cli.Tests;
 public sealed class ScopePlanCommandTests : IDisposable
 {
     private static readonly string Token = "example-token-for-cli-tests";
-    private static readonly FrameworkSnapshot Snapshot = new(
-        "urn:example:risk:library:example-baseline",
-        "urn:example:risk:framework:example-baseline",
-        1,
-        [new ImplementationGroup("1", "Level one")],
-        [new SnapshotNode("urn:example:risk:req_node:example-baseline:ex-1.1", "EX-1.1", null, ["1"], "Every account uses multi-factor authentication")]);
+    private static FrameworkSnapshot Snapshot => ScopeTestInstance.Snapshot;
 
     private readonly StringWriter _output = new();
     private readonly StringWriter _error = new();
@@ -703,9 +698,7 @@ public sealed class ScopePlanCommandTests : IDisposable
             new Dictionary<string, string?> { ["HOUND_CA_URL"] = $"{_ca.Url}/api/", ["HOUND_CA_TOKEN"] = Token },
             _ct);
 
-    private void Accept(string method, string path) =>
-        _ca.Given(Request.Create().WithPath(path).UsingMethod(method))
-            .RespondWith(Response.Create().WithStatusCode(method == "POST" ? 201 : 200).WithBody(new JsonObject { ["id"] = "new-id" }.ToJsonString()));
+    private void Accept(string method, string path) => ScopeTestInstance.Accept(_ca, method, path);
 
     private Task<int> Plan(Dictionary<string, string?>? settings, params string[] args) =>
         HoundCli.RunAsync(
@@ -728,44 +721,7 @@ public sealed class ScopePlanCommandTests : IDisposable
         List("perimeters", perimeters ?? []);
     }
 
-    /// <summary>
-    /// A CISO Assistant holding the scope's framework, domain, perimeter and system as <c>hound</c> last wrote them, and, outside the scope's
-    /// folders, objects the writer finds by ref_id: an audit with one row, and the control.
-    /// </summary>
-    private void HeldStructure()
-    {
-        static JsonObject In(string id, string folder, string? refId = null, string? name = null) =>
-            new() { ["id"] = id, ["name"] = name, ["ref_id"] = refId, ["folder"] = new JsonObject { ["id"] = folder, ["str"] = folder } };
-        static string Marked(params (string Name, string Value)[] fields) =>
-            $"[hound scope {Core.Scope.ScopeMarker.Fingerprint(fields.ToDictionary(f => f.Name, f => f.Value, StringComparer.Ordinal))}]";
-
-        List("folders", new JsonObject { ["id"] = "f-global", ["name"] = "Global", ["parent_folder"] = null }, new JsonObject { ["id"] = "f-ex", ["name"] = "Example Pty Ltd", ["parent_folder"] = new JsonObject { ["id"] = "f-global", ["str"] = "Global" } });
-        Object("folders", "f-ex", new JsonObject { ["id"] = "f-ex", ["name"] = "Example Pty Ltd", ["parent_folder"] = "f-global", ["description"] = Marked() });
-        List("frameworks", new JsonObject { ["id"] = "fw-1", ["urn"] = Snapshot.FrameworkUrn, ["library"] = new JsonObject { ["id"] = "lib-1", ["urn"] = Snapshot.LibraryUrn } });
-        List("loaded-libraries", new JsonObject { ["id"] = "lib-1", ["urn"] = Snapshot.LibraryUrn, ["version"] = Snapshot.Version });
-        List("perimeters", In("p-1", "f-ex", name: "Example baseline"));
-        Object("perimeters", "p-1", new JsonObject { ["id"] = "p-1", ["name"] = "Example baseline", ["folder"] = "f-ex", ["description"] = Marked(("name", "Example baseline"), ("domain", "Example Pty Ltd")) });
-        List("assets", In("a-1", "f-ex", name: "Example 365"));
-        Object("assets", "a-1", new JsonObject
-        {
-            ["id"] = "a-1",
-            ["name"] = "Example 365",
-            ["type"] = "PR",
-            ["folder"] = "f-ex",
-            ["owner"] = new JsonArray(),
-            ["parent_assets"] = new JsonArray(),
-            ["description"] = Marked(("type", "primary"), ("domain", "Example Pty Ltd")),
-        });
-        List("compliance-assessments", In("ca-1", "f-elsewhere", "EXAMPLE-BASELINE-2026"));
-        _ca.Given(Request.Create().WithPath("/api/compliance-assessments/ca-1/object/").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject { ["id"] = "ca-1", ["selected_implementation_groups"] = new JsonArray("1") }.ToJsonString()));
-        List("requirement-assessments", new JsonObject { ["id"] = "ra-1", ["requirement"] = new JsonObject { ["urn"] = Snapshot.Nodes[0].Urn, ["ref_id"] = "EX-1.1", ["implementation_groups"] = new JsonArray("1") } });
-        List("applied-controls", In("ac-1", "f-elsewhere", "AC-MFA"));
-        foreach (var resource in new[] { "users", "actors", "evidences" })
-        {
-            List(resource);
-        }
-    }
+    private void HeldStructure() => ScopeTestInstance.HeldStructure(_ca);
 
     /// <summary>The scope's system supplied through SUP-EX's hosting, which the organisation forces to the important tier.</summary>
     private async Task WriteSupplierAsync()
@@ -827,21 +783,9 @@ public sealed class ScopePlanCommandTests : IDisposable
         });
     }
 
-    private void List(string resource, params JsonObject[] items) =>
-        _ca.Given(Request.Create().WithPath($"/api/{resource}/").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject { ["count"] = items.Length, ["results"] = new JsonArray(items) }.ToJsonString()));
+    private void List(string resource, params JsonObject[] items) => ScopeTestInstance.List(_ca, resource, items);
 
-    private void Object(string resource, string id, JsonObject body) =>
-        _ca.Given(Request.Create().WithPath($"/api/{resource}/{id}/object/").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody(body.ToJsonString()));
+    private void Object(string resource, string id, JsonObject body) => ScopeTestInstance.Object(_ca, resource, id, body);
 
-    private async Task WriteScopeAsync(string audit = ScopeCommandTests.Audit)
-    {
-        Directory.CreateDirectory(Path.Combine(ScopeDir, "audits"));
-        Directory.CreateDirectory(Path.Combine(_workDir, "frameworks"));
-        await File.WriteAllTextAsync(Path.Combine(ScopeDir, "setup.yaml"), ScopeCommandTests.Setup, _ct);
-        await File.WriteAllTextAsync(Path.Combine(ScopeDir, "controls.yaml"), ScopeCommandTests.Controls, _ct);
-        await File.WriteAllTextAsync(Path.Combine(ScopeDir, "audits", "example-baseline-2026.yaml"), audit, _ct);
-        await File.WriteAllTextAsync(Path.Combine(_workDir, "frameworks", "example-baseline.json"), FrameworkSnapshotJson.Write(Snapshot), _ct);
-    }
+    private Task WriteScopeAsync(string audit = ScopeCommandTests.Audit) => ScopeTestInstance.WriteScopeAsync(_workDir, _ct, audit);
 }

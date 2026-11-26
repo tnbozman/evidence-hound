@@ -188,7 +188,7 @@ Notes:
 - Functional: the CI functional job, which plans, applies and runs against a real CISO Assistant (see the sprint review).
 
 ### s19-06 Make the tests cheaper to keep
-- [ ] Done
+- [x] Done
 
 **Story:** As a developer, I want tests that say what behaviour they protect and share their setup, so that a refactor changes code,
 not a hundred tests.
@@ -204,6 +204,22 @@ not a hundred tests.
 
 **Functional check**
 - `make test` duration before and after, recorded.
+
+Notes:
+- One driver for command tests, `tests/EvidenceHound.Cli.Tests/Hound.cs` (`Hound.RunAsync` returns exit, output and error;
+  `Hound.At` gives a home folder and a fixed day). Five private copies of the same wrapper now call it.
+- `ScopeTestInstance` owns the scope files and the CISO Assistant stub (`WriteScopeAsync`, `HeldStructure`, `List`, `Object`,
+  `Accept`), and `ScopePlanCommandTests` uses them on its own stub instead of keeping copies (closes s18-D5). 134 lines out, 57 in.
+- Implementation-detail check: no test verifies mock calls or reads private members; the one reflection test
+  (`FrameworkNeutralityTests`) enforces an architecture rule, which is behaviour this repo wants. No test deleted.
+- E6 is only partly done: `HoundCli` keeps its overloads because 46 test files call the ones that add logging or services. Recorded as
+  s19-D6.
+- Slowest ten: the Sophos and IaC dev server tests (7.4 s, 6.8 s, 3.1 s, 2.6 s, 1.8 s) start a real Kestrel server per deviation;
+  `ServeCommandTests` waits 2 s for a scheduler tick by design; `RestCollectorTests` saves every query of the example profile (1.9 s);
+  `AgentFilesTests.Every_hound_command_in_a_skill_exists` parses every skill against the command tree (1.7 s); `RunManifestTests` hashes
+  profiles (1.6 s); `ReviewPrepareTests.Saves_the_plan_the_session_applies` runs a whole review session (1.5 s). Each runs in parallel
+  with the other projects, so none lengthens the suite.
+- `make test`: 2,203 tests in 28.6 s after, 29 s before.
 
 ### s19-07 CISO review
 - [ ] Done
@@ -287,6 +303,8 @@ See [s19b-security-documents.md](s19b-security-documents.md). Starts after part 
   folder depends on the name.
 - **s19-D5 Two JSON escaping settings.** Newer agent answers leave `'`, `<` and `+` as they are; older reports and kept files escape
   them. One setting for all would change the bytes of older outputs, so it waits for a release that can say so.
+- **s19-D6 `HoundCli.RunAsync` still has 11 overloads** (E6, the rest). Tests now share `Hound.RunAsync`, but 46 test files call the
+  overloads that add logging or test services. Replace them with one options record when those tests next change.
 - **s19-D4 Two older deployment configs beside the example compliance repo** (E10): fold them in once the shared test repo exists.
 
 ## Sprint review
