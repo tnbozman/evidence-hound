@@ -10,7 +10,7 @@ CA_COMPOSE := dev/ciso-assistant/compose.yml
 CA_ENV := HOUND_CA_SECRET_KEY="$$(scripts/ca-secret-key.sh)"
 SHELL_SCRIPTS := $(wildcard scripts/*.sh scripts/lib/*.sh deploy/compose/*.sh .devcontainer/*.sh dev/ciso-assistant/seed/*.sh) .githooks/pre-commit
 
-.PHONY: help docs docs-serve lint-docs test-docs test-packages changelog restore build test test-functional test-profiles test-template test-scripts test-terraform coverage image test-image test-compose compose-smoke lint lint-dotnet lint-shell format run m365-dev sophos-dev iac-dev scan-dev hooks ca-up ca-down trial trial-clean
+.PHONY: help docs docs-serve lint-docs test-docs tutorials-audio test-packages changelog restore build test test-functional test-profiles test-template test-scripts test-terraform coverage image test-image test-compose compose-smoke lint lint-dotnet lint-shell format run m365-dev sophos-dev iac-dev scan-dev hooks ca-up ca-down trial trial-clean
 
 help: ## List targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-16s %s\n", $$1, $$2}'
@@ -78,6 +78,7 @@ lint-docs: ## Markdown lint (pinned markdownlint-cli2) and relative link check o
 	python3 -I scripts/check-links.py .
 
 DOCS_VENV ?= .venv-docs
+TUTORIALS_VENV ?= .venv-tutorials
 
 docs: ## Build the documentation site in strict mode (warnings fail) into site/
 	python3 -m venv $(DOCS_VENV)
@@ -87,8 +88,16 @@ docs: ## Build the documentation site in strict mode (warnings fail) into site/
 docs-serve: docs ## Serve the documentation site on http://localhost:8001 with live reload
 	$(DOCS_VENV)/bin/mkdocs serve -a localhost:8001
 
-test-docs: ## Tests of the docs tools (link checker)
+test-docs: ## Tests of the docs tools (link checker, tutorial checks and narration, the tutorial player)
 	bats tests/docs
+	python3 -I tests/docs/test_tutorials.py
+	node --test tests/docs/player.test.mjs
+	python3 -I scripts/tutorials.py check
+
+tutorials-audio: ## Speak the interactive tutorials' narration with Kokoro on this machine (needs ffmpeg; the model is cached outside the repo)
+	python3 -m venv $(TUTORIALS_VENV)
+	$(TUTORIALS_VENV)/bin/pip install -q --require-hashes -r tools/tutorials/requirements.txt
+	$(TUTORIALS_VENV)/bin/python -I scripts/tutorials.py audio
 
 lint-shell: ## ShellCheck on every script and the git hook
 	shellcheck -x $(SHELL_SCRIPTS)

@@ -1,0 +1,240 @@
+{
+  "id": "local-trial",
+  "title": "Try it locally",
+  "summary": "Run the local trial: a fictional company, a local CISO Assistant, your coding agent and every collector against built-in dev servers. No account, key or cloud needed.",
+  "minutes": 6,
+  "guide": "tutorials/local-trial.md",
+  "voice": "af_heart",
+  "steps": [
+    {
+      "id": "scene",
+      "title": "The scene: a small business and its GRC platform",
+      "narration": [
+        "Welcome to Evidence Hound.",
+        "In this tutorial you try it on your own machine, with a fictional company called Example Pty Ltd.",
+        "Example Pty Ltd runs CISO Assistant and Evidence Hound on one private cloud VM, its GRC platform.",
+        "The office reaches it over a VPN through a Sophos firewall, and staff sign in with Microsoft 365.",
+        "The GRC team audits each system against the Essential Eight, maturity level two.",
+        "Everything you are about to run reads fictional tenants on your machine, so nothing leaves it."
+      ],
+      "panel": {
+        "title": "Example Pty Ltd",
+        "lines": [
+          "GRC-PLATFORM: CISO Assistant and Evidence Hound on one OCI VM, no public address",
+          "OFFICE-FIREWALL: a Sophos XGS 88W managed in Sophos Central",
+          "Microsoft 365 for every account and laptop",
+          "Essential Eight, maturity level 2, audited by quarter"
+        ]
+      }
+    },
+    {
+      "id": "start",
+      "title": "Start the trial",
+      "narration": [
+        "Open this repository in its dev container, which has Docker and everything else the trial needs.",
+        "Then run make trial.",
+        "It checks Docker, finds or starts a local CISO Assistant, and builds the hound runner image from your checkout.",
+        "The first build takes a while. Every later run skips the steps it has finished.",
+        "Your turn: type the command that starts the trial."
+      ],
+      "terminal": [
+        {
+          "who": "you",
+          "command": "make trial",
+          "output": "== 1. Preflight: Docker, CISO Assistant and ports ==\nDocker answers.\nNo CISO Assistant is running, and ports 8000 and 8443 are free.\n…\n== 2. Build the Evidence Hound runner image from this checkout ==\nBuild it now (a few minutes the first time)? [Y/n/q] y"
+        }
+      ],
+      "try": {
+        "prompt": "Type the command that starts the trial.",
+        "answer": "make trial"
+      }
+    },
+    {
+      "id": "organisation",
+      "title": "The organisation, with hound init",
+      "narration": [
+        "First, hound init asks about the organisation.",
+        "Press Enter to take each default: Example Pty Ltd, maturity level two, audited by quarter.",
+        "It writes the compliance repo: the config, the scope and the Essential Eight mapping.",
+        "Then hound plans what it would change in CISO Assistant, and shows you before it applies anything."
+      ],
+      "terminal": [
+        {
+          "who": "you",
+          "command": "hound init /trial/repo --organisation-audit",
+          "output": "Organisation name [Example Pty Ltd]: \nShort code for ref IDs [EX]: \nCISO Assistant API address [https://ciso.example.com/api/]: \nTime zone [Australia/Sydney]: \nEssential Eight maturity level to assess (1, 2 or 3) [2]: \nAudit interval (quarter or month) [quarter]: \nCompliance owner's email, as a CISO Assistant user [ceo@example.com]: \nWrote Example Pty Ltd's compliance repo to /trial/repo: 14 files, audits EX-E8."
+        },
+        {
+          "who": "you",
+          "command": "hound scope plan scope --config hound.yaml --out /trial/scope-plan.json",
+          "output": "## Scope plan\n\n109 to create, 6 to update, 0 to delete.\n\n| Change | Kind | Object |\n| --- | --- | --- |\n| Create | team | GRC team |\n| Create | audit | EX-E8-Q2-2027FY |\n| Create | assessment | EX-E8-Q2-2027FY/ISM-1698 (non_compliant: No evidence yet) |\n…\n\n### Access review\n\n| ceo@example.com | has not turned on multi-factor authentication |\nApply this plan to CISO Assistant? [Y/n/q] y"
+        },
+        {
+          "who": "you",
+          "command": "hound scope apply /trial/scope-plan.json",
+          "output": "Apply writes exactly the plan you saw, and refuses it if the scope or CISO Assistant changed since.\nApplied. The report is in .dev/trial/scope-apply.json."
+        }
+      ],
+      "choice": {
+        "question": "The trial asks before it applies the plan. Why read the plan first?",
+        "options": [
+          {
+            "text": "It lists every object and field the apply would create or change in CISO Assistant.",
+            "right": true,
+            "feedback": "Apply writes exactly the plan you saw, and refuses it if the scope or CISO Assistant changed since."
+          },
+          {
+            "text": "It is only a summary; apply may do more.",
+            "feedback": "Apply never does more than the saved plan. That is why the plan is worth reading."
+          }
+        ]
+      }
+    },
+    {
+      "id": "agent",
+      "title": "Bring in your coding agent",
+      "narration": [
+        "From here your coding agent does the reading and drafting, and you approve.",
+        "hound agent setup writes the skills and agent files for Claude Code and GitHub Copilot into the trial repo.",
+        "Start your agent in a second terminal, in the trial repo, and keep it open.",
+        "The trial has already put fictional supplier notes in the inbox folder, for your agent to read."
+      ],
+      "terminal": [
+        {
+          "who": "you",
+          "command": "hound agent setup --assistant both",
+          "output": "Wrote CLAUDE.md\nWrote .claude/skills/answer-a-prime-questionnaire/SKILL.md\nWrote .claude/skills/assess-a-supplier/SKILL.md\n…"
+        },
+        {
+          "who": "you",
+          "command": "cd .dev/trial/repo && export PATH=\"$PWD/../bin:$PATH\" && claude",
+          "output": ""
+        }
+      ]
+    },
+    {
+      "id": "third-parties",
+      "title": "Third parties: the agent drafts, you approve",
+      "narration": [
+        "The trial prints what to ask your agent at each stage.",
+        "First the third parties: Oracle for hosting, Sophos for the firewall, and the two open-source projects.",
+        "The agent drafts each one with hound supplier draft, giving every risk level a reason.",
+        "Then you run hound approve in your own terminal, and answer each draft yes or no.",
+        "A system is only registered once its supplier is approved."
+      ],
+      "terminal": [
+        {
+          "who": "agent",
+          "command": "hound supplier draft --system GRC-PLATFORM --ref SUP-ORACLE --name \"Oracle Cloud Infrastructure\" --solution-ref SOL-OCI-HOSTING --solution-name \"OCI compute, networking and storage\" --contract-ref CTR-OCI-2026 --contract-name \"OCI pay-as-you-go 2026\" --level \"dependency=3:The GRC platform runs only on it; moving it is a planned project.\" --kind vendor",
+          "output": "Drafted scope/third-parties/sup-oracle.yaml with a draft contract. A person approves SUP-ORACLE and concludes its review with 'hound approve'."
+        },
+        {
+          "who": "you",
+          "command": "hound approve --repo .",
+          "output": "Your name, recorded with today's date on everything you approve: Sam Example\n\n[supplier] SUP-ORACLE Oracle Cloud Infrastructure: contract CTR-OCI-2026 (OCI pay-as-you-go 2026) is a draft, covering SOL-OCI-HOSTING.\nApprove SUP-ORACLE and make the contract active (y; n no, s stop): y"
+        }
+      ],
+      "try": {
+        "prompt": "Type the command you run to approve the agent's drafts.",
+        "answer": "hound approve --repo ."
+      }
+    },
+    {
+      "id": "systems",
+      "title": "Each system gets its own audit",
+      "narration": [
+        "Next, each system.",
+        "The agent starts an onboarding session for the GRC platform, then decides every Essential Eight requirement, one at a time.",
+        "Each decision says how the requirement is met: by an API check, by manual evidence, by another system, or not applicable, with its reasoning.",
+        "You approve the decisions, and hound writes the system's own audit.",
+        "The firewall gets the same treatment, so each system's gaps show on their own."
+      ],
+      "terminal": [
+        {
+          "who": "agent",
+          "command": "hound onboard GRC-PLATFORM pending --json --repo . --group 1 --group 2 --owner it@example.com --product \"GRC platform\" --solution SOL-OCI-HOSTING",
+          "output": "{\n  \"system\": \"GRC-PLATFORM\",\n  \"groups\": [\"1\", \"2\"],\n  \"supplier\": { \"ref_id\": \"SUP-ORACLE\", \"approved\": true },\n  \"total\": 107,\n  \"decided\": 0,\n  \"pending\": [\n    { \"requirement\": \"ISM-1698\", \"ref_id\": \"ISM-1698\", \"text\": \"A vulnerability scanner is used at least daily…\" },\n    …\n  ]\n}"
+        },
+        {
+          "who": "agent",
+          "command": "hound onboard GRC-PLATFORM decide ISM-1695 --repo . --json --kind manual --reasoning \"Patching is shown by the VM's update logs.\"",
+          "output": "{\n  \"requirement\": \"ISM-1695\",\n  \"kind\": \"manual\",\n  \"drafted_by\": \"agent\",\n  \"approved\": false,\n  \"remaining\": 106\n}"
+        }
+      ],
+      "panel": {
+        "title": "In CISO Assistant, after you approve",
+        "lines": [
+          "The asset GRC-PLATFORM",
+          "Its audit EX-E8-Q2-2027FY-GRC-PLATFORM, beside the organisation's EX-E8-Q2-2027FY"
+        ]
+      }
+    },
+    {
+      "id": "collectors",
+      "title": "Collectors gather the evidence",
+      "narration": [
+        "Now the evidence.",
+        "The trial starts dev servers that answer like Sophos Central, Microsoft 365 and an infrastructure pipeline, all on your machine.",
+        "It adds a collector for each, runs it dry first, then publishes the results to the right audit.",
+        "Then it breaks something on purpose, such as unsupported firewall firmware, and runs again, so you can watch the result turn to non-compliant in CISO Assistant."
+      ],
+      "terminal": [
+        {
+          "who": "you",
+          "command": "hound run --config hound.yaml --only sophos --dry-run",
+          "output": "info: Collector sophos: Succeeded\nwarn: Dry run: CISO Assistant was not read, so each plan lists every update as if CISO Assistant held nothing.\n{\n  \"outcome\": \"succeeded\",\n  …\n}\nPublish the sophos results to CISO Assistant? [Y/n/q] y"
+        },
+        {
+          "who": "you",
+          "command": "hound run --config hound.yaml --only sophos",
+          "output": "info: Collector sophos: Succeeded\n{\n  \"outcome\": \"succeeded\",\n  \"collectors\": [\n    {\n      \"name\": \"sophos\",\n      \"publish\": {\n        \"sent\": 8, \"skipped\": 0, \"failed\": 0,\n        \"audits\": [ { \"compliance_assessment\": \"EX-E8-Q2-2027FY-OFFICE-FIREWALL\", \"sent\": 3 } ]\n      }\n    }\n  ]\n}"
+        },
+        {
+          "who": "you",
+          "command": "hound status --config hound.yaml",
+          "output": "COLLECTOR           LAST RUN (UTC)       OUTCOME    PASSED  FAILED  PUBLISHED\ngrc-infra-controls  2026-11-26 07:04:01  succeeded  13      0       3 sent, 0 skipped, 0 failed\ngrc-infra-drift     2026-11-26 07:04:17  succeeded  0       1       8 sent, 0 skipped, 0 failed\nsophos              2026-11-26 07:04:32  succeeded  3       0       8 sent, 0 skipped, 0 failed"
+        }
+      ]
+    },
+    {
+      "id": "reading",
+      "title": "Read each audit honestly",
+      "narration": [
+        "Last, the trial reads each audit's compliance figure the way CISO Assistant computes it.",
+        "A row with no evidence yet is sent as non-compliant, never left blank, so an audit cannot read one hundred percent by leaving rows out.",
+        "That is your starting point: the gaps you see are real, and each one names what it still needs."
+      ],
+      "terminal": [
+        {
+          "who": "you",
+          "command": "make trial",
+          "output": "== 16. What CISO Assistant reads for each audit ==\nEX-E8-Q2-2027FY: CISO Assistant reads 14% (16 compliant, 0 partially compliant, 91 non-compliant of which 81 have no evidence yet; it leaves out 0 not applicable and 0 not assessed).\nA row with no evidence counts against the figure until its evidence arrives."
+        }
+      ],
+      "choice": {
+        "question": "An audit has three passing checks and every manual row not assessed. What should it read?",
+        "options": [
+          {
+            "text": "100%, because nothing failed.",
+            "feedback": "That is what leaving rows out would show. hound sends a row with no evidence as non-compliant so it cannot happen."
+          },
+          {
+            "text": "A low figure, because rows with no evidence count against it.",
+            "right": true,
+            "feedback": "No evidence is not compliance. The figure rises as evidence arrives."
+          }
+        ]
+      }
+    }
+  ],
+  "next": [
+    {
+      "title": "Make your compliance repo",
+      "tutorial": "compliance-repo"
+    },
+    {
+      "title": "Your week: the review",
+      "tutorial": "your-week"
+    }
+  ]
+}

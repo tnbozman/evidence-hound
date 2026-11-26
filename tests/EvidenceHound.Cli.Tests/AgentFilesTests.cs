@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace EvidenceHound.Cli.Tests;
@@ -25,6 +26,26 @@ public sealed partial class AgentFilesTests
             .Distinct()
             .ToArray();
 
+        wrong.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task Every_hound_command_in_a_tutorial_exists()
+    {
+        // s20-01: the interactive tutorials teach only commands and options the CLI has, so a renamed command fails here, not for a learner.
+        var options = await OptionsAsync();
+        var commands = Directory.GetFiles(Path.Combine(Root, "docs", "tutorials", "interactive"), "*.json")
+            .SelectMany(f => TutorialCommands(File.ReadAllText(f)).Select(line => (File: Path.GetRelativePath(Root, f), Line: line)))
+            .ToArray();
+
+        var wrong = commands
+            .Select(n => (n.File, n.Line, Problem: Check(n.Line, options)))
+            .Where(n => n.Problem is not null)
+            .Select(n => $"{n.File}: hound {n.Line}: {n.Problem}")
+            .Distinct()
+            .ToArray();
+
+        commands.Length.ShouldBeGreaterThan(20);
         wrong.ShouldBeEmpty();
     }
 
@@ -62,6 +83,24 @@ public sealed partial class AgentFilesTests
         Inline().Matches(text).Select(m => m.Groups["rest"].Value)
             .Concat(Block().Matches(text).SelectMany(b => b.Groups["body"].Value.Split('\n'))
                 .Select(l => BlockLine().Match(l)).Where(m => m.Success).Select(m => m.Groups["rest"].Value));
+
+    /// <summary>What follows <c>hound </c> in each terminal command and "try it" answer of a tutorial.</summary>
+    private static IEnumerable<string> TutorialCommands(string json)
+    {
+        using var tutorial = JsonDocument.Parse(json);
+        foreach (var step in tutorial.RootElement.GetProperty("steps").EnumerateArray())
+        {
+            var lines = step.TryGetProperty("terminal", out var terminal) ? terminal.EnumerateArray().Select(t => t.GetProperty("command").GetString()) : [];
+            var answer = step.TryGetProperty("try", out var tryIt) ? tryIt.GetProperty("answer").GetString() : null;
+            foreach (var command in lines.Append(answer))
+            {
+                if (command is not null && command.StartsWith("hound ", StringComparison.Ordinal))
+                {
+                    yield return command["hound ".Length..];
+                }
+            }
+        }
+    }
 
     /// <summary>Null when the command exists and has each option the line gives; otherwise what is wrong.</summary>
     private static string? Check(string line, Dictionary<string, HashSet<string>> options)

@@ -15,5 +15,5 @@
     "MD024": { "siblings_only": true }
   },
   "globs": ["*.md", "docs/**/*.md", "deploy/**/*.md", "examples/**/*.md", "frameworks/*.md", "mappings/**/*.md", "profiles/**/*.md", "templates/**/*.md"],
-  "ignores": ["docs/sprints/**", "examples/compliance-repo/ssp/**", "examples/compliance-repo/irp/**", "examples/onboarding-tutorial/onboarding/**", "**/bin/**", "**/obj/**", "**/node_modules/**", ".dev/**"]
+  "ignores": ["docs/sprints/**", "examples/compliance-repo/ssp/**", "examples/compliance-repo/irp/**", "examples/onboarding-tutorial/onboarding/**", "**/bin/**", "**/obj/**", "**/node_modules/**", ".dev/**", ".venv-docs/**", ".venv-tutorials/**"]
 }

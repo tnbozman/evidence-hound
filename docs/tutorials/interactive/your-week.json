@@ -1,0 +1,212 @@
+{
+  "id": "your-week",
+  "title": "Your week: the review",
+  "summary": "The one hour a week that keeps compliance current: your agent prepares the queue, you accept or challenge each item, and the next run publishes what you accepted.",
+  "minutes": 7,
+  "guide": "operate/grc-member.md",
+  "voice": "af_heart",
+  "steps": [
+    {
+      "id": "week",
+      "title": "One queue, once a week",
+      "narration": [
+        "You run compliance with a few hours a week and an AI agent that does most of the reading and drafting.",
+        "hound puts everything that waits on you into one queue, each item with a recommendation.",
+        "Nothing reaches CISO Assistant without you.",
+        "Each week, CISO Assistant's task emails you the weekly review runbook. That is your cue."
+      ],
+      "panel": {
+        "title": "What only you can do",
+        "lines": [
+          "Accept, approve and attest",
+          "Challenge a recommendation you are not sure of",
+          "Everything else is the agent's job: reading exports, drafting, answering your challenges"
+        ]
+      }
+    },
+    {
+      "id": "next",
+      "title": "Ask your agent to prepare the week",
+      "narration": [
+        "Say to your agent: prepare this week's review.",
+        "It starts with hound next, one read-only list of everything that needs doing, most urgent first.",
+        "Here it finds manual evidence that is overdue, collectors that failed, and an exception that expires soon.",
+        "Each item names the command that fixes it, the skill the agent uses, and about how many minutes it takes."
+      ],
+      "terminal": [
+        {
+          "who": "agent",
+          "command": "hound next --json",
+          "output": "{\n  \"minutes\": 110,\n  \"items\": [\n    { \"urgency\": \"overdue\", \"kind\": \"manual_source\", \"subject\": \"example-backup-restore-test\",\n      \"detail\": \"No evidence uploaded yet; due every 92 days from Sam Example.\", \"minutes\": 15,\n      \"skill\": \"process-manual-evidence\" },\n    { \"urgency\": \"broken\", \"kind\": \"collector\", \"subject\": \"example-m365\", \"minutes\": 15 },\n    { \"urgency\": \"due_soon\", \"kind\": \"exception\", \"subject\": \"EXC-01\", \"minutes\": 15 }\n  ]\n}"
+        }
+      ]
+    },
+    {
+      "id": "prepare",
+      "title": "The agent writes a recommendation for each item",
+      "narration": [
+        "Then the agent runs hound review prepare.",
+        "It refreshes the queue, lists the items that still have no recommendation, and saves the scope plan your session will apply.",
+        "For each item it records a recommendation with its reasons and its sources, so you can check what it read.",
+        "It also answers any challenge you left last week."
+      ],
+      "terminal": [
+        {
+          "who": "agent",
+          "command": "hound review prepare --json",
+          "output": "{\n  \"items\": 2,\n  \"minutes\": 15,\n  \"without_recommendation\": [\n    {\n      \"key\": \"supplier:SUP-EXAMPLE/CTR-EXAMPLE-ASSETS\",\n      \"kind\": \"supplier\",\n      \"title\": \"[supplier] SUP-EXAMPLE Example Assets Ltd: contract CTR-EXAMPLE-ASSETS (Asset inventory subscription) is a draft, …\",\n      \"skill\": \"onboard-a-third-party\"\n    }\n  ],\n  \"challenged\": [],\n  \"plan\": { \"changes\": 0, \"saved\": \"review/prepared.plan.json\", … }\n}"
+        },
+        {
+          "who": "agent",
+          "command": "hound review recommend supplier:SUP-EXAMPLE/CTR-EXAMPLE-ASSETS --answer y --reason \"ISO 27001 certificate current to 2027; holds the asset inventory only.\" --source inbox/example-assets-iso27001.pdf",
+          "output": "{\n  \"key\": \"supplier:SUP-EXAMPLE/CTR-EXAMPLE-ASSETS\",\n  \"answer\": \"y\",\n  \"recorded\": true\n}"
+        }
+      ]
+    },
+    {
+      "id": "session",
+      "title": "Your session: one command, in your own terminal",
+      "narration": [
+        "Now it is your turn, in your own terminal, not the agent's.",
+        "Run hound review, and give it the time you have. For an hour, that is for sixty minutes.",
+        "It tells you how many items wait on you and takes the most urgent first.",
+        "Your turn: type the command for a one hour session."
+      ],
+      "terminal": [
+        {
+          "who": "you",
+          "command": "hound review --for 60m",
+          "output": "2 item(s) wait on you, about 15 minutes. This session takes 2, about 15 minutes, most urgent first."
+        }
+      ],
+      "try": {
+        "prompt": "Type the command that starts a one hour review session.",
+        "answer": "hound review --for 60m"
+      }
+    },
+    {
+      "id": "supplier",
+      "title": "Item one: a new supplier",
+      "narration": [
+        "Each item shows what it is, why it matters, the recommendation, and what accepting it does.",
+        "This one is a new supplier, drafted by the agent from the vendor's documents.",
+        "The agent recommends accepting it, and names the certificate it read.",
+        "You can accept, challenge with a note, or skip. A challenge goes back to the agent, and the item comes back next week with its answer."
+      ],
+      "terminal": [
+        {
+          "who": "you",
+          "command": "hound review --for 60m",
+          "output": "[1/2] [supplier] SUP-EXAMPLE Example Assets Ltd: contract CTR-EXAMPLE-ASSETS (Asset inventory subscription) is a draft, covering SOL-EXAMPLE-ASSETS. Levels: dependency 2, maturity 3.\n  Why it matters: A supplier is approved before any system it provides is registered, so nothing enters the scope through a supplier no one has looked at.\n  Recommended: y. ISO 27001 certificate current to 2027; holds the asset inventory only. (sources: inbox/example-assets-iso27001.pdf)\n  If you accept: Contract CTR-EXAMPLE-ASSETS becomes active with your name and today's date; the next scope apply writes the supplier to CISO Assistant.\na accept, c challenge, s skip, q quit:"
+        }
+      ],
+      "choice": {
+        "question": "The recommendation gives its reason and the document it read. What do you do?",
+        "options": [
+          {
+            "text": "Accept: the reason is specific and the source is named.",
+            "right": true,
+            "feedback": "A recommendation with a clear reason and a source you could open is one you can accept in a minute."
+          },
+          {
+            "text": "Skip it until you have read the whole contract.",
+            "feedback": "You can, but the agent has already named what it read. Open the source if you are unsure, then decide."
+          }
+        ]
+      }
+    },
+    {
+      "id": "not-applicable",
+      "title": "Item two: a requirement marked not applicable",
+      "narration": [
+        "The next item is a requirement the agent marked not applicable, with its reasoning.",
+        "A not-applicable row leaves the audit, and an assessor will ask why, so hound always asks a person, and never covers one with a standing approval.",
+        "Read the reasoning as an assessor would.",
+        "If it does not hold up, challenge it, and say what you need."
+      ],
+      "terminal": [
+        {
+          "who": "you",
+          "command": "hound review --for 60m",
+          "output": "[2/2] [not applicable] EXAMPLE-ASSETS EX-2: Multi-factor authentication for privileged users.\n  Reasoning: No privileged users.\n  Justification: Only the supplier administers it.\n  Why it matters: A not-applicable requirement is left out of EXAMPLE-ASSETS's audit; an assessor will ask why, so a person signs each one.\n  Recommended: y. No privileged users. Only the supplier administers it.\n  If you accept: The decision is recorded as approved by you today; it is never covered by a standing approval.\na accept, c challenge, s skip, q quit: c\nYour question or objection, for the agent to answer: The supplier's admins are privileged users. Show their MFA."
+        }
+      ],
+      "choice": {
+        "question": "The supplier's own staff administer the system. Is \"no privileged users\" right?",
+        "options": [
+          {
+            "text": "Yes, accept it: none of our staff are administrators.",
+            "feedback": "The supplier's administrators are still privileged users of this system. An assessor would not accept it."
+          },
+          {
+            "text": "Challenge it: ask for evidence of the supplier's administrator MFA.",
+            "right": true,
+            "feedback": "Right. The item stays queued, and the agent answers your challenge before next week."
+          }
+        ]
+      }
+    },
+    {
+      "id": "apply",
+      "title": "One sign-off, one apply",
+      "narration": [
+        "At the end, hound records one sign-off naming you, the time and every item.",
+        "It shows you what applying the accepted items changes in CISO Assistant, and asks once.",
+        "Commit the sign-off, and mark the week's task done in CISO Assistant."
+      ],
+      "terminal": [
+        {
+          "who": "you",
+          "command": "hound review --for 60m",
+          "output": "What applying the accepted items changes in CISO Assistant:\n…\nApply these changes to CISO Assistant now (y, n): y\nAccepted 1, challenged 1, skipped 0. Sign-off recorded in review/sign-offs/2027-02-15-091200.yaml. Your agent answers each challenge before the next session."
+        }
+      ]
+    },
+    {
+      "id": "status",
+      "title": "Check the collectors, then you are done",
+      "narration": [
+        "Last, look at hound status.",
+        "A collector that failed or has not run is the one thing to chase this week.",
+        "The standing lines say how much of each programme is met, from last month's snapshot.",
+        "Once a month, ask your agent to take the snapshot and draft the committee report. That is the routine."
+      ],
+      "terminal": [
+        {
+          "who": "you",
+          "command": "hound status --config hound.yaml --scope scope/",
+          "output": "COLLECTOR     LAST RUN (UTC)       OUTCOME  PASSED  FAILED  PUBLISHED\nexample-m365  2027-02-14 16:00:03  failed   0       0       -\n…\nexample-m365 failed: All 2 checks errored. (collector.all_checks_errored)"
+        },
+        {
+          "who": "agent",
+          "command": "hound report committee --month 2027-01 --config hound.yaml --out committee-2027-01.md",
+          "output": ""
+        }
+      ],
+      "choice": {
+        "question": "hound status shows the Microsoft 365 collector failed. What now?",
+        "options": [
+          {
+            "text": "Ignore it: last month's results are still in CISO Assistant.",
+            "feedback": "Old results age out. A broken collector means those rows stop being evidenced."
+          },
+          {
+            "text": "Ask your agent to find out why, with hound status --json, and fix it this week.",
+            "right": true,
+            "feedback": "Yes. The JSON names each check's problem; an expired certificate or a revoked permission is the usual cause."
+          }
+        ]
+      }
+    }
+  ],
+  "next": [
+    {
+      "title": "Reporting to the committee and board",
+      "guide": "reporting.md"
+    },
+    {
+      "title": "Try it locally",
+      "tutorial": "local-trial"
+    }
+  ]
+}

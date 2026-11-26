@@ -1,0 +1,4 @@
+# The interactive tutorials' narration (make tutorials-audio): Kokoro run on this machine through ONNX Runtime.
+# Compiled with hashes into requirements.txt:
+#   pip-compile --generate-hashes --strip-extras tools/tutorials/requirements.in
+kokoro-onnx==0.6.1

@@ -74,6 +74,33 @@ public sealed class AgentSkillTests : IDisposable
         }
     }
 
+    /// <summary>s20-06: a person new to hound is pointed to the interactive tutorial for the step they are on, in both assistants.</summary>
+    internal static readonly (string Skill, string Tutorial)[] Tutorials =
+    [
+        ("onboard-the-organisation", "compliance-repo"),
+        ("weekly-review", "your-week"),
+    ];
+
+    [Fact]
+    public async Task A_new_person_is_pointed_to_the_tutorial_for_their_step()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var (exit, _, error) = await OnboardAgentCommandTests.RunAsync(["agent", "setup", "--repo", _root, "--assistant", "both"], "", terminal: false, Path.Combine(_root, "home"), ct);
+        exit.ShouldBe(ExitCodes.Ok, error);
+
+        const string Site = "https://tnbozman.github.io/evidence-hound/tutorials/interactive/";
+        (await File.ReadAllTextAsync(Path.Combine(_root, "CLAUDE.md"), ct)).ShouldContain(Site);
+        (await File.ReadAllTextAsync(Path.Combine(_root, ".github", "copilot-instructions.md"), ct)).ShouldContain(Site);
+        foreach (var (skill, tutorial) in Tutorials)
+        {
+            // With both assistants the skills are written once, under .claude/skills, which Copilot reads too.
+            var text = await File.ReadAllTextAsync(Path.Combine(_root, ".claude", "skills", skill, "SKILL.md"), ct);
+            text.ShouldContain($"{Site}play.html#{tutorial}", Case.Sensitive, skill);
+
+            File.Exists(Path.Combine(ExampleRepoTests.RepoRoot, "docs", "tutorials", "interactive", $"{tutorial}.json")).ShouldBeTrue(tutorial);
+        }
+    }
+
     [Fact]
     public async Task Manual_evidence_skill_proposes_from_the_file_and_never_attests()
     {

@@ -51,6 +51,9 @@ The version comes from the tag (MinVer). Between releases, builds are pre-releas
    $ gh attestation verify oci://ghcr.io/tnbozman/evidence-hound:1.0.0 --owner tnbozman
    ```
 
+If you made a GitHub release for the tag by hand (from the Releases page, which also creates the tag), the workflow completes it:
+it sets the title, notes and flags and uploads the packages and SBOM, replacing files of the same name.
+
 A pull request that changes the release workflow, its scripts or the Dockerfile runs `verify` as a dry run on a local `v1.0.0-dry-run`
 tag: packages into a local test feed, hound installed from it, the SBOM and notes made, the image built, tested and scanned. Nothing is
 pushed.

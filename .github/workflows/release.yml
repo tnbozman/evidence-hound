@@ -165,6 +165,13 @@ jobs:
           fi
           dotnet nuget push "artifacts/packages/*.nupkg" --api-key "$NUGET_API_KEY" \
             --source https://api.nuget.org/v3/index.json --skip-duplicate
+      - name: Speak the interactive tutorials' narration with Kokoro, on this runner (s20-03)
+        # The open-weight model runs here; no text goes to a speech service. Without audio the tutorials still play, with captions,
+        # so a failure here does not hold the release back.
+        continue-on-error: true
+        run: |
+          command -v ffmpeg >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg; }
+          make tutorials-audio
       - name: Publish the documentation site to GitHub Pages (the gh-pages branch)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -191,7 +198,15 @@ jobs:
             echo "- Collector template: \`dotnet new install EvidenceHound.Templates::${VERSION}\`."
             echo "- Tested with CISO Assistant $(sed -n 's/^CA_VERSION=//p' deploy/compose/.env.example)."
           } >"$RUNNER_TEMP/notes.md"
-          flags=(--verify-tag --title "v${VERSION}" --notes-file "$RUNNER_TEMP/notes.md")
+          flags=(--title "v${VERSION}" --notes-file "$RUNNER_TEMP/notes.md")
           if [[ "$PRERELEASE" == "true" ]]; then flags+=(--prerelease); else flags+=(--latest); fi
-          gh release create "v${VERSION}" "${flags[@]}" --repo "$GITHUB_REPOSITORY" \
-            artifacts/packages/*.nupkg artifacts/packages/*.snupkg artifacts/sbom/*.cdx.json
+          assets=(artifacts/packages/*.nupkg artifacts/packages/*.snupkg artifacts/sbom/*.cdx.json)
+          # s20-08: a release made by hand for the tag (as for 1.0.0) is completed, not a reason to fail: its title, notes and
+          # flags are set and the assets uploaded, replacing any of the same name.
+          if gh release view "v${VERSION}" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::notice::A release for v${VERSION} already exists: updating it and uploading the assets."
+            gh release edit "v${VERSION}" "${flags[@]}" --repo "$GITHUB_REPOSITORY"
+            gh release upload "v${VERSION}" "${assets[@]}" --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "v${VERSION}" --verify-tag "${flags[@]}" --repo "$GITHUB_REPOSITORY" "${assets[@]}"
+          fi

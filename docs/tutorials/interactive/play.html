@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Evidence Hound tutorial</title>
+  <link rel="stylesheet" href="player.css">
+  <script type="module" src="player.mjs"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to the tutorial</a>
+  <header class="bar">
+    <a class="home" href="./">All tutorials</a>
+    <h1 id="title">Evidence Hound tutorial</h1>
+    <button type="button" id="read" class="quiet" aria-pressed="false">Read it instead</button>
+  </header>
+  <nav class="steps" id="steps" aria-label="Steps"></nav>
+
+  <main id="main">
+    <section class="intro" id="intro" hidden>
+      <p class="minutes" id="minutes"></p>
+      <p id="summary"></p>
+      <button type="button" class="primary" id="begin">Start</button>
+      <p class="small" id="resume" hidden></p>
+      <p class="small">The narration is spoken by Kokoro, an open-weight speech model, run on our own machine. Captions show every word.</p>
+    </section>
+
+    <section class="stage" id="stage" hidden>
+      <div class="story">
+        <p class="count" id="count"></p>
+        <h2 id="step-title" tabindex="-1"></h2>
+        <div class="captions" id="captions" aria-live="polite"></div>
+        <div class="controls" role="group" aria-label="Narration">
+          <button type="button" id="back" aria-label="Previous step">Back</button>
+          <button type="button" id="play" class="primary">Play</button>
+          <button type="button" id="replay">Replay</button>
+          <button type="button" id="next">Next</button>
+          <button type="button" id="speed" class="quiet" aria-label="Speed">1×</button>
+          <button type="button" id="sound" class="quiet" aria-pressed="true">Sound on</button>
+        </div>
+
+        <form class="task" id="try" hidden autocomplete="off">
+          <label for="typed" id="try-prompt"></label>
+          <div class="row">
+            <input id="typed" spellcheck="false" autocapitalize="off" placeholder="hound ...">
+            <button type="submit">Check</button>
+          </div>
+          <p class="hint" id="try-hint" aria-live="polite"></p>
+          <button type="button" class="quiet" id="show">Show me</button>
+        </form>
+
+        <fieldset class="task" id="choice" hidden>
+          <legend id="choice-question"></legend>
+          <div class="options" id="choice-options"></div>
+          <p class="feedback" id="choice-feedback" aria-live="polite"></p>
+        </fieldset>
+
+        <div class="end" id="end" hidden>
+          <h3>Next</h3>
+          <ul id="end-links"></ul>
+          <button type="button" class="quiet" id="again">Start again</button>
+        </div>
+      </div>
+
+      <div class="screen">
+        <div class="terminal" id="terminal" aria-label="Terminal"></div>
+        <aside class="panel" id="panel" hidden>
+          <h3 id="panel-title"></h3>
+          <ul id="panel-lines"></ul>
+        </aside>
+      </div>
+    </section>
+
+    <article class="transcript" id="transcript" hidden></article>
+    <p class="problem" id="problem" hidden></p>
+  </main>
+</body>
+</html>

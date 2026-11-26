@@ -14,6 +14,7 @@ policies feeds it). Give every answer as an option, so nothing is asked:
 2. Read the JSON answer: the files written and the audit's ref_id.
 3. Run `hound scope validate <folder>/scope --config <folder>/hound.yaml --json` and fix what it reports.
 4. Tell the person what comes next: the environment ("onboard-the-environment"), then each third party and system.
+5. If the person is new to hound, give them the six-minute tutorial that walks this route: https://tnbozman.github.io/evidence-hound/tutorials/interactive/play.html#compliance-repo
 
 ## Your part and the person's
 

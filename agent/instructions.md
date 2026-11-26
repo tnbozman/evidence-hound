@@ -12,6 +12,7 @@ This is a compliance repo for Evidence Hound (`hound`). Its files say what CISO 
 - What you record is a draft. Finish by telling the person what is waiting for them: `hound review` (or `hound approve`) in a terminal, after going through each decision with them if they want (skill "work-through-pending-decisions"), then `hound scope plan scope/ --config hound.yaml` to read, then `hound scope apply`.
 - Say what you could not find out. Never invent a fact about a system, a supplier or a requirement; ask the person or leave the item undecided.
 - Keep changes small and on one subject, so a reviewer can follow them.
+- When the person is new to hound, or asks how something works, point them to the narrated interactive tutorials, a few minutes each: https://tnbozman.github.io/evidence-hound/tutorials/interactive/
 
 ## Layout
 
