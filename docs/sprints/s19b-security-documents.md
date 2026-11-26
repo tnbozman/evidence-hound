@@ -6,8 +6,20 @@ Release: 3, unless moved
 
 Added at the maintainer's request (2026-11-24) as the final sprint, after release 2. On 2026-11-25 the maintainer made s19 a principal
 software engineer and CISO review ([s19-review-and-release-3.md](s19-review-and-release-3.md)). These tasks are its droppable part B:
-they start only after part A is done, and only if the maintainer keeps them in s19. The CISO review (s19b-07) may cut or reorder them;
+they start only after part A is done, and only if the maintainer keeps them in s19. The CISO review (s19-07) may cut or reorder them;
 its result is recorded here before any of them starts.
+
+## CISO review verdict (s19-07, 2026-11-26)
+
+Recommended to the maintainer, who decides ([CISO review](../reviews/2026-ciso-review.md#part-b-the-document-generators)): **move part
+B after release 3, reordered and cut.** The SSP, POA&M and IRP already exist and are what an assessor of a small business asks for
+first. Keep, in this order: s19b-04 policy statements, s19b-03 continuous monitoring plan, s19b-10 change and configuration management
+plan, s19b-05 risk assessment report; then s19b-01 catalogue, s19b-08 document register and s19b-11 registers once three documents
+exist; s19b-12 last. Cut: s19b-02 security assessment report (the assessor writes it), s19b-09 authorisation package (a government
+authorisation a small business does not run), s19b-06 business continuity summary (the BIA covers it), s19b-07 supplier report
+(`hound supplier list` covers it).
+
+Maintainer's decision: waiting.
 
 **Goal:** `hound` drafts the security documents a CMMC Level 2 or Essential Eight Maturity Level 2 organisation must keep, from the data it already manages, the same way it drafts the system security plan (s11-04) and the incident response plan (s15-09). Only documents that Evidence Hound's data can largely fill are in scope. A person writes the judgement parts, and approves each version in CISO Assistant. Then the approved document is published as evidence for the controls that require it, because several of these documents are themselves the evidence for policy and documentation controls.
 

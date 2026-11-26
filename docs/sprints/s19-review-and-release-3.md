@@ -222,7 +222,7 @@ Notes:
 - `make test`: 2,203 tests in 28.6 s after, 29 s before.
 
 ### s19-07 CISO review
-- [ ] Done
+- [x] Done
 
 **Story:** As a small business's cyber GRC lead with a few hours a week, I want a CISO to judge whether hound gets me to Essential Eight
 Maturity Level 2 or CMMC Level 2 and keeps me there, so that I know what it does not do before an assessor tells me.
@@ -243,6 +243,24 @@ Maturity Level 2 or CMMC Level 2 and keeps me there, so that I know what it does
 
 **Functional check**
 - The year's walk-through followed on the example repo against the local CISO Assistant, with the time each step took.
+
+Notes:
+- [docs/reviews/2026-ciso-review.md](../reviews/2026-ciso-review.md): fit for release 3 for a Microsoft 365, Intune, Sophos Central and
+  scanner estate; the example year takes the GRC member a little over 2 hours a week.
+- Mapping check: 60 Essential Eight rows answered by collectors and the 32 CMMC `covers: part` rows read against each check's code.
+  Fixed under TDD: critical findings now use the 48-hour window (ISM-1876, ISM-1877); the Office ASR rules pass only for all users or
+  all devices (ISM-1667 to ISM-1673); ISM-1657 includes the yearly ruleset review for the three file types no collector reads; a
+  `covers: part` row's `rest:` says what the person assesses and the observation names it, on all 32 CMMC rows. Also fixed: the cheat
+  sheet listed options `hound irp build` does not take (now a test checks every option the sheet names), and `docs/third-parties.md`
+  said suppliers could not record CUI.
+- Known limitations for the release notes (s19-09): practices, not the 320 NIST SP 800-171A objectives; configuration evidence, not
+  control tests; collectors see only Microsoft 365, Intune Windows, Sophos Central and the scanner; ISM-1883 is answered by counts plus
+  the yearly privileged access review; `hound` does not post to SPRS.
+- Part B verdict recorded in [s19b-security-documents.md](s19b-security-documents.md): move after release 3, reordered, four tasks cut.
+  Sent to the maintainer with the second removal list (retired model options).
+- Functional check: the walk-through ran offline on a copy of the example repo with `HOUND_TODAY=2027-02-15`; every command answered in
+  under a second (times in the review). The local CISO Assistant could not start here: the environment's network policy blocks its
+  image registry. The steps that read CISO Assistant are covered by the functional suite in CI, recorded in the sprint review.
 
 ### s19-08 One path through the docs
 - [ ] Done

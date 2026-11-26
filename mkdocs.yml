@@ -123,6 +123,7 @@ nav:
       - Closed loop: closed-loop.md
       - Repository map: repo-map.md
       - Engineering review 2026: reviews/2026-engineering-review.md
+      - CISO review 2026: reviews/2026-ciso-review.md
       - Releasing: releasing.md
       - REST collector design: design/rest-collector.md
       - Agent-driven onboarding: design/agent-driven-onboarding.md
