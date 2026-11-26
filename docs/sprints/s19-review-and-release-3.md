@@ -26,7 +26,7 @@ judgement recorded on whether the product does its job.
 ## Part A: review
 
 ### s19-01 Inventory every folder and artefact
-- [ ] Done
+- [x] Done
 
 **Story:** As a maintainer, I want one list of what is in the repo, why it is there and who uses it, so that I can see what to keep and
 nothing new appears without a reason.
@@ -51,6 +51,16 @@ nothing new appears without a reason.
 
 **Functional check**
 - `git ls-files` compared with the map: every path belongs to a listed folder.
+
+Notes:
+- [docs/repo-map.md](../repo-map.md) lists 74 folders. `RepoMapTests` reads `git ls-files`, so the map is checked against what is
+  committed; the functional check is the test itself (2 of 2 pass; unit suite 2195 green).
+- Removed now: a compiled Python file committed under `tools/docs/hooks/__pycache__/`; `__pycache__/` and `*.pyc` are now ignored.
+- The planning pass was wrong about two candidates. The `ca-*.sh` scripts wrap `hound scope apply` for the dev container and probe a
+  CISO Assistant release in CI, and `skills/` holds the default onboarding skills hound embeds, which a compliance repo's own
+  `skills/` adds to. Both stay; s19-03 weighs moving `skills/` under `agent/`.
+- Waiting on the maintainer (s19-02): the Kafka transport, `docs/evidence/` with `examples/manual-exports/`, and the superseded
+  onboarding assistant design.
 
 ### s19-02 Remove what is no longer needed
 - [ ] Done
