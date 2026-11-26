@@ -37,6 +37,7 @@ everything that needs a person into one guided weekly review. Start with [gettin
 | --- | --- |
 | The Kafka transport (`transport: kafka`, `kafka_bootstrap_servers`, `HOUND_TRANSPORT=kafka`) | The REST API, the default. A config that still names Kafka is refused with `config.transport_removed`. |
 | The evidence records in `docs/evidence/` and `examples/manual-exports/` | Kept in git history; the guides that cited them link to the last commit that had them. |
+| The hidden options of the removed built-in model (`--no-model`, `--show-requests`, and the old `--config` on `explain`, `onboard`, `onboard environment`, `onboard profile` and `skill draft`) | Nothing: each did nothing since the model was removed. A script that still passes one now stops with a usage error; delete the option. Model help comes from your coding assistant (`hound agent setup`). |
 | The onboarding assistant design (`docs/design/onboarding-assistant.md`) | [Agent-driven onboarding](design/agent-driven-onboarding.md), which replaced it in s09. |
 
 ### Known limitations
@@ -64,7 +65,7 @@ For a repo made with a pre-release build:
 
 1. Pin the new version: the runner image `ghcr.io/tnbozman/evidence-hound:1.0.0` in `deploy/deploy.env`, and the .NET tool with
    `dotnet tool update --global EvidenceHound.Cli --version 1.0.0`.
-2. Remove any `transport: kafka` or `kafka_bootstrap_servers` from `hound.yaml`, and `HOUND_TRANSPORT` from the runner's environment.
+2. Remove `--no-model` and `--show-requests` from any script. Remove any `transport: kafka` or `kafka_bootstrap_servers` from `hound.yaml`, and `HOUND_TRANSPORT` from the runner's environment.
    `hound config validate hound.yaml` says what is left.
 3. Copy the shipped mappings you use over your copies, or make the same changes by hand: `mappings/essential-eight-2023.yaml` (ISM-1657
    adds `appcontrol.rulesets_validated`) and `mappings/cmmc-2.0.yaml` (a `rest:` on each row). If you map ISM-1657, add the

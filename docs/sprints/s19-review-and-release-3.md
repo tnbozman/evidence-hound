@@ -63,7 +63,7 @@ Notes:
   onboarding assistant design.
 
 ### s19-02 Remove what is no longer needed
-- [ ] Done
+- [x] Done
 
 **Story:** As a maintainer, I want what nobody uses gone, so that a new contributor or agent reads only what matters.
 
@@ -81,7 +81,7 @@ Notes:
 **Functional check**
 - `make test`, `make lint`, `make docs` and the trial script pass after the removals.
 
-Notes (in progress):
+Notes:
 - The maintainer approved all three removals on 2026-11-26. Removed: the Kafka transport (project, package, compose profiles, `make
   ca-up-kafka`, guides); a config with `transport: kafka` or `kafka_bootstrap_servers`, or `HOUND_TRANSPORT=kafka`, now stops with
   `config.transport_removed` and says to publish over REST (`ConfigTests.Bad_transport_is_rejected`,
@@ -92,7 +92,11 @@ Notes (in progress):
   helper, which are removed, and three M365 checks that take the options they do not need because every check in the table has one
   signature; those parameters are named `_`. A scan for public and internal types with no reference outside their own declaration
   found none.
-- Still to send the maintainer, with the CISO review's removals: the hidden retired model options (engineering review E8).
+- The maintainer approved the second list on 2026-11-26. Removed: the hidden options that only served the removed built-in model
+  (`--no-model`, `--show-requests`, the onboarding `--config` and `--framework`, `--skill`, `--rounds`, `--deny-terms`, `--repo` where
+  they were hidden), with the `Retired` class. They are now refused like any unknown option
+  (`HoundCliTests.Options_that_only_served_the_removed_model_are_refused`). `hound onboard config` stays, hidden, and still says to use
+  `hound agent setup`.
 
 ### s19-03 Principal engineer code review
 - [x] Done
@@ -360,7 +364,8 @@ Notes:
 
 ## Part B: security document generators (droppable)
 
-See [s19b-security-documents.md](s19b-security-documents.md). Starts after part A, if the maintainer keeps it in s19.
+Moved after release 3 by the maintainer on 2026-11-26, reordered, with four tasks cut: see
+[s19b-security-documents.md](s19b-security-documents.md).
 
 ## Discovered work
 

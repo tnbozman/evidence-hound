@@ -17,8 +17,8 @@ coding assistant may read a file and propose its result with `hound manual propo
 attests it with `hound manual approve` ([manual sources](configuration.md#manual-sources)).
 
 Removed with the built-in model: `hound onboard config`, `onboarding.yaml`, and the options `--no-model`, `--show-requests` and (for the
-onboarding config) `--config`. `hound onboard config` now only says so. The options are still taken, so an older script keeps working;
-each does nothing and prints a line pointing to `hound agent setup`.
+onboarding config) `--config`. `hound onboard config` now only says so. Since release 3 the options are refused like any unknown
+option; remove them from older scripts.
 
 ## Onboard a system
 

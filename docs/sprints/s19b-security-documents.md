@@ -1,8 +1,8 @@
 # s19 part B: Security document generators (droppable)
 
-Status: Planned, waiting on the maintainer: part B of s19, or a later sprint
+Status: Planned, after release 3 (the maintainer moved it on 2026-11-26)
 
-Release: 3, unless moved
+Release: after 3
 
 Added at the maintainer's request (2026-11-24) as the final sprint, after release 2. On 2026-11-25 the maintainer made s19 a principal
 software engineer and CISO review ([s19-review-and-release-3.md](s19-review-and-release-3.md)). These tasks are its droppable part B:
@@ -19,7 +19,8 @@ exist; s19b-12 last. Cut: s19b-02 security assessment report (the assessor write
 authorisation a small business does not run), s19b-06 business continuity summary (the BIA covers it), s19b-07 supplier report
 (`hound supplier list` covers it).
 
-Maintainer's decision: waiting.
+Maintainer's decision (2026-11-26): agreed. Part B moves after release 3 in the order above; s19b-02, s19b-06, s19b-07 and
+s19b-09 are cut and kept below only as a record.
 
 **Goal:** `hound` drafts the security documents a CMMC Level 2 or Essential Eight Maturity Level 2 organisation must keep, from the data it already manages, the same way it drafts the system security plan (s11-04) and the incident response plan (s15-09). Only documents that Evidence Hound's data can largely fill are in scope. A person writes the judgement parts, and approves each version in CISO Assistant. Then the approved document is published as evidence for the controls that require it, because several of these documents are themselves the evidence for policy and documentation controls.
 
@@ -76,8 +77,8 @@ Builds on: the SSP model and layout (s11-02 to s11-05), the POA&M (s11-03), the 
 **Functional check**
 - `hound doc list` against the example scope on the local CISO Assistant lists the SSP and IRP as drafts and every other document as not declared.
 
-### s19b-02 Security assessment report
-- [ ] Done
+### s19b-02 Security assessment report (cut)
+- Cut by the maintainer on 2026-11-26 (CISO review verdict).
 
 **Story:** As an authorising official, I want a security assessment report built from the audit, so that I can see what was assessed, how, and what was found before I decide.
 
@@ -147,8 +148,8 @@ Builds on: the SSP model and layout (s11-02 to s11-05), the POA&M (s11-03), the 
 **Functional check**
 - Build the example risk report against the local CISO Assistant with the example risk study (s15-06).
 
-### s19b-06 Business continuity and recovery summary
-- [ ] Done
+### s19b-06 Business continuity and recovery summary (cut)
+- Cut by the maintainer on 2026-11-26 (CISO review verdict).
 
 **Story:** As a system owner, I want my recovery objectives and the evidence that recovery works in one document, so that backups are shown to meet business continuity requirements.
 
@@ -162,8 +163,8 @@ Builds on: the SSP model and layout (s11-02 to s11-05), the POA&M (s11-03), the 
 **Functional check**
 - Build the example summary; it shows the example backup service's restore test.
 
-### s19b-07 Supplier and supply chain report
-- [ ] Done
+### s19b-07 Supplier and supply chain report (cut)
+- Cut by the maintainer on 2026-11-26 (CISO review verdict).
 
 **Story:** As a subcontractor, I want one report of my suppliers, what data they handle and which clauses I flow down, so that I can answer a prime's supply chain questionnaire.
 
@@ -199,8 +200,8 @@ Builds on: the SSP model and layout (s11-02 to s11-05), the POA&M (s11-03), the 
 **Functional check**
 - Approve the example SSP in the local CISO Assistant, move the clock a year on, and see it in `hound review`.
 
-### s19b-09 Authorisation package
-- [ ] Done
+### s19b-09 Authorisation package (cut)
+- Cut by the maintainer on 2026-11-26 (CISO review verdict).
 
 **Story:** As an authorising official, I want the SSP, SAR, POA&M and monitoring plan bundled at one version, so that I authorise one consistent set and an assessor receives exactly that.
 
