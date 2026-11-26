@@ -24,7 +24,7 @@ Projects: `src/EvidenceHound.Collectors.Abstractions` (published package), `src/
 
 **Functional check**
 - `make run ARGS="collectors list"` shows the fake and manual collectors with their check IDs.
-- Result (2026-11-21): lists `fake 1.0.0` with its four check IDs, setting `tenant (optional)` and no secrets, exit 0. `manual` appears once s04-04 adds it. [Evidence](../evidence/s04/s04-01.md).
+- Result (2026-11-21): lists `fake 1.0.0` with its four check IDs, setting `tenant (optional)` and no secrets, exit 0. `manual` appears once s04-04 adds it. [Evidence](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s04/s04-01.md).
 
 ### s04-02 Contract test kit
 - [x] Done
@@ -42,7 +42,7 @@ Projects: `src/EvidenceHound.Collectors.Abstractions` (published package), `src/
 
 **Functional check**
 - `make test` runs the contract suite for every collector in the solution.
-- Result (2026-11-21): `make test` passes 362 of 362 (0 skipped), including the six `FakeCollectorContractTests` contracts and `ContractCoverageTests.Every_built_in_collector_has_contract_tests`; making the fake's contract class non-public fails the coverage test, naming `FakeCollector`. [Evidence](../evidence/s04/s04-02.md).
+- Result (2026-11-21): `make test` passes 362 of 362 (0 skipped), including the six `FakeCollectorContractTests` contracts and `ContractCoverageTests.Every_built_in_collector_has_contract_tests`; making the fake's contract class non-public fails the coverage test, naming `FakeCollector`. [Evidence](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s04/s04-02.md).
 
 ### s04-03 Collector template
 - [x] Done
@@ -58,7 +58,7 @@ Projects: `src/EvidenceHound.Collectors.Abstractions` (published package), `src/
 
 **Functional check**
 - `dotnet new hound-collector -n Example.Widget` then `make test` passes.
-- Result (2026-11-21): the template was installed and `Example.Widget` was generated in the repo root against locally packed SDK packages (`--HoundVersion 0.1.0-local.1`). Its own `dotnet test` passed 8 of 8 (six contracts and two behaviour tests). The repo's `make test` passed 362 of 362 and `make lint-dotnet` was clean with the generated folder present. `make test-template` passes. [Evidence](../evidence/s04/s04-03.md).
+- Result (2026-11-21): the template was installed and `Example.Widget` was generated in the repo root against locally packed SDK packages (`--HoundVersion 0.1.0-local.1`). Its own `dotnet test` passed 8 of 8 (six contracts and two behaviour tests). The repo's `make test` passed 362 of 362 and `make lint-dotnet` was clean with the generated folder present. `make test-template` passes. [Evidence](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s04/s04-03.md).
 
 ### s04-04 Manual-upload collector
 - [x] Done
@@ -80,7 +80,7 @@ Projects: `src/EvidenceHound.Collectors.Abstractions` (published package), `src/
 
 **Functional check**
 - Configure a manual source "Example firewall config", upload a fictional config export with attestation, run, and see evidence and result in the example audit.
-- Result (2026-11-21): the example config plus manual source `example-firewall-config` passed `hound config validate`. `hound manual upload` copied `examples/manual-exports/example-firewall-config-export.txt` and wrote its attestation; a second upload copied nothing. `hound run` against a local CISO Assistant published 8 updates for the fake and 3 for the manual source. In audit `EXAMPLE-BASELINE-2026`, the new fictional requirement EX-4.1 reads `compliant`, with the attestation in its observation, and the export and its sidecar are linked as evidence. `make test-functional` passed 7 of 7. [Evidence](../evidence/s04/s04-04.md).
+- Result (2026-11-21): the example config plus manual source `example-firewall-config` passed `hound config validate`. `hound manual upload` copied `examples/manual-exports/example-firewall-config-export.txt` and wrote its attestation; a second upload copied nothing. `hound run` against a local CISO Assistant published 8 updates for the fake and 3 for the manual source. In audit `EXAMPLE-BASELINE-2026`, the new fictional requirement EX-4.1 reads `compliant`, with the attestation in its observation, and the export and its sidecar are linked as evidence. `make test-functional` passed 7 of 7. [Evidence](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s04/s04-04.md).
 
 ## Discovered work
 

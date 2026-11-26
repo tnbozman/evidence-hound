@@ -26,7 +26,7 @@ All code in this sprint lives in `src/EvidenceHound.Core` and is tested in `test
 **Functional check**
 - `make test` green; coverage of `Result` 100 %.
 
-**Functional check result (2026-11-21):** `make coverage` gave `total: 16, failed: 0`; Cobertura shows 100 % line and branch coverage for `Result`, `Result<T>` and `Problem`. Evidence: [`docs/evidence/s01/s01-01.md`](../evidence/s01/s01-01.md).
+**Functional check result (2026-11-21):** `make coverage` gave `total: 16, failed: 0`; Cobertura shows 100 % line and branch coverage for `Result`, `Result<T>` and `Problem`. Evidence: [`docs/evidence/s01/s01-01.md`](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s01/s01-01.md).
 
 ### s01-02 Check results and evidence
 - [x] Done
@@ -49,7 +49,7 @@ All code in this sprint lives in `src/EvidenceHound.Core` and is tested in `test
 **Functional check**
 - `make test` green.
 
-**Functional check result (2026-11-21):** `make test` gave `total: 45, failed: 0`; lint clean. Evidence: [`docs/evidence/s01/s01-02.md`](../evidence/s01/s01-02.md).
+**Functional check result (2026-11-21):** `make test` gave `total: 45, failed: 0`; lint clean. Evidence: [`docs/evidence/s01/s01-02.md`](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s01/s01-02.md).
 
 ### s01-03 Framework mapping model and loader
 - [x] Done
@@ -71,7 +71,7 @@ All code in this sprint lives in `src/EvidenceHound.Core` and is tested in `test
 **Functional check**
 - `make run ARGS="mapping validate mappings/example.yaml"` prints `valid: N requirements`.
 
-**Functional check result (2026-11-21):** `make run ARGS="mapping validate mappings/example.yaml"` printed `valid: 4 requirements`; a broken file printed each problem with its line and exited 3. `make test`: `total: 85, failed: 0`. Evidence: [`docs/evidence/s01/s01-03.md`](../evidence/s01/s01-03.md).
+**Functional check result (2026-11-21):** `make run ARGS="mapping validate mappings/example.yaml"` printed `valid: 4 requirements`; a broken file printed each problem with its line and exited 3. `make test`: `total: 85, failed: 0`. Evidence: [`docs/evidence/s01/s01-03.md`](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s01/s01-03.md).
 
 ### s01-04 Mapping engine
 - [x] Done
@@ -97,7 +97,7 @@ All code in this sprint lives in `src/EvidenceHound.Core` and is tested in `test
 **Functional check**
 - `make run ARGS="mapping apply mappings/example.yaml tests/fixtures/checks-sample.json"` prints a table of requirement results.
 
-**Functional check result (2026-11-21):** `make run ARGS="mapping apply mappings/example.yaml tests/fixtures/checks-sample.json"` printed one row per requirement: `EX-1.1 non_compliant`, `EX-1.2 partially_compliant`, `EX-2.1 compliant`, `EX-3.1 not_assessed`. `make test`: `total: 118, failed: 0`. Evidence: [`docs/evidence/s01/s01-04.md`](../evidence/s01/s01-04.md).
+**Functional check result (2026-11-21):** `make run ARGS="mapping apply mappings/example.yaml tests/fixtures/checks-sample.json"` printed one row per requirement: `EX-1.1 non_compliant`, `EX-1.2 partially_compliant`, `EX-2.1 compliant`, `EX-3.1 not_assessed`. `make test`: `total: 118, failed: 0`. Evidence: [`docs/evidence/s01/s01-04.md`](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s01/s01-04.md).
 
 ### s01-05 Audit update plan
 - [x] Done
@@ -118,7 +118,7 @@ All code in this sprint lives in `src/EvidenceHound.Core` and is tested in `test
 **Functional check**
 - `make run ARGS="plan --dry-run --config examples/example-pty-ltd.yaml --checks tests/fixtures/checks-sample.json"` prints the planned messages as JSON.
 
-**Functional check result (2026-11-21):** `make run ARGS="plan --dry-run --config examples/example-pty-ltd.yaml --checks tests/fixtures/checks-sample.json"` printed 11 dispatcher messages: 5 `upload_attachment`, 4 `update_requirement_assessment`, 2 `update_applied_control`. `make test`: `total: 136, failed: 0`. Evidence: [`docs/evidence/s01/s01-05.md`](../evidence/s01/s01-05.md).
+**Functional check result (2026-11-21):** `make run ARGS="plan --dry-run --config examples/example-pty-ltd.yaml --checks tests/fixtures/checks-sample.json"` printed 11 dispatcher messages: 5 `upload_attachment`, 4 `update_requirement_assessment`, 2 `update_applied_control`. `make test`: `total: 136, failed: 0`. Evidence: [`docs/evidence/s01/s01-05.md`](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s01/s01-05.md).
 
 ### s01-06 Global exception handler and logger
 - [x] Done
@@ -144,7 +144,7 @@ Added 2026-11-21 at the maintainer's request.
 **Functional check**
 - `make run ARGS="mapping validate <bad file>"` prints `error:` lines on stderr and exits 3; `Logging__LogLevel__Default=Warning make run ARGS="collect --dry-run --config examples/example-pty-ltd.yaml"` prints no info line.
 
-**Functional check result (2026-11-21):** `mapping validate` on a broken file printed `error: <file> line 4: unknown rule 'most_pass'...` on stderr with nothing on stdout, exit 3. With `Logging__LogLevel__Default=Warning`, `collect --dry-run` printed nothing. `plan --dry-run` stdout parsed as JSON (11 messages). `make test`: `total: 149, failed: 0`. Evidence: [`docs/evidence/s01/s01-06.md`](../evidence/s01/s01-06.md).
+**Functional check result (2026-11-21):** `mapping validate` on a broken file printed `error: <file> line 4: unknown rule 'most_pass'...` on stderr with nothing on stdout, exit 3. With `Logging__LogLevel__Default=Warning`, `collect --dry-run` printed nothing. `plan --dry-run` stdout parsed as JSON (11 messages). `make test`: `total: 149, failed: 0`. Evidence: [`docs/evidence/s01/s01-06.md`](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s01/s01-06.md).
 
 ## Discovered work
 

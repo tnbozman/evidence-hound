@@ -24,7 +24,7 @@ internal static class MappingCoverageCommand
             Description = "A hound config or manual source template, or a folder of them: checks of 'type: manual' collectors count as manual. Repeatable.",
             AllowMultipleArgumentsPerToken = false,
         };
-        var json = new Option<bool>("--json") { Description = "Print JSON instead of Markdown." };
+        var json = CommonOptions.Json("Print JSON instead of Markdown.");
         var command = new Command(
             "coverage",
             "Count requirements answered by collectors (automated), by people (manual), only by draft rows awaiting review (draft) and by nothing (uncovered), per parent node and group.")
@@ -173,7 +173,7 @@ internal static class MappingCoverageCommand
                 ["draft"] = r.Draft,
                 ["uncovered"] = r.Uncovered,
             })]),
-        }.ToJsonString(OnboardAgentCommand.Indented) + Environment.NewLine;
+        }.ToJsonString(CommandJson.Readable) + Environment.NewLine;
 
     /// <summary>
     /// A parent's label: for a framework with levels above the parents (the ASD Essentials), the top node's name and the parent's, as the

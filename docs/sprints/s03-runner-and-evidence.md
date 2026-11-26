@@ -25,7 +25,7 @@ Projects: `src/EvidenceHound.Runtime` (runner, stores, config), `src/EvidenceHou
 
 **Functional check**
 - `make run ARGS="config validate examples/example-pty-ltd.yaml"` prints `valid`.
-- Result (2026-11-21): prints `valid`, exit 0; a broken config lists all four problems with lines and exits 3 without printing the inline token. [Evidence](../evidence/s03/s03-01.md).
+- Result (2026-11-21): prints `valid`, exit 0; a broken config lists all four problems with lines and exits 3 without printing the inline token. [Evidence](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s03/s03-01.md).
 
 ### s03-02 Secret provider
 - [x] Done
@@ -45,7 +45,7 @@ Projects: `src/EvidenceHound.Runtime` (runner, stores, config), `src/EvidenceHou
 
 **Functional check**
 - Run the CLI with a missing env var: clear error, exit code 3, no value printed.
-- Result (2026-11-21): `hound config validate --check-secrets examples/example-pty-ltd.yaml` without `HOUND_CA_TOKEN` logs `Secret env:HOUND_CA_TOKEN could not be resolved` and exits 3; with it set prints `valid`. [Evidence](../evidence/s03/s03-02.md).
+- Result (2026-11-21): `hound config validate --check-secrets examples/example-pty-ltd.yaml` without `HOUND_CA_TOKEN` logs `Secret env:HOUND_CA_TOKEN could not be resolved` and exits 3; with it set prints `valid`. [Evidence](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s03/s03-02.md).
 
 ### s03-03 Evidence store and manifest
 - [x] Done
@@ -65,7 +65,7 @@ Projects: `src/EvidenceHound.Runtime` (runner, stores, config), `src/EvidenceHou
 
 **Functional check**
 - Dry run with the fake collector writes a folder and a manifest you can verify with `sha256sum`.
-- Result (2026-11-21): `make run ARGS="collect --config examples/example-pty-ltd.yaml"` wrote `.dev/evidence/example-fake/<timestamp>/` with four files and `_manifest.json`; `sha256sum -c` on the manifest's hashes printed `OK` for all four. [Evidence](../evidence/s03/s03-03.md).
+- Result (2026-11-21): `make run ARGS="collect --config examples/example-pty-ltd.yaml"` wrote `.dev/evidence/example-fake/<timestamp>/` with four files and `_manifest.json`; `sha256sum -c` on the manifest's hashes printed `OK` for all four. [Evidence](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s03/s03-03.md).
 
 ### s03-04 Runner pipeline
 - [x] Done
@@ -86,7 +86,7 @@ Projects: `src/EvidenceHound.Runtime` (runner, stores, config), `src/EvidenceHou
 
 **Functional check**
 - `make ca-up && make run ARGS="run --config examples/example-pty-ltd.yaml"` updates the example audit with the fake collector's results.
-- Result (2026-11-21): the CI functional test ran `hound run` against CISO Assistant v4.3.4: EX-1.1 non_compliant with two evidences, EX-3.1 compliant, exit 0. The dry run planned 8 updates. [Evidence](../evidence/s03/s03-04.md).
+- Result (2026-11-21): the CI functional test ran `hound run` against CISO Assistant v4.3.4: EX-1.1 non_compliant with two evidences, EX-3.1 compliant, exit 0. The dry run planned 8 updates. [Evidence](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s03/s03-04.md).
 
 ### s03-05 Run status and collector health
 - [x] Done
@@ -105,7 +105,7 @@ Projects: `src/EvidenceHound.Runtime` (runner, stores, config), `src/EvidenceHou
 
 **Functional check**
 - After `make run ARGS="run ..."`, the example audit's control shows a fresh "collector health" evidence revision.
-- Result (2026-11-21): in CI, `hound-health/example-fake` was linked to AC-AUTO-EVIDENCE and a second run added one new health revision. [Evidence](../evidence/s03/s03-05.md).
+- Result (2026-11-21): in CI, `hound-health/example-fake` was linked to AC-AUTO-EVIDENCE and a second run added one new health revision. [Evidence](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s03/s03-05.md).
 
 ### s03-06 Dev container with CISO Assistant on one network (added during the sprint)
 - [x] Done
@@ -125,7 +125,7 @@ Projects: `src/EvidenceHound.Runtime` (runner, stores, config), `src/EvidenceHou
 
 **Functional check**
 - Rebuild the dev container, then `set -a && . .dev/ca.env && set +a && make run ARGS="run --config examples/example-pty-ltd.yaml"` publishes to `backend:8000`. The person runs this (this cloud box cannot run the dev container).
-- Result (2026-11-21): compose model, seed env file, start-up wait and secret key covered by 18 bats tests that pass in CI; the rebuild check is listed in the [evidence](../evidence/s03/s03-06.md).
+- Result (2026-11-21): compose model, seed env file, start-up wait and secret key covered by 18 bats tests that pass in CI; the rebuild check is listed in the [evidence](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s03/s03-06.md).
 
 ## Discovered work
 

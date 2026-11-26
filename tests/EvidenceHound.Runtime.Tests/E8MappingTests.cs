@@ -67,6 +67,14 @@ public class E8MappingTests
     }
 
     [Fact]
+    public void Application_control_file_types_include_the_ruleset_review_for_the_types_no_collector_reads()
+    {
+        // s19-07: ISM-1657 also lists compiled HTML, HTML applications and control panel applets, which the Microsoft 365 check does not
+        // read. The row's comment said the ruleset review covers them, but the row did not include it, so it passed without them.
+        Mapping.Mapping.Requirements.Single(r => r.RequirementRef == "ISM-1657").Checks.Select(c => c.Value).ShouldContain("appcontrol.rulesets_validated");
+    }
+
+    [Fact]
     public void Every_requirement_without_a_collector_is_mapped_to_an_example_manual_source()
     {
         // s10-04 (maintainer, 2026-11-23): manual checks are mapped, attested with 'hound manual approve' and published by runs; only a

@@ -25,7 +25,7 @@ Required Entra app permissions (application, admin consent, all read-only): `Pol
 
 **Functional check**
 - Run against the WireMock recording: three pages read, one evidence file written.
-- Result (2026-11-21): against WireMock, `GraphPagingTests.Follows_next_link_until_exhausted` read three pages (three requests, five users in order) and `GraphEvidenceTests.One_file_holds_every_page_minimised` wrote one `users.json` recording `pages: 3` with every UPN hashed; 25 of 25 tests pass. [Evidence](../evidence/s05/s05-01.md).
+- Result (2026-11-21): against WireMock, `GraphPagingTests.Follows_next_link_until_exhausted` read three pages (three requests, five users in order) and `GraphEvidenceTests.One_file_holds_every_page_minimised` wrote one `users.json` recording `pages: 3` with every UPN hashed; 25 of 25 tests pass. [Evidence](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s05/s05-01.md).
 
 ### s05-02 Multi-factor authentication checks
 - [x] Done
@@ -43,7 +43,7 @@ Required Entra app permissions (application, admin consent, all read-only): `Pol
 
 **Functional check**
 - Collector run against recordings produces four check results with readable observations.
-- Result (2026-11-21): the `m365` collector run against the recorded `example.com` tenant (five Graph requests, three of them user pages) reported the four checks, all `pass`, with observations such as "All 7 enabled member accounts are MFA-capable.", and wrote `users.json`, `mfa-registration.json` and `conditional-access-policies.json`. `hound collectors list` shows `m365`. [Evidence](../evidence/s05/s05-02.md).
+- Result (2026-11-21): the `m365` collector run against the recorded `example.com` tenant (five Graph requests, three of them user pages) reported the four checks, all `pass`, with observations such as "All 7 enabled member accounts are MFA-capable.", and wrote `users.json`, `mfa-registration.json` and `conditional-access-policies.json`. `hound collectors list` shows `m365`. [Evidence](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s05/s05-02.md).
 
 ### s05-03 Privileged access checks
 - [x] Done
@@ -60,7 +60,7 @@ Required Entra app permissions (application, admin consent, all read-only): `Pol
 
 **Functional check**
 - As above; results appear in the example audit after `hound run` against the WireMock-backed tenant.
-- Result (2026-11-21): `M365RunFunctionalTests` runs `hound run` with the `m365` collector against the recorded tenant and a CISO Assistant container. EX-1.2 of `EXAMPLE-BASELINE-2026` (mapped in `tests/fixtures/m365-mapping.yaml` to the phishing-resistant and PIM checks) is `compliant` with three evidences linked. CI functional job: 8 of 8 passed. [Evidence](../evidence/s05/s05-03.md).
+- Result (2026-11-21): `M365RunFunctionalTests` runs `hound run` with the `m365` collector against the recorded tenant and a CISO Assistant container. EX-1.2 of `EXAMPLE-BASELINE-2026` (mapped in `tests/fixtures/m365-mapping.yaml` to the phishing-resistant and PIM checks) is `compliant` with three evidences linked. CI functional job: 8 of 8 passed. [Evidence](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s05/s05-03.md).
 
 ### s05-04 Device and Office hardening checks
 - [x] Done
@@ -78,7 +78,7 @@ Required Entra app permissions (application, admin consent, all read-only): `Pol
 
 **Functional check**
 - Full M365 collector run against recordings: all checks reported, evidence manifest written, contract kit green.
-- Result (2026-11-21): the run against the recorded tenant reported all 11 checks (all `pass`) from 11 Graph requests; through the runner's collect step it wrote nine evidence files and `_manifest.json`; `M365CollectorContractTests` passes all six contracts. [Evidence](../evidence/s05/s05-04.md).
+- Result (2026-11-21): the run against the recorded tenant reported all 11 checks (all `pass`) from 11 Graph requests; through the runner's collect step it wrote nine evidence files and `_manifest.json`; `M365CollectorContractTests` passes all six contracts. [Evidence](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s05/s05-04.md).
 
 ### s05-05 Documentation
 - [x] Done
@@ -93,7 +93,7 @@ Required Entra app permissions (application, admin consent, all read-only): `Pol
 
 **Functional check**
 - A reviewer follows the doc on a test tenant and gets a successful dry run (record date, no tenant details).
-- Result (2026-11-21): `DocsTests` (four tests) pass against `docs/collectors/m365.md`. **The reviewer's dry run on a test tenant is still owed**; record its date and outcome in [the evidence](../evidence/s05/s05-05.md).
+- Result (2026-11-21): `DocsTests` (four tests) pass against `docs/collectors/m365.md`. **The reviewer's dry run on a test tenant is still owed**; record its date and outcome in [the evidence](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s05/s05-05.md).
 
 ## Discovered work
 

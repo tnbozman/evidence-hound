@@ -275,7 +275,7 @@ The first CI run found that CISO Assistant returns an entity's legal identifiers
 
 ### Onboarding assistant (s09-21 to s09-26)
 
-These tasks come after s09-14, because they draft REST profiles, and after s09-20, because onboarding starts with the supplier. They build `hound onboard` from [`docs/design/onboarding-assistant.md`](../design/onboarding-assistant.md): a guided session in which a language model proposes how a system fits a framework and drafts its profile, and a person accepts or edits every decision. Nothing is applied to CISO Assistant by the session; the output is files for a pull request in the organisation's config repo. Tests use a fake model with recorded replies; no test or CI job calls a live model.
+These tasks come after s09-14, because they draft REST profiles, and after s09-20, because onboarding starts with the supplier. They build `hound onboard` from [`docs/design/onboarding-assistant.md`](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/design/onboarding-assistant.md): a guided session in which a language model proposes how a system fits a framework and drafts its profile, and a person accepts or edits every decision. Nothing is applied to CISO Assistant by the session; the output is files for a pull request in the organisation's config repo. Tests use a fake model with recorded replies; no test or CI job calls a live model.
 
 ### s09-21 Model port, Anthropic and OpenAI adapters, onboarding config and outbound guard
 - [x] Done
@@ -569,7 +569,7 @@ The first run found that a single-system audit needs `unlisted:` and that a requ
 **Functional check**
 - The person's onboarding run produces a profile that passes `hound profile test`, and the firewall's checks appear in a `hound plan --dry-run`.
 
-**Sophos firewall run (2026-11-23):** onboarded end to end on the person's tenant; see [`docs/evidence/s09/s09-25.md`](../evidence/s09/s09-25.md). The functional check is met with the shipped `sophos-central` profile (3 of 3 cases pass, both checks pass on the tenant); the model-drafted profile did not validate (discovered work), so the task stays open until drafting produces a passing profile.
+**Sophos firewall run (2026-11-23):** onboarded end to end on the person's tenant; see [`docs/evidence/s09/s09-25.md`](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s09/s09-25.md). The functional check is met with the shipped `sophos-central` profile (3 of 3 cases pass, both checks pass on the tenant); the model-drafted profile did not validate (discovered work), so the task stays open until drafting produces a passing profile.
 
 **As built so far (2026-11-23).** The docs part is done: `OnboardingDocsTests` checks that every option of `hound onboard`, `onboard config`, `onboard environment` and `onboard profile` is in `docs/onboarding.md`, that its relative links resolve, and that it has a tutorial on the example API. The tutorial ("Tutorial: onboard the example API") was followed as written against a copy of `examples/compliance-repo` with `--no-model` and `--group 1`: the supplier stop, then 48 decisions (1 API check, 47 manual), the audit, `scope/setup.yaml` and the record written, `hound scope validate scope` valid, and `hound profile test example` passing both cases. Still open: the person's own Sophos firewall run, and the discovered work it shows.
 

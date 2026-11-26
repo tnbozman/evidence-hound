@@ -9,7 +9,7 @@ assistant (Claude Code or GitHub Copilot) with [`hound agent setup`](#set-up-you
 documents and API specifications, drafts through `hound` commands that check everything it writes, and you approve with `hound approve`
 in a terminal. Without an assistant, every step below works by answering `hound`'s questions yourself. The design is in
 [design/agent-driven-onboarding.md](design/agent-driven-onboarding.md); it supersedes the earlier
-[onboarding assistant design](design/onboarding-assistant.md), in which `hound` called a model itself.
+[onboarding assistant design](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/design/onboarding-assistant.md), in which `hound` called a model itself.
 
 **No model in evidence collection, and no evidence without a person.** `hound run`, `hound serve` and every collector are deterministic
 code, and the runner refuses a deployment config (`hound.yaml`) that has an `llm` section (`config.llm_in_runner`). For manual evidence a
@@ -17,8 +17,8 @@ coding assistant may read a file and propose its result with `hound manual propo
 attests it with `hound manual approve` ([manual sources](configuration.md#manual-sources)).
 
 Removed with the built-in model: `hound onboard config`, `onboarding.yaml`, and the options `--no-model`, `--show-requests` and (for the
-onboarding config) `--config`. `hound onboard config` now only says so. The options are still taken, so an older script keeps working;
-each does nothing and prints a line pointing to `hound agent setup`.
+onboarding config) `--config`. `hound onboard config` now only says so. Since release 3 the options are refused like any unknown
+option; remove them from older scripts.
 
 ## Onboard a system
 
@@ -358,7 +358,7 @@ versions of one file (`hound explain before.yaml after.yaml`).
 
 ## Tutorial: onboard the example API
 
-For a worked example of a whole stack, two systems and four suppliers, see the [onboarding tutorial](examples/onboarding-tutorial.md):
+For a worked example of a whole stack, two systems and four suppliers, see the [onboarding tutorial](tutorials/onboarding-tutorial.md):
 Example Pty Ltd's privately hosted GRC platform on Oracle Cloud and its office firewall, onboarded, reviewed, validated and applied.
 
 This walk-through onboards the fictional Example Asset API into a copy of the template config repo by answering `hound`'s questions

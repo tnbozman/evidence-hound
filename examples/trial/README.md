@@ -1,6 +1,6 @@
 # Fixtures for the unattended local trial
 
-`HOUND_TRIAL_YES=1 make trial` (and the `trial` job in CI) runs the trial with no agent and no person. Each stage then replays what an agent and a person would do, through the same `hound` commands, with these fictional files. Everything here is made up. The trial walks [the onboarding tutorial's deployment](../../docs/examples/onboarding-tutorial.md): CISO Assistant and Evidence Hound on a private Oracle Cloud VM (`GRC-PLATFORM`), reached over a site-to-site VPN through a Sophos XGS 88W (`OFFICE-FIREWALL`).
+`HOUND_TRIAL_YES=1 make trial` (and the `trial` job in CI) runs the trial with no agent and no person. Each stage then replays what an agent and a person would do, through the same `hound` commands, with these fictional files. Everything here is made up. The trial walks [the onboarding tutorial's deployment](../../docs/tutorials/onboarding-tutorial.md): CISO Assistant and Evidence Hound on a private Oracle Cloud VM (`GRC-PLATFORM`), reached over a site-to-site VPN through a Sophos XGS 88W (`OFFICE-FIREWALL`).
 
 | File | Stands in for |
 | --- | --- |

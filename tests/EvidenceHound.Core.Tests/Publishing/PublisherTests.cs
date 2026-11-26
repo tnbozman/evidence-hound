@@ -31,6 +31,21 @@ public class PublisherTests
         new(_ca, new InMemoryEvidenceFiles(files ?? new() { ["ev-0001"] = MfaFile, ["ev-0002"] = BackupFile }));
 
     [Fact]
+    public async Task Upload_with_a_known_id_sends_a_revision_without_searching()
+    {
+        // s18-D3: one search per evidence item in a run, not two.
+        await Publisher().PublishAsync([new AuditUpdate.UploadEvidence(Mfa)], _ct);
+        _ca.Calls.Clear();
+
+        var report = await Publisher().PublishAsync([new AuditUpdate.UploadEvidence(Mfa) { KnownId = "uuid-ev-0001" }, new AuditUpdate.UpdateRequirementAssessment("EXAMPLE-BASELINE-2026", "EX-1.1", ComplianceResult.Compliant, "All admins use MFA.", ["ev-0001"])], _ct);
+
+        report.HasFailures.ShouldBeFalse();
+        _ca.Calls.ShouldNotContain(c => c.StartsWith("find-or-create", StringComparison.Ordinal));
+        _ca.Calls.ShouldContain(c => c.StartsWith("upload uuid-ev-0001", StringComparison.Ordinal));
+        _ca.Requirements.Values.ShouldContain(v => v.EvidenceIds.Contains("uuid-ev-0001"));
+    }
+
+    [Fact]
     public async Task Upload_links_the_evidence_to_its_applied_controls_whether_sent_or_skipped()
     {
         var linked = new AuditUpdate.UploadEvidence(Mfa) { AppliedControlRefIds = ["AC-AUTO"] };

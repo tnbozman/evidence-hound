@@ -1,6 +1,0 @@
-# Fictional firewall configuration export for Example Pty Ltd. Every name and address is made up.
-# Exported from fw-01.example.com on 2026-11-20.
-rule 1  allow  tcp  any                -> web-01.example.com:443   "Public website"
-rule 2  allow  tcp  10.0.10.0/24       -> mail-01.example.com:587  "Staff mail submission"
-rule 3  allow  tcp  10.0.20.5          -> backup-01.example.com:9392 "Backup console, admin host only"
-rule 99 deny   any  any                -> any                      "Default deny"

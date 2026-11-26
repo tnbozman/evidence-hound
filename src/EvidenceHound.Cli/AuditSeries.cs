@@ -61,7 +61,7 @@ internal static class AuditSeries
         ArgumentNullException.ThrowIfNull(config);
         var today = Today(configuration);
         var cycles = await CyclesAsync(config.Scope, cancellationToken);
-        return new CollectStep(ConfigCommands.Secrets(configuration), new FileEvidenceStore(config.Evidence.Root), new SystemClock(), config.Evidence.RetentionDays, services)
+        return new CollectStep(DeploymentFile.Secrets(configuration), new FileEvidenceStore(config.Evidence.Root), new SystemClock(), config.Evidence.RetentionDays, services)
         {
             PeriodEnds = [.. cycles.SelectMany(c => AuditPeriods.Until(c.Key, c.Value, today)).Where(p => p.End < today).Select(p => p.End).Distinct().Order()],
             PeriodRetentionYears = config.Evidence.PeriodRetentionYears,

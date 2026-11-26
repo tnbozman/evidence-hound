@@ -245,15 +245,8 @@ public sealed class OnboardAgentCommandTests : IDisposable
         }
     }
 
-    internal static async Task<(int Exit, string Output, string Error)> RunAsync(string[] args, string input, bool terminal, string home, CancellationToken ct)
-    {
-        using var reader = new StringReader(input);
-        using var output = new StringWriter();
-        using var error = new StringWriter();
-        var settings = new Dictionary<string, string?>(StringComparer.Ordinal) { ["XDG_CONFIG_HOME"] = home, ["HOUND_TODAY"] = "2026-11-23" };
-        var exit = await HoundCli.RunAsync(args, reader, output, error, settings, terminal, ct);
-        return (exit, output.ToString(), error.ToString());
-    }
+    internal static Task<(int Exit, string Output, string Error)> RunAsync(string[] args, string input, bool terminal, string home, CancellationToken ct) =>
+        Hound.RunAsync(args, ct, input, Hound.At(home), terminal);
 
     private string Repo => Path.Combine(_root, "repo");
 

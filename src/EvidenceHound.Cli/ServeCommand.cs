@@ -24,7 +24,7 @@ internal static class ServeCommand
         serve.SetAction(async (parseResult, cancellationToken) =>
         {
             var file = parseResult.GetRequiredValue(config);
-            var deployment = await ConfigCommands.LoadAsync(file, registry, cancellationToken);
+            var deployment = await DeploymentFile.LoadAsync(file, registry, cancellationToken);
             return await deployment.Bind(Schedule).Match(
                 async scheduler =>
                 {

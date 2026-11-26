@@ -80,13 +80,6 @@ public sealed class ExplainCommandTests : IDisposable
 
     public void Dispose() => Directory.Delete(_root, recursive: true);
 
-    private async Task<(int Exit, string Output, string Error)> RunAsync(string[] args, string input)
-    {
-        using var reader = new StringReader(input);
-        using var output = new StringWriter();
-        using var error = new StringWriter();
-        var settings = new Dictionary<string, string?>(StringComparer.Ordinal) { ["XDG_CONFIG_HOME"] = Path.Combine(_root, "home") };
-        var exit = await HoundCli.RunAsync(args, reader, output, error, settings, _ct);
-        return (exit, output.ToString(), error.ToString());
-    }
+    private Task<(int Exit, string Output, string Error)> RunAsync(string[] args, string input) =>
+        Hound.RunAsync(args, _ct, input, new Dictionary<string, string?>(StringComparer.Ordinal) { ["XDG_CONFIG_HOME"] = Path.Combine(_root, "home") });
 }

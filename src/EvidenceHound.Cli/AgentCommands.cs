@@ -18,7 +18,7 @@ internal static class AgentCommands
     {
         var logger = loggers.CreateLogger("hound.agent");
         var assistant = new Option<string?>("--assistant") { Description = "The assistant to set up: claude, copilot or both. Asked when not given." };
-        var repo = new Option<DirectoryInfo>("--repo") { Description = "The config repo to write into. Default: the current folder." };
+        var repo = CommonOptions.Repo("The compliance repo to write into. Default: the current folder.");
         var setup = new Command("setup", "Write the skills, agents and instructions your coding assistant reads in this repo. Re-running updates hound's files and keeps yours.")
         {
             assistant, repo,

@@ -29,6 +29,9 @@ public sealed record RequirementMapping
     /// <summary>s17-01: <c>covers: part</c>, the checks answer only part of the requirement, so it is at most partially compliant.</summary>
     public bool CoversPart { get; init; }
 
+    /// <summary>s19-07: on a row covering part, what a person assesses to finish the requirement (<c>rest:</c>).</summary>
+    public string? Rest { get; init; }
+
     /// <summary>A requirement named by its ref_id.</summary>
     public static Result<RequirementMapping> Create(string requirementRef, IEnumerable<CheckId> checks, MappingRule rule) =>
         Create(RequirementKey.Ref(requirementRef), checks, rule);

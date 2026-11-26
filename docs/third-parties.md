@@ -39,11 +39,12 @@ A small team does not need to type this up. `hound agent setup` gives your codin
 
 For worked examples, see the onboarding tutorial's four fictional suppliers in `examples/onboarding-tutorial/scope/third-parties/` (in the
 Evidence Hound repo): a cloud host, a firewall vendor and two open-source projects, each with its levels, reasons, contract and review.
-The [onboarding tutorial](examples/onboarding-tutorial.md) shows them being drafted and approved.
+The [onboarding tutorial](tutorials/onboarding-tutorial.md) shows them being drafted and approved.
 
 For CMMC Level 2, the register is where you show a prime which service providers handle or protect your controlled unclassified
-information (CUI). `hound` cannot yet record that on a supplier, nor run a NIST SP 800-171 audit (both are planned); until then, say it
-in each supplier's `description` and keep the provider's authorisation documents under `documents/suppliers/`.
+information (CUI). Record it in each solution's `data` with the authority that allows it, such as a FedRAMP Moderate equivalent, its
+evidence under `documents/suppliers/` and its expiry ([Sensitive data](scope.md#sensitive-data)). `hound supplier list --data cui` then
+answers the prime, and the CMMC Level 2 audit ([CMMC Level 2](adopt/cmmc-level-2.md)) assesses the practices.
 
 ## Keeping it current
 

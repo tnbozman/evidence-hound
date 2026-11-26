@@ -41,11 +41,5 @@ public sealed class SkillCommandTests : IDisposable
 
     public void Dispose() => Directory.Delete(_root, recursive: true);
 
-    private async Task<(int Exit, string Output, string Error)> RunAsync(params string[] args)
-    {
-        using var output = new StringWriter();
-        using var error = new StringWriter();
-        var exit = await HoundCli.RunAsync(args, output, error, cancellationToken: _ct);
-        return (exit, output.ToString(), error.ToString());
-    }
+    private Task<(int Exit, string Output, string Error)> RunAsync(params string[] args) => Hound.RunAsync(args, _ct);
 }

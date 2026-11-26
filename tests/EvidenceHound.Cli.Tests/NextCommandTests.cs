@@ -59,6 +59,20 @@ public sealed class NextCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task A_new_repo_starts_with_onboarding()
+    {
+        var fresh = Path.Combine(_dir, "fresh");
+        (await Run(online: false, "init", fresh, "--org", "Example Pty Ltd", "-y")).ShouldBe(ExitCodes.Ok, _error.ToString());
+        _output.GetStringBuilder().Clear();
+
+        var exitCode = await Run(online: false, "next", "--repo", fresh, "--config", Path.Combine(fresh, "hound.yaml"));
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        _output.ToString().ShouldNotContain("Nothing needs doing now.");
+        _output.ToString().ShouldContain("hound onboard environment pending --json");
+    }
+
+    [Fact]
     public async Task Writes_nothing()
     {
         var before = Tree(_dir);

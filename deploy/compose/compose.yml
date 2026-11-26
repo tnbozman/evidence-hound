@@ -138,44 +138,6 @@ services:
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
 
-  # Optional: docker compose --profile kafka up -d. Results then go through CISO Assistant's dispatcher
-  # (set HOUND_TRANSPORT=kafka for the runner in an override; see docs/publishing.md).
-  redpanda:
-    image: redpandadata/redpanda:${REDPANDA_VERSION:-v24.3.1}
-    profiles: [kafka]
-    restart: unless-stopped
-    command:
-      - redpanda start --mode dev-container --smp 1
-      - --kafka-addr internal://0.0.0.0:9092
-      - --advertise-kafka-addr internal://redpanda:9092
-    volumes:
-      - redpanda-data:/var/lib/redpanda/data
-    networks: [collect]
-    security_opt: ["no-new-privileges:true"]
-
-  dispatcher:
-    # Upstream publishes no dispatcher image, so it is built from the same CISO Assistant release.
-    build: https://github.com/intuitem/ciso-assistant-community.git#${CA_VERSION}:dispatcher
-    profiles: [kafka]
-    restart: unless-stopped
-    depends_on:
-      backend:
-        condition: service_healthy
-      redpanda:
-        condition: service_started
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - >-
-        export USER_TOKEN="$$(cat /run/secrets/hound_ca_token)"
-        && exec uv run bash entrypoint.sh
-    environment:
-      API_URL: http://backend:8000/api
-      BOOTSTRAP_SERVERS: redpanda:9092
-      ERRORS_TOPIC: errors
-    secrets: [hound_ca_token]
-    networks: [collect]
-    security_opt: ["no-new-privileges:true"]
-
 secrets:
   postgres_password:
     file: ${HOUND_SECRETS_DIR:?set HOUND_SECRETS_DIR in .env}/postgres_password
@@ -198,4 +160,3 @@ volumes:
   caddy-data:
   caddy-config:
   runner-data:
-  redpanda-data:

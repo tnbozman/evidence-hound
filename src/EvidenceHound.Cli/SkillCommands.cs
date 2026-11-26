@@ -29,10 +29,8 @@ internal static class SkillCommands
         add.SetAction((parseResult, cancellationToken) => AddAsync(output, logger, Folder(parseResult, configuration), parseResult.GetRequiredValue(file).FullName, cancellationToken));
 
         var validate = new Command("validate", "Check every skill in the folder: frontmatter, steps, size and overrides.") { FolderOption() };
-        var retiredValidate = Retired.On(validate, config: false, "--deny-terms");
         validate.SetAction(async (parseResult, cancellationToken) =>
         {
-            await retiredValidate.NoteAsync(parseResult, terminal, cancellationToken);
             return await ValidateAsync(output, logger, Folder(parseResult, configuration), cancellationToken);
         });
 
@@ -41,10 +39,8 @@ internal static class SkillCommands
         {
             FolderOption(), only,
         };
-        var retiredDraft = Retired.On(draft, config: true, "--repo");
         draft.SetAction(async (parseResult, cancellationToken) =>
         {
-            await retiredDraft.NoteAsync(parseResult, terminal, cancellationToken);
             return await SkillDraftCommand.RunAsync(new SkillDraftCommand.Settings(Folder(parseResult, configuration), parseResult.GetValue(only) ?? []), terminal, logger, cancellationToken);
         });
 

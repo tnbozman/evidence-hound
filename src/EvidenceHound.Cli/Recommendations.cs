@@ -1,4 +1,3 @@
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using EvidenceHound.Core.Review;
 
@@ -56,7 +55,7 @@ internal static class Recommendations
             json[key] = new JsonObject { ["answer"] = r.Answer, ["reasons"] = r.Reasons, ["sources"] = new JsonArray([.. r.Sources.Select(s => (JsonNode)s)]) };
         }
 
-        await File.WriteAllTextAsync(path, json.ToJsonString(new JsonSerializerOptions { WriteIndented = true }) + "\n", cancellationToken);
+        await File.WriteAllTextAsync(path, json.ToJsonString(CommandJson.Escaped) + "\n", cancellationToken);
     }
 
     private static string? Text(JsonNode? node) => node is JsonValue v && v.TryGetValue<string>(out var s) ? s : null;

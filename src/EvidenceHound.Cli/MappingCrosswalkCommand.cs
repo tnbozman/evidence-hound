@@ -35,7 +35,7 @@ internal static class MappingCrosswalkCommand
         var scope = new Option<DirectoryInfo?>("--scope") { Description = "The scope folder. Default: scope/ in the current folder." };
         var config = new Option<FileInfo>("--config") { Description = "The deployment config: the programme's mapping and the CISO Assistant connection.", Required = true };
         var offline = new Option<bool>("--offline") { Description = "Do not read today's results from CISO Assistant; show only what would answer each requirement." };
-        var json = new Option<bool>("--json") { Description = "Print JSON instead of Markdown." };
+        var json = CommonOptions.Json("Print JSON instead of Markdown.");
         var command = new Command(
             "crosswalk",
             "Show which requirements of another framework (such as NIST SP 800-171) the programme's evidence answers today, partly answers or leaves open. Advisory: writes nothing.")
@@ -73,7 +73,7 @@ internal static class MappingCrosswalkCommand
         Request request, TextWriter output, ILoggerFactory loggers, ILogger logger, IConfiguration configuration, CollectorRegistry registry, CancellationToken cancellationToken)
     {
         var today = AuditSeries.Today(configuration);
-        var checkedScope = await ScopeCommands.ValidateAsync(request.Scope, null, registry, today, cancellationToken);
+        var checkedScope = await RepoScope.ValidateAsync(request.Scope, null, registry, today, cancellationToken);
         if (checkedScope.Problems.Count > 0)
         {
             return Log.Problems(logger, checkedScope.Problems.Select(p => p.ToProblem()));
@@ -87,7 +87,7 @@ internal static class MappingCrosswalkCommand
                 $"No programme '{request.From}' in {request.Scope}; the programmes are {string.Join(", ", programmes.Select(p => p.Id))}.")]);
         }
 
-        var deployment = await ConfigCommands.LoadAsync(request.Config, registry, cancellationToken);
+        var deployment = await DeploymentFile.LoadAsync(request.Config, registry, cancellationToken);
         var crosswalk = await FindAsync(request, programme, cancellationToken);
         var mapping = await deployment.BindAsync(d => MappingAsync(d, programme, cancellationToken));
         var setup = deployment.Bind(d => crosswalk.Bind(c => mapping.Map(m => (Deployment: d, Crosswalk: c, Mapping: m))));
@@ -127,7 +127,7 @@ internal static class MappingCrosswalkCommand
     private static async Task<Result<IReadOnlyList<CurrentRow>>> ReadRowsAsync(
         string auditRef, FileInfo configFile, IConfiguration configuration, ILoggerFactory loggers, CollectorRegistry registry, CancellationToken cancellationToken)
     {
-        var connection = await PublishCommand.ConnectionAsync(configuration, configFile, registry, cancellationToken);
+        var connection = await CisoAssistantConnection.ResolveAsync(configuration, configFile, registry, cancellationToken);
         return await connection.BindAsync(async options =>
         {
             using var services = new ServiceCollection().AddSingleton(loggers).AddCisoAssistantClient(options).BuildServiceProvider();
@@ -252,7 +252,7 @@ internal static class MappingCrosswalkCommand
                     ["result"] = s.Answer.Result is { } r ? ResultText(r).Replace(' ', '_') : null,
                 })]),
             })]),
-        }.ToJsonString(OnboardAgentCommand.Indented) + Environment.NewLine;
+        }.ToJsonString(CommandJson.Readable) + Environment.NewLine;
 
     private static string Status(CrosswalkStatus status) => status switch
     {

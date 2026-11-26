@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.Text;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using EvidenceHound.Core.Scope;
 
@@ -9,7 +8,6 @@ namespace EvidenceHound.Cli;
 /// <summary>A scope plan as Markdown, for a pull request comment, or as JSON for tools; and an apply's report as JSON.</summary>
 internal static class ScopePlanOutput
 {
-    private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
 
     public static string Markdown(ScopePlan plan) => Markdown(plan, PlanNotes.None);
 
@@ -181,7 +179,7 @@ internal static class ScopePlanOutput
             })]),
             ["drift"] = DriftJson(plan.Drift),
             ["compliance"] = ComplianceJson(notes.Compliance),
-        }.ToJsonString(Indented) + "\n";
+        }.ToJsonString(CommandJson.Escaped) + "\n";
     }
 
     /// <summary>An apply's report: counts, then each change with what happened to it, and the effect on compliance it planned.</summary>
@@ -202,7 +200,7 @@ internal static class ScopePlanOutput
             })]),
             ["drift"] = DriftJson(report.Drift),
             ["compliance"] = ComplianceJson(compliance),
-        }.ToJsonString(Indented) + "\n";
+        }.ToJsonString(CommandJson.Escaped) + "\n";
 
     /// <summary>
     /// The plan's effect on each audit, after the change table: compliant counts per implementation group, then each row whose result

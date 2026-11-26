@@ -13,7 +13,7 @@ public sealed class ArchitectureTests
     private static readonly string[] Collection =
     [
         "EvidenceHound.Core", "EvidenceHound.Core.Yaml", "EvidenceHound.Runtime", "EvidenceHound.CisoAssistant", "EvidenceHound.Collectors.Abstractions",
-        "EvidenceHound.Collectors.Rest", "EvidenceHound.Collectors.M365", "EvidenceHound.Collectors.Manual", "EvidenceHound.Transport.Kafka",
+        "EvidenceHound.Collectors.Rest", "EvidenceHound.Collectors.M365", "EvidenceHound.Collectors.Manual",
     ];
 
     private static readonly string[] CollectionCommands = ["RunCommand.cs", "ServeCommand.cs", "CollectCommand.cs", "PublishCommand.cs", "PlanCommand.cs"];

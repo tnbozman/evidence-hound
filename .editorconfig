@@ -72,6 +72,9 @@ dotnet_diagnostic.IDE0005.severity = warning   # unnecessary using
 dotnet_diagnostic.IDE0161.severity = error     # file-scoped namespace
 dotnet_diagnostic.IDE0007.severity = warning   # use var
 dotnet_diagnostic.IDE0011.severity = warning   # braces
+dotnet_diagnostic.IDE0051.severity = warning   # unused private member (s19-02)
+dotnet_diagnostic.IDE0052.severity = warning   # private member written but never read (s19-02)
+dotnet_diagnostic.IDE0060.severity = warning   # unused parameter (s19-02)
 dotnet_diagnostic.CA1848.severity = suggestion # LoggerMessage delegates: revisit when logging grows
 dotnet_diagnostic.CA2007.severity = none       # ConfigureAwait: not a library for UI contexts
 

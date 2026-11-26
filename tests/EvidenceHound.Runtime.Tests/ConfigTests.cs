@@ -42,7 +42,6 @@ public class ConfigTests
         var config = (await ConfigLoader.LoadAsync(TestFiles.ExampleConfigPath, Known, TestContext.Current.CancellationToken)).Value();
 
         config.CisoAssistant.Token.ToString().ShouldBe("env:HOUND_CA_TOKEN");
-        config.CisoAssistant.Transport.ShouldBe("rest");
         config.Collectors.ShouldHaveSingleItem().Type.ShouldBe("fake");
         config.Targets[0].ComplianceAssessmentRefId.ShouldBe("EXAMPLE-BASELINE-2026");
         config.Targets[0].HealthControlRefId.ShouldBe("AC-AUTO-EVIDENCE");
@@ -257,24 +256,27 @@ public class ConfigTests
         ConfigLoader.Parse(yaml, Source, Known).Problems().ShouldHaveSingleItem().Code.ShouldBe("config.collector_name_duplicate");
     }
 
-    [Theory]
-    [InlineData("transport: rest", "rest")]
-    [InlineData("transport: kafka\n  kafka_bootstrap_servers: localhost:19092", "kafka")]
-    public void Transport_is_read(string line, string expected)
+    [Fact]
+    public void Transport_rest_is_still_accepted()
     {
-        var yaml = Valid.Replace("token: env:HOUND_CA_TOKEN", "token: env:HOUND_CA_TOKEN\n  " + line, StringComparison.Ordinal);
+        var yaml = Valid.Replace("token: env:HOUND_CA_TOKEN", "token: env:HOUND_CA_TOKEN\n  transport: rest", StringComparison.Ordinal);
 
-        ConfigLoader.Parse(yaml, Source, Known).Value().CisoAssistant.Transport.ShouldBe(expected);
+        ConfigLoader.Parse(yaml, Source, Known).Value().CisoAssistant.Url.ShouldNotBeNull();
     }
 
     [Theory]
     [InlineData("transport: carrier-pigeon", "config.transport_unknown")]
-    [InlineData("transport: kafka", "config.kafka_servers_missing")]
+    [InlineData("transport: kafka", "config.transport_removed")]
+    [InlineData("transport: kafka\n  kafka_bootstrap_servers: localhost:19092", "config.transport_removed")]
+    [InlineData("kafka_bootstrap_servers: localhost:19092", "config.transport_removed")]
     public void Bad_transport_is_rejected(string line, string code)
     {
+        // s19-02: the Kafka transport was removed in release 3; hound publishes over the REST API only.
         var yaml = Valid.Replace("token: env:HOUND_CA_TOKEN", "token: env:HOUND_CA_TOKEN\n  " + line, StringComparison.Ordinal);
 
-        ConfigLoader.Parse(yaml, Source, Known).Problems().ShouldHaveSingleItem().Code.ShouldBe(code);
+        var problems = ConfigLoader.Parse(yaml, Source, Known).Problems();
+
+        problems.Select(p => p.Code).Distinct().ShouldHaveSingleItem().ShouldBe(code);
     }
 
     [Theory]

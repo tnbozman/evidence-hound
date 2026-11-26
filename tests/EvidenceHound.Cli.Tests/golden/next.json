@@ -1,0 +1,92 @@
+{
+  "today": "2027-02-15",
+  "connection": {
+    "reachable": null,
+    "token": null,
+    "token_expiry": null,
+    "note": "Not checked: Secret env:HOUND_CA_TOKEN could not be resolved: the environment variable is not set. Scope changes not yet applied are not listed."
+  },
+  "minutes": 110,
+  "items": [
+    {
+      "urgency": "overdue",
+      "kind": "manual_source",
+      "subject": "example-ai-governance",
+      "detail": "No evidence uploaded yet; due every 366 days from Sam Example.",
+      "due": "2027-02-15",
+      "minutes": 15,
+      "command": "hound manual upload <file> --config hound.yaml --source example-ai-governance",
+      "skill": "process-manual-evidence"
+    },
+    {
+      "urgency": "overdue",
+      "kind": "manual_source",
+      "subject": "example-ai-operations",
+      "detail": "No evidence uploaded yet; due every 92 days from Alex Example.",
+      "due": "2027-02-15",
+      "minutes": 15,
+      "command": "hound manual upload <file> --config hound.yaml --source example-ai-operations",
+      "skill": "process-manual-evidence"
+    },
+    {
+      "urgency": "overdue",
+      "kind": "manual_source",
+      "subject": "example-backup-restore-test",
+      "detail": "No evidence uploaded yet; due every 92 days from Sam Example.",
+      "due": "2027-02-15",
+      "minutes": 15,
+      "command": "hound manual upload <file> --config hound.yaml --source example-backup-restore-test",
+      "skill": "process-manual-evidence"
+    },
+    {
+      "urgency": "overdue",
+      "kind": "manual_source",
+      "subject": "example-incident-register",
+      "detail": "No evidence uploaded yet; due every 31 days from Alex Example.",
+      "due": "2027-02-15",
+      "minutes": 15,
+      "command": "hound manual upload <file> --config hound.yaml --source example-incident-register",
+      "skill": "process-manual-evidence"
+    },
+    {
+      "urgency": "broken",
+      "kind": "collector",
+      "subject": "example-ai-register",
+      "detail": "It has never run, so nothing it checks has evidence.",
+      "due": null,
+      "minutes": 10,
+      "command": "hound run --config hound.yaml --only example-ai-register",
+      "skill": "operate-collectors"
+    },
+    {
+      "urgency": "broken",
+      "kind": "collector",
+      "subject": "example-incident-response-plan",
+      "detail": "It has never run, so nothing it checks has evidence.",
+      "due": null,
+      "minutes": 10,
+      "command": "hound run --config hound.yaml --only example-incident-response-plan",
+      "skill": "operate-collectors"
+    },
+    {
+      "urgency": "broken",
+      "kind": "collector",
+      "subject": "example-m365",
+      "detail": "Its latest run failed: All 2 checks errored.",
+      "due": null,
+      "minutes": 15,
+      "command": "hound run --config hound.yaml --only example-m365",
+      "skill": "operate-collectors"
+    },
+    {
+      "urgency": "due_soon",
+      "kind": "exception",
+      "subject": "EXC-01",
+      "detail": "security exception 'Legacy finance app without MFA', expiry 2027-03-31: expires in 44 days: renew it, or plan to resolve the gap before then.",
+      "due": "2027-03-31",
+      "minutes": 15,
+      "command": "hound scope plan scope --config hound.yaml",
+      "skill": "keep-exceptions-and-acceptances"
+    }
+  ]
+}

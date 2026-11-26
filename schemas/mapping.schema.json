@@ -72,6 +72,11 @@
             "whole"
           ]
         },
+        "rest": {
+          "description": "With covers: part, what a person assesses to finish the requirement. The published observation names it.",
+          "type": "string",
+          "minLength": 1
+        },
         "rule": {
           "enum": [
             "all_pass",

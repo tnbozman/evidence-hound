@@ -25,9 +25,9 @@ internal static class NextCommand
     public static Command Build(Terminal terminal, ILoggerFactory loggers, IConfiguration configuration, CollectorRegistry registry)
     {
         var logger = loggers.CreateLogger("hound.next");
-        var repo = new Option<DirectoryInfo>("--repo") { Description = "The compliance repo. Default: the current folder." };
+        var repo = CommonOptions.Repo();
         var config = new Option<FileInfo?>("--config") { Description = "The deployment config. Default: hound.yaml in the repo." };
-        var json = new Option<bool>("--json") { Description = "Answer in JSON, for an agent." };
+        var json = CommonOptions.Json();
         var next = new Command("next", "What needs doing now, most urgent first, with the command for each: the review queue, collectors, manual sources, expiring exceptions, scope changes not yet applied and the CISO Assistant connection. Reads only; prompt-free, for an agent.")
         {
             repo, config, json,
@@ -55,7 +55,7 @@ internal static class NextCommand
     private static async Task<Result<NextView>> GatherAsync(
         string root, FileInfo file, Terminal terminal, ILoggerFactory loggers, IConfiguration configuration, CollectorRegistry registry, DateOnly today, DateTimeOffset now, CancellationToken cancellationToken)
     {
-        var loaded = await ConfigCommands.LoadAsync(file, registry, cancellationToken);
+        var loaded = await DeploymentFile.LoadAsync(file, registry, cancellationToken);
         if (loaded is not Result<DeploymentConfig>.Ok { Value: var deployment })
         {
             return Result.Fail<NextView>(loaded is Result<DeploymentConfig>.Fail { Errors: var errors } ? errors : []);
@@ -76,6 +76,12 @@ internal static class NextCommand
             .Where(c => c.Urgency != NextUrgency.Broken || !manual.Any(m => m.Subject == c.Subject)));
 
         var scope = new DirectoryInfo(Path.Combine(root, "scope"));
+        var audits = Path.Combine(scope.FullName, "audits");
+        if (NextWork.Onboarding(Directory.Exists(audits) ? Directory.EnumerateFiles(audits, "*.yaml").Count() : 0) is { } start)
+        {
+            items.Add(start);
+        }
+
         var exceptions = await StatusCommand.ExceptionsAsync(scope, today, cancellationToken);
         items.AddRange(exceptions.Match(
             notes => notes.Select(n => NextWork.Exception(n, today)),
@@ -107,7 +113,7 @@ internal static class NextCommand
             return reached;
         }
 
-        var checkedScope = await ScopeCommands.ValidateAsync(scope, file, registry, today, cancellationToken);
+        var checkedScope = await RepoScope.ValidateAsync(scope, file, registry, today, cancellationToken);
         if (checkedScope.Problems.Count > 0)
         {
             items.Add(ScopeProblems(checkedScope.Problems.Count));
@@ -174,7 +180,7 @@ internal static class NextCommand
             ["command"] = i.Command,
             ["skill"] = i.Skill,
         })]),
-    }.ToJsonString(OnboardAgentCommand.Indented) + Environment.NewLine;
+    }.ToJsonString(CommandJson.Readable) + Environment.NewLine;
 
     private static string Text(NextView view)
     {

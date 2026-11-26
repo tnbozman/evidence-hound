@@ -73,7 +73,7 @@ internal static class ReportCommands
         var period = ReportingPeriod.Parse(monthText).Bind(p => p.Kind == PeriodKind.Month
             ? Result.Ok(p)
             : Result.Fail<ReportingPeriod>(new Problem("report.period_not_month", $"'{monthText}' is a quarter: the committee report is monthly (YYYY-MM); the board report is quarterly.")));
-        var deployment = await ConfigCommands.LoadAsync(configFile, registry, cancellationToken);
+        var deployment = await DeploymentFile.LoadAsync(configFile, registry, cancellationToken);
         var loaded = await period.Bind(p => deployment.Map(d => (Period: p, Root: d.Evidence.Root))).BindAsync(async x =>
         {
             var current = await ReadSnapshotAsync(x.Root, x.Period, cancellationToken);
@@ -91,7 +91,7 @@ internal static class ReportCommands
         var period = ReportingPeriod.Parse(quarterText).Bind(p => p.Kind == PeriodKind.Quarter
             ? Result.Ok(p)
             : Result.Fail<ReportingPeriod>(new Problem("report.period_not_quarter", $"'{quarterText}' is a month: the board report is quarterly (YYYY-Qn); the committee report is monthly.")));
-        var deployment = await ConfigCommands.LoadAsync(configFile, registry, cancellationToken);
+        var deployment = await DeploymentFile.LoadAsync(configFile, registry, cancellationToken);
         var loaded = await period.Bind(p => deployment.Map(d => (Quarter: p, Root: d.Evidence.Root))).BindAsync(async x =>
         {
             var ends = Enumerable.Range(0, BoardReport.TrendQuarters)
@@ -151,7 +151,7 @@ internal static class ReportCommands
     private static async Task<Result<PostureRecords>> WithReportsAsync(
         Result<PostureRecords> read, DirectoryInfo scopeDir, ScopeDocument scope, IIncidentSource incidents, CancellationToken cancellationToken)
     {
-        var reporting = await ScopeCommands.ReportingAsync(scopeDir, cancellationToken);
+        var reporting = await RepoScope.ReportingAsync(scopeDir, cancellationToken);
         if (reporting.Obligations.Count == 0 || read is not Result<PostureRecords>.Ok { Value: var records })
         {
             return read;
@@ -189,14 +189,14 @@ internal static class ReportCommands
 
         var period = ReportingPeriod.Parse(periodText).Match(p => p, _ => throw new InvalidOperationException());
         var today = AuditSeries.Today(configuration);
-        var checkedScope = await ScopeCommands.ValidateAsync(scopeDir, null, registry, today, cancellationToken);
+        var checkedScope = await RepoScope.ValidateAsync(scopeDir, null, registry, today, cancellationToken);
         if (checkedScope.Problems.Count > 0)
         {
             return Log.Problems(logger, checkedScope.Problems.Select(p => p.ToProblem()));
         }
 
-        var deployment = await ConfigCommands.LoadAsync(configFile, registry, cancellationToken);
-        var connection = await PublishCommand.ConnectionAsync(configuration, configFile, registry, cancellationToken);
+        var deployment = await DeploymentFile.LoadAsync(configFile, registry, cancellationToken);
+        var connection = await CisoAssistantConnection.ResolveAsync(configuration, configFile, registry, cancellationToken);
         if (deployment.Bind(d => connection.Map(c => (d, c))) is not Result<(DeploymentConfig Deployment, CisoAssistantOptions Connection)>.Ok { Value: var setup })
         {
             return Log.Problems(logger, [.. deployment.Match(_ => [], ps => ps), .. connection.Match(_ => [], ps => ps)]);
@@ -249,7 +249,7 @@ internal static class ReportCommands
     }
 
     private static async Task<Result<ProgrammePosture>> ProgrammeAsync(
-        ScopeProgramme programme, ScopeCommands.CheckedScope checkedScope, IReadOnlyDictionary<string, AuditCycle> cycles, ReportingPeriod period,
+        ScopeProgramme programme, CheckedScope checkedScope, IReadOnlyDictionary<string, AuditCycle> cycles, ReportingPeriod period,
         ICisoAssistantClient client, IPostureSource posture, CancellationToken cancellationToken)
     {
         var framework = checkedScope.Inputs.Snapshots[programme.Framework.Value];
@@ -266,7 +266,7 @@ internal static class ReportCommands
 
     /// <summary>How the config's mapping for the programme's audit answers each parent and group; none when no target maps that audit.</summary>
     private static async Task<Result<IReadOnlyList<CoverageCount>>> CoverageAsync(
-        ScopeProgramme programme, ScopeCommands.CheckedScope checkedScope, DeploymentConfig deployment, CancellationToken cancellationToken)
+        ScopeProgramme programme, CheckedScope checkedScope, DeploymentConfig deployment, CancellationToken cancellationToken)
     {
         if (deployment.Targets.FirstOrDefault(t => t.ComplianceAssessmentRefId == programme.Audit.Value) is not { } target)
         {

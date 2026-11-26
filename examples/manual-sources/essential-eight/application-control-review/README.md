@@ -34,7 +34,7 @@ Attest each check as pass, partial or fail, and say why in a sentence.
 
 | Check | Requirements | Passes when |
 | --- | --- | --- |
-| `appcontrol.rulesets_validated` | ISM-1582 | Application control rulesets are validated at least yearly. |
+| `appcontrol.rulesets_validated` | ISM-1582, and for ISM-1657 the compiled HTML, HTML applications and control panel applets the Microsoft 365 check does not read | Application control rulesets are validated at least yearly. |
 | `appcontrol.internet_facing_servers` | ISM-1490 | Application control is in place on internet-facing servers. |
 | `appcontrol.user_profiles_and_temp` | ISM-1870 | Application control covers user profiles and temporary folders. |
 | `appcontrol.all_other_locations` | ISM-1871 | Application control covers every other location. |

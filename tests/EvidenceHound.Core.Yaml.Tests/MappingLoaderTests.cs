@@ -69,6 +69,37 @@ public class MappingLoaderTests
     }
 
     [Fact]
+    public void Rest_names_what_a_person_assesses_on_a_row_covering_part()
+    {
+        const string yaml = """
+            framework_urn: urn:example:risk:library:example-baseline
+            requirements:
+              - ref: "1.1"
+                covers: part
+                rest: MFA on the VPN and on servers' local admin accounts.
+                rule: all_pass
+                checks: [identity.mfa.admins]
+            """;
+
+        MappingLoader.Parse(yaml, Source).Value().Mapping.Requirements.Single().Rest.ShouldBe("MFA on the VPN and on servers' local admin accounts.");
+    }
+
+    [Fact]
+    public void Rest_needs_covers_part()
+    {
+        const string yaml = """
+            framework_urn: urn:example:risk:library:example-baseline
+            requirements:
+              - ref: "1.1"
+                rest: Nothing, the checks answer it all.
+                rule: all_pass
+                checks: [identity.mfa.admins]
+            """;
+
+        MappingLoader.Parse(yaml, Source).Problems().Select(p => p.Code).ShouldBe(["mapping.rest_without_part"]);
+    }
+
+    [Fact]
     public void Covers_must_be_part_or_whole()
     {
         const string yaml = """

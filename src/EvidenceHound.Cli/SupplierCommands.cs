@@ -23,7 +23,7 @@ internal static class SupplierCommands
     public static Command Build(Terminal terminal, ILoggerFactory loggers, IConfiguration configuration)
     {
         var logger = loggers.CreateLogger("hound.supplier");
-        var repo = new Option<DirectoryInfo>("--repo") { Description = "The config repo to work in. Default: the current folder." };
+        var repo = CommonOptions.Repo();
         var system = new Option<string?>("--system") { Description = "The system this supplier is drafted for, named in the file's first line." };
         static Option<string> Text(string name, string description) => new(name) { Description = description, Required = true };
         var entityRef = Text("--ref", "The supplier's ref_id, such as SUP-EXAMPLE.");
@@ -50,7 +50,7 @@ internal static class SupplierCommands
         var end = new Option<string?>("--end") { Description = "The contract's end or renewal date, yyyy-MM-dd." };
         var expense = new Option<decimal?>("--annual-expense") { Description = "The contract's annual expense, a plain number." };
         var currency = new Option<string?>("--currency") { Description = "The annual expense's currency, ISO 4217 such as AUD or USD." };
-        var json = new Option<bool>("--json") { Description = "Answer in JSON, for an agent." };
+        var json = CommonOptions.Json();
         var data = new Option<string[]>("--data")
         {
             Description = "Sensitive data the solution handles, as <kind>:<role>[:<detail>], such as cui:stores:CUI//SP-CTI. Kinds: cui, pii, export_controlled, classified. Roles: stores, processes, transmits, protects. Repeat for more.",
@@ -93,7 +93,7 @@ internal static class SupplierCommands
                 async file =>
                 {
                     await terminal.Output.WriteLineAsync((parseResult.GetValue(json)
-                        ? new JsonObject { ["file"] = file, ["supplier"] = choice.EntityRef, ["kind"] = role, ["approved"] = false }.ToJsonString(OnboardAgentCommand.Indented)
+                        ? new JsonObject { ["file"] = file, ["supplier"] = choice.EntityRef, ["kind"] = role, ["approved"] = false }.ToJsonString(CommandJson.Readable)
                         : $"Drafted {file} with a draft contract. A person approves {choice.EntityRef} and concludes its review with 'hound approve'.").AsMemory(), cancellationToken);
                     return ExitCodes.Ok;
                 },
@@ -168,7 +168,7 @@ internal static class SupplierCommands
                 ["carried"] = c.Carried,
             })]),
         })]),
-    }.ToJsonString(OnboardAgentCommand.Indented);
+    }.ToJsonString(CommandJson.Readable);
 
     private static string Markdown(string kind, IReadOnlyList<SensitiveDataHolder> holders)
     {

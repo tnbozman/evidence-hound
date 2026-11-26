@@ -36,9 +36,8 @@ model() {
   [ "$seed_volume" = "$dev_volume" ]
 }
 
-@test "Kafka and the dispatcher only start with the kafka profile" {
-  [ "$(model | jq -r '.services | has("redpanda")')" = "false" ]
-  [ "$(model --profile kafka | jq -r '.services | has("redpanda") and has("dispatcher")')" = "true" ]
+@test "no Kafka or dispatcher, in any profile (removed in release 3)" {
+  [ "$(model --profile kafka | jq -r '.services | has("redpanda") or has("dispatcher")')" = "false" ]
 }
 
 @test "refuses to start without the generated secret key" {

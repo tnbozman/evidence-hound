@@ -18,7 +18,7 @@ internal static class ScopeImportCommand
     public static Command Build(TextWriter output, ILogger logger)
     {
         var workbook = new Argument<FileInfo>("workbook") { Description = "The audit workbook: an .xlsx or .csv file. It is read where it is and never copied into the repo." };
-        var repo = new Option<DirectoryInfo>("--repo") { Description = "The config repo to work in. Default: the current folder." };
+        var repo = CommonOptions.Repo();
         var audit = new Option<string>("--audit") { Description = "The ref_id of the audit in scope/audits/ the rows belong to.", Required = true };
         var sheet = new Option<string?>("--sheet") { Description = "The sheet to read, by name. Default: the first." };
         var columns = new Option<string[]>("--column")
@@ -26,7 +26,7 @@ internal static class ScopeImportCommand
             Description = $"Which heading holds what, as <name>=<heading>. Names: {string.Join(", ", WorkbookImport.Columns.Select(c => c.Name))}. Repeat for more.",
             AllowMultipleArgumentsPerToken = false,
         };
-        var json = new Option<bool>("--json") { Description = "Answer in JSON, for an agent." };
+        var json = CommonOptions.Json();
         var command = new Command("import", "Import an existing audit workbook's results into an audit, keeping each row's approver and row number. Rows without an approver wait for 'hound approve'.")
         {
             workbook, repo, audit, sheet, columns, json,
@@ -40,7 +40,7 @@ internal static class ScopeImportCommand
             return await imported.Match(
                 async report =>
                 {
-                    await output.WriteLineAsync((parseResult.GetValue(json) ? report.Json().ToJsonString(OnboardAgentCommand.Indented) : report.Text()).AsMemory(), cancellationToken);
+                    await output.WriteLineAsync((parseResult.GetValue(json) ? report.Json().ToJsonString(CommandJson.Readable) : report.Text()).AsMemory(), cancellationToken);
                     return ExitCodes.Ok;
                 },
                 problems => Task.FromResult(Log.Problems(logger, problems)));

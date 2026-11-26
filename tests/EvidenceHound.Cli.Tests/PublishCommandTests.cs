@@ -158,12 +158,13 @@ public sealed class PublishCommandTests : IDisposable
     }
 
     [Fact]
-    public async Task Kafka_transport_without_bootstrap_servers_exits_three()
+    public async Task Kafka_transport_is_removed_and_says_so()
     {
+        // s19-02: the Kafka transport was removed in release 3.
         var exitCode = await Publish(new Dictionary<string, string?> { ["HOUND_TRANSPORT"] = "kafka" });
 
         exitCode.ShouldBe(ExitCodes.Configuration);
-        _logs.Messages.ShouldContain(m => m.Contains("HOUND_KAFKA_BOOTSTRAP_SERVERS", StringComparison.Ordinal));
+        _logs.Messages.ShouldContain(m => m.Contains("removed", StringComparison.Ordinal) && m.Contains("REST", StringComparison.Ordinal));
     }
 
     [Fact]

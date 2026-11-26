@@ -1,12 +1,10 @@
 using System.CommandLine;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using EvidenceHound.CisoAssistant;
 using EvidenceHound.Core.Planning;
 using EvidenceHound.Core.Publishing;
 using EvidenceHound.Core.Results;
 using EvidenceHound.Runtime.Collectors;
-using EvidenceHound.Transport.Kafka;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -16,12 +14,8 @@ namespace EvidenceHound.Cli;
 /// <summary><c>hound publish</c>: plan a run's updates and send them to CISO Assistant, then print the report as JSON.</summary>
 internal static class PublishCommand
 {
-    public const string UrlSetting = "HOUND_CA_URL";
-    public const string TokenSetting = "HOUND_CA_TOKEN";
     public const string TransportSetting = "HOUND_TRANSPORT";
-    public const string KafkaSetting = "HOUND_KAFKA_BOOTSTRAP_SERVERS";
 
-    private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
 
     public static Command Build(TextWriter output, ILoggerFactory loggers, IConfiguration configuration, CollectorRegistry registry)
     {
@@ -31,7 +25,7 @@ internal static class PublishCommand
         var checks = new Option<FileInfo>("--checks") { Description = "Path to a check results file (JSON).", Required = true };
         var evidenceDir = new Option<DirectoryInfo>("--evidence-dir") { Description = "Folder holding the evidence files the check results cite.", Required = true };
 
-        var publish = new Command("publish", $"Publish a run's check results to CISO Assistant (needs {UrlSetting} and {TokenSetting}).") { dryRun, config, checks, evidenceDir };
+        var publish = new Command("publish", $"Publish a run's check results to CISO Assistant (needs {CisoAssistantConnection.UrlSetting} and {CisoAssistantConnection.TokenSetting}).") { dryRun, config, checks, evidenceDir };
         publish.SetAction(async (parseResult, cancellationToken) =>
         {
             // Each result carries the run marker hound run writes, so scope apply keeps it and scope export leaves it out.
@@ -58,13 +52,11 @@ internal static class PublishCommand
         var files = new EvidenceDirectory(evidenceDir);
         return (configuration[TransportSetting] ?? "rest") switch
         {
-            "rest" => Connection(configuration).Match(
+            "rest" => CisoAssistantConnection.FromSettings(configuration).Match(
                 options => SendRestAsync(options, files, updates, loggers, output, logger, cancellationToken),
                 problems => Task.FromResult(Log.Problems(logger, problems))),
-            "kafka" => KafkaConnection(configuration).Match(
-                options => SendKafkaAsync(options, files, updates, output, logger, cancellationToken),
-                problems => Task.FromResult(Log.Problems(logger, problems))),
-            var other => Task.FromResult(Log.Problems(logger, [new Problem("config.transport_unknown", $"Unknown {TransportSetting} '{other}'; use rest (the default) or kafka.")])),
+            "kafka" => Task.FromResult(Log.Problems(logger, [new Problem("config.transport_removed", $"{TransportSetting}=kafka: the Kafka transport was removed in release 3; hound publishes over the REST API. Unset {TransportSetting}.")])),
+            var other => Task.FromResult(Log.Problems(logger, [new Problem("config.transport_unknown", $"Unknown {TransportSetting} '{other}'; hound publishes over the REST API, so leave it unset or set it to rest.")])),
         };
     }
 
@@ -78,14 +70,7 @@ internal static class PublishCommand
         return await SendAsync(new RestSink(services.GetRequiredService<ICisoAssistantClient>(), files), updates, output, logger, cancellationToken);
     }
 
-    private static async Task<int> SendKafkaAsync(
-        KafkaSinkOptions options, IEvidenceFiles files, IReadOnlyList<AuditUpdate> updates, TextWriter output, ILogger logger, CancellationToken cancellationToken)
-    {
-        using var sink = new KafkaSink(options, files);
-        return await SendAsync(sink, updates, output, logger, cancellationToken);
-    }
-
-    private static async Task<int> SendAsync(IAuditUpdateSink sink, IReadOnlyList<AuditUpdate> updates, TextWriter output, ILogger logger, CancellationToken cancellationToken)
+    private static async Task<int> SendAsync(RestSink sink, IReadOnlyList<AuditUpdate> updates, TextWriter output, ILogger logger, CancellationToken cancellationToken)
     {
         var report = await sink.SendAsync(updates, cancellationToken);
         await WriteAsync(report, output);
@@ -95,43 +80,6 @@ internal static class PublishCommand
             .SelectMany(item => item.Problems.Select(p => new Problem(p.Code, $"{item.Description}: {p.Message}"))));
 
         return report.HasFailures ? ExitCodes.PublishFailed : ExitCodes.Ok;
-    }
-
-    private static Result<KafkaSinkOptions> KafkaConnection(IConfiguration configuration) =>
-        configuration[KafkaSetting] is { Length: > 0 } servers
-            ? Result.Ok(new KafkaSinkOptions(servers))
-            : Result.Fail<KafkaSinkOptions>(new Problem("config.kafka_servers_missing", $"Set {KafkaSetting} to the Kafka bootstrap servers the dispatcher reads, for example localhost:19092."));
-
-    internal static Result<CisoAssistantOptions> Connection(IConfiguration configuration)
-    {
-        var url = configuration[UrlSetting];
-        var token = configuration[TokenSetting];
-        return Validation.Validate(
-            () => new CisoAssistantOptions(new Uri(url!.EndsWith('/') ? url : url + "/"), token!),
-            new Invariant(Uri.TryCreate(url, UriKind.Absolute, out _), new Problem("config.ca_url_missing", $"Set {UrlSetting} to the CISO Assistant API address, for example http://localhost:8000/api/.")),
-            new Invariant(!string.IsNullOrWhiteSpace(token), new Problem("config.ca_token_missing", $"Set {TokenSetting} to a CISO Assistant personal access token.")));
-    }
-
-    /// <summary>
-    /// The connection for a command given a deployment config: <c>HOUND_CA_URL</c> and <c>HOUND_CA_TOKEN</c> when set, otherwise the
-    /// config's <c>ciso_assistant</c> address and token reference. Without a config, both variables are needed.
-    /// </summary>
-    internal static async Task<Result<CisoAssistantOptions>> ConnectionAsync(
-        IConfiguration configuration, FileInfo? configFile, CollectorRegistry registry, CancellationToken cancellationToken)
-    {
-        if (configFile is null || (configuration[UrlSetting] is { Length: > 0 } && configuration[TokenSetting] is { Length: > 0 }))
-        {
-            return Connection(configuration);
-        }
-
-        var deployment = await ConfigCommands.LoadAsync(configFile, registry, cancellationToken);
-        return deployment.Bind(config =>
-        {
-            var url = configuration[UrlSetting] is { Length: > 0 } overridden ? new Uri(overridden.EndsWith('/') ? overridden : overridden + "/") : config.CisoAssistant.Url;
-            return configuration[TokenSetting] is { Length: > 0 } token
-                ? Result.Ok(new CisoAssistantOptions(url, token))
-                : ConfigCommands.Secrets(configuration).Resolve(config.CisoAssistant.Token).Map(secret => new CisoAssistantOptions(url, secret.Reveal()));
-        });
     }
 
     /// <summary>Each audit's requirement items counted, for the publish and run reports.</summary>
@@ -162,7 +110,7 @@ internal static class PublishCommand
                 ["problems"] = new JsonArray([.. item.Problems.Select(p => new JsonObject { ["code"] = p.Code, ["message"] = p.Message })]),
             })]),
         };
-        await output.WriteLineAsync(json.ToJsonString(Indented));
+        await output.WriteLineAsync(json.ToJsonString(CommandJson.Escaped));
         return ExitCodes.Ok;
     }
 }

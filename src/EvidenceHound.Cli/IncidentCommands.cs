@@ -1,6 +1,5 @@
 using System.CommandLine;
 using System.Globalization;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using EvidenceHound.CisoAssistant;
 using EvidenceHound.Core.Results;
@@ -79,15 +78,15 @@ internal static class IncidentCommands
         string refId, DirectoryInfo scopeDir, FileInfo configFile, ILoggerFactory loggers, ILogger logger, IConfiguration configuration, CollectorRegistry registry,
         CancellationToken cancellationToken)
     {
-        var checkedScope = await ScopeCommands.ValidateAsync(scopeDir, null, registry, AuditSeries.Today(configuration), cancellationToken);
+        var checkedScope = await RepoScope.ValidateAsync(scopeDir, null, registry, AuditSeries.Today(configuration), cancellationToken);
         if (checkedScope.Problems.Count > 0)
         {
             Log.Problems(logger, checkedScope.Problems.Select(p => p.ToProblem()));
             return null;
         }
 
-        var reporting = await ScopeCommands.ReportingAsync(scopeDir, cancellationToken);
-        var connection = await PublishCommand.ConnectionAsync(configuration, configFile, registry, cancellationToken);
+        var reporting = await RepoScope.ReportingAsync(scopeDir, cancellationToken);
+        var connection = await CisoAssistantConnection.ResolveAsync(configuration, configFile, registry, cancellationToken);
         if (connection is not Result<CisoAssistantOptions>.Ok { Value: var options })
         {
             Log.Problems(logger, connection.Match(_ => [], ps => ps));
@@ -109,7 +108,7 @@ internal static class IncidentCommands
         string refId, DirectoryInfo scopeDir, FileInfo configFile, bool json, TextWriter output, ILoggerFactory loggers, ILogger logger,
         IConfiguration configuration, CollectorRegistry registry, CancellationToken cancellationToken)
     {
-        var reporting = await ScopeCommands.ReportingAsync(scopeDir, cancellationToken);
+        var reporting = await RepoScope.ReportingAsync(scopeDir, cancellationToken);
         if (reporting.Obligations.Count == 0)
         {
             return Log.Problems(logger, [new Problem("reporting.none", $"{Path.Combine(scopeDir.ToString(), "reporting.yaml")} declares no reporting obligations, so no report is owed. See docs/incidents.md.")]);
@@ -158,9 +157,8 @@ internal static class IncidentCommands
                 ["reported_at"] = r.ReportedAt?.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture),
                 ["why"] = r.Why,
             })]),
-        }.ToJsonString(Indented) + "\n";
+        }.ToJsonString(CommandJson.Escaped) + "\n";
 
-    private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
 
     private static string Time(DateTimeOffset time) => time.ToUniversalTime().ToString("yyyy-MM-dd HH:mm 'UTC'", CultureInfo.InvariantCulture);
 }

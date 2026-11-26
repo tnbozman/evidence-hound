@@ -28,7 +28,7 @@ internal static class ManualProposalCommands
         var check = new Option<string[]>("--check") { Description = "A different result for one check, as <check id>=<result>. Repeatable." };
         var observation = new Option<string?>("--observation") { Description = "What the file shows, and what is missing, in a sentence or two." };
         var supports = new Option<string[]>("--supports") { Description = "An extract or a location in the file that supports the result. Repeatable; at least one." };
-        var json = new Option<bool>("--json") { Description = "Answer in JSON, for an agent." };
+        var json = CommonOptions.Json();
 
         var propose = new Command("propose", "Record a proposed result for a manual evidence file. It waits for a person to attest it with 'hound manual approve'; no run publishes a proposal.")
         {
@@ -37,7 +37,7 @@ internal static class ManualProposalCommands
         propose.SetAction(async (parseResult, cancellationToken) =>
         {
             var name = parseResult.GetRequiredValue(source);
-            var found = (await ConfigCommands.LoadAsync(parseResult.GetRequiredValue(config), registry, cancellationToken)).Bind(deployment => ManualCommand.Find(deployment, name));
+            var found = (await DeploymentFile.LoadAsync(parseResult.GetRequiredValue(config), registry, cancellationToken)).Bind(deployment => ManualCommand.Find(deployment, name));
             var proposed = await found.BindAsync(manual => ProposeAsync(
                 manual, parseResult.GetRequiredValue(file), new Given(parseResult.GetValue(result), parseResult.GetValue(check) ?? [], parseResult.GetValue(observation), parseResult.GetValue(supports) ?? []),
                 clock, cancellationToken));
@@ -45,7 +45,7 @@ internal static class ManualProposalCommands
                 async kept =>
                 {
                     var answer = parseResult.GetValue(json)
-                        ? new JsonObject { ["source"] = name, ["file"] = kept.File, ["sha256"] = kept.Sha256, ["pending"] = true }.ToJsonString(OnboardAgentCommand.Indented)
+                        ? new JsonObject { ["source"] = name, ["file"] = kept.File, ["sha256"] = kept.Sha256, ["pending"] = true }.ToJsonString(CommandJson.Readable)
                         : $"Proposed a result for {kept.File} ({name}). It is pending: a person attests it with 'hound manual approve' in a terminal.";
                     await terminal.Output.WriteLineAsync(answer.AsMemory(), cancellationToken);
                     return ExitCodes.Ok;
@@ -68,7 +68,7 @@ internal static class ManualProposalCommands
                 return ExitCodes.Usage;
             }
 
-            var sources = (await ConfigCommands.LoadAsync(parseResult.GetRequiredValue(config), registry, cancellationToken)).Bind(deployment => Sources(deployment, parseResult.GetValue(only)));
+            var sources = (await DeploymentFile.LoadAsync(parseResult.GetRequiredValue(config), registry, cancellationToken)).Bind(deployment => Sources(deployment, parseResult.GetValue(only)));
             var waiting = await sources.BindAsync(found => WaitingAsync(found, cancellationToken));
             return await waiting.Match(
                 proposals => new Walk(terminal, clock).RunAsync(proposals, cancellationToken),
@@ -81,7 +81,7 @@ internal static class ManualProposalCommands
     internal static async Task<Result<IReadOnlyList<ReviewItem>>> PendingAsync(
         FileInfo config, CollectorRegistry registry, IReadOnlyList<StandingApproval> standing, DateOnly today, CancellationToken cancellationToken)
     {
-        var sources = (await ConfigCommands.LoadAsync(config, registry, cancellationToken)).Bind(deployment => Sources(deployment, null));
+        var sources = (await DeploymentFile.LoadAsync(config, registry, cancellationToken)).Bind(deployment => Sources(deployment, null));
         var waiting = await sources.BindAsync(found => WaitingAsync(found, cancellationToken));
         return await waiting.BindAsync(async all =>
         {
@@ -124,7 +124,7 @@ internal static class ManualProposalCommands
     internal static async Task<Result<IReadOnlyList<string>>> AttestAsync(
         FileInfo config, CollectorRegistry registry, IReadOnlySet<string> keys, string who, IClock clock, CancellationToken cancellationToken)
     {
-        var sources = (await ConfigCommands.LoadAsync(config, registry, cancellationToken)).Bind(deployment => Sources(deployment, null));
+        var sources = (await DeploymentFile.LoadAsync(config, registry, cancellationToken)).Bind(deployment => Sources(deployment, null));
         var waiting = await sources.BindAsync(found => WaitingAsync(found, cancellationToken));
         return await waiting.BindAsync(async all =>
         {

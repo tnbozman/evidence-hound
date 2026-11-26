@@ -1,6 +1,6 @@
 # The IaC pipeline dev server
 
-A fictional Example Pty Ltd IaC pipeline that answers the `terraform-tests` and `terraform-drift` profiles (and your copies of them, such as the onboarding tutorial's `grc-infra-controls`) on your machine. It stands in for the GitHub Actions API of the repository `example/grc-infra`, which holds the GRC platform's Oracle Cloud Terraform from [the onboarding tutorial](../examples/onboarding-tutorial.md). `make trial` uses it so the GRC platform's hosting controls are collected with no GitHub account and no token. Nothing leaves the machine.
+A fictional Example Pty Ltd IaC pipeline that answers the `terraform-tests` and `terraform-drift` profiles (and your copies of them, such as the onboarding tutorial's `grc-infra-controls`) on your machine. It stands in for the GitHub Actions API of the repository `example/grc-infra`, which holds the GRC platform's Oracle Cloud Terraform from [the onboarding tutorial](onboarding-tutorial.md). `make trial` uses it so the GRC platform's hosting controls are collected with no GitHub account and no token. Nothing leaves the machine.
 
 ```bash
 make iac-dev                                                # every control in place, no drift, on port 5380

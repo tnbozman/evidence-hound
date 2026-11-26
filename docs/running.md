@@ -25,7 +25,7 @@ Without `--dry-run` the same report counts what was sent, skipped because CISO A
 
 ## Only changes are sent
 
-Before planning, `hound run` reads each target audit's rows, the evidence it cites and the applied controls it sets, and sends only what differs (over the REST transport; the Kafka dispatcher cannot read, so with it everything is sent):
+Before planning, `hound run` reads each target audit's rows, the evidence it cites and the applied controls it sets, and sends only what differs:
 
 - **A row's state** is its result, the outcome of each check behind it and the hashes of its evidence. Timestamps and observation wording are not part of it, so an unchanged row is never rewritten and its history in CISO Assistant shows only real changes.
 - **Evidence** whose latest revision has the same SHA-256 is neither uploaded nor looked up again; rows cite its existing ID. A changed file becomes a new revision of the same evidence item.
@@ -134,4 +134,4 @@ folder list, `token_expiry`, which CISO Assistant's API does not give so it is n
 and `manual_sources`, each with its owner, `last_evidence`, `due` and `state` (`overdue`, `due_soon` from 14 days before, or `ok`).
 Without a token the connection is not checked and `reachable` is null. `hound next` reads the same data.
 
-With `target.health_control` set, each run also uploads the record as "collector health" evidence (`hound-health/<collector>`) and links it to that applied control, so the security committee sees in CISO Assistant when each collector last ran. Over the Kafka transport the record is uploaded but not linked, because the dispatcher cannot link evidence to controls.
+With `target.health_control` set, each run also uploads the record as "collector health" evidence (`hound-health/<collector>`) and links it to that applied control, so the security committee sees in CISO Assistant when each collector last ran.

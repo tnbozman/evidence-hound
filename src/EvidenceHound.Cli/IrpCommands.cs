@@ -18,7 +18,7 @@ internal static class IrpCommands
         var logger = loggers.CreateLogger("hound.irp");
         var programme = new Option<string>("--programme") { Description = "The programme's id from scope/setup.yaml that scope/irp.yaml names, such as essential-eight.", Required = true };
         var scope = new Option<DirectoryInfo>("--scope") { Description = "The scope folder. Default: scope/ in the current folder." };
-        var json = new Option<bool>("--json") { Description = "Answer in JSON, each value with its source." };
+        var json = CommonOptions.Json("Answer in JSON, each value with its source.");
         var strict = new Option<bool>("--strict") { Description = "Exit non-zero while any gap remains: a role or judgement section not written." };
         var build = new Command("build", "Build the incident response plan from the repo, gaps first: NIST SP 800-61 Rev 3 with the Australian reporting, covering ISM-0043. Writes nothing.")
         {
@@ -27,13 +27,13 @@ internal static class IrpCommands
         build.SetAction(async (parseResult, cancellationToken) =>
         {
             var dir = parseResult.GetValue(scope) ?? new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "scope"));
-            var checkedScope = await ScopeCommands.ValidateAsync(dir, null, registry, AuditSeries.Today(configuration), cancellationToken);
+            var checkedScope = await RepoScope.ValidateAsync(dir, null, registry, AuditSeries.Today(configuration), cancellationToken);
             if (checkedScope.Problems.Count > 0)
             {
                 return Log.Problems(logger, checkedScope.Problems.Select(p => p.ToProblem()));
             }
 
-            var (irp, _) = await ScopeCommands.IrpAsync(dir, checkedScope.Scope, cancellationToken);
+            var (irp, _) = await RepoScope.IrpAsync(dir, checkedScope.Scope, cancellationToken);
             var wanted = parseResult.GetRequiredValue(programme);
             if (irp is null || irp.Programme.Value != wanted)
             {
@@ -50,7 +50,7 @@ internal static class IrpCommands
                 texts[section.File] = File.Exists(path) ? await File.ReadAllTextAsync(path, cancellationToken) : "";
             }
 
-            var (reporting, _) = await ScopeCommands.ReportingAsync(dir, cancellationToken);
+            var (reporting, _) = await RepoScope.ReportingAsync(dir, cancellationToken);
             var plan = IrpBuilder.Build(irp, checkedScope.Scope, reporting, texts);
             await output.WriteAsync(parseResult.GetValue(json) ? IrpJson.Write(plan) : IrpLayout.Markdown(plan, texts));
             return parseResult.GetValue(strict) && plan.Gaps.Count > 0 ? ExitCodes.SspGaps : ExitCodes.Ok;

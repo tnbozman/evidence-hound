@@ -259,6 +259,25 @@ public class PlanTests
     }
 
     [Fact]
+    public void Changed_evidence_carries_the_id_the_state_read_found()
+    {
+        // s18-D3: the state read already found the evidence, so the upload need not search for it again.
+        var state = Fresh("EX-1.1") with { Evidence = [new CurrentEvidence("ev-0001", "uuid-ev-0001", new string('0', 64))] };
+
+        var plan = Changes([Requirement("EX-1.1", ComplianceResult.Compliant, "ev-0001")], [MfaAdmins], [], state, Run1);
+
+        plan.Updates.OfType<AuditUpdate.UploadEvidence>().ShouldHaveSingleItem().KnownId.ShouldBe("uuid-ev-0001");
+    }
+
+    [Fact]
+    public void New_evidence_has_no_known_id()
+    {
+        var plan = Changes([Requirement("EX-1.1", ComplianceResult.Compliant, "ev-0001")], [MfaAdmins], [], Fresh("EX-1.1"), Run1);
+
+        plan.Updates.OfType<AuditUpdate.UploadEvidence>().ShouldHaveSingleItem().KnownId.ShouldBeNull();
+    }
+
+    [Fact]
     public void Row_edited_in_ui_is_restored_and_reported_as_drift()
     {
         RequirementResult[] results = [Requirement("EX-1.1", ComplianceResult.Compliant), Requirement("EX-1.2", ComplianceResult.NonCompliant)];

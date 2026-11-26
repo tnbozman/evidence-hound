@@ -35,7 +35,7 @@ Secrets are Docker secrets files in `HOUND_SECRETS_DIR` (default `/etc/evidence-
 | --- | --- | --- |
 | `postgres_password` | PostgreSQL (`POSTGRES_PASSWORD_FILE`), backend, worker | `openssl rand -hex 24` |
 | `django_secret_key` | backend, worker | `openssl rand -hex 32` |
-| `hound_ca_token` | runner (`HOUND_CA_TOKEN_FILE`), dispatcher | `runner-token.sh`, after the stack is up |
+| `hound_ca_token` | runner (`HOUND_CA_TOKEN_FILE`) | `runner-token.sh`, after the stack is up |
 | `m365_client_certificate` | runner (the Microsoft 365 collector's `file:` secret) | [Microsoft 365 collector guide](../../docs/collectors/m365.md); an empty file until then |
 
 CISO Assistant reads its database password and secret key from variables, so [`ca-env.sh`](ca-env.sh) reads the files and exports them only inside its containers, at start and for each `./manage.sh` command. The runner understands Docker's `_FILE` convention for any variable: `HOUND_CA_TOKEN_FILE=/run/secrets/hound_ca_token` sets `HOUND_CA_TOKEN` from the file.
@@ -73,10 +73,6 @@ The first start migrates the database and loads CISO Assistant's libraries, whic
 5. Start the schedule: `docker compose up -d runner`. The runner runs `hound serve`, which runs each collector on its `schedule` in `scheduler.time_zone` ([running collectors](../../docs/running.md#on-a-schedule)); `docker compose logs runner` shows each collector's next run. To use the host's cron or a systemd timer instead, see the same page.
 
 Paths in `hound.yaml` are as the runner sees them: `/config/...` for your repo, `/var/lib/evidence-hound/...` for evidence and manual drop folders, and `/run/secrets/<name>` for secrets.
-
-## Optional Kafka transport
-
-`docker compose --profile kafka up -d` adds Redpanda and CISO Assistant's official dispatcher, built from the same release (`CA_VERSION`). To publish through it, set `HOUND_TRANSPORT=kafka` and `HOUND_KAFKA_BOOTSTRAP_SERVERS=redpanda:9092` for the runner in a `compose.override.yml` (see [publishing](../../docs/publishing.md)).
 
 ## Upgrade
 

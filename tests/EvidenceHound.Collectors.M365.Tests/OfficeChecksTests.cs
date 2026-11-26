@@ -138,6 +138,19 @@ public class OfficeChecksTests
         OfficeChecks.AsrOfficeRulesEnabled(tenant, Options()).Outcome.ShouldBe(CheckOutcome.Fail);
     }
 
+    [Fact]
+    public void Asr_rules_blocked_only_for_some_groups_partial()
+    {
+        // ISM-1667 to ISM-1673 hold for every workstation, so a policy assigned to one group is not enough.
+        var tenant = Recorded(items => items.Item("configuration-policies", Asr)["assignments"] = new JsonArray(
+            new JsonObject { ["id"] = "g1", ["target"] = new JsonObject { ["@odata.type"] = "#microsoft.graph.groupAssignmentTarget", ["groupId"] = "00000000-0000-4000-8000-0000000000f1" } }));
+
+        var finding = OfficeChecks.AsrOfficeRulesEnabled(tenant, Options());
+
+        finding.Outcome.ShouldBe(CheckOutcome.Partial);
+        finding.Observation.ShouldBe("All 4 Office attack surface reduction rules are in block mode, but only for some groups, not all users or devices (policy 'Attack surface reduction (Office)').");
+    }
+
     private static void SetAsr(Dictionary<string, JsonArray> items, string rule, string mode)
     {
         var children = items.Item("configuration-policies", Asr)["settings"]![0]!["settingInstance"]!["groupSettingCollectionValue"]![0]!["children"]!.AsArray();

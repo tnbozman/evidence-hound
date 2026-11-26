@@ -11,13 +11,16 @@ namespace EvidenceHound.Cli;
 /// </summary>
 internal static class OnboardCommands
 {
+    internal const string Removed =
+        "hound no longer has a built-in model. For model help, set up your coding assistant with 'hound agent setup' and ask it: it drafts through hound, and you approve.";
+
     public static Command Build(Terminal terminal, ILoggerFactory loggers, IConfiguration configuration, GraphAccess access)
     {
         var logger = loggers.CreateLogger("hound.onboard");
         var config = new Command("config", "Removed: hound has no built-in model to configure. Use 'hound agent setup'.") { Hidden = true, TreatUnmatchedTokensAsErrors = false };
         config.SetAction(_ =>
         {
-            Log.Usage(logger, Retired.Message);
+            Log.Usage(logger, Removed);
             return ExitCodes.Usage;
         });
 

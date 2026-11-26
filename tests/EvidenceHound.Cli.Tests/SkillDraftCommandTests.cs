@@ -53,13 +53,6 @@ public sealed class SkillDraftCommandTests : IDisposable
     private static Dictionary<string, string> Snapshot(string folder) =>
         Directory.GetFiles(folder, "*", SearchOption.AllDirectories).ToDictionary(f => Path.GetRelativePath(folder, f), File.ReadAllText, StringComparer.Ordinal);
 
-    private async Task<(int Exit, string Output, string Error)> RunAsync(params string[] args)
-    {
-        using var reader = new StringReader("");
-        using var output = new StringWriter();
-        using var error = new StringWriter();
-        var settings = new Dictionary<string, string?>(StringComparer.Ordinal) { ["XDG_CONFIG_HOME"] = Path.Combine(_root, "home") };
-        var exit = await HoundCli.RunAsync(args, reader, output, error, settings, _ct);
-        return (exit, output.ToString(), error.ToString());
-    }
+    private Task<(int Exit, string Output, string Error)> RunAsync(params string[] args) =>
+        Hound.RunAsync(args, _ct, settings: new Dictionary<string, string?>(StringComparer.Ordinal) { ["XDG_CONFIG_HOME"] = Path.Combine(_root, "home") });
 }

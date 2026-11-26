@@ -17,8 +17,7 @@ valid
 | --- | --- | --- |
 | `ciso_assistant.url` | yes | API address, for example `http://localhost:8000/api/`. The `HOUND_CA_URL` setting overrides it. |
 | `ciso_assistant.token` | yes | Secret reference to a CISO Assistant personal access token. |
-| `ciso_assistant.transport` | no | `rest` (default) or `kafka` (through CISO Assistant's dispatcher). |
-| `ciso_assistant.kafka_bootstrap_servers` | with `kafka` | Kafka servers the dispatcher reads. |
+| `ciso_assistant.transport` | no | `rest`, the only transport. The Kafka transport was removed in release 3; `kafka` or `kafka_bootstrap_servers` gives `config.transport_removed`. |
 | `evidence.root` | yes | Evidence folder, relative to the config file. |
 | `evidence.retention_days` | no | Runs older than this many days are deleted; the latest successful run of each collector is always kept. |
 | `evidence.period_retention_years` | no | How many years the final run of each ended audit period is kept, however old (default 7). It is the evidence behind a closed record. |

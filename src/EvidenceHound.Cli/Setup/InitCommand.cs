@@ -35,7 +35,7 @@ internal static class InitCommand
         var frameworks = new Option<string?>("--framework") { Description = "Also write an audit beside the Essential Eight one, comma separated: disp (DISP membership readiness). Default: none." };
         var assistant = new Option<string?>("--assistant") { Description = "Also set up a coding assistant in the repo, as 'hound agent setup' does: claude, copilot, both or none. Default: none." };
         var yes = new Option<bool>("--yes", "-y") { Description = "Ask nothing: take the options given and the defaults." };
-        var json = new Option<bool>("--json") { Description = "Answer in JSON, for an agent: the organisation, the audits and every file written." };
+        var json = CommonOptions.Json("Answer in JSON, for an agent: the organisation, the audits and every file written.");
         var organisationAudit = new Option<bool>("--organisation-audit")
         {
             Description = "Also write one Essential Eight audit for the whole organisation. Only when an organisation-wide source, such as policies, feeds it; otherwise draft one audit per system.",
@@ -99,7 +99,7 @@ internal static class InitCommand
                     ["organisation"] = organisation.Name,
                     ["audits"] = new JsonArray([.. organisation.AuditRefs.Select(a => (JsonNode)a)]),
                     ["files"] = new JsonArray([.. files.Select(f => (JsonNode)f)]),
-                }.ToJsonString(OnboardAgentCommand.Indented).AsMemory(), cancellationToken);
+                }.ToJsonString(CommandJson.Readable).AsMemory(), cancellationToken);
             }
 
             return setUp;
@@ -183,8 +183,8 @@ internal static class InitCommand
         }
 
         var config = new FileInfo(Path.Combine(target.FullName, "hound.yaml"));
-        var checkedConfig = await ConfigCommands.LoadAsync(config, registry, cancellationToken);
-        var checkedScope = await ScopeCommands.ValidateAsync(new DirectoryInfo(Path.Combine(target.FullName, "scope")), config, registry, AuditSeries.Today(configuration), cancellationToken);
+        var checkedConfig = await DeploymentFile.LoadAsync(config, registry, cancellationToken);
+        var checkedScope = await RepoScope.ValidateAsync(new DirectoryInfo(Path.Combine(target.FullName, "scope")), config, registry, AuditSeries.Today(configuration), cancellationToken);
         Problem[] problems = [.. checkedConfig.Match(_ => [], p => p), .. checkedScope.Problems.Select(p => p.ToProblem())];
         if (problems.Length > 0)
         {

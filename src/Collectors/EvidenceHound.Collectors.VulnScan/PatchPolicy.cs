@@ -2,12 +2,12 @@ namespace EvidenceHound.Collectors.VulnScan;
 
 /// <summary>
 /// How often a scope must be scanned and how soon its findings must be patched: within <paramref name="PatchWindowDays"/>, or
-/// <paramref name="ExploitedWindowHours"/> when an exploit exists.
+/// <paramref name="ExploitedWindowHours"/> when the finding is rated critical or an exploit exists.
 /// </summary>
 public sealed record PatchPolicy(int ScanIntervalDays, int PatchWindowDays, int ExploitedWindowHours)
 {
     /// <summary>
-    /// Essential Eight maturity level 2 for the scope: internet-facing services daily, two weeks, 48 hours with an exploit; common
+    /// Essential Eight maturity level 2 for the scope: internet-facing services daily, two weeks, 48 hours when critical or with an exploit; common
     /// applications weekly and two weeks; other applications and operating systems fortnightly and one month.
     /// </summary>
     public static PatchPolicy For(string scope) => scope switch

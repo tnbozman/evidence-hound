@@ -73,6 +73,13 @@ public class CmmcMappingTests
     }
 
     [Fact]
+    public void Every_row_covering_part_names_what_the_person_adds()
+    {
+        // s19-07: the CISO review found rows that said "a person assesses the rest" without saying what the rest is.
+        Mapping.Mapping.Requirements.Where(r => r.CoversPart && string.IsNullOrWhiteSpace(r.Rest)).Select(r => r.RequirementRef).ShouldBeEmpty();
+    }
+
+    [Fact]
     public void The_reference_mapping_has_no_draft_rows()
     {
         Mapping.Mapping.Requirements.Where(r => r.Draft).Select(r => r.RequirementRef).ShouldBeEmpty();

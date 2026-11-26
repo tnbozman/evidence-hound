@@ -20,7 +20,6 @@ public static partial class ConfigLoader
     private static readonly string[] EvidenceKeys = ["root", "retention_days", "period_retention_years"];
     private static readonly string[] CollectorKeys = ["name", "type", "schedule", "settings", "secrets"];
     private static readonly string[] TargetKeys = ["mapping", "compliance_assessment", "controls", "health_control", "no_evidence"];
-    private static readonly string[] Transports = ["rest", "kafka"];
     private static readonly int NoRetention = -1;
     private static readonly int DefaultPeriodRetentionYears = 7;
 
@@ -137,20 +136,25 @@ public static partial class ConfigLoader
                 ? Result.Ok(uri)
                 : Result.Fail<Uri>(at.Problem(node.Start, "config.url_invalid", "'url' must be an absolute http or https address.")));
         var token = Scalar(map, "token", at).Bind(node => Reference(node, "token", at));
-        var transport = OptionalScalar(map, "transport", at).Bind(node => node.Value is "" || Transports.Contains(node.Value, StringComparer.Ordinal)
-            ? Result.Ok(node.Value is "" ? "rest" : node.Value!)
-            : Result.Fail<string>(at.Problem(node.Start, "config.transport_unknown", $"unknown transport '{node.Value}'; use {string.Join(" or ", Transports)}.")));
-        var servers = OptionalScalar(map, "kafka_bootstrap_servers", at).Map(node => node.Value!);
-        var kafkaWithoutServers = transport.Match(t => t == "kafka", _ => false) && servers.Match(s => s.Length == 0, _ => false);
-        var kafkaReady = kafkaWithoutServers
-            ? Result.Fail<Unit>(at.Problem(map.Start, "config.kafka_servers_missing", "transport 'kafka' needs 'kafka_bootstrap_servers'."))
+        var transport = OptionalScalar(map, "transport", at).Bind(node => node.Value switch
+        {
+            "" or "rest" => Result.Ok(Unit.Value),
+            "kafka" => Result.Fail<Unit>(at.Problem(node.Start, "config.transport_removed", KafkaRemoved)),
+            _ => Result.Fail<Unit>(at.Problem(node.Start, "config.transport_unknown", $"unknown transport '{node.Value}'; hound publishes over the REST API, so leave 'transport' out or set it to rest.")),
+        });
+        var servers = map.Children.Keys.OfType<YamlScalarNode>().FirstOrDefault(k => k.Value == "kafka_bootstrap_servers") is { } key
+            ? Result.Fail<Unit>(at.Problem(key.Start, "config.transport_removed", KafkaRemoved))
             : Result.Ok(Unit.Value);
 
-        Problem[] problems = [.. UnknownKeys(map, CisoAssistantKeys, at), .. ProblemsOf(url), .. ProblemsOf(token), .. ProblemsOf(transport), .. ProblemsOf(servers), .. ProblemsOf(kafkaReady)];
+        Problem[] problems = [.. UnknownKeys(map, CisoAssistantKeys, at), .. ProblemsOf(url), .. ProblemsOf(token), .. ProblemsOf(transport), .. ProblemsOf(servers)];
         return problems.Length > 0
             ? Result.Fail<CisoAssistantConfig>(problems)
-            : url.Bind(u => token.Bind(k => transport.Bind(t => servers.Map(s => new CisoAssistantConfig(u, k, t, s.Length > 0 ? s : null)))));
+            : url.Bind(u => token.Map(k => new CisoAssistantConfig(u, k)));
     }
+
+    /// <summary>s19-02: the Kafka transport was removed in release 3.</summary>
+    public const string KafkaRemoved =
+        "the Kafka transport was removed in release 3; hound publishes over the REST API, which also reads what CISO Assistant holds and links evidence to controls. Remove 'transport' and 'kafka_bootstrap_servers'.";
 
     private static Result<EvidenceConfig> ParseEvidence(YamlMappingNode map, Locator at)
     {

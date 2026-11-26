@@ -25,7 +25,7 @@ internal static class ManualCommand
         var upload = new Command("upload", "Copy an export file into a manual source's drop folder, then, for a person at a terminal, ask whether to attest it. Through a pipe or an agent it is copied unattested.") { config, source, file };
         upload.SetAction(async (parseResult, cancellationToken) =>
         {
-            var found = (await ConfigCommands.LoadAsync(parseResult.GetRequiredValue(config), registry, cancellationToken))
+            var found = (await DeploymentFile.LoadAsync(parseResult.GetRequiredValue(config), registry, cancellationToken))
                 .Bind(deployment => Find(deployment, parseResult.GetRequiredValue(source)));
             return await found.Match(
                 manual => UploadAsync(terminal, logger, clock, manual, parseResult.GetRequiredValue(file), cancellationToken),

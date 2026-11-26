@@ -15,6 +15,9 @@ makes that manageable with open-source tools:
 
 ## Where to start
 
+New here? [Getting started](getting-started.md) is one route from a trial on your laptop to your first weekly review. The rest of
+the site is reference that route links to.
+
 | You want to | Read |
 | --- | --- |
 | See it work on your laptop in an hour or two | [Getting started](getting-started.md), then the [local trial](tutorials/local-trial.md) |
@@ -26,7 +29,8 @@ makes that manageable with open-source tools:
 | Govern your use of AI | [AI governance primer](ai-grc-primer.md) |
 | Connect a system | [Collectors](collectors/README.md), or [write a profile](tutorials/write-a-profile.md) for any REST API |
 
-Every command and its options are on the [cheat sheet](cheatsheet.md).
+Every command and its options are on the [cheat sheet](cheatsheet.md). What is in this release, its known limitations and how to
+upgrade are in the [release notes](release-notes.md).
 
 ## How it fits together
 

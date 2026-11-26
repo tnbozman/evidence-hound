@@ -2,7 +2,7 @@
 
 Every command takes `--help`. `--json` makes a command prompt-free for an agent. **Person** marks a command that refuses an agent or a
 pipe. CISO Assistant calls need `HOUND_CA_URL` and `HOUND_CA_TOKEN`. `(req)` marks a required option. The PDF is rendered from this
-file by `scripts/cheatsheet/render.sh`.
+file by `scripts/cheatsheet/render.sh`. New to hound? Follow the route in [getting started](getting-started.md).
 
 ## Commands
 
@@ -161,7 +161,7 @@ file by `scripts/cheatsheet/render.sh`.
 - `hound incident report-pack INC-2026-01 --dfars`: what the 72-hour DFARS 252.204-7012 report asks for: CUI systems, suppliers, the primes' contracts, deadline and timeline, for the person who files it
   - `--config` (req) `--scope --out`
 - `hound irp build --programme essential-eight`: the incident response plan from `scope/irp.yaml` and the repo, NIST SP 800-61 Rev 3 with the Australian reporting, gaps first (`--strict` fails on gaps, `--json` gives each source)
-  - `--config` (req) `--scope --format json`
+  - `--programme` (req) `--scope --json --strict`
 
 ### CMMC and SPRS
 

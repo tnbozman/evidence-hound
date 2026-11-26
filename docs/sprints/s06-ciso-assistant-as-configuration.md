@@ -37,7 +37,7 @@ All examples use the fictional Example Pty Ltd and `example.com`.
 
 **Functional check**
 - Against the local CISO Assistant: publish a fictional mapping that names an Essentials action in two domains by URN, and confirm each domain's row gets its own result.
-- Result (2026-11-21): `RequirementRowsFunctionalTests` in CI run [44898045325](https://github.com/tnbozman/evidence-hound/actions/runs/44898045325) passed; the Boundary services row of `IT.PRO-01.1` is `compliant`, the Identity services row `non_compliant`. Offline: `hound mapping validate mappings/essential-eight-2023.yaml --framework frameworks/essential-eight-2023.json` prints `valid: 16 requirements`. Evidence: [docs/evidence/s06/s06-01.md](../evidence/s06/s06-01.md).
+- Result (2026-11-21): `RequirementRowsFunctionalTests` in CI run [44898045325](https://github.com/tnbozman/evidence-hound/actions/runs/44898045325) passed; the Boundary services row of `IT.PRO-01.1` is `compliant`, the Identity services row `non_compliant`. Offline: `hound mapping validate mappings/essential-eight-2023.yaml --framework frameworks/essential-eight-2023.json` prints `valid: 16 requirements`. Evidence: [docs/evidence/s06/s06-01.md](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s06/s06-01.md).
 
 ### s06-02 Essential Eight 2023 ML2 mapping for the checks we have
 - [x] Done
@@ -57,7 +57,7 @@ All examples use the fictional Example Pty Ltd and `example.com`.
 
 **Functional check**
 - Against the local CISO Assistant with `essential-eight-2023` loaded: `hound run` with the M365 recordings fills the example ML2 audit, and a control repeated across strategies, such as ISM-0123, gets its result in every strategy's row.
-- Result (2026-11-21): `E8RunFunctionalTests` in CI run [44899216065](https://github.com/tnbozman/evidence-hound/actions/runs/44899216065) passed; all 4 rows of ISM-0123 are `compliant` and ISM-1504 is assessed. Evidence: [docs/evidence/s06/s06-02.md](../evidence/s06/s06-02.md).
+- Result (2026-11-21): `E8RunFunctionalTests` in CI run [44899216065](https://github.com/tnbozman/evidence-hound/actions/runs/44899216065) passed; all 4 rows of ISM-0123 are `compliant` and ISM-1504 is assessed. Evidence: [docs/evidence/s06/s06-02.md](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s06/s06-02.md).
 
 ### s06-03 Several audits from one run
 - [x] Done
@@ -78,7 +78,7 @@ Moved from the NIST sprint (now s17-02), because the Essentials parallel run nee
 
 **Functional check**
 - `hound run` against the local CISO Assistant updates the example Essential Eight 2023 and Essentials audits. The evidence appears once and is linked from both.
-- Result (2026-11-21): `TwoAuditsFunctionalTests` in CI run [44899216065](https://github.com/tnbozman/evidence-hound/actions/runs/44899216065) passed; both audits are updated with no failures, and the conditional access evidence exists once and is linked from both. Evidence: [docs/evidence/s06/s06-03.md](../evidence/s06/s06-03.md).
+- Result (2026-11-21): `TwoAuditsFunctionalTests` in CI run [44899216065](https://github.com/tnbozman/evidence-hound/actions/runs/44899216065) passed; both audits are updated with no failures, and the conditional access evidence exists once and is linked from both. Evidence: [docs/evidence/s06/s06-03.md](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s06/s06-03.md).
 
 ### s06-04 Change-only publishing, traced to the run
 - [x] Done
@@ -104,7 +104,7 @@ Moved from the NIST sprint (now s17-02), because the Essentials parallel run nee
 
 **Functional check**
 - Run `hound run` twice against the local CISO Assistant with the same recordings: the second run sends nothing and the history file shows every row verified unchanged. Edit one row in the UI and run again: only that row is written, and drift is reported.
-- Result (2026-11-21): `ChangeOnlyFunctionalTests` in CI run [44905017778](https://github.com/tnbozman/evidence-hound/actions/runs/44905017778) passed; the second run sends nothing and its history line counts every row unchanged, and after an edit of EX-1.1 through the API the third run writes that row only, reports `publish.drift_corrected` and records drift 1. Evidence: [docs/evidence/s06/s06-04.md](../evidence/s06/s06-04.md).
+- Result (2026-11-21): `ChangeOnlyFunctionalTests` in CI run [44905017778](https://github.com/tnbozman/evidence-hound/actions/runs/44905017778) passed; the second run sends nothing and its history line counts every row unchanged, and after an edit of EX-1.1 through the API the third run writes that row only, reports `publish.drift_corrected` and records drift 1. Evidence: [docs/evidence/s06/s06-04.md](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s06/s06-04.md).
 
 ### s06-05 CISO Assistant configuration inventory
 - [x] Done
@@ -132,7 +132,7 @@ Moved from the NIST sprint (now s17-02), because the Essentials parallel run nee
 
 **Functional check**
 - Each answer above reproduced against the local CISO Assistant with a short script under `scripts/`, its output recorded under this task.
-- Result (2026-11-21): `scripts/ca-inventory.sh` ran against v4.3.4 in the functional CI job (runs [44906131552](https://github.com/tnbozman/evidence-hound/actions/runs/44906131552) and [44907514706](https://github.com/tnbozman/evidence-hound/actions/runs/44907514706)). Locking an audit does not freeze its controls; evidence revisions carry the file's SHA-256; audits have `status`, `eta` and `due_date` and can be created from a baseline; read-only field writes are dropped silently; a custom library uploads as a raw file body (201), and the main entity and feature flags can be PATCHed; BIAs, entity assessments and metric instances have `ref_id`, and entity assessments have no revisions. Evidence: [docs/evidence/s06/s06-05.md](../evidence/s06/s06-05.md).
+- Result (2026-11-21): `scripts/ca-inventory.sh` ran against v4.3.4 in the functional CI job (runs [44906131552](https://github.com/tnbozman/evidence-hound/actions/runs/44906131552) and [44907514706](https://github.com/tnbozman/evidence-hound/actions/runs/44907514706)). Locking an audit does not freeze its controls; evidence revisions carry the file's SHA-256; audits have `status`, `eta` and `due_date` and can be created from a baseline; read-only field writes are dropped silently; a custom library uploads as a raw file body (201), and the main entity and feature flags can be PATCHed; BIAs, entity assessments and metric instances have `ref_id`, and entity assessments have no revisions. Evidence: [docs/evidence/s06/s06-05.md](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s06/s06-05.md).
 
 ### s06-06 Scope file and offline validation
 - [x] Done
@@ -181,7 +181,7 @@ The layout follows one that has already been tried against CISO Assistant: one s
 
 **Functional check**
 - `hound scope validate examples/compliance-repo/scope/` passes, and a copy with one broken reference fails with exactly that problem.
-- Result (2026-11-21): `hound scope validate examples/compliance-repo/scope --config examples/example-essential-eight.yaml` printed `scope valid: 1 domain(s), 2 control(s), 1 audit(s)` and exited 0. A copy naming the undeclared system `Example tablets` in the audit exited 3 with one problem, `scope.reference_unknown` at `audits/ex-e8-2026.yaml` line 17. Evidence: [docs/evidence/s06/s06-06.md](../evidence/s06/s06-06.md).
+- Result (2026-11-21): `hound scope validate examples/compliance-repo/scope --config examples/example-essential-eight.yaml` printed `scope valid: 1 domain(s), 2 control(s), 1 audit(s)` and exited 0. A copy naming the undeclared system `Example tablets` in the audit exited 3 with one problem, `scope.reference_unknown` at `audits/ex-e8-2026.yaml` line 17. Evidence: [docs/evidence/s06/s06-06.md](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s06/s06-06.md).
 
 ### s06-07 Scope plan
 - [x] Done
@@ -203,7 +203,7 @@ The layout follows one that has already been tried against CISO Assistant: one s
 
 **Functional check**
 - Against a freshly seeded local CISO Assistant, `hound scope plan` on the example scope lists the expected creates, and the Markdown renders in a pull request comment.
-- Result (2026-11-21): in CI run [44918724134](https://github.com/tnbozman/evidence-hound/actions/runs/44918724134), `hound scope plan` on the example scope against the seeded CISO Assistant listed 6 creates (perimeter Corporate IT, three systems, two documents), 5 updates (the seeded domain, audit EX-E8-2026, AC-MFA, AC-BACKUP and the hand-written ISM-1486 row) and the seed's other audits, perimeter and control as drift, with GET requests only. The Markdown is a GitHub table, recorded in the evidence file. Evidence: [docs/evidence/s06/s06-07.md](../evidence/s06/s06-07.md).
+- Result (2026-11-21): in CI run [44918724134](https://github.com/tnbozman/evidence-hound/actions/runs/44918724134), `hound scope plan` on the example scope against the seeded CISO Assistant listed 6 creates (perimeter Corporate IT, three systems, two documents), 5 updates (the seeded domain, audit EX-E8-2026, AC-MFA, AC-BACKUP and the hand-written ISM-1486 row) and the seed's other audits, perimeter and control as drift, with GET requests only. The Markdown is a GitHub table, recorded in the evidence file. Evidence: [docs/evidence/s06/s06-07.md](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s06/s06-07.md).
 
 ### s06-08 Scope apply: domains, perimeters and systems
 - [x] Done
@@ -222,7 +222,7 @@ The layout follows one that has already been tried against CISO Assistant: one s
 
 **Functional check**
 - Apply the example scope to an empty local CISO Assistant, apply it again and confirm the second run writes nothing.
-- Result (2026-11-21): in CI run [44923765514](https://github.com/tnbozman/evidence-hound/actions/runs/44923765514) the first apply wrote 5 changes (the domain, perimeter `Corporate IT` and three systems) with none failed, and the second apply wrote nothing. Owners are written as CISO Assistant actors. Evidence: [docs/evidence/s06/s06-08.md](../evidence/s06/s06-08.md).
+- Result (2026-11-21): in CI run [44923765514](https://github.com/tnbozman/evidence-hound/actions/runs/44923765514) the first apply wrote 5 changes (the domain, perimeter `Corporate IT` and three systems) with none failed, and the second apply wrote nothing. Owners are written as CISO Assistant actors. Evidence: [docs/evidence/s06/s06-08.md](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s06/s06-08.md).
 
 ### s06-09 Scope apply: frameworks, audits, documents, controls and assessments
 - [x] Done
@@ -251,7 +251,7 @@ The layout follows one that has already been tried against CISO Assistant: one s
 **Functional check**
 - `make ca-up` seeds through `hound scope apply`, and the existing functional suite passes unchanged.
 
-**Result (API check)**: a custom library uploads to `POST stored-libraries/upload/` (201) and a stored library, including a mapping library, loads by URN with `POST stored-libraries/{urn}/import/`. v4.3.4 also loads a library on upload, so a just-uploaded library is not imported again. Evidence: [docs/evidence/s06/s06-09.md](../evidence/s06/s06-09.md).
+**Result (API check)**: a custom library uploads to `POST stored-libraries/upload/` (201) and a stored library, including a mapping library, loads by URN with `POST stored-libraries/{urn}/import/`. v4.3.4 also loads a library on upload, so a just-uploaded library is not imported again. Evidence: [docs/evidence/s06/s06-09.md](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s06/s06-09.md).
 
 **Functional check result**: the functional suite seeds through `hound scope apply` and passes, 14 of 14 (CI run 44933838879). After the other tests' runs, `hound scope plan` shows 0 changes and no drift, and a second apply writes nothing.
 
@@ -281,7 +281,7 @@ The layout follows one that has already been tried against CISO Assistant: one s
 
 **Functional check**
 - With a fixed clock, run across a quarter boundary against the local CISO Assistant: the old period goes to in review with its final results, the new one opens with them carried over, the next run writes only to the new one, and adding a sign-off and running `scope apply` locks the old one.
-- Result (2026-11-21): `AuditPeriodsFunctionalTests` ran the series `EX-PERIOD` (quarterly from 2026-07-01) against v4.3.4 with `HOUND_TODAY` in the functional CI job (run [44947813409](https://github.com/tnbozman/evidence-hound/actions/runs/44947813409)). On 2026-09-30 apply created `EX-PERIOD-2026Q3` and publish wrote 5 rows to it; on 2026-10-01 the plan listed "EX-PERIOD-2026Q3 closes: in review, awaiting sign-off" and "EX-PERIOD-2026Q4 opens, from EX-PERIOD-2026Q3", apply did both, Q4 carried Q3's results, and the next publish wrote only to Q4 while Q3's rows stayed unchanged; on 2026-10-15, with the sign-off added, apply set Q3 to done and locked it. Locking does not freeze controls (s06-05), so no fallback was needed. Evidence: [docs/evidence/s06/s06-10.md](../evidence/s06/s06-10.md).
+- Result (2026-11-21): `AuditPeriodsFunctionalTests` ran the series `EX-PERIOD` (quarterly from 2026-07-01) against v4.3.4 with `HOUND_TODAY` in the functional CI job (run [44947813409](https://github.com/tnbozman/evidence-hound/actions/runs/44947813409)). On 2026-09-30 apply created `EX-PERIOD-2026Q3` and publish wrote 5 rows to it; on 2026-10-01 the plan listed "EX-PERIOD-2026Q3 closes: in review, awaiting sign-off" and "EX-PERIOD-2026Q4 opens, from EX-PERIOD-2026Q3", apply did both, Q4 carried Q3's results, and the next publish wrote only to Q4 while Q3's rows stayed unchanged; on 2026-10-15, with the sign-off added, apply set Q3 to done and locked it. Locking does not freeze controls (s06-05), so no fallback was needed. Evidence: [docs/evidence/s06/s06-10.md](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s06/s06-10.md).
 
 ### s06-11 Export an existing instance
 - [x] Done
@@ -300,7 +300,7 @@ The layout follows one that has already been tried against CISO Assistant: one s
 
 **Functional check**
 - Export the seeded local CISO Assistant, then plan against it: no changes.
-- Result (2026-11-21): `ScopeExportFunctionalTests` exported the seeded v4.3.4 instance with `--with-files` in the functional CI job (run [44953205117](https://github.com/tnbozman/evidence-hound/actions/runs/44953205117)): five audits, the controls and documents with their files, and the hand-written results. `scope validate` passed, `scope plan` on the export listed no changes, and a second export was identical. The first run found one period audit planned as "mark as managed", fixed by leaving an audit's status and lock out of its recorded state. Evidence: [docs/evidence/s06/s06-11.md](../evidence/s06/s06-11.md).
+- Result (2026-11-21): `ScopeExportFunctionalTests` exported the seeded v4.3.4 instance with `--with-files` in the functional CI job (run [44953205117](https://github.com/tnbozman/evidence-hound/actions/runs/44953205117)): five audits, the controls and documents with their files, and the hand-written results. `scope validate` passed, `scope plan` on the export listed no changes, and a second export was identical. The first run found one period audit planned as "mark as managed", fixed by leaving an audit's status and lock out of its recorded state. Evidence: [docs/evidence/s06/s06-11.md](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s06/s06-11.md).
 
 ### s06-12 Compliance repo template and guide
 - [x] Done
@@ -321,7 +321,7 @@ The layout follows one that has already been tried against CISO Assistant: one s
 
 **Functional check**
 - Following `docs/scope.md` verbatim: copy the example repo, change a system's owner, and confirm that validate passes, plan shows one field update, and apply makes it.
-- Result (2026-11-21): `ReviewWorkflowFunctionalTests` in the functional CI job (run [44956715748](https://github.com/tnbozman/evidence-hound/actions/runs/44956715748)): validate passed, plan showed `0 to create, 1 to update, 0 to delete.` with the owner change on "Example laptops", apply wrote 1, and a second plan showed no changes. The first run planned 5 updates because other tests had published results the example scope does not declare; the check now starts from the applied example scope. Evidence: [docs/evidence/s06/s06-12.md](../evidence/s06/s06-12.md).
+- Result (2026-11-21): `ReviewWorkflowFunctionalTests` in the functional CI job (run [44956715748](https://github.com/tnbozman/evidence-hound/actions/runs/44956715748)): validate passed, plan showed `0 to create, 1 to update, 0 to delete.` with the owner change on "Example laptops", apply wrote 1, and a second plan showed no changes. The first run planned 5 updates because other tests had published results the example scope does not declare; the check now starts from the applied example scope. Evidence: [docs/evidence/s06/s06-12.md](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s06/s06-12.md).
 
 ## Discovered work
 

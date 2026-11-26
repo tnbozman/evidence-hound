@@ -1,7 +1,6 @@
 using System.CommandLine;
 using System.Globalization;
 using System.Text;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using EvidenceHound.Core.Reporting;
 using EvidenceHound.Core.Results;
@@ -35,12 +34,12 @@ internal static class StatusCommand
         {
             Description = "The compliance repo's scope/ folder: also give each programme's standing from the latest posture snapshot, and list security exceptions that expire within 60 days or have expired.",
         };
-        var json = new Option<bool>("--json") { Description = "Answer in JSON, for an agent: the same figures as the tables." };
+        var json = CommonOptions.Json("Answer in JSON, for an agent: the same figures as the tables.");
         var status = new Command("status", "Show the latest run of each configured collector, and with --scope each programme's standing.") { config, scope, json };
         status.SetAction(async (parseResult, cancellationToken) =>
         {
             var today = AuditSeries.Today(configuration);
-            var loaded = await ConfigCommands.LoadAsync(parseResult.GetRequiredValue(config), registry, cancellationToken);
+            var loaded = await DeploymentFile.LoadAsync(parseResult.GetRequiredValue(config), registry, cancellationToken);
             var deployment = await loaded.Match(
                 async d => Result.Ok(await AuditSeries.ResolveAsync(d, today, cancellationToken)),
                 problems => Task.FromResult(Result.Fail<DeploymentConfig>(problems)));
@@ -208,14 +207,13 @@ internal static class StatusCommand
             json["exceptions_due"] = new JsonArray([.. view.Exceptions!.Select(n => new JsonObject { ["ref_id"] = n.RefId, ["expires"] = n.Expires, ["note"] = n.Detail })]);
         }
 
-        return json.ToJsonString(Indented) + Environment.NewLine;
+        return json.ToJsonString(CommandJson.Escaped) + Environment.NewLine;
     }
 
     private static JsonArray Checks(StatusView view, string collector) => view.Health?.Checks.GetValueOrDefault(collector) is { } checks
         ? new JsonArray([.. checks.Select(c => new JsonObject { ["check"] = c.Check, ["outcome"] = c.Outcome })])
         : [];
 
-    private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
 
     private static readonly string NoSnapshot =
         "No posture snapshot yet, so no programme standing. Take one with: hound report snapshot --period YYYY-MM --scope <scope> --config <hound.yaml>";

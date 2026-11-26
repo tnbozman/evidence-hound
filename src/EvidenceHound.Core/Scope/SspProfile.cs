@@ -16,7 +16,5 @@ public static class SspProfile
     /// and purpose, system environment, applicable laws and policies, and plan maintenance (how the system is managed). The same for every
     /// profile, as the layout is one (s11-04).
     /// </summary>
-    public static IReadOnlyList<string> RequiredSections(string profile) => Sections;
-
-    private static readonly string[] Sections = ["purpose", "environment", "management", "laws_and_policies"];
+    public static IReadOnlyList<string> RequiredSections { get; } = ["purpose", "environment", "management", "laws_and_policies"];
 }

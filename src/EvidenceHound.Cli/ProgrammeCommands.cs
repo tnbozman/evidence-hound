@@ -16,7 +16,7 @@ internal static class ProgrammeCommands
     {
         var logger = loggers.CreateLogger("hound.programme");
         var scope = new Option<DirectoryInfo>("--scope") { Description = "The scope folder. Default: scope/ in the current folder." };
-        var json = new Option<bool>("--json") { Description = "Answer in JSON, for an agent." };
+        var json = CommonOptions.Json();
         var list = new Command("list", "List the compliance programmes with their framework, groups, audit of record and requirement counts per group and parent node. Reads no CISO Assistant.")
         {
             scope, json,
@@ -24,7 +24,7 @@ internal static class ProgrammeCommands
         list.SetAction(async (parseResult, cancellationToken) =>
         {
             var dir = parseResult.GetValue(scope) ?? new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "scope"));
-            var checkedScope = await ScopeCommands.ValidateAsync(dir, null, registry, AuditSeries.Today(configuration), cancellationToken);
+            var checkedScope = await RepoScope.ValidateAsync(dir, null, registry, AuditSeries.Today(configuration), cancellationToken);
             if (checkedScope.Problems.Count > 0)
             {
                 return Log.Problems(logger, checkedScope.Problems.Select(p => p.ToProblem()));
@@ -74,7 +74,7 @@ internal static class ProgrammeCommands
                     ["level"] = r.Obligation.Level,
                 })]),
             })]),
-        }.ToJsonString(OnboardAgentCommand.Indented);
+        }.ToJsonString(CommandJson.Readable);
 
     private static JsonObject Register(ProgrammeRegister register, RegisterSummary summary) => new()
     {

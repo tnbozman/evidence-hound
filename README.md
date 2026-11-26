@@ -27,7 +27,7 @@ It is designed to be built and run by an ordinary in-house IT and software team,
 | Part | Purpose |
 | --- | --- |
 | Core library | One standard way to update a CISO Assistant audit: evidence, framework-neutral check results, applied control status. Maps to CISO Assistant's dispatcher messages (`upload_attachment`, `update_requirement_assessment`, `update_applied_control`). |
-| Publisher | Sends updates to the CISO Assistant REST API (Kafka and the official dispatcher optional). |
+| Publisher | Sends updates to the CISO Assistant REST API. |
 | Framework mappings | One file per framework turns neutral checks into requirement results. Essential Eight first, with an advisory crosswalk to NIST SP 800-171 ([mapping files](docs/mapping-files.md), [answering a prime's questionnaire](docs/adopt/answer-a-prime-questionnaire.md)). |
 | Collector SDK | A plugin interface, template and test kit. A collector only talks to its target system. |
 | Manual-upload collector | For systems without a usable API: schedule, upload, same audit updates. |

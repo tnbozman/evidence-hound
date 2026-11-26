@@ -8,13 +8,13 @@ namespace EvidenceHound.Cli.Tests;
 
 /// <summary>
 /// A small scope repo (one domain, perimeter, system, audit and control) and a WireMock CISO Assistant that already holds its structure,
-/// for tests that plan and apply it outside <see cref="ScopePlanCommandTests"/>.
+/// for tests that plan and apply it. <see cref="ScopePlanCommandTests"/> uses the static helpers with its own stub.
 /// </summary>
 internal sealed class ScopeTestInstance : IDisposable
 {
     public const string Token = "example-token-for-cli-tests";
 
-    private static readonly FrameworkSnapshot Snapshot = new(
+    public static readonly FrameworkSnapshot Snapshot = new(
         "urn:example:risk:library:example-baseline",
         "urn:example:risk:framework:example-baseline",
         1,
@@ -29,32 +29,42 @@ internal sealed class ScopeTestInstance : IDisposable
 
     public Dictionary<string, string?> Settings => new() { ["HOUND_CA_URL"] = $"{Ca.Url}/api/", ["HOUND_CA_TOKEN"] = Token, ["HOUND_TODAY"] = "2026-11-23" };
 
-    public async Task WriteScopeAsync(CancellationToken ct)
+    public Task WriteScopeAsync(CancellationToken ct) => WriteScopeAsync(Repo, ct);
+
+    /// <summary>The scope files and the framework snapshot in <paramref name="repo"/>, with <paramref name="audit"/> as the one audit.</summary>
+    public static async Task WriteScopeAsync(string repo, CancellationToken ct, string audit = ScopeCommandTests.Audit)
     {
-        Directory.CreateDirectory(Path.Combine(ScopeDir, "audits"));
-        Directory.CreateDirectory(Path.Combine(Repo, "frameworks"));
-        await File.WriteAllTextAsync(Path.Combine(ScopeDir, "setup.yaml"), ScopeCommandTests.Setup, ct);
-        await File.WriteAllTextAsync(Path.Combine(ScopeDir, "controls.yaml"), ScopeCommandTests.Controls, ct);
-        await File.WriteAllTextAsync(Path.Combine(ScopeDir, "audits", "example-baseline-2026.yaml"), ScopeCommandTests.Audit, ct);
-        await File.WriteAllTextAsync(Path.Combine(Repo, "frameworks", "example-baseline.json"), FrameworkSnapshotJson.Write(Snapshot), ct);
+        var scope = Path.Combine(repo, "scope");
+        Directory.CreateDirectory(Path.Combine(scope, "audits"));
+        Directory.CreateDirectory(Path.Combine(repo, "frameworks"));
+        await File.WriteAllTextAsync(Path.Combine(scope, "setup.yaml"), ScopeCommandTests.Setup, ct);
+        await File.WriteAllTextAsync(Path.Combine(scope, "controls.yaml"), ScopeCommandTests.Controls, ct);
+        await File.WriteAllTextAsync(Path.Combine(scope, "audits", "example-baseline-2026.yaml"), audit, ct);
+        await File.WriteAllTextAsync(Path.Combine(repo, "frameworks", "example-baseline.json"), FrameworkSnapshotJson.Write(Snapshot), ct);
     }
 
     /// <summary>The scope's framework, domain, perimeter and system as hound last wrote them; the audit and control exist elsewhere.</summary>
-    public void HeldStructure()
+    public void HeldStructure() => HeldStructure(Ca);
+
+    /// <summary>
+    /// <paramref name="ca"/> holding the scope's framework, domain, perimeter and system as <c>hound</c> last wrote them, and, outside the
+    /// scope's folders, objects the writer finds by ref_id: an audit with one row, and the control.
+    /// </summary>
+    public static void HeldStructure(WireMockServer ca)
     {
         static JsonObject In(string id, string folder, string? refId = null, string? name = null) =>
             new() { ["id"] = id, ["name"] = name, ["ref_id"] = refId, ["folder"] = new JsonObject { ["id"] = folder, ["str"] = folder } };
         static string Marked(params (string Name, string Value)[] fields) =>
             $"[hound scope {Core.Scope.ScopeMarker.Fingerprint(fields.ToDictionary(f => f.Name, f => f.Value, StringComparer.Ordinal))}]";
 
-        List("folders", new JsonObject { ["id"] = "f-global", ["name"] = "Global", ["parent_folder"] = null }, new JsonObject { ["id"] = "f-ex", ["name"] = "Example Pty Ltd", ["parent_folder"] = new JsonObject { ["id"] = "f-global", ["str"] = "Global" } });
-        Object("folders", "f-ex", new JsonObject { ["id"] = "f-ex", ["name"] = "Example Pty Ltd", ["parent_folder"] = "f-global", ["description"] = Marked() });
-        List("frameworks", new JsonObject { ["id"] = "fw-1", ["urn"] = Snapshot.FrameworkUrn, ["library"] = new JsonObject { ["id"] = "lib-1", ["urn"] = Snapshot.LibraryUrn } });
-        List("loaded-libraries", new JsonObject { ["id"] = "lib-1", ["urn"] = Snapshot.LibraryUrn, ["version"] = Snapshot.Version });
-        List("perimeters", In("p-1", "f-ex", name: "Example baseline"));
-        Object("perimeters", "p-1", new JsonObject { ["id"] = "p-1", ["name"] = "Example baseline", ["folder"] = "f-ex", ["description"] = Marked(("name", "Example baseline"), ("domain", "Example Pty Ltd")) });
-        List("assets", In("a-1", "f-ex", name: "Example 365"));
-        Object("assets", "a-1", new JsonObject
+        List(ca, "folders", new JsonObject { ["id"] = "f-global", ["name"] = "Global", ["parent_folder"] = null }, new JsonObject { ["id"] = "f-ex", ["name"] = "Example Pty Ltd", ["parent_folder"] = new JsonObject { ["id"] = "f-global", ["str"] = "Global" } });
+        Object(ca, "folders", "f-ex", new JsonObject { ["id"] = "f-ex", ["name"] = "Example Pty Ltd", ["parent_folder"] = "f-global", ["description"] = Marked() });
+        List(ca, "frameworks", new JsonObject { ["id"] = "fw-1", ["urn"] = Snapshot.FrameworkUrn, ["library"] = new JsonObject { ["id"] = "lib-1", ["urn"] = Snapshot.LibraryUrn } });
+        List(ca, "loaded-libraries", new JsonObject { ["id"] = "lib-1", ["urn"] = Snapshot.LibraryUrn, ["version"] = Snapshot.Version });
+        List(ca, "perimeters", In("p-1", "f-ex", name: "Example baseline"));
+        Object(ca, "perimeters", "p-1", new JsonObject { ["id"] = "p-1", ["name"] = "Example baseline", ["folder"] = "f-ex", ["description"] = Marked(("name", "Example baseline"), ("domain", "Example Pty Ltd")) });
+        List(ca, "assets", In("a-1", "f-ex", name: "Example 365"));
+        Object(ca, "assets", "a-1", new JsonObject
         {
             ["id"] = "a-1",
             ["name"] = "Example 365",
@@ -64,14 +74,14 @@ internal sealed class ScopeTestInstance : IDisposable
             ["parent_assets"] = new JsonArray(),
             ["description"] = Marked(("type", "primary"), ("domain", "Example Pty Ltd")),
         });
-        List("compliance-assessments", In("ca-1", "f-elsewhere", "EXAMPLE-BASELINE-2026"));
-        Ca.Given(Request.Create().WithPath("/api/compliance-assessments/ca-1/object/").UsingGet())
+        List(ca, "compliance-assessments", In("ca-1", "f-elsewhere", "EXAMPLE-BASELINE-2026"));
+        ca.Given(Request.Create().WithPath("/api/compliance-assessments/ca-1/object/").UsingGet())
             .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject { ["id"] = "ca-1", ["selected_implementation_groups"] = new JsonArray("1") }.ToJsonString()));
-        List("requirement-assessments", new JsonObject { ["id"] = "ra-1", ["requirement"] = new JsonObject { ["urn"] = Snapshot.Nodes[0].Urn, ["ref_id"] = "EX-1.1", ["implementation_groups"] = new JsonArray("1") } });
-        List("applied-controls", In("ac-1", "f-elsewhere", "AC-MFA"));
+        List(ca, "requirement-assessments", new JsonObject { ["id"] = "ra-1", ["requirement"] = new JsonObject { ["urn"] = Snapshot.Nodes[0].Urn, ["ref_id"] = "EX-1.1", ["implementation_groups"] = new JsonArray("1") } });
+        List(ca, "applied-controls", In("ac-1", "f-elsewhere", "AC-MFA"));
         foreach (var resource in new[] { "users", "actors", "evidences" })
         {
-            List(resource);
+            List(ca, resource);
         }
     }
 
@@ -84,11 +94,13 @@ internal sealed class ScopeTestInstance : IDisposable
                 ["count"] = 1,
                 ["results"] = new JsonArray(new JsonObject { ["id"] = "ac-new", ["ref_id"] = "AC-MFA", ["name"] = "Made by hand", ["folder"] = new JsonObject { ["id"] = "f-ex", ["str"] = "f-ex" } }),
             }.ToJsonString()));
-        Object("applied-controls", "ac-new", new JsonObject { ["id"] = "ac-new", ["ref_id"] = "AC-MFA", ["name"] = "Made by hand", ["folder"] = "f-ex" });
+        Object(Ca, "applied-controls", "ac-new", new JsonObject { ["id"] = "ac-new", ["ref_id"] = "AC-MFA", ["name"] = "Made by hand", ["folder"] = "f-ex" });
     }
 
-    public void Accept(string method, string path) =>
-        Ca.Given(Request.Create().WithPath(path).UsingMethod(method))
+    public void Accept(string method, string path) => Accept(Ca, method, path);
+
+    public static void Accept(WireMockServer ca, string method, string path) =>
+        ca.Given(Request.Create().WithPath(path).UsingMethod(method))
             .RespondWith(Response.Create().WithStatusCode(method == "POST" ? 201 : 200).WithBody(new JsonObject { ["id"] = "new-id" }.ToJsonString()));
 
     public void Dispose()
@@ -98,11 +110,11 @@ internal sealed class ScopeTestInstance : IDisposable
         Directory.Delete(Repo, recursive: true);
     }
 
-    private void List(string resource, params JsonObject[] items) =>
-        Ca.Given(Request.Create().WithPath($"/api/{resource}/").UsingGet())
+    public static void List(WireMockServer ca, string resource, params JsonObject[] items) =>
+        ca.Given(Request.Create().WithPath($"/api/{resource}/").UsingGet())
             .RespondWith(Response.Create().WithStatusCode(200).WithBody(new JsonObject { ["count"] = items.Length, ["results"] = new JsonArray(items) }.ToJsonString()));
 
-    private void Object(string resource, string id, JsonObject body) =>
-        Ca.Given(Request.Create().WithPath($"/api/{resource}/{id}/object/").UsingGet())
+    public static void Object(WireMockServer ca, string resource, string id, JsonObject body) =>
+        ca.Given(Request.Create().WithPath($"/api/{resource}/{id}/object/").UsingGet())
             .RespondWith(Response.Create().WithStatusCode(200).WithBody(body.ToJsonString()));
 }

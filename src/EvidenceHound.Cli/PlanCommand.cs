@@ -1,6 +1,5 @@
 using System.CommandLine;
 using System.Globalization;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Planning;
@@ -17,7 +16,6 @@ namespace EvidenceHound.Cli;
 /// <summary><c>hound plan</c>: work out the CISO Assistant updates for a run's check results.</summary>
 internal static class PlanCommand
 {
-    private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
 
     public static Command Build(TextWriter output, ILoggerFactory loggers, IConfiguration configuration, CollectorRegistry registry)
     {
@@ -28,7 +26,7 @@ internal static class PlanCommand
 
         var plan = new Command(
             "plan",
-            $"Plan the CISO Assistant updates for a run's check results: only what differs from CISO Assistant now (reads it; needs {PublishCommand.UrlSetting} and {PublishCommand.TokenSetting}). Sends nothing.")
+            $"Plan the CISO Assistant updates for a run's check results: only what differs from CISO Assistant now (reads it; needs {CisoAssistantConnection.UrlSetting} and {CisoAssistantConnection.TokenSetting}). Sends nothing.")
         {
             dryRun, config, checks,
         };
@@ -49,7 +47,7 @@ internal static class PlanCommand
         CancellationToken cancellationToken)
     {
         var inputs = (await InputsAsync(configFile, checksFile, registry, AuditSeries.Today(configuration), cancellationToken, logger))
-            .Bind(i => PublishCommand.Connection(configuration).Map(connection => (Inputs: i, Connection: connection)));
+            .Bind(i => CisoAssistantConnection.FromSettings(configuration).Map(connection => (Inputs: i, Connection: connection)));
         return await inputs.Match(
             async ready =>
             {
@@ -68,7 +66,7 @@ internal static class PlanCommand
                             ["drift"] = new JsonArray([.. changes.Drift.Select(p => new JsonObject { ["code"] = p.Code, ["message"] = p.Message })]),
                             ["messages"] = new JsonArray([.. changes.Updates.Select(u => DispatcherMessages.ToJson(u, DescribeFile))]),
                         };
-                        await output.WriteLineAsync(json.ToJsonString(Indented));
+                        await output.WriteLineAsync(json.ToJsonString(CommandJson.Escaped));
                         return ExitCodes.Ok;
                     },
                     problems => Task.FromResult(Log.Problems(logger, problems)));
@@ -85,7 +83,7 @@ internal static class PlanCommand
             async updates =>
             {
                 var messages = new JsonArray([.. updates.Select(u => DispatcherMessages.ToJson(u, DescribeFile))]);
-                await output.WriteLineAsync(messages.ToJsonString(Indented));
+                await output.WriteLineAsync(messages.ToJsonString(CommandJson.Escaped));
                 return ExitCodes.Ok;
             },
             problems => Task.FromResult(Log.Problems(logger, problems)));
@@ -105,7 +103,7 @@ internal static class PlanCommand
     private static async Task<Result<(IReadOnlyList<TargetResults> Targets, RunResults Run)>> InputsAsync(
         FileInfo configFile, FileInfo checksFile, CollectorRegistry registry, DateOnly today, CancellationToken cancellationToken, ILogger? logger = null)
     {
-        var targets = await (await ConfigCommands.LoadAsync(configFile, registry, cancellationToken)).Match(
+        var targets = await (await DeploymentFile.LoadAsync(configFile, registry, cancellationToken)).Match(
             async config =>
             {
                 if (logger is not null)

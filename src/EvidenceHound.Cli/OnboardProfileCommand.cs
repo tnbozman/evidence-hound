@@ -26,7 +26,7 @@ internal static class OnboardProfileCommand
     {
         var logger = loggers.CreateLogger("hound.onboard");
         var system = new Argument<string>("system") { Description = "The system onboarded with 'hound onboard <system>', whose accepted API checks the profile covers." };
-        var repo = new Option<DirectoryInfo>("--repo") { Description = "The config repo. Default: the current folder." };
+        var repo = CommonOptions.Repo();
         var profiles = new Option<DirectoryInfo>("--profiles") { Description = "The profiles folder. Default: profiles in the repo." };
         var name = new Option<string>("--name") { Description = "The profile's name. Default: the system's name in lower case." };
         var set = new Option<string[]>("--set") { Description = "An instance setting for the sample run, as name=value. Repeat for more.", AllowMultipleArgumentsPerToken = false };
@@ -36,10 +36,8 @@ internal static class OnboardProfileCommand
         {
             system, repo, profiles, name, set, secret, sample,
         };
-        var retired = Retired.On(command, config: true, "--rounds");
         command.SetAction(async (parseResult, cancellationToken) =>
         {
-            await retired.NoteAsync(parseResult, terminal, cancellationToken);
             var root = parseResult.GetValue(repo)?.FullName ?? Directory.GetCurrentDirectory();
             var systemName = parseResult.GetRequiredValue(system);
             var options = new Options(
@@ -95,7 +93,7 @@ internal static class OnboardProfileCommand
         var secrets = new Dictionary<string, Secret>(StringComparer.Ordinal);
         if (sampling)
         {
-            var provider = ConfigCommands.Secrets(configuration);
+            var provider = DeploymentFile.Secrets(configuration);
             foreach (var (key, reference) in options.Secrets)
             {
                 var resolved = SecretReference.Parse(reference).Bind(provider.Resolve);

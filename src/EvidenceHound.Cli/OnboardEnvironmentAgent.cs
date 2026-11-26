@@ -17,11 +17,9 @@ internal static class OnboardEnvironmentAgent
 {
     public static void AddTo(Command environment, Terminal terminal, ILogger logger)
     {
-        Option<DirectoryInfo> Repo() => new("--repo") { Description = "The config repo to work in. Default: the current folder." };
-        Option<FileInfo> Framework() => new("--framework") { Description = "The framework snapshot whose mitigations to decide. Default: frameworks/essential-eight-2023.json in the repo." };
-        Option<bool> Json() => new("--json") { Description = "Answer in JSON, for an agent." };
+        static Option<FileInfo> Framework() => new("--framework") { Description = "The framework snapshot whose mitigations to decide. Default: frameworks/essential-eight-2023.json in the repo." };
 
-        var (pendingRepo, pendingFramework, pendingJson) = (Repo(), Framework(), Json());
+        var (pendingRepo, pendingFramework, pendingJson) = (CommonOptions.Repo(), Framework(), CommonOptions.Json());
         var pending = new Command("pending", "List the mitigations not yet decided, the drafts waiting for a person, and the systems in scope.") { pendingRepo, pendingFramework, pendingJson };
         pending.SetAction(async (parseResult, cancellationToken) =>
         {
@@ -29,7 +27,7 @@ internal static class OnboardEnvironmentAgent
             return await loaded.Match(
                 async map =>
                 {
-                    await terminal.Output.WriteLineAsync((parseResult.GetValue(pendingJson) ? PendingJson(map).ToJsonString(OnboardAgentCommand.Indented) : PendingText(map)).AsMemory(), cancellationToken);
+                    await terminal.Output.WriteLineAsync((parseResult.GetValue(pendingJson) ? PendingJson(map).ToJsonString(CommandJson.Readable) : PendingText(map)).AsMemory(), cancellationToken);
                     return ExitCodes.Ok;
                 },
                 problems => Task.FromResult(Log.Problems(logger, problems)));
@@ -45,7 +43,7 @@ internal static class OnboardEnvironmentAgent
         var evidence = new Option<string?>("--evidence") { Description = "How its evidence arrives: collector, profile or manual." };
         evidence.AcceptOnlyFromAmong("collector", "profile", "manual");
         var route = new Option<string?>("--route") { Description = "The collector or profile the evidence comes through." };
-        var (decideRepo, decideFramework, decideJson) = (Repo(), Framework(), Json());
+        var (decideRepo, decideFramework, decideJson) = (CommonOptions.Repo(), Framework(), CommonOptions.Json());
         var decide = new Command("decide", "Record one mitigation's decision as a draft by an agent. A person approves drafts with 'hound approve'.")
         {
             mitigation, providedBy, systems, reason, supplier, owner, evidence, route, decideRepo, decideFramework, decideJson,
@@ -79,7 +77,7 @@ internal static class OnboardEnvironmentAgent
                 async _ =>
                 {
                     await terminal.Output.WriteLineAsync((parseResult.GetValue(decideJson)
-                        ? new JsonObject { ["mitigation"] = code, ["file"] = "scope/capabilities.yaml", ["drafted_by"] = OnboardAgentCommand.DraftedBy, ["approved"] = false }.ToJsonString(OnboardAgentCommand.Indented)
+                        ? new JsonObject { ["mitigation"] = code, ["file"] = "scope/capabilities.yaml", ["drafted_by"] = OnboardAgentCommand.DraftedBy, ["approved"] = false }.ToJsonString(CommandJson.Readable)
                         : $"Drafted {code} in scope/capabilities.yaml. A person approves it with 'hound approve'.").AsMemory(), cancellationToken);
                     return ExitCodes.Ok;
                 },

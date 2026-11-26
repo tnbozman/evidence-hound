@@ -1,7 +1,6 @@
 using System.CommandLine;
 using EvidenceHound.Collectors;
 using EvidenceHound.Core.Results;
-using EvidenceHound.Core.Secrets;
 using EvidenceHound.Runtime.Collectors;
 using EvidenceHound.Runtime.Configuration;
 using EvidenceHound.Runtime.Secrets;
@@ -21,7 +20,7 @@ internal static class ConfigCommands
         var validate = new Command("validate", "Check a deployment config file and report every problem.") { file, checkSecrets };
         validate.SetAction(async (parseResult, cancellationToken) =>
         {
-            var config = await LoadAsync(parseResult.GetRequiredValue(file), registry, cancellationToken);
+            var config = await DeploymentFile.LoadAsync(parseResult.GetRequiredValue(file), registry, cancellationToken);
             var checkedConfig = parseResult.GetValue(checkSecrets) ? config.Bind(c => WithSecrets(c, configuration)) : config;
             return await checkedConfig.Match(
                 async loaded =>
@@ -36,10 +35,6 @@ internal static class ConfigCommands
 
         return new Command("config", "Work with deployment config files.") { validate };
     }
-
-    /// <summary>Loads a deployment config, checking each collector against what its registered type describes.</summary>
-    internal static Task<Result<DeploymentConfig>> LoadAsync(FileInfo file, CollectorRegistry registry, CancellationToken cancellationToken) =>
-        ConfigLoader.LoadAsync(file.FullName, registry.Descriptions, cancellationToken);
 
     /// <summary>
     /// Logs a warning for each problem a collector finds with its own instances (such as a rest instance whose profile is not valid).
@@ -98,9 +93,6 @@ internal static class ConfigCommands
         }
     }
 
-    /// <summary>The secret provider for this run: <c>env:</c> reads .NET configuration (environment variables and test settings).</summary>
-    internal static ISecretProvider Secrets(IConfiguration configuration) => CompositeSecretProvider.Standard(name => configuration[name]);
-
     private static Result<DeploymentConfig> WithSecrets(DeploymentConfig config, IConfiguration configuration) =>
-        SecretCheck.Missing(config, Secrets(configuration)) is { Count: > 0 } missing ? Result.Fail<DeploymentConfig>(missing) : Result.Ok(config);
+        SecretCheck.Missing(config, DeploymentFile.Secrets(configuration)) is { Count: > 0 } missing ? Result.Fail<DeploymentConfig>(missing) : Result.Ok(config);
 }

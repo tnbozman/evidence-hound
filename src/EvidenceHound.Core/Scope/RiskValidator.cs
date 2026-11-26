@@ -76,14 +76,14 @@ public static class RiskValidator
             yield return problem;
         }
 
-        foreach (var problem in study.Scenarios.SelectMany(s => Scenario(study, s, matrix, catalogue, systems, controls)))
+        foreach (var problem in study.Scenarios.SelectMany(s => Scenario(s, matrix, catalogue, systems, controls)))
         {
             yield return problem;
         }
     }
 
     private static IEnumerable<ScopeProblem> Scenario(
-        ScopeRiskStudy study, ScopeRiskScenario scenario, MatrixSnapshot? matrix, RiskCatalogue catalogue, HashSet<string> systems, Dictionary<string, ScopeControl> controls)
+        ScopeRiskScenario scenario, MatrixSnapshot? matrix, RiskCatalogue catalogue, HashSet<string> systems, Dictionary<string, ScopeControl> controls)
     {
         var name = $"risk scenario '{scenario.RefId}'";
         foreach (var system in scenario.Systems.Where(s => !systems.Contains(s.Value)))

@@ -1,5 +1,5 @@
 # s13-05: the documentation site, built from docs/ with MkDocs Material (make docs; strict: warnings fail) and published
-# to GitHub Pages by the release workflow. Sprint plans and their evidence logs stay in the repository, not on the site.
+# to GitHub Pages by the release workflow. Sprint plans stay in the repository, not on the site.
 site_name: Evidence Hound
 site_description: Continuous compliance evidence for CISO Assistant, for small teams in the defence industry.
 site_url: https://tnbozman.github.io/evidence-hound/
@@ -12,7 +12,6 @@ strict: true
 
 exclude_docs: |
   sprints/
-  evidence/
   *.pdf
 
 hooks:
@@ -51,11 +50,15 @@ markdown_extensions:
 
 nav:
   - Home: index.md
-  - Getting started:
+  - Release notes: release-notes.md
+  - Start here:
       - getting-started.md
       - Local trial: tutorials/local-trial.md
-      - First deployment: tutorials/first-deployment.md
       - Guided setup: guided-setup.md
+      - Onboarding: onboarding.md
+      - Onboarding tutorial: tutorials/onboarding-tutorial.md
+      - First deployment: tutorials/first-deployment.md
+      - Your week: operate/grc-member.md
       - Cheat sheet: cheatsheet.md
   - Deploy:
       - Configuration: configuration.md
@@ -81,7 +84,6 @@ nav:
       - Write a collector: tutorials/write-a-collector.md
       - Mapping files: mapping-files.md
   - Adopt:
-      - Onboarding: onboarding.md
       - Scope files: scope.md
       - Risk studies and exceptions: risk.md
       - Business impact analysis: bia.md
@@ -90,16 +92,20 @@ nav:
       - Third parties: third-parties.md
       - Move off spreadsheets: adopt/migrate-from-spreadsheets.md
       - Answer a prime's questionnaire: adopt/answer-a-prime-questionnaire.md
-      - Onboarding tutorial: examples/onboarding-tutorial.md
       - Essential Eight to ASD Essentials: migrations/essential-eight-to-asd-essentials.md
       - DISP membership readiness: adopt/disp-readiness.md
       - CMMC Level 2 and the SPRS score: adopt/cmmc-level-2.md
   - Operate:
       - operate/README.md
-      - GRC member: operate/grc-member.md
       - System owner: operate/system-owner.md
       - Collector operator: operate/collector-operator.md
       - Committee member: operate/committee-member.md
+      - Training:
+          - training/README.md
+          - System owners: training/system-owners.md
+          - Committee: training/committee.md
+          - Board: training/board.md
+          - AI governance: training/ai-governance.md
   - Govern:
       - Reporting: reporting.md
       - Security committee: govern/security-committee.md
@@ -112,20 +118,16 @@ nav:
       - AI governance primer: ai-grc-primer.md
       - AI governance: ai-grc.md
       - AI governance tutorial: tutorials/ai-governance.md
-  - Training:
-      - training/README.md
-      - System owners: training/system-owners.md
-      - Committee: training/committee.md
-      - Board: training/board.md
-      - AI governance: training/ai-governance.md
   - Architecture:
       - Plan: plan.md
       - Engineering: engineering.md
       - Closed loop: closed-loop.md
+      - Repository map: repo-map.md
+      - Engineering review 2026: reviews/2026-engineering-review.md
+      - CISO review 2026: reviews/2026-ciso-review.md
       - Releasing: releasing.md
       - REST collector design: design/rest-collector.md
       - Agent-driven onboarding: design/agent-driven-onboarding.md
-      - Onboarding assistant: design/onboarding-assistant.md
       - Guided review: design/guided-review.md
       - Dev servers:
           - Microsoft 365: tutorials/m365-dev-server.md

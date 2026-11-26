@@ -1,7 +1,6 @@
 using System.CommandLine;
 using System.Globalization;
 using System.Text;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using EvidenceHound.CisoAssistant;
 using EvidenceHound.Core.Mapping;
@@ -74,7 +73,7 @@ internal static class SprsCommands
         {
             var configFile = parseResult.GetRequiredValue(config);
             var weights = await MethodologyAsync(parseResult.GetValue(methodology), cancellationToken);
-            var deployment = await ConfigCommands.LoadAsync(configFile, registry, cancellationToken);
+            var deployment = await DeploymentFile.LoadAsync(configFile, registry, cancellationToken);
             var posture = await ReportingPeriod.Parse(parseResult.GetRequiredValue(period))
                 .Bind(p => deployment.Map(d => (Period: p, d.Evidence.Root)))
                 .BindAsync(x => ReportCommands.ReadSnapshotAsync(x.Root, x.Period, cancellationToken));
@@ -114,7 +113,7 @@ internal static class SprsCommands
             return Log.Problems(logger, methodology.Match(_ => [], ps => ps));
         }
 
-        var connection = await PublishCommand.ConnectionAsync(configuration, configFile, registry, cancellationToken);
+        var connection = await CisoAssistantConnection.ResolveAsync(configuration, configFile, registry, cancellationToken);
         if (connection is not Result<CisoAssistantOptions>.Ok { Value: var options })
         {
             return Log.Problems(logger, connection.Match(_ => [], ps => ps));
@@ -205,7 +204,7 @@ internal static class SprsCommands
                 ["points"] = d.Points,
                 ["note"] = d.Note,
             })]),
-        }.ToJsonString(Indented) + "\n";
+        }.ToJsonString(CommandJson.Escaped) + "\n";
 
     private static async Task<Result<Unit>> UploadAsync(ICisoAssistantClient client, string name, string title, string control, string json, CancellationToken cancellationToken)
     {
@@ -218,5 +217,4 @@ internal static class SprsCommands
 
     private static string Day(DateOnly date) => date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
-    private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
 }

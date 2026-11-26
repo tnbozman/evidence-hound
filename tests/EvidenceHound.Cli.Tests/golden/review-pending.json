@@ -1,0 +1,54 @@
+{
+  "minutes": 15,
+  "high": 2,
+  "summary": [
+    {
+      "kind": "supplier",
+      "recommendation": "none",
+      "count": 1,
+      "minutes": 10,
+      "high": 1
+    },
+    {
+      "kind": "not_applicable",
+      "recommendation": "y",
+      "count": 1,
+      "minutes": 5,
+      "high": 1
+    }
+  ],
+  "items": [
+    {
+      "kind": "supplier",
+      "key": "supplier:SUP-EXAMPLE/CTR-EXAMPLE-ASSETS",
+      "title": "[supplier] SUP-EXAMPLE Example Assets Ltd: contract CTR-EXAMPLE-ASSETS (Asset inventory subscription) is a draft, covering SOL-EXAMPLE-ASSETS. Levels: dependency 2, maturity 3. Read scope/third-parties/sup-example.yaml before you answer.",
+      "why": "A supplier is approved before any system it provides is registered, so nothing enters the scope through a supplier no one has looked at.",
+      "effect": "Contract CTR-EXAMPLE-ASSETS becomes active with your name and today's date; the next scope apply writes the supplier to CISO Assistant.",
+      "minutes": 10,
+      "risk": "high",
+      "deadline": null,
+      "file": "scope/third-parties/sup-example.yaml",
+      "recommendation": null,
+      "challenge": null,
+      "covered_by": null
+    },
+    {
+      "kind": "not_applicable",
+      "key": "not_applicable:EXAMPLE-ASSETS/EX-2",
+      "title": "[not applicable] EXAMPLE-ASSETS EX-2: Multi-factor authentication for privileged users.\n  Reasoning: No privileged users.\n  Justification: Only the supplier administers it.",
+      "why": "A not-applicable requirement is left out of EXAMPLE-ASSETS's audit; an assessor will ask why, so a person signs each one.",
+      "effect": "The decision is recorded as approved by you today; it is never covered by a standing approval.",
+      "minutes": 5,
+      "risk": "high",
+      "deadline": null,
+      "file": "onboarding/EXAMPLE-ASSETS/session.json",
+      "recommendation": {
+        "answer": "y",
+        "reasons": "No privileged users. Only the supplier administers it.",
+        "sources": []
+      },
+      "challenge": null,
+      "covered_by": null
+    }
+  ]
+}
