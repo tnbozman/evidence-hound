@@ -21,18 +21,22 @@ public sealed class HoundCliTests : IDisposable
     }
 
     [Theory]
-    [InlineData("--no-model")]
-    [InlineData("--show-requests")]
-    public async Task Options_that_only_served_the_model_point_to_agent_setup(string option)
+    [InlineData("explain", "--no-model")]
+    [InlineData("explain", "--show-requests")]
+    [InlineData("explain", "--framework")]
+    [InlineData("onboard environment", "--no-model")]
+    [InlineData("onboard profile", "--rounds")]
+    [InlineData("skill draft", "--show-requests")]
+    [InlineData("skill validate", "--deny-terms")]
+    public async Task Options_that_only_served_the_removed_model_are_refused(string command, string option)
     {
-        // The option is still taken, so an older script keeps working, but it does nothing and says where model help now comes from.
-        const string diff = "--- a/mappings/example.yaml\n+++ b/mappings/example.yaml\n@@ -1,3 +1,2 @@\n requirements:\n-  - ref: EX-4\n   - ref: EX-5\n";
-        var (exit, output, error) = await OnboardAgentCommandTests.RunAsync(["explain", "--repo", _root, option], diff, terminal: false, Path.Combine(_root, "home"), _ct);
+        // s19-02: removed in release 3 after being hidden and inert since s09; an unknown option is a usage error like any other.
+        var (exit, output, error) = await OnboardAgentCommandTests.RunAsync([.. command.Split(' '), option], "", terminal: false, Path.Combine(_root, "home"), _ct);
 
-        exit.ShouldBe(ExitCodes.Ok, error);
-        output.ShouldContain("1 file changed");
-        error.ShouldContain($"{option} does nothing now: hound has no built-in model");
-        error.ShouldContain("hound agent setup");
+        exit.ShouldBe(ExitCodes.Usage, error);
+        error.ShouldContain(option);
+        error.ShouldNotContain("does nothing now");
+        output.ShouldBeEmpty();
     }
 
     [Fact]
