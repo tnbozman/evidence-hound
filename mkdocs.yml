@@ -122,6 +122,7 @@ nav:
       - Plan: plan.md
       - Engineering: engineering.md
       - Closed loop: closed-loop.md
+      - Repository map: repo-map.md
       - Releasing: releasing.md
       - REST collector design: design/rest-collector.md
       - Agent-driven onboarding: design/agent-driven-onboarding.md
