@@ -28,7 +28,6 @@ internal static partial class OnboardSystemCommand
         var framework = new Option<FileInfo>("--framework") { Description = "The framework snapshot to decide against. Default: frameworks/essential-eight-2023.json in the repo." };
         var groups = new Option<string[]>("--group") { Description = "An implementation group in scope, such as 2 for maturity level two. Repeat for more; none means every requirement.", AllowMultipleArgumentsPerToken = false };
         var specs = new Option<FileInfo[]>("--spec") { Description = "The system's API specification (OpenAPI, JSON or YAML). Repeat for more." };
-        var retired = Retired.On(onboard);
         OnboardAgentCommand.Attach(onboard, system, terminal, loggers);
         foreach (var symbol in new Symbol[] { system, repo, framework, groups, specs })
         {
@@ -51,7 +50,6 @@ internal static partial class OnboardSystemCommand
                 return ExitCodes.Usage;
             }
 
-            await retired.NoteAsync(parseResult, terminal, cancellationToken);
             var root = parseResult.GetValue(repo)?.FullName ?? Directory.GetCurrentDirectory();
             var options = new Settings(
                 name,

@@ -22,10 +22,8 @@ internal static class ExplainCommand
         {
             files, repo, json,
         };
-        var retired = Retired.On(command, config: true, "--framework", "--skill");
         command.SetAction(async (parseResult, cancellationToken) =>
         {
-            await retired.NoteAsync(parseResult, terminal, cancellationToken);
             var root = parseResult.GetValue(repo)?.FullName ?? Directory.GetCurrentDirectory();
             var read = await ReadAsync(parseResult.GetValue(files) ?? [], root, terminal, cancellationToken);
             if (read is Result<ChangeFacts>.Fail { Errors: var readProblems })

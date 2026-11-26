@@ -36,10 +36,8 @@ internal static class OnboardProfileCommand
         {
             system, repo, profiles, name, set, secret, sample,
         };
-        var retired = Retired.On(command, config: true, "--rounds");
         command.SetAction(async (parseResult, cancellationToken) =>
         {
-            await retired.NoteAsync(parseResult, terminal, cancellationToken);
             var root = parseResult.GetValue(repo)?.FullName ?? Directory.GetCurrentDirectory();
             var systemName = parseResult.GetRequiredValue(system);
             var options = new Options(

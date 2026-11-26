@@ -34,11 +34,9 @@ internal static class OnboardEnvironmentCommand
         {
             repo, framework, signals, graph, deployment, microsoft,
         };
-        var retired = Retired.On(command);
         OnboardEnvironmentAgent.AddTo(command, terminal, logger);
         command.SetAction(async (parseResult, cancellationToken) =>
         {
-            await retired.NoteAsync(parseResult, terminal, cancellationToken);
             var root = parseResult.GetValue(repo)?.FullName ?? Directory.GetCurrentDirectory();
             var frameworkFile = parseResult.GetValue(framework)?.FullName ?? Path.Combine(root, "frameworks", "essential-eight-2023.json");
             var source = new SignalSource(parseResult.GetValue(signals), parseResult.GetValue(graph), parseResult.GetValue(deployment)?.FullName ?? Path.Combine(root, "hound.yaml"));

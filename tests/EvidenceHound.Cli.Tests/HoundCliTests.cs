@@ -25,7 +25,7 @@ public sealed class HoundCliTests : IDisposable
     [InlineData("explain", "--show-requests")]
     [InlineData("explain", "--framework")]
     [InlineData("onboard environment", "--no-model")]
-    [InlineData("onboard profile", "--rounds")]
+    [InlineData("onboard profile web", "--show-requests")]
     [InlineData("skill draft", "--show-requests")]
     [InlineData("skill validate", "--deny-terms")]
     public async Task Options_that_only_served_the_removed_model_are_refused(string command, string option)
