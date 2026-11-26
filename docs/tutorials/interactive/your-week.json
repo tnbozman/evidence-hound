@@ -54,12 +54,12 @@
         {
           "who": "agent",
           "command": "hound review prepare --json",
-          "output": "{ \"queue\": 2, \"without_recommendation\": [\"supplier:SUP-EXAMPLE/CTR-EXAMPLE-ASSETS\"], \"plan\": \"review/prepared.plan.json\" }"
+          "output": "{\n  \"items\": 2,\n  \"minutes\": 15,\n  \"without_recommendation\": [\n    {\n      \"key\": \"supplier:SUP-EXAMPLE/CTR-EXAMPLE-ASSETS\",\n      \"kind\": \"supplier\",\n      \"title\": \"[supplier] SUP-EXAMPLE Example Assets Ltd: contract CTR-EXAMPLE-ASSETS (Asset inventory subscription) is a draft, …\",\n      \"skill\": \"onboard-a-third-party\"\n    }\n  ],\n  \"challenged\": [],\n  \"plan\": { \"changes\": 0, \"saved\": \"review/prepared.plan.json\", … }\n}"
         },
         {
           "who": "agent",
           "command": "hound review recommend supplier:SUP-EXAMPLE/CTR-EXAMPLE-ASSETS --answer y --reason \"ISO 27001 certificate current to 2027; holds the asset inventory only.\" --source inbox/example-assets-iso27001.pdf",
-          "output": "{ \"key\": \"supplier:SUP-EXAMPLE/CTR-EXAMPLE-ASSETS\", \"answer\": \"y\" }"
+          "output": "{\n  \"key\": \"supplier:SUP-EXAMPLE/CTR-EXAMPLE-ASSETS\",\n  \"answer\": \"y\",\n  \"recorded\": true\n}"
         }
       ]
     },
@@ -158,7 +158,7 @@
         {
           "who": "you",
           "command": "hound review --for 60m",
-          "output": "What applying the accepted items changes in CISO Assistant:\n+ third party SUP-EXAMPLE Example Assets Ltd, contract CTR-EXAMPLE-ASSETS active\nApply these changes to CISO Assistant now (y, n): y\nAccepted 1, challenged 1, skipped 0. Sign-off recorded in review/sign-offs/2027-02-15-091200.yaml. Your agent answers each challenge before the next session."
+          "output": "What applying the accepted items changes in CISO Assistant:\n…\nApply these changes to CISO Assistant now (y, n): y\nAccepted 1, challenged 1, skipped 0. Sign-off recorded in review/sign-offs/2027-02-15-091200.yaml. Your agent answers each challenge before the next session."
         }
       ]
     },
@@ -175,12 +175,12 @@
         {
           "who": "you",
           "command": "hound status --config hound.yaml --scope scope/",
-          "output": "example-m365  2027-02-14 16:00:03  failed  0  0  -\nexample-m365 failed: All 2 checks errored. (collector.all_checks_errored)"
+          "output": "COLLECTOR     LAST RUN (UTC)       OUTCOME  PASSED  FAILED  PUBLISHED\nexample-m365  2027-02-14 16:00:03  failed   0       0       -\n…\nexample-m365 failed: All 2 checks errored. (collector.all_checks_errored)"
         },
         {
           "who": "agent",
           "command": "hound report committee --month 2027-01 --config hound.yaml --out committee-2027-01.md",
-          "output": "Wrote committee-2027-01.md."
+          "output": ""
         }
       ],
       "choice": {
@@ -200,7 +200,13 @@
     }
   ],
   "next": [
-    { "title": "Reporting to the committee and board", "guide": "reporting.md" },
-    { "title": "Try it locally", "tutorial": "local-trial" }
+    {
+      "title": "Reporting to the committee and board",
+      "guide": "reporting.md"
+    },
+    {
+      "title": "Try it locally",
+      "tutorial": "local-trial"
+    }
   ]
 }

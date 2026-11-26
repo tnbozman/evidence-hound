@@ -35,7 +35,7 @@
         {
           "who": "you",
           "command": "dotnet tool install --global EvidenceHound.Cli --version 1.0.0 --add-source ~/hound-packages",
-          "output": "Tool 'evidencehound.cli' (version '1.0.0') was successfully installed."
+          "output": "You can invoke the tool using the following command: hound\nTool 'evidencehound.cli' (version '1.0.0') was successfully installed."
         },
         {
           "who": "you",
@@ -57,7 +57,7 @@
         {
           "who": "you",
           "command": "hound init my-compliance --org \"Example Pty Ltd\"",
-          "output": "Short code for ref IDs [EX]:\nCISO Assistant address [https://ciso.example.com]:\nTime zone [Australia/Sydney]:\nEssential Eight maturity level [2]:\nWho owns compliance (email): grc@example.com"
+          "output": "Short code for ref IDs [EX]: \nCISO Assistant API address [https://ciso.example.com/api/]: \nTime zone [Australia/Sydney]: \nEssential Eight maturity level to assess (1, 2 or 3) [2]: \nAudit interval (quarter or month) [quarter]: \nCompliance owner's email, as a CISO Assistant user [ceo@example.com]: grc@example.com\nWrote Example Pty Ltd's compliance repo to my-compliance: 14 files, audits EX-E8."
         }
       ],
       "try": {
@@ -83,7 +83,7 @@
         {
           "who": "you",
           "command": "hound agent setup --assistant claude",
-          "output": "Wrote the skills and agents for Claude Code."
+          "output": "Wrote CLAUDE.md\nWrote .claude/skills/answer-a-prime-questionnaire/SKILL.md\n…"
         }
       ]
     },
@@ -99,8 +99,8 @@
       "terminal": [
         {
           "who": "agent",
-          "command": "hound supplier draft --system GRC-PLATFORM --ref SUP-ORACLE --name \"Oracle Cloud Infrastructure\" --solution-ref SOL-OCI-HOSTING --solution-name \"OCI compute, networking and storage\" --contract-ref CTR-OCI-2026 --contract-name \"OCI pay-as-you-go 2026\" --level \"dependency=3:The GRC platform runs only on it.\" --kind vendor --json",
-          "output": "{ \"file\": \"scope/third-parties/sup-oracle.yaml\", \"contract\": \"draft\", \"review\": \"open\" }"
+          "command": "hound supplier draft --system GRC-PLATFORM --ref SUP-ORACLE --name \"Oracle Cloud Infrastructure\" --solution-ref SOL-OCI-HOSTING --solution-name \"OCI compute, networking and storage\" --contract-ref CTR-OCI-2026 --contract-name \"OCI pay-as-you-go 2026\" --level \"dependency=3:The GRC platform runs only on it; moving it is a planned project.\" --kind vendor",
+          "output": "Drafted scope/third-parties/sup-oracle.yaml with a draft contract. A person approves SUP-ORACLE and concludes its review with 'hound approve'."
         }
       ]
     },
@@ -117,12 +117,12 @@
         {
           "who": "agent",
           "command": "hound onboard GRC-PLATFORM pending --json --repo . --group 1 --group 2 --owner it@example.com --product \"GRC platform\" --solution SOL-OCI-HOSTING",
-          "output": "{ \"system\": \"GRC-PLATFORM\", \"undecided\": 46, ... }"
+          "output": "{\n  \"system\": \"GRC-PLATFORM\",\n  \"groups\": [\"1\", \"2\"],\n  \"supplier\": { \"ref_id\": \"SUP-ORACLE\", \"approved\": true },\n  \"total\": 107,\n  \"decided\": 0,\n  \"pending\": [\n    { \"requirement\": \"ISM-1698\", \"ref_id\": \"ISM-1698\", \"text\": \"A vulnerability scanner is used at least daily…\" },\n    …\n  ]\n}"
         },
         {
           "who": "agent",
           "command": "hound onboard GRC-PLATFORM decide ISM-1515 --repo . --json --kind manual --reasoning \"A quarterly restore test to a scratch VM, recorded in the restore log.\"",
-          "output": "{ \"requirement\": \"ISM-1515\", \"kind\": \"manual\", \"drafted_by\": \"agent\" }"
+          "output": "{\n  \"requirement\": \"ISM-1515\",\n  \"kind\": \"manual\",\n  \"drafted_by\": \"agent\",\n  \"approved\": false,\n  \"remaining\": 106\n}"
         }
       ],
       "choice": {
@@ -153,7 +153,7 @@
         {
           "who": "you",
           "command": "hound approve --repo .",
-          "output": "Your name, recorded with today's date on everything you approve: Sam Example\n[supplier] SUP-ORACLE Oracle Cloud Infrastructure: contract CTR-OCI-2026 is a draft.\nApprove it? (y, n, s): y"
+          "output": "Your name, recorded with today's date on everything you approve: Sam Example\n\n[supplier] SUP-ORACLE Oracle Cloud Infrastructure: contract CTR-OCI-2026 (OCI pay-as-you-go 2026) is a draft, covering SOL-OCI-HOSTING.\nApprove SUP-ORACLE and make the contract active (y; n no, s stop): y\n…\nApproved 2 of 2.\nNext: review the changes in a pull request, then run 'hound scope validate scope', 'hound scope plan scope' and 'hound scope apply scope'. Apply writes what you approved to CISO Assistant."
         }
       ],
       "try": {
@@ -174,23 +174,29 @@
         {
           "who": "you",
           "command": "hound scope validate scope --config hound.yaml",
-          "output": "scope is valid."
+          "output": "scope valid: 1 domain(s), 1 control(s), 2 audit(s), 1 third party(ies)"
         },
         {
           "who": "you",
           "command": "hound scope plan scope --config hound.yaml --out scope.plan.json",
-          "output": "+ third party SUP-ORACLE Oracle Cloud Infrastructure\n+ asset GRC-PLATFORM\n+ audit EX-E8-Q2-2027FY-GRC-PLATFORM\nPlan saved to scope.plan.json."
+          "output": "## Scope plan\n\n| Change | Kind | Object |\n| --- | --- | --- |\n| Create | entity | SUP-ORACLE |\n| Create | solution | SOL-OCI-HOSTING |\n| Create | system | GRC-PLATFORM |\n| Create | audit | EX-E8-Q2-2027FY-GRC-PLATFORM |\n…"
         },
         {
           "who": "you",
           "command": "hound scope apply scope.plan.json",
-          "output": "Applied."
+          "output": ""
         }
       ]
     }
   ],
   "next": [
-    { "title": "Deploy it", "tutorial": "first-deployment" },
-    { "title": "Guided setup: every question hound init asks", "guide": "guided-setup.md" }
+    {
+      "title": "Deploy it",
+      "tutorial": "first-deployment"
+    },
+    {
+      "title": "Guided setup: every question hound init asks",
+      "guide": "guided-setup.md"
+    }
   ]
 }

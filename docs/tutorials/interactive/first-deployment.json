@@ -79,12 +79,12 @@
         {
           "who": "you",
           "command": "./manage.sh createsuperuser",
-          "output": "Email: grc@example.com\nPassword: \nSuperuser created successfully."
+          "output": "Email: grc@example.com\nPassword: \nPassword (again): \nSuperuser created successfully."
         },
         {
           "who": "you",
           "command": "sudo ./runner-token.sh hound-runner@example.com /etc/evidence-hound/secrets",
-          "output": "Token written to /etc/evidence-hound/secrets/hound_ca_token."
+          "output": ""
         }
       ],
       "try": {
@@ -104,7 +104,7 @@
         {
           "who": "you",
           "command": "docker compose run --rm runner config validate /config/hound.yaml --check-secrets",
-          "output": "/config/hound.yaml is valid. Every secret resolves."
+          "output": "valid"
         }
       ]
     },
@@ -120,12 +120,12 @@
         {
           "who": "you",
           "command": "docker compose run --rm runner scope plan /config/scope --config /config/hound.yaml",
-          "output": "+ user grc@example.com (analyst on Example Pty Ltd)\n~ setting enforce_mfa: false -> true\nAccess review: 1 user has not turned on MFA yet."
+          "output": "## Scope plan\n\n| Change | Kind | Object |\n| --- | --- | --- |\n| Create | user | grc@example.com |\n| Update | setting | enforce_mfa |\n…\n\n### Access review\n\n| User | Note |\n| --- | --- |\n| grc@example.com | has not turned on multi-factor authentication |"
         },
         {
           "who": "you",
           "command": "docker compose run --rm runner scope apply /config/scope --config /config/hound.yaml",
-          "output": "Applied."
+          "output": ""
         }
       ],
       "choice": {
@@ -189,7 +189,13 @@
     }
   ],
   "next": [
-    { "title": "Your week: the review", "tutorial": "your-week" },
-    { "title": "Back it up and test a restore", "guide": "deploy/backups.md" }
+    {
+      "title": "Your week: the review",
+      "tutorial": "your-week"
+    },
+    {
+      "title": "Back it up and test a restore",
+      "guide": "deploy/backups.md"
+    }
   ]
 }

@@ -41,7 +41,7 @@
         {
           "who": "you",
           "command": "make trial",
-          "output": "Docker answers.\nNo CISO Assistant is running, and ports 8000 and 8443 are free.\nStart one with make ca-up? [Y/n/q] y\n...\nThe API token is in .dev/trial/secrets/ca_token (mode 600). It is never printed or put on a command line."
+          "output": "== 1. Preflight: Docker, CISO Assistant and ports ==\nDocker answers.\nNo CISO Assistant is running, and ports 8000 and 8443 are free.\n…\n== 2. Build the Evidence Hound runner image from this checkout ==\nBuild it now (a few minutes the first time)? [Y/n/q] y"
         }
       ],
       "try": {
@@ -62,17 +62,17 @@
         {
           "who": "you",
           "command": "hound init /trial/repo --organisation-audit",
-          "output": "Organisation name [Example Pty Ltd]:\nShort code for ref IDs [EX]:\nEssential Eight maturity level [2]:\nAudit interval (quarter, month) [quarter]:"
+          "output": "Organisation name [Example Pty Ltd]: \nShort code for ref IDs [EX]: \nCISO Assistant API address [https://ciso.example.com/api/]: \nTime zone [Australia/Sydney]: \nEssential Eight maturity level to assess (1, 2 or 3) [2]: \nAudit interval (quarter or month) [quarter]: \nCompliance owner's email, as a CISO Assistant user [ceo@example.com]: \nWrote Example Pty Ltd's compliance repo to /trial/repo: 14 files, audits EX-E8."
         },
         {
           "who": "you",
           "command": "hound scope plan scope --config hound.yaml --out /trial/scope-plan.json",
-          "output": "+ domain Example Pty Ltd\n+ applied control AC-AUTO-EVIDENCE\n+ audit EX-E8-Q2-2027FY (Essential Eight, groups 1 and 2)\nPlan saved to /trial/scope-plan.json."
+          "output": "## Scope plan\n\n109 to create, 6 to update, 0 to delete.\n\n| Change | Kind | Object |\n| --- | --- | --- |\n| Create | team | GRC team |\n| Create | audit | EX-E8-Q2-2027FY |\n| Create | assessment | EX-E8-Q2-2027FY/ISM-1698 (non_compliant: No evidence yet) |\n…\n\n### Access review\n\n| ceo@example.com | has not turned on multi-factor authentication |\nApply this plan to CISO Assistant? [Y/n/q] y"
         },
         {
           "who": "you",
           "command": "hound scope apply /trial/scope-plan.json",
-          "output": "Applied. The report is in .dev/trial/scope-apply.json."
+          "output": "Apply writes exactly the plan you saw, and refuses it if the scope or CISO Assistant changed since.\nApplied. The report is in .dev/trial/scope-apply.json."
         }
       ],
       "choice": {
@@ -103,7 +103,7 @@
         {
           "who": "you",
           "command": "hound agent setup --assistant both",
-          "output": "Wrote the skills and agents for Claude Code and GitHub Copilot."
+          "output": "Wrote CLAUDE.md\nWrote .claude/skills/answer-a-prime-questionnaire/SKILL.md\nWrote .claude/skills/assess-a-supplier/SKILL.md\n…"
         },
         {
           "who": "you",
@@ -125,13 +125,13 @@
       "terminal": [
         {
           "who": "agent",
-          "command": "hound supplier draft --system GRC-PLATFORM --ref SUP-ORACLE --name \"Oracle Cloud Infrastructure\" --solution-ref SOL-OCI-HOSTING --solution-name \"OCI compute, networking and storage\" --contract-ref CTR-OCI-2026 --contract-name \"OCI pay-as-you-go 2026\" --level \"dependency=3:The GRC platform runs only on it.\" --kind vendor --json",
-          "output": "{ \"file\": \"scope/third-parties/sup-oracle.yaml\", \"contract\": \"draft\", \"review\": \"open\" }"
+          "command": "hound supplier draft --system GRC-PLATFORM --ref SUP-ORACLE --name \"Oracle Cloud Infrastructure\" --solution-ref SOL-OCI-HOSTING --solution-name \"OCI compute, networking and storage\" --contract-ref CTR-OCI-2026 --contract-name \"OCI pay-as-you-go 2026\" --level \"dependency=3:The GRC platform runs only on it; moving it is a planned project.\" --kind vendor",
+          "output": "Drafted scope/third-parties/sup-oracle.yaml with a draft contract. A person approves SUP-ORACLE and concludes its review with 'hound approve'."
         },
         {
           "who": "you",
           "command": "hound approve --repo .",
-          "output": "4 draft(s) wait on you: 4 supplier.\n[supplier] SUP-ORACLE Oracle Cloud Infrastructure: contract CTR-OCI-2026 is a draft.\nApprove it? (y, n, s)"
+          "output": "Your name, recorded with today's date on everything you approve: Sam Example\n\n[supplier] SUP-ORACLE Oracle Cloud Infrastructure: contract CTR-OCI-2026 (OCI pay-as-you-go 2026) is a draft, covering SOL-OCI-HOSTING.\nApprove SUP-ORACLE and make the contract active (y; n no, s stop): y"
         }
       ],
       "try": {
@@ -153,12 +153,12 @@
         {
           "who": "agent",
           "command": "hound onboard GRC-PLATFORM pending --json --repo . --group 1 --group 2 --owner it@example.com --product \"GRC platform\" --solution SOL-OCI-HOSTING",
-          "output": "{ \"system\": \"GRC-PLATFORM\", \"undecided\": 46, ... }"
+          "output": "{\n  \"system\": \"GRC-PLATFORM\",\n  \"groups\": [\"1\", \"2\"],\n  \"supplier\": { \"ref_id\": \"SUP-ORACLE\", \"approved\": true },\n  \"total\": 107,\n  \"decided\": 0,\n  \"pending\": [\n    { \"requirement\": \"ISM-1698\", \"ref_id\": \"ISM-1698\", \"text\": \"A vulnerability scanner is used at least daily…\" },\n    …\n  ]\n}"
         },
         {
           "who": "agent",
           "command": "hound onboard GRC-PLATFORM decide ISM-1695 --repo . --json --kind manual --reasoning \"Patching is shown by the VM's update logs.\"",
-          "output": "{ \"requirement\": \"ISM-1695\", \"kind\": \"manual\", \"drafted_by\": \"agent\" }"
+          "output": "{\n  \"requirement\": \"ISM-1695\",\n  \"kind\": \"manual\",\n  \"drafted_by\": \"agent\",\n  \"approved\": false,\n  \"remaining\": 106\n}"
         }
       ],
       "panel": {
@@ -182,17 +182,17 @@
         {
           "who": "you",
           "command": "hound run --config hound.yaml --only sophos --dry-run",
-          "output": "sophos: 3 checks, 3 passed. Dry run: nothing sent."
+          "output": "info: Collector sophos: Succeeded\nwarn: Dry run: CISO Assistant was not read, so each plan lists every update as if CISO Assistant held nothing.\n{\n  \"outcome\": \"succeeded\",\n  …\n}\nPublish the sophos results to CISO Assistant? [Y/n/q] y"
         },
         {
           "who": "you",
           "command": "hound run --config hound.yaml --only sophos",
-          "output": "sophos: 3 checks, 3 passed. Published to EX-E8-Q2-2027FY-OFFICE-FIREWALL and EX-E8-Q2-2027FY."
+          "output": "info: Collector sophos: Succeeded\n{\n  \"outcome\": \"succeeded\",\n  \"collectors\": [\n    {\n      \"name\": \"sophos\",\n      \"publish\": {\n        \"sent\": 8, \"skipped\": 0, \"failed\": 0,\n        \"audits\": [ { \"compliance_assessment\": \"EX-E8-Q2-2027FY-OFFICE-FIREWALL\", \"sent\": 3 } ]\n      }\n    }\n  ]\n}"
         },
         {
           "who": "you",
           "command": "hound status --config hound.yaml",
-          "output": "sophos   last run 2026-11-26 04:00   3 passed, 0 failed"
+          "output": "COLLECTOR           LAST RUN (UTC)       OUTCOME    PASSED  FAILED  PUBLISHED\ngrc-infra-controls  2026-11-26 07:04:01  succeeded  13      0       3 sent, 0 skipped, 0 failed\ngrc-infra-drift     2026-11-26 07:04:17  succeeded  0       1       8 sent, 0 skipped, 0 failed\nsophos              2026-11-26 07:04:32  succeeded  3       0       8 sent, 0 skipped, 0 failed"
         }
       ]
     },
@@ -208,7 +208,7 @@
         {
           "who": "you",
           "command": "make trial",
-          "output": "EX-E8-Q2-2027FY-GRC-PLATFORM: CISO Assistant reads 6% (3 compliant, 0 partially compliant, 43 non-compliant of which 43 have no evidence yet; it leaves out 61 not applicable and 0 not assessed)"
+          "output": "== 16. What CISO Assistant reads for each audit ==\nEX-E8-Q2-2027FY: CISO Assistant reads 14% (16 compliant, 0 partially compliant, 91 non-compliant of which 81 have no evidence yet; it leaves out 0 not applicable and 0 not assessed).\nA row with no evidence counts against the figure until its evidence arrives."
         }
       ],
       "choice": {
@@ -228,7 +228,13 @@
     }
   ],
   "next": [
-    { "title": "Make your compliance repo", "tutorial": "compliance-repo" },
-    { "title": "Your week: the review", "tutorial": "your-week" }
+    {
+      "title": "Make your compliance repo",
+      "tutorial": "compliance-repo"
+    },
+    {
+      "title": "Your week: the review",
+      "tutorial": "your-week"
+    }
   ]
 }
