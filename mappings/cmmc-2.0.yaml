@@ -19,6 +19,7 @@ requirements:
   #   via ISM-1507:intersect
   - ref: AC.L1-3.1.1
     covers: part
+    rest: "The list of authorised users, processes and devices for every system holding FCI or CUI, and that access is limited to them (3.1.1[a] to [f])."
     rule: all_pass
     checks:
       - privileged.requests.validated
@@ -26,6 +27,7 @@ requirements:
   #   via ISM-1507:intersect, ISM-1647:intersect, ISM-1648:intersect, ISM-1883:intersect
   - ref: AC.L2-3.1.5
     covers: part
+    rest: "Least privilege for non-administrative security functions and for systems outside Microsoft 365 and Sophos Central, such as servers and line-of-business apps."
     rule: all_pass
     checks:
       - privileged.requests.validated
@@ -38,6 +40,7 @@ requirements:
   #   via ISM-0445:equal, ISM-1175:subset
   - ref: AC.L2-3.1.6
     covers: part
+    rest: "That users with security roles use a non-privileged account for everything else on systems outside Microsoft 365."
     rule: all_pass
     checks:
       - identity.privileged.admins_cloud_only
@@ -46,6 +49,7 @@ requirements:
   #   via ISM-1509:intersect, ISM-1650:intersect
   - ref: AC.L2-3.1.7
     covers: part
+    rest: "That non-privileged users cannot run privileged functions on each system (local admin rights, sudo), not only that privileged actions are logged."
     rule: all_pass
     checks:
       - logging.privileged_access.centrally_logged
@@ -54,6 +58,7 @@ requirements:
   #   via ISM-1387:intersect
   - ref: AC.L2-3.1.15
     covers: part
+    rest: "Which privileged commands may run remotely and who authorised that, for every remote path, not only the jump servers."
     rule: all_pass
     checks:
       - privileged.admin.jump_servers
@@ -61,6 +66,7 @@ requirements:
   #   via ISM-1509:subset, ISM-1650:subset, ISM-1683:subset, ISM-1660:subset, ISM-1623:subset, ISM-1889:subset
   - ref: AU.L2-3.3.1
     covers: part
+    rest: "Which events each system in the CMMC scope logs, how long logs are kept, and that the content of each record is enough to investigate (3.3.1[a] to [f])."
     rule: all_pass
     checks:
       - logging.privileged_access.centrally_logged
@@ -73,6 +79,7 @@ requirements:
   #   via ISM-1509:intersect
   - ref: AU.L2-3.3.2
     covers: part
+    rest: "That every system's records trace actions to an individual user, including shared and service accounts."
     rule: all_pass
     checks:
       - logging.privileged_access.centrally_logged
@@ -80,6 +87,7 @@ requirements:
   #   via ISM-1228:intersect, ISM-1906:intersect
   - ref: AU.L2-3.3.5
     covers: part
+    rest: "How audit review, analysis and reporting are correlated across systems, such as a SIEM or a documented manual process."
     rule: all_pass
     checks:
       - logging.events.triaged
@@ -88,6 +96,7 @@ requirements:
   #   via ISM-1815:intersect
   - ref: AU.L2-3.3.8
     covers: part
+    rest: "Protection of logs and logging tools on every system in scope, not only the central store."
     rule: all_pass
     checks:
       - logging.event_logs.protected
@@ -95,6 +104,7 @@ requirements:
   #   via ISM-1807:subset
   - ref: CM.L2-3.4.1
     covers: part
+    rest: "Documented baseline configurations for each kind of system, and an inventory that covers hardware, software and firmware across the system life cycle."
     rule: all_pass
     checks:
       - vuln.asset_discovery.fortnightly
@@ -102,6 +112,7 @@ requirements:
   #   via ISM-1412:subset, ISM-1859:subset, ISM-1860:subset, ISM-1671:subset, ISM-1489:subset
   - ref: CM.L2-3.4.2
     covers: part
+    rest: "Security configuration settings for servers, network devices and other software beyond browsers, Office and PDF readers, and that they are enforced."
     rule: all_pass
     checks:
       - browser.hardened
@@ -113,6 +124,7 @@ requirements:
   #   via ISM-1654:subset, ISM-1486:subset, ISM-1485:subset
   - ref: CM.L2-3.4.6
     covers: part
+    rest: "Least functionality for servers and network devices: only the capabilities each system needs."
     rule: all_pass
     checks:
       - browser.ie11_disabled
@@ -122,6 +134,7 @@ requirements:
   #   via ISM-0843:intersect
   - ref: CM.L2-3.4.7
     covers: part
+    rest: "The nonessential programs, functions, ports, protocols and services for each system, and that they are restricted, disabled or prevented. Application control covers only programs on workstations."
     rule: all_pass
     checks:
       - endpoint.application_control.enforced
@@ -129,6 +142,7 @@ requirements:
   #   via ISM-0843:intersect, ISM-1490:intersect, ISM-1657:intersect, ISM-1544:subset
   - ref: CM.L2-3.4.8
     covers: part
+    rest: "The software execution policy on servers and systems outside Intune, and that the authorised software list is kept."
     rule: all_pass
     checks:
       - endpoint.application_control.enforced
@@ -139,6 +153,7 @@ requirements:
   #   via ISM-0843:intersect, ISM-1870:intersect
   - ref: CM.L2-3.4.9
     covers: part
+    rest: "A policy for user-installed software and how installations are monitored on systems outside Intune."
     rule: all_pass
     checks:
       - endpoint.application_control.enforced
@@ -147,6 +162,7 @@ requirements:
   #   via ISM-0974:intersect, ISM-1173:intersect
   - ref: IA.L1-3.5.2
     covers: part
+    rest: "Authentication of processes and devices, and of users on systems outside Microsoft 365 that hold FCI or CUI."
     rule: all_pass
     checks:
       - identity.mfa.systems
@@ -156,6 +172,7 @@ requirements:
   #   via ISM-1173:subset, ISM-0974:subset, ISM-1504:intersect
   - ref: IA.L2-3.5.3
     covers: part
+    rest: "MFA for local access to privileged accounts, and for network access to systems outside Microsoft 365 such as the VPN and servers."
     rule: all_pass
     checks:
       - identity.mfa.enforced_conditional_access
@@ -167,6 +184,7 @@ requirements:
   #   via ISM-1682:intersect, ISM-1872:intersect
   - ref: IA.L2-3.5.4
     covers: part
+    rest: "Replay-resistant authentication for network access to systems outside Microsoft 365."
     rule: all_pass
     checks:
       - identity.mfa.phishing_resistant
@@ -174,6 +192,7 @@ requirements:
   #   via ISM-1648:subset
   - ref: IA.L2-3.5.6
     covers: part
+    rest: "The inactivity period for every identifier, including non-privileged accounts, and that each system disables them."
     rule: all_pass
     checks:
       - privileged.access.disabled_when_unused
@@ -181,6 +200,7 @@ requirements:
   #   via ISM-1819:intersect, ISM-1228:intersect
   - ref: IR.L2-3.6.1
     covers: part
+    rest: "Every stage of the capability: preparation, detection, analysis, containment, recovery and user response, with the plan's tests."
     rule: all_pass
     checks:
       - incident.response_plan_followed
@@ -189,6 +209,7 @@ requirements:
   #   via ISM-0123:intersect, ISM-0140:intersect
   - ref: IR.L2-3.6.2
     covers: part
+    rest: "Reports to the authorities outside the organisation, such as DIBNet within 72 hours under DFARS 252.204-7012 and the ACSC, and the incident tracking."
     rule: all_pass
     checks:
       - incident.reported_to_ciso
@@ -196,6 +217,7 @@ requirements:
   #   via ISM-1173:intersect
   - ref: MA.L2-3.7.5
     covers: part
+    rest: "Every nonlocal maintenance path, including vendors', and that sessions end when maintenance is complete."
     rule: all_pass
     checks:
       - identity.mfa.enforced_conditional_access
@@ -204,6 +226,7 @@ requirements:
   #   via ISM-1811:intersect, ISM-1812:intersect, ISM-1705:intersect
   - ref: MP.L2-3.8.9
     covers: part
+    rest: "Encryption or physical protection of every backup copy of CUI, including offline and off-site media."
     rule: all_pass
     checks:
       - backup.retained_securely
@@ -213,6 +236,7 @@ requirements:
   #   ciso-assistant profile: risk studies updated within the review interval
   - ref: RA.L2-3.11.1
     covers: part
+    rest: "The risk assessment itself: that it covers operations, assets and individuals from processing CUI, and the period between assessments."
     rule: all_pass
     checks:
       - risk.studies_reviewed
@@ -220,6 +244,7 @@ requirements:
   #   via ISM-1808:intersect, ISM-1698:intersect, ISM-1699:intersect, ISM-1700:intersect, ISM-1701:intersect, ISM-1702:intersect
   - ref: RA.L2-3.11.2
     covers: part
+    rest: "Scanning of every system in the CMMC scope, and scans when new vulnerabilities are announced, not only on the schedule."
     rule: all_pass
     checks:
       - vuln.scanner.database_current
@@ -231,6 +256,7 @@ requirements:
   #   via ISM-1876:intersect, ISM-1690:intersect, ISM-1691:intersect, ISM-1693:intersect, ISM-1877:intersect, ISM-1694:intersect, ISM-1695:intersect
   - ref: RA.L2-3.11.3
     covers: part
+    rest: "That remediation follows the risk assessment for systems the scans and collectors do not see, and the record of accepted risks."
     rule: all_pass
     checks:
       - vuln.internet_facing.patched_in_window
@@ -243,6 +269,7 @@ requirements:
   #   via ISM-1380:intersect, ISM-1387:intersect
   - ref: SC.L2-3.13.3
     covers: part
+    rest: "Separation of user and management functions on servers and network devices outside the privileged environment."
     rule: all_pass
     checks:
       - privileged.environments.separate
@@ -251,6 +278,7 @@ requirements:
   #   via ISM-1488:intersect, ISM-1671:intersect, ISM-1486:intersect
   - ref: SC.L2-3.13.13
     covers: part
+    rest: "The mobile code policy and how use of mobile code beyond Office macros and Java is controlled and monitored, such as JavaScript and ActiveX."
     rule: all_pass
     checks:
       - apps.office.macros_blocked_from_internet
@@ -260,6 +288,7 @@ requirements:
   #   via ISM-1691:intersect, ISM-1693:intersect, ISM-1694:intersect, ISM-1695:intersect, ISM-1501:intersect, ISM-1905:intersect
   - ref: SI.L1-3.14.1
     covers: part
+    rest: "Flaws found by other means than the scanner (vendor advisories, assessments), their reporting, and correction on systems the collectors do not see."
     rule: all_pass
     checks:
       - vuln.common_apps.patched_in_window
@@ -276,6 +305,7 @@ requirements:
   #   via ISM-0843:intersect, ISM-1672:subset
   - ref: SI.L1-3.14.2
     covers: part
+    rest: "Malicious code protection at entry and exit points (email, web gateway) and on servers, not only application control on workstations."
     rule: all_pass
     checks:
       - endpoint.application_control.enforced
@@ -284,6 +314,7 @@ requirements:
   #   via ISM-1228:intersect, ISM-1906:intersect
   - ref: SI.L2-3.14.6
     covers: part
+    rest: "Monitoring of inbound and outbound traffic at the boundary and inside the network, with the indicators of attack it looks for."
     rule: all_pass
     checks:
       - logging.events.triaged
@@ -292,6 +323,7 @@ requirements:
   #   via ISM-1228:intersect
   - ref: SI.L2-3.14.7
     covers: part
+    rest: "What authorised use of each system is, and how unauthorised use is identified."
     rule: all_pass
     checks:
       - logging.events.triaged

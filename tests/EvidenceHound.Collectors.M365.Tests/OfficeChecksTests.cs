@@ -148,7 +148,7 @@ public class OfficeChecksTests
         var finding = OfficeChecks.AsrOfficeRulesEnabled(tenant, Options());
 
         finding.Outcome.ShouldBe(CheckOutcome.Partial);
-        finding.Observation.ShouldBe("All 4 Office attack surface reduction rules are in block mode, but only for some groups, not all devices ('Attack surface reduction (Office)').");
+        finding.Observation.ShouldBe("All 4 Office attack surface reduction rules are in block mode, but only for some groups, not all users or devices (policy 'Attack surface reduction (Office)').");
     }
 
     private static void SetAsr(Dictionary<string, JsonArray> items, string rule, string mode)

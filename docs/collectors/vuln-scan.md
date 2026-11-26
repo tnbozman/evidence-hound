@@ -26,7 +26,7 @@ So a business that scans its internet-facing servers with Nessus and its laptops
 | `owner` | yes | Who owns the scans and fixes what they find. |
 | `scan_interval_days` | no | Most days between scans. Default, for maturity level 2: 1 for `internet_facing`, 7 for `common_apps`, 14 otherwise. |
 | `patch_window_days` | no | Most days a finding may stay open after its patch is published. Default: 14 for `internet_facing` and `common_apps`, 30 otherwise. |
-| `exploited_patch_window_hours` | no | Most hours a finding with a known exploit may stay open. Default: 48 for `internet_facing`, otherwise the patch window. |
+| `exploited_patch_window_hours` | no | Most hours a finding rated critical, or with a known exploit, may stay open. Default: 48 for `internet_facing`, otherwise the patch window. |
 | `column_host` | for csv | The column with the host name. |
 | `column_finding_id` | for csv | The column that identifies the finding, such as a plugin ID or a CVE. |
 | `column_severity` | for csv | The severity column: `info`, `low`, `medium` (or `moderate`), `high`, `critical`, or `0` to `4`. |
@@ -136,7 +136,7 @@ Each instance reports the checks of its scope, judged from the current scan:
 | Check | Pass when | Otherwise |
 | --- | --- | --- |
 | `vuln.<scope>.scanned_in_interval` | The current scan is at most `scan_interval_days` calendar days old. | `fail`, with the scan's age and owner; `fail` when no export has been dropped yet. |
-| `vuln.<scope>.patched_in_window` | No open finding is older than `patch_window_days`, or `exploited_patch_window_hours` when an exploit is available. | `fail`, naming up to 20 overdue findings and counting the rest; `error` with no scan yet. |
+| `vuln.<scope>.patched_in_window` | No open finding is older than `patch_window_days`, or `exploited_patch_window_hours` when the finding is rated critical or an exploit is available. | `fail`, naming up to 20 overdue findings and counting the rest; `error` with no scan yet. |
 | `vuln.<scope>.unsupported_removed` | No finding is marked unsupported. | `fail`, naming the hosts and up to 20 findings; `error` with no scan yet. |
 
 So there are eleven check IDs:
@@ -163,7 +163,7 @@ Every open finding counts, whatever its severity, because the Essential Eight wi
 | Check | Requirements |
 | --- | --- |
 | `vuln.internet_facing.scanned_in_interval` | ISM-1698 (online services, daily), ISM-1701 (operating systems of internet-facing servers and network devices, daily) |
-| `vuln.internet_facing.patched_in_window` | ISM-1690 and ISM-1876 (online services: two weeks, 48 hours with an exploit), ISM-1877 (their operating systems, 48 hours with an exploit) |
+| `vuln.internet_facing.patched_in_window` | ISM-1690 and ISM-1876 (online services: two weeks, or 48 hours when the vendor rates it critical or an exploit exists), ISM-1877 (their operating systems, 48 hours when critical or exploited) |
 | `vuln.internet_facing.unsupported_removed` | ISM-1905 (unsupported online services removed) |
 | `vuln.common_apps.scanned_in_interval` | ISM-1699 (weekly) |
 | `vuln.common_apps.patched_in_window` | ISM-1691 (two weeks) |
@@ -174,7 +174,7 @@ Every open finding counts, whatever its severity, because the Essential Eight wi
 | `vuln.operating_systems.patched_in_window` | ISM-1695 (one month), with Intune compliance |
 | `vuln.operating_systems.unsupported_removed` | ISM-1501, with the Microsoft 365 operating system check and the firewall firmware check |
 
-All the rows use `all_pass`. So a deployment that maps ISM-1695 or ISM-1501 needs an `operating_systems` scan source, or those rows stay not assessed. ISM-1694, the two-week window (48 hours with an exploit) for operating systems of internet-facing servers and network devices, needs both `vuln.internet_facing.patched_in_window` and the Sophos Central firewall check `network.firewall.firmware_current`.
+All the rows use `all_pass`. So a deployment that maps ISM-1695 or ISM-1501 needs an `operating_systems` scan source, or those rows stay not assessed. ISM-1694, the two-week window (48 hours when critical or exploited) for operating systems of internet-facing servers and network devices, needs both `vuln.internet_facing.patched_in_window` and the Sophos Central firewall check `network.firewall.firmware_current`.
 
 ## Problems
 

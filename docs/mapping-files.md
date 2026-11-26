@@ -28,6 +28,7 @@ Rules:
 - `threshold` is required with `rule: threshold`, is between 1 and the number of checks, and is not allowed with the other rules.
 - `draft: true` marks a row `hound mapping derive` wrote and nobody has reviewed yet. Runs leave draft rows out and report each one as `publish.draft_row`; delete the line once a person has checked the row.
 - `covers: part` marks a row whose checks answer only part of the requirement, such as Essential Eight evidence for a NIST SP 800-171 requirement that is wider in scope. When every check passes, the row is partially compliant, not compliant, and its observation says a person must assess the rest. Leave it out, or write `covers: whole`, when the checks answer all of the requirement.
+- `rest`, on a row with `covers: part`, says what a person assesses to finish the requirement, such as "MFA on the VPN and on servers' local admin accounts". The published observation names it, so whoever reads the row in CISO Assistant knows what is left. Every shipped CMMC row has one.
 - Unknown keys are errors.
 
 ## Requirements a framework repeats

@@ -12,7 +12,7 @@ public static class MappingLoader
 {
     private static readonly string[] TopLevelKeys = ["framework_urn", "description", "requirements", "manual_only"];
     private static readonly string[] ManualOnlyKeys = ["ref", "urn", "rows", "source"];
-    private static readonly string[] RequirementKeys = ["ref", "urn", "rows", "draft", "covers", "rule", "threshold", "checks"];
+    private static readonly string[] RequirementKeys = ["ref", "urn", "rows", "draft", "covers", "rest", "rule", "threshold", "checks"];
 
     public static Result<LoadedMapping> Parse(string yaml, string source, IReadOnlySet<CheckId>? knownChecks = null)
     {
@@ -127,12 +127,13 @@ public static class MappingLoader
         var checks = ParseChecks(map, at);
         var draft = ParseDraft(map, at);
         var part = ParseCovers(map, at);
-        Problem[] problems = [.. UnknownKeys(map, RequirementKeys, at), .. ProblemsOf(key), .. ProblemsOf(rule), .. ProblemsOf(checks), .. ProblemsOf(draft), .. ProblemsOf(part)];
+        var rest = ParseRest(map, part, at);
+        Problem[] problems = [.. UnknownKeys(map, RequirementKeys, at), .. ProblemsOf(key), .. ProblemsOf(rule), .. ProblemsOf(checks), .. ProblemsOf(draft), .. ProblemsOf(part), .. ProblemsOf(rest)];
         return problems.Length > 0
             ? Result.Fail<ParsedRequirement>(problems)
-            : key.Bind(parsedKey => rule.Bind(parsedRule => checks.Bind(parsedChecks => draft.Bind(isDraft => part.Bind(coversPart =>
+            : key.Bind(parsedKey => rule.Bind(parsedRule => checks.Bind(parsedChecks => draft.Bind(isDraft => part.Bind(coversPart => rest.Bind(personAdds =>
                 Located(RequirementMapping.Create(parsedKey, parsedChecks.Select(c => c.Id), parsedRule), map.Start, at)
-                    .Map(mapping => new ParsedRequirement(mapping with { Draft = isDraft, CoversPart = coversPart }, [.. parsedChecks], (int)map.Start.Line)))))));
+                    .Map(mapping => new ParsedRequirement(mapping with { Draft = isDraft, CoversPart = coversPart, Rest = personAdds.Length > 0 ? personAdds : null }, [.. parsedChecks], (int)map.Start.Line))))))));
     }
 
     /// <summary>s14-01: <c>draft: true</c> on a row <c>hound mapping derive</c> wrote and nobody has reviewed yet.</summary>
@@ -150,6 +151,16 @@ public static class MappingLoader
         null or YamlScalarNode { Value: "whole" } => Result.Ok(false),
         YamlScalarNode { Value: "part" } => Result.Ok(true),
         var other => Result.Fail<bool>(at.Problem(other.Start, "mapping.covers_invalid", "'covers' must be part (the checks answer only part of the requirement) or whole.")),
+    };
+
+    /// <summary>s19-07: <c>rest:</c>, what a person assesses to finish a row covering part; only on such a row. Empty when not given.</summary>
+    private static Result<string> ParseRest(YamlMappingNode map, Result<bool> part, Locator at) => Child(map, "rest") switch
+    {
+        null => Result.Ok(""),
+        YamlScalarNode { Value: { Length: > 0 } text } node => part is Result<bool>.Ok { Value: false }
+            ? Result.Fail<string>(at.Problem(node.Start, "mapping.rest_without_part", "'rest' says what a person assesses on a row with 'covers: part'; this row covers the whole requirement."))
+            : Result.Ok(text),
+        var other => Result.Fail<string>(at.Problem(other.Start, "mapping.rest_invalid", "'rest' must be text: what a person assesses to finish the requirement.")),
     };
 
     /// <summary>Exactly one of <c>ref</c> and <c>urn</c>; <c>rows: all</c> only with a ref.</summary>

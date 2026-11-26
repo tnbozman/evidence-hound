@@ -79,7 +79,7 @@ public static class PatchChecks
         var scan = assessment.Scan;
         var window = policy.ExploitedWindowHours == policy.PatchWindowDays * 24
             ? Days(policy.PatchWindowDays)
-            : string.Create(CultureInfo.InvariantCulture, $"{Days(policy.PatchWindowDays)}, or {policy.ExploitedWindowHours} hours with an exploit");
+            : string.Create(CultureInfo.InvariantCulture, $"{Days(policy.PatchWindowDays)}, or {policy.ExploitedWindowHours} hours when critical or with an exploit");
         var hosts = scan.Findings.Select(f => f.Host).Distinct(StringComparer.Ordinal).Count();
         if (assessment.Overdue.Count == 0)
         {
@@ -105,7 +105,7 @@ public static class PatchChecks
 
     private static OverdueFinding Age(PatchPolicy policy, ScanRun scan, IReadOnlyList<ScanRun> history, ScanFinding finding)
     {
-        var window = finding.ExploitAvailable ? policy.ExploitedWindowHours : policy.PatchWindowDays * 24;
+        var window = Urgent(finding) ? policy.ExploitedWindowHours : policy.PatchWindowDays * 24;
         var (from, since, file) = finding switch
         {
             { PatchPublished: { } published } => ("patch_published", published, (string?)null),
@@ -125,8 +125,11 @@ public static class PatchChecks
             "first_seen" => $"{Days(o.AgeDays)} since first seen",
             _ => $"{Days(o.AgeDays)} since first scanned ({o.SinceFile})",
         };
-        return $"{o.Finding.Host} {o.Finding.FindingId} ({o.Finding.Name}{(o.Finding.ExploitAvailable ? ", exploit available" : "")}, {since})";
+        return $"{o.Finding.Host} {o.Finding.FindingId} ({o.Finding.Name}{(o.Finding.ExploitAvailable ? ", exploit available" : o.Finding.Severity == Severity.Critical ? ", critical" : "")}, {since})";
     }
+
+    /// <summary>ISM-1876 and ISM-1877: the short window applies when the vendor rates the finding critical or a working exploit exists.</summary>
+    private static bool Urgent(ScanFinding finding) => finding.ExploitAvailable || finding.Severity == Severity.Critical;
 
     private static string Names(IEnumerable<string> items, int count)
     {

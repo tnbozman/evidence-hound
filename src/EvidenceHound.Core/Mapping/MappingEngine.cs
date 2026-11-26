@@ -18,7 +18,9 @@ public static class MappingEngine
         return [.. mapping.Requirements.Select(requirement => Assess(requirement, latest))];
     }
 
-    private static readonly string PartNote = "These checks cover part of the requirement, so it is at most partially compliant until a person assesses the rest. ";
+    private static string PartNote(RequirementMapping requirement) =>
+        "These checks cover part of the requirement, so it is at most partially compliant until a person assesses the rest"
+        + (string.IsNullOrWhiteSpace(requirement.Rest) ? ". " : $": {requirement.Rest.TrimEnd('.')}. ");
 
     private static Dictionary<CheckId, CheckResult> Latest(IEnumerable<CheckResult> checkResults) =>
         checkResults
@@ -50,7 +52,7 @@ public static class MappingEngine
                 applicable.Count(o => o == CheckOutcome.Partial),
                 applicable.Count(o => o == CheckOutcome.Fail))));
 
-        var observation = (requirement.CoversPart ? PartNote : "") + $"Rule {requirement.Rule.Name}. " + string.Join(
+        var observation = (requirement.CoversPart ? PartNote(requirement) : "") + $"Rule {requirement.Rule.Name}. " + string.Join(
             "; ",
             contributing.Select(c => c.Result is null
                 ? $"{c.Id}: missing"

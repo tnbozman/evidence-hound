@@ -69,17 +69,21 @@ internal static class OfficeChecks
         var profiles = tenant.DeviceConfigurations.Where(p => p.Assigned).ToArray();
         var rules = AsrRules.Select(rule =>
         {
-            var modes = catalog.Select(p => (p.Name, Mode: CatalogMode(p, rule.Fragment)))
-                .Concat(profiles.Select(p => (p.Name, Mode: ProfileMode(p.Find(rule.Property)))))
+            var modes = catalog.Select(p => (p.Name, Everyone: p.AllDevices || p.AllUsers, Mode: CatalogMode(p, rule.Fragment)))
+                .Concat(profiles.Select(p => (p.Name, Everyone: p.AllDevices || p.AllUsers, Mode: ProfileMode(p.Find(rule.Property)))))
                 .ToArray();
             var best = modes.Length == 0 ? Mode.NotConfigured : modes.Max(m => m.Mode);
-            return (rule.Name, Mode: best, Policies: modes.Where(m => m.Mode == Mode.Block).Select(m => m.Name).ToArray());
+            var blockingPolicies = modes.Where(m => m.Mode == Mode.Block).ToArray();
+            return (rule.Name, Mode: best, Policies: blockingPolicies.Select(m => m.Name).ToArray(), Everywhere: blockingPolicies.Any(m => m.Everyone));
         }).ToArray();
 
         var blocking = rules.Where(r => r.Mode == Mode.Block).ToArray();
         if (blocking.Length == rules.Length)
         {
-            return new(id, CheckOutcome.Pass, $"All {rules.Length} Office attack surface reduction rules are in block mode ({Policies(blocking.SelectMany(r => r.Policies))}).", sources);
+            // ISM-1667 to ISM-1673 hold for every workstation: blocking for all users or all devices passes, for some groups only is partial.
+            return blocking.All(r => r.Everywhere)
+                ? new(id, CheckOutcome.Pass, $"All {rules.Length} Office attack surface reduction rules are in block mode ({Policies(blocking.SelectMany(r => r.Policies))}).", sources)
+                : new(id, CheckOutcome.Partial, $"All {rules.Length} Office attack surface reduction rules are in block mode, but only for some groups, not all users or devices ({Policies(blocking.SelectMany(r => r.Policies))}).", sources);
         }
 
         if (rules.All(r => r.Mode == Mode.NotConfigured))

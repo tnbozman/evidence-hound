@@ -119,12 +119,13 @@ requirements:
     checks:
       - endpoint.application_control.enforced
   # Application control. Executables, software libraries, scripts and installers are controlled; compiled HTML, HTML
-  # applications and control panel applets are not read yet, so the ruleset review below still covers them.
+  # applications and control panel applets are not read from Intune, so the yearly ruleset review attests them.
   - ref: ISM-1657
     rule: all_pass
     checks:
       - endpoint.application_control.enforced
       - endpoint.application_control.file_types_covered
+      - appcontrol.rulesets_validated
   # Application control. Microsoft Defender for Endpoint reports allowed and blocked application control events to
   # advanced hunting, and enough devices are onboarded for that to be central.
   - ref: ISM-1660
