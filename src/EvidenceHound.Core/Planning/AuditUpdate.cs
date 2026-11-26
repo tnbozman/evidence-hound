@@ -19,8 +19,11 @@ public abstract record AuditUpdate
     /// <summary><c>upload_attachment</c>: create or update the evidence with ref_id <c>Evidence.Id</c> and attach the file.</summary>
     public sealed record UploadEvidence(Evidence Evidence) : AuditUpdate
     {
-        /// <summary>ref_ids of applied controls the evidence is linked to after upload. The dispatcher cannot link, so only the REST transport does.</summary>
+        /// <summary>ref_ids of applied controls the evidence is linked to after upload.</summary>
         public IReadOnlyList<string> AppliedControlRefIds { get; init; } = [];
+
+        /// <summary>s18-D3: the evidence's CISO Assistant ID when the state read found it, so the upload does not search for it again.</summary>
+        public string? KnownId { get; init; }
 
         public override T Match<T>(Func<UploadEvidence, T> upload, Func<UpdateRequirementAssessment, T> requirement, Func<UpdateAppliedControl, T> control)
         {
