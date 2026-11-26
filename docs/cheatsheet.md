@@ -161,7 +161,7 @@ file by `scripts/cheatsheet/render.sh`.
 - `hound incident report-pack INC-2026-01 --dfars`: what the 72-hour DFARS 252.204-7012 report asks for: CUI systems, suppliers, the primes' contracts, deadline and timeline, for the person who files it
   - `--config` (req) `--scope --out`
 - `hound irp build --programme essential-eight`: the incident response plan from `scope/irp.yaml` and the repo, NIST SP 800-61 Rev 3 with the Australian reporting, gaps first (`--strict` fails on gaps, `--json` gives each source)
-  - `--config` (req) `--scope --format json`
+  - `--programme` (req) `--scope --json --strict`
 
 ### CMMC and SPRS
 
