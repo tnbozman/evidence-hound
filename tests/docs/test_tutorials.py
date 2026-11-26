@@ -65,6 +65,16 @@ class CheckTests(unittest.TestCase):
         broken["steps"][0]["narration"] = []
         self.assertIn("t.json: step prepare: empty narration", tutorials.check(broken, "t.json", FIXTURES))
 
+    def test_a_next_link_must_lead_somewhere(self):
+        broken = good()
+        broken["next"] = [{"title": "Gone", "tutorial": "gone"}, {"title": "Missing", "guide": "missing.md"}, {"title": "Self", "tutorial": "good"}]
+
+        findings = tutorials.check(broken, "t.json", FIXTURES)
+
+        self.assertIn("t.json: next 'Gone': no tutorial gone", findings)
+        self.assertIn("t.json: next 'Missing': guide missing.md: no such file", findings)
+        self.assertEqual(2, len([f for f in findings if "next" in f]))
+
     def test_every_tutorial_is_listed_and_every_listed_one_exists(self):
         with tempfile.TemporaryDirectory() as tmp:
             docs = pathlib.Path(tmp)
