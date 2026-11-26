@@ -93,11 +93,9 @@ public sealed class AgentSkillTests : IDisposable
         (await File.ReadAllTextAsync(Path.Combine(_root, ".github", "copilot-instructions.md"), ct)).ShouldContain(Site);
         foreach (var (skill, tutorial) in Tutorials)
         {
-            foreach (var folder in new[] { ".claude", ".github" })
-            {
-                var text = await File.ReadAllTextAsync(Path.Combine(_root, folder, "skills", skill, "SKILL.md"), ct);
-                text.ShouldContain($"{Site}play.html#{tutorial}", Case.Sensitive, $"{folder} {skill}");
-            }
+            // With both assistants the skills are written once, under .claude/skills, which Copilot reads too.
+            var text = await File.ReadAllTextAsync(Path.Combine(_root, ".claude", "skills", skill, "SKILL.md"), ct);
+            text.ShouldContain($"{Site}play.html#{tutorial}", Case.Sensitive, skill);
 
             File.Exists(Path.Combine(ExampleRepoTests.RepoRoot, "docs", "tutorials", "interactive", $"{tutorial}.json")).ShouldBeTrue(tutorial);
         }
