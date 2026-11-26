@@ -1,0 +1,4208 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Continuous compliance evidence for CISO Assistant, for small teams in the defence industry.">
+      
+      
+      
+        <link rel="canonical" href="https://tnbozman.github.io/evidence-hound/collectors/rest/">
+      
+      
+        <link rel="prev" href="../m365/">
+      
+      
+        <link rel="next" href="../sophos/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>REST profiles - Evidence Hound</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#rest-collector-and-profiles" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Evidence Hound" class="md-header__button md-logo" aria-label="Evidence Hound" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Evidence Hound
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              REST profiles
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/tnbozman/evidence-hound" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tnbozman/evidence-hound
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Evidence Hound" class="md-nav__button md-logo" aria-label="Evidence Hound" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Evidence Hound
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/tnbozman/evidence-hound" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tnbozman/evidence-hound
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Start here
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Start here
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/local-trial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local trial
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guided-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guided setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../onboarding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Onboarding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/onboarding-tutorial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Onboarding tutorial
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/first-deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    First deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operate/grc-member/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Your week
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cheatsheet/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cheat sheet
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deploy
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Deploy
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../running/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running collectors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../publishing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Publishing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploy/backups/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backups and restore tests
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploy/hardening/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Harden the host
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploy/updates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keep it up to date
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ciso-assistant-configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CISO Assistant configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Collectors
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Collectors
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../m365/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Microsoft 365
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    REST profiles
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    REST profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-profiles-folder-and-the-library" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The profiles folder and the library
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-a-profile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using a profile
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#profile-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profile reference
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Profile reference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#parameters-and-secrets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parameters and secrets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#connection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Connection
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#queries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Queries
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#datasets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Datasets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Checks
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Results
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limits
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#security" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#problems" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Problems
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sophos/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sophos Central
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../vuln-scan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Vulnerability scans
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../terraform-tests/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Terraform tests
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../terraform-drift/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Terraform drift
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ciso-assistant/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CISO Assistant
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../manual-evidence/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Manual evidence
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../manual-templates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Manual templates
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Write a collector
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Write a collector
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/write-a-profile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Write a profile
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/write-a-collector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Write a collector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../mapping-files/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mapping files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adopt
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Adopt
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../scope/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scope files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../risk/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk studies and exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../bia/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Business impact analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../metrics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Metrics and dashboards
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../incidents/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Incidents and reporting deadlines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../third-parties/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Third parties
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adopt/migrate-from-spreadsheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Move off spreadsheets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adopt/answer-a-prime-questionnaire/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Answer a prime's questionnaire
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../migrations/essential-eight-to-asd-essentials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Essential Eight to ASD Essentials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adopt/disp-readiness/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DISP membership readiness
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adopt/cmmc-level-2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CMMC Level 2 and the SPRS score
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../operate/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operate
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8" id="__nav_8_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Operate
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operate/system-owner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System owner
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operate/collector-operator/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Collector operator
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operate/committee-member/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Committee member
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../training/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Training
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_5" id="__nav_8_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Training
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../training/system-owners/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System owners
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../training/committee/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Committee
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../training/board/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Board
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../training/ai-governance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI governance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Govern
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Govern
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reporting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reporting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../govern/security-committee/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security committee
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../govern/board-reporting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Board reporting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../govern/ai-assisted-reporting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI-assisted reporting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../govern/continuous-compliance-procedure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Continuous compliance procedure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ssp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System security plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../govern/system-security-plan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writing the SSP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../audit-plan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Audit plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ai-grc-primer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI governance primer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ai-grc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI governance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/ai-governance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI governance tutorial
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../engineering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Engineering
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../closed-loop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Closed loop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../repo-map/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Repository map
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reviews/2026-engineering-review/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Engineering review 2026
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reviews/2026-ciso-review/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CISO review 2026
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releasing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Releasing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../design/rest-collector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    REST collector design
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../design/agent-driven-onboarding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Agent-driven onboarding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../design/guided-review/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guided review
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_10_11" id="__nav_10_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dev servers
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_10_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Dev servers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/m365-dev-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Microsoft 365
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/sophos-dev-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sophos Central
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/iac-dev-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IaC pipeline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/scan-dev/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Vulnerability scans
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-profiles-folder-and-the-library" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The profiles folder and the library
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-a-profile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using a profile
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#profile-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profile reference
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Profile reference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#parameters-and-secrets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parameters and secrets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#connection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Connection
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#queries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Queries
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#datasets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Datasets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Checks
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Results
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limits
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#security" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#problems" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Problems
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="rest-collector-and-profiles">REST collector and profiles<a class="headerlink" href="#rest-collector-and-profiles" title="Permanent link">&para;</a></h1>
+<p>The built-in <code>rest</code> collector reads any HTTP API described by a <strong>profile</strong>: a YAML file that says how to sign in, which lists to read, and which checks to run over them. A new system, or a new check on a system, is a profile change, not a code change or a release. Sophos Central is read this way (<a href="https://github.com/tnbozman/evidence-hound/blob/main/profiles/sophos-central.yaml"><code>profiles/sophos-central.yaml</code></a>, <a href="../sophos/">guide</a>), infrastructure drift from an IaC pipeline's plan artefact (<a href="https://github.com/tnbozman/evidence-hound/blob/main/profiles/terraform-drift.yaml"><code>profiles/terraform-drift.yaml</code></a>, <a href="../terraform-drift/">guide</a>), hosting controls from the pipeline's infrastructure tests (<a href="https://github.com/tnbozman/evidence-hound/blob/main/profiles/terraform-tests.yaml"><code>profiles/terraform-tests.yaml</code></a>, <a href="../terraform-tests/">guide</a>), and CISO Assistant's own AI risks and supplier records (<a href="https://github.com/tnbozman/evidence-hound/blob/main/profiles/ciso-assistant.yaml"><code>profiles/ciso-assistant.yaml</code></a>, <a href="../ciso-assistant/">guide</a>).</p>
+<p>Each run has three phases, and each is kept apart from the others:</p>
+<ol>
+<li><strong>Collect.</strong> Sign in, run the <code>bootstrap</code> queries (such as <code>whoami</code>), then read each query once, following its pages. Each query is saved as one evidence file, <code>&lt;query&gt;.json</code>, with identities hashed.</li>
+<li><strong>Extract.</strong> Build the <code>datasets</code>: join, flatten, filter and pick fields from the queries' items. Each dataset is saved as <code>dataset.&lt;name&gt;.json</code>, naming the query files it was built from and their SHA-256.</li>
+<li><strong>Assess.</strong> Run each check over a query or a dataset. A check's result names the evidence it read.</li>
+</ol>
+<p>Nothing in a run calls a language model. The profile is the whole definition; the engine only follows it.</p>
+<p>To write your first profile, follow the tutorial <a href="../../tutorials/write-a-profile/">Write a profile</a>. The design and the decisions behind it are in <a href="../../design/rest-collector/">the design note</a>.</p>
+<h2 id="the-profiles-folder-and-the-library">The profiles folder and the library<a class="headerlink" href="#the-profiles-folder-and-the-library" title="Permanent link">&para;</a></h2>
+<p><code>hound</code> has no profiles built in. Every profile loads from the organisation's <strong>profiles folder</strong>, by default <code>/config/profiles</code>, mounted read-only into the runner. Keep the folder in your private compliance repo, next to <code>hound.yaml</code>. Each profile is <code>&lt;name&gt;.yaml</code>, and its tests are in <code>&lt;name&gt;.tests/</code> beside it.</p>
+<p>This repository keeps a public <strong>library</strong> of tested profiles in <a href="https://github.com/tnbozman/evidence-hound/blob/main/profiles"><code>profiles/</code></a>: <code>example</code> (the fictional Example Asset API) and <code>sophos-central</code>. To use one, copy the profile and its tests into your profiles folder:</p>
+<div class="highlight"><pre><span></span><code><span class="gp">$ </span>cp<span class="w"> </span>-R<span class="w"> </span>evidence-hound/profiles/sophos-central.yaml<span class="w"> </span>evidence-hound/profiles/sophos-central.tests<span class="w"> </span>/srv/compliance/profiles/
+<span class="gp">$ </span>hound<span class="w"> </span>profile<span class="w"> </span>validate<span class="w"> </span>sophos-central<span class="w"> </span>--profiles<span class="w"> </span>/srv/compliance/profiles
+<span class="gp">$ </span>hound<span class="w"> </span>profile<span class="w"> </span><span class="nb">test</span><span class="w"> </span>sophos-central<span class="w"> </span>--profiles<span class="w"> </span>/srv/compliance/profiles
+</code></pre></div>
+<p>A copied profile keeps its <code>source</code> and <code>version</code>. After you update your checkout of this repository, <code>hound profile diff sophos-central --library &lt;checkout&gt;</code> shows how your copy differs from the library version, so you can take the library's fixes without losing your own changes. Set <code>HOUND_PROFILES_PATH</code> and <code>HOUND_LIBRARY_PATH</code> to skip the options.</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>hound profile validate &lt;name&gt;</code></td>
+<td>Parses and checks the profile, listing every problem with its code.</td>
+</tr>
+<tr>
+<td><code>hound profile test &lt;name&gt;</code></td>
+<td>Runs each test case in <code>&lt;name&gt;.tests/</code> offline, against its recorded answers, and compares each check's result with the expected one. Exits 1 if any case fails.</td>
+</tr>
+<tr>
+<td><code>hound profile diff &lt;name&gt; --library &lt;checkout&gt;</code></td>
+<td>Shows the lines that differ from the library version named in <code>source</code>.</td>
+</tr>
+</tbody>
+</table>
+<p><code>make test-profiles</code> runs <code>hound profile test</code> for every library profile; CI runs it on every push.</p>
+<h2 id="using-a-profile">Using a profile<a class="headerlink" href="#using-a-profile" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="nt">collectors</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">example-assets</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rest</span>
+<span class="w">    </span><span class="nt">schedule</span><span class="p">:</span><span class="w"> </span><span class="s">"0</span><span class="nv"> </span><span class="s">5</span><span class="nv"> </span><span class="s">*</span><span class="nv"> </span><span class="s">*</span><span class="nv"> </span><span class="s">*"</span>
+<span class="w">    </span><span class="nt">settings</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">profile</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">example</span>
+<span class="w">      </span><span class="nt">client_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">00000000-0000-4000-8000-0000000000c1</span>
+<span class="w">      </span><span class="nt">supported_os</span><span class="p">:</span><span class="w"> </span><span class="s">"14,</span><span class="nv"> </span><span class="s">15"</span>
+<span class="w">    </span><span class="nt">secrets</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">client_secret</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">file:/run/secrets/example-assets_client_secret</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Required</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>profile</code></td>
+<td>yes</td>
+<td>The profile's name, its file name without <code>.yaml</code>.</td>
+</tr>
+<tr>
+<td><code>profiles_path</code></td>
+<td>no</td>
+<td>The profiles folder. Default <code>/config/profiles</code>.</td>
+</tr>
+<tr>
+<td><code>include_identities</code></td>
+<td>no</td>
+<td><code>true</code> keeps the identities the profile lists in evidence. Default <code>false</code>: they are hashed.</td>
+</tr>
+<tr>
+<td><code>allow_writes</code></td>
+<td>no</td>
+<td><code>true</code> lets the profile's <code>write: true</code> queries run, such as the opt-in pipeline trigger of <code>terraform-drift-trigger</code>. Default <code>false</code>: they are refused and nothing is sent. Give the instance a token that can do only that one write.</td>
+</tr>
+<tr>
+<td><code>require_profile_tests</code></td>
+<td>no</td>
+<td><code>true</code> makes a profile without tests unable to assess. Default <code>false</code>: a warning in the log.</td>
+</tr>
+</tbody>
+</table>
+<p>Every other setting is one of the profile's <code>parameters</code>, and every secret one of its <code>secrets</code>. <code>hound add collector rest --set profile=&lt;name&gt;</code> asks for the ones the profile requires. <code>hound config validate</code> checks each instance against its profile: unknown settings, missing parameters, values of the wrong type and missing secrets are all reported before anything is called.</p>
+<h2 id="profile-reference">Profile reference<a class="headerlink" href="#profile-reference" title="Permanent link">&para;</a></h2>
+<p>A profile has these top-level keys. Anything else is refused (<code>profile.key_unknown</code>).</p>
+<div class="highlight"><pre><span></span><code><span class="nt">profile</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">example</span><span class="w">                 </span><span class="c1"># the name; must match the file name</span>
+<span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">"1.0.0"</span><span class="w">                 </span><span class="c1"># your version of this profile</span>
+<span class="nt">source</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">evidence-hound/profiles/example.yaml</span><span class="w">   </span><span class="c1"># where it was copied from, for hound profile diff</span>
+<span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">One line on what it reads.</span>
+<span class="nt">requires</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">hound</span><span class="p">:</span><span class="w"> </span><span class="s">"&gt;=0.1"</span><span class="w">                 </span><span class="c1"># the oldest hound that can run it</span>
+<span class="nt">parameters</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="w"> </span><span class="nv">...</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="nt">secrets</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="w"> </span><span class="nv">...</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="nt">connection</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="w"> </span><span class="nv">...</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="nt">bootstrap</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="w"> </span><span class="nv">...</span><span class="w"> </span><span class="p p-Indicator">}</span><span class="w">               </span><span class="c1"># optional</span>
+<span class="nt">queries</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="w"> </span><span class="nv">...</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="nt">datasets</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="w"> </span><span class="nv">...</span><span class="w"> </span><span class="p p-Indicator">}</span><span class="w">                </span><span class="c1"># optional</span>
+<span class="nt">checks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="w"> </span><span class="nv">...</span><span class="w"> </span><span class="p p-Indicator">]</span>
+</code></pre></div>
+<h3 id="parameters-and-secrets">Parameters and secrets<a class="headerlink" href="#parameters-and-secrets" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="nt">parameters</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">client_id</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">    </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Client ID of the read-only API client.</span>
+<span class="w">  </span><span class="nt">stale_after</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">duration</span>
+<span class="w">    </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">P30D</span>
+<span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">A device not seen for longer than this is stale.</span>
+<span class="nt">secrets</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">client_secret</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Client secret of the read-only API client.</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Holds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>string</code></td>
+<td>Any text.</td>
+</tr>
+<tr>
+<td><code>int</code></td>
+<td>A whole number.</td>
+</tr>
+<tr>
+<td><code>number</code></td>
+<td>A number, such as <code>0.95</code>.</td>
+</tr>
+<tr>
+<td><code>bool</code></td>
+<td><code>true</code> or <code>false</code>.</td>
+</tr>
+<tr>
+<td><code>list</code></td>
+<td>Comma-separated values, such as <code>14, 15</code>.</td>
+</tr>
+<tr>
+<td><code>duration</code></td>
+<td>An ISO 8601 duration, such as <code>P30D</code> or <code>PT12H</code>.</td>
+</tr>
+<tr>
+<td><code>url</code></td>
+<td>An absolute <code>http</code> or <code>https</code> address.</td>
+</tr>
+</tbody>
+</table>
+<p>A parameter is required when it says so and has no <code>default</code>. Text anywhere in the profile can use placeholders:</p>
+<table>
+<thead>
+<tr>
+<th>Placeholder</th>
+<th>Is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>${name}</code></td>
+<td>A parameter, or a variable a query set with <code>vars</code>.</td>
+</tr>
+<tr>
+<td><code>${secrets.name}</code></td>
+<td>A secret the profile declares. Evidence records the request with the placeholder, never the value.</td>
+</tr>
+<tr>
+<td><code>${item.path}</code></td>
+<td>A field of the item a <code>for_each</code> query is called for, such as <code>${item.id}</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>A placeholder with no value is a problem (<code>rest.value_missing</code>), never an empty string.</p>
+<h3 id="connection">Connection<a class="headerlink" href="#connection" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="nt">connection</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">base_url</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${base_url}</span>
+<span class="w">  </span><span class="nt">allowed_hosts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">api.example.com</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">login.example.com</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">"${base_url}"</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">"${token_url}"</span><span class="p p-Indicator">]</span>
+<span class="w">  </span><span class="nt">auth</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">oauth2_client_credentials</span>
+<span class="w">    </span><span class="nt">token_url</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${token_url}</span>
+<span class="w">    </span><span class="nt">client_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${client_id}</span>
+<span class="w">    </span><span class="nt">client_secret</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${secrets.client_secret}</span>
+<span class="w">    </span><span class="nt">scope</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">read</span>
+<span class="w">  </span><span class="nt">rate_limit</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">per_second</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
+<span class="w">    </span><span class="nt">max_retries</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
+<span class="w">  </span><span class="nt">tls</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">pinned_thumbprint</span><span class="p">:</span><span class="w"> </span><span class="s">""</span><span class="w">        </span><span class="c1"># optional: accept a self-signed certificate only with this SHA-256 thumbprint</span>
+</code></pre></div>
+<p>Relative query paths are resolved against <code>base_url</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Auth <code>type</code></th>
+<th>Keys</th>
+<th>Sends</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>none</code></td>
+<td></td>
+<td>Nothing.</td>
+</tr>
+<tr>
+<td><code>oauth2_client_credentials</code></td>
+<td><code>token_url</code>, <code>client_id</code>, <code>client_secret</code> or <code>client_certificate</code>, <code>scope</code></td>
+<td>A bearer token from the token endpoint, renewed when it expires. With <code>client_certificate</code> (PEM with its key), a signed client assertion instead of a secret.</td>
+</tr>
+<tr>
+<td><code>api_key</code></td>
+<td><code>in</code> (<code>header</code> or <code>query</code>), <code>name</code>, <code>value</code></td>
+<td>A static key.</td>
+</tr>
+<tr>
+<td><code>bearer</code></td>
+<td><code>token</code></td>
+<td>A static bearer token.</td>
+</tr>
+<tr>
+<td><code>basic</code></td>
+<td><code>username</code>, <code>password</code></td>
+<td>HTTP basic authentication.</td>
+</tr>
+<tr>
+<td><code>mutual_tls</code></td>
+<td><code>certificate</code></td>
+<td>A client certificate (PEM with its key) as the only credential.</td>
+</tr>
+</tbody>
+</table>
+<p><code>rate_limit</code> defaults to 5 requests a second and 3 retries. A <code>429</code> or <code>503</code> answer is retried after its <code>Retry-After</code>. Redirects are followed at most 5 times, and only on the same host; any other redirect is refused (<code>rest.redirect_refused</code>) and nothing is sent.</p>
+<h3 id="queries">Queries<a class="headerlink" href="#queries" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="nt">bootstrap</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">whoami</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">get</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v1/whoami</span>
+<span class="w">    </span><span class="nt">vars</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">org_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$.organisation.id</span>
+
+<span class="nt">queries</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">devices</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">get</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v1/orgs/${org_id}/devices</span>
+<span class="w">    </span><span class="nt">paging</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> style</span><span class="p">:</span><span class="w"> </span><span class="nv">next_link</span><span class="p p-Indicator">,</span><span class="nt"> next</span><span class="p">:</span><span class="w"> </span><span class="nv">$.next</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">    </span><span class="nt">items</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$.items</span>
+<span class="w">    </span><span class="nt">identities</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">hostname</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">serial</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">owner</span><span class="p p-Indicator">]</span>
+</code></pre></div>
+<p>A <strong>bootstrap</strong> query runs before the others, is not saved as evidence and cannot be checked; it sets variables with <code>vars</code> (name to path). A query may also set <code>vars</code> for queries after it; <code>hound</code> orders queries by what they use and refuses a cycle (<code>profile.dependency_cycle</code>).</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>get</code> or <code>post</code></td>
+<td>The path or address.</td>
+</tr>
+<tr>
+<td><code>headers</code>, <code>query</code>, <code>body</code></td>
+<td>Request headers, query parameters and (for <code>post</code>) a JSON body.</td>
+</tr>
+<tr>
+<td><code>items</code></td>
+<td>Where the list is in each answer. Default <code>$</code>, the answer itself.</td>
+</tr>
+<tr>
+<td><code>paging</code></td>
+<td>How to follow pages (below).</td>
+</tr>
+<tr>
+<td><code>identities</code></td>
+<td>Property names, at any depth, that identify a person, device or network. Hashed in evidence and in datasets unless <code>include_identities</code> is <code>true</code>.</td>
+</tr>
+<tr>
+<td><code>vars</code></td>
+<td>Values later queries can use as <code>${name}</code>.</td>
+</tr>
+<tr>
+<td><code>for_each</code></td>
+<td>Another query: this one is called once per item of it, with <code>${item.path}</code>. At most <code>max_calls</code> calls (default 100).</td>
+</tr>
+<tr>
+<td><code>optional_on</code></td>
+<td>Status codes that mean "not available here", such as a missing licence: <code>[403, 404]</code>. Checks over it become not applicable, with the reason.</td>
+</tr>
+<tr>
+<td><code>async</code></td>
+<td>A report run as a job: <code>status_url</code> (path in the first answer), <code>done</code> (a test on the status answer), <code>result_url</code>, <code>poll_seconds</code> and <code>timeout_seconds</code>.</td>
+</tr>
+<tr>
+<td><code>format</code></td>
+<td><code>auto</code> (from the content type), <code>json</code>, <code>xml</code>, <code>csv</code> or <code>zip</code>. <code>arrays</code> names XML paths that are always lists.</td>
+</tr>
+<tr>
+<td><code>write</code></td>
+<td><code>true</code> marks a query that changes something, such as starting a pipeline run (<code>terraform-drift-trigger</code>). It runs only when the collector instance also sets <code>allow_writes: true</code>; otherwise nothing is sent and checks over it are unable to assess. Every other query only reads.</td>
+</tr>
+<tr>
+<td><code>redirect_hosts</code></td>
+<td>Hosts other than the API's that a redirect from this query's GET may lead to, such as the signed storage a pipeline artefact downloads from. They get a plain GET with no sign-in and no headers, so they never receive credentials. Any other redirect off the API's host is refused (<code>rest.redirect_refused</code>).</td>
+</tr>
+<tr>
+<td><code>member</code></td>
+<td>With <code>format: zip</code> (a pipeline artefact, for example), the file in the archive to read, as JSON, XML or CSV by its extension. Required with <code>zip</code>, refused without it. The archive and the unzipped member both count towards <code>max_bytes</code>, so a member that unzips past the cap is refused.</td>
+</tr>
+<tr>
+<td><code>keep</code></td>
+<td>Keep only these properties of each item, in memory and in evidence, for very large lists.</td>
+</tr>
+<tr>
+<td><code>max_items</code>, <code>max_bytes</code>, <code>max_pages</code></td>
+<td>Caps. Defaults 50,000 items, 50 MB and 1,000 pages. Over a cap, checks over the query are unable to assess, naming the cap.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Paging <code>style</code></th>
+<th>Keys</th>
+<th>Follows</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>next_link</code></td>
+<td><code>next</code></td>
+<td>The next page's address at a path in the answer, until it is absent.</td>
+</tr>
+<tr>
+<td><code>page_number</code></td>
+<td><code>page</code>, <code>size_param</code>, <code>size</code>, <code>total_pages</code></td>
+<td>Page numbers from 1 until <code>total_pages</code> (a path in the answer).</td>
+</tr>
+<tr>
+<td><code>cursor</code></td>
+<td><code>cursor</code>, <code>param</code></td>
+<td>A cursor at a path, sent back as query parameter <code>param</code>, until there is none.</td>
+</tr>
+<tr>
+<td><code>offset</code></td>
+<td><code>offset_param</code>, <code>limit_param</code>, <code>limit</code>, <code>total</code></td>
+<td>Offset and limit, until <code>total</code> items, or a short page when there is no total.</td>
+</tr>
+<tr>
+<td><code>link_header</code></td>
+<td></td>
+<td>The <code>Link</code> header's <code>rel="next"</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>Paths are a small, fixed language so every path can be checked before a run: <code>$</code>, then <code>.name</code>, <code>['any name']</code>, <code>[2]</code> or <code>[*]</code> (every element of a list).</p>
+<h3 id="datasets">Datasets<a class="headerlink" href="#datasets" title="Permanent link">&para;</a></h3>
+<p>A dataset shapes one query's items into the rows a check needs.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">datasets</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">user_roles</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">from</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">users</span>
+<span class="w">    </span><span class="nt">join</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">with</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">roles</span>
+<span class="w">        </span><span class="nt">on</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> left</span><span class="p">:</span><span class="w"> </span><span class="s">"$.roleIds[*]"</span><span class="p p-Indicator">,</span><span class="nt"> right</span><span class="p">:</span><span class="w"> </span><span class="nv">$.id</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">        </span><span class="nt">as</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">roles</span>
+<span class="w">        </span><span class="nt">optional</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">where</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> field</span><span class="p">:</span><span class="w"> </span><span class="nv">$.status</span><span class="p p-Indicator">,</span><span class="nt"> equals</span><span class="p">:</span><span class="w"> </span><span class="nv">active</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">    </span><span class="nt">fields</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$.id</span>
+<span class="w">      </span><span class="nt">mfa</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$.mfa.enabled</span>
+<span class="w">      </span><span class="nt">role_names</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$.roles[*].name</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>from</code></td>
+<td>A query or another dataset.</td>
+</tr>
+<tr>
+<td><code>join</code></td>
+<td>Attach the rows of <code>with</code> whose <code>right</code> value equals a <code>left</code> value of the row, as a list under <code>as</code>. A join that is not <code>optional</code> counts rows that match nothing, and checks over the dataset report them.</td>
+</tr>
+<tr>
+<td><code>flatten</code></td>
+<td>A path to a list in each row: one row per element, with the original row under <code>parent</code> (a plain value goes under <code>value</code>).</td>
+</tr>
+<tr>
+<td><code>where</code></td>
+<td>Tests (as in checks) a row must pass to stay.</td>
+</tr>
+<tr>
+<td><code>fields</code></td>
+<td>Output name to path. Without it, whole rows are kept. A path that finds nothing leaves the field out.</td>
+</tr>
+</tbody>
+</table>
+<p>A dataset built from a query that failed, or is not available, fails or is not available with it, and says which.</p>
+<h3 id="checks">Checks<a class="headerlink" href="#checks" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="nt">checks</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">example.device.os_supported</span>
+<span class="w">    </span><span class="nt">title</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Devices run a supported operating system</span>
+<span class="w">    </span><span class="nt">over</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">devices</span>
+<span class="w">    </span><span class="nt">each</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> field</span><span class="p">:</span><span class="w"> </span><span class="nv">$.os.version</span><span class="p p-Indicator">,</span><span class="nt"> version_in</span><span class="p">:</span><span class="w"> </span><span class="s">"${supported_os}"</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">    </span><span class="nt">require</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">all</span>
+<span class="w">    </span><span class="nt">when_empty</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">not_applicable</span>
+<span class="w">    </span><span class="nt">describe</span><span class="p">:</span><span class="w"> </span><span class="s">"{passed}</span><span class="nv"> </span><span class="s">of</span><span class="nv"> </span><span class="s">{total}</span><span class="nv"> </span><span class="s">devices</span><span class="nv"> </span><span class="s">run</span><span class="nv"> </span><span class="s">a</span><span class="nv"> </span><span class="s">supported</span><span class="nv"> </span><span class="s">operating</span><span class="nv"> </span><span class="s">system.</span><span class="nv"> </span><span class="s">Supported:</span><span class="nv"> </span><span class="s">${supported_os}."</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id</code></td>
+<td>The framework-neutral check ID that mappings use, such as <code>network.firewall.firmware_supported</code>. Unique in the profile.</td>
+</tr>
+<tr>
+<td><code>over</code></td>
+<td>The query or dataset it reads. A code check may read several: <code>[admins, roles]</code>.</td>
+</tr>
+<tr>
+<td><code>where</code></td>
+<td>Tests that put a row in scope. Rows out of scope are not tested.</td>
+</tr>
+<tr>
+<td><code>each</code></td>
+<td>The test every row in scope is put to.</td>
+</tr>
+<tr>
+<td><code>require</code></td>
+<td>How row results become the check's result (below).</td>
+</tr>
+<tr>
+<td><code>when_empty</code></td>
+<td>What no rows in scope means: <code>not_applicable</code>, <code>fail</code> or <code>unable_to_assess</code>. Required: there is no default, because an empty list means different things for different checks.</td>
+</tr>
+<tr>
+<td><code>describe</code></td>
+<td>The observation. <code>{passed}</code>, <code>{failed}</code>, <code>{total}</code> (rows read) and <code>{matched}</code> (rows in scope) are filled in, as are <code>${...}</code> placeholders. Failing rows are listed after it, by <code>id</code> or <code>name</code>, up to 20.</td>
+</tr>
+<tr>
+<td><code>code</code>, <code>with</code></td>
+<td>A built-in code check instead of <code>each</code> and <code>require</code>, with its own settings.</td>
+</tr>
+<tr>
+<td><code>history</code></td>
+<td>For a code check only: a query it is over whose items from the instance's earlier runs it is also given, oldest first, as the evidence store still keeps them. The run saves them as <code>&lt;query&gt;.history.json</code>, which the result cites, so it can be reproduced from this run's evidence. For things an API gives no date for, such as how long a firmware upgrade has been offered.</td>
+</tr>
+</tbody>
+</table>
+<p>A <strong>test</strong> is a map with <code>field</code>, one operator, and optionally <code>missing</code> and <code>negate</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Operator</th>
+<th>Passes when the field</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>equals</code></td>
+<td>Equals the value (text, number or <code>true</code>/<code>false</code>).</td>
+</tr>
+<tr>
+<td><code>not_equals</code></td>
+<td>Does not equal the value.</td>
+</tr>
+<tr>
+<td><code>in</code></td>
+<td>Equals one of a list, such as <code>"enabled, enforced"</code> or a <code>list</code> parameter.</td>
+</tr>
+<tr>
+<td><code>matches</code></td>
+<td>Matches a regular expression.</td>
+</tr>
+<tr>
+<td><code>any_matches</code></td>
+<td>Is a list with at least one element matching a regular expression.</td>
+</tr>
+<tr>
+<td><code>exists</code></td>
+<td>Is present and not null (<code>exists: true</code>). For "is absent", add <code>negate: true</code>.</td>
+</tr>
+<tr>
+<td><code>version_in</code></td>
+<td>Is a version within one of a list: <code>21.0.1</code> is within <code>21.0</code> and <code>21</code>, not within <code>21.5</code>.</td>
+</tr>
+<tr>
+<td><code>version_at_least</code></td>
+<td>Is a version at least this one.</td>
+</tr>
+<tr>
+<td><code>within</code></td>
+<td>Is a date no older than a duration, such as <code>P30D</code>.</td>
+</tr>
+<tr>
+<td><code>older_than</code></td>
+<td>Is a date older than a duration.</td>
+</tr>
+<tr>
+<td><code>at_least</code></td>
+<td>Is a number at least this one.</td>
+</tr>
+<tr>
+<td><code>at_most</code></td>
+<td>Is a number at most this one.</td>
+</tr>
+</tbody>
+</table>
+<p><code>missing</code> says what a missing field means: <code>unable_to_assess</code> (the default), <code>pass</code> or <code>fail</code>. <code>negate: true</code> turns a pass into a fail and a fail into a pass; it does not change <code>missing</code>. A test that cannot be decided (a field that is not a date for <code>within</code>, say) makes the check unable to assess, naming the row.</p>
+<table>
+<thead>
+<tr>
+<th><code>require</code></th>
+<th>Pass when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>all</code></td>
+<td>Every row in scope passes <code>each</code>.</td>
+</tr>
+<tr>
+<td><code>any</code></td>
+<td>At least one does.</td>
+</tr>
+<tr>
+<td><code>none</code></td>
+<td>None does.</td>
+</tr>
+<tr>
+<td><code>count_at_most</code>, as <code>{ count_at_most: N }</code></td>
+<td>At most N rows are in scope (N may be a placeholder).</td>
+</tr>
+<tr>
+<td><code>count_at_least</code>, as <code>{ count_at_least: N }</code></td>
+<td>At least N rows are in scope.</td>
+</tr>
+<tr>
+<td><code>{ ratio_at_least: 0.95, partial_at: 0.8 }</code></td>
+<td>At least 95% pass. From <code>partial_at</code> up to it, the result is <code>partial</code>; below it, <code>fail</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>Code checks are for what the operators cannot say. They are built into <code>hound</code>, named and tested; a profile names one with <code>code</code>. Today they are <code>sophos.super_admin_count</code> (Sophos Central admins and roles, <code>with: { max: ... }</code>), <code>sophos.firmware_upgrade_age</code> (firewalls and the firmware upgrade check, <code>history</code> of the upgrade check, <code>with: { days: ... }</code>), <code>terraform.no_drift</code> and <code>terraform.tests_pass</code>. There are no runtime code plugins.</p>
+<h2 id="results">Results<a class="headerlink" href="#results" title="Permanent link">&para;</a></h2>
+<p>Every check gives one of these, which the mapping turns into CISO Assistant results:</p>
+<table>
+<thead>
+<tr>
+<th>Result</th>
+<th>Means</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pass</code></td>
+<td>The requirement holds on the evidence read.</td>
+</tr>
+<tr>
+<td><code>fail</code></td>
+<td>It does not. The observation names the rows that fail.</td>
+</tr>
+<tr>
+<td><code>partial</code></td>
+<td>Only for <code>ratio_at_least</code> with <code>partial_at</code>: between the two.</td>
+</tr>
+<tr>
+<td><code>not applicable</code></td>
+<td>Nothing to assess: no rows (with <code>when_empty: not_applicable</code>), or the API said the list is not available here (<code>optional_on</code>).</td>
+</tr>
+<tr>
+<td><code>unable to assess</code></td>
+<td>The evidence could not be read or decided: a failed query, a cap reached, a missing field, a join with unmatched rows. It never counts as a pass or a fail.</td>
+</tr>
+</tbody>
+</table>
+<p>A broken query only affects the checks that read it. The run's <code>_manifest.json</code> names the profile, its version, its source and the SHA-256 of the file that ran.</p>
+<h2 id="limits">Limits<a class="headerlink" href="#limits" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Limit</th>
+<th>Default</th>
+<th>Change it with</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Items per query</td>
+<td>50,000</td>
+<td><code>max_items</code></td>
+</tr>
+<tr>
+<td>Bytes per query</td>
+<td>50 MB</td>
+<td><code>max_bytes</code></td>
+</tr>
+<tr>
+<td>Pages per query</td>
+<td>1,000</td>
+<td><code>max_pages</code></td>
+</tr>
+<tr>
+<td>Calls per <code>for_each</code> query</td>
+<td>100</td>
+<td><code>max_calls</code></td>
+</tr>
+<tr>
+<td>Requests per second</td>
+<td>5</td>
+<td><code>rate_limit.per_second</code></td>
+</tr>
+<tr>
+<td>Retries after 429 or 503</td>
+<td>3</td>
+<td><code>rate_limit.max_retries</code></td>
+</tr>
+<tr>
+<td>Redirects</td>
+<td>5</td>
+<td>Fixed</td>
+</tr>
+</tbody>
+</table>
+<h2 id="security">Security<a class="headerlink" href="#security" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Allowed hosts.</strong> Credentials, tokens and requests only go to hosts in <code>connection.allowed_hosts</code>: a host name, a wildcard for its sub-domains (<code>*.central.sophos.com</code>), or an address (an entry with a port matches only that port). Anything else, including a data region named by the API, is refused with <code>rest.host_not_allowed</code> and nothing is sent. Credentials go only over <code>https</code>, except to this machine for recorded tests (<code>profile.host_insecure</code>).</li>
+<li><strong>Secrets.</strong> Secrets come only from the instance's <code>secrets</code>, which reference files or environment variables, and a profile can only use the secrets it declares. Before evidence is written, it is searched for every secret value; a file holding one is refused (<code>rest.secret_in_evidence</code>) and its checks are unable to assess.</li>
+<li><strong>Identities.</strong> The properties a query lists in <code>identities</code> are replaced by <code>sha256:</code> and the first 16 hex characters of a SHA-256 hash, before datasets and checks see them, unless the instance sets <code>include_identities: true</code>. The same value gets the same hash in every run, so findings can be followed over time.</li>
+<li><strong>Read only.</strong> A profile can <code>post</code> (some APIs search with a POST), but it is meant for reading. Give the API credential the least role that can read the lists.</li>
+<li><strong>No language model.</strong> Collection and assessment are the profile and the engine only.</li>
+</ul>
+<h2 id="problems">Problems<a class="headerlink" href="#problems" title="Permanent link">&para;</a></h2>
+<p>Profile problems start with <code>profile.</code> and are listed by <code>hound profile validate</code>, with the line they are on. Run problems start with <code>rest.</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rest.auth_failed</code></td>
+<td>The token endpoint or API refused the credential.</td>
+</tr>
+<tr>
+<td><code>rest.host_not_allowed</code></td>
+<td>A request or token would have gone to a host not in <code>allowed_hosts</code>. Nothing was sent.</td>
+</tr>
+<tr>
+<td><code>rest.redirect_refused</code></td>
+<td>The API redirected to another host. Nothing was sent there.</td>
+</tr>
+<tr>
+<td><code>rest.value_missing</code></td>
+<td>A placeholder has no value: a missing parameter, or a variable a query did not set.</td>
+</tr>
+<tr>
+<td><code>rest.rate_limited</code></td>
+<td>Still <code>429</code> or <code>503</code> after every retry.</td>
+</tr>
+<tr>
+<td><code>rest.response_invalid</code></td>
+<td>An answer that is not the format expected, or has no items where <code>items</code> says.</td>
+</tr>
+<tr>
+<td><code>rest.zip_member_missing</code></td>
+<td>A zip answer without the <code>member</code> the query names; the message lists what the archive holds.</td>
+</tr>
+<tr>
+<td><code>rest.response_too_large</code></td>
+<td>A zip <code>member</code> that unzips past <code>max_bytes</code>.</td>
+</tr>
+<tr>
+<td><code>rest.job_failed</code>, <code>rest.job_timeout</code></td>
+<td>An <code>async</code> report failed or did not finish in time.</td>
+</tr>
+<tr>
+<td><code>rest.secret_in_evidence</code></td>
+<td>Evidence held a secret value; it was not written.</td>
+</tr>
+<tr>
+<td><code>rest.unreachable</code></td>
+<td>The API could not be reached (network, DNS or proxy).</td>
+</tr>
+<tr>
+<td><code>profile.tests_missing</code></td>
+<td><code>require_profile_tests</code> is <code>true</code> and the profile has no tests.</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Evidence Hound contributors. Apache-2.0.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.indexes", "navigation.top", "content.code.copy", "search.suggest"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,3999 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Continuous compliance evidence for CISO Assistant, for small teams in the defence industry.">
+      
+      
+      
+        <link rel="canonical" href="https://tnbozman.github.io/evidence-hound/ai-grc/">
+      
+      
+        <link rel="prev" href="../ai-grc-primer/">
+      
+      
+        <link rel="next" href="../tutorials/ai-governance/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>AI governance - Evidence Hound</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#ai-governance-ai6-in-evidence-hound" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Evidence Hound" class="md-header__button md-logo" aria-label="Evidence Hound" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Evidence Hound
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              AI governance
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/tnbozman/evidence-hound" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tnbozman/evidence-hound
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Evidence Hound" class="md-nav__button md-logo" aria-label="Evidence Hound" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Evidence Hound
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/tnbozman/evidence-hound" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tnbozman/evidence-hound
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../release-notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Start here
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Start here
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/local-trial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local trial
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guided-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guided setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../onboarding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Onboarding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/onboarding-tutorial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Onboarding tutorial
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/first-deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    First deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../operate/grc-member/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Your week
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cheatsheet/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cheat sheet
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deploy
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Deploy
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../running/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running collectors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../publishing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Publishing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deploy/backups/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backups and restore tests
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deploy/hardening/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Harden the host
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deploy/updates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keep it up to date
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ciso-assistant-configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CISO Assistant configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../collectors/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Collectors
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Collectors
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../collectors/m365/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Microsoft 365
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../collectors/rest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    REST profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../collectors/sophos/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sophos Central
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../collectors/vuln-scan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Vulnerability scans
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../collectors/terraform-tests/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Terraform tests
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../collectors/terraform-drift/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Terraform drift
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../collectors/ciso-assistant/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CISO Assistant
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../manual-evidence/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Manual evidence
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../collectors/manual-templates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Manual templates
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Write a collector
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Write a collector
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/write-a-profile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Write a profile
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/write-a-collector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Write a collector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mapping-files/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mapping files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adopt
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Adopt
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../scope/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scope files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../risk/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk studies and exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bia/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Business impact analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../metrics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Metrics and dashboards
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../incidents/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Incidents and reporting deadlines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../third-parties/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Third parties
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adopt/migrate-from-spreadsheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Move off spreadsheets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adopt/answer-a-prime-questionnaire/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Answer a prime's questionnaire
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migrations/essential-eight-to-asd-essentials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Essential Eight to ASD Essentials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adopt/disp-readiness/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DISP membership readiness
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adopt/cmmc-level-2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CMMC Level 2 and the SPRS score
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../operate/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operate
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8" id="__nav_8_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Operate
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../operate/system-owner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System owner
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../operate/collector-operator/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Collector operator
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../operate/committee-member/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Committee member
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../training/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Training
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_5" id="__nav_8_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Training
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../training/system-owners/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System owners
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../training/committee/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Committee
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../training/board/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Board
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../training/ai-governance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI governance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Govern
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Govern
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reporting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reporting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../govern/security-committee/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security committee
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../govern/board-reporting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Board reporting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../govern/ai-assisted-reporting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI-assisted reporting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../govern/continuous-compliance-procedure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Continuous compliance procedure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ssp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System security plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../govern/system-security-plan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writing the SSP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../audit-plan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Audit plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ai-grc-primer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI governance primer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI governance
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI governance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-ai6-asks-and-where-each-part-lives" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What AI6 asks, and where each part lives
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#who-sets-each-field" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Who sets each field
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The checks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-national-ai-centres-templates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The National AI Centre's templates
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-national-ai-centres-register-template" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The National AI Centre's register template
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-national-ai-centres-screening-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The National AI Centre's screening questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-ai-policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The AI policy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adopting-at-foundations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adopting at Foundations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#moving-to-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Moving to Implementation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-evidence-hound-does-not-do" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Evidence Hound does not do
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-ai6-framework-library" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The AI6 framework library
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#foundations-actions-traced-to-sub-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Foundations actions traced to sub-practices
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/ai-governance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI governance tutorial
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../engineering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Engineering
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../closed-loop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Closed loop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../repo-map/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Repository map
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reviews/2026-engineering-review/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Engineering review 2026
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reviews/2026-ciso-review/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CISO review 2026
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../releasing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Releasing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../design/rest-collector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    REST collector design
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../design/agent-driven-onboarding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Agent-driven onboarding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../design/guided-review/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guided review
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_10_11" id="__nav_10_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dev servers
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_10_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Dev servers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/m365-dev-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Microsoft 365
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/sophos-dev-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sophos Central
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/iac-dev-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IaC pipeline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/scan-dev/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Vulnerability scans
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-ai6-asks-and-where-each-part-lives" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What AI6 asks, and where each part lives
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#who-sets-each-field" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Who sets each field
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The checks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-national-ai-centres-templates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The National AI Centre's templates
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-national-ai-centres-register-template" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The National AI Centre's register template
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-national-ai-centres-screening-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The National AI Centre's screening questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-ai-policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The AI policy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adopting-at-foundations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adopting at Foundations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#moving-to-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Moving to Implementation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-evidence-hound-does-not-do" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Evidence Hound does not do
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-ai6-framework-library" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The AI6 framework library
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#foundations-actions-traced-to-sub-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Foundations actions traced to sub-practices
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="ai-governance-ai6-in-evidence-hound">AI governance (AI6) in Evidence Hound<a class="headerlink" href="#ai-governance-ai6-in-evidence-hound" title="Permanent link">&para;</a></h1>
+<p>This is the reference for how Evidence Hound and CISO Assistant support AI governance with the Australian Government's <em>Guidance for AI Adoption</em> (AI6). New to AI governance? Read the <a href="../ai-grc-primer/">primer</a> first, then follow <a href="../tutorials/ai-governance/">the walkthrough</a> on the local
+stack; <a href="../training/ai-governance/">the training outline</a> turns it into a 30-minute team session.</p>
+<h2 id="what-ai6-asks-and-where-each-part-lives">What AI6 asks, and where each part lives<a class="headerlink" href="#what-ai6-asks-and-where-each-part-lives" title="Permanent link">&para;</a></h2>
+<p>AI6 asks six things: decide who is accountable, understand the impacts, measure and manage the risks, share essential information, test
+and monitor, and keep people in control. Evidence Hound handles them with what CISO Assistant already has, plus your repo:</p>
+<table>
+<thead>
+<tr>
+<th>AI6 asks for</th>
+<th>Kept in</th>
+<th>How it is checked</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A register of AI systems, each with an owner</td>
+<td>The <code>ai</code> block of each AI system in <code>scope/setup.yaml</code>, shown in CISO Assistant as an asset labelled <code>ai-system</code></td>
+<td><code>ai-register</code> collector</td>
+</tr>
+<tr>
+<td>Screening with the National AI Centre's questions, and an approved impact assessment before an elevated system goes live</td>
+<td>The same <code>ai</code> block: <code>screening</code>, <code>screening_yes</code>, <code>screened_on</code>, <code>impact_assessment</code>, <code>impact_assessed_on</code>, <code>in_use_from</code></td>
+<td><code>ai-register</code> collector</td>
+</tr>
+<tr>
+<td>The risks of elevated systems</td>
+<td>Risk scenarios in CISO Assistant, linked to the system's asset</td>
+<td><code>ciso-assistant</code> profile</td>
+</tr>
+<tr>
+<td>Human oversight</td>
+<td><code>oversight</code> and <code>oversight_note</code> in the <code>ai</code> block</td>
+<td><code>ai-register</code> collector</td>
+</tr>
+<tr>
+<td>Testing, and testing again in proportion to risk</td>
+<td><code>last_tested_on</code> in the <code>ai</code> block, with the test result as evidence</td>
+<td><code>ai-register</code> collector</td>
+</tr>
+<tr>
+<td>Suppliers of third-party AI</td>
+<td>The supplier's solution, entity assessment and contract in CISO Assistant (as for any supplier)</td>
+<td><code>ciso-assistant</code> profile</td>
+</tr>
+<tr>
+<td>Policy, training, redress, disclosure, monitoring and incident reviews</td>
+<td>Records a person keeps and attests</td>
+<td><code>ai-governance</code> (yearly) and <code>ai-operations</code> (quarterly) manual sources</td>
+</tr>
+<tr>
+<td>The self-assessment</td>
+<td>An audit of the AI6 framework, group <code>F</code> (Foundations)</td>
+<td><code>mappings/ai6.yaml</code> turns every check into AI6 results</td>
+</tr>
+</tbody>
+</table>
+<p>CISO Assistant's custom fields are an Enterprise feature, so the register entry lives in the repo and reaches CISO Assistant as
+filtering labels (<code>ai-screening-elevated</code>, <code>ai-use-third-party</code>, <code>ai-oversight-on-the-loop</code>, <code>ai-retired</code>) and as lines in the asset's
+description. Filtering the asset list by <code>ai-system</code> gives the register; CISO Assistant's own Excel export saves it.</p>
+<h2 id="who-sets-each-field">Who sets each field<a class="headerlink" href="#who-sets-each-field" title="Permanent link">&para;</a></h2>
+<p>Everything in the <code>ai</code> block is changed by pull request, so each change is reviewed. The <a href="../scope/#ai-systems">scope guide</a> lists the
+keys and what <code>hound scope validate</code> reports.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Set by</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>screening</code>, <code>screening_yes</code>, <code>screened_on</code></td>
+<td>The GRC team, from the <a href="https://github.com/tnbozman/evidence-hound/blob/main/examples/compliance-repo/runbooks/ai-screening.md">screening runbook</a></td>
+<td>When a system is proposed, and again when its use changes</td>
+</tr>
+<tr>
+<td><code>registered_on</code></td>
+<td>The GRC team</td>
+<td>When the system is approved and added to the register</td>
+</tr>
+<tr>
+<td><code>version</code>, <code>use</code>, <code>purpose</code>, <code>intended_uses</code>, <code>limitations</code>, <code>misuse</code>, <code>data_sources</code>, <code>stakeholders</code></td>
+<td>The system's owner, reviewed by the GRC team</td>
+<td>At screening, and when the system or its use changes</td>
+</tr>
+<tr>
+<td><code>oversight</code>, <code>oversight_note</code></td>
+<td>The system's owner, reviewed by the GRC team</td>
+<td>At screening, and when the arrangement changes</td>
+</tr>
+<tr>
+<td><code>impact_assessment</code>, <code>impact_assessed_on</code></td>
+<td>The GRC team, once the assessment is approved</td>
+<td>Before an elevated system goes live</td>
+</tr>
+<tr>
+<td><code>in_use_from</code>, <code>retired_on</code></td>
+<td>The system's owner</td>
+<td>At go-live and when the system is switched off</td>
+</tr>
+<tr>
+<td><code>last_tested_on</code></td>
+<td>The system's owner, with the test result kept as evidence</td>
+<td>Before go-live, then at least every 12 months (6 for an elevated system)</td>
+</tr>
+</tbody>
+</table>
+<p>A third-party AI system also names its supplier's <code>solution</code>, and its supplier is approved before the system is registered, as for any
+other system.</p>
+<h2 id="the-checks">The checks<a class="headerlink" href="#the-checks" title="Permanent link">&para;</a></h2>
+<p>The <a href="../collectors/ciso-assistant/">collector guide</a> lists each check and when it passes. In short: the <code>ai-register</code> collector checks the
+entries in your repo every night (owners, screening, impact assessments before use, oversight, test dates) and the <code>ciso-assistant</code> profile
+checks what only CISO Assistant holds (risk scenarios, supplier assessments and contracts). Every observation names the AI6 sub-practice
+in words and says what to do. Checks a person attests come from two manual sources, copied from
+<a href="https://github.com/tnbozman/evidence-hound/tree/main/examples/manual-sources/ai6/"><code>examples/manual-sources/ai6/</code></a>: <code>ai-governance</code> once a year and <code>ai-operations</code> each quarter.</p>
+<h2 id="the-national-ai-centres-templates">The National AI Centre's templates<a class="headerlink" href="#the-national-ai-centres-templates" title="Permanent link">&para;</a></h2>
+<p>The register, the screening and the AI policy follow the National AI Centre's own templates, so an assessor sees the government's terms.</p>
+<table>
+<thead>
+<tr>
+<th>Template</th>
+<th>Published</th>
+<th>How it is used</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>AI register template</em> (Word and Excel)</td>
+<td>ai.gov.au; the copies used here were last changed in June 2026 (Word) and May 2026 (Excel)</td>
+<td>Its 12 columns are the <code>ai</code> block's keys (traced below). Each run's <code>ai-register.json</code> holds every column for every AI system, ready to give an assessor.</td>
+</tr>
+<tr>
+<td><em>AI screening questions</em> (PDF)</td>
+<td>ai.gov.au; last changed July 2026</td>
+<td>Its seven questions are the <a href="https://github.com/tnbozman/evidence-hound/blob/main/examples/compliance-repo/runbooks/ai-screening.md">screening runbook</a>, and its outcome is <code>screening</code>.</td>
+</tr>
+<tr>
+<td><em>AI policy guide and template</em> (Word)</td>
+<td>ai.gov.au; last changed June 2026</td>
+<td>The source for your AI policy, which the AI6 audit lists as a document (AI6-1.4, AI6-3.1). See <a href="#the-ai-policy">the AI policy</a>.</td>
+</tr>
+</tbody>
+</table>
+<p>None of the three states a licence or a version number, so this repo does not copy their text: the tables below summarise them in our own
+words. Download them from <a href="https://www.ai.gov.au/">ai.gov.au</a> and keep your filled-in copies with your own records.</p>
+<h2 id="the-national-ai-centres-register-template">The National AI Centre's register template<a class="headerlink" href="#the-national-ai-centres-register-template" title="Permanent link">&para;</a></h2>
+<p>Every column of the template, and where the register keeps it. <code>ai.</code> keys are in the system's <code>ai</code> block in <code>scope/setup.yaml</code>; they
+reach CISO Assistant in the asset's description, and <code>ai.register_complete</code> fails while one is empty.</p>
+<table>
+<thead>
+<tr>
+<th>Template column</th>
+<th>Kept as</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Name and version</td>
+<td>The system's <code>name</code>, and <code>ai.version</code></td>
+<td><code>version</code> is optional, for systems that have one.</td>
+</tr>
+<tr>
+<td>Owner</td>
+<td>The system's <code>owner</code></td>
+<td>The accountable person (AI6-1.1); checked by <code>ai.owner_assigned</code>.</td>
+</tr>
+<tr>
+<td>Status</td>
+<td>Worked out each run from <code>ai.in_use_from</code> and <code>ai.retired_on</code></td>
+<td>Pilot until it goes live, operational while in use, decommissioned once retired; written to <code>ai-register.json</code> as <code>status</code>. Kept as dates so a status cannot be forgotten.</td>
+</tr>
+<tr>
+<td>Source</td>
+<td><code>ai.use</code>, and for a supplier's product the system's <code>solution</code></td>
+<td><code>built</code> is the internal team; <code>third_party</code> names the supplier's solution, so the supplier is approved first.</td>
+</tr>
+<tr>
+<td>Purpose/business goals</td>
+<td><code>ai.purpose</code></td>
+<td></td>
+</tr>
+<tr>
+<td>Intended use case(s)</td>
+<td><code>ai.intended_uses</code></td>
+<td>A list.</td>
+</tr>
+<tr>
+<td>Known limitations and prohibited use</td>
+<td><code>ai.limitations</code></td>
+<td></td>
+</tr>
+<tr>
+<td>Any foreseeable misuse</td>
+<td><code>ai.misuse</code></td>
+<td>Write "None identified." when there is none.</td>
+</tr>
+<tr>
+<td>Data sources and type</td>
+<td><code>ai.data_sources</code></td>
+<td>A list, each with its type, such as "Past proposals (text)". Sensitive data is also recorded in the system's <code>data</code> (CUI, PII and so on).</td>
+</tr>
+<tr>
+<td>Registered date</td>
+<td><code>ai.registered_on</code></td>
+<td></td>
+</tr>
+<tr>
+<td>Screening outcome</td>
+<td><code>ai.screening</code>, with <code>ai.screening_yes</code></td>
+<td><code>normal</code>, <code>elevated</code> or <code>unacceptable</code>, as the template's drop-down; the answers show the reasoning.</td>
+</tr>
+<tr>
+<td>Key stakeholders affected</td>
+<td><code>ai.stakeholders</code></td>
+<td>A list.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="the-national-ai-centres-screening-questions">The National AI Centre's screening questions<a class="headerlink" href="#the-national-ai-centres-screening-questions" title="Permanent link">&para;</a></h2>
+<p>The seven questions, in brief. A yes to any of them makes the outcome <strong>elevated</strong>; no to all of them makes it <strong>normal</strong>. <strong>Unacceptable</strong>
+is the AI governance committee's decision for a use the organisation will not accept, whatever the answers. <code>hound scope validate</code>
+reports <code>ai.screening_disagrees</code> when the outcome and the answers do not match.</p>
+<table>
+<thead>
+<tr>
+<th>Question</th>
+<th>In brief</th>
+<th>A yes means</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>It uses personal, sensitive or confidential information, in training, operation or prompts.</td>
+<td>Elevated: also record the data in the system's <code>data</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>It talks directly to people with freedom to answer without a person checking.</td>
+<td>Elevated</td>
+</tr>
+<tr>
+<td>3</td>
+<td>It acts on its own at scale, or would be hard to stop or correct.</td>
+<td>Elevated: think about <code>oversight</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>It makes or supports decisions about people in vulnerable or under-represented groups.</td>
+<td>Elevated</td>
+</tr>
+<tr>
+<td>5</td>
+<td>It works in a regulated area or can have legal effects on people.</td>
+<td>Elevated</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Harm from a wrong decision would be hard to contest, reverse or put right.</td>
+<td>Elevated</td>
+</tr>
+<tr>
+<td>7</td>
+<td>It is general purpose, or easily used beyond what it was meant for.</td>
+<td>Elevated</td>
+</tr>
+</tbody>
+</table>
+<p>An <strong>elevated</strong> system needs more before and after it goes live, and the checks enforce it: an approved impact assessment before
+<code>in_use_from</code> (<code>ai.impact_assessment_before_use</code>), its risks as risk scenarios in CISO Assistant (<code>ai.risks_in_register</code>), a person in or on
+the loop (<code>ai.human_oversight_documented</code>), and a test at least every 6 months instead of 12 (<code>ai.test_results_current</code>). The template
+says to consult senior leadership or the governance committee before planning an elevated system in detail; the runbook makes that the
+approval of the impact assessment. An <strong>unacceptable</strong> system in use fails <code>ai.screening_recorded</code>.</p>
+<h2 id="the-ai-policy">The AI policy<a class="headerlink" href="#the-ai-policy" title="Permanent link">&para;</a></h2>
+<p>The policy template sets out a policy's purpose and scope, what counts as an AI system, the policy statements (human-centred use,
+accountability, risk and impact assessment, testing, fairness, transparency and human oversight), the roles (policy owner, approvers,
+compliance monitor, governance committee, system owners and all staff), screening new use cases, incidents and yearly review.</p>
+<p>Write your own policy from it, approve it, and list it under <code>documents</code> in your AI6 audit for AI6-1.4 and AI6-3.1, as the
+example's AI6 audit does with a placeholder (<a href="https://github.com/tnbozman/evidence-hound/blob/main/examples/compliance-repo/scope/audits/ex-ai6-2026.yaml"><code>ex-ai6-2026.yaml</code></a>). The yearly <code>ai-governance</code> source attests it was approved (<code>ai.policy_approved</code>). Two things to match up when
+you write it: the template's screening outcomes are <em>normal</em>, <em>elevated</em> and <em>prohibited</em> in one place and <em>unacceptable</em> in another
+(the register uses <em>unacceptable</em>); and it asks for a risk and impact assessment for every AI system, where the register asks for an
+approved one only for elevated systems. Choose one rule for your policy, and say so in it.</p>
+<h2 id="adopting-at-foundations">Adopting at Foundations<a class="headerlink" href="#adopting-at-foundations" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Add the AI6 library to <code>scope/setup.yaml</code> (as <code>examples/compliance-repo/scope/setup.yaml</code> does), an audit for group <code>F</code>, and an <code>ai6</code>
+   programme with <code>register: { of: ai_systems, by: [screening, use] }</code>.</li>
+<li>Register each AI system you use with an <code>ai</code> block, after screening it.</li>
+<li>Add the <code>ai-register</code> collector, the <code>ciso-assistant</code> profile and the two manual sources to <code>hound.yaml</code>, and <code>mappings/ai6.yaml</code> as a
+   target for the AI6 audit.</li>
+<li>Add evidence plan rows for the manual sources, so their owners are reminded.</li>
+<li><code>hound scope plan</code>, review, <code>hound scope apply</code>, then <code>hound run</code>.</li>
+</ol>
+<p>If your team uses its own coding agent with <code>hound onboard</code> or <code>hound manual propose</code>, that agent is AI use too: screen it and register it
+like any other AI system (a person approves every proposal, so it is human in the loop; it reads your repo, so expect question 1 to be yes).</p>
+<p>The example compliance repo has all of this for two fictional AI systems; one is deliberately not tested yet, so a run shows AI6-4.1
+(the register) met and AI6-5.1 (testing before use) not met.</p>
+<h2 id="moving-to-implementation">Moving to Implementation<a class="headerlink" href="#moving-to-implementation" title="Permanent link">&para;</a></h2>
+<p>Change the audit's and the programme's group from <code>F</code> to <code>I</code>. AI6-4.4 (AI-generated content transparency) joins the audit; it is filled
+by <code>ai.generated_content_labelled</code> from the <code>ai-governance</code> manual source. Implementation expects more depth in each record a person
+attests: read the <em>Implementation practices</em> for each sub-practice and widen your runbooks.</p>
+<h2 id="what-evidence-hound-does-not-do">What Evidence Hound does not do<a class="headerlink" href="#what-evidence-hound-does-not-do" title="Permanent link">&para;</a></h2>
+<ul>
+<li>It does not test, evaluate or monitor a model. <code>last_tested_on</code> records that a test was done; the test itself is yours.</li>
+<li>It has no AI incident workflow. AI incidents go through your incident process; the <code>ai-operations</code> source attests they were reviewed.</li>
+<li>It does not screen a system for you. Screening is a person's judgement, recorded in the repo and reviewed by pull request.</li>
+<li>It has no model of its own. An agent may draft a register entry or a manual result; a person reviews it before it counts.</li>
+</ul>
+<h2 id="the-ai6-framework-library">The AI6 framework library<a class="headerlink" href="#the-ai6-framework-library" title="Permanent link">&para;</a></h2>
+<p><a href="https://github.com/tnbozman/evidence-hound/blob/main/frameworks/ai6.yaml"><code>frameworks/ai6.yaml</code></a> is a CISO Assistant library for AI6, and <a href="https://github.com/tnbozman/evidence-hound/blob/main/frameworks/ai6.json"><code>frameworks/ai6.json</code></a> its snapshot.</p>
+<ul>
+<li><strong>Source.</strong> <em>Guidance for AI Adoption: Foundations</em> and <em>Implementation practices</em>, National AI Centre, v1.0, October 2025.</li>
+<li><strong>Text.</strong> The guidance states no licence, so the library carries the practice and sub-practice titles with short descriptions in our own words and a link to the guidance. It will carry the full text only if the guidance is published under CC BY 4.0.</li>
+<li><strong>Structure.</strong> The six practices are headings (<code>AI6-1</code> to <code>AI6-6</code>, not assessed). The 21 Implementation sub-practices (<code>AI6-1.1</code> to <code>AI6-6.2</code>) are the assessable rows.</li>
+<li><strong>Groups.</strong> <code>I</code> (Implementation) holds every sub-practice. <code>F</code> (Foundations) holds a sub-practice when at least one Foundations action falls under it (table below). An audit for group <code>F</code> shows only those rows. Only <code>AI6-4.4</code> (AI-generated content transparency) has no Foundations action.</li>
+<li><strong>Versions.</strong> The library's <code>version</code> goes up with every content change, with a note at the top of the file. CISO Assistant keeps a framework loaded from an older library, and <code>hound scope validate</code> reports it rather than upgrading silently.</li>
+</ul>
+<h2 id="foundations-actions-traced-to-sub-practices">Foundations actions traced to sub-practices<a class="headerlink" href="#foundations-actions-traced-to-sub-practices" title="Permanent link">&para;</a></h2>
+<p>Foundations has no numbered sub-practices: each practice has "Getting started" and "Next steps" actions, 30 in all. Each is traced to the one Implementation sub-practice it falls under. The actions are summarised in our own words; the numbers (F1.1 to F6.4) are ours, in the order the guidance lists them.</p>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Foundations part</th>
+<th>Action, in brief</th>
+<th>Sub-practice</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>F1.1</td>
+<td>Getting started</td>
+<td>Name a senior leader as the overall owner of AI governance.</td>
+<td>AI6-1.1</td>
+</tr>
+<tr>
+<td>F1.2</td>
+<td>Getting started</td>
+<td>Write an AI policy for responsible use, with advice to staff on the risks.</td>
+<td>AI6-1.4</td>
+</tr>
+<tr>
+<td>F1.3</td>
+<td>Next steps</td>
+<td>Make one named person accountable for each AI system in use.</td>
+<td>AI6-1.1</td>
+</tr>
+<tr>
+<td>F1.4</td>
+<td>Next steps</td>
+<td>Train the accountable people to decide well about AI risks.</td>
+<td>AI6-1.3</td>
+</tr>
+<tr>
+<td>F1.5</td>
+<td>Next steps</td>
+<td>Agree responsibilities with vendors, developers and integrators.</td>
+<td>AI6-1.2</td>
+</tr>
+<tr>
+<td>F1.6</td>
+<td>Next steps</td>
+<td>Grow the AI policy into a governance framework of policies and procedures.</td>
+<td>AI6-1.4</td>
+</tr>
+<tr>
+<td>F2.1</td>
+<td>Getting started</td>
+<td>Assess who an AI system affects, with care for vulnerable groups.</td>
+<td>AI6-2.1</td>
+</tr>
+<tr>
+<td>F2.2</td>
+<td>Getting started</td>
+<td>Give people a way to challenge AI decisions and have harms put right.</td>
+<td>AI6-2.2</td>
+</tr>
+<tr>
+<td>F2.3</td>
+<td>Next steps</td>
+<td>Engage the people affected through the system's life.</td>
+<td>AI6-2.1</td>
+</tr>
+<tr>
+<td>F2.4</td>
+<td>Next steps</td>
+<td>Watch feedback for patterns of unwanted impact.</td>
+<td>AI6-2.3</td>
+</tr>
+<tr>
+<td>F3.1</td>
+<td>Getting started</td>
+<td>Screen AI systems and uses to flag those that are unacceptable or need more governance.</td>
+<td>AI6-3.2</td>
+</tr>
+<tr>
+<td>F3.2</td>
+<td>Next steps</td>
+<td>Fit risk processes to the kind of AI: traditional IT, narrow, general-purpose or agentic.</td>
+<td>AI6-3.1</td>
+</tr>
+<tr>
+<td>F3.3</td>
+<td>Next steps</td>
+<td>Assess the risks of each use and plan how to reduce them.</td>
+<td>AI6-3.2</td>
+</tr>
+<tr>
+<td>F3.4</td>
+<td>Next steps</td>
+<td>Apply controls in proportion to each use's risk.</td>
+<td>AI6-3.3</td>
+</tr>
+<tr>
+<td>F3.5</td>
+<td>Next steps</td>
+<td>Investigate and learn from AI incidents.</td>
+<td>AI6-3.4</td>
+</tr>
+<tr>
+<td>F4.1</td>
+<td>Getting started</td>
+<td>Keep a register of every AI system, built or bought, including AI inside other tools.</td>
+<td>AI6-4.1</td>
+</tr>
+<tr>
+<td>F4.2</td>
+<td>Getting started</td>
+<td>Tell people when AI makes or influences decisions, or could be mistaken for a person.</td>
+<td>AI6-4.2</td>
+</tr>
+<tr>
+<td>F4.3</td>
+<td>Next steps</td>
+<td>Explain what each AI system can and cannot do.</td>
+<td>AI6-4.2</td>
+</tr>
+<tr>
+<td>F4.4</td>
+<td>Next steps</td>
+<td>Be open along the supply chain about components and data sources.</td>
+<td>AI6-4.3</td>
+</tr>
+<tr>
+<td>F4.5</td>
+<td>Next steps</td>
+<td>Explain AI outcomes to the people affected, in proportion to the stakes.</td>
+<td>AI6-4.2</td>
+</tr>
+<tr>
+<td>F5.1</td>
+<td>Getting started</td>
+<td>Ask suppliers for proof their AI system was tested.</td>
+<td>AI6-5.1</td>
+</tr>
+<tr>
+<td>F5.2</td>
+<td>Getting started</td>
+<td>Test before deployment.</td>
+<td>AI6-5.1</td>
+</tr>
+<tr>
+<td>F5.3</td>
+<td>Getting started</td>
+<td>Monitor after deployment in proportion to the risk.</td>
+<td>AI6-5.2</td>
+</tr>
+<tr>
+<td>F5.4</td>
+<td>Getting started</td>
+<td>Extend data governance and cyber security to cover AI.</td>
+<td>AI6-5.4</td>
+</tr>
+<tr>
+<td>F5.5</td>
+<td>Next steps</td>
+<td>Stress-test the system, including attempts to get around its controls.</td>
+<td>AI6-5.3</td>
+</tr>
+<tr>
+<td>F5.6</td>
+<td>Next steps</td>
+<td>Consider independent testing for uses that need more governance.</td>
+<td>AI6-5.3</td>
+</tr>
+<tr>
+<td>F6.1</td>
+<td>Getting started</td>
+<td>Give meaningful human oversight matched to the system's autonomy and stakes.</td>
+<td>AI6-6.1</td>
+</tr>
+<tr>
+<td>F6.2</td>
+<td>Getting started</td>
+<td>Build in points where a person can pause, override, roll back or shut down the system.</td>
+<td>AI6-6.1</td>
+</tr>
+<tr>
+<td>F6.3</td>
+<td>Next steps</td>
+<td>Train the people who oversee AI on when to step in.</td>
+<td>AI6-6.1</td>
+</tr>
+<tr>
+<td>F6.4</td>
+<td>Next steps</td>
+<td>Keep another way to do critical work if the AI fails or is retired.</td>
+<td>AI6-6.2</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Evidence Hound contributors. Apache-2.0.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.indexes", "navigation.top", "content.code.copy", "search.suggest"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

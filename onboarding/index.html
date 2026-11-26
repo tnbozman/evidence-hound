@@ -1,0 +1,4095 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Continuous compliance evidence for CISO Assistant, for small teams in the defence industry.">
+      
+      
+      
+        <link rel="canonical" href="https://tnbozman.github.io/evidence-hound/onboarding/">
+      
+      
+        <link rel="prev" href="../guided-setup/">
+      
+      
+        <link rel="next" href="../tutorials/onboarding-tutorial/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Onboarding - Evidence Hound</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#onboarding" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Evidence Hound" class="md-header__button md-logo" aria-label="Evidence Hound" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Evidence Hound
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Onboarding
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/tnbozman/evidence-hound" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tnbozman/evidence-hound
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Evidence Hound" class="md-nav__button md-logo" aria-label="Evidence Hound" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Evidence Hound
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/tnbozman/evidence-hound" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tnbozman/evidence-hound
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../release-notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Start here
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Start here
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/local-trial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local trial
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guided-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guided setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Onboarding
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Onboarding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#onboard-a-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Onboard a system
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Onboard a system">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-the-terminal-tells-you" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the terminal tells you
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validate-sample-and-test-the-profile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validate, sample and test the profile
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onboard-the-environment-first-which-system-provides-each-mitigation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Onboard the environment first: which system provides each mitigation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Onboard the environment first: which system provides each mitigation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#microsoft-365-which-capabilities-it-provides" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Microsoft 365: which capabilities it provides
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#set-up-your-coding-assistant-hound-agent-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Set up your coding assistant: hound agent setup
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#drive-it-with-an-agent-pending-decide-supplier-draft-approve" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Drive it with an agent: pending, decide, supplier draft, approve
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Drive it with an agent: pending, decide, supplier draft, approve">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#every-kind-of-onboarding-the-same-way" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Every kind of onboarding, the same way
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#approve-in-a-terminal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Approve, in a terminal
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#explain-a-change-for-review" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Explain a change for review
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tutorial-onboard-the-example-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tutorial: onboard the example API
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#skills-the-assistants-guidance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Skills: the assistant's guidance
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/onboarding-tutorial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Onboarding tutorial
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/first-deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    First deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../operate/grc-member/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Your week
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cheatsheet/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cheat sheet
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deploy
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Deploy
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../running/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running collectors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../publishing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Publishing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deploy/backups/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backups and restore tests
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deploy/hardening/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Harden the host
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deploy/updates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keep it up to date
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ciso-assistant-configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CISO Assistant configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../collectors/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Collectors
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Collectors
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../collectors/m365/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Microsoft 365
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../collectors/rest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    REST profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../collectors/sophos/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sophos Central
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../collectors/vuln-scan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Vulnerability scans
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../collectors/terraform-tests/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Terraform tests
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../collectors/terraform-drift/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Terraform drift
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../collectors/ciso-assistant/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CISO Assistant
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../manual-evidence/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Manual evidence
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../collectors/manual-templates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Manual templates
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Write a collector
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Write a collector
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/write-a-profile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Write a profile
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/write-a-collector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Write a collector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mapping-files/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mapping files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adopt
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Adopt
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../scope/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scope files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../risk/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk studies and exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bia/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Business impact analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../metrics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Metrics and dashboards
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../incidents/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Incidents and reporting deadlines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../third-parties/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Third parties
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adopt/migrate-from-spreadsheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Move off spreadsheets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adopt/answer-a-prime-questionnaire/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Answer a prime's questionnaire
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migrations/essential-eight-to-asd-essentials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Essential Eight to ASD Essentials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adopt/disp-readiness/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DISP membership readiness
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adopt/cmmc-level-2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CMMC Level 2 and the SPRS score
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../operate/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operate
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8" id="__nav_8_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Operate
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../operate/system-owner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System owner
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../operate/collector-operator/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Collector operator
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../operate/committee-member/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Committee member
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../training/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Training
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_5" id="__nav_8_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Training
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../training/system-owners/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System owners
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../training/committee/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Committee
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../training/board/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Board
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../training/ai-governance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI governance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Govern
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Govern
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reporting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reporting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../govern/security-committee/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security committee
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../govern/board-reporting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Board reporting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../govern/ai-assisted-reporting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI-assisted reporting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../govern/continuous-compliance-procedure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Continuous compliance procedure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ssp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System security plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../govern/system-security-plan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writing the SSP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../audit-plan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Audit plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ai-grc-primer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI governance primer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ai-grc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI governance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/ai-governance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI governance tutorial
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../engineering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Engineering
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../closed-loop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Closed loop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../repo-map/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Repository map
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reviews/2026-engineering-review/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Engineering review 2026
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reviews/2026-ciso-review/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CISO review 2026
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../releasing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Releasing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../design/rest-collector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    REST collector design
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../design/agent-driven-onboarding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Agent-driven onboarding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../design/guided-review/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guided review
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_10_11" id="__nav_10_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dev servers
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_10_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Dev servers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/m365-dev-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Microsoft 365
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/sophos-dev-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sophos Central
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/iac-dev-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IaC pipeline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/scan-dev/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Vulnerability scans
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#onboard-a-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Onboard a system
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Onboard a system">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-the-terminal-tells-you" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the terminal tells you
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validate-sample-and-test-the-profile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validate, sample and test the profile
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onboard-the-environment-first-which-system-provides-each-mitigation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Onboard the environment first: which system provides each mitigation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Onboard the environment first: which system provides each mitigation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#microsoft-365-which-capabilities-it-provides" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Microsoft 365: which capabilities it provides
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#set-up-your-coding-assistant-hound-agent-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Set up your coding assistant: hound agent setup
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#drive-it-with-an-agent-pending-decide-supplier-draft-approve" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Drive it with an agent: pending, decide, supplier draft, approve
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Drive it with an agent: pending, decide, supplier draft, approve">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#every-kind-of-onboarding-the-same-way" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Every kind of onboarding, the same way
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#approve-in-a-terminal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Approve, in a terminal
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#explain-a-change-for-review" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Explain a change for review
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tutorial-onboard-the-example-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tutorial: onboard the example API
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#skills-the-assistants-guidance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Skills: the assistant's guidance
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="onboarding">Onboarding<a class="headerlink" href="#onboarding" title="Permanent link">&para;</a></h1>
+<p><code>hound onboard</code> takes a GRC team member through onboarding a system: the supplier first, then how each requirement of a framework is
+met for the system. The output is files for a pull request in the config repo; nothing is applied to CISO Assistant until a person reviews
+it and runs <code>hound scope validate</code>, <code>plan</code> and <code>apply</code>.</p>
+<p><strong>hound has no language model of its own.</strong> There is no API key, provider or token budget to manage. For model help, set up your coding
+assistant (Claude Code or GitHub Copilot) with <a href="#set-up-your-coding-assistant-hound-agent-setup"><code>hound agent setup</code></a>: it reads your
+documents and API specifications, drafts through <code>hound</code> commands that check everything it writes, and you approve with <code>hound approve</code>
+in a terminal. Without an assistant, every step below works by answering <code>hound</code>'s questions yourself. The design is in
+<a href="../design/agent-driven-onboarding/">design/agent-driven-onboarding.md</a>; it supersedes the earlier
+<a href="https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/design/onboarding-assistant.md">onboarding assistant design</a>, in which <code>hound</code> called a model itself.</p>
+<p><strong>No model in evidence collection, and no evidence without a person.</strong> <code>hound run</code>, <code>hound serve</code> and every collector are deterministic
+code, and the runner refuses a deployment config (<code>hound.yaml</code>) that has an <code>llm</code> section (<code>config.llm_in_runner</code>). For manual evidence a
+coding assistant may read a file and propose its result with <code>hound manual propose</code>, but the result becomes evidence only when a person
+attests it with <code>hound manual approve</code> (<a href="../configuration/#manual-sources">manual sources</a>).</p>
+<p>Removed with the built-in model: <code>hound onboard config</code>, <code>onboarding.yaml</code>, and the options <code>--no-model</code>, <code>--show-requests</code> and (for the
+onboarding config) <code>--config</code>. <code>hound onboard config</code> now only says so. Since release 3 the options are refused like any unknown
+option; remove them from older scripts.</p>
+<h2 id="onboard-a-system">Onboard a system<a class="headerlink" href="#onboard-a-system" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="gp">$ </span>hound<span class="w"> </span>onboard<span class="w"> </span>EXAMPLE-ASSETS<span class="w"> </span>--framework<span class="w"> </span>frameworks/essential-eight-2023.json<span class="w"> </span>--group<span class="w"> </span><span class="m">1</span><span class="w"> </span>--group<span class="w"> </span><span class="m">2</span><span class="w"> </span>--spec<span class="w"> </span>../specs/example-asset-api.openapi.yaml
+</code></pre></div>
+<p>Run it in the config repo (or pass <code>--repo</code>). The session goes in this order, and saves after every answer in
+<code>onboarding/&lt;system&gt;/session.json</code>. Run the same command again to carry on where it stopped.</p>
+<ol>
+<li><strong>Who and what.</strong> Your name (recorded as who accepted each decision), the system owner, the product, and who supplies it: the supplier,
+   the solution it provides and the contract covering it, each by <code>ref_id</code> and name.</li>
+<li><strong>Supplier first.</strong> A supplier not yet under <code>scope/third-parties/</code> is drafted there. Dependency, penetration, maturity and
+   trust, and the solution's criticality, are each asked with their scale printed first (see
+   <a href="#what-the-terminal-tells-you">What the terminal tells you</a>); a level you leave empty stays in the file to decide (a coding assistant
+   drafts them with their reasons through <code>hound supplier draft</code>). What the supplier provides, in your words, is kept in the session. Vendor documents you keep (an https URL or a file) are saved under <code>documents/suppliers/&lt;supplier&gt;/</code> with
+   their SHA-256 and retrieval date. The contract is drafted as
+   <code>status: draft</code>, and the session stops: <strong>a system is onboarded only once its supplier is approved.</strong> Onboarding checks the scope
+   files for an active contract covering the solution; <code>hound scope plan</code> then checks approval in CISO Assistant, where the GRC team
+   concludes the supplier's assessment (see <a href="../scope/#supplier-approval">Supplier approval</a>). A drafted supplier file includes that
+   review (<code>EA-&lt;supplier&gt;</code>, due a month from today, then every 12 months, in the first domain and perimeter of <code>scope/setup.yaml</code>). So the
+   order is: approve the contract in the file, apply the supplier, conclude its review as ok in CISO Assistant, then finish onboarding
+   and apply the system.</li>
+<li><strong>What the API offers.</strong> Each <code>--spec</code> (an OpenAPI 3 document, JSON or YAML) is read into a short summary: the endpoints that read,
+   sign-in and paging.</li>
+<li>
+<p><strong>Applicability.</strong> Every requirement in the <code>--group</code> implementation groups (all of them without <code>--group</code>) gets one decision. Give the
+   groups as your audits declare them, so the system's audit matches: for Essential Eight ML2 that is <code>--group 1 --group 2</code>. Each requirement gets one of <code>api_check</code>,
+   <code>manual</code>, <code>not_applicable</code> or <code>other_system</code>, with its reasoning. For each, type <code>c</code>, <code>m</code>, <code>n</code> or <code>o</code> to decide (<code>a</code> accepts a
+   proposal where a session has one, and <code>l</code> every remaining one that is not <code>not_applicable</code>), or <code>s</code> to save and stop. Not applicable always needs a justification
+   and the name of who approves it; another system needs that system's name.</p>
+</li>
+<li>
+<p><strong>Written for review.</strong> Once every requirement is decided, it asks for the domain and perimeter of the system's audit. These are
+   names, not yes or no: the prompt lists the ones <code>scope/setup.yaml</code> declares, Enter takes the first, and any other answer is asked
+   again. It then writes, into the working copy only:</p>
+</li>
+<li><code>scope/audits/&lt;system&gt;-&lt;framework&gt;.yaml</code>: the system's own audit. Not applicable rows are done with result <code>not_applicable</code> and the
+     justification and approver in the observation; rows another system meets stay open (<code>to_do</code>, <code>not_assessed</code>) with <code>provided_by</code> naming
+     that system, until its own audit shows the requirement met; manual rows are to do. Rows checked
+     through the API are left to the collector (<code>unlisted: not_assessed</code> until its results are published). The audit lists the system.
+     When the repo has an audit series, as <code>hound init</code> names it in <code>scope/setup.yaml</code> (<code>audit_series</code>, <code>EX-E8</code> by quarter) or an
+     organisation audit that runs in periods, the system's audit joins it: its ref ID is the series and the system's ref ID without <code>SYS-</code>
+     (<code>EX-E8-SOPHOS-NETWORK</code>), on the same cycle, so a period reads <code>EX-E8-Q2-2027FY-SOPHOS-NETWORK</code>
+     (<a href="../scope/#audit-periods">Audit periods</a>). Without a series it is <code>&lt;SYSTEM&gt;-&lt;FRAMEWORK&gt;</code>, with no cycle. Its target is added to
+     <code>hound.yaml</code> when the repo has the system's own mapping (<code>mappings/&lt;system&gt;-&lt;framework&gt;.yaml</code>); the framework's general mapping maps
+     every collector's checks, so another system's results would land in this system's audit.</li>
+<li><code>scope/setup.yaml</code>: the system is declared in the audit's domain with <code>solution:</code> set to the supplier's solution, or, if it is already
+     declared, <code>solution:</code> is added to it (a different solution already there stops the write). That is what lets <code>hound scope plan</code> hold
+     the system back until its supplier is <a href="../scope/#supplier-approval">approved in CISO Assistant</a>.</li>
+<li><code>mappings/&lt;framework&gt;.yaml</code>: manual requirements the mapping does not name yet are added to <code>manual_only</code>, with your reasoning as the
+     suggested source. Existing lines are never changed.</li>
+<li><code>onboarding/&lt;system&gt;-&lt;framework&gt;-&lt;date&gt;.md</code>: the record for auditors: the system, the supplier and its levels, the documents kept
+     with their hashes, and every decision with who drafted it and who accepted it.</li>
+</ol>
+<p>Nothing is sent to CISO Assistant. Review the files in a pull request, then run <code>hound scope validate scope</code>, <code>hound scope plan scope</code>
+   and <code>hound scope apply scope</code>. Running <code>hound onboard</code> again for the same system writes nothing; to onboard it against another
+   framework, pass that framework's file and it writes a separate audit and record.</p>
+<h3 id="what-the-terminal-tells-you">What the terminal tells you<a class="headerlink" href="#what-the-terminal-tells-you" title="Permanent link">&para;</a></h3>
+<p>Before the first question, <code>hound onboard</code> prints the three steps ahead (the supplier, applicability, the files) and reminds you that nothing reaches CISO Assistant until <code>hound scope apply</code>. It refuses to start, before writing anything, in a folder with no <code>scope/setup.yaml</code>, because that is not a compliance repo. Without <code>--spec</code> it says that it cannot list what the system's API offers, so you can stop and add one.</p>
+<p>Every opening question comes with a line that says what the answer is for and gives an example, such as <code>The service, and what depends on it, e.g. "Perimeter firewall; all office internet traffic passes through it"</code>. A ref ID's prompt ends with its prefix (<code>Supplier ref_id: SUP-</code>), so you type only the rest; see <a href="../scope/#ref-id-conventions">Ref ID conventions</a>.</p>
+<p>After the vendor documents, each supplier level is asked with its scale printed first. Answer with a number and, when asked, a sentence saying why; the reason is written beside the level in the supplier file with your name. Leave a level empty to decide it later in the file. These are the scales, as the terminal prints them. Dependency, penetration, maturity and trust follow EBIOS Risk Manager's stakeholder criteria, which CISO Assistant's third-party records use.</p>
+<p><strong>dependency</strong>: how much the system relies on this supplier to keep working.</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>None: nothing stops if the supplier does.</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Low: the supplier is useful, and work carries on without it.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Moderate: work is harder without it, and another supplier could step in.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>High: the supplier is needed, though it could be replaced with effort.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Total: the supplier is needed, and nothing could replace it in the short term.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>penetration</strong>: how far the supplier can reach into your systems and data.</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>None: no access to your systems or data.</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Access as an ordinary user, or to user devices only.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Administrator access to user devices, or physical access to your premises.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Administrator access to business systems or servers.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Administrator access to core infrastructure, or physical access to server rooms.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>maturity</strong>: how well the supplier manages its own cyber security.</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Security is handled case by case, with nothing written down.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Good practice and regulation are followed, without one overall policy.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>An overall security policy is applied, and problems are mostly handled as they arise.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Risk is managed under an overall policy, ahead of problems.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>trust</strong>: how sure you are that the supplier's intentions and interests line up with yours.</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Its intentions cannot be judged.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Its intentions are taken to be neutral.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Its intentions are known and probably good.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Its intentions are known and fully in line with yours.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>criticality</strong>: how much the business depends on what the supplier provides (the solution).</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Low: the business carries on without it.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Medium: some work is slower or harder without it.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>High: important work stops without it.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Critical: the business cannot run without it.</td>
+</tr>
+</tbody>
+</table>
+<p>Maturity, trust and criticality have no 0: a level you leave empty is not yet assessed, and stays in the file as a comment to decide.</p>
+<h2 id="validate-sample-and-test-the-profile">Validate, sample and test the profile<a class="headerlink" href="#validate-sample-and-test-the-profile" title="Permanent link">&para;</a></h2>
+<p>Once applicability is decided, write the profile for the requirements you accepted as API checks: by hand (<a href="../collectors/rest/">REST profiles</a>),
+or ask your coding assistant, whose <code>write-a-profile</code> skill iterates with <code>hound profile validate</code> and <code>hound profile test</code>. Then check it
+against the real API yourself:</p>
+<div class="highlight"><pre><span></span><code>hound<span class="w"> </span>onboard<span class="w"> </span>profile<span class="w"> </span>EXAMPLE-ASSETS<span class="w"> </span>--name<span class="w"> </span>example-assets<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--set<span class="w"> </span><span class="nv">client_id</span><span class="o">=</span><span class="m">00000000</span>-0000-4000-8000-000000000001<span class="w"> </span>--set<span class="w"> </span><span class="nv">base_url</span><span class="o">=</span>https://api.example.com/<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--secret<span class="w"> </span><span class="nv">client_secret</span><span class="o">=</span>env:EXAMPLE_ASSETS_SECRET
+</code></pre></div>
+<ul>
+<li><strong>Checked as written.</strong> It reads <code>profiles/&lt;name&gt;.yaml</code> (<code>--profiles</code>, <code>--name</code>; by default the system's name in lower case), which
+  must exist, and loads and validates it as <code>hound profile validate</code> does. It never changes the profile.</li>
+<li><strong>Sampled once, with your go-ahead.</strong> It asks before it calls the API (<code>--sample</code> answers yes). The profile's queries run once, read-only,
+  with the instance settings (<code>--set name=value</code>) and secrets (<code>--secret name=env:VAR</code> or <code>file:/path</code>) you give. A query that fails is
+  listed, such as a wrong path. Each answer is kept as a recording with the profile's <code>identities</code> fields hashed, tokens replaced and the
+  API's address as <code>{{api}}</code>; an answer still holding a secret is refused.</li>
+<li><strong>You confirm each result.</strong> Each check's result on the sample is shown; type <code>y</code> if it is right, or the result it should give. Your
+  answers and the recordings are saved as the profile test <code>profiles/&lt;name&gt;.tests/onboarding.yaml</code>, and the test runs.</li>
+<li><strong>What is still wrong is listed,</strong> and the command exits 1, as a failing <code>hound profile test</code> does. Fix the profile (or have your
+  assistant fix it from the listed problems) and run it again.</li>
+<li><strong>Nothing is scheduled.</strong> Review the profile and its test in a pull request, run <code>hound profile validate &lt;name&gt;</code> and
+  <code>hound profile test &lt;name&gt;</code>, then add a <code>rest</code> collector instance for it to <code>hound.yaml</code>.</li>
+</ul>
+<h2 id="onboard-the-environment-first-which-system-provides-each-mitigation">Onboard the environment first: which system provides each mitigation<a class="headerlink" href="#onboard-the-environment-first-which-system-provides-each-mitigation" title="Permanent link">&para;</a></h2>
+<p>Before onboarding systems one by one, decide once, for each mitigation of the framework, which product actually provides it. Then <code>hound</code>
+judges a requirement only on the audit of the system that provides it, and never fails an audit because it looked at the wrong system.</p>
+<div class="highlight"><pre><span></span><code>hound<span class="w"> </span>onboard<span class="w"> </span>environment<span class="w"> </span>--repo<span class="w"> </span>.<span class="w"> </span>--framework<span class="w"> </span>frameworks/essential-eight-2023.json<span class="w"> </span>--signals<span class="w"> </span>signals.json
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>hound<span class="w"> </span>onboard<span class="w"> </span>environment<span class="w"> </span>--repo<span class="w"> </span>.<span class="w"> </span>--graph<span class="w"> </span>example-m365<span class="w">      </span><span class="c1"># read the signals live, as an m365 collector in hound.yaml</span>
+</code></pre></div>
+<ul>
+<li><strong>Signals suggest, you decide.</strong> <code>--graph &lt;collector&gt;</code> signs in as that <code>m365</code> collector of the deployment config (<code>--deployment</code>, default
+  <code>hound.yaml</code> in the repo), with its own settings and secrets, and makes two read-only Graph reads: subscribed licences
+  (<code>v1.0/subscribedSkus</code>, enabled or in warning, needs <code>Organization.Read.All</code>) and the kinds of Intune configuration
+  (<code>v1.0/deviceManagement/deviceConfigurations</code>, already granted to the collector). A tenant without Intune has no configuration kinds.
+  Nothing is kept as evidence. Or give <code>--signals</code>, a JSON file of recorded answers (<code>source</code>, <code>licences</code> as SKU part numbers,
+  <code>configuration_types</code> as Intune configuration types), not both. A licence such as Entra ID P2 suggests the Microsoft 365 system
+  (<code>--microsoft-system</code>, by default the first system whose name has "365") for MFA; a system in <code>scope/setup.yaml</code> tagged
+  <code>capabilities: ac, rb</code> is suggested for those mitigations first. Each suggestion shows the signal and its source, and is recorded with
+  the decision, never as the decision.</li>
+<li><strong>One decision per mitigation.</strong> For each, type <code>a</code> to accept the suggestion, <code>s</code> to name the systems, <code>m</code> for manual evidence, <code>g</code> for a
+  gap, or <code>q</code> to save and stop. It asks once for your name and the role that approves the decisions. A product not onboarded yet can be
+  named; you are asked for its supplier.</li>
+<li><strong>What it writes, for review:</strong> <code>scope/capabilities.yaml</code> (see <a href="../scope/#capabilitiesyaml">scope.md</a>), and in each system's own audit,
+  every requirement another system provides as an open row (<code>not_assessed</code>, <code>provided_by: [&lt;system&gt;]</code>), "Met by <system> (audit <ref>) ...; open until that audit shows it met", never as not applicable, so no gap shows as closed. <code>hound scope plan</code> lists these rows under "Open dependencies". A requirement the audit's mapping already computes (a target in <code>hound.yaml</code>, <code>--deployment</code>) is left to the mapping and listed, since a hand-written row would conflict with it (<code>scope.result_conflict</code>); take it out of that mapping if the system should not be judged on it. Nothing is merged into a combined
+  audit, rows you wrote by hand are never changed, and running it again adds nothing.</li>
+<li>
+<p><strong>What comes next:</strong> each named system not onboarded yet is listed with <code>hound onboard "&lt;system&gt;"</code>, whose supplier goes through the
+  supplier gate first; each gap is listed as requirements no system's audit answers.</p>
+</li>
+<li>
+<p><strong>With a coding assistant,</strong> the same decisions are drafted through <code>hound onboard environment pending</code> and <code>decide</code>
+  (<a href="#every-kind-of-onboarding-the-same-way">every kind of onboarding</a>) and approved with <code>hound approve</code>.</p>
+</li>
+<li><strong>Gaps in the plan.</strong> <code>hound scope plan</code> lists each mitigation decided as a gap under "Capability gaps" (and <code>gaps</code> in <code>--json</code>): the
+  requirements no system's audit answers, never a fail on some system.</li>
+</ul>
+<p>The default skill <code>environment-capabilities</code> describes how to tell which product is authoritative; organisation skills that apply to the
+<code>environment</code> step extend it. Both reach a coding assistant through its skill files and <code>pending --json</code>.</p>
+<h3 id="microsoft-365-which-capabilities-it-provides">Microsoft 365: which capabilities it provides<a class="headerlink" href="#microsoft-365-which-capabilities-it-provides" title="Permanent link">&para;</a></h3>
+<p>Run it with <code>--graph &lt;m365 collector&gt;</code> to read the tenant's licences and Intune configuration kinds live, read-only, as that collector of
+<code>hound.yaml</code>. Microsoft 365 is then suggested for the mitigations they cover. An accepted suggestion is written with <code>evidence: collector</code>
+and <code>route: &lt;collector&gt;</code>, so the collector's checks for that capability run; a mitigation you give to another product (an application
+control or identity product, for example) is routed away from Microsoft 365, and its checks there answer not applicable, naming that
+product. See <a href="../collectors/m365/#capabilities">Capabilities</a>. With <code>--signals</code> (recorded answers) nothing is routed, because no collector
+read them; set <code>route</code> by hand, or <code>system</code> on the collector.</p>
+<h2 id="set-up-your-coding-assistant-hound-agent-setup">Set up your coding assistant: hound agent setup<a class="headerlink" href="#set-up-your-coding-assistant-hound-agent-setup" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="gp">$ </span>hound<span class="w"> </span>agent<span class="w"> </span>setup<span class="w"> </span>--repo<span class="w"> </span>.<span class="w"> </span>--assistant<span class="w"> </span>both
+</code></pre></div>
+<p><code>hound agent setup</code> writes the files a coding assistant reads in the compliance repo, so that it can onboard systems and suppliers, import
+an audit workbook, write a profile and review a plan before you apply it. Without <code>--assistant</code> it asks which one you use in VS Code:
+<code>claude</code>, <code>copilot</code> or <code>both</code>. <code>hound init</code> offers the same at its end (or takes <code>--assistant</code>).</p>
+<table>
+<thead>
+<tr>
+<th>Assistant</th>
+<th>Files</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Claude Code</td>
+<td><code>CLAUDE.md</code>; <code>.claude/skills/&lt;skill&gt;/SKILL.md</code>; <code>.claude/agents/hound-onboarding.md</code>, <code>hound-review.md</code>, <code>hound-decisions.md</code> and <code>hound-operations.md</code></td>
+</tr>
+<tr>
+<td>GitHub Copilot in VS Code</td>
+<td><code>.github/copilot-instructions.md</code>; <code>.github/agents/hound-onboarding.agent.md</code>, <code>hound-review.agent.md</code>, <code>hound-decisions.agent.md</code> and <code>hound-operations.agent.md</code>; <code>.github/skills/&lt;skill&gt;/SKILL.md</code></td>
+</tr>
+</tbody>
+</table>
+<p>With <code>both</code>, the skills are written once, under <code>.claude/skills/</code>, which Copilot in VS Code reads too.</p>
+<ul>
+<li><strong>Twenty skills, from one source, covering every hound command.</strong> Onboarding: onboard the organisation, the environment, a third
+  party, a system and an audit; assess a supplier; read an API specification; import an audit workbook; write a profile. Upkeep:
+  process manual evidence, prepare the weekly review, work through pending decisions with you, review before apply, operate the
+  collectors, keep frameworks, libraries, mappings, profiles and these files current. Documents and response: build the SSP and POA&amp;M,
+  respond to an incident and build the incident response plan, prepare the committee and board reports, answer a prime's
+  questionnaire, move registers from spreadsheets. Each is the steps for driving <code>hound</code>, linking the guide it follows, and where hound
+  has default guidance for that step (the same text <code>hound skill list</code> shows), that guidance too.</li>
+<li><strong>A command reference built from hound itself.</strong> The skill <code>hound-commands</code> lists every command and its options, generated from the
+  hound that ran <code>hound agent setup</code>, so it matches what is installed. Every agent loads it. Run <code>hound agent setup</code> again after
+  upgrading hound.</li>
+<li><strong>Four agents, with the least tools each needs.</strong> <code>hound-onboarding</code> reads, searches, edits and runs commands. <code>hound-review</code> reads,
+  searches and runs commands; it cannot edit a file. <code>hound-decisions</code> takes you through the decisions waiting on you, one at a time,
+  highest risk first, and gives you the <code>hound review --only &lt;key&gt;</code> to accept or challenge each; it records recommendations and edits
+  no file. <code>hound-operations</code> runs the collectors, the SSP, incidents, frameworks and libraries, and the reports.</li>
+<li><strong>Every file opens with the same rules:</strong> organisation data stays in this private repo; never open <code>secrets/</code>; never approve on the
+  person's behalf; nothing reaches CISO Assistant except through <code>hound scope plan</code> and <code>hound scope apply</code>. The rules guide the
+  assistant; what enforces them is <code>hound</code> itself: <code>hound approve</code> refuses anything but a person at a terminal.</li>
+<li><strong>Your files are yours.</strong> Each file hound writes carries a comment naming hound and its version. Running the command again replaces
+  those files (<code>Updated</code>), and leaves alone any file without the comment (<code>Kept</code>), including a <code>CLAUDE.md</code> you already had. To take a
+  file over, delete the comment; to get hound's version back, delete the file and run the command again.</li>
+</ul>
+<p>Your assistant's provider sees what the assistant reads in the repo. Keep secrets out of it, as the rules say.</p>
+<h2 id="drive-it-with-an-agent-pending-decide-supplier-draft-approve">Drive it with an agent: pending, decide, supplier draft, approve<a class="headerlink" href="#drive-it-with-an-agent-pending-decide-supplier-draft-approve" title="Permanent link">&para;</a></h2>
+<p>A coding agent (Claude Code, GitHub Copilot) can draft a whole onboarding without answering a prompt. Every command below takes options
+instead of questions and answers in JSON with <code>--json</code>; without <code>--json</code> the same facts print as text for a person. <code>hound</code> checks each
+step exactly as the interactive flow does. What an agent records is a <strong>draft</strong>: nothing is written to the scope's audits, and nothing is
+approved, until a person runs <code>hound approve</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="gp">$ </span>hound<span class="w"> </span>supplier<span class="w"> </span>draft<span class="w"> </span>--repo<span class="w"> </span>.<span class="w"> </span>--system<span class="w"> </span>EXAMPLE-ASSETS<span class="w"> </span>--ref<span class="w"> </span>SUP-EXAMPLE<span class="w"> </span>--name<span class="w"> </span><span class="s2">"Example Assets Ltd"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--solution-ref<span class="w"> </span>SOL-EXAMPLE-ASSETS<span class="w"> </span>--solution-name<span class="w"> </span><span class="s2">"Asset inventory"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--contract-ref<span class="w"> </span>CTR-EXAMPLE-ASSETS<span class="w"> </span>--contract-name<span class="w"> </span><span class="s2">"Asset inventory subscription"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--level<span class="w"> </span><span class="s2">"dependency=2:Holds the asset inventory only."</span><span class="w"> </span>--level<span class="w"> </span><span class="s2">"maturity=3:Holds an ISO 27001 certificate."</span><span class="w"> </span>--json
+<span class="gp">$ </span>hound<span class="w"> </span>onboard<span class="w"> </span>EXAMPLE-ASSETS<span class="w"> </span>pending<span class="w"> </span>--json<span class="w"> </span>--repo<span class="w"> </span>.<span class="w"> </span>--group<span class="w"> </span><span class="m">1</span><span class="w"> </span>--spec<span class="w"> </span>../specs/example-asset-api.openapi.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--owner<span class="w"> </span>it@example.com<span class="w"> </span>--product<span class="w"> </span><span class="s2">"Example Asset API"</span><span class="w"> </span>--solution<span class="w"> </span>SOL-EXAMPLE-ASSETS
+<span class="gp">$ </span>hound<span class="w"> </span>onboard<span class="w"> </span>EXAMPLE-ASSETS<span class="w"> </span>decide<span class="w"> </span>urn:intuitem:risk:req_node:essential-eight-2023:pa:ism-1807<span class="w"> </span>--repo<span class="w"> </span>.<span class="w"> </span>--json<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--kind<span class="w"> </span>api_check<span class="w"> </span>--reasoning<span class="w"> </span><span class="s2">"GET /v1/devices lists every device, discovered daily."</span><span class="w"> </span>--source<span class="w"> </span><span class="s2">"GET /v1/devices"</span>
+<span class="gp">$ </span>hound<span class="w"> </span>onboard<span class="w"> </span>EXAMPLE-ASSETS<span class="w"> </span>pending<span class="w"> </span>--json<span class="w"> </span>--repo<span class="w"> </span>.
+</code></pre></div>
+<ul>
+<li><strong><code>hound supplier draft</code></strong> writes <code>scope/third-parties/&lt;ref&gt;.yaml</code> with a draft contract and an open review. Each <code>--level</code> is
+  <code>&lt;name&gt;=&lt;value&gt;:&lt;reason&gt;</code> (dependency and penetration 0 to 4; maturity, trust and criticality 1 to 4); a level outside its scale or
+  without a reason is refused. It never overwrites a file.</li>
+<li><strong><code>hound onboard &lt;system&gt; pending</code></strong> starts the session when given <code>--owner</code>, <code>--product</code> and <code>--solution</code> (a solution a third-party
+  file declares), then lists the requirements not yet decided with their text, the API summary from <code>--spec</code>, and the skills that apply
+  (the defaults, plus the repo's own under <code>skills/</code>). Later calls need only the system and <code>--repo</code>.</li>
+<li><strong><code>hound onboard &lt;system&gt; decide &lt;requirement&gt;</code></strong> records one decision: <code>--kind api_check|manual|not_applicable|other_system</code>,
+  <code>--reasoning</code>, any <code>--source</code> it rests on, <code>--other-system &lt;name&gt;</code> for another system, <code>--justification &lt;text&gt;</code> for not applicable.
+  Name the requirement as <code>pending</code> lists it under <code>requirement</code> (its <code>ref_id</code> when that is unique in the framework, else its URN).
+  It is marked <code>drafted_by: agent</code> in the session, with no one as its accepter or approver. Deciding a requirement again replaces the
+  draft; a decision a person made is never replaced.</li>
+<li><strong><code>--json</code></strong> is also on <code>hound scope validate</code>, <code>hound scope plan</code> and <code>hound explain</code> (what code reads from a change: counts, objects,
+  flags and topics; no model is asked).</li>
+</ul>
+<h3 id="every-kind-of-onboarding-the-same-way">Every kind of onboarding, the same way<a class="headerlink" href="#every-kind-of-onboarding-the-same-way" title="Permanent link">&para;</a></h3>
+<p>The agent drafts each kind through a command that asks nothing; <code>hound</code> checks it; a person approves with <code>hound approve</code>.</p>
+<table>
+<thead>
+<tr>
+<th>What</th>
+<th>Command</th>
+<th>Where the draft waits</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The organisation</td>
+<td><code>hound init &lt;folder&gt; --org ... --code ... --url ... --time-zone ... --level ... --interval ... --owner ... --assistant ... --json</code></td>
+<td>The new repo itself, for review</td>
+</tr>
+<tr>
+<td>The environment</td>
+<td><code>hound onboard environment pending --json</code>, then <code>hound onboard environment decide &lt;mitigation&gt; --provided-by system\|manual\|gap --reason ... [--system ...]</code></td>
+<td><code>scope/capabilities.yaml</code>, with no approver</td>
+</tr>
+<tr>
+<td>A third party</td>
+<td><code>hound supplier draft --kind vendor\|reseller\|msp [--for &lt;vendor&gt;] ... [--document &lt;path&gt;]...</code></td>
+<td><code>scope/third-parties/&lt;ref&gt;.yaml</code>, with a draft contract</td>
+</tr>
+<tr>
+<td>A system</td>
+<td><code>hound onboard &lt;system&gt; pending</code> and <code>decide</code></td>
+<td><code>onboarding/&lt;SYSTEM&gt;/session.json</code></td>
+</tr>
+<tr>
+<td>An audit</td>
+<td><code>hound audit draft --ref ... --name ... --framework ... --group ... --domain ... --perimeter ... --system ... --due ...</code></td>
+<td><code>onboarding/drafts/audits/&lt;ref&gt;.yaml</code></td>
+</tr>
+<tr>
+<td>An audit workbook</td>
+<td><code>hound scope import &lt;workbook&gt; --audit &lt;ref&gt; [--sheet ...] [--column &lt;name&gt;=&lt;heading&gt;]...</code></td>
+<td>Approved rows go to the audit; the rest wait in <code>onboarding/drafts/imports/&lt;audit&gt;.json</code></td>
+</tr>
+<tr>
+<td>Manual evidence</td>
+<td><code>hound manual propose &lt;source&gt; &lt;file&gt; --result ... --observation ... --supports ...</code></td>
+<td><code>&lt;file&gt;.proposal.yaml</code> beside the file in the drop folder, until <code>hound manual approve</code></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>The environment.</strong> <code>pending</code> lists the mitigations not yet decided, the drafts waiting and the systems in scope. <code>decide</code> records one
+  mitigation; deciding it again replaces the draft, and a decision a person approved is refused. Once every mitigation is decided
+  and the decisions are approved, <code>hound onboard environment</code> asks nothing and writes the rows each system's audit leaves open for
+  another system. While any mitigation is undecided it asks a person for each one, so an agent checks <code>pending</code> is empty first.</li>
+<li><strong>A reseller or managed service provider</strong> is a third party of its own. Draft the vendor first, then the reseller or provider with
+  <code>--kind</code> and <code>--for &lt;vendor ref_id&gt;</code>; its description names the vendor it stands for. <code>--document</code> names a document kept in the repo
+  that the draft rests on, and the file records it with its SHA-256. A system bought through one names it as <code>supplied_through</code>.</li>
+<li><strong>An audit</strong> is drafted per system, with a shared platform audited on its own (<a href="../scope/#one-audit-per-system-and-one-per-shared-platform">one audit per system</a>). It is checked against the scope as it is drafted: its framework, domain, perimeter and systems must be in <code>scope/setup.yaml</code>.
+  It stays out of the scope, and out of every plan, until <code>hound approve</code> moves it into <code>scope/audits/</code>.</li>
+<li><strong>An audit workbook</strong> (<code>.xlsx</code> or <code>.csv</code>) is read where it is; it is never copied into the repo. <code>hound</code> finds the columns by their
+  headings (requirement, result, observation, evidence, approved by, approved on) or by <code>--column</code>. A row the workbook says someone
+  approved is written to the audit's <code>assessments</code> with the workbook's own words, ending "Imported from <code>&lt;workbook&gt;</code>, row <code>&lt;n&gt;</code>, approved
+  by <code>&lt;who&gt;</code> on <code>&lt;date&gt;</code>", so the provenance shows in <code>hound scope plan</code> and in CISO Assistant. A row with no approver is a draft: <code>hound
+  approve</code> asks about it, and records the person who approves it, today. Rows not assessed are left out; rows whose requirement is not in
+  the audit's framework are listed as unmatched and never guessed. Importing again adds nothing twice. Try it with
+  <a href="https://github.com/tnbozman/evidence-hound/blob/main/examples/workbooks/README.md"><code>examples/workbooks/example-audit-workbook.csv</code></a>.</li>
+</ul>
+<h3 id="approve-in-a-terminal">Approve, in a terminal<a class="headerlink" href="#approve-in-a-terminal" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="gp">$ </span>hound<span class="w"> </span>approve<span class="w"> </span>--repo<span class="w"> </span>.
+</code></pre></div>
+<p><code>hound approve</code> walks you through everything drafted in the repo that needs a person, one item at a time, in this order:</p>
+<ol>
+<li><strong>Environment capabilities</strong> in <code>scope/capabilities.yaml</code> with no <code>approved_by</code>.</li>
+<li><strong>Suppliers</strong> whose contract is a draft. Approving makes the contract <code>active</code>.</li>
+<li><strong>Supplier reviews</strong> that are open, for suppliers with an active contract: conclude each as <code>ok</code>, <code>warning</code> or <code>blocker</code>, once the
+   review is done.</li>
+<li><strong>Not-applicable decisions</strong> an agent drafted, each with its reasoning and justification.</li>
+<li><strong>Each system an agent drafted</strong>, with its decisions. Approving writes the system's audit, its entry in <code>scope/setup.yaml</code> and the
+   onboarding record, as the interactive command does. A system waits while its supplier is not approved, a not-applicable decision is
+   declined, or requirements are still undecided.</li>
+<li><strong>Audits an agent drafted</strong> with <code>hound audit draft</code>. Approving moves the audit into <code>scope/audits/</code>, with your name and the date in
+   its first line.</li>
+<li><strong>Imported workbook rows with no approver.</strong> Approving writes the row to its audit, with you as its approver.</li>
+</ol>
+<p>Answer <code>y</code>, <code>n</code> (leave it as a draft) or <code>s</code> (stop; nothing more is asked). Your name, asked once, and today's date are recorded on
+everything you approve: <code>approved_by</code> and <code>approved_on</code> on the capability and the contract, <code>by</code> and <code>on</code> on the review's conclusion,
+and the approver in the session and the onboarding record.</p>
+<p><strong>It needs a person at a terminal.</strong> When its input or output is redirected, as when an agent runs it or answers are piped in,
+<code>hound approve</code> refuses and changes nothing. <code>hound manual approve</code> is the same walk for manual evidence only: it shows each file an
+agent proposed a result for, and you attest, change or reject it (<a href="../configuration/#manual-sources">manual sources</a>). Nothing is approved in CISO Assistant: review the changed files in a pull request, then
+<code>hound scope plan</code> and <code>hound scope apply</code> write the approved state, including each review's conclusion.</p>
+<p><strong>Or sign off once a week.</strong> <code>hound review</code> walks the same items, and manual evidence proposals, in one session: most urgent first, each
+with why it matters and the agent's recommendation, answered accept, challenge or skip. It records one sign-off and applies what you
+accepted. See <a href="../manual-evidence/#the-weekly-review">the weekly review</a>.</p>
+<h2 id="explain-a-change-for-review">Explain a change for review<a class="headerlink" href="#explain-a-change-for-review" title="Permanent link">&para;</a></h2>
+<p><code>hound explain</code> writes a plain-English review summary of a plan or a config change, so you approve only what you understand. It reads
+the output of <code>hound scope plan</code> (Markdown or <code>--json</code>), <code>hound plan</code>, a diff (a file, or piped in: <code>git diff | hound explain</code>), or two
+versions of one file (<code>hound explain before.yaml after.yaml</code>).</p>
+<ul>
+<li><strong>Code reads it.</strong> The counts, the objects and what needs a careful look (requirements newly marked not applicable, deletions,
+  removed checks in mappings or profiles, a check removed from a profile that a mapping in <code>mappings/</code> still uses, a system
+  without an owner, a supplier contract that is not active) come from code. The plan is the source of truth: the summary quotes its
+  counts. No model is asked.</li>
+<li><strong>For an agent,</strong> <code>--json</code> gives the same facts (counts, objects, flags and topics); the <code>review-before-apply</code> skill has a coding
+  assistant read them with the plan and the changed files before it proposes an apply.</li>
+<li><strong>Review only.</strong> It never edits config or applies a plan, and collection never uses it.</li>
+</ul>
+<h2 id="tutorial-onboard-the-example-api">Tutorial: onboard the example API<a class="headerlink" href="#tutorial-onboard-the-example-api" title="Permanent link">&para;</a></h2>
+<p>For a worked example of a whole stack, two systems and four suppliers, see the <a href="../tutorials/onboarding-tutorial/">onboarding tutorial</a>:
+Example Pty Ltd's privately hosted GRC platform on Oracle Cloud and its office firewall, onboarded, reviewed, validated and applied.</p>
+<p>This walk-through onboards the fictional Example Asset API into a copy of the template config repo by answering <code>hound</code>'s questions
+yourself: it needs no key and sends nothing anywhere. It takes about ten minutes. Run it from the root of this repository.</p>
+<ol>
+<li><strong>A config repo to work in.</strong></li>
+</ol>
+<div class="highlight"><pre><span></span><code>cp<span class="w"> </span>-R<span class="w"> </span>examples/compliance-repo<span class="w"> </span>/tmp/tutorial-repo
+</code></pre></div>
+<ol>
+<li><strong>Start onboarding.</strong> Group 1 keeps the list short (48 requirements); for Essential Eight ML2 you would give <code>--group 1 --group 2</code>.</li>
+</ol>
+<div class="highlight"><pre><span></span><code>hound<span class="w"> </span>onboard<span class="w"> </span>EXAMPLE-ASSETS<span class="w"> </span>--repo<span class="w"> </span>/tmp/tutorial-repo<span class="w"> </span>--group<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--spec<span class="w"> </span>examples/apis/example-asset-api.openapi.yaml
+</code></pre></div>
+<p>Answer the questions: your name, the system owner's email (<code>owner@example.com</code>), the product (<code>Example Asset Service</code>), the supplier
+   (<code>SUP-EXAMPLE</code>, <code>Example Vendor Pty Ltd</code>), the solution (<code>SOL-EXAMPLE-ASSETS</code>, <code>Example Asset Service</code>), the contract
+   (<code>CTR-EXAMPLE-ASSETS</code>, <code>Example asset service subscription</code>) and what the supplier provides. Press Enter when asked for a vendor
+   document. The supplier is new, so <code>hound</code> drafts <code>scope/third-parties/sup-example.yaml</code> and stops:</p>
+<div class="highlight"><pre><span></span><code><span class="go">SUP-EXAMPLE is not approved yet. Review scope/third-parties/sup-example.yaml; once the supplier is approved, make contract CTR-EXAMPLE-ASSETS active and run 'hound onboard EXAMPLE-ASSETS' again to decide applicability.</span>
+</code></pre></div>
+<ol>
+<li>
+<p><strong>Approve the supplier.</strong> Open the drafted file, fill in the levels it leaves to decide, and set the contract to <code>status: active</code>. In a
+   real repo you would now apply the supplier and conclude its review <code>EA-SUP-EXAMPLE</code> as ok in CISO Assistant (see
+   <a href="../scope/#supplier-approval">Supplier approval</a>); the tutorial skips that, because onboarding itself checks only the contract.</p>
+</li>
+<li>
+<p><strong>Decide applicability.</strong> Run the same command again. It shows what the API offers, then each requirement with "No proposal": the
+   decisions are yours. Type <code>c</code> for ISM-1807 (the API lists devices and their last check-in) with a reason, and <code>m</code> with a reason for the rest.
+   Type <code>s</code> at any point to stop; the next run carries on from there. At the end, accept the default domain and perimeter:</p>
+</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="go">All 48 requirements decided: 1 API check(s), 47 manual, 0 not applicable, 0 for another system. The session is in onboarding/EXAMPLE-ASSETS/session.json.</span>
+<span class="go">Wrote scope/audits/example-assets-essential-eight-2023.yaml, scope/setup.yaml, onboarding/example-assets-essential-eight-2023-&lt;date&gt;.md. ...</span>
+</code></pre></div>
+<ol>
+<li><strong>Review what it wrote.</strong> Read the audit, the system's new <code>solution:</code> line in <code>scope/setup.yaml</code> and the onboarding record, as a
+   reviewer would in a pull request, then check the scope files offline:</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/tmp/tutorial-repo<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>hound<span class="w"> </span>scope<span class="w"> </span>validate<span class="w"> </span>scope
+</code></pre></div>
+<ol>
+<li><strong>The profile.</strong> Copy the library's example profile and its tests, and run them offline (for your own system you would write the
+   profile, or have your coding assistant write it, then <a href="#validate-sample-and-test-the-profile">validate, sample and test it</a>):</li>
+</ol>
+<div class="highlight"><pre><span></span><code>mkdir<span class="w"> </span>-p<span class="w"> </span>profiles<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>cp<span class="w"> </span>-R<span class="w"> </span>&lt;evidence-hound&gt;/profiles/example.yaml<span class="w"> </span>&lt;evidence-hound&gt;/profiles/example.tests<span class="w"> </span>profiles/
+hound<span class="w"> </span>profile<span class="w"> </span><span class="nb">test</span><span class="w"> </span>example<span class="w"> </span>--profiles<span class="w"> </span>profiles
+</code></pre></div>
+<p>To do the same with a coding assistant, run <code>hound agent setup</code> in the repo and ask it to onboard the system with hound.</p>
+<h2 id="skills-the-assistants-guidance">Skills: the assistant's guidance<a class="headerlink" href="#skills-the-assistants-guidance" title="Permanent link">&para;</a></h2>
+<p>A skill is a Markdown file with frontmatter that says how to approach a step. <code>hound</code> gives the skills for a step to a coding assistant
+with <code>hound onboard &lt;system&gt; pending --json</code>, and <code>hound agent setup</code> writes the defaults into the assistant's own skill files. Skills only
+guide: the named approver for not applicable, the supplier gate, <code>hound approve</code> and profile tests stay in code, and no skill can change them.</p>
+<div class="highlight"><pre><span></span><code>---
+name: our-applicability
+description: How we justify not applicable.
+version: 1.0.0
+applies_to: [applicability]          # supplier, system, applicability, profile, mapping, explain
+frameworks: [essential-eight-2023]    # optional: only for these frameworks
+<span class="gu">overrides: applicability              # optional: replace this default on purpose</span>
+<span class="gu">---</span>
+Guidance, in plain Markdown.
+</code></pre></div>
+<ul>
+<li><strong>Defaults</strong> are built into <code>hound</code>, from this repository's <a href="https://github.com/tnbozman/evidence-hound/tree/main/skills/"><code>skills/</code></a> folder: supplier assessment and tiering, supplier
+  assurance documents, applicability and not-applicable justification, Essential Eight ML2 mapping, profile authoring, reading an API
+  specification, and reviewing a config change (for <code>hound explain</code>).</li>
+<li><strong>Organisation skills</strong> live in the config repo's <code>skills/</code> folder (<code>skills_path</code>, mounted read-only like profiles). They add to the
+  defaults; one with a default's name is an error unless it says <code>overrides:</code>.</li>
+<li><strong>Choosing:</strong> a step gets every skill whose <code>applies_to</code> names the step and whose <code>frameworks</code> match, defaults first, within
+  a size budget. Over the budget is an error naming the skills, never a silent cut.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>hound skill list</code></td>
+<td>Every active skill: source, version, SHA-256, steps and override.</td>
+</tr>
+<tr>
+<td><code>hound skill new &lt;name&gt;</code></td>
+<td>Writes a skeleton to fill in.</td>
+</tr>
+<tr>
+<td><code>hound skill add &lt;file&gt;</code></td>
+<td>Validates the skill against the defaults and the folder, then copies it in.</td>
+</tr>
+<tr>
+<td><code>hound skill validate</code></td>
+<td>Checks every skill: frontmatter, steps, size and overrides.</td>
+</tr>
+<tr>
+<td><code>hound skill draft [--only &lt;name&gt;]...</code></td>
+<td>Writes the organisation's own skills (<code>organisation-profile</code>, <code>risk-appetite</code>, <code>it-landscape</code>, <code>ai-landscape</code>) as templates with their questions as headings, for you or your coding assistant to answer. A skill already in the folder is kept as it is. Templates go only into the skills folder, for you to review, edit and commit.</td>
+</tr>
+</tbody>
+</table>
+<p>Each takes <code>--skills &lt;folder&gt;</code> (default <code>HOUND_SKILLS_PATH</code>, else <code>./skills</code>).</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Evidence Hound contributors. Apache-2.0.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.indexes", "navigation.top", "content.code.copy", "search.suggest"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

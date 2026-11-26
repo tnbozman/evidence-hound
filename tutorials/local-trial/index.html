@@ -1,0 +1,3832 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Continuous compliance evidence for CISO Assistant, for small teams in the defence industry.">
+      
+      
+      
+        <link rel="canonical" href="https://tnbozman.github.io/evidence-hound/tutorials/local-trial/">
+      
+      
+        <link rel="prev" href="../../getting-started/">
+      
+      
+        <link rel="next" href="../../guided-setup/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Local trial - Evidence Hound</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#local-trial-evidence-hound-next-to-your-ciso-assistant" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Evidence Hound" class="md-header__button md-logo" aria-label="Evidence Hound" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Evidence Hound
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Local trial
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/tnbozman/evidence-hound" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tnbozman/evidence-hound
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Evidence Hound" class="md-nav__button md-logo" aria-label="Evidence Hound" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Evidence Hound
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/tnbozman/evidence-hound" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tnbozman/evidence-hound
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Start here
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Start here
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local trial
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local trial
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-it-needs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What it needs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-preflight" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Preflight
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-the-runner-image" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. The runner image
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-the-workspace" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. The workspace
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-a-new-organisation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. A new organisation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-to-11-third-parties-then-each-system-its-audit-and-controls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5 to 11. Third parties, then each system, its audit and controls
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12-grc-platforms-evidence-its-hosting-controls-and-drift-from-the-iac-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. GRC-PLATFORM's evidence: its hosting controls and drift, from the IaC pipeline
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#13-office-firewalls-evidence-sophos-central-a-fictional-tenant-on-this-machine-or-your-own" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        13. OFFICE-FIREWALL's evidence: Sophos Central, a fictional tenant on this machine or your own
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="13. OFFICE-FIREWALL&#39;s evidence: Sophos Central, a fictional tenant on this machine or your own">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-dev-server-default" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The dev server (default)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#your-own-tenant" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Your own tenant
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#then-either-way" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Then, either way
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#14-identity-and-laptops-microsoft-365" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14. Identity and laptops: Microsoft 365
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="14. Identity and laptops: Microsoft 365">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#your-own-test-tenant" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Your own test tenant
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#15-patching-evidence-vulnerability-scans" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        15. Patching evidence: vulnerability scans
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#16-what-ciso-assistant-reads-for-each-audit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        16. What CISO Assistant reads for each audit
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#unattended" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unattended
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guided-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guided setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../onboarding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Onboarding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../onboarding-tutorial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Onboarding tutorial
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../first-deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    First deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operate/grc-member/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Your week
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cheatsheet/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cheat sheet
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deploy
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Deploy
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../running/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running collectors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../publishing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Publishing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploy/backups/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backups and restore tests
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploy/hardening/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Harden the host
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploy/updates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keep it up to date
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ciso-assistant-configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CISO Assistant configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../collectors/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Collectors
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Collectors
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../collectors/m365/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Microsoft 365
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../collectors/rest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    REST profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../collectors/sophos/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sophos Central
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../collectors/vuln-scan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Vulnerability scans
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../collectors/terraform-tests/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Terraform tests
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../collectors/terraform-drift/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Terraform drift
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../collectors/ciso-assistant/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CISO Assistant
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../manual-evidence/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Manual evidence
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../collectors/manual-templates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Manual templates
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Write a collector
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Write a collector
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../write-a-profile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Write a profile
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../write-a-collector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Write a collector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../mapping-files/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mapping files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adopt
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Adopt
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../scope/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scope files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../risk/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Risk studies and exceptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../bia/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Business impact analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../metrics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Metrics and dashboards
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../incidents/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Incidents and reporting deadlines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../third-parties/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Third parties
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adopt/migrate-from-spreadsheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Move off spreadsheets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adopt/answer-a-prime-questionnaire/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Answer a prime's questionnaire
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../migrations/essential-eight-to-asd-essentials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Essential Eight to ASD Essentials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adopt/disp-readiness/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DISP membership readiness
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adopt/cmmc-level-2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CMMC Level 2 and the SPRS score
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../operate/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operate
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8" id="__nav_8_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Operate
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operate/system-owner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System owner
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operate/collector-operator/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Collector operator
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operate/committee-member/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Committee member
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../training/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Training
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_5" id="__nav_8_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Training
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../training/system-owners/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System owners
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../training/committee/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Committee
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../training/board/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Board
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../training/ai-governance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI governance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Govern
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Govern
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reporting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reporting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../govern/security-committee/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security committee
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../govern/board-reporting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Board reporting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../govern/ai-assisted-reporting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI-assisted reporting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../govern/continuous-compliance-procedure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Continuous compliance procedure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ssp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System security plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../govern/system-security-plan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writing the SSP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../audit-plan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Audit plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ai-grc-primer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI governance primer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ai-grc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI governance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ai-governance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI governance tutorial
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../plan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../engineering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Engineering
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../closed-loop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Closed loop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../repo-map/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Repository map
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reviews/2026-engineering-review/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Engineering review 2026
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reviews/2026-ciso-review/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CISO review 2026
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releasing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Releasing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../design/rest-collector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    REST collector design
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../design/agent-driven-onboarding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Agent-driven onboarding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../design/guided-review/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guided review
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_10_11" id="__nav_10_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dev servers
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_10_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Dev servers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../m365-dev-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Microsoft 365
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sophos-dev-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sophos Central
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../iac-dev-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IaC pipeline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../scan-dev/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Vulnerability scans
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-it-needs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What it needs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-preflight" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Preflight
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-the-runner-image" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. The runner image
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-the-workspace" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. The workspace
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-a-new-organisation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. A new organisation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-to-11-third-parties-then-each-system-its-audit-and-controls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5 to 11. Third parties, then each system, its audit and controls
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12-grc-platforms-evidence-its-hosting-controls-and-drift-from-the-iac-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. GRC-PLATFORM's evidence: its hosting controls and drift, from the IaC pipeline
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#13-office-firewalls-evidence-sophos-central-a-fictional-tenant-on-this-machine-or-your-own" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        13. OFFICE-FIREWALL's evidence: Sophos Central, a fictional tenant on this machine or your own
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="13. OFFICE-FIREWALL&#39;s evidence: Sophos Central, a fictional tenant on this machine or your own">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-dev-server-default" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The dev server (default)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#your-own-tenant" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Your own tenant
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#then-either-way" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Then, either way
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#14-identity-and-laptops-microsoft-365" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14. Identity and laptops: Microsoft 365
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="14. Identity and laptops: Microsoft 365">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#your-own-test-tenant" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Your own test tenant
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#15-patching-evidence-vulnerability-scans" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        15. Patching evidence: vulnerability scans
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#16-what-ciso-assistant-reads-for-each-audit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        16. What CISO Assistant reads for each audit
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#unattended" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unattended
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="local-trial-evidence-hound-next-to-your-ciso-assistant">Local trial: Evidence Hound next to your CISO Assistant<a class="headerlink" href="#local-trial-evidence-hound-next-to-your-ciso-assistant" title="Permanent link">&para;</a></h1>
+<p>This tutorial is interactive: <code>make trial</code> runs it step by step from the dev container. It sets a scene and walks it the way you would onboard for real, so you can explore CISO Assistant and Evidence Hound with little fuss.</p>
+<p><strong>The scene.</strong> The fictional Example Pty Ltd self-hosts its cyber GRC: CISO Assistant and Evidence Hound run in Docker Compose on one private Oracle Cloud (OCI) VM with no public IP address (<code>GRC-PLATFORM</code>). The office reaches it only over a site-to-site VPN through its Sophos XGS 88W firewall, managed in Sophos Central (<code>OFFICE-FIREWALL</code>). Staff sign in with Microsoft 365. The GRC team audits each system to the Essential Eight, maturity level 2. This is <a href="../onboarding-tutorial/#the-deployment">the onboarding tutorial's deployment</a>, with its diagram.</p>
+<p><strong>The order.</strong> The organisation with <code>hound init</code> (<a href="../../guided-setup/">guided setup</a>), its third parties (Oracle, Sophos, and the CISO Assistant and Evidence Hound projects), then each system with its own audit and the controls it relies on, and last the collectors that gather evidence on a schedule: the IaC pipeline's control tests and drift check for <code>GRC-PLATFORM</code> (<a href="../iac-dev-server/">its dev server</a>), Sophos Central for <code>OFFICE-FIREWALL</code> (<a href="../sophos-dev-server/">its dev server</a>) Microsoft 365 for identity and laptops (<a href="../m365-dev-server/">its dev server</a>), and vulnerability scan exports for patching (<a href="../scan-dev/">fictional exports</a>). Every collector reads a fictional tenant on your machine, so you need no account, API key or cloud; Sophos Central and Microsoft 365 can be your own tenants instead. From the third parties on, your coding agent drafts each stage with hound's skills and you approve it. Allow an hour or two; the first image build takes much of it.</p>
+<div class="highlight"><pre><span></span><code>make<span class="w"> </span>trial
+</code></pre></div>
+<p>Each step shows the <code>hound</code> command before it runs and asks before anything that changes CISO Assistant. Answer <code>q</code> to stop. Run <code>make trial</code> again to carry on: finished steps are skipped. <code>make trial-clean</code> removes the workspace and leaves CISO Assistant running.</p>
+<h2 id="what-it-needs">What it needs<a class="headerlink" href="#what-it-needs" title="Permanent link">&para;</a></h2>
+<ul>
+<li>The dev container, with Docker answering inside it.</li>
+<li>A CISO Assistant. The dev container starts its own, at <code>http://backend:8000</code> in the dev container and <code>https://localhost:8443</code> in your browser. A stack from <code>make ca-up</code> works too. If none is running, the trial offers to start one.</li>
+<li>No account or key: each collector reads its dev server. Optionally Terraform (the dev container has it), so the trial runs the GRC platform's real control tests.</li>
+<li>For your own Sophos Central tenant instead (step 13), an API credential with the <strong>Service Principal Read-Only</strong> role, created as <a href="../../collectors/sophos/">the Sophos guide</a> describes; for your own Microsoft 365 test tenant (step 14), <a href="#14-identity-and-laptops-microsoft-365">section 14</a>.</li>
+</ul>
+<h2 id="1-preflight">1. Preflight<a class="headerlink" href="#1-preflight" title="Permanent link">&para;</a></h2>
+<p>Before it starts anything, the trial checks:</p>
+<table>
+<thead>
+<tr>
+<th>Check</th>
+<th>What happens</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Docker answers</td>
+<td>Stops with a hint if it does not.</td>
+</tr>
+<tr>
+<td>The dev container's CISO Assistant answers at <code>http://backend:8000</code></td>
+<td>Reused. Nothing new is started.</td>
+</tr>
+<tr>
+<td>A CISO Assistant backend container runs on the Docker daemon the dev container sees (<code>make ca-up</code>)</td>
+<td>Reused, on its Docker network.</td>
+</tr>
+<tr>
+<td>Something answers at <code>http://localhost:8000</code></td>
+<td>Reused.</td>
+</tr>
+<tr>
+<td>None of these, and ports 8000 and 8443 are free</td>
+<td>Offers <code>make ca-up</code>.</td>
+</tr>
+<tr>
+<td>None of these, and port 8000 or 8443 is taken</td>
+<td>Stops and names the container, or says it is a process outside Docker.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="2-the-runner-image">2. The runner image<a class="headerlink" href="#2-the-runner-image" title="Permanent link">&para;</a></h2>
+<p>The trial builds the runner image from your checkout (<code>make image HOUND_IMAGE=evidence-hound-runner:trial</code>), so it tests your branch, not a published release. Every <code>hound</code> command then runs as a throwaway container: <code>docker run --rm</code> with the workspace mounted at <code>/trial</code>.</p>
+<p>How the container reaches CISO Assistant:</p>
+<ul>
+<li><strong>The dev container's CISO Assistant</strong> runs on the Docker daemon outside the dev container. The dev container uses Docker-in-Docker, so its containers cannot join that network. They share the dev container's network namespace (<code>--network host</code>) instead, where <code>backend</code> resolves.</li>
+<li><strong>A <code>make ca-up</code> stack</strong> runs on the dev container's own daemon. <code>hound</code> joins its network (<code>hound-ciso-assistant_default</code>).</li>
+</ul>
+<p>In both cases the API is <code>http://backend:8000/api/</code>. The token is copied from <code>.dev/ca.env</code> to <code>.dev/trial/secrets/ca_token</code> (mode 600) and reaches the container as <code>HOUND_CA_TOKEN_FILE</code>. It is never printed or put on a command line.</p>
+<h2 id="3-the-workspace">3. The workspace<a class="headerlink" href="#3-the-workspace" title="Permanent link">&para;</a></h2>
+<p><code>.dev/trial/</code> is git-ignored and holds everything the trial writes:</p>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Holds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>repo/</code></td>
+<td>The organisation's compliance repo, as <code>hound init</code> writes it</td>
+</tr>
+<tr>
+<td><code>secrets/</code></td>
+<td>The API token and, later, the Sophos client secret (folder 700, files 600)</td>
+</tr>
+<tr>
+<td><code>profiles/</code></td>
+<td>The profiles the collectors read, with their tests: <code>grc-infra-controls</code> and <code>terraform-drift</code> (step 12), <code>sophos-central</code> (step 13)</td>
+</tr>
+<tr>
+<td><code>iac/</code></td>
+<td>The GRC platform's Terraform, copied to run its control tests, and their report <code>controls.xml</code> (step 12)</td>
+</tr>
+<tr>
+<td><code>manual/</code></td>
+<td>Drop folders for manual evidence sources</td>
+</tr>
+<tr>
+<td><code>evidence/</code></td>
+<td>Evidence and run records</td>
+</tr>
+<tr>
+<td><code>specs/</code></td>
+<td>API specifications for the agent: the trial puts a fictional description of the Sophos Central API calls the dev server answers here</td>
+</tr>
+<tr>
+<td><code>inbox/</code></td>
+<td>Vendor documents for the agent (the trial puts fictional notes on each of the four suppliers here), and the Microsoft 365 test certificate</td>
+</tr>
+<tr>
+<td><code>bin/hound</code></td>
+<td><code>hound</code> for your coding agent: the trial's image, against the trial's CISO Assistant</td>
+</tr>
+</tbody>
+</table>
+<h2 id="4-a-new-organisation">4. A new organisation<a class="headerlink" href="#4-a-new-organisation" title="Permanent link">&para;</a></h2>
+<p><code>hound init /trial/repo --organisation-audit</code> asks about the organisation: its name, a short code for ref IDs, the CISO Assistant address, the time zone, the Essential Eight maturity level, whether the audit runs by quarter or by month, and the compliance owner. Press Enter to take each default, the fictional Example Pty Ltd at maturity level 2, audited by quarter: the series <code>EX-E8</code>, whose open period on 23 November 2026 is <code>EX-E8-Q2-2027FY</code>. It writes the config, the scope (the domain, the health control and the audit) and the Essential Eight mapping, and checks them. The organisation gets its own audit because an organisation-wide source feeds it: Microsoft 365 covers every account and laptop (step 14). Each system still gets its own audit in the series; without such a source, leave <code>--organisation-audit</code> out. The trial then runs:</p>
+<div class="highlight"><pre><span></span><code>hound<span class="w"> </span>config<span class="w"> </span>validate<span class="w"> </span>hound.yaml
+hound<span class="w"> </span>scope<span class="w"> </span>validate<span class="w"> </span>scope<span class="w"> </span>--config<span class="w"> </span>hound.yaml
+hound<span class="w"> </span>scope<span class="w"> </span>plan<span class="w"> </span>scope<span class="w"> </span>--config<span class="w"> </span>hound.yaml<span class="w"> </span>--out<span class="w"> </span>/trial/scope-plan.json
+hound<span class="w"> </span>scope<span class="w"> </span>apply<span class="w"> </span>/trial/scope-plan.json
+</code></pre></div>
+<p>Read the plan before you answer: it lists every object and field the apply would create or change. The plan is saved outside the repo, and apply writes exactly that saved plan. If the scope or CISO Assistant changed in between, it refuses with <code>scope.plan_stale</code> (<a href="../../scope/#saved-plans">Saved plans</a>). A second run plans nothing new.</p>
+<p>It then runs <code>hound agent setup --assistant both</code>, which writes the skills and agent files for Claude Code and GitHub Copilot (<a href="../../onboarding/">onboarding</a>), and links <code>.dev/trial/bin/hound</code> to <code>scripts/trial-hound.sh</code>: it runs the trial's runner image against the trial's CISO Assistant with the trial's token, in the folder you call it from. hound's container sees only <code>.dev/trial</code>, so it refuses a folder outside it. Start your agent in a second terminal and keep it open:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>.dev/trial/repo<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">export</span><span class="w"> </span><span class="nv">PATH</span><span class="o">=</span><span class="s2">"</span><span class="nv">$PWD</span><span class="s2">/../bin:</span><span class="nv">$PATH</span><span class="s2">"</span>
+claude
+</code></pre></div>
+<p>Or open <code>.dev/trial/repo</code> in VS Code and pick the <code>hound-onboarding</code> agent in Copilot. The trial has already put fictional supplier notes in <code>.dev/trial/inbox</code> and a Sophos Central API description in <code>.dev/trial/specs</code>; add any other API specification or vendor document there.</p>
+<h2 id="5-to-11-third-parties-then-each-system-its-audit-and-controls">5 to 11. Third parties, then each system, its audit and controls<a class="headerlink" href="#5-to-11-third-parties-then-each-system-its-audit-and-controls" title="Permanent link">&para;</a></h2>
+<p>Each of these stages works the same way. The trial says what the stage is and prints what to ask your agent, with the skills it uses. It waits until <code>hound</code> sees the draft in the repo; answer <code>y</code> when the agent has finished, or <code>q</code> to stop and carry on later. Where a person must approve, it runs <code>hound approve --repo .</code> in your terminal, which shows each draft one at a time (answer <code>y</code>, <code>n</code> or <code>s</code>). Then it validates, plans and applies, as in step 4, and says what to look at in CISO Assistant. Steps 6 to 8 are <code>GRC-PLATFORM</code>; steps 9 to 11 are the same for <code>OFFICE-FIREWALL</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>The agent drafts (skills)</th>
+<th>You</th>
+<th>In CISO Assistant</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>5. Third parties</td>
+<td>Oracle (OCI hosting, <code>SOL-OCI-HOSTING</code>) and the CISO Assistant and Evidence Hound projects for <code>GRC-PLATFORM</code>; Sophos (the XGS 88W and Sophos Central, <code>SOL-SOPHOS-FIREWALL</code>) for <code>OFFICE-FIREWALL</code>, with <code>hound supplier draft</code> (onboard-a-third-party, assess-a-supplier)</td>
+<td>Approve each supplier and conclude its review with <code>hound approve</code>. A system is registered only once its supplier's review is concluded ok</td>
+<td>Third parties SUP-ORACLE, SUP-SOPHOS, SUP-CISO-ASSISTANT and SUP-EVIDENCE-HOUND, with their solutions, contracts and reviews</td>
+</tr>
+<tr>
+<td>6 and 9. The system</td>
+<td>The session, with <code>hound onboard &lt;system&gt; pending</code>: owner, product, solution and maturity level (onboard-a-system-with-hound)</td>
+<td>Answer what it asks</td>
+<td>Nothing yet: the session waits in <code>repo/onboarding/&lt;system&gt;/</code></td>
+</tr>
+<tr>
+<td>7 and 10. Its audit</td>
+<td>One decision per requirement with <code>hound onboard &lt;system&gt; decide</code> (read-an-api-specification), then the review (review-before-apply)</td>
+<td>Approve the decisions with <code>hound approve</code>, which writes the system and its audit</td>
+<td>The asset and the audit <code>EX-E8-&lt;period&gt;-&lt;system&gt;</code>, such as <code>EX-E8-Q2-2027FY-GRC-PLATFORM</code>, next to the organisation's <code>EX-E8-Q2-2027FY</code></td>
+</tr>
+<tr>
+<td>8 and 11. Controls</td>
+<td>The applied controls the audit's manual requirements rely on, with <code>hound add control … --audit EX-E8-&lt;system&gt;</code>: for <code>GRC-PLATFORM</code> patching (ISM-1695) and restore tests (ISM-1515), for <code>OFFICE-FIREWALL</code> a daily external scan (ISM-1701)</td>
+<td>Review them</td>
+<td>The applied controls, linked to the audit's requirements</td>
+</tr>
+</tbody>
+</table>
+<p>A finished stage is skipped on the next run; remove its file in <code>.dev/trial/state/</code> to do it again.</p>
+<h2 id="12-grc-platforms-evidence-its-hosting-controls-and-drift-from-the-iac-pipeline">12. GRC-PLATFORM's evidence: its hosting controls and drift, from the IaC pipeline<a class="headerlink" href="#12-grc-platforms-evidence-its-hosting-controls-and-drift-from-the-iac-pipeline" title="Permanent link">&para;</a></h2>
+<p>The GRC platform's network, backups and hosting controls are Terraform (<a href="https://github.com/tnbozman/evidence-hound/blob/main/examples/onboarding-tutorial/infra/oci"><code>infra/oci</code></a>). Its IaC pipeline proves each control with <code>terraform test</code> on every change and checks nightly that the cloud still matches the code (<a href="../onboarding-tutorial/#5-check-the-platform-for-drift">the tutorial, steps 5 and 6</a>). hound only reads the pipeline's reports through the GitHub Actions API; it never runs Terraform against the cloud and holds no cloud credential. In the trial:</p>
+<ol>
+<li>If Terraform is installed, the trial copies the Terraform to <code>.dev/trial/iac/oci</code> and runs <code>terraform init -backend=false</code> and <code>terraform test -junit-xml=controls.xml</code>, as the pipeline would. The tests use mock providers: no Oracle account, nothing created.</li>
+<li>It starts <a href="../iac-dev-server/">the IaC pipeline dev server</a> (<code>make iac-dev</code> on port 5380), which serves that report, or its own report of the same tests without Terraform, and a drift plan with no drift, as the fictional repository <code>example/grc-infra</code>.</li>
+<li>It copies the tutorial's mapping for the system, <code>mappings/grc-platform-essential-eight-2023.yaml</code>, and adds a target for <code>EX-E8-GRC-PLATFORM</code> to <code>hound.yaml</code>, so the results reach the system's own audit. No hound command writes these yet.</li>
+<li>It adds two rest collectors with a placeholder token, <code>grc-infra-controls</code> (the tutorial's per-control copy of <code>terraform-tests</code>) and <code>grc-infra-drift</code> (<code>terraform-drift</code>), then validates, dry-runs and, after asking, publishes each.</li>
+</ol>
+<p>Each backup row (ISM-1811, ISM-1705, ISM-1812, ISM-1707, ISM-1814) needs its control test <strong>and</strong> no drift: the test proves the code declares the control, and the drift check proves the cloud still matches the code. The trial then offers to restart the dev server with the <code>drift</code> deviation and collect again: the backup rows now fail. The system's other rows stay manual, with the controls from step 8 and <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#105;&#116;&#64;&#101;&#120;&#97;&#109;&#112;&#108;&#101;&#46;&#99;&#111;&#109;">&#105;&#116;&#64;&#101;&#120;&#97;&#109;&#112;&#108;&#101;&#46;&#99;&#111;&#109;</a> as their owner.</p>
+<h2 id="13-office-firewalls-evidence-sophos-central-a-fictional-tenant-on-this-machine-or-your-own">13. OFFICE-FIREWALL's evidence: Sophos Central, a fictional tenant on this machine or your own<a class="headerlink" href="#13-office-firewalls-evidence-sophos-central-a-fictional-tenant-on-this-machine-or-your-own" title="Permanent link">&para;</a></h2>
+<p>The trial copies the <code>sophos-central</code> library profile and its tests into <code>.dev/trial/profiles</code>, then asks which tenant to read. Press Enter for the dev server; an unattended run takes it too.</p>
+<h3 id="the-dev-server-default">The dev server (default)<a class="headerlink" href="#the-dev-server-default" title="Permanent link">&para;</a></h3>
+<p>The trial starts <a href="../sophos-dev-server/">the Sophos Central dev server</a> in the background (<code>make sophos-dev</code> on port 5370, log in <code>.dev/trial/sophos-dev.log</code>, stopped when the trial ends). It serves the fictional Example Pty Ltd tenant: two XGS firewalls on supported firmware and five admins, two of them Super Admins. Nothing leaves the machine and no question asks for a credential:</p>
+<div class="highlight"><pre><span></span><code>hound<span class="w"> </span>add<span class="w"> </span>collector<span class="w"> </span>rest<span class="w"> </span>--name<span class="w"> </span>sophos<span class="w"> </span>--config<span class="w"> </span>hound.yaml<span class="w"> </span>--schedule<span class="w"> </span><span class="s2">"0 4 * * *"</span><span class="w"> </span>--secrets-dir<span class="w"> </span>/trial/secrets<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--set<span class="w"> </span><span class="nv">profile</span><span class="o">=</span>sophos-central<span class="w"> </span>--set<span class="w"> </span><span class="nv">profiles_path</span><span class="o">=</span>/trial/profiles<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--set<span class="w"> </span><span class="nv">client_id</span><span class="o">=</span><span class="m">00000000</span>-0000-4000-8000-0000050d0001<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--set<span class="w"> </span><span class="nv">id_url</span><span class="o">=</span>http://localhost:5370/<span class="w"> </span>--set<span class="w"> </span><span class="nv">api_url</span><span class="o">=</span>http://localhost:5370/<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--set<span class="w"> </span><span class="s2">"supported_firewall_firmware=21.0, 21.5"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--secret-file<span class="w"> </span><span class="nv">client_secret</span><span class="o">=</span>/trial/inbox/sophos-dev-secret<span class="w"> </span>--yes
+</code></pre></div>
+<p>The secret is a placeholder the trial writes; the dev server checks no credential. The address is <code>localhost</code> on a <code>make ca-up</code> network too: hound sends credentials over plain http only to the machine it runs on, so while the config reads a dev server the trial runs hound on the host network and reaches CISO Assistant on its published port.</p>
+<h3 id="your-own-tenant">Your own tenant<a class="headerlink" href="#your-own-tenant" title="Permanent link">&para;</a></h3>
+<p>Answer <code>n</code> and <code>hound add collector rest --name sophos --config hound.yaml --schedule "0 4 * * *" --secrets-dir /trial/secrets --set profile=sophos-central --set profiles_path=/trial/profiles</code> asks for what the profile needs:</p>
+<ol>
+<li>The credential's client ID, and the firewall firmware versions still in support (see Sophos's firmware lifecycle), such as <code>21.5, 22.0</code>. Other settings, such as <code>super_admin_max</code>, keep their defaults; add them with <code>--set key=value</code>. The credential must be the tenant's own: partner and organisation credentials are not supported.</li>
+<li>The client secret, which is not shown as you type. It is saved to <code>.dev/trial/secrets/sophos_client_secret</code> (mode 600), never in git, and the config references it as <code>file:/trial/secrets/sophos_client_secret</code>.</li>
+</ol>
+<h3 id="then-either-way">Then, either way<a class="headerlink" href="#then-either-way" title="Permanent link">&para;</a></h3>
+<p>The trial runs:</p>
+<div class="highlight"><pre><span></span><code>hound<span class="w"> </span>config<span class="w"> </span>validate<span class="w"> </span>hound.yaml<span class="w"> </span>--check-secrets
+hound<span class="w"> </span>run<span class="w"> </span>--config<span class="w"> </span>hound.yaml<span class="w"> </span>--only<span class="w"> </span>sophos<span class="w"> </span>--dry-run
+hound<span class="w"> </span>run<span class="w"> </span>--config<span class="w"> </span>hound.yaml<span class="w"> </span>--only<span class="w"> </span>sophos
+hound<span class="w"> </span>status<span class="w"> </span>--config<span class="w"> </span>hound.yaml
+</code></pre></div>
+<p>Before it runs, the trial copies the tutorial's <code>mappings/office-firewall-essential-eight-2023.yaml</code> and targets <code>EX-E8-OFFICE-FIREWALL</code>, as in step 12. The dry run signs in, reads the firewalls, stores the evidence locally and plans the updates, and sends nothing. The real run publishes the firmware, firmware upgrade and Super Admin checks to <code>OFFICE-FIREWALL</code>'s audit (ISM-1501, ISM-1694 and ISM-1883) and the firmware checks to the organisation's (ISM-1694, and ISM-1501 together with the Microsoft 365 collector's operating system check, so that row waits for step 14). Sophos Central is read for network devices only; evidence about endpoint protection comes from the endpoints' own antivirus, not from Sophos.</p>
+<p>With the dev server, the trial then offers to restart it with the <code>unsupported-firmware</code> deviation (the branch firewall on SFOS 20.0.3) and run again: the firmware check now fails, and you can watch the result change in CISO Assistant. This is continual evidence collection in miniature: the schedule runs the same collector every day and CISO Assistant keeps each result.</p>
+<p>If you share output for help, remove identifiers first: tenant IDs, host names, IP addresses and serial numbers.</p>
+<h2 id="14-identity-and-laptops-microsoft-365">14. Identity and laptops: Microsoft 365<a class="headerlink" href="#14-identity-and-laptops-microsoft-365" title="Permanent link">&para;</a></h2>
+<p>The trial offers the <a href="../m365-dev-server/">Microsoft 365 dev server</a> first: a fictional Example Pty Ltd tenant that answers Microsoft Graph on this machine, with no tenant, no sign-in and nothing leaving the machine. Choose the compliant tenant, which passes every check, or the gaps tenant, where each named check fails. The trial:</p>
+<ol>
+<li>Starts it (<code>make m365-dev ARGS="--variant compliant"</code>), with its output in <code>.dev/trial/m365-dev.log</code>, and waits until it answers on <code>http://localhost:5365/</code>.</li>
+<li>Adds the m365 collector with the settings the server prints, <code>graph_url: http://localhost:5365/</code> and <code>sign_in: none</code>, so it asks for no certificate or secret. <code>sign_in: none</code> is refused for any address not on this machine (<a href="../../collectors/m365/">settings</a>).</li>
+<li>Validates, dry-runs and, after asking, publishes, with hound's container on the host network so it reaches the server; then shows <code>hound status</code> and stops the server.</li>
+</ol>
+<p>The checks publish to the open period of the organisation's audit, <code>EX-E8-Q2-2027FY</code> on 23 November 2026. A later <code>make trial</code> starts the server again and runs the same collector.</p>
+<h3 id="your-own-test-tenant">Your own test tenant<a class="headerlink" href="#your-own-test-tenant" title="Permanent link">&para;</a></h3>
+<p>Answer <code>n</code> to the dev server to use a tenant of your own instead.</p>
+<p>Use a test tenant, never a work one: the collector only reads, but a trial is the place to make mistakes. Two ways to get one:</p>
+<ul>
+<li><strong>The Microsoft 365 Developer Program</strong>, if you qualify for its E5 sandbox (Microsoft limits who does). It has Entra ID P2 and Intune, so every check can run.</li>
+<li><strong>A Microsoft 365 Business Premium trial</strong> (one month). It has Entra ID P1 and Intune, which the Conditional Access and device checks need; the PIM check reports <code>not_applicable</code> without P2. Cancel the trial when you are done.</li>
+</ul>
+<p>In the tenant, register the app as <a href="../../collectors/m365/#1-register-the-app">the Microsoft 365 guide</a> says: the six read-only Graph application permissions, admin consent, and a certificate. The trial offers to make a test certificate with <code>openssl</code> in <code>.dev/trial/inbox/</code> (valid 90 days): upload <code>hound-m365.crt</code> to the app, and the trial keeps <code>hound-m365.pem</code> (certificate and key). If you have your own, put it at <code>.dev/trial/inbox/hound-m365.pem</code> first.</p>
+<p>Then <code>hound add collector m365 --config hound.yaml --secrets-dir /trial/secrets --secret-file client_certificate=/trial/inbox/hound-m365.pem</code> asks for the tenant ID, the app's client ID and the Windows builds still in support, such as <code>10.0.22631, 10.0.26100</code>. The other settings keep their defaults; add any with <code>--set key=value</code>. The PEM is copied to <code>.dev/trial/secrets/m365_client_certificate</code> (mode 600) and the inbox copy is removed. As with Sophos, the trial then validates the secrets, runs a dry run and, after asking, a real run and <code>hound status</code>.</p>
+<p>If you share output for help, remove identifiers first: tenant and client IDs, domains, user names and device names.</p>
+<h2 id="15-patching-evidence-vulnerability-scans">15. Patching evidence: vulnerability scans<a class="headerlink" href="#15-patching-evidence-vulnerability-scans" title="Permanent link">&para;</a></h2>
+<p>Scanners export files instead of answering an API, so the <code>vuln-scan</code> collector reads exports dropped in a folder (<a href="../../collectors/vuln-scan/">its guide</a>). The trial:</p>
+<ol>
+<li>Writes <a href="../scan-dev/">fictional scan exports</a> for the Example Pty Ltd estate into <code>.dev/trial/scans</code>, dated from today. That is <code>make scan-dev ARGS="--variant compliant --out ../scans"</code>, run from the workspace's <code>repo</code> folder, with its output in <code>.dev/trial/scan-dev.log</code>. There is one export per scope: Nessus for internet-facing services, other applications and operating systems, and a Defender CSV for the laptops.</li>
+<li>Adds one <code>vuln-scan</code> source per scope, named <code>internet-facing-scans</code>, <code>laptops-scans</code>, <code>other-apps-scans</code> and <code>operating-systems-scans</code>, with the settings the generator printed. Their drop folders are <code>../scans/&lt;scope folder&gt;</code>, relative to <code>hound.yaml</code>.</li>
+<li>Runs each source dry, then publishes after asking. The eleven patching checks reach the Essential Eight rows they map to: scanning frequency, patch windows and unsupported software.</li>
+<li>Offers to write the gaps estate and collect again. That estate has a stale internet-facing scan, an exploited web flaw past 48 hours, an unsupported VPN appliance, an overdue browser patch, an overdue operating system update and an unsupported laptop operating system. The patching rows then fail, naming the hosts.</li>
+</ol>
+<p>In a real deployment, each new export goes into the same folder, by hand or with <code>hound manual upload --source &lt;name&gt;</code>.</p>
+<h2 id="16-what-ciso-assistant-reads-for-each-audit">16. What CISO Assistant reads for each audit<a class="headerlink" href="#16-what-ciso-assistant-reads-for-each-audit" title="Permanent link">&para;</a></h2>
+<p>The trial ends by reading each audit's compliance percentage the way CISO Assistant computes it on its Compliance pages: compliant
+rows, plus half of the partially compliant ones, over compliant, partially compliant and non-compliant rows. CISO Assistant leaves
+not-assessed and not-applicable rows out of that figure, so an audit with three passing checks and every manual row not assessed
+would read 100%. hound therefore sends a row with no evidence as non-compliant, its observation starting "No evidence yet: "
+(<a href="../../scope/#no-evidence-is-not-compliance">why</a>), and the trial prints each audit's figure with those rows counted, for example
+<code>EX-SYSTEM-2026: CISO Assistant reads 6% (3 compliant, 0 partially compliant, 43 non-compliant of which 43 have no evidence yet; it
+leaves out 61 not applicable and 0 not assessed)</code>. It stops if any audit reads 100% while a row is not assessed.</p>
+<p>For each programme's standing (the maturity level met, and compliant of applicable with every open row counted), use
+<code>hound report committee</code> (<a href="../../reporting/#a-programmes-standing">reporting</a>).</p>
+<h2 id="unattended">Unattended<a class="headerlink" href="#unattended" title="Permanent link">&para;</a></h2>
+<p><code>HOUND_TRIAL_YES=1 make trial</code> answers yes to every question and gives the wizards their answers as options (<code>--yes</code>). Stages 5 to 11 replay fictional answers through the same commands an agent uses: the four third parties with <code>hound supplier draft</code>, each system with <code>hound onboard &lt;system&gt; pending</code>, its decisions from the onboarding tutorial's answers (<a href="https://github.com/tnbozman/evidence-hound/blob/main/examples/onboarding-tutorial/answers"><code>answers/</code></a>) typed into <code>hound onboard</code>, and its controls with <code>hound add control</code>. Because <code>hound approve</code> refuses without a person at a terminal, approved copies of the four supplier files stand in for it (<a href="https://github.com/tnbozman/evidence-hound/blob/main/examples/trial/README.md"><code>examples/trial/</code></a>). Steps 12 to 15 use the three dev servers and the fictional scan exports, publish, and collect again with the <code>drift</code> and <code>unsupported-firmware</code> deviations and the gaps scan estate. No step needs a credential. CI uses it to check the trial against a fresh CISO Assistant, twice: the second run applies nothing new.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Evidence Hound contributors. Apache-2.0.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.indexes", "navigation.top", "content.code.copy", "search.suggest"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
