@@ -48,7 +48,9 @@ public sealed class Publisher(ICisoAssistantClient client, IEvidenceFiles files)
         AuditUpdate.UploadEvidence upload, ImmutableDictionary<string, string> evidenceIds, CancellationToken cancellationToken)
     {
         var evidence = upload.Evidence;
-        var remote = await client.FindOrCreateEvidenceAsync(evidence.Id, EvidenceNames.For(evidence), cancellationToken);
+        var remote = upload.KnownId is { } known
+            ? Result.Ok(new RemoteEvidence(known, null))
+            : await client.FindOrCreateEvidenceAsync(evidence.Id, EvidenceNames.For(evidence), cancellationToken);
         var outcome = await remote.Match(
             found => found.LatestSha256 == evidence.Sha256
                 ? Task.FromResult(Result.Ok(PublishOutcome.Skipped))

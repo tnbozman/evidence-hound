@@ -78,9 +78,9 @@ public static class AuditPlanner
         return Validate(targets, evidence, controlStatuses).Map(controls =>
         {
             var hashes = Hashes(evidence);
-            var known = current.Evidence
+            var held = current.Evidence.DistinctBy(e => e.RefId).ToDictionary(e => e.RefId, StringComparer.Ordinal);
+            var known = held.Values
                 .Where(e => hashes.TryGetValue(e.RefId, out var sha) && e.LatestSha256 == sha)
-                .DistinctBy(e => e.RefId)
                 .ToDictionary(e => e.RefId, e => e.Id, StringComparer.Ordinal);
             var audits = current.Audits.DistinctBy(a => a.RefId).ToDictionary(a => a.RefId, StringComparer.Ordinal);
             var documents = current.ScopeDocumentIds.ToHashSet(StringComparer.Ordinal);
@@ -91,7 +91,7 @@ public static class AuditPlanner
 
             return new ChangePlan(
                 [
-                    .. Uploads(evidence, e => !known.ContainsKey(e.Id)),
+                    .. Uploads(evidence, e => !known.ContainsKey(e.Id)).Select(u => u with { KnownId = held.GetValueOrDefault(u.Evidence.Id)?.Id }),
                     .. rows.Select(r => r.Update).OfType<AuditUpdate>(),
                     .. controls.Where(c => !statuses.TryGetValue(c.RefId, out var status) || status != c.Status),
                 ],
@@ -150,7 +150,7 @@ public static class AuditPlanner
                 .ToArray());
     }
 
-    private static IEnumerable<AuditUpdate> Uploads(IReadOnlyList<Evidence> evidence, Func<Evidence, bool> needed) =>
+    private static IEnumerable<AuditUpdate.UploadEvidence> Uploads(IReadOnlyList<Evidence> evidence, Func<Evidence, bool> needed) =>
         evidence
             .DistinctBy(e => e.Id)
             .Where(needed)
