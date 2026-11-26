@@ -83,7 +83,7 @@ internal static class ReviewCommand
             }
 
             var items = ((Result<IReadOnlyList<ReviewItem>>.Ok)queue).Value;
-            var connection = await PublishCommand.ConnectionAsync(configuration, file.Exists ? file : null, registry, cancellationToken);
+            var connection = await CisoAssistantConnection.ResolveAsync(configuration, file.Exists ? file : null, registry, cancellationToken);
             var plan = await connection.Match(
                 options => ScopeCommands.PrepareAsync(
                     new DirectoryInfo(Path.Combine(root, "scope")), file.Exists ? file : null, options, ScopeCommands.PreparedPlan(root), today, registry, loggers, cancellationToken),
@@ -140,7 +140,7 @@ internal static class ReviewCommand
             async Task<bool> Confirm(CancellationToken ct) => (await new Prompt(terminal).AskAsync("Apply these changes to CISO Assistant now (y, n)", ct))?.ToLowerInvariant() == "y";
             if (state is { FilesUnchanged: true } unchanged)
             {
-                var connection = await PublishCommand.ConnectionAsync(configuration, deployment.Exists ? deployment : null, registry, cancellationToken);
+                var connection = await CisoAssistantConnection.ResolveAsync(configuration, deployment.Exists ? deployment : null, registry, cancellationToken);
                 if (connection is not Result<CisoAssistantOptions>.Ok { Value: var options })
                 {
                     return (Log.Problems(logger, connection is Result<CisoAssistantOptions>.Fail { Errors: var e } ? e : []), "nothing applied");
@@ -211,7 +211,7 @@ internal static class ReviewCommand
     {
         var scope = new DirectoryInfo(Path.Combine(repo, "scope"));
         var reporting = await ScopeCommands.ReportingAsync(scope, cancellationToken);
-        if (reporting.Obligations.Count == 0 || PublishCommand.Connection(configuration) is not Result<CisoAssistantOptions>.Ok { Value: var options })
+        if (reporting.Obligations.Count == 0 || CisoAssistantConnection.FromSettings(configuration) is not Result<CisoAssistantOptions>.Ok { Value: var options })
         {
             return [];
         }

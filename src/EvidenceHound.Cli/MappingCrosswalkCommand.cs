@@ -127,7 +127,7 @@ internal static class MappingCrosswalkCommand
     private static async Task<Result<IReadOnlyList<CurrentRow>>> ReadRowsAsync(
         string auditRef, FileInfo configFile, IConfiguration configuration, ILoggerFactory loggers, CollectorRegistry registry, CancellationToken cancellationToken)
     {
-        var connection = await PublishCommand.ConnectionAsync(configuration, configFile, registry, cancellationToken);
+        var connection = await CisoAssistantConnection.ResolveAsync(configuration, configFile, registry, cancellationToken);
         return await connection.BindAsync(async options =>
         {
             using var services = new ServiceCollection().AddSingleton(loggers).AddCisoAssistantClient(options).BuildServiceProvider();

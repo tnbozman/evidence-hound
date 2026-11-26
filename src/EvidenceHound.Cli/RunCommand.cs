@@ -241,7 +241,7 @@ internal static class RunCommand
             return Result.Ok(Transports.Kafka(new KafkaSinkOptions(ca.KafkaBootstrapServers!)));
         }
 
-        var url = configuration[PublishCommand.UrlSetting] is { Length: > 0 } overridden ? new Uri(overridden.EndsWith('/') ? overridden : overridden + "/") : ca.Url;
+        var url = configuration[CisoAssistantConnection.UrlSetting] is { Length: > 0 } overridden ? new Uri(overridden.EndsWith('/') ? overridden : overridden + "/") : ca.Url;
         return ConfigCommands.Secrets(configuration).Resolve(ca.Token).Map(token => Transports.Rest(new CisoAssistantOptions(url, token.Reveal()), loggers, AuditSeries.Today(configuration)));
     }
 

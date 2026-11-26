@@ -196,7 +196,7 @@ internal static class ReportCommands
         }
 
         var deployment = await ConfigCommands.LoadAsync(configFile, registry, cancellationToken);
-        var connection = await PublishCommand.ConnectionAsync(configuration, configFile, registry, cancellationToken);
+        var connection = await CisoAssistantConnection.ResolveAsync(configuration, configFile, registry, cancellationToken);
         if (deployment.Bind(d => connection.Map(c => (d, c))) is not Result<(DeploymentConfig Deployment, CisoAssistantOptions Connection)>.Ok { Value: var setup })
         {
             return Log.Problems(logger, [.. deployment.Match(_ => [], ps => ps), .. connection.Match(_ => [], ps => ps)]);

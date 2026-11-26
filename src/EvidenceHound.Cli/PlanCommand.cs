@@ -26,7 +26,7 @@ internal static class PlanCommand
 
         var plan = new Command(
             "plan",
-            $"Plan the CISO Assistant updates for a run's check results: only what differs from CISO Assistant now (reads it; needs {PublishCommand.UrlSetting} and {PublishCommand.TokenSetting}). Sends nothing.")
+            $"Plan the CISO Assistant updates for a run's check results: only what differs from CISO Assistant now (reads it; needs {CisoAssistantConnection.UrlSetting} and {CisoAssistantConnection.TokenSetting}). Sends nothing.")
         {
             dryRun, config, checks,
         };
@@ -47,7 +47,7 @@ internal static class PlanCommand
         CancellationToken cancellationToken)
     {
         var inputs = (await InputsAsync(configFile, checksFile, registry, AuditSeries.Today(configuration), cancellationToken, logger))
-            .Bind(i => PublishCommand.Connection(configuration).Map(connection => (Inputs: i, Connection: connection)));
+            .Bind(i => CisoAssistantConnection.FromSettings(configuration).Map(connection => (Inputs: i, Connection: connection)));
         return await inputs.Match(
             async ready =>
             {

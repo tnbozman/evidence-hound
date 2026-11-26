@@ -86,7 +86,7 @@ internal static class IncidentCommands
         }
 
         var reporting = await ScopeCommands.ReportingAsync(scopeDir, cancellationToken);
-        var connection = await PublishCommand.ConnectionAsync(configuration, configFile, registry, cancellationToken);
+        var connection = await CisoAssistantConnection.ResolveAsync(configuration, configFile, registry, cancellationToken);
         if (connection is not Result<CisoAssistantOptions>.Ok { Value: var options })
         {
             Log.Problems(logger, connection.Match(_ => [], ps => ps));

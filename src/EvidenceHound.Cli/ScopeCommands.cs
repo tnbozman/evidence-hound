@@ -61,7 +61,7 @@ internal static class ScopeCommands
         var planOut = new Option<FileInfo?>("--out") { Description = "Also save the plan here, for 'hound scope apply <file>' to apply exactly. Holds no token; do not commit it." };
         var plan = new Command(
             "plan",
-            $"Show what applying the scope would create, update or delete in CISO Assistant, and what drifted (reads it; with --config, uses the config's ciso_assistant address and token unless {PublishCommand.UrlSetting} and {PublishCommand.TokenSetting} override them; without it, needs both). Sends nothing.")
+            $"Show what applying the scope would create, update or delete in CISO Assistant, and what drifted (reads it; with --config, uses the config's ciso_assistant address and token unless {CisoAssistantConnection.UrlSetting} and {CisoAssistantConnection.TokenSetting} override them; without it, needs both). Sends nothing.")
         {
             dir, config, planFormat, planJson, prune, showUnmanaged, detailedExitCode, planOut,
         };
@@ -76,7 +76,7 @@ internal static class ScopeCommands
 
             var exitCode = checkedScope.Problems.Count > 0
                 ? await ReportAsync(checkedScope.Problems, checkedScope.Summary, "text", output, logger)
-                : await (await PublishCommand.ConnectionAsync(configuration, parseResult.GetValue(config), registry, cancellationToken)).Match(
+                : await (await CisoAssistantConnection.ResolveAsync(configuration, parseResult.GetValue(config), registry, cancellationToken)).Match(
                     connection => PlanAsync(
                         checkedScope,
                         connection,
@@ -97,7 +97,7 @@ internal static class ScopeCommands
         var scopeOrPlan = new Argument<string>("scope") { Description = "The scope folder, or a plan saved with 'hound scope plan --out' to apply exactly as reviewed." };
         var apply = new Command(
             "apply",
-            $"Write the scope to CISO Assistant, in dependency order: libraries, domains, perimeters, systems, audits, documents, controls and rows (with --config, uses the config's ciso_assistant address and token unless {PublishCommand.UrlSetting} and {PublishCommand.TokenSetting} override them; without it, needs both). Safe to run again. Give --config so the unlisted rule leaves the rows a mapping computes alone. Given a saved plan, applies it without planning again, and refuses it if the scope or CISO Assistant changed since.")
+            $"Write the scope to CISO Assistant, in dependency order: libraries, domains, perimeters, systems, audits, documents, controls and rows (with --config, uses the config's ciso_assistant address and token unless {CisoAssistantConnection.UrlSetting} and {CisoAssistantConnection.TokenSetting} override them; without it, needs both). Safe to run again. Give --config so the unlisted rule leaves the rows a mapping computes alone. Given a saved plan, applies it without planning again, and refuses it if the scope or CISO Assistant changed since.")
         {
             scopeOrPlan, config, dryRun, prune,
         };
@@ -106,7 +106,7 @@ internal static class ScopeCommands
             var target = parseResult.GetRequiredValue(scopeOrPlan);
             if (File.Exists(target))
             {
-                return await PublishCommand.Connection(configuration).Match(
+                return await CisoAssistantConnection.FromSettings(configuration).Match(
                     connection => ApplySavedAsync(target, connection, parseResult.GetValue(dryRun), registry, loggers, output, logger, cancellationToken),
                     problems => Task.FromResult(Log.Problems(logger, problems)));
             }
@@ -118,7 +118,7 @@ internal static class ScopeCommands
                 return await ReportAsync(checkedScope.Problems, checkedScope.Summary, "text", output, logger);
             }
 
-            return await (await PublishCommand.ConnectionAsync(configuration, parseResult.GetValue(config), registry, cancellationToken)).Match(
+            return await (await CisoAssistantConnection.ResolveAsync(configuration, parseResult.GetValue(config), registry, cancellationToken)).Match(
                 connection => ApplyAsync(checkedScope, connection, parseResult.GetValue(prune), parseResult.GetValue(dryRun), loggers, output, logger, cancellationToken),
                 problems => Task.FromResult(Log.Problems(logger, problems)));
         });
@@ -128,11 +128,11 @@ internal static class ScopeCommands
         var withFiles = new Option<bool>("--with-files") { Description = "Also download each document's file into documents/<id>/ in the compliance repo." };
         var export = new Command(
             "export",
-            $"Write what CISO Assistant holds under the root folder as scope files: setup, controls, one file per audit and framework snapshots (reads it; needs {PublishCommand.UrlSetting} and {PublishCommand.TokenSetting}). Results runs compute and their evidence are left out.")
+            $"Write what CISO Assistant holds under the root folder as scope files: setup, controls, one file per audit and framework snapshots (reads it; needs {CisoAssistantConnection.UrlSetting} and {CisoAssistantConnection.TokenSetting}). Results runs compute and their evidence are left out.")
         {
             outDir, rootFolder, withFiles,
         };
-        export.SetAction((parseResult, cancellationToken) => PublishCommand.Connection(configuration).Match(
+        export.SetAction((parseResult, cancellationToken) => CisoAssistantConnection.FromSettings(configuration).Match(
             connection => ExportAsync(parseResult.GetRequiredValue(outDir), parseResult.GetRequiredValue(rootFolder), parseResult.GetValue(withFiles), connection, loggers, output, logger, cancellationToken),
             problems => Task.FromResult(Log.Problems(logger, problems))));
 
@@ -151,7 +151,7 @@ internal static class ScopeCommands
             return await ReportAsync(checkedScope.Problems, checkedScope.Summary, "text", output, logger);
         }
 
-        return await (await PublishCommand.ConnectionAsync(configuration, config, registry, cancellationToken)).Match(
+        return await (await CisoAssistantConnection.ResolveAsync(configuration, config, registry, cancellationToken)).Match(
             async connection =>
             {
                 var planned = await ApplyAsync(checkedScope, connection, prune: false, dryRun: true, loggers, output, logger, cancellationToken);

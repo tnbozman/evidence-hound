@@ -113,7 +113,7 @@ internal static class SprsCommands
             return Log.Problems(logger, methodology.Match(_ => [], ps => ps));
         }
 
-        var connection = await PublishCommand.ConnectionAsync(configuration, configFile, registry, cancellationToken);
+        var connection = await CisoAssistantConnection.ResolveAsync(configuration, configFile, registry, cancellationToken);
         if (connection is not Result<CisoAssistantOptions>.Ok { Value: var options })
         {
             return Log.Problems(logger, connection.Match(_ => [], ps => ps));

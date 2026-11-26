@@ -37,7 +37,7 @@ internal static class HoundHealth
     internal static async Task<(Connection Connection, CisoAssistantOptions? Options)> ConnectionAsync(
         IConfiguration configuration, FileInfo config, CollectorRegistry registry, CancellationToken cancellationToken)
     {
-        var resolved = await PublishCommand.ConnectionAsync(configuration, config, registry, cancellationToken);
+        var resolved = await CisoAssistantConnection.ResolveAsync(configuration, config, registry, cancellationToken);
         return resolved is Result<CisoAssistantOptions>.Ok { Value: var options }
             ? (await CheckAsync(options, cancellationToken), options)
             : (new Connection(null, null, $"Not checked: {string.Join(" ", resolved is Result<CisoAssistantOptions>.Fail { Errors: var e } ? e.Select(p => p.Message) : [])}"), null);

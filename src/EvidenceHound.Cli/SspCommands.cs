@@ -265,7 +265,7 @@ internal static class SspCommands
 
             var plan = ((Result<string>.Ok)signed).Value;
             var snapshotText = await File.ReadAllTextAsync(file.FullName, cancellationToken);
-            var connection = await PublishCommand.ConnectionAsync(configuration, parseResult.GetValue(config), registry, cancellationToken);
+            var connection = await CisoAssistantConnection.ResolveAsync(configuration, parseResult.GetValue(config), registry, cancellationToken);
             return await connection.Match(
                 c => UploadAsync(snapshot, plan, snapshotText, c, loggers, logger, cancellationToken),
                 problems => Task.FromResult(Log.Problems(logger, problems)));
@@ -322,7 +322,7 @@ internal static class SspCommands
             return (Log.Problems(logger, [new Problem("ssp.not_declared", $"no plan is declared for programme '{programme}'; declare it in scope/ssp.yaml.")]), null);
         }
 
-        var connection = await PublishCommand.ConnectionAsync(configuration, config, registry, cancellationToken);
+        var connection = await CisoAssistantConnection.ResolveAsync(configuration, config, registry, cancellationToken);
         return await connection.Match(
             c => ReadAsync(ssp, checkedScope, c, loggers, logger, cancellationToken),
             problems => Task.FromResult<(int, SspDocument?)>((Log.Problems(logger, problems), null)));
@@ -376,7 +376,7 @@ internal static class SspCommands
         ParseResult parseResult, Option<FileInfo?> config, IConfiguration configuration, CollectorRegistry registry, ScopeCommands.CheckedScope checkedScope, ScopeSsp ssp,
         ILoggerFactory loggers, ILogger logger, CancellationToken cancellationToken)
     {
-        var connection = await PublishCommand.ConnectionAsync(configuration, parseResult.GetValue(config), registry, cancellationToken);
+        var connection = await CisoAssistantConnection.ResolveAsync(configuration, parseResult.GetValue(config), registry, cancellationToken);
         return await connection.Match(
             c => ReadAsync(ssp, checkedScope, c, loggers, logger, cancellationToken),
             problems => Task.FromResult<(int, SspDocument?)>((Log.Problems(logger, problems), null)));
