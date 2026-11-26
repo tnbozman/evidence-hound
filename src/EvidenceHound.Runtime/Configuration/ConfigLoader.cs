@@ -20,7 +20,7 @@ public static partial class ConfigLoader
     private static readonly string[] EvidenceKeys = ["root", "retention_days", "period_retention_years"];
     private static readonly string[] CollectorKeys = ["name", "type", "schedule", "settings", "secrets"];
     private static readonly string[] TargetKeys = ["mapping", "compliance_assessment", "controls", "health_control", "no_evidence"];
-        private static readonly int NoRetention = -1;
+    private static readonly int NoRetention = -1;
     private static readonly int DefaultPeriodRetentionYears = 7;
 
     public static async Task<Result<DeploymentConfig>> LoadAsync(string path, IReadOnlyDictionary<string, CollectorDescription> knownCollectorTypes, CancellationToken cancellationToken) =>

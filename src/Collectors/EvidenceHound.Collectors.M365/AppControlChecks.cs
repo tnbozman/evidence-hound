@@ -100,7 +100,7 @@ internal static class AppControlChecks
             : new(id, CheckOutcome.Partial, string.Create(CultureInfo.InvariantCulture, $"Only {share} are onboarded to Defender for Endpoint, below {options.DefenderOnboardedPercent:0.#} %; it received {received}.{top}"), sources);
     }
 
-    public static Finding FileTypesCovered(TenantData tenant, M365Options options)
+    public static Finding FileTypesCovered(TenantData tenant, M365Options _)
     {
         ArgumentNullException.ThrowIfNull(tenant);
         const string id = "endpoint.application_control.file_types_covered";

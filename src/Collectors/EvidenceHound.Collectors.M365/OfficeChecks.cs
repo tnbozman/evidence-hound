@@ -31,7 +31,7 @@ internal static class OfficeChecks
         Block,
     }
 
-    public static Finding MacrosBlockedFromInternet(TenantData tenant, M365Options options)
+    public static Finding MacrosBlockedFromInternet(TenantData tenant, M365Options _)
     {
         ArgumentNullException.ThrowIfNull(tenant);
         const string id = "apps.office.macros_blocked_from_internet";
@@ -60,7 +60,7 @@ internal static class OfficeChecks
             : new(id, CheckOutcome.Fail, "No assigned configuration policy blocks macros from the internet in Word, Excel or PowerPoint.", sources);
     }
 
-    public static Finding AsrOfficeRulesEnabled(TenantData tenant, M365Options options)
+    public static Finding AsrOfficeRulesEnabled(TenantData tenant, M365Options _)
     {
         ArgumentNullException.ThrowIfNull(tenant);
         const string id = "endpoint.asr.office_rules_enabled";

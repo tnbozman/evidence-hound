@@ -38,7 +38,7 @@ public static class SspValidator
             "ssp.role_unknown", r.Holder, $"{r.Role} holder", "Name a user (by email) or a team declared in scope/access.yaml.")),
         .. ssp.Documents.Where(d => !documents.Contains(d.Value)).Select(d => Unknown(
             "ssp.document_unknown", d, "document", "Name a document by its id from an audit's 'documents:'.")),
-        .. SspProfile.RequiredSections(ssp.Profile).Where(n => ssp.Sections.All(s => s.Name != n)).Select(n => new ScopeProblem(
+        .. SspProfile.RequiredSections.Where(n => ssp.Sections.All(s => s.Name != n)).Select(n => new ScopeProblem(
             "ssp.section_missing",
             ssp.At,
             $"the {ssp.Profile} profile needs a '{n}' section, which the plan for programme '{ssp.Programme.Value}' does not name.",

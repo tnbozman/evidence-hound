@@ -250,8 +250,6 @@ public sealed class SupplierClientTests : IDisposable
 
     internal static JsonObject List(params JsonObject[] items) => new() { ["count"] = items.Length, ["results"] = new JsonArray([.. items]) };
 
-    private void Respond(string method, string path, JsonObject body) => Respond(_ca, method, path, body);
-
     internal static void Respond(FakeCisoAssistant ca, string method, string path, JsonObject body) =>
         ca.Server.Given(Request.Create().WithPath(path).UsingMethod(method)).RespondWith(Response.Create().WithStatusCode(method == "POST" ? 201 : 200).WithBody(body.ToJsonString()));
 }

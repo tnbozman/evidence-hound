@@ -116,7 +116,7 @@ public sealed partial class ExampleRepoTests : IDisposable
             new ScopeSource("setup.yaml", File.ReadAllText(Path.Combine(Repo, "scope", "setup.yaml"))), null, [], ssp: new ScopeSource("ssp.yaml", ssp)).Scope.Ssps[0];
 
         plan.Programme.Value.ShouldBe("essential-eight");
-        plan.Sections.Select(s => s.Name).ShouldBe(SspProfile.RequiredSections(plan.Profile), ignoreOrder: true);
+        plan.Sections.Select(s => s.Name).ShouldBe(SspProfile.RequiredSections, ignoreOrder: true);
         foreach (var section in plan.Sections)
         {
             var text = File.ReadAllText(Path.Combine(Repo, section.File));
