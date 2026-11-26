@@ -356,6 +356,85 @@ internal static class ScopeCommands
     /// <summary>Where to save a plan, and the scope folder and config it is made from, as given.</summary>
     private sealed record PlanSave(FileInfo File, DirectoryInfo Scope, FileInfo? Config);
 
+    /// <summary>Where <c>hound review prepare</c> saves the plan the person's session applies; <c>*.plan.json</c> is never committed.</summary>
+    internal static string PreparedPlan(string repo) => Path.Combine(repo, "review", "prepared.plan.json");
+
+    /// <summary>
+    /// Plans the scope and saves it to <paramref name="file"/> for the person's session (s18-02). Reads only. Returns the number of changes
+    /// and the file, or no file and why: nothing to apply, or the scope could not be planned.
+    /// </summary>
+    internal static async Task<(int Changes, string? Saved, string Note)> PrepareAsync(
+        DirectoryInfo scope, FileInfo? config, CisoAssistantOptions connection, string file, DateOnly today, CollectorRegistry registry, ILoggerFactory loggers, CancellationToken cancellationToken)
+    {
+        var checkedScope = await ValidateAsync(scope, config, registry, today, cancellationToken);
+        if (checkedScope.Problems.Count > 0)
+        {
+            return (0, null, string.Create(CultureInfo.InvariantCulture, $"The scope has {checkedScope.Problems.Count} problem(s); fix them first: hound scope validate scope --config hound.yaml --json."));
+        }
+
+        Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+        var options = new PlanOptions(Prune: false, ShowUnmanaged: false, "json") { Save = new PlanSave(new FileInfo(file), scope, config) };
+        var exit = await PlanAsync(checkedScope, connection, options, loggers, TextWriter.Null, loggers.CreateLogger("hound.scope"), cancellationToken);
+        if (exit != ExitCodes.Ok || !File.Exists(file) || SavedPlanFile.Read(await File.ReadAllTextAsync(file, cancellationToken), file) is not Result<SavedPlan>.Ok { Value: var saved })
+        {
+            return (0, null, "Could not plan the scope; run hound scope plan scope --config hound.yaml to see why.");
+        }
+
+        if (saved.Plan.IsEmpty)
+        {
+            File.Delete(file);
+            return (0, null, "Nothing to apply: CISO Assistant already holds the scope.");
+        }
+
+        return (saved.Plan.Changes.Count, file, "Saved for the person's session, which applies it after the accepted items, or refuses it if CISO Assistant changed since.");
+    }
+
+    /// <summary>The day a saved plan was made, and whether the scope files and config it was made from are still as they were.</summary>
+    internal static async Task<(string Day, bool FilesUnchanged)?> SavedStateAsync(string file, CollectorRegistry registry, CancellationToken cancellationToken)
+    {
+        if (!File.Exists(file) || SavedPlanFile.Read(await File.ReadAllTextAsync(file, cancellationToken), file) is not Result<SavedPlan>.Ok { Value: var saved })
+        {
+            return null;
+        }
+
+        var scopeDir = new DirectoryInfo(saved.Scope);
+        var config = saved.Config is null ? null : new FileInfo(saved.Config);
+        var checkedScope = await ValidateAsync(scopeDir, config, registry, DateOnly.ParseExact(saved.Day, "yyyy-MM-dd", CultureInfo.InvariantCulture), cancellationToken);
+        return (saved.Day, checkedScope.Problems.Count == 0 && await InputsSha256Async(scopeDir, config, checkedScope.Inputs, cancellationToken) == saved.InputsSha256);
+    }
+
+    /// <summary>
+    /// For the review session: shows the saved plan, refusing it if CISO Assistant changed since it was made, and applies it once
+    /// <paramref name="confirm"/> says so. The file is deleted once applied: a plan is applied once.
+    /// </summary>
+    internal static async Task<int> ApplyPreparedAsync(
+        string file, CisoAssistantOptions connection, CollectorRegistry registry, ILoggerFactory loggers, TextWriter output, Func<CancellationToken, Task<bool>> confirm, CancellationToken cancellationToken)
+    {
+        var logger = loggers.CreateLogger("hound.scope");
+        var shown = await ApplySavedAsync(file, connection, dryRun: true, registry, loggers, output, logger, cancellationToken);
+        if (shown != ExitCodes.Ok || !await confirm(cancellationToken))
+        {
+            return shown;
+        }
+
+        var applied = await ApplySavedAsync(file, connection, dryRun: false, registry, loggers, output, logger, cancellationToken);
+        if (applied == ExitCodes.Ok)
+        {
+            File.Delete(file);
+        }
+
+        return applied;
+    }
+
+    /// <summary>The plan the scope would make against CISO Assistant now, without notes, output or prune: for <c>hound next</c> (s18-01). Reads only.</summary>
+    internal static async Task<Result<ScopePlan>> PendingPlanAsync(CheckedScope checkedScope, CisoAssistantOptions connection, ILoggerFactory loggers, CancellationToken cancellationToken)
+    {
+        using var services = new ServiceCollection().AddSingleton(loggers).AddCisoAssistantClient(connection).BuildServiceProvider();
+        var declared = ScopeDesired.From(checkedScope.Scope, checkedScope.Inputs);
+        var actual = await services.GetRequiredService<IScopeStateSource>().ReadAsync(ScopeStateQuery.For(checkedScope.Scope, declared), cancellationToken);
+        return actual.Map(held => ScopePlanner.Plan(declared, held, prune: false));
+    }
+
     private static async Task<int> PlanAsync(
         CheckedScope checkedScope, CisoAssistantOptions connection, PlanOptions options, ILoggerFactory loggers, TextWriter output, ILogger logger, CancellationToken cancellationToken)
     {

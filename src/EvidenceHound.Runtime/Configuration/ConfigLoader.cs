@@ -106,7 +106,10 @@ public static partial class ConfigLoader
             : zone.Bind(z => jitter.Map(j => new SchedulerConfig(z, j)));
     }
 
-    /// <summary><c>targets</c>, a list, or a single <c>target</c> read as a list of one; never both, never empty, one target per audit.</summary>
+    /// <summary>
+    /// <c>targets</c>, a list, or a single <c>target</c> read as a list of one; never both, one target per audit. An empty list means no audit
+    /// yet (s18-08): <c>hound init</c> writes none by default, and approving an audit adds its target.
+    /// </summary>
     private static Result<IReadOnlyList<TargetConfig>> ParseTargets(YamlMappingNode root, Locator at)
     {
         var parsed = (Child(root, "target"), Child(root, "targets")) switch
@@ -114,7 +117,6 @@ public static partial class ConfigLoader
             (not null, { } both) => Result.Fail<IReadOnlyList<TargetConfig>>(at.Problem(both.Start, "config.targets_conflict", "use 'target' for one audit or 'targets' for several, not both.")),
             (null, null) => Result.Fail<IReadOnlyList<TargetConfig>>(at.Problem(root.Start, "config.key_missing", "'targets' (or a single 'target') is missing.")),
             (not null, null) => Section(root, "target", at).Bind(map => ParseTarget(map, at)).Map(t => (IReadOnlyList<TargetConfig>)[t]),
-            (null, YamlSequenceNode { Children.Count: 0 } empty) => Result.Fail<IReadOnlyList<TargetConfig>>(at.Problem(empty.Start, "config.targets_empty", "'targets' needs at least one audit.")),
             (null, YamlSequenceNode list) => Result.Combine(list.Children.Select(item => item is YamlMappingNode map
                 ? ParseTarget(map, at)
                 : Result.Fail<TargetConfig>(at.Problem(item.Start, "config.section_not_a_map", "each target must be a map of keys.")))),

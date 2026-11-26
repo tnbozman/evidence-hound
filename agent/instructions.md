@@ -4,6 +4,7 @@ This is a compliance repo for Evidence Hound (`hound`). Its files say what CISO 
 
 ## How to work here
 
+- When the person asks what needs doing, or at the start of a session, run `hound next --repo . --config hound.yaml --json`: it lists the work most urgent first, each with the command and skill that handles it and about how long it takes. It reads only.
 - Use the hound skills for the job in hand: onboard the organisation, the environment, a third party, a system or an audit; assess a supplier; read an API specification; import an audit workbook; write a profile; process manual evidence; prepare the weekly review; work through pending decisions with the person; review before apply; operate the collectors; build the SSP; respond to an incident; keep frameworks and libraries current; prepare the reports.
 - The skill "hound-commands" lists every hound command and its options, generated from the hound installed here. Check a command there before you run it, and never run one it does not list.
 - Run `hound` commands with `--json` where they offer it and read the result; never guess what a command did.

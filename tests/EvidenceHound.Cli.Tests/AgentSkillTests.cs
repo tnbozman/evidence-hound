@@ -38,6 +38,42 @@ public sealed class AgentSkillTests : IDisposable
         }
     }
 
+    /// <summary>s18-03: each feature up to s17, the skill for it, and what the skill must say.</summary>
+    internal static readonly (string Skill, string[] Says)[] Features =
+    [
+        ("keep-the-risk-register", ["docs/risk.md", "scope/risks/", "hound library validate", "hound scope validate", "hound scope plan", "Never accept a risk"]),
+        ("keep-exceptions-and-acceptances", ["docs/risk.md", "scope/exceptions.yaml", "treatment: accept", "hound status", "Never write a `status`"]),
+        ("keep-the-bia", ["docs/bia.md", "scope/bia/", "tested_by", "hound scope validate", "hound scope plan"]),
+        ("respond-to-an-incident", ["hound incident obligations", "hound incident report-pack", "hound irp build"]),
+        ("flow-down-to-suppliers", ["docs/scope.md", "flow_down: true", "contract.flow_down_missing", "hound supplier list --data"]),
+        ("keep-the-metrics", ["docs/metrics.md", "scope/metrics.yaml", "source: hound", "metric.not_applied", "hound scope plan"]),
+        ("keep-the-sprs-score", ["docs/adopt/cmmc-level-2.md", "hound sprs score", "hound sprs affirmation-pack"]),
+    ];
+
+    [Fact]
+    public async Task Every_feature_has_a_skill()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var (exit, _, error) = await OnboardAgentCommandTests.RunAsync(["agent", "setup", "--repo", _root, "--assistant", "both"], "", terminal: false, Path.Combine(_root, "home"), ct);
+        exit.ShouldBe(ExitCodes.Ok, error);
+
+        var agents = string.Concat(Directory.GetFiles(Path.Combine(_root, ".github", "agents")).Select(File.ReadAllText));
+        var weekly = await File.ReadAllTextAsync(Path.Combine(_root, ".claude", "skills", "weekly-review", "SKILL.md"), ct);
+        foreach (var (skill, says) in Features)
+        {
+            var file = Path.Combine(_root, ".claude", "skills", skill, "SKILL.md");
+            File.Exists(file).ShouldBeTrue(skill);
+            var text = await File.ReadAllTextAsync(file, ct);
+            says.Where(s => !text.Contains(s, StringComparison.Ordinal)).ShouldBeEmpty(skill);
+            agents.ShouldContain(skill, Case.Sensitive);
+        }
+
+        foreach (var skill in new[] { "keep-exceptions-and-acceptances", "flow-down-to-suppliers", "respond-to-an-incident" })
+        {
+            weekly.ShouldContain($"\"{skill}\"", Case.Sensitive, "the weekly review sends each new kind of item to its skill");
+        }
+    }
+
     [Fact]
     public async Task Manual_evidence_skill_proposes_from_the_file_and_never_attests()
     {
@@ -78,6 +114,21 @@ public sealed class AgentSkillTests : IDisposable
         }
 
         (await File.ReadAllTextAsync(Path.Combine(_root, ".claude", "skills", "weekly-review", "SKILL.md"), ct)).ShouldContain("work-through-pending-decisions");
+    }
+
+    [Fact]
+    public async Task Decisions_skill_orders_items_by_risk()
+    {
+        // s18-08: high risk first, then by deadline; it starts from the prepared week, groups what the same evidence settles, and answers
+        // a challenge by redrafting.
+        var ct = TestContext.Current.CancellationToken;
+        var (exit, _, error) = await OnboardAgentCommandTests.RunAsync(["agent", "setup", "--repo", _root, "--assistant", "claude"], "", terminal: false, Path.Combine(_root, "home"), ct);
+        exit.ShouldBe(ExitCodes.Ok, error);
+
+        var text = await File.ReadAllTextAsync(Path.Combine(_root, ".claude", "skills", "work-through-pending-decisions", "SKILL.md"), ct);
+        string[] says = ["hound review prepare", "\"risk\": \"high\"` first", "then by deadline", "present together", "each is still answered by its own key", "hound onboard <system> decide", "the time it will take"];
+        says.Where(s => !text.Contains(s, StringComparison.Ordinal)).ShouldBeEmpty();
+        text.IndexOf("\"risk\": \"high\"", StringComparison.Ordinal).ShouldBeLessThan(text.IndexOf("then by deadline", StringComparison.Ordinal));
     }
 
     public void Dispose() => Directory.Delete(_root, recursive: true);

@@ -127,11 +127,12 @@ public class ConfigTests
     }
 
     [Fact]
-    public void Targets_list_must_not_be_empty()
+    public void An_empty_target_list_means_no_audit_yet()
     {
+        // s18-08: hound init writes no organisation audit by default; each audit approved later adds its target.
         var yaml = Valid[..Valid.IndexOf("target:", StringComparison.Ordinal)] + "targets: []\n";
 
-        ConfigLoader.Parse(yaml, Source, Known).Problems().Select(p => p.Code).ShouldBe(["config.targets_empty"]);
+        ConfigLoader.Parse(yaml, Source, Known).Value().Targets.ShouldBeEmpty();
     }
 
     [Fact]

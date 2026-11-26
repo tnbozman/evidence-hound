@@ -28,7 +28,7 @@ Two repositories are involved. The public Evidence Hound repo provides the stack
    - An **environment** named `ciso-assistant` with required reviewers, so every apply after a merge waits for a second approval.
 3. Replace Example Pty Ltd with your organisation in `scope/setup.yaml`, `scope/controls.yaml`, `scope/access.yaml` and `hound.yaml`. Each YAML file's first line links a schema with a relative path into the Evidence Hound repo; point it at the schema of the Evidence Hound version you run so your editor keeps checking the files.
 
-To start from a smaller repo instead, `hound init` asks about your organisation and writes the config, scope, audit and mapping, and `hound add` adds systems, controls and collectors ([guided setup](../guided-setup.md)). Copy the template's `deploy/`, `scope/settings.yaml` and `.github/` into it. Keep the `scope/access.yaml` that `hound init` wrote: its GRC team is the one the evidence plan names, and the template's would replace it.
+To start from a smaller repo instead, `hound init` asks about your organisation and writes the config, scope and mapping (audits come per system, as you onboard each), and `hound add` adds systems, controls and collectors ([guided setup](../guided-setup.md)). Copy the template's `deploy/`, `scope/settings.yaml` and `.github/` into it. Keep the `scope/access.yaml` that `hound init` wrote: its GRC team is the one the evidence plan names, and the template's would replace it.
 
 Commit each step on a branch and merge it through a pull request, so the repo's history starts as it will continue.
 
@@ -123,7 +123,7 @@ docker compose run --rm runner scope apply /config/scope --config /config/hound.
 
 The plan lists every user (with the roles they will hold), team, flag and setting it will create or change. New users get CISO Assistant's invitation and set their own password; `hound` never handles one. The plan's access review lists anyone who has not turned on MFA yet.
 
-**Second: the Essential Eight audit.** Put `scope/audits/ex-e8-2026.yaml` back (renamed for your audit; a repo from `hound init` has `scope/audits/<code>-e8.yaml` instead, and no `scope/settings.yaml` until you copy the template's), check the mapping, and repeat validate, plan and apply:
+**Second: the Essential Eight audit.** Put `scope/audits/ex-e8-2026.yaml` back (renamed for your audit; a repo from `hound init` has no audit until you onboard a system, or `scope/audits/<code>-e8.yaml` with `--organisation-audit`, and no `scope/settings.yaml` until you copy the template's), check the mapping, and repeat validate, plan and apply:
 
 ```bash
 hound mapping validate mappings/essential-eight-2023.yaml

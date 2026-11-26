@@ -20,7 +20,7 @@ public sealed class InitCommandTests : IDisposable
             File.Exists(Path.Combine(Repo, file)).ShouldBeTrue(file);
         }
 
-        Directory.GetFiles(Path.Combine(Repo, "scope", "audits"), "*.yaml").ShouldHaveSingleItem();
+        Directory.GetFiles(Path.Combine(Repo, "scope", "audits"), "*.yaml").ShouldBeEmpty("audits are drafted per system (s18-08)");
         await ShouldValidateAsync();
     }
 
@@ -71,7 +71,7 @@ public sealed class InitCommandTests : IDisposable
     public async Task Writes_a_quarterly_series_starting_this_financial_year_quarter()
     {
         // s09-47: the organisation's audit is the series <CODE>-E8; its periods read EX-E8-Q2-2027FY and so on (s09-46).
-        var exitCode = await RunOn("2026-11-23", "", "init", Repo, "--yes");
+        var exitCode = await RunOn("2026-11-23", "", "init", Repo, "--yes", "--organisation-audit");
 
         exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
         var audit = await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "audits", "ex-e8.yaml"), TestContext.Current.CancellationToken);
@@ -86,7 +86,7 @@ public sealed class InitCommandTests : IDisposable
     [Fact]
     public async Task A_monthly_series_starts_this_month()
     {
-        var exitCode = await RunOn("2026-11-23", "", "init", Repo, "--yes", "--interval", "month", "--due", "2027-06-30");
+        var exitCode = await RunOn("2026-11-23", "", "init", Repo, "--yes", "--interval", "month", "--due", "2027-06-30", "--organisation-audit");
 
         exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
         (await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "audits", "ex-e8.yaml"), TestContext.Current.CancellationToken))
@@ -110,14 +110,14 @@ public sealed class InitCommandTests : IDisposable
         // s09-41: an agent gives every answer as an option, so nothing is asked even without --yes, and reads the result as JSON.
         var exitCode = await Run(
             "", "init", Repo, "--org", "Example Two Pty Ltd", "--code", "EX2", "--url", "https://ciso.example.com/api/", "--time-zone", "Australia/Perth", "--level", "1",
-            "--interval", "month", "--owner", "grc@example.com", "--assistant", "claude", "--json");
+            "--interval", "month", "--owner", "grc@example.com", "--organisation-audit", "--assistant", "claude", "--json");
 
         exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
         _error.ToString().ShouldNotContain("]: ");
         _error.ToString().ShouldNotContain("Organisation name");
         var answer = System.Text.Json.Nodes.JsonNode.Parse(_output.ToString())!;
         answer["organisation"]!.GetValue<string>().ShouldBe("Example Two Pty Ltd");
-        answer["audit"]!.GetValue<string>().ShouldBe("EX2-E8");
+        answer["audits"]!.AsArray().Select(a => a!.GetValue<string>()).ShouldBe(["EX2-E8"]);
         var files = answer["files"]!.AsArray().Select(f => f!.GetValue<string>()).ToArray();
         files.ShouldContain("scope/setup.yaml");
         files.ShouldContain("CLAUDE.md");
@@ -130,7 +130,7 @@ public sealed class InitCommandTests : IDisposable
     public async Task Answers_on_stdin_set_the_organisation_code_level_and_owner()
     {
         // Organisation, code, CISO Assistant URL, time zone, maturity level, audit interval, owner.
-        var exitCode = await Run("Example Two Pty Ltd\nEX2\n\n\n3\nquarter\ngrc@example.com\n", "init", Repo);
+        var exitCode = await Run("Example Two Pty Ltd\nEX2\n\n\n3\nquarter\ngrc@example.com\n", "init", Repo, "--organisation-audit");
 
         exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
         var setup = await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "setup.yaml"), TestContext.Current.CancellationToken);
@@ -180,7 +180,7 @@ public sealed class InitCommandTests : IDisposable
     }
 
     [Fact]
-    public async Task Framework_disp_adds_the_disp_audit_beside_the_essential_eight_one()
+    public async Task Framework_disp_adds_the_disp_audit()
     {
         // s14-02: DISP membership readiness is held as an audit beside the Essential Eight, from the custom library hound carries.
         var ct = TestContext.Current.CancellationToken;
@@ -188,7 +188,7 @@ public sealed class InitCommandTests : IDisposable
         var exitCode = await RunOn("2026-11-23", "", "init", Repo, "--yes", "--framework", "disp");
 
         exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
-        foreach (var file in new[] { "frameworks/disp.yaml", "frameworks/disp.json", "mappings/disp.yaml", "scope/audits/ex-e8.yaml", "scope/audits/ex-disp.yaml" })
+        foreach (var file in new[] { "frameworks/disp.yaml", "frameworks/disp.json", "mappings/disp.yaml", "scope/audits/ex-disp.yaml" })
         {
             File.Exists(Path.Combine(Repo, file)).ShouldBeTrue(file);
         }
@@ -199,7 +199,7 @@ public sealed class InitCommandTests : IDisposable
         var setup = await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "setup.yaml"), ct);
         setup.ShouldContain("file: ../frameworks/disp.yaml");
         var config = await File.ReadAllTextAsync(Path.Combine(Repo, "hound.yaml"), ct);
-        config.ShouldContain("compliance_assessment: EX-E8\n");
+        config.ShouldNotContain("compliance_assessment: EX-E8\n");
         config.ShouldContain("mapping: mappings/disp.yaml");
         config.ShouldContain("compliance_assessment: EX-DISP\n");
         var readme = await File.ReadAllTextAsync(Path.Combine(Repo, "README.md"), ct);
@@ -207,6 +207,29 @@ public sealed class InitCommandTests : IDisposable
         readme.ShouldContain("examples/manual-sources/disp");
         readme.ShouldContain("hound mapping coverage mappings/disp.yaml --framework frameworks/disp.json --manual hound.yaml");
         await ShouldValidateAsync();
+    }
+
+    [Fact]
+    public async Task Organisation_audit_only_with_an_organisation_wide_source()
+    {
+        // s18-08: audits are per system, so each shows its own gaps; an organisation-wide audit no organisation-wide source feeds is an
+        // empty shell. init writes one only when asked, and says how to draft one per system.
+        var ct = TestContext.Current.CancellationToken;
+        (await Run("", "init", Repo, "--yes")).ShouldBe(ExitCodes.Ok, _error.ToString());
+
+        Directory.GetFiles(Path.Combine(Repo, "scope", "audits"), "*.yaml").ShouldBeEmpty();
+        var config = await File.ReadAllTextAsync(Path.Combine(Repo, "hound.yaml"), ct);
+        config.ShouldContain("targets: []");
+        var readme = await File.ReadAllTextAsync(Path.Combine(Repo, "README.md"), ct);
+        readme.ShouldContain("hound onboard <system>");
+        readme.ShouldContain("its own audit");
+        (await File.ReadAllTextAsync(Path.Combine(Repo, "scope", "setup.yaml"), ct)).ShouldContain("audit_series: {ref_id: EX-E8, groups: [\"1\", \"2\"], cycle: {period: quarter, starts: ");
+        await ShouldValidateAsync();
+
+        var organisation = Path.Combine(_root, "organisation");
+        (await Run("", "init", organisation, "--yes", "--organisation-audit")).ShouldBe(ExitCodes.Ok, _error.ToString());
+        Directory.GetFiles(Path.Combine(organisation, "scope", "audits"), "*.yaml").ShouldHaveSingleItem();
+        (await File.ReadAllTextAsync(Path.Combine(organisation, "hound.yaml"), ct)).ShouldContain("compliance_assessment: EX-E8\n");
     }
 
     [Fact]

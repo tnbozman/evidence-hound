@@ -226,6 +226,7 @@ public static class HoundCli
             RunCommand.Build(output, loggers, configuration, registry, collectorServices),
             ServeCommand.Build(output, loggers, configuration, registry, collectorServices),
             StatusCommand.Build(output, loggers, configuration, registry),
+            NextCommand.Build(terminal, loggers, configuration, registry),
         };
     }
 

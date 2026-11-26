@@ -110,9 +110,8 @@
       "$ref": "#/$defs/target"
     },
     "targets": {
-      "description": "Every audit results are published to. Each evidence file is uploaded once and linked from every audit that uses it.",
+      "description": "Every audit results are published to. Each evidence file is uploaded once and linked from every audit that uses it. Empty until the first audit is approved.",
       "type": "array",
-      "minItems": 1,
       "items": {
         "$ref": "#/$defs/target"
       }

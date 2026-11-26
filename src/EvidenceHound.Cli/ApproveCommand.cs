@@ -440,6 +440,10 @@ internal static class ApproveCommand
                 Directory.CreateDirectory(Path.GetDirectoryName(target)!);
                 await File.WriteAllTextAsync(target, approved, cancellationToken);
                 File.Delete(file);
+                if (await EvidenceHound.Cli.Setup.AuditTargets.AddAsync(repo, audit.RefId, audit.Framework.Value, [.. audit.Systems.Select(x => x.Value)], cancellationToken) is { } targeted)
+                {
+                    await terminal.Output.WriteLineAsync(targeted.Note.AsMemory(), cancellationToken);
+                }
             }
 
             return Result.Ok(Unit.Value);

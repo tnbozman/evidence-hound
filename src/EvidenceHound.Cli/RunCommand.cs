@@ -23,6 +23,9 @@ internal static class RunCommand
 {
     private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
 
+    /// <summary>s18-04: collectors mostly wait on other systems' APIs, so a few at once shortens a run without crowding any one system.</summary>
+    internal const int DefaultParallel = 4;
+
     public static Command Build(TextWriter output, ILoggerFactory loggers, IConfiguration configuration, CollectorRegistry registry, CollectorServices collectorServices)
     {
         var logger = loggers.CreateLogger("hound.run");
@@ -30,11 +33,23 @@ internal static class RunCommand
         var only = new Option<string?>("--only") { Description = "Run only the collector with this name." };
         var dryRun = new Option<bool>("--dry-run") { Description = "Collect and store evidence and plan the updates, but send nothing to CISO Assistant." };
         var noPublish = new Option<bool>("--no-publish") { Description = "Collect and store evidence only; do not plan or publish." };
+        var parallel = new Option<int>("--parallel")
+        {
+            Description = $"How many collectors collect at once (default {DefaultParallel}); each still publishes in config order.",
+            DefaultValueFactory = _ => DefaultParallel,
+        };
+        parallel.Validators.Add(result =>
+        {
+            if (result.GetValueOrDefault<int>() < 1)
+            {
+                result.AddError("--parallel must be at least 1.");
+            }
+        });
 
-        var run = new Command("run", "Run every configured collector: collect, store evidence, map, plan and publish.") { config, only, dryRun, noPublish };
+        var run = new Command("run", "Run every configured collector: collect, store evidence, map, plan and publish.") { config, only, dryRun, noPublish, parallel };
         run.SetAction((parseResult, cancellationToken) => RunConfigAsync(
             parseResult.GetRequiredValue(config),
-            new RunOptions(parseResult.GetValue(only), parseResult.GetValue(dryRun), parseResult.GetValue(noPublish)),
+            new RunOptions(parseResult.GetValue(only), parseResult.GetValue(dryRun), parseResult.GetValue(noPublish), parseResult.GetValue(parallel)),
             configuration,
             registry,
             collectorServices,

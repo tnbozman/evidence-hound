@@ -258,7 +258,7 @@ internal static class ManualProposalCommands
 
     private static bool Proposable(string text, out CheckOutcome outcome) => Attestation.TryParseOutcome(text, out outcome) && outcome != CheckOutcome.NotApplicable;
 
-    private static Result<IReadOnlyList<(string Name, ManualSource Manual)>> Sources(DeploymentConfig deployment, string? only) => only is not null
+    internal static Result<IReadOnlyList<(string Name, ManualSource Manual)>> Sources(DeploymentConfig deployment, string? only) => only is not null
         ? ManualCommand.Find(deployment, only).Map(manual => (IReadOnlyList<(string, ManualSource)>)[(only, manual)])
         : Result.Combine(deployment.Collectors.Where(c => c.Type == ManualCollector.TypeName).Select(c => ManualCommand.Find(deployment, c.Name).Map(manual => (c.Name, manual))));
 

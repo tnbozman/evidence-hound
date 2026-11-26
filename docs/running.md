@@ -41,6 +41,7 @@ Before planning, `hound run` reads each target audit's rows, the evidence it cit
 | `--only <name>` | Run one collector. An unknown name is a usage error (exit 2). |
 | `--dry-run` | Collect and store evidence, then plan, but send nothing. |
 | `--no-publish` | Collect and store evidence only. |
+| `--parallel <n>` | How many collectors collect at once (default 4, at least 1). Each still plans and publishes in config order, reading what CISO Assistant holds for its audits once, so a later collector sees what an earlier one wrote. |
 
 Exit codes: 0 every collector succeeded, 1 any collector failed, 2 usage, 3 configuration or secrets.
 
@@ -126,5 +127,11 @@ Standing from the 2026-11 snapshot taken 2026-11-28 02:00 UTC:
 `--json` gives the same figures for an agent: `collectors` (each latest run, with its problems), `audits`, and with `--scope`
 `standing` (the snapshot's period and each programme's `level_met`, `compliant`, `applicable`, `compliant_pct`, `assessed`, `total` and
 `not_assessed`, or `snapshot: null` with a `hint`) and `exceptions_due`.
+
+`--json` also gives the health an agent needs without a console: each collector's latest `checks` (the check and its outcome only,
+never an observation or evidence) and `publish_failed`; `ciso_assistant` (`reachable`, `token` accepted or rejected after one read of the
+folder list, `token_expiry`, which CISO Assistant's API does not give so it is null, and `rejected_publishes` across the latest runs);
+and `manual_sources`, each with its owner, `last_evidence`, `due` and `state` (`overdue`, `due_soon` from 14 days before, or `ok`).
+Without a token the connection is not checked and `reachable` is null. `hound next` reads the same data.
 
 With `target.health_control` set, each run also uploads the record as "collector health" evidence (`hound-health/<collector>`) and links it to that applied control, so the security committee sees in CISO Assistant when each collector last ran. Over the Kafka transport the record is uploaded but not linked, because the dispatcher cannot link evidence to controls.

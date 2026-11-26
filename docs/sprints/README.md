@@ -23,7 +23,7 @@ Releases are delivered in one-week sprints. Each sprint has its own file, `sNN-<
 | [s16](s16-governance-and-metrics.md) | Risk and recovery checks in the `ciso-assistant` profile; metrics as configuration and from runs | 2 |
 | [s17](s17-nist-800-171.md) | CMMC Level 2 (NIST SP 800-171 Rev 2) mapping and SSP layout; SPRS score, annual affirmation, DFARS 7012 reporting; Rev 3 optional | 2 |
 | [s18](s18-agent-speed.md) | Agent speed: fewer steps, faster runs | 2 |
-| [s19](s19-security-documents.md) | Security document generators: assessment report, monitoring plan, policy set, risk, recovery and supply chain reports, change and configuration management plan, registers, document register, authorisation package | 3 |
+| [s19](s19-review-and-release-3.md) | Principal engineer and CISO review: remove what is no longer needed, refactor for long-term maintainability, judge the product as a CISO, one path through the docs, release 3. Part B, droppable: [security document generators](s19b-security-documents.md) | 3 |
 
 Release 1 is ordered to put Essential Eight evidence on a schedule as early as possible: the thin deployment (s07) comes straight after s06, and the rest of the deployment work (backups and hardening) joins the release sprint (s13).
 

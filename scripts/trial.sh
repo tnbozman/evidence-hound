@@ -157,11 +157,12 @@ organisation() {
     say "Already written: repo/hound.yaml and repo/scope. Remove ${ws#"$root"/} (make trial-clean) to start again."
   else
     say "hound init asks about the organisation. Press Enter to take each default: the fictional Example Pty Ltd at maturity"
-    say "level 2, audited by quarter. The plan below creates its domain, perimeter, health control and this quarter's audit."
+    say "level 2, audited by quarter. Microsoft 365 covers every account and laptop, an organisation-wide source, so the organisation"
+    say "gets its own audit (--organisation-audit). The plan below creates its domain, perimeter, health control and this quarter's audit."
     if [[ "$yes" == 1 ]]; then
-      hound no init /trial/repo --evidence-root /trial/evidence --yes
+      hound no init /trial/repo --evidence-root /trial/evidence --organisation-audit --yes
     else
-      hound yes init /trial/repo --evidence-root /trial/evidence
+      hound yes init /trial/repo --evidence-root /trial/evidence --organisation-audit
     fi
   fi
   hound no config validate hound.yaml

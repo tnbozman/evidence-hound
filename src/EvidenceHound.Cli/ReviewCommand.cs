@@ -67,12 +67,36 @@ internal static class ReviewCommand
                 },
                 problems => Task.FromResult(Log.Problems(logger, problems)));
         });
+        var prepare = new Command("prepare", "Get the week's session ready in one step: refresh the queue, list the items still without a recommendation and the skill that drafts each, and save the scope plan the session applies. Reads only; prompt-free, for an agent.")
+        {
+            repo, config, json,
+        };
+        prepare.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var root = parseResult.GetValue(repo)?.FullName ?? Directory.GetCurrentDirectory();
+            var file = parseResult.GetValue(config) ?? new FileInfo(Path.Combine(root, "hound.yaml"));
+            var today = AuditSeries.Today(configuration);
+            var queue = await QueueAsync(root, parseResult.GetValue(config), terminal, registry, today, cancellationToken, configuration);
+            if (queue is Result<IReadOnlyList<ReviewItem>>.Fail { Errors: var errors })
+            {
+                return Log.Problems(logger, errors);
+            }
+
+            var items = ((Result<IReadOnlyList<ReviewItem>>.Ok)queue).Value;
+            var connection = await PublishCommand.ConnectionAsync(configuration, file.Exists ? file : null, registry, cancellationToken);
+            var plan = await connection.Match(
+                options => ScopeCommands.PrepareAsync(
+                    new DirectoryInfo(Path.Combine(root, "scope")), file.Exists ? file : null, options, ScopeCommands.PreparedPlan(root), today, registry, loggers, cancellationToken),
+                problems => Task.FromResult((0, (string?)null, $"Not planned: {string.Join(" ", problems.Select(p => p.Message))}")));
+            await terminal.Output.WriteLineAsync((parseResult.GetValue(json) ? PreparedJson(items, plan) : PreparedText(items, plan)).AsMemory(), cancellationToken);
+            return ExitCodes.Ok;
+        });
         var forTime = new Option<string>("--for") { Description = "How long you have, such as 60m or 2h. The session takes the most urgent items that fit.", DefaultValueFactory = _ => "60m" };
         var only = new Option<string[]>("--only") { Description = "Ask only this item, by its key from hound review pending --json, once you have talked it through with your agent. Repeat for more." };
         var noApply = new Option<bool>("--no-apply") { Description = "Stop once the accepted items are written to the repo's files; do not plan or apply them to CISO Assistant." };
         var review = new Command("review", "One guided session: read each item that waits on you, with the agent's recommendation, then accept, challenge or skip it. Accepted items are written and applied in one batch. Needs a person at a terminal.")
         {
-            repo, config, forTime, only, noApply, pending, recommend,
+            repo, config, forTime, only, noApply, pending, prepare, recommend,
         };
         review.SetAction(async (parseResult, cancellationToken) =>
         {
@@ -93,23 +117,58 @@ internal static class ReviewCommand
             {
                 Only = [.. parseResult.GetValue(only) ?? []],
             };
+            var started = DateTimeOffset.UtcNow;
             var done = await session.RunAsync(minutes, cancellationToken);
             if (done is Result<Unit>.Fail { Errors: var problems })
             {
                 return Log.Problems(logger, problems);
             }
 
-            if (parseResult.GetValue(noApply) || session.Accepted.Count == 0)
+            var (exit, applied) = parseResult.GetValue(noApply) ? (ExitCodes.Ok, "nothing applied (--no-apply)") : await ApplyAsync(root, deployment, session, cancellationToken);
+            await terminal.Output.WriteLineAsync(string.Create(
+                CultureInfo.InvariantCulture,
+                $"\nSession summary: accepted {session.Accepted.Count}, challenged {session.Challenged}; CISO Assistant: {applied}; took {Math.Max(1, (int)Math.Ceiling((DateTimeOffset.UtcNow - started).TotalMinutes))} minute(s).").AsMemory(), cancellationToken);
+            return exit;
+        });
+
+        // The prepared plan when the scope files are as it read them (no accepted item changed them); otherwise plan again, which includes
+        // both the accepted items and whatever the prepared plan held.
+        async Task<(int Exit, string Applied)> ApplyAsync(string root, FileInfo deployment, Session session, CancellationToken cancellationToken)
+        {
+            var prepared = ScopeCommands.PreparedPlan(root);
+            var state = await ScopeCommands.SavedStateAsync(prepared, registry, cancellationToken);
+            async Task<bool> Confirm(CancellationToken ct) => (await new Prompt(terminal).AskAsync("Apply these changes to CISO Assistant now (y, n)", ct))?.ToLowerInvariant() == "y";
+            if (state is { FilesUnchanged: true } unchanged)
             {
-                return ExitCodes.Ok;
+                var connection = await PublishCommand.ConnectionAsync(configuration, deployment.Exists ? deployment : null, registry, cancellationToken);
+                if (connection is not Result<CisoAssistantOptions>.Ok { Value: var options })
+                {
+                    return (Log.Problems(logger, connection is Result<CisoAssistantOptions>.Fail { Errors: var e } ? e : []), "nothing applied");
+                }
+
+                var changes = (await File.ReadAllTextAsync(prepared, cancellationToken)) is var text && SavedPlanFile.Read(text, prepared) is Result<SavedPlan>.Ok { Value: var saved } ? saved.Plan.Changes.Count : 0;
+                await terminal.Output.WriteLineAsync($"\nWhat the plan prepared on {unchanged.Day} changes in CISO Assistant:".AsMemory(), cancellationToken);
+                var exit = await ScopeCommands.ApplyPreparedAsync(prepared, options, registry, loggers, terminal.Output, Confirm, cancellationToken);
+                return (exit, exit == ExitCodes.Ok && !File.Exists(prepared)
+                    ? string.Create(CultureInfo.InvariantCulture, $"{changes} change(s) applied to CISO Assistant")
+                    : exit == ExitCodes.Ok ? "nothing applied (you said no)" : "nothing applied (see above)");
+            }
+
+            if (state is not null)
+            {
+                File.Delete(prepared);
+            }
+
+            if (session.Accepted.Count == 0)
+            {
+                return (ExitCodes.Ok, "nothing to apply");
             }
 
             await terminal.Output.WriteLineAsync("\nWhat applying the accepted items changes in CISO Assistant:".AsMemory(), cancellationToken);
-            return await ScopeCommands.PlanThenApplyAsync(
-                new DirectoryInfo(Path.Combine(root, "scope")), deployment.Exists ? deployment : null, configuration, registry, loggers, terminal.Output,
-                async ct => (await new Prompt(terminal).AskAsync("Apply these changes to CISO Assistant now (y, n)", ct))?.ToLowerInvariant() == "y",
-                cancellationToken);
-        });
+            var planned = await ScopeCommands.PlanThenApplyAsync(
+                new DirectoryInfo(Path.Combine(root, "scope")), deployment.Exists ? deployment : null, configuration, registry, loggers, terminal.Output, Confirm, cancellationToken);
+            return (planned, planned == ExitCodes.Ok ? "the accepted changes, as planned above" : "nothing applied (see above)");
+        }
         return review;
     }
 
@@ -193,7 +252,7 @@ internal static class ReviewCommand
             ReviewKind.Finding,
             string.Create(CultureInfo.InvariantCulture, $"finding:{w.Code}/{Path.GetFileName(w.At.File)}:{w.At.Line}"),
             $"[finding] {w.Message}",
-            "Sensitive data is handled where nothing on file approves it. A prime or an assessor asks about exactly this, so it stays in front of you until it is fixed.",
+            ReviewOrder.FindingWhy(w.Code),
             $"Nothing changes; your sign-off records that you saw it this week. To clear it: {w.Hint}",
             2)
         {
@@ -234,6 +293,36 @@ internal static class ReviewCommand
         })]),
     }.ToJsonString(OnboardAgentCommand.Indented);
 
+    private static string PreparedJson(IReadOnlyList<ReviewItem> items, (int Changes, string? Saved, string Note) plan) => new JsonObject
+    {
+        ["items"] = items.Count,
+        ["minutes"] = items.Sum(i => i.Minutes),
+        ["without_recommendation"] = new JsonArray([.. Bare(items).Select(i => (JsonNode)new JsonObject
+        {
+            ["key"] = i.Key,
+            ["kind"] = ReviewOrder.Code(i.Kind),
+            ["title"] = i.Title,
+            ["skill"] = ReviewOrder.Skill(i),
+        })]),
+        ["challenged"] = new JsonArray([.. items.Where(i => i.Challenge is not null).Select(i => (JsonNode)i.Key)]),
+        ["plan"] = new JsonObject { ["changes"] = plan.Changes, ["saved"] = plan.Saved, ["note"] = plan.Note },
+    }.ToJsonString(OnboardAgentCommand.Indented);
+
+    private static string PreparedText(IReadOnlyList<ReviewItem> items, (int Changes, string? Saved, string Note) plan)
+    {
+        var bare = Bare(items);
+        var lines = new List<string>
+        {
+            string.Create(CultureInfo.InvariantCulture, $"{items.Count} item(s) wait on the person, about {items.Sum(i => i.Minutes)} minutes; {bare.Count} still need a recommendation:"),
+        };
+        lines.AddRange(bare.Select(i => $"- {i.Key}: skill {ReviewOrder.Skill(i)}"));
+        lines.Add(plan.Saved is null ? $"Scope plan: {plan.Note}" : string.Create(CultureInfo.InvariantCulture, $"Scope plan: {plan.Changes} change(s), saved in {plan.Saved}. {plan.Note}"));
+        return string.Join('\n', lines);
+    }
+
+    /// <summary>Items the agent still has to recommend on; a standing approval or the item's own draft already answers the rest.</summary>
+    private static List<ReviewItem> Bare(IReadOnlyList<ReviewItem> items) => [.. items.Where(i => i.Recommendation is null && i.CoveredBy is null)];
+
     private static string Text(IReadOnlyList<ReviewItem> items) => items.Count == 0
         ? "Nothing is waiting on a person."
         : string.Create(CultureInfo.InvariantCulture, $"{items.Count} item(s), about {items.Sum(i => i.Minutes)} minutes:\n")
@@ -255,6 +344,8 @@ internal static class ReviewCommand
         private Dictionary<string, ReviewRecommendation> _recommendations = new(StringComparer.Ordinal);
 
         public IReadOnlyList<string> Accepted => [.. _answers.Keys];
+
+        public int Challenged => _challenged.Count;
 
         /// <summary>The keys the person named with <c>--only</c>: just these are asked. Empty: the whole queue, as time allows.</summary>
         public IReadOnlyList<string> Only { get; init; } = [];

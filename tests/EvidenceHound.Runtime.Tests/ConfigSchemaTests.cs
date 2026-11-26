@@ -45,7 +45,7 @@ public class ConfigSchemaTests
 
         Schema.Evaluate(ToJson(targets)).IsValid.ShouldBeTrue();
         Schema.Evaluate(ToJson(yaml + "\ntargets: []\n")).IsValid.ShouldBeFalse();
-        Schema.Evaluate(ToJson(yaml[..start] + "targets: []\n")).IsValid.ShouldBeFalse();
+        Schema.Evaluate(ToJson(yaml[..start] + "targets: []\n")).IsValid.ShouldBeTrue("no audit yet (s18-08)");
     }
 
     [Theory]

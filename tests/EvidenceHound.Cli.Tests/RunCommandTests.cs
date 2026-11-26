@@ -72,6 +72,17 @@ public sealed class RunCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task Parallel_sets_how_many_collectors_collect_at_once()
+    {
+        // s18-04: at least one.
+        var config = await ConfigAsync();
+        (await Run(Settings(), "run", "--config", config, "--dry-run", "--parallel", "2")).ShouldBe(ExitCodes.Ok, _error.ToString());
+
+        (await Run(Settings(), "run", "--config", config, "--dry-run", "--parallel", "0")).ShouldBe(ExitCodes.Usage);
+        _error.ToString().ShouldContain("--parallel must be at least 1");
+    }
+
+    [Fact]
     public async Task Publishing_without_the_token_exits_three()
     {
         var exitCode = await Run(Settings(), "run", "--config", await ConfigAsync(token: "env:HOUND_TEST_NOT_SET"));

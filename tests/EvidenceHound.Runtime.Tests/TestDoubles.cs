@@ -11,6 +11,18 @@ internal sealed class FixedClock(DateTimeOffset now) : IClock
     public DateTimeOffset UtcNow { get; set; } = now;
 }
 
+/// <summary>A collector whose collection is any asynchronous function, for tests of timing.</summary>
+internal sealed class AsyncCollector(Func<CollectorContext, CancellationToken, Task<Result<CollectionResult>>> collect) : ICollector
+{
+    public string Type => "async";
+
+    public string Version => "9.9.9";
+
+    public CollectorDescription Describe() => new([], [], []);
+
+    public Task<Result<CollectionResult>> CollectAsync(CollectorContext context, CancellationToken cancellationToken) => collect(context, cancellationToken);
+}
+
 /// <summary>A collector that returns a fixed result and records what it was given.</summary>
 internal sealed class StubCollector(Func<CollectorContext, Result<CollectionResult>> collect) : ICollector
 {

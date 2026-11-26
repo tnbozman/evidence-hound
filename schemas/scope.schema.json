@@ -727,6 +727,29 @@
               "description": "The existing folder the domains sit under. Default Global.",
               "$ref": "#/$defs/text"
             },
+            "audit_series": {
+              "description": "The series each system's audit joins when no organisation-wide audit carries it: EX-E8 gives EX-E8-<SYSTEM>, in these periods. Written by hound init.",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "ref_id",
+                "cycle"
+              ],
+              "properties": {
+                "ref_id": {
+                  "$ref": "#/$defs/text"
+                },
+                "groups": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "cycle": {
+                  "$ref": "#/$defs/audit/properties/cycle"
+                }
+              }
+            },
             "entity": {
               "description": "The organisation's own entity (CISO Assistant's main entity). It is only ever updated, never created or deleted.",
               "type": "object",

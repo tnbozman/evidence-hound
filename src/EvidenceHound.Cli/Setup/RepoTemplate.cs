@@ -17,6 +17,15 @@ internal sealed record NewOrganisation(string Name, string Code, string CisoAssi
     /// <summary>s14-02: the audits written beside the Essential Eight one, such as DISP membership readiness.</summary>
     public IReadOnlyList<ExtraFramework> Extras { get; init; } = [];
 
+    /// <summary>
+    /// s18-08: whether to write the organisation-wide Essential Eight audit. Audits are per system by default, so each shows its own gaps;
+    /// an organisation-wide audit is worth having only when an organisation-wide source, such as policies, feeds it.
+    /// </summary>
+    public bool OrganisationAudit { get; init; }
+
+    /// <summary>Every audit hound init writes.</summary>
+    public IReadOnlyList<string> AuditRefs => [.. OrganisationAudit ? [AuditRef] : Array.Empty<string>(), .. Extras.Select(ExtraAuditRef)];
+
     /// <summary>An extra audit's series, such as <c>&lt;CODE&gt;-DISP</c>.</summary>
     public string ExtraAuditRef(ExtraFramework extra)
     {
@@ -92,9 +101,14 @@ internal static class RepoTemplate
             ["scope/controls.yaml"] = Controls(org),
             ["scope/access.yaml"] = Access(org),
             ["scope/evidence-plan.yaml"] = EvidencePlan(),
-            [org.AuditFile] = Audit(org),
             ["README.md"] = Readme(org),
+            ["scope/audits/README.md"] = AuditsReadme(org),
         };
+        if (org.OrganisationAudit)
+        {
+            files[org.AuditFile] = Audit(org);
+        }
+
         foreach (var extra in org.Extras)
         {
             files[$"scope/audits/{org.ExtraAuditRef(extra).ToLowerInvariant()}.yaml"] = ExtraAudit(org, extra);
@@ -124,15 +138,22 @@ internal static class RepoTemplate
         "# Add one with: hound add collector <type> --config hound.yaml (hound collectors list lists the types; manual is for exports people send in).",
         "collectors: []",
         "",
-        "targets:",
-        "  - mapping: mappings/essential-eight-2023.yaml",
-        $"    compliance_assessment: {Scalar(org.AuditRef)}",
-        $"    health_control: {HealthControl}",
-        .. org.Extras.SelectMany(extra => (string[])
+        "# The audits runs publish to, one each. Approving an audit with hound approve adds its target here.",
+        .. org.AuditRefs.Count == 0 ? ["targets: []"] : (string[])
         [
-            $"  - mapping: {extra.Mapping}",
-            $"    compliance_assessment: {Scalar(org.ExtraAuditRef(extra))}",
-        ]),
+            "targets:",
+            .. org.OrganisationAudit ? (string[])
+            [
+                "  - mapping: mappings/essential-eight-2023.yaml",
+                $"    compliance_assessment: {Scalar(org.AuditRef)}",
+                $"    health_control: {HealthControl}",
+            ] : [],
+            .. org.Extras.SelectMany(extra => (string[])
+            [
+                $"  - mapping: {extra.Mapping}",
+                $"    compliance_assessment: {Scalar(org.ExtraAuditRef(extra))}",
+            ]),
+        ],
     ]);
 
     private static string Setup(NewOrganisation org) => Lines(
@@ -141,6 +162,10 @@ internal static class RepoTemplate
         "# Check it with: hound scope validate scope. Add systems with: hound add system --scope scope",
         "organisation:",
         "  root_folder: Global",
+        .. org.OrganisationAudit ? Array.Empty<string>() : [
+            "  # Each system's audit joins this series: EX-E8 gives EX-E8-<SYSTEM>, one audit per period. See docs/scope.md, Audit periods.",
+            $"  audit_series: {{ref_id: {Scalar(org.AuditRef)}, groups: [{Groups(org)}], cycle: {{period: {org.Interval}, starts: \"{org.Starts.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}\"}}}}",
+        ],
         "frameworks:",
         $"  - urn: {Framework}",
         $"    library: {Library}",
@@ -207,7 +232,7 @@ internal static class RepoTemplate
         $"ref_id: {Scalar(org.AuditRef)}",
         $"name: {Scalar(string.Create(CultureInfo.InvariantCulture, $"Essential Eight ML{org.Level}"))}",
         $"framework: {Framework}",
-        $"groups: [{string.Join(", ", Enumerable.Range(1, org.Level).Select(level => $"\"{level.ToString(CultureInfo.InvariantCulture)}\""))}]",
+        $"groups: [{Groups(org)}]",
         $"domain: {Scalar(org.Name)}",
         $"perimeter: {Perimeter}",
         "# Each period is its own audit: <CODE>-E8-Q2-2027FY is October to December 2026, its ETA the period's last day. See docs/scope.md, Audit periods.",
@@ -247,7 +272,12 @@ internal static class RepoTemplate
         "",
         "0. Make this folder a git repository and push it to a private repository, so every change is reviewed: `git init`, then commit.",
         "1. Add your systems: `hound add system --scope scope`",
-        "2. Add the controls you rely on, linked to the audit's requirements: `hound add control --scope scope --audit " + org.AuditRef + "`",
+        org.OrganisationAudit
+            ? "2. Add the controls you rely on, linked to the audit's requirements: `hound add control --scope scope --audit " + org.AuditRef + "`"
+            : "2. Give each system its own audit, and each shared platform other systems run on, so each shows its own gaps: `hound onboard <system>` "
+                + "drafts the system's audit in the series `" + org.AuditRef + "` (`" + org.AuditRef + "-<SYSTEM>`, by " + org.Interval + "), and approving it with "
+                + "`hound approve` adds its target to `hound.yaml`. Add an organisation-wide audit only when an organisation-wide source, such as "
+                + "policies, feeds it.",
         "3. Add collectors, such as a manual source for exports people send in: `hound add collector manual --config hound.yaml`",
         "4. Check everything offline: `hound config validate hound.yaml` and `hound scope validate scope --config hound.yaml`",
         "5. See what applying would do, then apply: `hound scope plan scope --config hound.yaml` and `hound scope apply scope --config hound.yaml`",
@@ -256,6 +286,18 @@ internal static class RepoTemplate
         .. org.Extras.Select((extra, i) => $"{8 + i}. {extra.NextStep(org)}"),
         "",
         "The Evidence Hound repo's `examples/compliance-repo` has a fuller example, with access, settings and a pull request workflow."]);
+
+    private static string AuditsReadme(NewOrganisation org) => Lines(
+        "# Audits",
+        "",
+        "One file per audit: one for each system, and one for each shared platform other systems run on, so each shows its own gaps.",
+        $"`hound onboard <system>` drafts a system's audit in the series `{org.AuditRef}` that `setup.yaml` names (`{org.AuditRef}-<SYSTEM>`, one",
+        $"audit per {org.Interval}); `hound audit draft` drafts one for named systems. A person approves it with `hound approve`, which writes it",
+        "here and adds its target to `hound.yaml`. Shared evidence feeds every audit it answers; an organisation-wide audit is worth having",
+        "only when an organisation-wide source, such as policies, feeds it.");
+
+    private static string Groups(NewOrganisation org) =>
+        string.Join(", ", Enumerable.Range(1, org.Level).Select(level => $"\"{level.ToString(CultureInfo.InvariantCulture)}\""));
 
     private static string Lines(params string[] lines) => string.Join('\n', lines) + "\n";
 }

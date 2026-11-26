@@ -1,9 +1,16 @@
 using System.Text.Json.Nodes;
+using EvidenceHound.Core.Checks;
 using EvidenceHound.Core.Frameworks;
 using EvidenceHound.Core.Mapping;
 using EvidenceHound.Core.Reporting;
+using EvidenceHound.Core.Results;
 using EvidenceHound.Runtime;
+using EvidenceHound.Runtime.Pipeline;
 using EvidenceHound.Runtime.Status;
+using EvidenceHound.Runtime.Storage;
+using WireMock.RequestBuilders;
+using WireMock.ResponseBuilders;
+using WireMock.Server;
 
 namespace EvidenceHound.Cli.Tests;
 
@@ -237,6 +244,89 @@ public sealed class StatusCommandTests : IDisposable
                 [.. results.Select((r, i) => new RequirementPosture($"urn:example:req:{i}", $"R{i}", null, ["ML1"], r))], []),
         ],
         [], [], [], [], [], [], []);
+
+    [Fact]
+    public async Task Json_has_collectors_integration_and_manual_sources()
+    {
+        // s18-05: the agent's readout of health: each collector's checks, CISO Assistant reachable and the token accepted, publishes
+        // CISO Assistant refused, and each manual source with its due date.
+        using var ca = WireMockServer.Start();
+        ca.Given(Request.Create().WithPath("/api/folders/").UsingGet())
+            .RespondWith(Response.Create().WithBody(new JsonObject { ["count"] = 0, ["results"] = new JsonArray() }.ToJsonString()));
+        var config = await HealthConfigAsync();
+
+        var exitCode = await HoundCli.RunAsync(
+            ["status", "--config", config, "--json"],
+            TextReader.Null,
+            _output,
+            _error,
+            new Dictionary<string, string?> { ["HOUND_TODAY"] = "2026-07-01", ["HOUND_CA_URL"] = $"{ca.Url}/api/", ["HOUND_CA_TOKEN"] = "example-token" },
+            TestContext.Current.CancellationToken);
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var json = JsonNode.Parse(_output.ToString())!;
+        var fake = json["collectors"]!.AsArray().Single(c => c!["collector"]!.GetValue<string>() == "example-fake")!;
+        fake["checks"]!.AsArray().Select(c => (c!["check"]!.GetValue<string>(), c["outcome"]!.GetValue<string>()))
+            .ShouldBe([("backup.daily", "pass"), ("identity.mfa.users", "fail")]);
+        fake["publish_failed"]!.GetValue<int>().ShouldBe(2);
+        var integration = json["ciso_assistant"]!;
+        integration["reachable"]!.GetValue<bool>().ShouldBeTrue();
+        integration["token"]!.GetValue<string>().ShouldBe("accepted");
+        integration["token_expiry"].ShouldBeNull();
+        integration["rejected_publishes"]!.GetValue<int>().ShouldBe(2);
+        var manual = json["manual_sources"]!.AsArray().Single()!;
+        manual["source"]!.GetValue<string>().ShouldBe("example-backups");
+        manual["state"]!.GetValue<string>().ShouldBe("overdue");
+        manual["due"]!.GetValue<string>().ShouldBe("2026-06-20");
+        manual["owner"]!.GetValue<string>().ShouldBe("Sam Example");
+    }
+
+    [Fact]
+    public async Task Evidence_content_is_never_returned()
+    {
+        var config = await HealthConfigAsync();
+
+        var exitCode = await HoundCli.RunAsync(
+            ["status", "--config", config, "--json"], TextReader.Null, _output, _error, new Dictionary<string, string?> { ["HOUND_TODAY"] = "2026-07-01" }, TestContext.Current.CancellationToken);
+
+        exitCode.ShouldBe(ExitCodes.Ok, _error.ToString());
+        var text = _output.ToString();
+        text.ShouldNotContain("EVIDENCE-CONTENT");
+        text.ShouldNotContain("3 of 40 user accounts");
+        JsonNode.Parse(text)!["ciso_assistant"]!["reachable"].ShouldBeNull("no token, so not checked");
+    }
+
+    /// <summary>A fake collector with saved results and two refused publishes, and a manual source last uploaded on 2026-05-21, due every 30 days.</summary>
+    private async Task<string> HealthConfigAsync()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var drop = Directory.CreateDirectory(Path.Combine(_workDir, "drop")).FullName;
+        var config = Path.Combine(_workDir, "hound.yaml");
+        await File.WriteAllTextAsync(config, $$"""
+            ciso_assistant: {url: "http://localhost:8000/api/", token: "env:HOUND_CA_TOKEN"}
+            evidence: {root: ./evidence}
+            collectors:
+              - {name: example-fake, type: fake, schedule: "0 2 * * *"}
+              - name: example-backups
+                type: manual
+                schedule: "0 6 * * *"
+                settings: {drop_folder: {{drop}}, checks: backup.restore_tested, due_days: 30, owner: Sam Example}
+            target: {mapping: ./mapping.yaml, compliance_assessment: EXAMPLE-1}
+            """, ct);
+        var export = Path.Combine(drop, "restore.csv");
+        await File.WriteAllTextAsync(export, "EVIDENCE-CONTENT", ct);
+        File.SetLastWriteTimeUtc(export, new DateTime(2026, 5, 21, 9, 0, 0, DateTimeKind.Utc));
+        var evidence = Path.Combine(_workDir, "evidence");
+        await new FileRunRecordStore(evidence).SaveAsync(
+            new RunRecord("example-fake", Start, Start.AddSeconds(4), CollectorOutcome.Succeeded, 1, 1, 0, [], new PublishCounts(4, 2, 0, 2)), ct);
+        CheckResult[] checks =
+        [
+            ((Result<CheckResult>.Ok)CheckResult.Create(((Result<CheckId>.Ok)CheckId.Create("identity.mfa.users")).Value, CheckOutcome.Fail, "3 of 40 user accounts have no MFA method.", [], Start, "example-fake")).Value,
+            ((Result<CheckResult>.Ok)CheckResult.Create(((Result<CheckId>.Ok)CheckId.Create("backup.daily")).Value, CheckOutcome.Pass, "Backups ran.", [], Start, "example-fake")).Value,
+        ];
+        await new FileLatestResults(evidence, ["example-fake"]).SaveAsync(new LatestResults("example-fake", new CollectorResults(checks, [], []), Path.Combine(evidence, "example-fake")), ct);
+        return config;
+    }
 
     private Task SaveSnapshotAsync(PostureSnapshot snapshot)
     {

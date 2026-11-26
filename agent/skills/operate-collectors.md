@@ -18,10 +18,12 @@ The guides are [docs/configuration.md](https://github.com/tnbozman/evidence-houn
    results would change in CISO Assistant; `hound publish --dry-run --config hound.yaml --checks <results.json>` shows what it would send.
 5. Read how the collectors are doing: `hound status --config hound.yaml --scope scope/ --json` gives each collector's last run, outcome
    and problems, each programme's standing from the latest posture snapshot (level met, compliant of applicable, not assessed), and the
-   security exceptions near expiry. Quote the standing as it is; never round it up or call a programme compliant while rows are not assessed. A collector in error, or with no run for a week, is a gap: its rows go to CISO Assistant as
+   security exceptions near expiry; it also gives each collector's checks and outcomes, whether CISO Assistant is reachable and
+   accepts the token, publishes it refused, and each manual source's due date. Quote the standing as it is; never round it up or call a programme compliant while rows are not assessed. A collector in error, or with no run for a week, is a gap: its rows go to CISO Assistant as
    non-compliant with "No evidence yet" until a run succeeds. Tell the person which check failed and why, from the run's problems; never
    guess a cause.
 6. Real runs belong to the runner: `hound serve --config hound.yaml` runs each collector on its schedule (the runner container's default);
-   `hound run --config hound.yaml` runs them once and publishes. Run either only when the person asks.
+   `hound run --config hound.yaml` runs them once and publishes, collecting up to four at once (`--parallel <n>` changes that; each
+   still publishes in config order). Run either only when the person asks.
 
 Never copy evidence, an export or a token into the repo, a message or a web search.

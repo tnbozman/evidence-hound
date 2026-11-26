@@ -57,9 +57,12 @@ Run it in the config repo (or pass `--repo`). The session goes in this order, an
      justification and approver in the observation; rows another system meets stay open (`to_do`, `not_assessed`) with `provided_by` naming
      that system, until its own audit shows the requirement met; manual rows are to do. Rows checked
      through the API are left to the collector (`unlisted: not_assessed` until its results are published). The audit lists the system.
-     When the organisation's audit is a series, as `hound init` writes it (`EX-E8`, by quarter), the system's audit joins it: its ref ID is
-     the series and the system's ref ID without `SYS-` (`EX-E8-SOPHOS-NETWORK`), on the same cycle, so a period reads
-     `EX-E8-Q2-2027FY-SOPHOS-NETWORK` ([Audit periods](scope.md#audit-periods)). Without a series it is `<SYSTEM>-<FRAMEWORK>`, with no cycle.
+     When the repo has an audit series, as `hound init` names it in `scope/setup.yaml` (`audit_series`, `EX-E8` by quarter) or an
+     organisation audit that runs in periods, the system's audit joins it: its ref ID is the series and the system's ref ID without `SYS-`
+     (`EX-E8-SOPHOS-NETWORK`), on the same cycle, so a period reads `EX-E8-Q2-2027FY-SOPHOS-NETWORK`
+     ([Audit periods](scope.md#audit-periods)). Without a series it is `<SYSTEM>-<FRAMEWORK>`, with no cycle. Its target is added to
+     `hound.yaml` when the repo has the system's own mapping (`mappings/<system>-<framework>.yaml`); the framework's general mapping maps
+     every collector's checks, so another system's results would land in this system's audit.
    - `scope/setup.yaml`: the system is declared in the audit's domain with `solution:` set to the supplier's solution, or, if it is already
      declared, `solution:` is added to it (a different solution already there stops the write). That is what lets `hound scope plan` hold
      the system back until its supplier is [approved in CISO Assistant](scope.md#supplier-approval).

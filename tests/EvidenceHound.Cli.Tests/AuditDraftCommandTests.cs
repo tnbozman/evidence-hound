@@ -62,6 +62,27 @@ public sealed class AuditDraftCommandTests : IDisposable
         exit.ShouldBe(ExitCodes.Ok, output + error);
     }
 
+    [Fact]
+    public async Task Approving_an_audit_adds_its_target_so_runs_feed_it()
+    {
+        // s18-08: one target per audit lets one run feed every audit; approving the audit adds it, with the mapping of its framework.
+        // The framework's general mapping maps every collector's checks, so only the system's own mapping is used.
+        (await DraftAsync("EX-E8-2027", "--system", "Example 365")).Exit.ShouldBe(ExitCodes.Ok);
+        (await DraftAsync("EX-E8-2028", "--system", "Example laptops")).Exit.ShouldBe(ExitCodes.Ok);
+        File.Copy(Path.Combine(Repo, "mappings", "essential-eight-2023.yaml"), Path.Combine(Repo, "mappings", "example-365-essential-eight-2023.yaml"));
+
+        var (exit, output, error) = await ApproveAsync("Sam Example\ny\ny\n", terminal: true);
+
+        exit.ShouldBe(ExitCodes.Ok, output + error);
+        var config = await File.ReadAllTextAsync(Path.Combine(Repo, "hound.yaml"), _ct);
+        config.ShouldContain("  - mapping: mappings/example-365-essential-eight-2023.yaml\n    compliance_assessment: EX-E8-2027\n");
+        output.ShouldContain("hound.yaml now publishes to EX-E8-2027");
+        config.ShouldNotContain("EX-E8-2028");
+        output.ShouldContain("No mapping of the checks for Example laptops (mappings/example-laptops-<framework>.yaml)");
+        (exit, output, error) = await OnboardAgentCommandTests.RunAsync(["config", "validate", Path.Combine(Repo, "hound.yaml")], "", terminal: false, Path.Combine(_root, "home"), _ct);
+        exit.ShouldBe(ExitCodes.Ok, output + error);
+    }
+
     public void Dispose() => Directory.Delete(_root, recursive: true);
 
     private string Repo => Path.Combine(_root, "repo");

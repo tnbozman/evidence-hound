@@ -11,6 +11,7 @@ using EvidenceHound.Runtime;
 using EvidenceHound.Runtime.Collectors;
 using EvidenceHound.Runtime.Configuration;
 using EvidenceHound.Runtime.Status;
+using EvidenceHound.Runtime.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -51,7 +52,8 @@ internal static class StatusCommand
                 {
                     var exceptions = dir is null ? Result.Ok<IReadOnlyList<ExceptionNote>>([]) : await ExceptionsAsync(dir, today, cancellationToken);
                     var standing = dir is null ? null : await StandingAsync(x.Deployment.Evidence.Root, cancellationToken);
-                    return exceptions.Map(notes => new StatusView(x.Deployment, x.Records, x.Entries, dir is null ? null : notes, standing));
+                    var health = parseResult.GetValue(json) ? await HealthAsync(x.Deployment, parseResult.GetRequiredValue(config), configuration, registry, today, cancellationToken) : null;
+                    return exceptions.Map(notes => new StatusView(x.Deployment, x.Records, x.Entries, dir is null ? null : notes, standing) { Health = health });
                 });
             return await view.Match(
                 async v =>
@@ -69,6 +71,25 @@ internal static class StatusCommand
         DeploymentConfig Deployment, IReadOnlyList<RunRecord> Records, IReadOnlyList<(string Audit, HistoryEntry Entry)> Entries, IReadOnlyList<ExceptionNote>? Exceptions, PostureSnapshot? Standing)
     {
         public bool ScopeGiven => Exceptions is not null;
+
+        /// <summary>For <c>--json</c> (s18-05): each collector's latest checks, the CISO Assistant connection and the manual sources.</summary>
+        public Health? Health { get; init; }
+    }
+
+    private sealed record Health(
+        IReadOnlyDictionary<string, IReadOnlyList<(string Check, string Outcome)>> Checks, HoundHealth.Connection Connection, IReadOnlyList<HoundHealth.ManualDue> Manual);
+
+    /// <summary>The latest checks each collector saved (their ids and outcomes only, never observations or evidence), the connection and manual sources.</summary>
+    private static async Task<Health> HealthAsync(
+        DeploymentConfig deployment, FileInfo config, IConfiguration configuration, CollectorRegistry registry, DateOnly today, CancellationToken cancellationToken)
+    {
+        var saved = await new FileLatestResults(deployment.Evidence.Root, [.. deployment.Collectors.Select(c => c.Name)]).OthersAsync("", cancellationToken);
+        var checks = saved.ToDictionary(
+            l => l.Collector,
+            l => (IReadOnlyList<(string, string)>)[.. l.Results.Checks.Select(c => (c.CheckId.Value, c.Outcome.ToString().ToLowerInvariant())).Order()],
+            StringComparer.Ordinal);
+        var (connection, _) = await HoundHealth.ConnectionAsync(configuration, config, registry, cancellationToken);
+        return new Health(checks, connection, await HoundHealth.ManualSourcesAsync(deployment, today, cancellationToken));
     }
 
     private static string Text(StatusView view)
@@ -125,6 +146,8 @@ internal static class StatusCommand
                     ["passed"] = r.ChecksPassed,
                     ["failed"] = r.ChecksFailed,
                     ["problems"] = new JsonArray([.. r.Problems.Select(p => new JsonObject { ["code"] = p.Code, ["message"] = p.Message })]),
+                    ["publish_failed"] = r.Publish?.Failed ?? 0,
+                    ["checks"] = Checks(view, c.Name),
                 }
                 : new JsonObject { ["collector"] = c.Name, ["last_run"] = null, ["outcome"] = "never_run" })]),
             ["audits"] = new JsonArray([.. view.Deployment.Targets.Select(t => t.ComplianceAssessmentRefId).Distinct(StringComparer.Ordinal).Select(audit => byAudit.TryGetValue(audit, out var e)
@@ -139,6 +162,27 @@ internal static class StatusCommand
                 }
                 : new JsonObject { ["audit"] = audit, ["last_run"] = null })]),
         };
+        if (view.Health is { } health)
+        {
+            json["ciso_assistant"] = new JsonObject
+            {
+                ["reachable"] = health.Connection.Reachable,
+                ["token"] = health.Connection.Token,
+                ["token_expiry"] = null,
+                ["note"] = health.Connection.Note,
+                ["rejected_publishes"] = view.Records.Sum(r => r.Publish?.Failed ?? 0),
+            };
+            json["manual_sources"] = new JsonArray([.. health.Manual.Select(m => new JsonObject
+            {
+                ["source"] = m.Source,
+                ["owner"] = m.Owner,
+                ["every_days"] = m.EveryDays,
+                ["last_evidence"] = m.LastEvidence?.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture),
+                ["due"] = m.Due?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                ["state"] = m.State,
+            })]);
+        }
+
         if (view.ScopeGiven)
         {
             json["standing"] = view.Standing is { } snapshot
@@ -166,6 +210,10 @@ internal static class StatusCommand
 
         return json.ToJsonString(Indented) + Environment.NewLine;
     }
+
+    private static JsonArray Checks(StatusView view, string collector) => view.Health?.Checks.GetValueOrDefault(collector) is { } checks
+        ? new JsonArray([.. checks.Select(c => new JsonObject { ["check"] = c.Check, ["outcome"] = c.Outcome })])
+        : [];
 
     private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
 
@@ -195,7 +243,7 @@ internal static class StatusCommand
     }
 
     /// <summary>The exceptions <c>scope/exceptions.yaml</c> declares that expire within 60 days or have expired (s15-03), by their declared expiry.</summary>
-    private static async Task<Result<IReadOnlyList<ExceptionNote>>> ExceptionsAsync(DirectoryInfo scope, DateOnly today, CancellationToken cancellationToken)
+    internal static async Task<Result<IReadOnlyList<ExceptionNote>>> ExceptionsAsync(DirectoryInfo scope, DateOnly today, CancellationToken cancellationToken)
     {
         var path = Path.Combine(scope.FullName, "exceptions.yaml");
         if (!File.Exists(path))

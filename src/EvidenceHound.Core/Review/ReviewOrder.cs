@@ -50,6 +50,40 @@ public sealed record ReviewChallenge(string Note, string By, string On);
 /// <summary>The one review queue. Pure.</summary>
 public static class ReviewOrder
 {
+    /// <summary>The agent skill that drafts a recommendation for an item (s18-02), as the skill "weekly-review" assigns them.</summary>
+    public static string Skill(ReviewItem item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        return item.Kind switch
+        {
+            ReviewKind.Capability or ReviewKind.NotApplicable or ReviewKind.System => "onboard-a-system-with-hound",
+            ReviewKind.Supplier => "onboard-a-third-party",
+            ReviewKind.SupplierReview => "assess-a-supplier",
+            ReviewKind.Audit => "onboard-an-audit",
+            ReviewKind.ImportedRow => "import-an-audit-workbook",
+            ReviewKind.ManualEvidence => "process-manual-evidence",
+            _ when item.Key.StartsWith("incident_report:", StringComparison.Ordinal) => "respond-to-an-incident",
+            _ when item.Key.StartsWith("finding:contract.flow_down_missing/", StringComparison.Ordinal) => "flow-down-to-suppliers",
+            _ => "weekly-review",
+        };
+    }
+
+    /// <summary>Why a scope warning waits on a person, by its code (s18-07): each kind of finding says what it is about.</summary>
+    public static string FindingWhy(string code)
+    {
+        ArgumentNullException.ThrowIfNull(code);
+        return code switch
+        {
+            _ when code.StartsWith("data.", StringComparison.Ordinal) =>
+                "Sensitive data is handled where nothing on file approves it. A prime or an assessor asks about exactly this, so it stays in front of you until it is fixed.",
+            "contract.flow_down_missing" =>
+                "A supplier's contract lacks a clause your customer requires you to flow down to it. A prime asks about exactly this, so it stays in front of you until the contract carries it.",
+            "contract.framework_unknown" =>
+                "A customer requires a framework no programme tracks yet, so nothing shows whether you meet it. It stays in front of you until a programme tracks it.",
+            _ => "The scope reports this as a warning: it blocks nothing, so it stays in front of you each week until it is fixed.",
+        };
+    }
+
     public static string Code(ReviewKind kind) => kind switch
     {
         ReviewKind.SupplierReview => "supplier_review",

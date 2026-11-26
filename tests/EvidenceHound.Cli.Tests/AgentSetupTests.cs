@@ -14,6 +14,7 @@ public sealed partial class AgentSetupTests : IDisposable
         "onboard-the-organisation", "onboard-the-environment", "onboard-a-third-party", "onboard-an-audit", "process-manual-evidence", "weekly-review",
         "move-registers-from-spreadsheets", "prepare-the-reports", "answer-a-prime-questionnaire",
         "work-through-pending-decisions", "operate-collectors", "build-the-ssp", "respond-to-an-incident", "keep-frameworks-and-libraries", "keep-the-sprs-score", "hound-commands",
+        "keep-the-risk-register", "keep-exceptions-and-acceptances", "keep-the-bia", "flow-down-to-suppliers", "keep-the-metrics",
     ];
 
     internal static readonly string[] Rules =

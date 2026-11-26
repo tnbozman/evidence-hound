@@ -7,25 +7,36 @@ description: Prepare the person's weekly review session with hound review pendin
 The person has a few hours a week for compliance. Everything that needs them is signed off in one session, `hound review`, which they
 run in their own terminal. Your job is to have every item ready before they start, so that each one takes a minute to read and decide.
 
-1. List what is waiting: `hound review pending --repo . --config hound.yaml --json`. Each item has its `kind`, `key`, `title`, `why`
+1. See the whole week first: `hound next --repo . --config hound.yaml --json` lists the review queue with collectors that failed or
+   missed their schedule, manual sources due, exceptions expiring and scope changes not yet applied, most urgent first, each with its
+   command and skill. Fix what you can before the session (a collector, an upload the owner has sent); the rest goes in your summary.
+2. Prepare in one step: `hound review prepare --repo . --config hound.yaml --json` refreshes the queue, lists in
+   `without_recommendation` each item you still have to draft, with the skill that drafts it, and saves the scope plan the person's
+   session applies (`plan`: the number of changes and the file, or why there is none). Then read the items:
+   `hound review pending --repo . --config hound.yaml --json`. Each item has its `kind`, `key`, `title`, `why`
    (from the requirement), `effect` (what accepting it does), `deadline`, `minutes`, `recommendation` (when one is drafted) and
    `challenge` (when the person challenged it last week). The answer's `minutes` is the total; most urgent first.
-2. For each item without a recommendation, draft one with the skill for its kind. Never decide for the person; draft.
+3. For each item without a recommendation, draft one with the skill for its kind. Never decide for the person; draft.
    - `capability`, `not_applicable`, `system`: the skill "onboard-a-system-with-hound" (`hound onboard <system> decide ... --reasoning ...`).
    - `supplier`, `supplier_review`: the skills "onboard-a-third-party" and "assess-a-supplier".
    - `audit`, `imported_row`: the skills "onboard-an-audit" and "import-an-audit-workbook".
    - `manual_evidence`: the skill "process-manual-evidence" (`hound manual propose`).
+   - `finding` keyed `incident_report:`: a report an open incident still owes; the skill "respond-to-an-incident".
+   - `finding` keyed `finding:contract.flow_down_missing`: a supplier contract without a clause it owes; the skill
+     "flow-down-to-suppliers". Other findings (sensitive data held where nothing approves it): fix the file the item names.
+   - An `exception` item from `hound next` (one expiring or expired): the skill "keep-exceptions-and-acceptances".
    Then record what you recommend for each item that is not manual evidence (its proposal is already the recommendation):
    `hound review recommend <key> --repo . --answer <accept|decline> --reason "<why>" --source "<file, page or extract>"... --json`
    (a supplier review takes `ok`, `warning` or `blocker`). Give reasons the person can check and the sources you used: a file in the
    repo, a page of the supplier's trust centre, a line of the export. Recommend `decline` when the facts say so, and say what would
    change your answer.
-3. Answer each challenge. The person's note is in `review/challenges.json` under the item's key. Read it, find out what they asked, then
+4. Answer each challenge. The person's note is in `review/challenges.json` under the item's key. Read it, find out what they asked, then
    change your draft with the same command, or keep it, and record your answer as the item's recommendation with
    `hound review recommend`, its reason answering their note. Do not edit `review/challenges.json` or `review/recommendations.json`:
    a challenge and a recommendation go once the person accepts the item.
-4. Run `hound review pending --repo . --config hound.yaml --json` again and check that every item has a recommendation.
-5. Tell the person, in a few lines: how many items, about how long the session takes, what is most urgent and why, and how you answered
+5. Run `hound review prepare --repo . --config hound.yaml --json` again: `without_recommendation` is empty when every item has one,
+   and the saved plan is fresh. Run it last, after any change to the scope files, or the session plans again.
+6. Tell the person, in a few lines: how many items, about how long the session takes, what is most urgent and why, and how you answered
    each challenge. Then tell them to run `hound review` in their own terminal (`--for 30m` if they have less time), or, to go through the items
    with you one at a time first, use the skill "work-through-pending-decisions" and accept each with `hound review --only <key>`.
 

@@ -27,19 +27,22 @@ Writes a new compliance repo into the folder, which must be missing or empty:
 `--evidence-root` sets where the runner keeps evidence (default `/var/lib/evidence-hound/evidence`, outside the repo; only root or
 the runner container can write there, so for a trial as yourself use a folder in your home, such as `--evidence-root ~/hound-evidence`).
 
-`--framework disp` also writes a DISP membership readiness audit beside the Essential Eight one ([DISP readiness](adopt/disp-readiness.md)).
-It is not asked.
+Audits are per system, so each shows its own gaps: `hound init` writes no organisation-wide audit. It names the series each system's
+audit joins (`<CODE>-E8`, so `EX-E8-SOPHOS-NETWORK`, by quarter or month) in `scope/setup.yaml`, and `hound onboard <system>` drafts the
+system's audit in it. `--organisation-audit` also writes one Essential Eight audit for the whole organisation: only when an
+organisation-wide source, such as policies, feeds it. `--framework disp` also writes a DISP membership readiness audit
+([DISP readiness](adopt/disp-readiness.md)), which is organisation-wide by nature. Neither is asked.
 
 It writes:
 
 | File | Holds |
 | --- | --- |
-| `hound.yaml` | The deployment config: CISO Assistant, evidence, the schedule's time zone, no collectors yet, and the Essential Eight target with its health control |
-| `scope/setup.yaml` | The root folder, the Essential Eight framework with its snapshot, and one domain with its perimeter |
+| `hound.yaml` | The deployment config: CISO Assistant, evidence, the schedule's time zone, no collectors yet, and no targets until an audit is approved (`hound approve` adds a system's audit's target once the repo has that system's mapping, `mappings/<system>-<framework>.yaml`) |
+| `scope/setup.yaml` | The root folder and the audit series (`audit_series`: its ref ID, maturity level and periods), the Essential Eight framework with its snapshot, and one domain with its perimeter |
 | `scope/controls.yaml` | The health control, AC-AUTO-EVIDENCE |
 | `scope/access.yaml` | The compliance owner as a user, and the GRC team they lead |
 | `scope/evidence-plan.yaml`, `manual-sources/weekly-compliance-review.md` | The weekly review: a task for the GRC team every week, whose runbook says how to start `hound review` ([the weekly review](manual-evidence.md#the-weekly-review)) |
-| `scope/audits/<code>-e8.yaml` | The audit series `<CODE>-E8` at that maturity level, by quarter or month from the period holding today, with no hand-written results yet. Each period is its own audit, such as `EX-E8-Q2-2027FY` ([Audit periods](scope.md#audit-periods)). `hound scope new-audit` lists every requirement, if you want them all in the file |
+| `scope/audits/README.md` | How audits are drafted: one per system and per shared platform. With `--organisation-audit`, also `scope/audits/<code>-e8.yaml`: the series `<CODE>-E8` at that maturity level for the whole organisation, with its target and health control in `hound.yaml`. Each period is its own audit, such as `EX-E8-Q2-2027FY` ([Audit periods](scope.md#audit-periods)) |
 | `mappings/essential-eight-2023.yaml`, `frameworks/essential-eight-2023.json` | The Essential Eight mapping and framework snapshot of this `hound` version |
 | With `--framework disp`: `frameworks/disp.yaml`, `frameworks/disp.json`, `mappings/disp.yaml`, `scope/audits/<code>-disp.yaml` | The DISP library, its snapshot and mapping, and the audit series `<CODE>-DISP`, declared in `scope/setup.yaml` and added to `targets` in `hound.yaml` |
 | `.devcontainer/` | The GRC team's workspace: released `hound`, the .NET runtime and the Claude Code and GitHub Copilot extensions, so your machine needs only Docker and VS Code ([work in the devcontainer](../examples/compliance-repo/README.md#work-in-the-devcontainer)) |
@@ -47,7 +50,7 @@ It writes:
 
 For more people, settings and a pull request workflow, copy them from the [example compliance repo](../examples/compliance-repo/README.md), as the [first deployment tutorial](tutorials/first-deployment.md) describes.
 
-At the end `hound init` asks whether to set up a coding assistant in the new repo (`claude`, `copilot`, `both` or `none`; `--assistant` answers it, and `--yes` takes `none`). With every answer given as an option nothing is asked, and `--json` answers with the organisation, the audit and every file written, for an agent. It writes what [`hound agent setup`](onboarding.md#set-up-your-coding-assistant-hound-agent-setup) writes.
+At the end `hound init` asks whether to set up a coding assistant in the new repo (`claude`, `copilot`, `both` or `none`; `--assistant` answers it, and `--yes` takes `none`). With every answer given as an option nothing is asked, and `--json` answers with the organisation, the audits it wrote (`audits`, empty by default) and every file written, for an agent. It writes what [`hound agent setup`](onboarding.md#set-up-your-coding-assistant-hound-agent-setup) writes.
 
 ## hound add system
 

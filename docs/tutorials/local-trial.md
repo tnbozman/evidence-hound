@@ -61,7 +61,7 @@ In both cases the API is `http://backend:8000/api/`. The token is copied from `.
 
 ## 4. A new organisation
 
-`hound init /trial/repo` asks about the organisation: its name, a short code for ref IDs, the CISO Assistant address, the time zone, the Essential Eight maturity level, whether the audit runs by quarter or by month, and the compliance owner. Press Enter to take each default, the fictional Example Pty Ltd at maturity level 2, audited by quarter: the series `EX-E8`, whose open period on 23 November 2026 is `EX-E8-Q2-2027FY`. It writes the config, the scope (the domain, the health control and the audit) and the Essential Eight mapping, and checks them. The trial then runs:
+`hound init /trial/repo --organisation-audit` asks about the organisation: its name, a short code for ref IDs, the CISO Assistant address, the time zone, the Essential Eight maturity level, whether the audit runs by quarter or by month, and the compliance owner. Press Enter to take each default, the fictional Example Pty Ltd at maturity level 2, audited by quarter: the series `EX-E8`, whose open period on 23 November 2026 is `EX-E8-Q2-2027FY`. It writes the config, the scope (the domain, the health control and the audit) and the Essential Eight mapping, and checks them. The organisation gets its own audit because an organisation-wide source feeds it: Microsoft 365 covers every account and laptop (step 14). Each system still gets its own audit in the series; without such a source, leave `--organisation-audit` out. The trial then runs:
 
 ```bash
 hound config validate hound.yaml

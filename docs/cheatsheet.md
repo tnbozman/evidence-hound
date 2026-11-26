@@ -8,7 +8,7 @@ file by `scripts/cheatsheet/render.sh`.
 
 ### Set up a repo
 
-- `hound init <folder>`: new compliance repo: config, scope, an Essential Eight audit and its mapping (`--framework disp` adds DISP readiness)
+- `hound init <folder>`: new compliance repo: config, scope and the Essential Eight mapping; audits are per system (`--organisation-audit` adds one for the whole organisation, `--framework disp` DISP readiness)
   - `--org --code --url --time-zone --level --interval --owner --evidence-root --framework --assistant -y --json`
 - `hound agent setup`: set up Claude Code or Copilot in the repo
   - `--assistant --repo`
@@ -79,10 +79,10 @@ file by `scripts/cheatsheet/render.sh`.
 ### Collect and publish
 
 - `hound run`: collect, store evidence, map, plan, publish
-  - `--config` (req) `--only --dry-run --no-publish`
+  - `--config` (req) `--only --dry-run --no-publish --parallel`
 - `hound serve`: run each collector on its schedule
   - `--config` (req)
-- `hound status`: latest run of each collector; with `--scope`, each programme's standing from the latest snapshot; `--json` for an agent
+- `hound status`: latest run of each collector; with `--scope`, each programme's standing from the latest snapshot; `--json` for an agent, with each collector's checks, the CISO Assistant connection and manual sources due
   - `--config` (req)
 - `hound collect`: step 1 of run: collect into the evidence store
   - `--config` (req) `--dry-run`
@@ -138,7 +138,10 @@ file by `scripts/cheatsheet/render.sh`.
 
 ### Weekly review
 
+- `hound next --json`: agent: what needs doing now, most urgent first, each with its command, skill and minutes (reads only)
+  - `--repo --config`
 - `hound review pending --json`: agent: everything waiting on a person
+- `hound review prepare --json`: agent: the queue, what still lacks a recommendation and its skill, and the saved scope plan the session applies
 - `hound review recommend <key> --answer ... --reason ... --source ...`: agent: its recommendation
 - `hound review --for 60m`: **Person**: one guided weekly session
   - `--no-apply`: stop at the files
@@ -221,6 +224,6 @@ file by `scripts/cheatsheet/render.sh`.
 ### Weekly review
 
 1. CISO Assistant's weekly task alerts the GRC member
-2. Agent: `hound review pending --json`, drafts each recommendation
+2. Agent: `hound next --json`, then `hound review prepare --json`, drafts each recommendation
 3. **Person**: `hound review --for 60m`: read, accept or challenge
 4. Accepted items are applied in one batch
