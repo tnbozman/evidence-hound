@@ -74,6 +74,7 @@ def check(tutorial, name, docs):
     if guide and not (pathlib.Path(docs) / guide).is_file():
         findings.append(f"{name}: guide {guide}: no such file")
     findings += _companies(name, "", [tutorial.get("title", ""), tutorial.get("summary", "")])
+    findings += _next(tutorial, name, pathlib.Path(docs))
 
     seen = set()
     for step in tutorial.get("steps", []):
@@ -93,6 +94,17 @@ def check(tutorial, name, docs):
                 findings.append(f"{where}: terminal line {number}: who must be 'you' or 'agent'")
         findings += _companies(name, f" step {step.get('id', '?')}", _texts(step))
     return findings
+
+
+def _next(tutorial, name, docs):
+    found = []
+    for link in tutorial.get("next", []):
+        where = f"{name}: next '{link.get('title', '?')}'"
+        if "tutorial" in link and not (docs / INTERACTIVE / f"{link['tutorial']}.json").is_file():
+            found.append(f"{where}: no tutorial {link['tutorial']}")
+        if "guide" in link and not (docs / link["guide"]).is_file():
+            found.append(f"{where}: guide {link['guide']}: no such file")
+    return found
 
 
 def _choice(where, choice):
