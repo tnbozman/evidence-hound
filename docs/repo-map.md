@@ -93,6 +93,7 @@ Reviewed 2026-11-26 (s19-01).
 | `docs/govern/` | Committee, board, SSP and the continuous compliance procedure. | person | keep |
 | `docs/migrations/` | Essential Eight to ASD Essentials migration. | person | keep |
 | `docs/operate/` | Role guides (GRC member, system owner, operator, committee member). | person | keep; s19-08 checks the overlap with `docs/training/` |
+| `docs/reviews/` | The engineering and CISO reviews before release 3 (s19). | person (contributors) | keep |
 | `docs/sprints/` | Sprint plans and reviews. Not on the site. | person, agent | keep |
 | `docs/training/` | Role training (board, committee, system owners, AI governance). | person | keep; s19-08 checks the overlap with `docs/operate/` |
 | `docs/tutorials/` | Trial, first deployment, dev servers, writing a collector or profile. | person | keep |

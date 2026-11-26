@@ -82,7 +82,7 @@ Notes:
 - `make test`, `make lint`, `make docs` and the trial script pass after the removals.
 
 ### s19-03 Principal engineer code review
-- [ ] Done
+- [x] Done
 
 **Story:** As the next developer, I want the code reviewed as a whole by someone who will maintain it, so that the refactoring in this
 sprint goes where it pays most.
@@ -103,6 +103,15 @@ sprint goes where it pays most.
 
 **Functional check**
 - The review's measures are reproduced by a script in `scripts/` and recorded in the sprint file.
+
+Notes:
+- [docs/reviews/2026-engineering-review.md](../reviews/2026-engineering-review.md): dependencies point inwards and the core is pure;
+  ten findings. P1, fixed in this sprint: E1 commands borrow shared helpers from each other (s19-04), E2 common options declared in
+  every command (s19-04), E3 large command files (s19-04), E4 `ScopeStateReader` and `ScopeLoader` read every kind in one class
+  (s19-05), E5 repeated test setup (s19-06, with E6, the 11 `HoundCli.RunAsync` overloads). The rest are under "Discovered work".
+- `scripts/code-measures.sh` (tested by `scripts/tests/code-measures.bats`), at the start of s19: 47,051 production lines, 43,367 test
+  lines; largest files `ScopeStateReader.cs` 886, `ScopeCommands.cs` 851, `OnboardSystemCommand.cs` 767, `ScopeLoader.cs` 699. Unit
+  suite 2,195 tests in 29 s; no analyser warnings.
 
 ### s19-04 Refactor the command-line shell
 - [ ] Done
@@ -234,5 +243,11 @@ part A is quality work, so this task only collects what the other tasks did not.
 See [s19b-security-documents.md](s19b-security-documents.md). Starts after part A, if the maintainer keeps it in s19.
 
 ## Discovered work
+
+- **s19-D1 `Runtime` references every built-in collector** (engineering review E7). Register them in the CLI's composition root.
+- **s19-D2 Retired model options are still parsed** (E8). Removing them goes to the maintainer with the s19-02 list.
+- **s19-D3 Two homes for agent guidance** (E9): move `skills/` under `agent/` in a release after 3; a compliance repo's own `skills/`
+  folder depends on the name.
+- **s19-D4 Two older deployment configs beside the example compliance repo** (E10): fold them in once the shared test repo exists.
 
 ## Sprint review
