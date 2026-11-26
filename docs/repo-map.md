@@ -86,8 +86,7 @@ Reviewed 2026-11-26 (s19-01).
 | `docs/adopt/` | Guides for adopting a framework or migrating from spreadsheets. | person | keep; s19-08 places them on one route |
 | `docs/collectors/` | One reference page per collector. | person, agent | keep |
 | `docs/deploy/` | Backups, hardening and updates of a deployment. | person | keep |
-| `docs/design/` | Design records: agent-driven onboarding, guided review, REST collector. | person (contributors) | keep. `onboarding-assistant.md` was superseded on 2026-11-23 and describes code that was removed: remove, waiting on the maintainer. |
-| `docs/evidence/` | Functional check records for s00 to s09; later sprints record them in the sprint file. Not on the site. | nobody now | remove, waiting on the maintainer: history that git keeps; the sprint files link to it and would link to the commit instead. |
+| `docs/design/` | Design records: agent-driven onboarding, guided review, REST collector. | person (contributors) | keep |
 | `docs/examples/` | The onboarding tutorial's walk-through. | person | merge into `docs/tutorials/` (s19-08) |
 | `docs/govern/` | Committee, board, SSP and the continuous compliance procedure. | person | keep |
 | `docs/migrations/` | Essential Eight to ASD Essentials migration. | person | keep |
@@ -103,7 +102,6 @@ Reviewed 2026-11-26 (s19-01).
 | --- | --- | --- | --- |
 | `examples/apis/` | A fictional OpenAPI spec for the profile-writing tutorial. | person, CI | keep |
 | `examples/compliance-repo/` | The fictional organisation's compliance repo: config, scope, mappings, SSP and IRP. | person, agent, CI | keep |
-| `examples/manual-exports/` | One fictional firewall export used only by the s04 evidence record. | nobody now | remove with `docs/evidence/`; `examples/manual-sources/` has the live examples |
 | `examples/manual-sources/` | Manual evidence templates and fictional exports. | person, agent, CI | keep |
 | `examples/migration/` | CSV inputs for migrating from spreadsheets. | person, CI | keep |
 | `examples/onboarding-tutorial/` | The onboarding tutorial's starting repo. | person, CI | keep |

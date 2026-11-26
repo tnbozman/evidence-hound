@@ -22,7 +22,7 @@ Projects: `src/EvidenceHound.CisoAssistant` (adapter), `tests/EvidenceHound.Ciso
 
 **Functional check**
 - `make ca-up`, open `https://localhost:8443`, log in as the seeded user, see the example audit.
-- Result (2026-11-21): CI `functional` job green, fixture tests pass against v4.3.4. Browser check with `make ca-up` is left for the maintainer; steps in [evidence](../evidence/s02/s02-01.md).
+- Result (2026-11-21): CI `functional` job green, fixture tests pass against v4.3.4. Browser check with `make ca-up` is left for the maintainer; steps in [evidence](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s02/s02-01.md).
 
 ### s02-02 API client port and adapter
 - [x] Done
@@ -45,7 +45,7 @@ Projects: `src/EvidenceHound.CisoAssistant` (adapter), `tests/EvidenceHound.Ciso
 
 **Functional check**
 - Functional test `Client_updates_requirement_assessment_on_real_instance` passes against the fixture.
-- Result (2026-11-21): `Client_updates_requirement_assessment_on_real_instance` passes in CI. [Evidence](../evidence/s02/s02-02.md).
+- Result (2026-11-21): `Client_updates_requirement_assessment_on_real_instance` passes in CI. [Evidence](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s02/s02-02.md).
 
 ### s02-03 Publisher
 - [x] Done
@@ -66,7 +66,7 @@ Projects: `src/EvidenceHound.CisoAssistant` (adapter), `tests/EvidenceHound.Ciso
 
 **Functional check**
 - `make run ARGS="publish --config examples/example-pty-ltd.yaml --plan tests/fixtures/plan-sample.json"` against `make ca-up`; open the example audit and see results and evidence; run again and see no duplicates.
-- Result (2026-11-21): `make run ARGS="publish --config examples/example-pty-ltd.yaml --checks tests/fixtures/publish/checks.json --evidence-dir tests/fixtures/publish/evidence --dry-run"` exits 0 with 9 planned; `Publish_example_plan_twice_is_idempotent` passes in CI (second run 3 skipped, 0 failed, no duplicate evidence). [Evidence](../evidence/s02/s02-03.md).
+- Result (2026-11-21): `make run ARGS="publish --config examples/example-pty-ltd.yaml --checks tests/fixtures/publish/checks.json --evidence-dir tests/fixtures/publish/evidence --dry-run"` exits 0 with 9 planned; `Publish_example_plan_twice_is_idempotent` passes in CI (second run 3 skipped, 0 failed, no duplicate evidence). [Evidence](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s02/s02-03.md).
 
 ### s02-04 Optional Kafka transport
 - [x] Done
@@ -82,7 +82,7 @@ Projects: `src/EvidenceHound.CisoAssistant` (adapter), `tests/EvidenceHound.Ciso
 
 **Functional check**
 - Optional compose profile `kafka` runs Redpanda and the dispatcher; one plan publishes end to end.
-- Result (2026-11-21): `KafkaSinkTests` pass locally and in CI with Redpanda. The dispatcher end-to-end run is left for the maintainer; steps in [evidence](../evidence/s02/s02-04.md).
+- Result (2026-11-21): `KafkaSinkTests` pass locally and in CI with Redpanda. The dispatcher end-to-end run is left for the maintainer; steps in [evidence](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s02/s02-04.md).
 
 ## Discovered work
 

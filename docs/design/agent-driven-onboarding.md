@@ -1,10 +1,10 @@
 # Design: onboarding driven by the person's own coding agent
 
-Status: Agreed (Nov 23). Approvals are gathered into one guided weekly session by [one guided review a week](guided-review.md) (Proposed, Nov 24). Changes the [onboarding assistant design](onboarding-assistant.md): the model moves out of `hound` and into the coding agent the person already uses. The build is tasks s09-36 to s09-42 in [the s09 sprint](../sprints/s09-e8-gap-collectors.md).
+Status: Agreed (Nov 23). Approvals are gathered into one guided weekly session by [one guided review a week](guided-review.md) (Proposed, Nov 24). Changes the [onboarding assistant design](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/design/onboarding-assistant.md): the model moves out of `hound` and into the coding agent the person already uses. The build is tasks s09-36 to s09-42 in [the s09 sprint](../sprints/s09-e8-gap-collectors.md).
 
 ## Why
 
-The first real onboarding (a Sophos XGS 88w against Essential Eight ML2, [s09-25 evidence](../evidence/s09/s09-25.md)) worked end to end, and showed where the built-in model falls short:
+The first real onboarding (a Sophos XGS 88w against Essential Eight ML2, [s09-25 evidence](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s09/s09-25.md)) worked end to end, and showed where the built-in model falls short:
 
 - **It cannot do the research a good pass needs.** It read only the text it was given: no PDFs (the vendor's ISO/IEC 27001 certificate), no response fields behind `$ref` in the API spec (so it missed `firmwareVersion`), no vendor documentation beyond what the person pasted. 46 of 107 requirements fell back to "manual", including MFA, admin accounts, logging and configuration backups that the firewall's own XML API can likely evidence.
 - **It cannot iterate.** Profile drafting stopped after 3 rounds with a profile that did not validate; an agent that can run `hound profile validate` and `hound profile test` itself would keep going.
@@ -51,7 +51,7 @@ A task that adds or changes a command is done only when both ways work and are t
 
 ## Rules that do not change
 
-- **No model in evidence collection, and no evidence without a person.** `hound run`, `hound serve` and every collector stay model-free. For manual evidence an agent may read the file and propose a result, but a result becomes evidence only when a person attests it with `hound manual approve` (decision 10). This rewords the rule of the [onboarding assistant design](onboarding-assistant.md), at the maintainer's request: the person attests, as before, with the agent's proposal in front of them.
+- **No model in evidence collection, and no evidence without a person.** `hound run`, `hound serve` and every collector stay model-free. For manual evidence an agent may read the file and propose a result, but a result becomes evidence only when a person attests it with `hound manual approve` (decision 10). This rewords the rule of the [onboarding assistant design](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/design/onboarding-assistant.md), at the maintainer's request: the person attests, as before, with the agent's proposal in front of them.
 - **Nothing reaches CISO Assistant except through `hound scope plan` and `apply`.**
 - **No organisation data in this repository.** The person's workbook, evidence and outputs live only in their private compliance repo. Each skill says so first.
 

@@ -23,7 +23,7 @@ Folder: `deploy/compose/`. Fictional names only.
 
 **Functional check**
 - `docker run --rm ghcr.io/<owner>/<repo>:dev --version`.
-- Result (2026-11-21): the same Dockerfile built locally passed `make test-image` (starts, `--version` prints `0.1.0`, user `app`, no shell, read-only root); amd64 and arm64 both build; CI job `image` passed with no high or critical Grype finding. The `dev` tag is published from main after merge. Evidence: [`docs/evidence/s07/s07-01.md`](../evidence/s07/s07-01.md).
+- Result (2026-11-21): the same Dockerfile built locally passed `make test-image` (starts, `--version` prints `0.1.0`, user `app`, no shell, read-only root); amd64 and arm64 both build; CI job `image` passed with no high or critical Grype finding. The `dev` tag is published from main after merge. Evidence: [`docs/evidence/s07/s07-01.md`](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s07/s07-01.md).
 
 ### s07-02 Compose stack
 - [x] Done
@@ -42,7 +42,7 @@ Folder: `deploy/compose/`. Fictional names only.
 
 **Functional check**
 - On a fresh VM: follow `deploy/compose/README.md` and reach the CISO Assistant login over HTTPS within 30 minutes.
-- Result (2026-11-22): the `compose` job in [CI run 44975475229](https://github.com/tnbozman/evidence-hound/actions/runs/44975475229) brought the stack up, issued the runner token, applied the example scope through the runner image, recorded 4 scheduled runs and reached CISO Assistant over HTTPS through Caddy. The fresh-VM run is part of the s07-06 check. Evidence: [`docs/evidence/s07/s07-02.md`](../evidence/s07/s07-02.md).
+- Result (2026-11-22): the `compose` job in [CI run 44975475229](https://github.com/tnbozman/evidence-hound/actions/runs/44975475229) brought the stack up, issued the runner token, applied the example scope through the runner image, recorded 4 scheduled runs and reached CISO Assistant over HTTPS through Caddy. The fresh-VM run is part of the s07-06 check. Evidence: [`docs/evidence/s07/s07-02.md`](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s07/s07-02.md).
 
 ### s07-03 Scheduling
 - [x] Done
@@ -60,7 +60,7 @@ Folder: `deploy/compose/`. Fictional names only.
 
 **Functional check**
 - Stack runs overnight with a 15-minute test schedule; status shows each run.
-- Result (2026-11-22): in [CI run 44975475229](https://github.com/tnbozman/evidence-hound/actions/runs/44975475229), `hound serve` ran the fake collector every minute and 4 runs were recorded. **Owed by the person:** the overnight run with a 15-minute schedule. Evidence: [`docs/evidence/s07/s07-03.md`](../evidence/s07/s07-03.md).
+- Result (2026-11-22): in [CI run 44975475229](https://github.com/tnbozman/evidence-hound/actions/runs/44975475229), `hound serve` ran the fake collector every minute and 4 runs were recorded. **Owed by the person:** the overnight run with a 15-minute schedule. Evidence: [`docs/evidence/s07/s07-03.md`](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s07/s07-03.md).
 
 ### s07-04 Users, teams and role assignments as configuration
 - [x] Done
@@ -82,7 +82,7 @@ Folder: `deploy/compose/`. Fictional names only.
 
 **Functional check**
 - Apply a fictional `access.yaml` with two users and a team to the local CISO Assistant; both appear with their roles; re-applying writes nothing.
-- Result (2026-11-22): the functional seed applies the example `access.yaml` (four users, a team, their roles); `ScopePlanFunctionalTests` finds them with their groups and a second plan is empty; 19 of 19 functional tests passed in [CI run 44975475229](https://github.com/tnbozman/evidence-hound/actions/runs/44975475229). Roles are given as memberships of built-in user groups, not role assignments (see Discovered work). Evidence: [`docs/evidence/s07/s07-04.md`](../evidence/s07/s07-04.md).
+- Result (2026-11-22): the functional seed applies the example `access.yaml` (four users, a team, their roles); `ScopePlanFunctionalTests` finds them with their groups and a second plan is empty; 19 of 19 functional tests passed in [CI run 44975475229](https://github.com/tnbozman/evidence-hound/actions/runs/44975475229). Roles are given as memberships of built-in user groups, not role assignments (see Discovered work). Evidence: [`docs/evidence/s07/s07-04.md`](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s07/s07-04.md).
 
 **Notes**
 - Users' names and emails are personal data. They belong only in the private repo; the public example uses fictional `example.com` users.
@@ -106,7 +106,7 @@ Folder: `deploy/compose/`. Fictional names only.
 
 **Functional check**
 - Turn a fictional flag off and on through the file against the local CISO Assistant; the UI follows.
-- Result (2026-11-22): `ttps` turned on and off through the file against the local CISO Assistant, read back from the API each time, and a second plan was empty; the snapshot matches the live flags; 19 of 19 functional tests passed in [CI run 44975475229](https://github.com/tnbozman/evidence-hound/actions/runs/44975475229). Evidence: [`docs/evidence/s07/s07-05.md`](../evidence/s07/s07-05.md).
+- Result (2026-11-22): `ttps` turned on and off through the file against the local CISO Assistant, read back from the API each time, and a second plan was empty; the snapshot matches the live flags; 19 of 19 functional tests passed in [CI run 44975475229](https://github.com/tnbozman/evidence-hound/actions/runs/44975475229). Evidence: [`docs/evidence/s07/s07-05.md`](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s07/s07-05.md).
 
 ### s07-06 Tutorial: your private compliance repo and first deployment
 - [x] Done
@@ -132,7 +132,7 @@ Folder: `deploy/compose/`. Fictional names only.
 
 **Functional check**
 - A reviewer follows the tutorial verbatim on a fresh VM with a new private repo and reaches a scheduled run that publishes to the example audit. Record the time taken and every step that needed help.
-- Result (2026-11-22): `TutorialTests` and `ExampleRepoTests` pass, and the template's deploy folder validates with the stack. **Owed by a reviewer:** following the tutorial on a fresh VM, which a cloud session cannot do. Evidence: [`docs/evidence/s07/s07-06.md`](../evidence/s07/s07-06.md).
+- Result (2026-11-22): `TutorialTests` and `ExampleRepoTests` pass, and the template's deploy folder validates with the stack. **Owed by a reviewer:** following the tutorial on a fresh VM, which a cloud session cannot do. Evidence: [`docs/evidence/s07/s07-06.md`](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s07/s07-06.md).
 
 ### s07-07 `hound publish` writes the run marker
 - [x] Done
@@ -150,7 +150,7 @@ Folder: `deploy/compose/`. Fictional names only.
 
 **Functional check**
 - Publish a run's results with `hound publish`, then `scope plan` on the example scope lists no change to those rows.
-- Result (2026-11-22): `PublishFunctionalTests` publishes with `hound publish`, finds the marker on the row, and `scope plan` lists no change to `EXAMPLE-BASELINE-2026/EX-1.1`; passed in [CI run 44975475229](https://github.com/tnbozman/evidence-hound/actions/runs/44975475229). Evidence: [`docs/evidence/s07/s07-07.md`](../evidence/s07/s07-07.md).
+- Result (2026-11-22): `PublishFunctionalTests` publishes with `hound publish`, finds the marker on the row, and `scope plan` lists no change to `EXAMPLE-BASELINE-2026/EX-1.1`; passed in [CI run 44975475229](https://github.com/tnbozman/evidence-hound/actions/runs/44975475229). Evidence: [`docs/evidence/s07/s07-07.md`](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/evidence/s07/s07-07.md).
 
 ## Discovered work
 

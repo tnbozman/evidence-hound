@@ -13,7 +13,7 @@ import re
 import sys
 from pathlib import Path
 
-SKIPPED = ("docs/sprints/", "docs/evidence/", "tests/", ".dev/", ".git/")
+SKIPPED = ("docs/sprints/", "tests/", ".dev/", ".git/")
 SKIPPED_PARTS = {"node_modules", "bin", "obj"}
 LINK = re.compile(r"!?\[(?:[^\]\[]|\[[^\]]*\])*\]\(\s*<?([^)\s>]+)>?(?:\s+\"[^\"]*\")?\s*\)")
 FENCE = re.compile(r"^\s*(```|~~~)")

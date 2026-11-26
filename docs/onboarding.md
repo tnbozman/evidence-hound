@@ -9,7 +9,7 @@ assistant (Claude Code or GitHub Copilot) with [`hound agent setup`](#set-up-you
 documents and API specifications, drafts through `hound` commands that check everything it writes, and you approve with `hound approve`
 in a terminal. Without an assistant, every step below works by answering `hound`'s questions yourself. The design is in
 [design/agent-driven-onboarding.md](design/agent-driven-onboarding.md); it supersedes the earlier
-[onboarding assistant design](design/onboarding-assistant.md), in which `hound` called a model itself.
+[onboarding assistant design](https://github.com/tnbozman/evidence-hound/blob/d05f4d042885553cfd94a16a8189b535be63b84e/docs/design/onboarding-assistant.md), in which `hound` called a model itself.
 
 **No model in evidence collection, and no evidence without a person.** `hound run`, `hound serve` and every collector are deterministic
 code, and the runner refuses a deployment config (`hound.yaml`) that has an `llm` section (`config.llm_in_runner`). For manual evidence a
