@@ -24,6 +24,7 @@ Releases are delivered in one-week sprints. Each sprint has its own file, `sNN-<
 | [s17](s17-nist-800-171.md) | CMMC Level 2 (NIST SP 800-171 Rev 2) mapping and SSP layout; SPRS score, annual affirmation, DFARS 7012 reporting; Rev 3 optional | 2 |
 | [s18](s18-agent-speed.md) | Agent speed: fewer steps, faster runs | 2 |
 | [s19](s19-review-and-release-3.md) | Principal engineer and CISO review: remove what is no longer needed, refactor for long-term maintainability, judge the product as a CISO, one path through the docs, release 3. Part B, droppable: [security document generators](s19b-security-documents.md) | 3 |
+| [s20](s20-narrated-tutorials.md) | Narrated interactive tutorials for the getting-started route, spoken by Kokoro run locally; every command they teach checked against the CLI | 4 |
 
 Release 1 is ordered to put Essential Eight evidence on a schedule as early as possible: the thin deployment (s07) comes straight after s06, and the rest of the deployment work (backups and hardening) joins the release sprint (s13).
 
