@@ -146,7 +146,7 @@ jobs:
       - name: Build the runner image and test it (starts, non-root, no shell, read-only)
         run: make test-image HOUND_IMAGE=evidence-hound-runner:ci
       - name: Scan the runner image (high and critical findings fail the build)
-        uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
+        uses: anchore/scan-action@11983a512817154c80a9db660c1a184be7513ed6 # v7.4.3
         with:
           image: evidence-hound-runner:ci
           severity-cutoff: high
